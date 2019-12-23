@@ -3,7 +3,7 @@
     - [Authorization](#authorization)
     - [Administration panel](#administration-panel)
     - [Creating an annotation task](#creating-an-annotation-task)
-    - [Model manager](#model-manager)
+    - [Models](#models)
     - [Search](#search)
   - [Interface of the annotation tool](#interface-of-the-annotation-tool)
     - [Basic navigation](#basic-navigation)
@@ -272,23 +272,41 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     ![](static/documentation/images/image007.jpg)
 
-### Model manager
+### Models
 
-The application will be enabled automatically if [OpenVINO™ component](/components/openvino/README.md) is installed.
-It allows to use custom models for auto annotation. Only models in OpenVINO™ toolkit format are supported.
-If you would like to annotate a task with a custom model,
-please convert it to the intermediate representation (IR) format via the model optimizer tool.
-See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
-You can "register" a model and "use" it after that to pre annotate your tasks.
+On the ``Models`` page allows you to manage your deep learning (DL) models uploaded for auto annotation. 
+Using the functionality you can upload, update or delete a specific DL model.  
+To open the model manager, click the ``Models`` button on the navigation bar. 
+The ``Models`` page contains information about all the existing models. The list of models is divided into two sections:
+- Primary — contains default CVAT models. Each model is a separate element. 
+It contains the model’s name, a framework on which the model was based on and 
+``Supported labels`` (a dropdown list of all supported labels).
+- Uploaded by a user — Contains models uploaded by a user. 
+The list of user models has additional columns with the following information: 
+name of the user who uploaded the model and the upload date. 
+Here you can delete models in the ``Actions`` menu.
 
 ![](static/documentation/images/image099.jpg)
 
-The model manager allows you to manage your deep learning (DL) models uploaded for auto annotation.
-Using the functionality you can upload, update or delete a specific DL model.
-Use "Auto annotation" button to pre annotate a task using one of your DL models.
-[Read more](/cvat/apps/auto_annotation)
+In order to add your model, click `` Create new model``. 
+Enter model name, and select model file using "Select files" button. 
+To annotate a task with a custom model you need to prepare 4 files:
+- ``Model config`` (*.xml) - a text file with network configuration. 
+- ``Model weights`` (*.bin) - a binary file with trained weights. 
+- ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with 
+string values for label numbers.
+- ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
+which can be processed by CVAT. 
+
+You can learn more about creating model files by pressing [(?)](/cvat/apps/auto_annotation).
+Check the box `` Load globally`` if you want everyone to be able to use the model. 
+Click the ``Submit`` button to submit  a model. 
 
 ![](static/documentation/images/image104.jpg)
+
+After the upload is complete your model can be found in the ``Uploaded by a user`` section.
+Use "Auto annotation" button to pre annotate a task using one of your DL models.
+[Read more](/cvat/apps/auto_annotation)
 
 ### Search
 
