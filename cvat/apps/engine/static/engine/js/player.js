@@ -58,7 +58,7 @@ class FrameProviderWrapper extends Listener {
             }).catch((error) => {
                 if (typeof (error) === 'number') {
                     if (this._required === error) {
-                        console.log('Unexpecter error. Requested frame was rejected');
+                        console.log(`Unexpecter error. Requested frame ${error} was rejected`);
                     } else {
                         console.log(`${error} rejected - ok`);
                     }
@@ -69,10 +69,9 @@ class FrameProviderWrapper extends Listener {
         } catch (error) {
             if (typeof (error) === 'number') {
                 if (this._required === error) {
-                    console.log('Unexpecter error. Requested frame was rejected');
+                    console.log(`Unexpecter error. Requested frame ${error} was rejected`);
                 } else {
                     console.log(`${error} rejected - ok`);
-                    throw error;
                 }
             } else {
                 throw error;
@@ -139,8 +138,6 @@ class FrameBuffer extends Listener {
                 this._frameProvider.require(requestedFrame).then(frameData => {
                     if (!this._requestedChunks[chunk_idx].requestedFrames.has(requestedFrame)) {
                         reject();
-                        // this._requestedFrames.clear();
-                        // this._buffer = {};
                     }
 
                     if (frameData !== null) {
@@ -152,13 +149,14 @@ class FrameBuffer extends Listener {
                         }
                     }
                 }).catch( error => {
-                    console.log('TODO: handle excepton correctly ' + error);
+                    reject(error);
                 });
             }
         });
     }
 
     fillBuffer(startFrame, frameStep) {
+        console.log(`FrameBuffer:Fill buffer request`);
         const freeSize = this.getFreeBufferSize();
 
         const stopFrame = Math.min(startFrame + frameStep * freeSize, this._stopFrame + 1);
@@ -183,16 +181,18 @@ class FrameBuffer extends Listener {
                 if(this._requestedChunks.hasOwnProperty(chunk_idx)) {
                     try {
                         const chunkFrames = await this.requestOneChunkFrames(chunk_idx);
-                        bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
-                        this._buffer = {...this._buffer, ...this._requestedChunks[chunk_idx].buffer};
-                        delete this._requestedChunks[chunk_idx];
-                        if (Object.keys(this._requestedChunks).length === 0){
-                            resolve(bufferedFrames);
+                        if (chunk_idx in this._requestedChunks) {
+                            bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
+                            this._buffer = {...this._buffer, ...this._requestedChunks[chunk_idx].buffer};
+                            delete this._requestedChunks[chunk_idx];
+                            if (Object.keys(this._requestedChunks).length === 0){
+                                resolve(bufferedFrames);
+                            }
+                        } else {
+                            reject();
                         }
-
                     } catch (error) {
-                        // need to cleanup
-                        reject();
+                        reject(error);
                     }
                 }
              }
@@ -208,12 +208,17 @@ class FrameBuffer extends Listener {
             this.clear();
             return this._frameProvider.require(frameNumber);
         }
-
     }
 
     clear() {
         this._requestedChunks = {};
         this._buffer = {};
+    }
+
+    deleteFrame(frameNumber){
+        if (frameNumber in this._buffer) {
+            delete this._buffer[frameNumber];
+        }
     }
 }
 
@@ -244,7 +249,7 @@ class PlayerModel extends Listener {
         this._pauseFlag = null;
         this._chunkSize = window.cvat.job.chunk_size;
         this._frameProvider = new FrameProviderWrapper(this._frame.stop);
-        this._bufferSize = 107;
+        this._bufferSize = 500;
         this._frameBuffer = new FrameBuffer(this._bufferSize, this._frameProvider, this._chunkSize, this._frame.stop);
         this._continueAfterLoad = false;
         // this._continueTimeout = null;
@@ -367,8 +372,14 @@ class PlayerModel extends Listener {
         this._playing = true;
         const timeout = 1000 / this._settings.fps;
         this._frame.requested.clear();
-        // this._frameBuffer.clear();
-        this._bufferedFrames.clear();
+
+        for (const bufferedFrame in this._bufferedFrames) {
+            if (bufferedFrame <= this._frame.current) {
+                this._bufferedFrames.delete(bufferedFrame);
+                this._frameBuffer.deleteFrame(bufferedFrame);
+            }
+        }
+        // this._bufferedFrames.clear();
 
         const playFunc = async () => {
             if (this._pauseFlag) { // pause method without notify (for frame downloading)
@@ -389,8 +400,12 @@ class PlayerModel extends Listener {
             // }
 
             // if (this._bufferedFrames.size < this._bufferSize / 2) {
-            if (this._bufferedFrames.size === 0 && requestedFrame <= this._frame.stop) {
-                const startFrame = requestedFrame;
+            // if (this._bufferedFrames.size === 0 && requestedFrame <= this._frame.stop) {
+            if (this._bufferedFrames.size < this._bufferSize / 2 && requestedFrame <= this._frame.stop) {
+                let startFrame = requestedFrame;
+                if (this._bufferedFrames.size !== 0) {
+                    startFrame = Math.max(...this._bufferedFrames) + 1;
+                }
                 fillBufferRequest(startFrame);
             }
 
@@ -412,10 +427,11 @@ class PlayerModel extends Listener {
             if (this._activeBufrequest) {
                 return;
             }
+            console.log(`Fill buffer request`);
 
             this._activeBufrequest = true;
             this._frameBuffer.fillBuffer(startFrame, skip).then((bufferedFrames) => {
-                // console.log(`Buffer is ready`);
+                console.log(`Buffer is ready`);
                 this._bufferedFrames = new Set([...this._bufferedFrames, ...bufferedFrames]);
                 if ((!this._pauseFlag || this._continueAfterLoad) && !this._playInterval) {
                     this._continueAfterLoad = false;
@@ -431,7 +447,7 @@ class PlayerModel extends Listener {
 
         const checkFunction = () => {
             if (this._activeBufrequest && !this._bufferedFrames.size) {
-                // console.log(`Wait buffering of frames`);
+                console.log(`Wait buffering of frames`);
                 this._image = null;
                 this._continueAfterLoad = this.playing;
                 this._pauseFlag = true;
