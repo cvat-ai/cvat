@@ -146,41 +146,42 @@ def convert_mask_to_polygons(mask, tolerance=1.0, area_threshold=1):
             polygons.append(contour)
     return polygons
 
-def crop_covered_polygons(polygons, height, width,
-        threshold=0.0, ratio_tolerance=0.001, area_threshold=1):
+def crop_covered_segments(segments, height, width,
+        iou_threshold=0.0, ratio_tolerance=0.001, area_threshold=1,
+        return_polygons=True):
     """
-    Find all contours occluded by others and crop them to the visible part only.
-    Input polygons are expected to be sorted from background to foreground.
+    Find all segments occluded by others and crop them to the visible part only.
+    Input segments are expected to be sorted from background to foreground.
 
     Args:
-        polygons: 2d array of contours
+        segments: 1d list of segment RLEs (in COCO format)
         height: height of the image
         width: width of the image
-        threshold: IoU threshold for two objects to be counted as intersected
-            By default is set to 0 and processes any two intersected objects
+        iou_threshold: IoU threshold for objects to be counted as intersected
+            By default is set to 0 to process any intersected objects
         ratio_tolerance: an IoU "handicap" value for a situation
             when an object is (almost) fully covered by another one and we
             don't want make a "hole" in the background object
-        area_threshold: minimal area of included polygons
+        area_threshold: minimal area of included segments
+        return_polygons: return either binary masks or polygons
 
     Returns:
-        A list of input polygons' segments (in the same order as input):
+        A list of input segments' parts (in the same order as input):
             [
-                [[x1,y1, x2,y2 ...], ...], # input polygon #0 segments
-                [[x1,y1, x2,y2 ...], ...], # input polygon #1 segments
+                [[x1,y1, x2,y2 ...], ...], # input segment #0 parts
+                mask1, # input segment #1 mask (if return_polygons == False)
                 ...
             ]
     """
     from pycocotools import mask as mask_utils
 
-    input_rles = mask_utils.frPyObjects(polygons, height, width)
-
-    polygons = [[p] for p in polygons]
+    segments = [[s] for s in segments]
+    input_rles = [mask_utils.frPyObjects(s, height, width) for s in segments]
 
     for i, rle_bottom in enumerate(input_rles):
         area_bottom = sum(mask_utils.area(rle_bottom))
         if area_bottom < area_threshold:
-            polygons[i] = []
+            segments[i] = []
             continue
 
         rles_top = []
@@ -188,7 +189,7 @@ def crop_covered_polygons(polygons, height, width,
             rle_top = input_rles[j]
             iou = sum(mask_utils.iou(rle_bottom, rle_top, [0, 0]))[0]
 
-            if iou < threshold:
+            if iou < iou_threshold:
                 continue
 
             area_top = sum(mask_utils.area(rle_top))
@@ -204,17 +205,30 @@ def crop_covered_polygons(polygons, height, width,
                 rles_top = []
                 break
 
-            rles_top.append(rle_top)
-        if not rles_top:
-            continue
-        rle_top = mask_utils.merge(rles_top)
+            rles_top += rle_top
 
+        rle_bottom = rle_bottom[0]
         bottom_mask = mask_utils.decode(rle_bottom).astype(np.uint8)
-        top_mask = mask_utils.decode(rle_top).astype(np.uint8)
 
-        bottom_mask -= top_mask
-        bottom_mask[bottom_mask != 1] = 0
-        polygons[i] = convert_mask_to_polygons(bottom_mask,
-            area_threshold=area_threshold)
+        if rles_top:
+            rle_top = mask_utils.merge(rles_top)
+            top_mask = mask_utils.decode(rle_top).astype(np.uint8)
 
-    return polygons
+            bottom_mask -= top_mask
+            bottom_mask[bottom_mask != 1] = 0
+
+        if return_polygons:
+            segments[i] = convert_mask_to_polygons(bottom_mask,
+                area_threshold=area_threshold)
+        else:
+            segments[i] = bottom_mask
+
+    return segments
+
+def rles_to_mask(rles, width, height):
+    from pycocotools import mask as mask_utils
+
+    rles = mask_utils.frPyObjects(rles, width, height)
+    rles = mask_utils.merge(rles)
+    mask = mask_utils.decode(rles)
+    return mask
