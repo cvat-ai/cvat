@@ -102,12 +102,18 @@
                 },
             };
 
+            const keys = ['id', 'label_id', 'group', 'frame',
+                'occluded', 'z_order', 'points', 'type', 'shapes',
+                'attributes', 'value', 'spec_id', 'outside'];
+
             // Find created and updated objects
             for (const type of Object.keys(exported)) {
                 for (const object of exported[type]) {
                     if (object.id in this.initialObjects[type]) {
-                        const exportedHash = JSON.stringify(object);
-                        const initialHash = JSON.stringify(this.initialObjects[type][object.id]);
+                        const exportedHash = JSON.stringify(object, keys);
+                        const initialHash = JSON.stringify(
+                            this.initialObjects[type][object.id], keys,
+                        );
                         if (exportedHash !== initialHash) {
                             splitted.updated[type].push(object);
                         }
