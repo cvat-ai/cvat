@@ -211,12 +211,17 @@ class ShapeCreatorView {
         this._labelSelector.attr('title', `
             ${shortkeys['change_default_label'].view_value} - ${shortkeys['change_default_label'].description}`);
 
-        let labels = window.cvat.labelsInfo.labels();
-        for (let labelId in labels) {
-            let option = $(`<option value=${labelId}> ${labels[labelId].normalize()} </option>`);
-            option.appendTo(this._labelSelector);
+        const labels = window.cvat.labelsInfo.labels();
+        const labelsKeys = Object.keys(labels);
+        for (let i = 0; i < labelsKeys.length; i += 1) {
+            this._labelSelector.append(
+                // eslint-disable-next-line
+                $(`<option value=${labelsKeys[i]}> ${labels[labelsKeys[i]].normalize()} </option>`)
+            );
         }
+        this._labelSelector.val(labelsKeys[0]);
 
+        this._typeSelector.val('box');
         this._typeSelector.on('change', (e) => {
             // FIXME: In the future we have to make some generic solution
             const mode = this._modeSelector.prop('value');
