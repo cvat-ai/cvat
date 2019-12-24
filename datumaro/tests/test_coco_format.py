@@ -191,6 +191,11 @@ class CocoConverterTest(TestCase):
                 CocoCaptionsConverter(), test_dir)
 
     def test_can_save_and_load_instances(self):
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+        categories = { AnnotationType.label: label_categories }
+
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
@@ -203,7 +208,7 @@ class CocoConverterTest(TestCase):
                                 attributes={ 'is_crowd': False },
                                 label=2, group=1, id=1),
                         ]),
-                    DatasetItem(id=1, subset='train',
+                    DatasetItem(id=1, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
                             # Mask + bbox
                             MaskObject(np.array([[0, 0, 0, 0], [1, 0, 1, 0],
@@ -215,7 +220,7 @@ class CocoConverterTest(TestCase):
                                 attributes={ 'is_crowd': True }),
                         ]),
 
-                    DatasetItem(id=3, subset='val',
+                    DatasetItem(id=3, subset='val', image=np.ones((4, 4, 3)),
                         annotations=[
                             # Bbox + mask
                             BboxObject(0, 1, 3, 2, label=4, group=3, id=3,
@@ -229,18 +234,27 @@ class CocoConverterTest(TestCase):
                 ])
 
             def categories(self):
-                label_categories = LabelCategories()
-                for i in range(10):
-                    label_categories.add(str(i))
-                return {
-                    AnnotationType.label: label_categories,
-                }
+                return categories
+
+        class TargetExtractor(TestExtractor):
+            def __iter__(self):
+                items = list(super().__iter__())
+                items[0].annotations[1] = PolygonObject(
+                    [1, 2.5, 0, 2, 0, 0.5, 1.5, 1, 1, 2.5],
+                    attributes={ 'is_crowd': False }, label=2, group=1, id=1)
+                return iter(items)
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoInstancesConverter(), test_dir)
+                CocoInstancesConverter(), test_dir,
+                target_dataset=TargetExtractor())
 
     def test_can_save_and_load_instances_with_mask_conversion(self):
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+        categories = { AnnotationType.label: label_categories }
+
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
@@ -267,19 +281,31 @@ class CocoConverterTest(TestCase):
                 ])
 
             def categories(self):
-                label_categories = LabelCategories()
-                for i in range(10):
-                    label_categories.add(str(i))
-                return {
-                    AnnotationType.label: label_categories,
-                }
+                return categories
+
+        class TargetExtractor(TestExtractor):
+            def __iter__(self):
+                items = list(super().__iter__())
+                items[0].annotations[1] = PolygonObject(
+                    [3.0, 2.5, 1.0, 0.0, 3.5, 0.0, 3.0, 2.5],
+                    label=3, id=4, group=4, attributes={ 'is_crowd': False })
+                items[0].annotations[2] = MaskObject(np.array([
+                        [0, 1, 1, 0, 0],
+                        [0, 0, 1, 0, 0],
+                        [0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0]],
+                        dtype=np.bool),
+                    attributes={ 'is_crowd': False }, label=3, id=4, group=4)
+                return iter(items)
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
                 CocoInstancesConverter(), test_dir,
-                {'merge_instance_polygons': True})
+                importer_params={'merge_instance_polygons': True},
+                target_dataset=TargetExtractor())
 
-    def test_can_merge_instance_polygons_to_mask_in_coverter(self):
+    def test_can_convert_polygons_to_mask(self):
         label_categories = LabelCategories()
         for i in range(10):
             label_categories.add(str(i))
@@ -290,11 +316,9 @@ class CocoConverterTest(TestCase):
                     DatasetItem(id=0, image=np.zeros((5, 10, 3)),
                         annotations=[
                             PolygonObject([0, 0, 4, 0, 4, 4],
-                                label=3, id=4, group=4,
-                                attributes={ 'is_crowd': False }),
+                                label=3, id=4, group=4),
                             PolygonObject([5, 0, 9, 0, 5, 5],
-                                label=3, id=4, group=4,
-                                attributes={ 'is_crowd': False }),
+                                label=3, id=4, group=4),
                         ]
                     ),
                 ])
@@ -307,7 +331,7 @@ class CocoConverterTest(TestCase):
                 return iter([
                     DatasetItem(id=0, image=np.zeros((5, 10, 3)),
                         annotations=[
-                            BboxObject(1, 0, 8, 4, label=3, id=4, group=4,
+                            BboxObject(0, 0, 9, 5, label=3, id=4, group=4,
                                 attributes={ 'is_crowd': True }),
                             MaskObject(np.array([
                                     [0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
@@ -329,7 +353,58 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(SrcTestExtractor(),
-                CocoInstancesConverter(merge_polygons=True), test_dir,
+                CocoInstancesConverter(segmentation_mode='mask'), test_dir,
+                target_dataset=DstTestExtractor())
+
+    def test_can_convert_masks_to_polygons(self):
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+
+        class SrcTestExtractor(Extractor):
+            def __iter__(self):
+                items = [
+                    DatasetItem(id=0, image=np.zeros((5, 5, 3)),
+                        annotations=[
+                            MaskObject(np.array([
+                                        [0, 1, 1, 1, 0],
+                                        [0, 0, 1, 1, 0],
+                                        [0, 0, 0, 1, 0],
+                                        [0, 0, 0, 0, 0],
+                                        [0, 0, 0, 0, 0],
+                                    ],
+                                    dtype=np.bool),
+                                label=3, id=4, group=4),
+                        ]
+                    ),
+                ]
+                return iter(items)
+
+            def categories(self):
+                return { AnnotationType.label: label_categories }
+
+        class DstTestExtractor(Extractor):
+            def __iter__(self):
+                items = [
+                    DatasetItem(id=0, image=np.zeros((10, 10, 3)),
+                        annotations=[
+                            BboxObject(1, 0, 2, 2, label=3, id=4, group=4,
+                                attributes={ 'is_crowd': False }),
+                            PolygonObject(
+                                [2.0, 1.5, 1.0, 0.0, 2.5, 0.0, 2.0, 1.5],
+                                label=3, id=4, group=4,
+                                attributes={ 'is_crowd': False }),
+                        ]
+                    ),
+                ]
+                return iter(items)
+
+            def categories(self):
+                return { AnnotationType.label: label_categories }
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(SrcTestExtractor(),
+                CocoInstancesConverter(segmentation_mode='polygons'), test_dir,
                 target_dataset=DstTestExtractor())
 
     def test_can_save_and_load_images(self):
@@ -433,12 +508,8 @@ class CocoConverterTest(TestCase):
                         LabelObject(2, id=1),
                     ]),
 
-                    DatasetItem(id=2, image=np.zeros((5, 5, 3)), annotations=[
-                        LabelObject(3, id=3),
-                        BboxObject(0, 0, 5, 5, label=3, id=4, group=4,
-                            attributes={ 'is_crowd': False }),
-                        PolygonObject([0, 0, 4, 0, 4, 4], label=3, id=4, group=4,
-                            attributes={ 'is_crowd': False }),
+                    DatasetItem(id=2, annotations=[
+                        LabelObject(3, id=2),
                     ]),
                 ])
 

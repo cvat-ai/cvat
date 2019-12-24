@@ -3,8 +3,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import Enum
+from itertools import groupby
 import json
-import numpy as np
+import logging as log
 import os
 import os.path as osp
 
@@ -12,7 +14,7 @@ import pycocotools.mask as mask_utils
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME, AnnotationType, PointsObject, BboxObject
+    DEFAULT_SUBSET_NAME, AnnotationType, PointsObject, BboxObject, MaskObject
 )
 from datumaro.components.formats.ms_coco import CocoTask, CocoPath
 from datumaro.util import find
@@ -27,6 +29,9 @@ def _cast(value, type_conv, default=None):
         return type_conv(value)
     except Exception:
         return default
+
+
+SegmentationMode = Enum('SegmentationMode', ['guess', 'polygons', 'mask'])
 
 class _TaskConverter:
     def __init__(self, context):
@@ -121,108 +126,164 @@ class _InstancesConverter(_TaskConverter):
                 'supercategory': _cast(cat.parent, str, ''),
             })
 
-    def save_annotations(self, item):
-        annotations = item.annotations.copy()
+    @classmethod
+    def crop_segments(cls, instances, img_width, img_height):
+        instances = sorted(instances, key=lambda x: x[0].z_order)
 
-        while len(annotations) != 0:
-            ann = annotations.pop()
-
-            if ann.type == AnnotationType.bbox and ann.label is not None:
-                pass
-            elif ann.type == AnnotationType.polygon and ann.label is not None:
-                pass
-            elif ann.type == AnnotationType.mask and ann.label is not None:
-                pass
+        segment_map = []
+        segments = []
+        for inst_idx, (_, polygons, mask, _) in enumerate(instances):
+            if polygons:
+                segment_map.extend(inst_idx for p in polygons)
+                segments.extend(polygons)
             else:
+                segment_map.append(inst_idx)
+                segments.append(mask)
+
+        segments = mask_tools.crop_covered_segments(
+            segments, img_width, img_height, return_polygons=False)
+
+        for inst_idx, inst in enumerate(instances):
+            new_segments = [s for si_id, s in zip(segment_map, segments)
+                if si_id == inst_idx and s != []]
+
+            if not new_segments:
+                inst[1] = []
+                inst[2] = None
+
+            mask = cls.merge_masks(new_segments)
+
+            if inst[1]:
+                inst[1] = mask_tools.convert_mask_to_polygons(mask)
+            else:
+                inst[2] = mask_tools.convert_mask_to_rle(mask)
+
+        return instances
+
+    def find_instance_parts(self, group, img_width, img_height):
+        boxes = [a for a in group if a.type == AnnotationType.bbox]
+        polygons = [a for a in group if a.type == AnnotationType.polygon]
+        masks = [a for a in group if a.type == AnnotationType.mask]
+
+        anns = boxes + polygons + masks
+        leader = self.find_group_leader(anns)
+        bbox = self.compute_bbox(anns)
+        mask = None
+        polygons = [p.get_polygon() for p in polygons]
+
+        if self._context._segmentation_mode == SegmentationMode.guess:
+            use_masks = leader.attributes.get('is_crowd',
+                find(masks, lambda x: x.label == leader.label) is not None)
+        elif self._context._segmentation_mode == SegmentationMode.polygons:
+            use_masks = False
+        elif self._context._segmentation_mode == SegmentationMode.mask:
+            use_masks = True
+        else:
+            raise NotImplementedError("Unexpected segmentation mode '%s'" % \
+                self._context._segmentation_mode)
+
+        if use_masks:
+            if polygons:
+                mask = mask_tools.rles_to_mask(polygons, img_width, img_height)
+
+            if masks:
+                if mask:
+                    masks += [mask]
+                mask = self.merge_masks(masks)
+
+            if mask is None:
+                mask = mask_tools.rles_to_mask([bbox], img_width, img_height)
+
+            mask = mask_tools.convert_mask_to_rle(mask)
+            polygons = []
+        else:
+            if masks:
+                mask = self.merge_masks(masks)
+                polygons += mask_tools.convert_mask_to_polygons(mask)
+            if not polygons:
+                polygons = [BboxObject(*bbox).get_polygon()]
+            mask = None
+
+        return [leader, polygons, mask, bbox]
+
+    @staticmethod
+    def find_group_leader(group):
+        return max(group, key=lambda x: x.area())
+
+    @staticmethod
+    def merge_masks(masks):
+        if not masks:
+            return None
+
+        def get_mask(m):
+            if isinstance(m, MaskObject):
+                return m.image
+            else:
+                return m
+
+        binary_mask = get_mask(masks[0])
+        for m in masks[1:]:
+            binary_mask |= get_mask(m)
+
+        return binary_mask
+
+    @staticmethod
+    def compute_bbox(annotations):
+        boxes = [ann.get_bbox() for ann in annotations]
+        x0 = min((b[0] for b in boxes), default=0)
+        y0 = min((b[1] for b in boxes), default=0)
+        x1 = max((b[0] + b[2] for b in boxes), default=0)
+        y1 = max((b[1] + b[3] for b in boxes), default=0)
+        return [x0, y0, x1 - x0, y1 - y0]
+
+    @staticmethod
+    def find_instances(annotations):
+        instance_anns = [a for a in annotations
+            if a.label is not None and a.type in {
+                AnnotationType.bbox, AnnotationType.polygon,
+                AnnotationType.mask
+            }
+        ]
+
+        ann_groups = []
+        for g_id, group in groupby(instance_anns, lambda a: a.group):
+            if g_id is None:
+                ann_groups.extend(map(list, group))
+            else:
+                ann_groups.append(list(group))
+
+        return ann_groups
+
+    def save_annotations(self, item):
+        instances = self.find_instances(item.annotations)
+        if not instances:
+            return
+
+        h, w, _ = item.image.shape
+        instances = [self.find_instance_parts(i, w, h) for i in instances]
+
+        instances = self.crop_segments(instances, w, h)
+
+        for ann, polygons, mask, bbox in instances:
+            if not polygons and mask is None:
+                log.warn("Skipping too small object '%s' on the item '%s'" % \
+                    (ann.id, item.id))
                 continue
 
-            bbox = None
-            segmentation = None
-
-            if ann.type == AnnotationType.bbox:
-                is_crowd = ann.attributes.get('is_crowd', False)
-                bbox = ann.get_bbox()
-            elif ann.type == AnnotationType.polygon:
-                is_crowd = ann.attributes.get('is_crowd', False)
-            elif ann.type == AnnotationType.mask:
-                is_crowd = ann.attributes.get('is_crowd', True)
-                if is_crowd:
-                    segmentation = ann
-            area = None
-
-            # If ann in a group, try to find corresponding annotations in
-            # this group, otherwise try to infer them.
-
-            if bbox is None and ann.group is not None:
-                bbox = find(annotations, lambda x: \
-                    x.group == ann.group and \
-                    x.type == AnnotationType.bbox and \
-                    x.label == ann.label)
-                if bbox is not None:
-                    bbox = bbox.get_bbox()
-
+            is_crowd = mask is not None
             if is_crowd:
-                # is_crowd=True means there should be a mask
-                if segmentation is None and ann.group is not None:
-                    segmentation = find(annotations, lambda x: \
-                        x.group == ann.group and \
-                        x.type == AnnotationType.mask and \
-                        x.label == ann.label)
-                if segmentation is not None:
-                    binary_mask = np.array(segmentation.image, dtype=np.bool)
-                    binary_mask = np.asfortranarray(binary_mask, dtype=np.uint8)
-                    segmentation = mask_utils.encode(binary_mask)
-                    area = mask_utils.area(segmentation)
-                    segmentation = mask_tools.convert_mask_to_rle(binary_mask)
+                segmentation = mask
             else:
-                # is_crowd=False means there are some polygons
-                polygons = []
-                if ann.type == AnnotationType.polygon:
-                    polygons = [ ann ]
-                if ann.group is not None:
-                    # A single object can consist of several polygons
-                    polygons += [p for p in annotations
-                        if p.group == ann.group and \
-                           p.type == AnnotationType.polygon and \
-                           p.label == ann.label]
-                if polygons:
-                    segmentation = [p.get_points() for p in polygons]
-                    h, w, _ = item.image.shape
-                    rles = mask_utils.frPyObjects(segmentation, h, w)
-                    rle = mask_utils.merge(rles)
-                    area = mask_utils.area(rle)
+                segmentation = [list(map(float, p)) for p in polygons]
 
-                    if self._context._merge_polygons:
-                        binary_mask = mask_utils.decode(rle).astype(np.bool)
-                        binary_mask = np.asfortranarray(binary_mask, dtype=np.uint8)
-                        segmentation = mask_tools.convert_mask_to_rle(binary_mask)
-                        is_crowd = True
-                        bbox = [int(i) for i in mask_utils.toBbox(rle)]
+            rles = mask_utils.frPyObjects(segmentation, h, w)
+            if is_crowd:
+                rles = [rles]
+            else:
+                rles = mask_utils.merge(rles)
+            area = mask_utils.area(rles)
 
-            if ann.group is not None:
-                # Mark the group as visited to prevent repeats
-                for a in annotations[:]:
-                    if a.group == ann.group:
-                        annotations.remove(a)
-
-            if segmentation is None:
-                is_crowd = False
-                segmentation = [ann.get_polygon()]
-                area = ann.area()
-
-                if self._context._merge_polygons:
-                    h, w, _ = item.image.shape
-                    rles = mask_utils.frPyObjects(segmentation, h, w)
-                    rle = mask_utils.merge(rles)
-                    area = mask_utils.area(rle)
-                    binary_mask = mask_utils.decode(rle).astype(np.bool)
-                    binary_mask = np.asfortranarray(binary_mask, dtype=np.uint8)
-                    segmentation = mask_tools.convert_mask_to_rle(binary_mask)
-                    is_crowd = True
-                    bbox = [int(i) for i in mask_utils.toBbox(rle)]
-
-            if bbox is None:
-                bbox = ann.get_bbox()
+            bbox = list(map(float, bbox))
 
             elem = {
                 'id': self._get_ann_id(ann),
@@ -268,7 +329,7 @@ class _CaptionsConverter(_TaskConverter):
 
             self.annotations.append(elem)
 
-class _KeypointsConverter(_TaskConverter):
+class _KeypointsConverter(_InstancesConverter):
     def save_categories(self, dataset):
         label_categories = dataset.categories().get(AnnotationType.label)
         if label_categories is None:
@@ -368,7 +429,7 @@ class _Converter:
     }
 
     def __init__(self, extractor, save_dir,
-            tasks=None, save_images=False, merge_polygons=False):
+            tasks=None, save_images=False, segmentation_mode=None):
         assert tasks is None or isinstance(tasks, (CocoTask, list))
         if tasks is None:
             tasks = list(self._TASK_CONVERTER)
@@ -383,7 +444,15 @@ class _Converter:
         self._save_dir = save_dir
 
         self._save_images = save_images
-        self._merge_polygons = merge_polygons
+
+        assert segmentation_mode is None or \
+            segmentation_mode in SegmentationMode or \
+            isinstance(segmentation_mode, str)
+        if segmentation_mode is None:
+            segmentation_mode = SegmentationMode.guess
+        if isinstance(segmentation_mode, str):
+            segmentation_mode = SegmentationMode[segmentation_mode]
+        self._segmentation_mode = segmentation_mode
 
     def make_dirs(self):
         self._images_dir = osp.join(self._save_dir, CocoPath.IMAGES_DIR)
@@ -442,14 +511,14 @@ class _Converter:
 
 class CocoConverter(Converter):
     def __init__(self,
-            tasks=None, save_images=False, merge_polygons=False,
+            tasks=None, save_images=False, segmentation_mode=None,
             cmdline_args=None):
         super().__init__()
 
         self._options = {
             'tasks': tasks,
             'save_images': save_images,
-            'merge_polygons': merge_polygons,
+            'segmentation_mode': segmentation_mode,
         }
 
         if cmdline_args is not None:
@@ -459,6 +528,10 @@ class CocoConverter(Converter):
     def _split_tasks_string(s):
         return [CocoTask[i.strip()] for i in s.split(',')]
 
+    @staticmethod
+    def _parse_segmentation_mode(s):
+        return SegmentationMode[s]
+
     @classmethod
     def build_cmdline_parser(cls, parser=None):
         import argparse
@@ -467,8 +540,18 @@ class CocoConverter(Converter):
 
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")
-        parser.add_argument('--merge-polygons', action='store_true',
-            help="Merge instance polygons into a mask (default: %(default)s)")
+        parser.add_argument('--segmentation-mode',
+            choices=[m.name for m in SegmentationMode],
+            default=SegmentationMode.guess.name,
+            type=cls._parse_segmentation_mode,
+            help="Save mode for instance segmentation: "
+                "- '{sm.guess.name}': guess the mode for each instance, "
+                    "use 'is_crowd' attribute as hint; "
+                "- '{sm.polygons.name}': save polygons, "
+                    "merge and convert masks, prefer polygons; "
+                "- '{sm.mask.name}': save masks, "
+                    "merge and convert polygons, prefer masks; "
+                "(default: %(default)s)".format(sm=SegmentationMode))
         parser.add_argument('--tasks', type=cls._split_tasks_string,
             default=None,
             help="COCO task filter, comma-separated list of {%s} "

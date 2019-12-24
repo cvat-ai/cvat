@@ -142,7 +142,7 @@ def convert_mask_to_polygons(mask, tolerance=1.0, area_threshold=1):
         # Check if the polygon is big enough
         rle = mask_utils.frPyObjects([contour], mask.shape[0], mask.shape[1])
         area = sum(mask_utils.area(rle))
-        if area_threshold < area:
+        if area_threshold <= area:
             polygons.append(contour)
     return polygons
 
@@ -228,7 +228,7 @@ def crop_covered_segments(segments, height, width,
 def rles_to_mask(rles, width, height):
     from pycocotools import mask as mask_utils
 
-    rles = mask_utils.frPyObjects(rles, width, height)
+    rles = mask_utils.frPyObjects(rles, height, width)
     rles = mask_utils.merge(rles)
     mask = mask_utils.decode(rles)
     return mask
