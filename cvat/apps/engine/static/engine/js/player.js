@@ -26,56 +26,39 @@ class FrameProviderWrapper extends Listener {
 
     async require(frameNumber) {
         this._required = frameNumber;
-        try {
-            const frameData = await window.cvatTask.frames.get(frameNumber);
-            const ranges = await window.cvatTask.frames.ranges();
-            for (const range of ranges) {
-                const [start, stop] = range.split(':').map((el) => +el);
-                if (frameNumber >= start && frameNumber <= stop) {
-                    const data = await frameData.data();
-                    this._loaded = frameNumber;
-                    this._result = {
-                        data,
-                        renderWidth: frameData.width,
-                        renderHeight: frameData.height,
-                    };
-                    return this._result;
-                }
-            }
-
-            // fetching from server
-            // we don't want to wait it
-            // but we promise to notify the player when frame is loaded
-            frameData.data().then((data) => {
+        const frameData = await window.cvatTask.frames.get(frameNumber);
+        const ranges = await window.cvatTask.frames.ranges();
+        for (const range of ranges) {
+            const [start, stop] = range.split(':').map((el) => +el);
+            if (frameNumber >= start && frameNumber <= stop) {
+                const data = await frameData.data();
                 this._loaded = frameNumber;
                 this._result = {
                     data,
                     renderWidth: frameData.width,
                     renderHeight: frameData.height,
                 };
-
-                this.notify();
-            }).catch((error) => {
-                this._loaded = {frameNumber};
-                if (typeof (error) === 'number') {
-                    if (this._required === error) {
-                        console.log(`Unexpecter error. Requested frame ${error} was rejected`);
-                    } else {
-                        console.log(`${error} rejected - ok`);
-                    }
-                }
-                this.notify();
-            });
-        } catch (error) {
-            if (typeof (error) === 'number') {
-                if (this._required === error) {
-                    console.log(`Unexpecter error. Requested frame ${error} was rejected`);
-                } else {
-                    console.log(`${error} rejected - ok`);
-                }
-                throw error;
+                return this._result;
             }
         }
+
+        // fetching from server
+        // we don't want to wait it
+        // but we promise to notify the player when frame is loaded
+        frameData.data().then((data) => {
+            this._loaded = frameNumber;
+            this._result = {
+                data,
+                renderWidth: frameData.width,
+                renderHeight: frameData.height,
+            };
+
+            this.notify();
+        }).catch(() => {
+            this._loaded = { frameNumber };
+            this.notify();
+        });
+
         return null;
     }
 
@@ -101,35 +84,39 @@ class FrameBuffer extends Listener {
         this._stopFrame = stopFrame;
     }
 
-    getFreeBufferSize () {
+    getFreeBufferSize() {
         let requestedFrameCount = 0;
-        for (let chunk_idx in this._requestedChunks){
-            if(this._requestedChunks.hasOwnProperty(chunk_idx)){
-                requestedFrameCount += this._requestedChunks[chunk_idx].requestedFrames.size;
+        for (const chunkIdx in this._requestedChunks) {
+            if (Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)) {
+                requestedFrameCount += this._requestedChunks[chunkIdx].requestedFrames.size;
             }
-         }
+        }
         return this._size - Object.keys(this._buffer).length - requestedFrameCount;
     }
 
     async onFrameLoad(last) { // callback for FrameProvider instance
-        const isReject = typeof(last) === 'object';
+        const isReject = typeof (last) === 'object';
         if (isReject) {
             last = last.frameNumber;
         }
-        const chunk_idx = Math.floor(last / this._chunkSize);
-        if (chunk_idx in this._requestedChunks && this._requestedChunks[chunk_idx].requestedFrames.has(last)) {
+        const chunkIdx = Math.floor(last / this._chunkSize);
+        if (chunkIdx in this._requestedChunks
+            && this._requestedChunks[chunkIdx].requestedFrames.has(last)) {
             if (isReject) {
-                this._requestedChunks[chunk_idx].reject(new Set());
-                this._requestedChunks[chunk_idx].requestedFrames.clear();
+                this._requestedChunks[chunkIdx].reject(new Set());
+                this._requestedChunks[chunkIdx].requestedFrames.clear();
             }
-             const frameData = await this._frameProvider.require(last);
-            if (chunk_idx in this._requestedChunks && this._requestedChunks[chunk_idx].requestedFrames.has(last)) {
-                this._requestedChunks[chunk_idx].buffer[last] = frameData;
-                this._requestedChunks[chunk_idx].requestedFrames.delete(last);
-                if (this._requestedChunks[chunk_idx].requestedFrames.size === 0) {
-                    if (this._requestedChunks[chunk_idx].resolve) {
-                        const bufferedframes = Object.keys(this._requestedChunks[chunk_idx].buffer).map(f => +f);
-                        this._requestedChunks[chunk_idx].resolve(new Set(bufferedframes));
+            const frameData = await this._frameProvider.require(last);
+            if (chunkIdx in this._requestedChunks
+                && this._requestedChunks[chunkIdx].requestedFrames.has(last)) {
+                this._requestedChunks[chunkIdx].buffer[last] = frameData;
+                this._requestedChunks[chunkIdx].requestedFrames.delete(last);
+                if (this._requestedChunks[chunkIdx].requestedFrames.size === 0) {
+                    if (this._requestedChunks[chunkIdx].resolve) {
+                        const bufferedframes = Object.keys(
+                            this._requestedChunks[chunkIdx].buffer,
+                        ).map(f => +f);
+                        this._requestedChunks[chunkIdx].resolve(new Set(bufferedframes));
                     }
                 }
             }
@@ -139,32 +126,39 @@ class FrameBuffer extends Listener {
         }
     }
 
-    requestOneChunkFrames(chunk_idx) {
-        return new Promise ( (resolve, reject) => {
-            this._requestedChunks[chunk_idx] = {...this._requestedChunks[chunk_idx], resolve, reject};
-            for (const frame of this._requestedChunks[chunk_idx].requestedFrames.entries()) {
+    requestOneChunkFrames(chunkIdx) {
+        return new Promise((resolve, reject) => {
+            this._requestedChunks[chunkIdx] = {
+                ...this._requestedChunks[chunkIdx],
+                resolve,
+                reject,
+            };
+            for (const frame of this._requestedChunks[chunkIdx].requestedFrames.entries()) {
                 const requestedFrame = frame[1];
                 this._frameProvider.require(requestedFrame).then(frameData => {
-                    if (!(chunk_idx in this._requestedChunks) || !this._requestedChunks[chunk_idx].requestedFrames.has(requestedFrame)) {
+                    if (!(chunkIdx in this._requestedChunks)
+                        || !this._requestedChunks[chunkIdx].requestedFrames.has(requestedFrame)) {
                         reject(requestedFrame);
                     }
 
                     if (frameData !== null) {
-                        this._requestedChunks[chunk_idx].requestedFrames.delete(requestedFrame);
-                        this._requestedChunks[chunk_idx].buffer[requestedFrame] = frameData;
-                        if (this._requestedChunks[chunk_idx].requestedFrames.size === 0) {
-                            const bufferedframes = Object.keys(this._requestedChunks[chunk_idx].buffer).map(f => +f);
-                            this._requestedChunks[chunk_idx].resolve(new Set(bufferedframes));
+                        this._requestedChunks[chunkIdx].requestedFrames.delete(requestedFrame);
+                        this._requestedChunks[chunkIdx].buffer[requestedFrame] = frameData;
+                        if (this._requestedChunks[chunkIdx].requestedFrames.size === 0) {
+                            const bufferedframes = Object.keys(
+                                this._requestedChunks[chunkIdx].buffer,
+                            ).map(f => +f);
+                            this._requestedChunks[chunkIdx].resolve(new Set(bufferedframes));
                         }
                     }
-                }).catch( error => {
+                }).catch(error => {
                     reject(error);
                 });
             }
         });
     }
 
-    fillBuffer(startFrame, frameStep=1, count=null) {
+    fillBuffer(startFrame, frameStep = 1, count = null) {
         const freeSize = this.getFreeBufferSize();
 
         let stopFrame = Math.min(startFrame + frameStep * freeSize, this._stopFrame + 1);
@@ -173,41 +167,46 @@ class FrameBuffer extends Listener {
         }
 
         for (let i = startFrame; i < stopFrame; i += frameStep) {
-            const chunk_idx = Math.floor(i / this._chunkSize);
-            if (!(chunk_idx in this._requestedChunks)) {
-                this._requestedChunks[chunk_idx] = {
+            const chunkIdx = Math.floor(i / this._chunkSize);
+            if (!(chunkIdx in this._requestedChunks)) {
+                this._requestedChunks[chunkIdx] = {
                     requestedFrames: new Set(),
                     resolve: null,
                     reject: null,
                     buffer: {},
                 };
             }
-            this._requestedChunks[chunk_idx].requestedFrames.add(i);
+            this._requestedChunks[chunkIdx].requestedFrames.add(i);
         }
 
         let bufferedFrames = new Set();
 
-        return new Promise( async (resolve, reject) => {
-            for (const chunk_idx in this._requestedChunks) {
-                if(this._requestedChunks.hasOwnProperty(chunk_idx)) {
+        // Need to decode chunks in sequence
+        // eslint-disable-next-line no-async-promise-executor
+        return new Promise(async (resolve, reject) => {
+            for (const chunkIdx in this._requestedChunks) {
+                if (Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)) {
                     try {
-                        const chunkFrames = await this.requestOneChunkFrames(chunk_idx);
-                        if (chunk_idx in this._requestedChunks) {
+                        const chunkFrames = await this.requestOneChunkFrames(chunkIdx);
+                        if (chunkIdx in this._requestedChunks) {
                             bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
-                            this._buffer = {...this._buffer, ...this._requestedChunks[chunk_idx].buffer};
-                            delete this._requestedChunks[chunk_idx];
-                            if (Object.keys(this._requestedChunks).length === 0){
+                            this._buffer = {
+                                ...this._buffer,
+                                ...this._requestedChunks[chunkIdx].buffer,
+                            };
+                            delete this._requestedChunks[chunkIdx];
+                            if (Object.keys(this._requestedChunks).length === 0) {
                                 resolve(bufferedFrames);
                             }
                         } else {
-                            reject(parseInt(chunk_idx));
+                            reject(chunkIdx);
                         }
                     } catch (error) {
                         this._requestedChunks = {};
                         resolve(bufferedFrames);
                     }
                 }
-             }
+            }
         });
     }
 
@@ -216,22 +215,22 @@ class FrameBuffer extends Listener {
             const frame = this._buffer[frameNumber];
             delete this._buffer[frameNumber];
             return frame;
-        } else {
-            return this._frameProvider.require(frameNumber);
         }
+        return this._frameProvider.require(frameNumber);
     }
 
     clear() {
-        for (const chunk_idx in this._requestedChunks) {
-            if (this._requestedChunks.hasOwnProperty(chunk_idx) && this._requestedChunks[chunk_idx].reject) {
-                this._requestedChunks[chunk_idx].reject();
+        for (const chunkIdx in this._requestedChunks) {
+            if (Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)
+                && this._requestedChunks[chunkIdx].reject) {
+                this._requestedChunks[chunkIdx].reject();
             }
         }
         this._requestedChunks = {};
         this._buffer = {};
     }
 
-    deleteFrame(frameNumber){
+    deleteFrame(frameNumber) {
         if (frameNumber in this._buffer) {
             delete this._buffer[frameNumber];
         }
@@ -266,7 +265,10 @@ class PlayerModel extends Listener {
         this._chunkSize = window.cvat.job.chunk_size;
         this._frameProvider = new FrameProviderWrapper(this._frame.stop);
         this._bufferSize = 200;
-        this._frameBuffer = new FrameBuffer(this._bufferSize, this._frameProvider, this._chunkSize, this._frame.stop);
+        this._frameBuffer = new FrameBuffer(
+            this._bufferSize, this._frameProvider,
+            this._chunkSize, this._frame.stop,
+        );
         this._continueAfterLoad = false;
         this._image = null;
         this._activeBufrequest = false;
@@ -373,7 +375,7 @@ class PlayerModel extends Listener {
         }
     }
 
-    fillBuffer(startFrame, step, count=null) {
+    fillBuffer(startFrame, step, count = null) {
         if (this._activeBufrequest) {
             return;
         }
@@ -387,7 +389,7 @@ class PlayerModel extends Listener {
                 this._playInterval = setInterval(() => this._playFunction(), this._timeout);
             }
         }).catch(error => {
-            if (typeof(error) !== 'number') {
+            if (typeof (error) !== 'number') {
                 throw error;
             }
         }).finally(() => {
@@ -405,7 +407,8 @@ class PlayerModel extends Listener {
         }
 
         const requestedFrame = this._frame.current + this._step;
-        if (this._bufferedFrames.size < this._bufferSize / 2 && requestedFrame <= this._frame.stop) {
+        if (this._bufferedFrames.size < this._bufferSize / 2
+            && requestedFrame <= this._frame.stop) {
             if (this._bufferedFrames.size !== 0) {
                 const maxBufFrame = Math.max(...this._bufferedFrames);
                 if (maxBufFrame !== this._frame.stop) {
@@ -447,8 +450,9 @@ class PlayerModel extends Listener {
         this._timeout = 1000 / this._settings.fps;
         this._frame.requested.clear();
 
-        this._bufferedFrames.forEach( bufferedFrame => {
-            if (bufferedFrame <= this._frame.current || bufferedFrame >= this._frame.current + this._bufferSize) {
+        this._bufferedFrames.forEach(bufferedFrame => {
+            if (bufferedFrame <= this._frame.current
+                || bufferedFrame >= this._frame.current + this._bufferSize) {
                 this._bufferedFrames.delete(bufferedFrame);
                 this._frameBuffer.deleteFrame(bufferedFrame);
             }
@@ -467,7 +471,7 @@ class PlayerModel extends Listener {
         }
     }
 
-    async shift(delta, absolute, is_load_frame = true) {
+    async shift(delta, absolute, isLoadFrame = true) {
         if (['resize', 'drag'].indexOf(window.cvat.mode) !== -1) {
             return false;
         }
@@ -479,7 +483,7 @@ class PlayerModel extends Listener {
             this._frame.stop);
         this._frame.requested.add(requestedFrame);
 
-        if (!is_load_frame) {
+        if (!isLoadFrame) {
             this._image = null;
             this._continueAfterLoad = this.playing;
             this._pauseFlag = true;
@@ -520,7 +524,8 @@ class PlayerModel extends Listener {
             const curFrameRotation = this._framewiseRotation[this._frame.current];
             const prevFrameRotation = this._framewiseRotation[this._frame.previous];
             const differentRotation = curFrameRotation !== prevFrameRotation;
-            // fit if tool is in the annotation mode or frame loading is first in the interpolation mode
+            // fit if tool is in the annotation mode or frame loading is first
+            // in the interpolation mode
             if (this._settings.resetZoom || this._frame.previous === null || differentRotation) {
                 this._frame.previous = requestedFrame;
                 this.fit(); // notify() inside the fit()
@@ -537,6 +542,7 @@ class PlayerModel extends Listener {
                 throw error;
             }
         }
+        return false;
     }
 
     updateGeometry(geometry) {
@@ -558,8 +564,10 @@ class PlayerModel extends Listener {
                 this._geometry.height / this._image.renderHeight);
         }
 
-        this._geometry.top = (this._geometry.height - this._image.renderHeight * this._geometry.scale) / 2;
-        this._geometry.left = (this._geometry.width - this._image.renderWidth * this._geometry.scale) / 2;
+        this._geometry.top = (this._geometry.height
+            - this._image.renderHeight * this._geometry.scale) / 2;
+        this._geometry.left = (this._geometry.width
+            - this._image.renderWidth * this._geometry.scale) / 2;
 
         window.cvat.player.rotation = rotation;
         window.cvat.player.geometry.scale = this._geometry.scale;
@@ -581,14 +589,19 @@ class PlayerModel extends Listener {
 
         if (this._geometry.scale < fittedScale) {
             this._geometry.scale = fittedScale;
-            this._geometry.top = (this._geometry.height - this._image.renderHeight * this._geometry.scale) / 2;
-            this._geometry.left = (this._geometry.width - this._image.renderWidth * this._geometry.scale) / 2;
+            this._geometry.top = (this._geometry.height
+                - this._image.renderHeight * this._geometry.scale) / 2;
+            this._geometry.left = (this._geometry.width
+                - this._image.renderWidth * this._geometry.scale) / 2;
         } else {
-            this._geometry.left = (this._geometry.width / this._geometry.scale - xtl * 2 - boxWidth) * this._geometry.scale / 2;
-            this._geometry.top = (this._geometry.height / this._geometry.scale - ytl * 2 - boxHeight) * this._geometry.scale / 2;
+            this._geometry.left = ((this._geometry.width / this._geometry.scale
+                - xtl * 2 - boxWidth) * this._geometry.scale) / 2;
+            this._geometry.top = ((this._geometry.height / this._geometry.scale
+                - ytl * 2 - boxHeight) * this._geometry.scale) / 2;
         }
         window.cvat.player.geometry.scale = this._geometry.scale;
-        this._frame.previous = this._frame.current; // fix infinite loop via playerUpdate->collectionUpdate*->AAMUpdate->playerUpdate->...
+        // fix infinite loop via playerUpdate->collectionUpdate*->AAMUpdate->playerUpdate->...
+        this._frame.previous = this._frame.current;
         this.notify();
     }
 
@@ -596,11 +609,15 @@ class PlayerModel extends Listener {
         if (!this._image) return;
 
         const oldScale = this._geometry.scale;
-        const newScale = value > 0 ? this._geometry.scale * 6 / 5 : this._geometry.scale * 5 / 6;
+        const newScale = value > 0
+            ? (this._geometry.scale * 6) / 5
+            : (this._geometry.scale * 5) / 6;
         this._geometry.scale = Math.clamp(newScale, MIN_PLAYER_SCALE, MAX_PLAYER_SCALE);
 
-        this._geometry.left += (point.x * (oldScale / this._geometry.scale - 1)) * this._geometry.scale;
-        this._geometry.top += (point.y * (oldScale / this._geometry.scale - 1)) * this._geometry.scale;
+        this._geometry.left += this._geometry.scale
+            * (point.x * (oldScale / this._geometry.scale - 1));
+        this._geometry.top += this._geometry.scale
+            * (point.y * (oldScale / this._geometry.scale - 1));
 
         window.cvat.player.geometry.scale = this._geometry.scale;
         this.notify();
@@ -649,7 +666,7 @@ class PlayerController {
             move: null,
         };
 
-        function setupPlayerShortcuts(playerModel) {
+        function setupPlayerShortcuts() {
             const nextHandler = Logger.shortkeyLogDecorator((e) => {
                 this.next();
                 e.preventDefault();
@@ -792,7 +809,7 @@ class PlayerController {
         }
     }
 
-    progressMouseDown(e) {
+    progressMouseDown() {
         this._rewinding = true;
     }
 
@@ -809,7 +826,7 @@ class PlayerController {
         this._rewind(e, true);
     }
 
-    _rewind(e, is_move = false) {
+    _rewind(e, isMove = false) {
         if (this._rewinding) {
             if (!this._events.jump) {
                 this._events.jump = Logger.addContinuedEvent(Logger.EventType.jumpFrame);
@@ -821,7 +838,7 @@ class PlayerController {
             const percent = x / progressWidth;
             const targetFrame = Math.round((frames.stop - frames.start) * percent);
             this._model.pause();
-            this._model.shift(targetFrame + frames.start, !is_move);
+            this._model.shift(targetFrame + frames.start, !isMove);
         }
     }
 
@@ -1143,16 +1160,17 @@ class PlayerView {
                 this._playerCanvasBackground.attr('width', image.renderWidth);
                 this._playerCanvasBackground.attr('height', image.renderHeight);
                 const imageData = image.data;
-                ctx.scale(image.renderWidth / image.data.width, image.renderHeight / image.data.height);
+                ctx.scale(image.renderWidth / image.data.width,
+                    image.renderHeight / image.data.height);
                 ctx.putImageData(imageData, 0, 0);
                 ctx.drawImage(this._playerCanvasBackground[0], 0, 0);
             } else {
-                var img = new Image();
-                img.onload = function() {
+                const img = new Image();
+                img.onload = () => {
                     this._playerCanvasBackground.attr('width', img.width);
                     this._playerCanvasBackground.attr('height', img.height);
                     ctx.drawImage(img, 0, 0);
-                }.bind(this);
+                };
                 img.src = image.data.data;
             }
         }
