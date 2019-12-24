@@ -157,7 +157,7 @@
                 provider.frame(this.number).then((frame) => {
                     if (frame === null) {
                         onServerRequest();
-                        if (!provider.is_chunk_cached(start, stop)) {
+                        if (!provider.isChunkCached(start, stop)) {
                             if (!frameDataCache[this.tid].activeChunkRequest
                                 || (frameDataCache[this.tid].activeChunkRequest
                                 && frameDataCache[this.tid].activeChunkRequest.completed)) {
