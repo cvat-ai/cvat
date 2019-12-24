@@ -1,17 +1,22 @@
+/*
+* Copyright (C) 2019 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:true
+*/
+
 const JSZip = require('jszip');
 
-self.onmessage = function (e) {
-
+onmessage = (e) => {
     const zip = new JSZip();
-    const start =  e.data.start;
-    const end =  e.data.end;
-    const block =  e.data.block;
+    const { start, end, block } = e.data;
 
     zip.loadAsync(block).then((_zip) => {
-        fileMapping = {};
+        const fileMapping = {};
         let index = start;
         _zip.forEach((relativePath) => {
-
             fileMapping[relativePath] = index++;
         });
         index = start;
@@ -21,17 +26,22 @@ self.onmessage = function (e) {
 
             _zip.file(relativePath).async('blob').then((fileData) => {
                 const reader = new FileReader();
-                reader.onload = (function(i, event){
-                    postMessage({fileName : relativePath, index : fileIndex, data: reader.result, isEnd : inverseUnzippedFilesCount <= start});
-                    inverseUnzippedFilesCount --;
-                    if (inverseUnzippedFilesCount < start){
-                        self.close();
+                reader.onload = (() => {
+                    postMessage({
+                        fileName: relativePath,
+                        index: fileIndex,
+                        data: reader.result,
+                        isEnd: inverseUnzippedFilesCount <= start,
+                    });
+                    inverseUnzippedFilesCount--;
+                    if (inverseUnzippedFilesCount < start) {
+                        // eslint-disable-next-line no-restricted-globals
+                        close();
                     }
-                }).bind(fileIndex, relativePath);
+                });
 
                 reader.readAsDataURL(fileData);
             });
         });
     });
-
-}
+};
