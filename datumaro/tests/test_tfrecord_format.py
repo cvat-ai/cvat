@@ -112,7 +112,8 @@ class TfrecordConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_can_save_and_load(
-                TestExtractor(), DetectionApiConverter(), test_dir)
+                TestExtractor(), DetectionApiConverter(save_images=True),
+                test_dir)
 
     def test_labelmap_parsing(self):
         text = """

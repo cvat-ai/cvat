@@ -98,8 +98,27 @@ def _make_tf_example(item, get_label_id, get_label, save_images=False):
     return tf_example
 
 class DetectionApiConverter:
-    def __init__(self, save_images=True):
-        self.save_images = save_images
+    def __init__(self, save_images=False, cmdline_args=None):
+        super().__init__()
+
+        self._save_images = save_images
+
+        if cmdline_args is not None:
+            options = self._parse_cmdline(cmdline_args)
+            for k, v in options.items():
+                if hasattr(self, '_' + str(k)):
+                    setattr(self, '_' + str(k), v)
+
+    @classmethod
+    def build_cmdline_parser(cls, parser=None):
+        import argparse
+        if not parser:
+            parser = argparse.ArgumentParser()
+
+        parser.add_argument('--save-images', action='store_true',
+            help="Save images (default: %(default)s)")
+
+        return parser
 
     def __call__(self, extractor, save_dir):
         tf = _import_tf()
@@ -141,6 +160,6 @@ class DetectionApiConverter:
                         item,
                         get_label=get_label,
                         get_label_id=map_label_id,
-                        save_images=self.save_images,
+                        save_images=self._save_images,
                     )
                     writer.write(tf_example.SerializeToString())

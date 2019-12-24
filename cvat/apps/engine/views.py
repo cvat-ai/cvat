@@ -593,7 +593,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='dataset')
     def dataset_export(self, request, pk):
-
         db_task = self.get_object()
 
         action = request.query_params.get("action", "")
@@ -611,7 +610,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Unexpected parameter 'format' specified for the request")
 
-        rq_id = "task_dataset_export.{}.{}".format(pk, dst_format)
+        rq_id = "/api/v1/tasks/{}/dataset/{}".format(pk, dst_format)
         queue = django_rq.get_queue("default")
 
         rq_job = queue.fetch_job(rq_id)
