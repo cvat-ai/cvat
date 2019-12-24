@@ -43,7 +43,7 @@ scikit-image==0.15.0
 tensorflow==1.15.0
 keras==2.2.5
 opencv-python==4.1.0.25
-opencv-contrib-python=4.1.2.30
+opencv-contrib-python==4.1.2.30
 h5py==2.9.0
 imgaug==0.2.9
 django-cors-headers==3.2.0
