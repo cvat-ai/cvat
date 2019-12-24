@@ -23,4 +23,8 @@ __pycache__
 # Ignore development npm files
 node_modules
 
+# Ignore goturn model
+goturn.caffemodel
+goturn.prototxt
+
 .DS_Store
