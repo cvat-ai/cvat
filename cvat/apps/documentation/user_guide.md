@@ -1090,7 +1090,7 @@ You can find the list of available models in the ``Models`` section.
     ![](static/documentation/images/image119_DETRAC.jpg)
 
 1.  In dialogue window select a model you need. DL models are created for specific labels, e.g. 
-    the Crossroad model was created was taught using footage from cameras located above the highway, 
+    the Crossroad model was created whit using footage from cameras located above the highway, 
     which is you should use this model with the tasks with similar camera angles. 
     If it's necessary select the ``Clean old annotations`` checkbox. 
     Adjust the labels so that the task labels will correspond to the labels of the DL model. 
