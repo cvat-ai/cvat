@@ -16,9 +16,8 @@
     showMessage:false
     STROKE_WIDTH:false
     SVG:false
+    BorderSticker: false
 */
-
-"use strict";
 
 class ShapeCreatorModel extends Listener {
     constructor(shapeCollection) {
@@ -34,8 +33,8 @@ class ShapeCreatorModel extends Listener {
     }
 
     finish(result) {
-        let data = {};
-        let frame = window.cvat.player.frames.current;
+        const data = {};
+        const frame = window.cvat.player.frames.current;
 
         data.label_id = this._defaultLabel;
         data.group = 0;
@@ -50,7 +49,7 @@ class ShapeCreatorModel extends Listener {
                 mode: this._defaultMode,
                 type: this._defaultType,
                 label: this._defaultLabel,
-                frame: frame,
+                frame,
             });
         }
 
@@ -64,7 +63,7 @@ class ShapeCreatorModel extends Listener {
             this._shapeCollection.add(data, `annotation_${this._defaultType}`);
         }
 
-        let model = this._shapeCollection.shapes.slice(-1)[0];
+        const model = this._shapeCollection.shapes.slice(-1)[0];
 
         // Undo/redo code
         window.cvat.addAction('Draw Object', () => {
@@ -87,12 +86,10 @@ class ShapeCreatorModel extends Listener {
             if (this._createMode) {
                 this._createEvent = Logger.addContinuedEvent(Logger.EventType.drawObject);
                 window.cvat.mode = 'creation';
-            }
-            else if (window.cvat.mode === 'creation') {
+            } else if (window.cvat.mode === 'creation') {
                 window.cvat.mode = null;
             }
-        }
-        else {
+        } else {
             this._createMode = false;
             if (window.cvat.mode === 'creation') {
                 window.cvat.mode = null;
@@ -104,6 +101,11 @@ class ShapeCreatorModel extends Listener {
         }
         this._saveCurrent = !forceClose;
         this.notify();
+    }
+
+    get currentShapes() {
+        this._shapeCollection.update();
+        return this._shapeCollection.currentShapes;
     }
 
     get saveCurrent() {
@@ -177,6 +179,10 @@ class ShapeCreatorController {
     finish(result) {
         this._model.finish(result);
     }
+
+    get currentShapes() {
+        return this._model.currentShapes;
+    }
 }
 
 class ShapeCreatorView {
@@ -188,6 +194,7 @@ class ShapeCreatorView {
         this._modeSelector = $('#shapeModeSelector');
         this._typeSelector = $('#shapeTypeSelector');
         this._polyShapeSizeInput = $('#polyShapeSize');
+        this._autoBorderingCheckbox = $('#autoBorderingCheckbox');
         this._frameContent = SVG.adopt($('#frameContent')[0]);
         this._frameText = SVG.adopt($("#frameText")[0]);
         this._playerFrame = $('#playerFrame');
@@ -203,6 +210,7 @@ class ShapeCreatorView {
         this._mode = null;
         this._cancel = false;
         this._scale = 1;
+        this._borderSticker = null;
 
         let shortkeys = window.cvat.config.shortkeys;
         this._createButton.attr('title', `
@@ -288,8 +296,19 @@ class ShapeCreatorView {
                 }
             }
         });
-    }
 
+        this._autoBorderingCheckbox.on('change.shapeCreator', (e) => {
+            if (this._drawInstance) {
+                if (!e.target.checked) {
+                    this._borderSticker.disable();
+                    this._borderSticker = null;
+                } else {
+                    this._borderSticker = new BorderSticker(this._drawInstance, this._frameContent,
+                        this._controller.currentShapes, this._scale);
+                }
+            }
+        });
+    }
 
     _createPolyEvents() {
         // If number of points for poly shape specified, use it.
@@ -340,10 +359,21 @@ class ShapeCreatorView {
             numberOfPoints ++;
         });
 
+        this._autoBorderingCheckbox[0].disabled = false;
+        $('body').on('keydown.shapeCreator', (e) => {
+            if (e.ctrlKey && e.keyCode === 17) {
+                this._autoBorderingCheckbox[0].checked = !this._borderSticker;
+                this._autoBorderingCheckbox.trigger('change.shapeCreator');
+            }
+        });
+
         this._frameContent.on('mousedown.shapeCreator', (e) => {
             if (e.which === 3) {
                 let lenBefore = this._drawInstance.array().value.length;
                 this._drawInstance.draw('undo');
+                if (this._borderSticker) {
+                    this._borderSticker.reset();
+                }
                 let lenAfter = this._drawInstance.array().value.length;
                 if (lenBefore != lenAfter) {
                     numberOfPoints --;
@@ -373,6 +403,13 @@ class ShapeCreatorView {
         this._drawInstance.on('drawstop', () => {
             this._frameContent.off('mousedown.shapeCreator');
             this._frameContent.off('mousemove.shapeCreator');
+            this._autoBorderingCheckbox[0].disabled = true;
+            this._autoBorderingCheckbox[0].checked = false;
+            $('body').off('keydown.shapeCreator');
+            if (this._borderSticker) {
+                this._borderSticker.disable();
+                this._borderSticker = null;
+            }
         });
         // Also we need callback on drawdone event for get points
         this._drawInstance.on('drawdone', function(e) {
@@ -418,7 +455,7 @@ class ShapeCreatorView {
         let sizeUI = null;
         switch(this._type) {
         case 'box':
-            this._drawInstance = this._frameContent.rect().draw({snapToGrid: 0.1}).addClass('shapeCreation').attr({
+            this._drawInstance = this._frameContent.rect().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
                 'stroke-width': STROKE_WIDTH / this._scale,
             }).on('drawstop', function(e) {
                 if (this._cancel) return;
@@ -461,9 +498,10 @@ class ShapeCreatorView {
             });
             break;
         case 'points':
-            this._drawInstance = this._frameContent.polyline().draw({snapToGrid: 0.1}).addClass('shapeCreation').attr({
-                'stroke-width': 0,
-            });
+            this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 })
+                .addClass('shapeCreation').attr({
+                    'stroke-width': 0,
+                });
             this._createPolyEvents();
             break;
         case 'polygon':
@@ -474,9 +512,10 @@ class ShapeCreatorView {
                 this._controller.switchCreateMode(true);
                 return;
             }
-            this._drawInstance = this._frameContent.polygon().draw({snapToGrid: 0.1}).addClass('shapeCreation').attr({
-                'stroke-width':  STROKE_WIDTH / this._scale,
-            });
+            this._drawInstance = this._frameContent.polygon().draw({ snapToGrid: 0.1 })
+                .addClass('shapeCreation').attr({
+                    'stroke-width':  STROKE_WIDTH / this._scale,
+                });
             this._createPolyEvents();
             break;
         case 'polyline':
@@ -487,9 +526,10 @@ class ShapeCreatorView {
                 this._controller.switchCreateMode(true);
                 return;
             }
-            this._drawInstance = this._frameContent.polyline().draw({snapToGrid: 0.1}).addClass('shapeCreation').attr({
-                'stroke-width':  STROKE_WIDTH / this._scale,
-            });
+            this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 })
+                .addClass('shapeCreation').attr({
+                    'stroke-width':  STROKE_WIDTH / this._scale,
+                });
             this._createPolyEvents();
             break;
         default:
@@ -585,6 +625,9 @@ class ShapeCreatorView {
             this._scale = player.geometry.scale;
             if (this._drawInstance) {
                 this._rescaleDrawPoints();
+                if (this._borderSticker) {
+                    this._borderSticker.scale(this._scale);
+                }
                 if (this._aim) {
                     this._aim.x.attr('stroke-width', STROKE_WIDTH / this._scale);
                     this._aim.y.attr('stroke-width', STROKE_WIDTH / this._scale);
