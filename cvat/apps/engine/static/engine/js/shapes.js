@@ -142,21 +142,22 @@ class ShapeModel extends Listener {
         return interpolated;
     }
 
-    _neighboringFrames(frame) {
+    _neighboringFrames(frame, predicate = () => true) {
         if (!Number.isInteger(frame) || frame < 0) {
             throw Error(`Got invalid frame: ${frame}`);
         }
 
         let leftFrame = null;
         let rightFrame = null;
-
         for (let frameKey in this._positions) {
             frameKey = +frameKey;
-            if (frameKey < frame && (frameKey > leftFrame || leftFrame === null)) {
+            if (frameKey < frame && (frameKey > leftFrame || leftFrame === null)
+                && predicate(this._positions[frameKey])) {
                 leftFrame = frameKey;
             }
 
-            if (frameKey > frame && (frameKey < rightFrame || rightFrame === null)) {
+            if (frameKey > frame && (frameKey < rightFrame || rightFrame === null)
+                && predicate(this._positions[frameKey])) {
                 rightFrame = frameKey;
             }
         }
@@ -435,12 +436,14 @@ class ShapeModel extends Listener {
         this.notify('click');
     }
 
-    prevKeyFrame() {
-        return this._neighboringFrames(window.cvat.player.frames.current)[0];
+    prevKeyFrame(predicate = () => true) {
+        return this._neighboringFrames(window.cvat.player.frames.current,
+            predicate)[0];
     }
 
-    nextKeyFrame() {
-        return this._neighboringFrames(window.cvat.player.frames.current)[1];
+    nextKeyFrame(predicate = () => true) {
+        return this._neighboringFrames(window.cvat.player.frames.current,
+            predicate)[1];
     }
 
     initKeyFrame() {
@@ -678,8 +681,9 @@ class BoxModel extends ShapeModel {
             ytl: Math.clamp(position.ytl, 0, window.cvat.player.geometry.frameHeight),
             xbr: Math.clamp(position.xbr, 0, window.cvat.player.geometry.frameWidth),
             ybr: Math.clamp(position.ybr, 0, window.cvat.player.geometry.frameHeight),
-            occluded: position.occluded,
-            z_order: position.z_order,
+            byMachine: position.byMachine ? true : false,
+            occluded: position.occluded ? true : false,
+            z_order: position.z_order ? true : false,
         };
 
         if (this._verifyArea(pos)) {
