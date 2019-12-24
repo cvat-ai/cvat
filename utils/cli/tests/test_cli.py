@@ -10,6 +10,7 @@ from utils.cli.core import CLI, CVAT_API_V1, ResourceType
 from rest_framework.test import APITestCase, RequestsClient
 from cvat.apps.engine.tests.test_rest_api import create_db_users
 from cvat.apps.engine.tests.test_rest_api import generate_image_file
+from PIL import Image
 
 
 class TestCLI(APITestCase):
@@ -22,7 +23,7 @@ class TestCLI(APITestCase):
         self.cli = CLI(self.client, self.api)
         self.taskname = 'test_task'
         self.cli.tasks_create(self.taskname,
-                              [],
+                              [{'name' : 'car'}, {'name': 'person'}],
                               '',
                               ResourceType.LOCAL,
                               [self.img_file])
@@ -68,4 +69,63 @@ class TestCLI(APITestCase):
         path = os.path.join(settings.SHARE_ROOT, 'task_1_frame_000000.jpg')
         self.cli.tasks_frame(1, [0], outdir=settings.SHARE_ROOT)
         self.assertTrue(os.path.exists(path))
+        os.remove(path)
+
+    def test_tasks_upload(self):
+        test_image = Image.open(self.img_file)
+        width, height = test_image.size
+
+        # Using generate_coco_anno() from:
+        # https://github.com/opencv/cvat/blob/develop/cvat/apps/engine/tests/test_rest_api.py
+        def generate_coco_anno():
+            return b"""{
+            "categories": [
+                {
+                "id": 1,
+                "name": "car",
+                "supercategory": ""
+                },
+                {
+                "id": 2,
+                "name": "person",
+                "supercategory": ""
+                }
+            ],
+            "images": [
+                {
+                "coco_url": "",
+                "date_captured": "",
+                "flickr_url": "",
+                "license": 0,
+                "id": 0,
+                "file_name": "test_cli.jpg",
+                "height": %d,
+                "width": %d
+                }
+            ],
+            "annotations": [
+                {
+                "category_id": 1,
+                "id": 1,
+                "image_id": 0,
+                "iscrowd": 0,
+                "segmentation": [
+                    []
+                ],
+                "area": 17702.0,
+                "bbox": [
+                    574.0,
+                    407.0,
+                    167.0,
+                    106.0
+                ]
+                }
+            ]
+            }"""
+        content = generate_coco_anno() % (height, width)
+        path = os.path.join(settings.SHARE_ROOT, 'test_cli.json')
+        with open(path, "wb") as coco:
+            coco.write(content)
+        self.cli.tasks_upload(1, 'COCO JSON 1.0', path)
+        self.assertRegex(self.mock_stdout.getvalue(), '.*{}.*'.format("annotation file"))
         os.remove(path)
