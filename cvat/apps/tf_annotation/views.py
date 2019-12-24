@@ -13,8 +13,6 @@ from cvat.apps.engine.annotation import put_task_data
 from cvat.apps.engine.frame_provider import FrameProvider
 
 import django_rq
-import fnmatch
-import json
 import os
 import rq
 

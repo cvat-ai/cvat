@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import django_rq
-import fnmatch
 import numpy as np
 import os
 import rq

@@ -8,10 +8,10 @@ import re
 import traceback
 import shutil
 from datetime import datetime
-from tempfile import mkstemp, NamedTemporaryFile
+from tempfile import mkstemp
 
 from django.views.generic import RedirectView
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.conf import settings
 from sendfile import sendfile
@@ -600,11 +600,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return response
 
+    @staticmethod
     @swagger_auto_schema(method='get', operation_summary='Method provides a list of sizes (width, height) of media files which are related with the task',
         responses={'200': ImageMetaSerializer(many=True)})
     @action(detail=True, methods=['GET'], serializer_class=ImageMetaSerializer,
         url_path='data/meta')
-    def data_info(self, request, pk):
+    def data_info(request, pk):
         data = {
             'original_size': [],
         }

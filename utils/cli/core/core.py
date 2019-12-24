@@ -165,10 +165,6 @@ class CVAT_API_V1():
         return self.tasks_id(task_id) + '/annotations?format={}' \
             .format(fileformat)
 
-    def tasks_id_annotations_format(self, task_id, fileformat):
-        return self.tasks_id(task_id) + '/annotations?format={}' \
-            .format(fileformat)
-
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
         return self.tasks_id(task_id) + '/annotations/{}?format={}' \
             .format(name, fileformat)

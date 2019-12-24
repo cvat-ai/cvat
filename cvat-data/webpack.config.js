@@ -1,7 +1,12 @@
+/* global
+    require:true,
+    __dirname:true,
+*/
+
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
-const _module = {
+const moduleConf = {
     rules: [
         {
             test: /.js?$/,
@@ -28,7 +33,7 @@ const _module = {
             },
         },
     ],
-}
+};
 
 const cvatData = {
     target: 'web',
@@ -46,7 +51,7 @@ const cvatData = {
         inline: true,
         port: 3001,
     },
-    module: _module
+    module: moduleConf,
 };
 
 const workerImg = {
@@ -57,8 +62,8 @@ const workerImg = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'unzip_imgs.js',
     },
-    module: _module
-}
+    module: moduleConf,
+};
 
 const workerVideo = {
     target: 'web',
@@ -68,12 +73,12 @@ const workerVideo = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'Decoder.js',
     },
-    module: _module,
+    module: moduleConf,
     plugins: [
         new CopyPlugin([
             './src/js/3rdparty/avc.wasm',
         ]),
     ],
-}
+};
 
-module.exports = [cvatData, workerImg, workerVideo]
+module.exports = [cvatData, workerImg, workerVideo];
