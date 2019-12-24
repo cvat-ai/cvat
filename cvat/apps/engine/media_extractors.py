@@ -234,7 +234,7 @@ class IChunkWriter(ABC):
 
     @staticmethod
     def _compress_image(image_path, quality):
-        image = Image.open(image_path)
+        image = image_path.to_image() if isinstance(image_path, av.VideoFrame) else Image.open(image_path)
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
             # Image mode is 32bit integer pixels.
