@@ -100,12 +100,12 @@
             );
             const chunkNumber = Math.floor(this.number / chunkSize);
 
-            const onDecodeAll = (frameNumber) => {
+            const onDecodeAll = () => {
                 if (frameDataCache[this.tid].activeChunkRequest
                     && chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber) {
                     const callbackArray = frameDataCache[this.tid].activeChunkRequest.callbacks;
                     for (const callback of callbackArray) {
-                        callback.resolve(provider.frame(frameNumber));
+                        callback.resolve(provider.frame(callback.frameNumber));
                     }
                     frameDataCache[this.tid].activeChunkRequest = undefined;
                 }
