@@ -56,7 +56,7 @@ class FrameProvider {
     async _cleanup() {
         if (this._blocks_ranges.length > this._cachedBlockCount) {
             const shifted = this._blocks_ranges.shift(); // get the oldest block
-            const [start, end] = shifted.split(':').map((el) => +el);
+            const [start, end] = shifted.split(':').map(el => +el);
             delete this._blocks[start / this._blockSize];
             for (let i = start; i <= end; i++) {
                 delete this._frames[i];
@@ -66,7 +66,7 @@ class FrameProvider {
         // delete frames whose are not in areas of current frame
         const distance = Math.floor(this._decodedBlocksCacheSize / 2);
         for (let i = 0; i < this._blocks_ranges.length; i++) {
-            const [start, end] = this._blocks_ranges[i].split(':').map((el) => +el);
+            const [start, end] = this._blocks_ranges[i].split(':').map(el => +el);
             if (end < this._currFrame - distance * this._blockSize
                 || start > this._currFrame + distance * this._blockSize) {
                 for (let j = start; j <= end; j++) {
@@ -202,7 +202,7 @@ class FrameProvider {
             }
             this._cleanup();
             if (this._blockType === BlockType.MP4VIDEO) {
-                const worker = new Worker('/static/engine/js/Decoder.js');
+                const worker = new Worker('/static/engine/js/3rdparty/Decoder.js');
                 let index = start;
 
                 worker.onmessage = (e) => {
@@ -211,7 +211,7 @@ class FrameProvider {
                     }
 
                     const scaleFactor = Math.ceil(this._height / e.data.height);
-                    this._frames[index] = this.cropImage(
+                    this._frames[index] = FrameProvider.cropImage(
                         e.data.buf, e.data.width, e.data.height, 0, 0,
                         Math.floor(width / scaleFactor), Math.floor(height / scaleFactor),
                     );

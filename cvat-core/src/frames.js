@@ -122,15 +122,16 @@
             };
 
             const makeActiveRequest = () => {
-                const activeChunk = frameDataCache[this.tid].activeChunkRequest;
+                const taskDataCache = frameDataCache[this.tid];
+                const activeChunk = taskDataCache.activeChunkRequest;
                 activeChunk.request = serverProxy.frames.getData(this.tid,
                     activeChunk.chunkNumber).then((chunk) => {
                     frameDataCache[this.tid].activeChunkRequest.completed = true;
                     provider.requestDecodeBlock(chunk,
-                        frameDataCache[this.tid].activeChunkRequest.start,
-                        frameDataCache[this.tid].activeChunkRequest.stop,
-                        frameDataCache[this.tid].activeChunkRequest.onDecodeAll,
-                        frameDataCache[this.tid].activeChunkRequest.rejectRequestAll);
+                        taskDataCache.activeChunkRequest.start,
+                        taskDataCache.activeChunkRequest.stop,
+                        taskDataCache.activeChunkRequest.onDecodeAll,
+                        taskDataCache.activeChunkRequest.rejectRequestAll);
                 }).catch((exception) => {
                     if (exception instanceof Exception) {
                         reject(exception);
@@ -138,14 +139,14 @@
                         reject(new Exception(exception.message));
                     }
                 }).finally(() => {
-                    if (frameDataCache[this.tid].nextChunkRequest) {
-                        if (frameDataCache[this.tid].activeChunkRequest) {
-                            for (const r of frameDataCache[this.tid].activeChunkRequest.callbacks) {
+                    if (taskDataCache.nextChunkRequest) {
+                        if (taskDataCache.activeChunkRequest) {
+                            for (const r of taskDataCache.activeChunkRequest.callbacks) {
                                 r.reject(r.frameNumber);
                             }
                         }
-                        frameDataCache[this.tid].activeChunkRequest = frameDataCache[this.tid].nextChunkRequest;
-                        frameDataCache[this.tid].nextChunkRequest = undefined;
+                        taskDataCache.activeChunkRequest = taskDataCache.nextChunkRequest;
+                        taskDataCache.nextChunkRequest = undefined;
                         makeActiveRequest();
                     }
                 });

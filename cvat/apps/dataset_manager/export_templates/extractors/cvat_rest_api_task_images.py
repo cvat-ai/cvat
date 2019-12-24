@@ -116,6 +116,7 @@ class cvat_rest_api_task_images(datumaro.Extractor):
     def __len__(self):
         return len(self._items)
 
+    # pylint: disable=no-self-use
     def subsets(self):
         return None
 

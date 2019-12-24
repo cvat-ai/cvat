@@ -7,9 +7,7 @@ import os
 import sys
 import rq
 import shutil
-from PIL import Image
 from traceback import print_exception
-from ast import literal_eval
 from urllib import error as urlerror
 from urllib import parse as urlparse
 from urllib import request as urlrequest

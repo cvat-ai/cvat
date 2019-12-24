@@ -1,5 +1,7 @@
-import os
-import zipfile
+# Copyright (C) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import math
 from io import BytesIO
 

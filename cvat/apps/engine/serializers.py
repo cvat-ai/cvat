@@ -179,6 +179,7 @@ class DataSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid frame filter expression")
         return value
 
+    # pylint: disable=no-self-use
     def create(self, validated_data):
         client_files = validated_data.pop('client_files')
         server_files = validated_data.pop('server_files')
