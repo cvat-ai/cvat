@@ -1213,7 +1213,7 @@ If your CVAT instance is created with analytics support, you can press the
 "analytics" button in dashboard, a new tab with analytics and journals will
 be opened.
 
-![](static/documentation/images/image113.jpg)
+![](static/documentation/images/image113_DETRAC.jpg)
 
 It allows you to see how much working time every user spend on each task and how much they did, over any time range.
 
