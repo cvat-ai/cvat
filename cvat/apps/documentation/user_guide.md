@@ -1114,7 +1114,10 @@ You can find the list of available models in the ``Models`` section.
 1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects, and
     merging into tracks using ``ReID merge``. Click the ``ReID merge`` button in the menu. 
     You can use the default settings (for more information click [here](cvat/apps/reid/README.md)). 
-    To launch the merging process click ``Submit``. Each frame of the track will be a key. 
+    To launch the merging process click ``Merge``. Each frame of the track will be a key. 
+
+    ![](static/documentation/images/image133.jpg)
+
 1.  You can remove false positives and edit tracks using ``Split`` and ``Merge`` functions.
 
     ![](static/documentation/images/gif015_DETRAC.gif)
