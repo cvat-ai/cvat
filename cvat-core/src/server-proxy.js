@@ -275,7 +275,7 @@
                 });
             }
 
-            async function createTask(taskData, files, onUpdate) {
+            async function createTask(taskSpec, taskDataSpec, onUpdate) {
                 const { backendAPI } = config;
 
                 async function wait(id) {
@@ -315,11 +315,15 @@
                     });
                 }
 
-                const batchOfFiles = new FormData();
-                for (const key in files) {
-                    if (Object.prototype.hasOwnProperty.call(files, key)) {
-                        for (let i = 0; i < files[key].length; i++) {
-                            batchOfFiles.append(`${key}[${i}]`, files[key][i]);
+                const taskData = new FormData();
+                for (const key in taskDataSpec) {
+                    if (Object.prototype.hasOwnProperty.call(taskDataSpec, key)) {
+                        if (Array.isArray(taskDataSpec[key])) {
+                            for (let i = 0; i < taskDataSpec[key].length; i++) {
+                                taskData.append(`${key}[${i}]`, taskDataSpec[key][i]);
+                            }
+                        } else {
+                            taskData.set(key, taskDataSpec[key]);
                         }
                     }
                 }
@@ -328,7 +332,7 @@
 
                 onUpdate('The task is being created on the server..');
                 try {
-                    response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskData), {
+                    response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskSpec), {
                         proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
@@ -340,7 +344,7 @@
 
                 onUpdate('The data is being uploaded to the server..');
                 try {
-                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, batchOfFiles, {
+                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
@@ -435,8 +439,7 @@
 
                 let response = null;
                 try {
-                    // TODO: change 0 frame to preview
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/0`, {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/data?type=preview`, {
                         proxy: config.proxy,
                         responseType: 'blob',
                     });
@@ -451,14 +454,14 @@
                 return response.data;
             }
 
-            async function getData(tid, frame) {
+            async function getData(tid, chunk) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/${frame}`, {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/data?type=chunk&number=${chunk}&quality=compressed`, {
                         proxy: config.proxy,
-                        responseType: 'blob',
+                        responseType: 'arraybuffer',
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
@@ -472,7 +475,7 @@
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/meta`, {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/data/meta`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {

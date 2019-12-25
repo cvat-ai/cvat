@@ -180,16 +180,16 @@ class Annotation:
             self._frame_info = {
                 frame: {
                     "path": "frame_{:06d}".format(frame),
-                    "width": self._db_task.video.width,
-                    "height": self._db_task.video.height,
-                } for frame in range(self._db_task.size)
+                    "width": self._db_task.data.video.width,
+                    "height": self._db_task.data.video.height,
+                } for frame in range(self._db_task.data.size)
             }
         else:
             self._frame_info = {db_image.frame: {
                 "path": db_image.path,
                 "width": db_image.width,
                 "height": db_image.height,
-            } for db_image in self._db_task.image_set.all()}
+            } for db_image in self._db_task.data.images.all()}
 
         self._frame_mapping = {
             self._get_filename(info["path"]): frame for frame, info in self._frame_info.items()
@@ -201,15 +201,15 @@ class Annotation:
             ("task", OrderedDict([
                 ("id", str(self._db_task.id)),
                 ("name", self._db_task.name),
-                ("size", str(self._db_task.size)),
+                ("size", str(self._db_task.data.size)),
                 ("mode", self._db_task.mode),
                 ("overlap", str(self._db_task.overlap)),
                 ("bugtracker", self._db_task.bug_tracker),
                 ("created", str(timezone.localtime(self._db_task.created_date))),
                 ("updated", str(timezone.localtime(self._db_task.updated_date))),
-                ("start_frame", str(self._db_task.start_frame)),
-                ("stop_frame", str(self._db_task.stop_frame)),
-                ("frame_filter", self._db_task.frame_filter),
+                ("start_frame", str(self._db_task.data.start_frame)),
+                ("stop_frame", str(self._db_task.data.stop_frame)),
+                ("frame_filter", self._db_task.data.frame_filter),
                 ("z_order", str(self._db_task.z_order)),
 
                 ("labels", [
@@ -251,11 +251,11 @@ class Annotation:
 
         if self._db_task.mode == "interpolation":
             self._meta["task"]["original_size"] = OrderedDict([
-                ("width", str(self._db_task.video.width)),
-                ("height", str(self._db_task.video.height))
+                ("width", str(self._db_task.data.video.width)),
+                ("height", str(self._db_task.data.video.height))
             ])
             # Add source to dumped file
-            self._meta["source"] = str(os.path.basename(self._db_task.video.path))
+            self._meta["source"] = str(os.path.basename(self._db_task.data.video.path))
 
     def _export_attributes(self, attributes):
         exported_attributes = []
@@ -270,7 +270,7 @@ class Annotation:
     def _export_tracked_shape(self, shape):
         return Annotation.TrackedShape(
             type=shape["type"],
-            frame=self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step(),
+            frame=self._db_task.data.start_frame + shape["frame"] * self._db_task.data.get_frame_step(),
             points=shape["points"],
             occluded=shape["occluded"],
             outside=shape.get("outside", False),
@@ -283,7 +283,7 @@ class Annotation:
         return Annotation.LabeledShape(
             type=shape["type"],
             label=self._get_label_name(shape["label_id"]),
-            frame=self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step(),
+            frame=self._db_task.data.start_frame + shape["frame"] * self._db_task.data.get_frame_step(),
             points=shape["points"],
             occluded=shape["occluded"],
             z_order=shape.get("z_order", 0),
@@ -293,7 +293,7 @@ class Annotation:
 
     def _export_tag(self, tag):
         return Annotation.Tag(
-            frame=self._db_task.start_frame + tag["frame"] * self._db_task.get_frame_step(),
+            frame=self._db_task.data.start_frame + tag["frame"] * self._db_task.data.get_frame_step(),
             label=self._get_label_name(tag["label_id"]),
             group=tag.get("group", 0),
             attributes=self._export_attributes(tag["attributes"]),
@@ -302,16 +302,11 @@ class Annotation:
     def group_by_frame(self):
         def _get_frame(annotations, shape):
             db_image = self._frame_info[shape["frame"]]
-            frame = self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step()
-            rpath = db_image['path'].split(os.path.sep)
-            if len(rpath) != 1:
-                rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
-            else:
-                rpath = rpath[0]
+            frame = self._db_task.data.start_frame + shape["frame"] * self._db_task.data.get_frame_step()
             if frame not in annotations:
                 annotations[frame] = Annotation.Frame(
                     frame=frame,
-                    name=rpath,
+                    name=db_image['path'],
                     height=db_image["height"],
                     width=db_image["width"],
                     labeled_shapes=[],
@@ -321,7 +316,7 @@ class Annotation:
 
         annotations = {}
         data_manager = DataManager(self._annotation_ir)
-        for shape in data_manager.to_shapes(self._db_task.size):
+        for shape in data_manager.to_shapes(self._db_task.data.size):
             _get_frame(annotations, shape).labeled_shapes.append(self._export_labeled_shape(shape))
 
         for tag in self._annotation_ir.tags:
@@ -337,7 +332,7 @@ class Annotation:
     @property
     def tracks(self):
         for track in self._annotation_ir.tracks:
-            tracked_shapes = TrackManager.get_interpolated_shapes(track, 0, self._db_task.size)
+            tracked_shapes = TrackManager.get_interpolated_shapes(track, 0, self._db_task.data.size)
             for tracked_shape in tracked_shapes:
                 tracked_shape["attributes"] += track["attributes"]
 

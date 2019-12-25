@@ -19,6 +19,8 @@ import sys
 import fcntl
 import shutil
 import subprocess
+import mimetypes
+mimetypes.add_type("application/wasm", ".wasm", True)
 
 from pathlib import Path
 
@@ -390,10 +392,16 @@ os.makedirs(STATIC_ROOT, exist_ok=True)
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
 os.makedirs(DATA_ROOT, exist_ok=True)
 
+MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
+os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
+
+TASKS_ROOT = os.path.join(DATA_ROOT, 'tasks')
+os.makedirs(TASKS_ROOT, exist_ok=True)
+
 SHARE_ROOT = os.path.join(BASE_DIR, 'share')
 os.makedirs(SHARE_ROOT, exist_ok=True)
 
-MODELS_ROOT = os.path.join(BASE_DIR, 'models')
+MODELS_ROOT = os.path.join(DATA_ROOT, 'models')
 os.makedirs(MODELS_ROOT, exist_ok=True)
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB

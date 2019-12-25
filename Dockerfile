@@ -31,29 +31,37 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -yq \
         apache2 \
         apache2-dev \
-        libapache2-mod-xsendfile \
-        supervisor \
         ffmpeg \
+        git-core \
         gstreamer0.10-ffmpeg \
+        libapache2-mod-xsendfile \
+        libavcodec-dev \
+        libavdevice-dev \
+        libavfilter-dev \
+        libavformat-dev \
+        libavutil-dev \
         libldap2-dev \
         libsasl2-dev \
+        libswresample-dev \
+        libswscale-dev \
+        libsm6 \
+        libxext6 \
+        p7zip-full \
+        pkg-config \
         python3-dev \
         python3-pip \
+        supervisor \
         tzdata \
-        unzip \
         unrar \
-        p7zip-full \
-        vim \
-        git-core \
-        libsm6 \
-        libxext6 && \
+        vim && \
     python3 -m pip install -U pip && \
     python3 -m pip install -U setuptools && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \
     add-apt-repository --remove ppa:mc3man/xerus-media -y && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    echo 'application/wasm                                wasm' >> /etc/mime.types
 
 # Add a non-root user
 ENV USER=${USER}
@@ -159,6 +167,7 @@ COPY ssh ${HOME}/.ssh
 COPY utils ${HOME}/utils
 COPY cvat/ ${HOME}/cvat
 COPY cvat-core/ ${HOME}/cvat-core
+COPY cvat-data/ ${HOME}/cvat-data
 COPY tests ${HOME}/tests
 COPY datumaro/ ${HOME}/datumaro
 
