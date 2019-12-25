@@ -91,8 +91,10 @@ class CLI():
             im = Image.open(BytesIO(response.content))
             mime_type = im.get_format_mimetype() or 'image/jpg'
             im_ext = mimetypes.guess_extension(mime_type)
-            #replace '.jpe' with a more used '.jpg'
-            if im_ext == '.jpe' or None:
+            # FIXME It is better to use meta information from the server
+            # to determine the extension
+            # replace '.jpe' or '.jpeg' with a more used '.jpg'
+            if im_ext == '.jpe' or 'jpeg' or None:
                 im_ext = '.jpg'
 
             outfile = 'task_{}_frame_{:06d}{}'.format(task_id, frame_id, im_ext)
