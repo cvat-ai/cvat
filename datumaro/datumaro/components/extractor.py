@@ -438,7 +438,7 @@ class PointsObject(ShapeObject):
             else:
                 visibility = []
                 for _ in range(len(points) // 2):
-                    visibility.append(self.Visibility.absent)
+                    visibility.append(self.Visibility.visible)
 
         super().__init__(type=AnnotationType.points,
             points=points, label=label, z_order=z_order,
@@ -449,6 +449,17 @@ class PointsObject(ShapeObject):
 
     def area(self):
         return 0
+
+    def get_bbox(self):
+        xs = [p for p, v in zip(self.points[0::2], self.visibility)
+            if v != __class__.Visibility.absent]
+        ys = [p for p, v in zip(self.points[1::2], self.visibility)
+            if v != __class__.Visibility.absent]
+        x0 = min(xs, default=0)
+        x1 = max(xs, default=0)
+        y0 = min(ys, default=0)
+        y1 = max(ys, default=0)
+        return [x0, y0, x1 - x0, y1 - y0]
 
     def __eq__(self, other):
         if not super().__eq__(other):

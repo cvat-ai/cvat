@@ -91,7 +91,7 @@ def lazy_mask(path, colormap=None):
     return lazy_image(path, lambda path: load_mask(path, colormap))
 
 
-def convert_mask_to_rle(binary_mask):
+def mask_to_rle(binary_mask):
     counts = []
     for i, (value, elements) in enumerate(
             groupby(binary_mask.ravel(order='F'))):
@@ -105,7 +105,7 @@ def convert_mask_to_rle(binary_mask):
         'size': list(binary_mask.shape)
     }
 
-def convert_mask_to_polygons(mask, tolerance=1.0, area_threshold=1):
+def mask_to_polygons(mask, tolerance=1.0, area_threshold=1):
     """
     Convert an instance mask to polygons
 
@@ -134,7 +134,7 @@ def convert_mask_to_polygons(mask, tolerance=1.0, area_threshold=1):
             contour = np.vstack((contour, contour[0])) # make polygon closed
 
         contour = measure.approximate_polygon(contour, tolerance)
-        if len(contour) < 2:
+        if len(contour) <= 2:
             continue
 
         contour = np.flip(contour, axis=1).flatten().clip(0) # [x0, y0, ...]
@@ -146,30 +146,30 @@ def convert_mask_to_polygons(mask, tolerance=1.0, area_threshold=1):
             polygons.append(contour)
     return polygons
 
-def crop_covered_segments(segments, height, width,
+def crop_covered_segments(segments, width, height,
         iou_threshold=0.0, ratio_tolerance=0.001, area_threshold=1,
-        return_polygons=True):
+        return_masks=False):
     """
     Find all segments occluded by others and crop them to the visible part only.
     Input segments are expected to be sorted from background to foreground.
 
     Args:
         segments: 1d list of segment RLEs (in COCO format)
-        height: height of the image
         width: width of the image
+        height: height of the image
         iou_threshold: IoU threshold for objects to be counted as intersected
             By default is set to 0 to process any intersected objects
         ratio_tolerance: an IoU "handicap" value for a situation
             when an object is (almost) fully covered by another one and we
             don't want make a "hole" in the background object
         area_threshold: minimal area of included segments
-        return_polygons: return either binary masks or polygons
 
     Returns:
         A list of input segments' parts (in the same order as input):
             [
                 [[x1,y1, x2,y2 ...], ...], # input segment #0 parts
-                mask1, # input segment #1 mask (if return_polygons == False)
+                mask1, # input segment #1 mask (if source segment is mask)
+                [], # when source segment is too small
                 ...
             ]
     """
@@ -181,7 +181,7 @@ def crop_covered_segments(segments, height, width,
     for i, rle_bottom in enumerate(input_rles):
         area_bottom = sum(mask_utils.area(rle_bottom))
         if area_bottom < area_threshold:
-            segments[i] = []
+            segments[i] = [] if not return_masks else None
             continue
 
         rles_top = []
@@ -189,7 +189,7 @@ def crop_covered_segments(segments, height, width,
             rle_top = input_rles[j]
             iou = sum(mask_utils.iou(rle_bottom, rle_top, [0, 0]))[0]
 
-            if iou < iou_threshold:
+            if iou <= iou_threshold:
                 continue
 
             area_top = sum(mask_utils.area(rle_top))
@@ -207,6 +207,10 @@ def crop_covered_segments(segments, height, width,
 
             rles_top += rle_top
 
+        if not rles_top and not isinstance(segments[i][0], dict) \
+                and not return_masks:
+            continue
+
         rle_bottom = rle_bottom[0]
         bottom_mask = mask_utils.decode(rle_bottom).astype(np.uint8)
 
@@ -217,8 +221,8 @@ def crop_covered_segments(segments, height, width,
             bottom_mask -= top_mask
             bottom_mask[bottom_mask != 1] = 0
 
-        if return_polygons:
-            segments[i] = convert_mask_to_polygons(bottom_mask,
+        if not return_masks and not isinstance(segments[i][0], dict):
+            segments[i] = mask_to_polygons(bottom_mask,
                 area_threshold=area_threshold)
         else:
             segments[i] = bottom_mask

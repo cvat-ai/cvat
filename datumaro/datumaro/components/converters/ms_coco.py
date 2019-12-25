@@ -113,6 +113,36 @@ class _TaskConverter:
             self._min_ann_id = max(ann_id, self._min_ann_id)
         return ann_id
 
+class _ImageInfoConverter(_TaskConverter):
+    def is_empty(self):
+        return len(self._data['images']) == 0
+
+    def save_categories(self, dataset):
+        pass
+
+    def save_annotations(self, item):
+        pass
+
+class _CaptionsConverter(_TaskConverter):
+    def save_categories(self, dataset):
+        pass
+
+    def save_annotations(self, item):
+        for ann in item.annotations:
+            if ann.type != AnnotationType.caption:
+                continue
+
+            elem = {
+                'id': self._get_ann_id(ann),
+                'image_id': _cast(item.id, int, 0),
+                'category_id': 0, # NOTE: workaround for a bug in cocoapi
+                'caption': ann.caption,
+            }
+            if 'score' in ann.attributes:
+                elem['score'] = float(ann.attributes['score'])
+
+            self.annotations.append(elem)
+
 class _InstancesConverter(_TaskConverter):
     def save_categories(self, dataset):
         label_categories = dataset.categories().get(AnnotationType.label)
@@ -136,27 +166,27 @@ class _InstancesConverter(_TaskConverter):
             if polygons:
                 segment_map.extend(inst_idx for p in polygons)
                 segments.extend(polygons)
-            else:
+            elif mask is not None:
                 segment_map.append(inst_idx)
                 segments.append(mask)
 
         segments = mask_tools.crop_covered_segments(
-            segments, img_width, img_height, return_polygons=False)
+            segments, img_width, img_height)
 
         for inst_idx, inst in enumerate(instances):
             new_segments = [s for si_id, s in zip(segment_map, segments)
-                if si_id == inst_idx and s != []]
+                if si_id == inst_idx]
 
             if not new_segments:
                 inst[1] = []
                 inst[2] = None
-
-            mask = cls.merge_masks(new_segments)
+                continue
 
             if inst[1]:
-                inst[1] = mask_tools.convert_mask_to_polygons(mask)
+                inst[1] = sum(new_segments, [])
             else:
-                inst[2] = mask_tools.convert_mask_to_rle(mask)
+                mask = cls.merge_masks(new_segments)
+                inst[2] = mask_tools.mask_to_rle(mask)
 
         return instances
 
@@ -187,21 +217,17 @@ class _InstancesConverter(_TaskConverter):
                 mask = mask_tools.rles_to_mask(polygons, img_width, img_height)
 
             if masks:
-                if mask:
+                if mask is not None:
                     masks += [mask]
                 mask = self.merge_masks(masks)
 
-            if mask is None:
-                mask = mask_tools.rles_to_mask([bbox], img_width, img_height)
-
-            mask = mask_tools.convert_mask_to_rle(mask)
+            if mask is not None:
+                mask = mask_tools.mask_to_rle(mask)
             polygons = []
         else:
             if masks:
                 mask = self.merge_masks(masks)
-                polygons += mask_tools.convert_mask_to_polygons(mask)
-            if not polygons:
-                polygons = [BboxObject(*bbox).get_polygon()]
+                polygons += mask_tools.mask_to_polygons(mask)
             mask = None
 
         return [leader, polygons, mask, bbox]
@@ -237,18 +263,20 @@ class _InstancesConverter(_TaskConverter):
         return [x0, y0, x1 - x0, y1 - y0]
 
     @staticmethod
-    def find_instances(annotations):
-        instance_anns = [a for a in annotations
-            if a.label is not None and a.type in {
-                AnnotationType.bbox, AnnotationType.polygon,
-                AnnotationType.mask
-            }
+    def find_instance_anns(annotations):
+        return [a for a in annotations
+            if a.type in { AnnotationType.bbox, AnnotationType.polygon } or \
+                a.type == AnnotationType.mask and a.label is not None
         ]
+
+    @classmethod
+    def find_instances(cls, annotations):
+        instance_anns = cls.find_instance_anns(annotations)
 
         ann_groups = []
         for g_id, group in groupby(instance_anns, lambda a: a.group):
             if g_id is None:
-                ann_groups.extend(map(list, group))
+                ann_groups.extend(([a] for a in group))
             else:
                 ann_groups.append(list(group))
 
@@ -259,22 +287,38 @@ class _InstancesConverter(_TaskConverter):
         if not instances:
             return
 
+        if not item.has_image:
+            log.warn("Skipping writing instances for "
+                "item '%s' as it has no image info" % item.id)
+            return
         h, w, _ = item.image.shape
         instances = [self.find_instance_parts(i, w, h) for i in instances]
 
         instances = self.crop_segments(instances, w, h)
 
-        for ann, polygons, mask, bbox in instances:
-            if not polygons and mask is None:
-                log.warn("Skipping too small object '%s' on the item '%s'" % \
-                    (ann.id, item.id))
-                continue
+        for instance in instances:
+            elem = self.convert_instance(instance, item)
+            if elem:
+                self.annotations.append(elem)
 
-            is_crowd = mask is not None
-            if is_crowd:
-                segmentation = mask
+    def convert_instance(self, instance, item):
+        ann, polygons, mask, bbox = instance
+
+        is_crowd = mask is not None
+        if is_crowd:
+            segmentation = mask
+        else:
+            segmentation = [list(map(float, p)) for p in polygons]
+
+        area = 0
+        if segmentation:
+            if item.has_image:
+                h, w, _ = item.image.shape
             else:
-                segmentation = [list(map(float, p)) for p in polygons]
+                # NOTE: here we can guess the image size as
+                # it is only needed for the area computation
+                w = bbox[0] + bbox[2]
+                h = bbox[1] + bbox[3]
 
             rles = mask_utils.frPyObjects(segmentation, h, w)
             if is_crowd:
@@ -282,52 +326,24 @@ class _InstancesConverter(_TaskConverter):
             else:
                 rles = mask_utils.merge(rles)
             area = mask_utils.area(rles)
+        else:
+            x, y, w, h = bbox
+            segmentation = [[x, y, x + w, y, x + w, y + h, x, y + h]]
+            area = w * h
 
-            bbox = list(map(float, bbox))
+        elem = {
+            'id': self._get_ann_id(ann),
+            'image_id': _cast(item.id, int, 0),
+            'category_id': _cast(ann.label, int, -1) + 1,
+            'segmentation': segmentation,
+            'area': float(area),
+            'bbox': list(map(float, bbox)),
+            'iscrowd': int(is_crowd),
+        }
+        if 'score' in ann.attributes:
+            elem['score'] = float(ann.attributes['score'])
 
-            elem = {
-                'id': self._get_ann_id(ann),
-                'image_id': _cast(item.id, int, 0),
-                'category_id': _cast(ann.label, int, -1) + 1,
-                'segmentation': segmentation,
-                'area': float(area),
-                'bbox': bbox,
-                'iscrowd': int(is_crowd),
-            }
-            if 'score' in ann.attributes:
-                elem['score'] = float(ann.attributes['score'])
-
-            self.annotations.append(elem)
-
-class _ImageInfoConverter(_TaskConverter):
-    def is_empty(self):
-        return len(self._data['images']) == 0
-
-    def save_categories(self, dataset):
-        pass
-
-    def save_annotations(self, item):
-        pass
-
-class _CaptionsConverter(_TaskConverter):
-    def save_categories(self, dataset):
-        pass
-
-    def save_annotations(self, item):
-        for ann in item.annotations:
-            if ann.type != AnnotationType.caption:
-                continue
-
-            elem = {
-                'id': self._get_ann_id(ann),
-                'image_id': _cast(item.id, int, 0),
-                'category_id': 0, # NOTE: workaround for a bug in cocoapi
-                'caption': ann.caption,
-            }
-            if 'score' in ann.attributes:
-                elem['score'] = float(ann.attributes['score'])
-
-            self.annotations.append(elem)
+        return elem
 
 class _KeypointsConverter(_InstancesConverter):
     def save_categories(self, dataset):
@@ -351,45 +367,61 @@ class _KeypointsConverter(_InstancesConverter):
             self.categories.append(cat)
 
     def save_annotations(self, item):
-        for ann in item.annotations:
-            if ann.type != AnnotationType.points:
-                continue
+        point_annotations = [a for a in item.annotations
+            if a.type == AnnotationType.points]
+        if not point_annotations:
+            return
 
-            elem = {
-                'id': self._get_ann_id(ann),
-                'image_id': _cast(item.id, int, 0),
-                'category_id': _cast(ann.label, int, -1) + 1,
-            }
-            if 'score' in ann.attributes:
-                elem['score'] = float(ann.attributes['score'])
+        # Create annotations for solitary keypoints annotations
+        for points in self.find_solitary_points(item.annotations):
+            instance = [points, [], None, points.get_bbox()]
+            elem = super().convert_instance(instance, item)
+            elem.update(self.convert_points_object(points))
+            if elem:
+                self.annotations.append(elem)
 
-            keypoints = []
-            points = ann.get_points()
-            visibility = ann.visibility
-            for index in range(0, len(points), 2):
-                kp = points[index : index + 2]
-                state = visibility[index // 2].value
-                keypoints.extend([*kp, state])
+        # Create annotations for complete instance + keypoints annotations
+        super().save_annotations(item)
 
-            num_visible = len([v for v in visibility \
-                if v == PointsObject.Visibility.visible])
+    @classmethod
+    def find_solitary_points(cls, annotations):
+        solitary_points = []
 
-            bbox = find(item.annotations, lambda x: \
-                x.group == ann.group and \
-                x.type == AnnotationType.bbox and
-                x.label == ann.label)
-            if bbox is None:
-                bbox = BboxObject(*ann.get_bbox())
-            elem.update({
-                'segmentation': bbox.get_polygon(),
-                'area': bbox.area(),
-                'bbox': bbox.get_bbox(),
-                'iscrowd': 0,
-                'keypoints': keypoints,
-                'num_keypoints': num_visible,
-            })
+        for g_id, group in groupby(annotations, lambda a: a.group):
+            if g_id is not None and not cls.find_instance_anns(group):
+                group = [a for a in group if a.type == AnnotationType.points]
+            solitary_points.extend(group)
 
-            self.annotations.append(elem)
+        return solitary_points
+
+    @staticmethod
+    def convert_points_object(ann):
+        keypoints = []
+        points = ann.get_points()
+        visibility = ann.visibility
+        for index in range(0, len(points), 2):
+            kp = points[index : index + 2]
+            state = visibility[index // 2].value
+            keypoints.extend([*kp, state])
+
+        num_annotated = len([v for v in visibility \
+            if v != PointsObject.Visibility.absent])
+
+        return {
+            'keypoints': keypoints,
+            'num_keypoints': num_annotated,
+        }
+
+    def convert_instance(self, instance, item):
+        points_ann = find(item.annotations, lambda x: \
+            x.type == AnnotationType.points and x.group == instance[0].group)
+        if not points_ann:
+            return None
+
+        elem = super().convert_instance(instance, item)
+        elem.update(self.convert_points_object(points_ann))
+
+        return elem
 
 class _LabelsConverter(_TaskConverter):
     def save_categories(self, dataset):
