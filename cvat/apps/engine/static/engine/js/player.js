@@ -102,8 +102,8 @@ class FrameBuffer extends Listener {
         const chunkIdx = Math.floor(last / this._chunkSize);
         if (chunkIdx in this._requestedChunks
             && this._requestedChunks[chunkIdx].requestedFrames.has(last)) {
-            if (isReject) {
-                this._requestedChunks[chunkIdx].reject(new Set());
+            if (isReject && this._requestedChunks[chunkIdx].reject) {
+                this._requestedChunks[chunkIdx].reject(last);
                 this._requestedChunks[chunkIdx].requestedFrames.clear();
             }
             const frameData = await this._frameProvider.require(last);
@@ -120,7 +120,7 @@ class FrameBuffer extends Listener {
                     }
                 }
             }
-        } else {
+        } else if (!isReject) {
             this._loaded = last;
             this.notify();
         }
@@ -490,6 +490,11 @@ class PlayerModel extends Listener {
             this.notify();
             return false;
         }
+
+        if (requestedFrame === this._frame.current && this._image !== null) {
+            return false;
+        }
+
         try {
             if (!this._bufferedFrames.has(requestedFrame)) {
                 this._bufferedFrames.clear();
@@ -809,12 +814,12 @@ class PlayerController {
         }
     }
 
-    progressMouseDown() {
+    progressMouseDown(e) {
         this._rewinding = true;
+        this._rewind(e);
     }
 
-    progressMouseUp(e) {
-        this._rewind(e);
+    progressMouseUp() {
         this._rewinding = false;
         if (this._events.jump) {
             this._events.jump.close();
@@ -823,10 +828,10 @@ class PlayerController {
     }
 
     progressMouseMove(e) {
-        this._rewind(e, true);
+        this._rewind(e);
     }
 
-    _rewind(e, isMove = false) {
+    _rewind(e) {
         if (this._rewinding) {
             if (!this._events.jump) {
                 this._events.jump = Logger.addContinuedEvent(Logger.EventType.jumpFrame);
@@ -835,10 +840,12 @@ class PlayerController {
             const { frames } = this._model;
             const progressWidth = e.target.clientWidth;
             const x = e.clientX + window.pageXOffset - e.target.offsetLeft;
-            const percent = x / progressWidth;
+            const percent = Math.clamp(x / progressWidth, 0, 1);
             const targetFrame = Math.round((frames.stop - frames.start) * percent);
-            this._model.pause();
-            this._model.shift(targetFrame + frames.start, !isMove);
+            if (targetFrame !== frames.current) {
+                this._model.pause();
+                this._model.shift(targetFrame + frames.start, true);
+            }
         }
     }
 
@@ -952,7 +959,6 @@ class PlayerView {
         this._counterClockwiseRotationButtonUI = $('#counterClockwiseRotation');
         this._rotationWrapperUI = $('#rotationWrapper');
         this._rotatateAllImagesUI = $('#rotateAllImages');
-        this._updateCall = performance.now();
 
         this._latestDrawnImage = null;
         this._clockwiseRotationButtonUI.on('click', () => {
@@ -985,6 +991,7 @@ class PlayerView {
         this._playerContentUI.on('mousemove', e => this._controller.frameMouseMove(e));
         this._progressUI.on('mousedown', e => this._controller.progressMouseDown(e));
         this._progressUI.on('mouseup', e => this._controller.progressMouseUp(e));
+        this._progressUI.on('mousemove', e => this._controller.progressMouseMove(e));
         this._playButtonUI.on('click', () => this._controller.play());
         this._pauseButtonUI.on('click', () => this._controller.pause());
         this._nextButtonUI.on('click', () => this._controller.next());
