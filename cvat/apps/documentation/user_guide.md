@@ -31,7 +31,7 @@
     - [Points in annotation mode](#points-in-annotation-mode)
     - [Linear interpolation with one point](#linear-interpolation-with-one-point)
   - [Annotation with Auto Segmentation](#annotation-with-auto-segmentation)
-  - [Auto annotation](#auto-annotation)
+  - [Automatic annotation](#auto-annotation)
   - [Shape grouping](#shape-grouping)
   - [Filter](#filter)
   - [Analytics](#analytics)
@@ -1078,50 +1078,47 @@ a shape is created and you can work with it as a polygon.
 
 ![](static/documentation/images/gif009_DETRAC.gif)
 
-## Auto annotation
+## Automatic annotation
 
-1.  First you need to upload deep learning (DL) models using model manager.
-    Only models in OpenVINO™ toolkit format are supported.
-    If you would like to annotate a task with a custom model please convert it
-    to the intermediate representation (IR) format via the model optimizer tool.
-    See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
+Automatic Annotation is used for creating preliminary annotations. 
+To use Automatic Annotation you need a DL model. You can use primary models or models uploaded by a user. 
+You can find the list of available models in the ``Models`` section.
 
-    ![](static/documentation/images/image099.jpg)
+1.  To launch automatic annotation, you should open the dashboard and find a task which you want to annotate. 
+    Then click the ``Actions`` button and choose option ``Automatic Annotation`` from the dropdown menu.
 
-1.  Enter model name, and select model file using "Select files" button. To annotate a task with a custom model
-    you need to prepare 4 files:
-    - ``Model config`` (*.xml) - a text file with network configuration. 
-    - ``Model weights`` (*.bin) - a binary file with trained weights. 
-    - ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with 
-    string values for label numbers.
-    - ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
-    which can be processed by CVAT. 
-    More about creating model files can be found [here](/cvat/apps/auto_annotation).
+    ![](static/documentation/images/image119_DETRAC.jpg)
 
-    ![](static/documentation/images/image104.jpg)
-
-1.  After downloading a model you have to  create a task or find an already created one and
-    click ``Run Auto Annotation`` button.
-
-    ![](static/documentation/images/image119.jpg)
-
-1.  In dialog window select a model you need. If it's necessary select the ``Delete current annotation`` checkbox.
-    Adjust the labels so that the task labels will correspond to the labels of the DL model.
-    Click ``Start`` to begin the auto annotatiton process.
+1.  In the dialog window select a model you need. DL models are created for specific labels, e.g. 
+    the Crossroad model was taught using footage from cameras located above the highway and it is best to 
+    use this model for the tasks with similar camera angles. 
+    If it's necessary select the ``Clean old annotations`` checkbox. 
+    Adjust the labels so that the task labels will correspond to the labels of the DL model. 
+    For example, let’s consider a task where you have to annotate labels “car” and “person”. 
+    You should connect the “person” label from the model to the “person” label in the task. 
+    As for the “car” label, you should choose the most fitting label available in the model - the “vehicle” label. 
+    The task requires to annotate cars only and choosing the “vehicle” label implies annotation of all vehicles, 
+    in this case using auto annotation will help you complete the task faster. 
+    Click ``Submit`` to begin the automatic annotation process.
 
     ![](static/documentation/images/image120.jpg)
 
-1.  At runtime, you can see percentage of completion. You can also cancel the auto annotation
-    process by clicking ``Cancel Auto Annotation``
+1.  At runtime, you can see the percentage of completion.
 
-    ![](static/documentation/images/image121.jpg)
+    ![](static/documentation/images/image121_DETRAC.jpg)
 
 1.  As a result, you will get an annotation with separate bounding boxes (or other shapes)
 
     ![](static/documentation/images/gif014_DETRAC.gif)
 
-1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects, and
-    merging into tracks using ``Merge Shape``
+1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects and
+    merging into tracks using ``ReID merge`` function. Click the ``ReID merge`` button in the menu. 
+    You can use the default settings (for more information click [here](cvat/apps/reid/README.md)). 
+    To launch the merging process click ``Merge``. Each frame of the track will be a key frame. 
+
+    ![](static/documentation/images/image133.jpg)
+
+1.  You can remove false positives and edit tracks using ``Split`` and ``Merge`` functions.
 
     ![](static/documentation/images/gif015_DETRAC.gif)
 
@@ -1216,7 +1213,7 @@ If your CVAT instance is created with analytics support, you can press the
 "analytics" button in dashboard, a new tab with analytics and journals will
 be opened.
 
-![](static/documentation/images/image113.jpg)
+![](static/documentation/images/image113_DETRAC.jpg)
 
 It allows you to see how much working time every user spend on each task and how much they did, over any time range.
 
