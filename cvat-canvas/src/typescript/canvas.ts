@@ -27,9 +27,7 @@ import {
     CanvasViewImpl,
 } from './canvasView';
 
-
-import '../css/canvas.css';
-
+import '../scss/canvas.scss';
 
 interface Canvas {
     html(): HTMLDivElement;

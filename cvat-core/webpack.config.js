@@ -46,16 +46,7 @@ const webConfig = {
                 options: {
                     presets: [
                         ['@babel/preset-env', {
-                            targets: {
-                                chrome: 58,
-                            },
-                            useBuiltIns: 'usage',
-                            corejs: 3,
-                            loose: false,
-                            spec: false,
-                            debug: false,
-                            include: [],
-                            exclude: [],
+                            targets: '> 2.5%', // https://github.com/browserslist/browserslist
                         }],
                     ],
                     sourceType: 'unambiguous',
