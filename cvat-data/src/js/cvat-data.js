@@ -6,11 +6,9 @@
 /* global
     require:true
 */
-// require("./decode_video")
-// eslint-disable-next-line max-classes-per-file
 const { Mutex } = require('async-mutex');
+// eslint-disable-next-line max-classes-per-file
 const { MP4Reader, Bytestream } = require('./3rdparty/mp4');
-
 
 const BlockType = Object.freeze({
     MP4VIDEO: 'mp4video',
