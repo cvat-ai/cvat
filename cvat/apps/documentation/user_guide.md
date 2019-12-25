@@ -1080,7 +1080,7 @@ a shape is created and you can work with it as a polygon.
 
 ## Automatic annotation
 
-Automatic Annotation is used for creating preliminary annotation. 
+Automatic Annotation is used for creating preliminary annotations. 
 To use Automatic Annotation you need a DL model. You can use primary models or models uploaded by a user. 
 You can find the list of available models in the ``Models`` section.
 
@@ -1089,21 +1089,21 @@ You can find the list of available models in the ``Models`` section.
 
     ![](static/documentation/images/image119_DETRAC.jpg)
 
-1.  In dialogue window select a model you need. DL models are created for specific labels, e.g. 
-    the Crossroad model was created whit using footage from cameras located above the highway, 
-    which is you should use this model with the tasks with similar camera angles. 
+1.  In the dialog window select a model you need. DL models are created for specific labels, e.g. 
+    the Crossroad model was taught using footage from cameras located above the highway and it is best to 
+    use this model for the tasks with similar camera angles. 
     If it's necessary select the ``Clean old annotations`` checkbox. 
     Adjust the labels so that the task labels will correspond to the labels of the DL model. 
     For example, let’s consider a task where you have to annotate labels “car” and “person”. 
-    In this case you should choose the “person” label from the model to connect to the “person” label in the task. 
+    You should connect the “person” label from the model to the “person” label in the task. 
     As for the “car” label, you should choose the most fitting label available in the model - the “vehicle” label. 
-    Choosing the “vehicle” label implies annotation of all vehicles and however the task requires 
-    to annotate cars only, in this case using auto annotation will help you to complete the task faster. 
+    The task requires to annotate cars only and choosing the “vehicle” label implies annotation of all vehicles, 
+    in this case using auto annotation will help you complete the task faster. 
     Click ``Submit`` to begin the automatic annotation process.
 
     ![](static/documentation/images/image120.jpg)
 
-1.  At runtime, you can see percentage of completion.
+1.  At runtime, you can see the percentage of completion.
 
     ![](static/documentation/images/image121_DETRAC.jpg)
 
@@ -1111,10 +1111,10 @@ You can find the list of available models in the ``Models`` section.
 
     ![](static/documentation/images/gif014_DETRAC.gif)
 
-1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects, and
-    merging into tracks using ``ReID merge``. Click the ``ReID merge`` button in the menu. 
+1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects and
+    merging into tracks using ``ReID merge`` function. Click the ``ReID merge`` button in the menu. 
     You can use the default settings (for more information click [here](cvat/apps/reid/README.md)). 
-    To launch the merging process click ``Merge``. Each frame of the track will be a key. 
+    To launch the merging process click ``Merge``. Each frame of the track will be a key frame. 
 
     ![](static/documentation/images/image133.jpg)
 
