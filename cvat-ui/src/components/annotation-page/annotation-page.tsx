@@ -18,7 +18,7 @@ interface Props {
 
 interface State {
     frame: number | null;
-    playingTimeout: number | null;
+    playing: boolean;
 }
 
 export default class AnnotationPageComponent extends React.PureComponent<Props, State> {
@@ -26,9 +26,28 @@ export default class AnnotationPageComponent extends React.PureComponent<Props, 
         super(props);
         this.state = {
             frame: null,
-            playingTimeout: null,
+            playing: false,
         };
     }
+
+    private setupCanvasCallback = (): void => {
+        const {
+            jobInstance,
+        } = this.props;
+
+        const {
+            frame,
+            playing,
+        } = this.state;
+
+        if (jobInstance && frame !== null && playing && frame < jobInstance.stopFrame) {
+            window.setTimeout(this.changeFrameTimeoutCallback, 30);
+        } else {
+            this.setState({
+                playing: false,
+            });
+        }
+    };
 
     private changeFrameTimeoutCallback = (): void => {
         const {
@@ -40,16 +59,9 @@ export default class AnnotationPageComponent extends React.PureComponent<Props, 
         } = this.state;
 
         if (jobInstance && frame !== null && jobInstance.stopFrame > frame) {
-            // change frame here
-
             this.setState((prevState: State) => ({
                 frame: prevState.frame as number + 1,
-                playingTimeout: window.setTimeout(this.changeFrameTimeoutCallback, 30),
             }));
-        } else {
-            this.setState({
-                playingTimeout: null,
-            });
         }
     };
 
@@ -62,7 +74,7 @@ export default class AnnotationPageComponent extends React.PureComponent<Props, 
 
         const {
             frame,
-            playingTimeout,
+            playing,
         } = this.state;
 
         if (jobInstance === null) {
@@ -89,7 +101,7 @@ export default class AnnotationPageComponent extends React.PureComponent<Props, 
                 <AnnotationTopBarComponent
                     jobInstance={jobInstance}
                     frame={frame}
-                    playingTimeout={playingTimeout}
+                    playing={playing}
                     onChangeFrame={(_frame: number): void => {
                         this.setState({
                             frame: Math.max(
@@ -98,22 +110,28 @@ export default class AnnotationPageComponent extends React.PureComponent<Props, 
                             ),
                         });
                     }}
-                    onPlay={(playing: boolean): void => {
-                        if (playing && playingTimeout === null) {
-                            const timeout = window.setTimeout(this.changeFrameTimeoutCallback, 30);
+                    onPlay={(_playing: boolean): void => {
+                        const notTheLastFrame = frame !== null && frame < jobInstance.stopFrame;
+                        if (_playing && notTheLastFrame) {
+                            this.setState((prevState: State) => ({
+                                playing: true,
+                                frame: prevState.frame as number + 1,
+                            }));
+                        } else {
                             this.setState({
-                                playingTimeout: timeout,
-                            });
-                        } else if (!playing && playingTimeout !== null) {
-                            clearTimeout(playingTimeout);
-
-                            this.setState({
-                                playingTimeout: null,
+                                playing: false,
                             });
                         }
+                        this.setState({
+                            playing: _playing && frame !== null && frame < jobInstance.stopFrame,
+                        });
                     }}
                 />
-                <StandardWorkspaceComponent jobInstance={jobInstance} frame={frame} />
+                <StandardWorkspaceComponent
+                    jobInstance={jobInstance}
+                    frame={frame}
+                    onSetupCanvas={this.setupCanvasCallback}
+                />
             </Layout>
         );
     }

@@ -35,7 +35,7 @@ import {
 interface Props {
     jobInstance: any;
     frame: number | null;
-    playingTimeout: number | null;
+    playing: boolean;
     onChangeFrame(frame: number): void;
     onPlay(playing: boolean): void;
 }
@@ -44,7 +44,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
         jobInstance,
         frame,
-        playingTimeout,
+        playing,
         onChangeFrame,
         onPlay,
     } = props;
@@ -121,7 +121,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 />
                             </Tooltip>
 
-                            {playingTimeout === null
+                            {!playing
                                 ? (
                                     <Tooltip overlay='Play'>
                                         <Icon

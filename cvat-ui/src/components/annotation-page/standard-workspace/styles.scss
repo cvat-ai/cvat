@@ -10,6 +10,7 @@
     left: auto;
     background-color: $background-color-2;
     border-left: 1px solid $border-color-1;
+    z-index: 2;
 }
 
 .cvat-annotation-page-controls-sidebar {
