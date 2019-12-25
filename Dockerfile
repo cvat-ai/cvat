@@ -90,6 +90,13 @@ RUN if [ "$AUTO_SEGMENTATION" = "yes" ]; then \
     bash -i /tmp/components/auto_segmentation/install.sh; \
     fi
 
+ARG TRACKING
+ENV TRACKING=${TRACKING}
+ENV TRACKING_PATH=${HOME}/tracking
+RUN if [ "$TRACKING" = "yes" ]; then \
+    bash -i /tmp/components/tracking/install.sh; \
+    fi
+
 ARG WITH_TESTS
 RUN if [ "$WITH_TESTS" = "yes" ]; then \
         wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
