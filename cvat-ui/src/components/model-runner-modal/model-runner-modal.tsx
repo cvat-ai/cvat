@@ -389,7 +389,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
             visible && (
                 <Modal
                     closable={false}
-                    okType='danger'
+                    okType='primary'
                     okText='Submit'
                     onOk={(): void => {
                         runInference(

@@ -133,6 +133,11 @@ RUN apt-get update && \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
     fi
 
+# Install poppler for working with pdfs
+RUN apt-get update && \
+    apt install -y poppler-utils && \
+    rm -rf /var/lib/apt/lists/*
+
 # CUDA support
 ARG CUDA_SUPPORT
 ENV CUDA_SUPPORT=${CUDA_SUPPORT}

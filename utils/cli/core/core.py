@@ -125,8 +125,9 @@ class CLI():
             if response.status_code == 201:
                 break
 
-        log.info('Upload job for Task ID {} \
-             with annotation file {} finished'.format(task_id, filename))
+        logger_string = "Upload job for Task ID {} ".format(task_id) +\
+            "with annotation file {} finished".format(filename)
+        log.info(logger_string)
 
 
 class CVAT_API_V1():

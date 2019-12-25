@@ -151,14 +151,18 @@ class AnnotationSaverModel extends Listener {
             tags: [],
         };
 
+        const keys = ['id', 'label_id', 'group', 'frame',
+            'occluded', 'z_order', 'points', 'type', 'shapes',
+            'attributes', 'value', 'spec_id', 'outside'];
+
         // Compare initial state objects and export state objects
         // in order to get updated and created objects
         for (const type of Object.keys(this._initialObjects)) {
             for (const obj of exported[type]) {
                 if (obj.id in this._initialObjects[type]) {
-                    const exportedHash = JSON.stringify(obj);
-                    const initialSash = JSON.stringify(this._initialObjects[type][obj.id]);
-                    if (exportedHash !== initialSash) {
+                    const exportedHash = JSON.stringify(obj, keys);
+                    const initialHash = JSON.stringify(this._initialObjects[type][obj.id], keys);
+                    if (exportedHash !== initialHash) {
                         updated[type].push(obj);
                     }
                 } else if (typeof obj.id === 'undefined') {
@@ -241,11 +245,18 @@ class AnnotationSaverModel extends Listener {
                 this._shapeCollection.flush = false;
                 this._version = savedObjects.version;
                 this._resetState();
+
                 for (const type of Object.keys(this._initialObjects)) {
                     for (const object of savedObjects[type]) {
+                        if (object.shapes) {
+                            for (const shape of object.shapes) {
+                                delete shape.id;
+                            }
+                        }
                         this._initialObjects[type][object.id] = object;
                     }
                 }
+
                 this._version = savedObjects.version;
             } else {
                 const [created, updated, deleted] = this._split(exported);
@@ -253,8 +264,14 @@ class AnnotationSaverModel extends Listener {
                 const savedCreated = await this._create(created);
                 this._updateCreatedObjects(created, savedCreated, mapping);
                 this._version = savedCreated.version;
+
                 for (const type of Object.keys(this._initialObjects)) {
                     for (const object of savedCreated[type]) {
+                        if (object.shapes) {
+                            for (const shape of object.shapes) {
+                                delete shape.id;
+                            }
+                        }
                         this._initialObjects[type][object.id] = object;
                     }
                 }
@@ -264,6 +281,11 @@ class AnnotationSaverModel extends Listener {
                 this._version = savedUpdated.version;
                 for (const type of Object.keys(this._initialObjects)) {
                     for (const object of savedUpdated[type]) {
+                        if (object.shapes) {
+                            for (const shape of object.shapes) {
+                                delete shape.id;
+                            }
+                        }
                         this._initialObjects[type][object.id] = object;
                     }
                 }
@@ -375,7 +397,7 @@ class AnnotationSaverView {
         });
 
         window.onbeforeunload = (e) => {
-            if (this._controller.hasUnsavedChanges()) { // eslint-disable-line react/no-this-in-sfc
+            if (this._controller.hasUnsavedChanges()) {
                 const message = 'You have unsaved changes. Leave this page?';
                 e.returnValue = message;
                 return message;
