@@ -566,10 +566,6 @@ class CocoConverter(Converter):
     def _split_tasks_string(s):
         return [CocoTask[i.strip()] for i in s.split(',')]
 
-    @staticmethod
-    def _parse_segmentation_mode(s):
-        return SegmentationMode[s]
-
     @classmethod
     def build_cmdline_parser(cls, parser=None):
         import argparse
@@ -581,7 +577,6 @@ class CocoConverter(Converter):
         parser.add_argument('--segmentation-mode',
             choices=[m.name for m in SegmentationMode],
             default=SegmentationMode.guess.name,
-            type=cls._parse_segmentation_mode,
             help="Save mode for instance segmentation: "
                 "- '{sm.guess.name}': guess the mode for each instance, "
                     "use 'is_crowd' attribute as hint; "
