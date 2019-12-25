@@ -53,10 +53,10 @@ def create_data_objects(apps, schema_editor):
 
             db_data_dir = os.path.join(settings.MEDIA_DATA_ROOT, str(db_data.id))
             os.makedirs(db_data_dir)
-            compressed_cache_dir = os.path.join(db_data_dir, 'cache', 'compressed')
+            compressed_cache_dir = os.path.join(db_data_dir, 'compressed')
             os.makedirs(compressed_cache_dir)
 
-            original_cache_dir = os.path.join(db_data_dir, 'cache', 'original')
+            original_cache_dir = os.path.join(db_data_dir, 'original')
             os.makedirs(original_cache_dir)
 
             old_db_task_dir = os.path.join(settings.DATA_ROOT, str(db_task.id))
@@ -97,8 +97,10 @@ def create_data_objects(apps, schema_editor):
                             reader = ArchiveReader(archives, get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
                         elif zips:
                             reader = ZipReader(archives, get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
-                        else:
+                        elif pdfs:
                             reader = PdfReader(pdfs, get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
+                        else:
+                            print('No raw data found for task {}'.format(db_task.id))
 
                     original_chunk_writer = ZipCompressedChunkWriter(100)
                     compressed_chunk_writer = ZipChunkWriter(db_data.image_quality)
@@ -128,13 +130,27 @@ def create_data_objects(apps, schema_editor):
                 db_image.path = fix_path(db_image.path)
                 db_image.save()
 
-            db_task.clientfile_set.all().delete()
-            db_task.serverfile_set.all().delete()
-            db_task.remotefile_set.all().delete()
+            old_raw_dir = os.path.join(old_db_task_dir, '.upload')
+            new_raw_dir = os.path.join(db_data_dir, 'raw')
+
+            for client_file in db_task.clientfile_set.all():
+                client_file.file = client_file.file.path.replace(old_raw_dir, new_raw_dir)
+                client_file.save()
+
+            for server_file in db_task.serverfile_set.all():
+                server_file.file = server_file.file.replace(old_raw_dir, new_raw_dir)
+                server_file.save()
+
+            for remote_file in db_task.remotefile_set.all():
+                remote_file.file = remote_file.file.replace(old_raw_dir, new_raw_dir)
+                remote_file.save()
 
             db_task.save()
 
-            shutil.rmtree(old_db_task_dir)
+            #move old raw data
+            if os.path.exists(old_db_task_dir):
+                shutil.move(old_raw_dir, new_raw_dir)
+
         except Exception as e:
             print('Cannot migrate data for the task: {}'.format(db_task.id))
             print(str(e))

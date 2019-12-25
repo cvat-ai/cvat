@@ -123,7 +123,8 @@ class ArchiveReader(DirectoryReader):
         )
 
     def __del__(self):
-        self.delete_tmp_dir(self._tmp_dir)
+        if (self._tmp_dir):
+            self.delete_tmp_dir(self._tmp_dir)
 
     @property
     def image_names(self):
@@ -152,7 +153,8 @@ class PdfReader(DirectoryReader):
         )
 
     def __del__(self):
-        self.delete_tmp_dir(self._tmp_dir)
+        if (self._tmp_dir):
+            self.delete_tmp_dir(self._tmp_dir)
 
     @property
     def image_names(self):

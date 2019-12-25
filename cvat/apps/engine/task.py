@@ -289,10 +289,5 @@ def _create_thread(tid, data):
 
     extractors[0].save_preview(db_data.get_preview_path())
 
-    db_data.client_files.all().delete()
-    db_data.server_files.all().delete()
-    db_data.remote_files.all().delete()
-    shutil.rmtree(db_data.get_upload_dirname())
-
     slogger.glob.info("Founded frames {} for Data #{}".format(db_data.size, db_data.id))
     _save_task_to_db(db_task)

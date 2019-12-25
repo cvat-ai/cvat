@@ -66,16 +66,13 @@ class Data(models.Model):
         return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
 
     def get_upload_dirname(self):
-        return os.path.join(self.get_data_dirname(), ".upload")
-
-    def get_cache_dirname(self):
-        return os.path.join(self.get_data_dirname(), "cache")
+        return os.path.join(self.get_data_dirname(), "raw")
 
     def get_compressed_cache_dirname(self):
-        return os.path.join(self.get_cache_dirname(), "compressed")
+        return os.path.join(self.get_data_dirname(), "compressed")
 
     def get_original_cache_dirname(self):
-        return os.path.join(self.get_cache_dirname(), "original")
+        return os.path.join(self.get_data_dirname(), "original")
 
     @staticmethod
     def _get_chunk_name(chunk_number, chunk_type):

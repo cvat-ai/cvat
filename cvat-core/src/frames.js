@@ -100,14 +100,20 @@
             );
             const chunkNumber = Math.floor(this.number / chunkSize);
 
-            const onDecodeAll = () => {
+            const onDecodeAll = (frameNumber) => {
                 if (frameDataCache[this.tid].activeChunkRequest
                     && chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber) {
                     const callbackArray = frameDataCache[this.tid].activeChunkRequest.callbacks;
-                    for (const callback of callbackArray) {
-                        callback.resolve(provider.frame(callback.frameNumber));
+                    for (let i = callbackArray.length - 1; i >= 0; --i) {
+                        if (callbackArray[i].frameNumber === frameNumber) {
+                            const callback = callbackArray[i];
+                            callbackArray.splice(i, 1);
+                            callback.resolve(provider.frame(callback.frameNumber));
+                        }
                     }
-                    frameDataCache[this.tid].activeChunkRequest = undefined;
+                    if (callbackArray.length === 0) {
+                        frameDataCache[this.tid].activeChunkRequest = undefined;
+                    }
                 }
             };
 
