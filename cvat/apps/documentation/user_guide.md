@@ -531,30 +531,21 @@ Usage examples:
 
 ### Task synchronization with a repository
 
-1.  At the end of the annotation process, a task is synchronized clicking
-    the `` Synchronize`` on the task page. Notice: this feature
+1.  At the end of the annotation process, a task is synchronized by clicking
+    `` Synchronize`` on the task page. Notice: this feature
     works only if a git repository was specified when the task was created.
 
     ![](static/documentation/images/image106.jpg)
 
-1.  Clicking `` Sync`` starts synchronization of annotation with the
-    repository, the url address of which is specified in the
-    ``Repository URL`` field. The synchronization process may take some time.
-
-    ![](static/documentation/images/image107.jpg)
-
-    ![](static/documentation/images/image108.jpg)
-
-1.  After synchronization, the task in the list is highlighted in yellow. The
-    annotation is now in the repository, in a temporary branch.
+1.  After synchronization the button ``Sync`` is highlighted in green. The
+    annotation is now in the repository in a temporary branch.
 
     ![](static/documentation/images/image109.jpg)
 
 1.  The next step is to go to the repository and manually create a pull request to the main branch.
-1.  After confirming the PR, when the annotation is saved in the main branch, the color of the task changes to green.
+1.  After confirming the PR, when the annotation is saved in the main branch, the color of the task changes to blue.
 
     ![](static/documentation/images/image110.jpg)
-    ![](static/documentation/images/image111.jpg)
 
 ### Vocabulary
 
