@@ -56,6 +56,7 @@ setuptools.setup(
         'Pillow',
         'PyYAML',
         'pycocotools',
+        'scikit-image',
         'tensorboardX',
         'tensorflow',
     ],
