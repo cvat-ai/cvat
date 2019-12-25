@@ -294,7 +294,8 @@ class _InstancesConverter(_TaskConverter):
         h, w, _ = item.image.shape
         instances = [self.find_instance_parts(i, w, h) for i in instances]
 
-        instances = self.crop_segments(instances, w, h)
+        if self._context._crop_covered:
+            instances = self.crop_segments(instances, w, h)
 
         for instance in instances:
             elem = self.convert_instance(instance, item)
@@ -461,7 +462,8 @@ class _Converter:
     }
 
     def __init__(self, extractor, save_dir,
-            tasks=None, save_images=False, segmentation_mode=None):
+            tasks=None, save_images=False, segmentation_mode=None,
+            crop_covered=False):
         assert tasks is None or isinstance(tasks, (CocoTask, list))
         if tasks is None:
             tasks = list(self._TASK_CONVERTER)
@@ -485,6 +487,8 @@ class _Converter:
         if isinstance(segmentation_mode, str):
             segmentation_mode = SegmentationMode[segmentation_mode]
         self._segmentation_mode = segmentation_mode
+
+        self._crop_covered = crop_covered
 
     def make_dirs(self):
         self._images_dir = osp.join(self._save_dir, CocoPath.IMAGES_DIR)
@@ -544,6 +548,7 @@ class _Converter:
 class CocoConverter(Converter):
     def __init__(self,
             tasks=None, save_images=False, segmentation_mode=None,
+            crop_covered=False,
             cmdline_args=None):
         super().__init__()
 
@@ -551,6 +556,7 @@ class CocoConverter(Converter):
             'tasks': tasks,
             'save_images': save_images,
             'segmentation_mode': segmentation_mode,
+            'crop_covered': crop_covered,
         }
 
         if cmdline_args is not None:
@@ -584,6 +590,9 @@ class CocoConverter(Converter):
                 "- '{sm.mask.name}': save masks, "
                     "merge and convert polygons, prefer masks; "
                 "(default: %(default)s)".format(sm=SegmentationMode))
+        parser.add_argument('--crop-covered', action='store_true',
+            help="Crop covered segments so that background objects' "
+                "segmentation was more accurate (default: %(default)s)")
         parser.add_argument('--tasks', type=cls._split_tasks_string,
             default=None,
             help="COCO task filter, comma-separated list of {%s} "
