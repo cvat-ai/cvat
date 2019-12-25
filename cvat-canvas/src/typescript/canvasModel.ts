@@ -3,9 +3,6 @@
 * SPDX-License-Identifier: MIT
 */
 
-// Disable till full implementation
-/* eslint class-methods-use-this: "off" */
-
 import { MasterImpl } from './master';
 
 
@@ -265,6 +262,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }).catch((exception: any): void => {
             throw exception;
         });
+    }
+
+    public resize(width: number, height: number) {
+        this.model.resize(width, height);
     }
 
     public activate(clientID: number, attributeID: number): void {

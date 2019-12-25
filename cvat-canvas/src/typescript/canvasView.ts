@@ -42,6 +42,7 @@ import {
 
 export interface CanvasView {
     html(): HTMLDivElement;
+    updateSize(): void;
 }
 
 interface ShapeDict {
@@ -396,24 +397,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.appendChild(this.content);
 
 
-        // A little hack to get size after first mounting
-        // http://www.backalleycoder.com/2012/04/25/i-want-a-damnodeinserted/
         const self = this;
-        const canvasFirstMounted = (event: AnimationEvent): void => {
-            if (event.animationName === 'loadingAnimation') {
-                const { geometry } = this.controller;
-                geometry.canvas = {
-                    height: self.canvas.clientHeight,
-                    width: self.canvas.clientWidth,
-                };
-
-                this.controller.geometry = geometry;
-                this.geometry = geometry;
-                self.canvas.removeEventListener('animationstart', canvasFirstMounted);
-            }
-        };
-
-        this.canvas.addEventListener('animationstart', canvasFirstMounted);
 
         // Setup API handlers
         this.drawHandler = new DrawHandlerImpl(
@@ -733,6 +717,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.editHandler.cancel();
             }
         }
+    }
+
+    public updateSize(): void {
+        const { geometry } = this.controller;
+        geometry.canvas = {
+            height: this.canvas.clientHeight,
+            width: this.canvas.clientWidth,
+        };
+
+        this.controller.geometry = geometry;
+        this.geometry = geometry;
     }
 
     public html(): HTMLDivElement {

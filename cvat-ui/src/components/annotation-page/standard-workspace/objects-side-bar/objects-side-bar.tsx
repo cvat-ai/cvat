@@ -5,11 +5,15 @@ import {
     Layout,
 } from 'antd';
 
+interface Props {
+    onSidebarFoldUnfold(): void;
+}
+
 interface State {
     collapsed: boolean;
 }
 
-export default class StandardWorkspaceComponent extends React.PureComponent<{}, State> {
+export default class StandardWorkspaceComponent extends React.PureComponent<Props, State> {
     public constructor(props: any) {
         super(props);
         this.state = {
@@ -19,6 +23,8 @@ export default class StandardWorkspaceComponent extends React.PureComponent<{}, 
 
     public render(): JSX.Element {
         const { collapsed } = this.state;
+        const { onSidebarFoldUnfold } = this.props;
+
         return (
             <Layout.Sider
                 className='cvat-annotation-page-objects-sidebar'
@@ -35,13 +41,19 @@ export default class StandardWorkspaceComponent extends React.PureComponent<{}, 
                     className={`cvat-annotation-page-objects-sidebar
                         ant-layout-sider-zero-width-trigger
                         ant-layout-sider-zero-width-trigger-left`}
-                    onClick={
-                        (): void => this.setState(
+                    onClick={(): void => {
+                        this.setState(
                             (prevState: State): State => ({
                                 collapsed: !prevState.collapsed,
                             }),
-                        )
-                    }
+                        );
+
+                        const [sidebar] = window.document
+                            .getElementsByClassName('cvat-annotation-page-objects-sidebar');
+                        sidebar.addEventListener('transitionend', () => {
+                            onSidebarFoldUnfold();
+                        }, { once: true });
+                    }}
                 >
                     {collapsed ? <Icon type='menu-fold' title='Show' />
                         : <Icon type='menu-unfold' title='Hide' />}

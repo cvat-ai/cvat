@@ -32,6 +32,7 @@ import '../scss/canvas.scss';
 interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[]): void;
+    resize(width: number, height: number): void;
     activate(clientID: number, attributeID?: number): void;
     rotate(rotation: Rotation, remember?: boolean): void;
     focus(clientID: number, padding?: number): void;
@@ -64,6 +65,10 @@ class CanvasImpl implements Canvas {
 
     public setup(frameData: any, objectStates: any[]): void {
         this.model.setup(frameData, objectStates);
+    }
+
+    public updateSize(): void {
+        this.view.updateSize();
     }
 
     public activate(clientID: number, attributeID: number = null): void {

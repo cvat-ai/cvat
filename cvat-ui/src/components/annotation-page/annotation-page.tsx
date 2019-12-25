@@ -22,12 +22,14 @@ interface State {
 }
 
 export default class AnnotationPageComponent extends React.PureComponent<Props, State> {
+    private playTimeout: number | null;
     public constructor(props: Props) {
         super(props);
         this.state = {
             frame: null,
             playing: false,
         };
+        this.playTimeout = null;
     }
 
     private setupCanvasCallback = (): void => {
@@ -41,7 +43,7 @@ export default class AnnotationPageComponent extends React.PureComponent<Props, 
         } = this.state;
 
         if (jobInstance && frame !== null && playing && frame < jobInstance.stopFrame) {
-            window.setTimeout(this.changeFrameTimeoutCallback, 30);
+            this.playTimeout = window.setTimeout(this.changeFrameTimeoutCallback, 10);
         } else {
             this.setState({
                 playing: false,
@@ -118,6 +120,9 @@ export default class AnnotationPageComponent extends React.PureComponent<Props, 
                                 frame: prevState.frame as number + 1,
                             }));
                         } else {
+                            if (this.playTimeout) {
+                                clearTimeout(this.playTimeout);
+                            }
                             this.setState({
                                 playing: false,
                             });

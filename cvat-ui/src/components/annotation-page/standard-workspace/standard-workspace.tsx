@@ -22,6 +22,8 @@ export default function StandardWorkspaceComponent(props: Props): JSX.Element {
         onSetupCanvas,
     } = props;
 
+    const canvasWrapper = React.createRef<CanvasWrapperComponent>();
+
     return (
         <Layout>
             <ControlsSideBarComponent />
@@ -29,8 +31,16 @@ export default function StandardWorkspaceComponent(props: Props): JSX.Element {
                 jobInstance={jobInstance}
                 frame={frame}
                 onSetupCanvas={onSetupCanvas}
+                ref={canvasWrapper}
             />
-            <ObjectSideBarComponent />
+            <ObjectSideBarComponent
+                onSidebarFoldUnfold={(): void => {
+                    if (canvasWrapper.current) {
+                        canvasWrapper.current.canvas.updateSize();
+                        canvasWrapper.current.canvas.fit();
+                    }
+                }}
+            />
         </Layout>
     );
 }
