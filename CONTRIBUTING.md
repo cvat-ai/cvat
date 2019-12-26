@@ -134,6 +134,17 @@ wget https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_co
     export AUTO_SEGMENTATION_PATH="/path/to/dir" # dir must contain mask_rcnn_coco.h5 file
 ```
 
+### Tracking
+- Download the GOTURN model if the the OpenCV GOTURN tracker is to be used.
+```sh
+#This downloads it into the cvat folder
+components/tracking/install.sh
+```
+- Add next lines to ``.env/bin/activate``:
+```sh
+    export TRACKING="yes"
+```
+
 ## JavaScript/Typescript coding style
 
 We use the [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript) for JavaScript code with a
