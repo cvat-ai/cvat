@@ -371,7 +371,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(SrcTestExtractor(),
-                CocoInstancesConverter(), test_dir,
+                CocoInstancesConverter(crop_covered=True), test_dir,
                 target_dataset=DstTestExtractor())
 
     def test_can_convert_polygons_to_mask(self):
