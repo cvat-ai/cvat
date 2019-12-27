@@ -14,33 +14,20 @@ onmessage = (e) => {
     const { start, end, block } = e.data;
 
     zip.loadAsync(block).then((_zip) => {
-        const fileMapping = {};
         let index = start;
-        _zip.forEach((relativePath) => {
-            fileMapping[relativePath] = index++;
-        });
-        index = start;
         let inverseUnzippedFilesCount = end;
         _zip.forEach((relativePath) => {
             const fileIndex = index++;
-
             _zip.file(relativePath).async('blob').then((fileData) => {
-                const reader = new FileReader();
-                reader.onload = (() => {
+                createImageBitmap(fileData).then((img) => {
                     postMessage({
                         fileName: relativePath,
                         index: fileIndex,
-                        data: reader.result,
+                        data: img,
                         isEnd: inverseUnzippedFilesCount <= start,
                     });
                     inverseUnzippedFilesCount--;
-                    if (inverseUnzippedFilesCount < start) {
-                        // eslint-disable-next-line no-restricted-globals
-                        close();
-                    }
                 });
-
-                reader.readAsDataURL(fileData);
             });
         });
     });

@@ -288,14 +288,12 @@ class FrameProvider {
                         this._decodingBlocks[`${start}:${end}`].rejectCallback(Error(e));
                     }
                     this._decodeThreadCount--;
+                    worker.terminate();
                 };
 
                 worker.onmessage = (event) => {
-                    this._frames[event.data.index] = {
-                        data: event.data.data,
-                        width,
-                        height,
-                    };
+                    this._frames[event.data.index] = event.data.data;
+
                     if (this._decodingBlocks[`${start}:${end}`].resolveCallback) {
                         this._decodingBlocks[`${start}:${end}`].resolveCallback(event.data.index);
                     }
@@ -308,6 +306,7 @@ class FrameProvider {
                     }
 
                     if (event.data.isEnd) {
+                        worker.terminate();
                         delete this._decodingBlocks[`${start}:${end}`];
                         this._decodeThreadCount--;
                     }

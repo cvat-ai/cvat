@@ -176,6 +176,8 @@ def create_data_objects(apps, schema_editor):
             if os.path.exists(old_db_task_dir):
                 shutil.move(old_raw_dir, new_raw_dir)
 
+            shutil.rmtree(old_db_task_dir)
+
         except Exception as e:
             log.error('Cannot migrate data for the task: {}'.format(db_task.id))
             log.error(str(e))

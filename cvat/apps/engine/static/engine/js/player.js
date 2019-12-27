@@ -1163,22 +1163,18 @@ class PlayerView {
         if (this._latestDrawnImage !== image) {
             this._latestDrawnImage = image;
             const ctx = this._playerCanvasBackground[0].getContext('2d');
+            const imageData = image.data;
             if (window.cvatTask.dataChunkType === 'video') {
                 this._playerCanvasBackground.attr('width', image.renderWidth);
                 this._playerCanvasBackground.attr('height', image.renderHeight);
-                const imageData = image.data;
                 ctx.scale(image.renderWidth / image.data.width,
                     image.renderHeight / image.data.height);
                 ctx.putImageData(imageData, 0, 0);
                 ctx.drawImage(this._playerCanvasBackground[0], 0, 0);
             } else {
-                const img = new Image();
-                img.onload = () => {
-                    this._playerCanvasBackground.attr('width', img.width);
-                    this._playerCanvasBackground.attr('height', img.height);
-                    ctx.drawImage(img, 0, 0);
-                };
-                img.src = image.data.data;
+                this._playerCanvasBackground.attr('width', imageData.width);
+                this._playerCanvasBackground.attr('height', imageData.height);
+                ctx.drawImage(imageData, 0, 0);
             }
         }
 
