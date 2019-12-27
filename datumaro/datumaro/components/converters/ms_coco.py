@@ -62,7 +62,7 @@ class _TaskConverter:
 
     def save_image_info(self, item, filename):
         if item.has_image:
-            h, w, _ = item.image.shape
+            h, w = item.image.shape[:2]
         else:
             h = 0
             w = 0
@@ -187,7 +187,7 @@ class _InstancesConverter(_TaskConverter):
                            p.label == ann.label]
                 if polygons:
                     segmentation = [p.get_points() for p in polygons]
-                    h, w, _ = item.image.shape
+                    h, w = item.image.shape[:2]
                     rles = mask_utils.frPyObjects(segmentation, h, w)
                     rle = mask_utils.merge(rles)
                     area = mask_utils.area(rle)
@@ -211,7 +211,7 @@ class _InstancesConverter(_TaskConverter):
                 area = ann.area()
 
                 if self._context._merge_polygons:
-                    h, w, _ = item.image.shape
+                    h, w = item.image.shape[:2]
                     rles = mask_utils.frPyObjects(segmentation, h, w)
                     rle = mask_utils.merge(rles)
                     area = mask_utils.area(rle)
