@@ -48,7 +48,7 @@ def _make_tf_example(item, get_label_id, get_label, save_images=False):
     if not item.has_image:
         raise Exception(
             "Failed to export dataset item '%s': item has no image" % item.id)
-    height, width, _ = item.image.shape
+    height, width = item.image.shape[:2]
 
     features.update({
         'image/height': int64_feature(height),

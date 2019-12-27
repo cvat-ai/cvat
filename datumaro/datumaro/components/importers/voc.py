@@ -31,7 +31,7 @@ class VocImporter:
             project.add_source(task.name, {
                 'url': path,
                 'format': extractor_type,
-                'options': extra_params,
+                'options': dict(extra_params),
             })
 
         if len(project.config.sources) == 0:
@@ -69,7 +69,7 @@ class VocResultsImporter:
             project.add_source(task_name, {
                 'url': task_dir,
                 'format': extractor_type,
-                'options': extra_params,
+                'options': dict(extra_params),
             })
 
         if len(project.config.sources) == 0:

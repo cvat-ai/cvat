@@ -67,7 +67,7 @@ class _TaskConverter:
 
     def save_image_info(self, item, filename):
         if item.has_image:
-            h, w, _ = item.image.shape
+            h, w = item.image.shape[:2]
         else:
             h = 0
             w = 0

@@ -92,7 +92,7 @@ class YoloConverter(Converter):
                     if not osp.exists(image_path):
                         save_image(image_path, item.image)
 
-                height, width, _ = item.image.shape
+                height, width = item.image.shape[:2]
 
                 yolo_annotation = ''
                 for bbox in item.annotations:

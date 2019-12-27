@@ -273,6 +273,19 @@ class ProjectTest(TestCase):
 
         self.assertEqual(5, len(dataset))
 
+    def test_can_save_and_load_own_dataset(self):
+        with TestDir() as test_dir:
+            src_project = Project()
+            src_dataset = src_project.make_dataset()
+            item = DatasetItem(id=1)
+            src_dataset.put(item)
+            src_dataset.save(test_dir.path)
+
+            loaded_project = Project.load(test_dir.path)
+            loaded_dataset = loaded_project.make_dataset()
+
+            self.assertEqual(list(src_dataset), list(loaded_dataset))
+
     def test_project_own_dataset_can_be_modified(self):
         project = Project()
         dataset = project.make_dataset()
