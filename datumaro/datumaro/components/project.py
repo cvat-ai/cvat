@@ -97,7 +97,7 @@ class GitWrapper:
     def __init__(self, config=None):
         self.repo = None
 
-        if config is not None:
+        if config is not None and osp.isdir(config.project_dir):
             self.init(config.project_dir)
 
     @staticmethod
