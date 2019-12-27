@@ -335,7 +335,7 @@ class ProjectDataset(Extractor):
 
         own_source = None
         own_source_dir = osp.join(config.project_dir, config.dataset_dir)
-        if osp.isdir(own_source_dir):
+        if osp.isdir(config.project_dir) and osp.isdir(own_source_dir):
             log.disable(log.INFO)
             own_source = env.make_importer(DEFAULT_FORMAT)(own_source_dir) \
                 .make_dataset()
