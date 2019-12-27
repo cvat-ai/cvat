@@ -35,7 +35,7 @@ class DetectionApiImporter:
             project.add_source(subset_name, {
                 'url': subset_path,
                 'format': self.EXTRACTOR_NAME,
-                'options': extra_params,
+                'options': dict(extra_params),
             })
 
         return project
