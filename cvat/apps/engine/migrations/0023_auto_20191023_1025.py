@@ -4,13 +4,15 @@ import os
 import re
 import shutil
 import glob
+import logging
+import sys
 
 from django.db import migrations, models
 import django.db.models.deletion
 from django.conf import settings
 
 from cvat.apps.engine.media_extractors import (VideoReader, ArchiveReader, ZipReader,
-    PdfReader , ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
+    PdfReader , ImageListReader, Mpeg4ChunkWriter,
     ZipChunkWriter, ZipCompressedChunkWriter, get_mime)
 from cvat.apps.engine.models import DataChoice
 
@@ -25,10 +27,28 @@ def create_data_objects(apps, schema_editor):
         match = re.search("step\s*=\s*([1-9]\d*)", frame_filter)
         return int(match.group(1)) if match else 1
 
+    migration_name = os.path.splitext(os.path.basename(__file__))[0]
+    migration_log_file = '{}.log'.format(migration_name)
+    stdout = sys.stdout
+    # redirect all stdout to the file
+    log_file = open(os.path.join(settings.MIGRATIONS_LOGS_ROOT, migration_log_file), 'w')
+    sys.stdout = log_file
+    sys.stderr = log_file
+
+    log = logging.getLogger(migration_name)
+    log.addHandler(logging.StreamHandler(stdout))
+    log.addHandler(logging.StreamHandler(log_file))
+    log.setLevel(logging.INFO)
+
     Task = apps.get_model('engine', 'Task')
     Data = apps.get_model('engine', 'Data')
 
-    for db_task in Task.objects.prefetch_related("image_set").select_related("video").all():
+    db_tasks = list(Task.objects.prefetch_related("image_set").select_related("video").all())
+    task_count = len(db_tasks)
+    log.info('\nStart data migration...')
+    for task_idx, db_task in enumerate(db_tasks):
+        progress = (100 * task_idx) // task_count
+        log.info('Start migration of task ID {}. Progress: {}% | {}/{}.'.format(db_task.id, progress, task_idx + 1, task_count))
         try:
             # create folders
             new_task_dir = os.path.join(settings.TASKS_ROOT, str(db_task.id))
@@ -44,7 +64,7 @@ def create_data_objects(apps, schema_editor):
                 start_frame=db_task.start_frame,
                 stop_frame=db_task.stop_frame,
                 frame_filter=db_task.frame_filter,
-                compressed_chunk_type = DataChoice.VIDEO if db_task.mode == 'interpolation' else DataChoice.IMAGESET,
+                compressed_chunk_type = DataChoice.IMAGESET,
                 original_chunk_type = DataChoice.VIDEO if db_task.mode == 'interpolation' else DataChoice.IMAGESET,
             )
             db_data.save()
@@ -64,21 +84,25 @@ def create_data_objects(apps, schema_editor):
             # prepare media data
             old_task_data_dir = os.path.join(old_db_task_dir, 'data')
             if os.path.exists(old_task_data_dir):
-                if db_task.mode == 'interpolation' and hasattr(db_task, 'video'):
-                    reader = VideoReader([db_task.video.path], get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
-                    original_chunk_writer = Mpeg4ChunkWriter(100)
-                    compressed_chunk_writer = Mpeg4CompressedChunkWriter(db_data.image_quality)
+                if hasattr(db_task, 'video'):
+                    if os.path.exists(db_task.video.path):
+                        reader = VideoReader([db_task.video.path], get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
+                        original_chunk_writer = Mpeg4ChunkWriter(100)
+                        compressed_chunk_writer = ZipCompressedChunkWriter(db_data.image_quality)
 
-                    for chunk_idx, chunk_images in enumerate(reader.slice_by_size(db_data.chunk_size)):
-                        original_chunk_path = os.path.join(original_cache_dir, '{}.mp4'.format(chunk_idx))
-                        original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
+                        for chunk_idx, chunk_images in enumerate(reader.slice_by_size(db_data.chunk_size)):
+                            original_chunk_path = os.path.join(original_cache_dir, '{}.mp4'.format(chunk_idx))
+                            original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
 
-                        compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.mp4'.format(chunk_idx))
-                        compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
+                            compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.zip'.format(chunk_idx))
+                            compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
 
-                    reader.save_preview(os.path.join(db_data_dir, 'preview.jpeg'))
+                        reader.save_preview(os.path.join(db_data_dir, 'preview.jpeg'))
+                    else:
+                        log.error('No raw video data found for task {}'.format(db_task.id))
                 else:
                     original_images = [os.path.realpath(db_image.path) for db_image in db_task.image_set.all()]
+                    reader = None
                     if os.path.exists(original_images[0]): # task created from images
                         reader = ImageListReader(original_images)
                     else: # task created from archive or pdf
@@ -99,20 +123,21 @@ def create_data_objects(apps, schema_editor):
                             reader = ZipReader(archives, get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
                         elif pdfs:
                             reader = PdfReader(pdfs, get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
-                        else:
-                            print('No raw data found for task {}'.format(db_task.id))
 
-                    original_chunk_writer = ZipChunkWriter(100)
-                    compressed_chunk_writer = ZipCompressedChunkWriter(db_data.image_quality)
+                    if not reader:
+                        log.error('No raw data found for task {}'.format(db_task.id))
+                    else:
+                        original_chunk_writer = ZipChunkWriter(100)
+                        compressed_chunk_writer = ZipCompressedChunkWriter(db_data.image_quality)
 
-                    for chunk_idx, chunk_images in enumerate(reader.slice_by_size(db_data.chunk_size)):
-                        compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.zip'.format(chunk_idx))
-                        compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
+                        for chunk_idx, chunk_images in enumerate(reader.slice_by_size(db_data.chunk_size)):
+                            compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.zip'.format(chunk_idx))
+                            compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
 
-                        original_chunk_path = os.path.join(original_cache_dir, '{}.zip'.format(chunk_idx))
-                        original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
+                            original_chunk_path = os.path.join(original_cache_dir, '{}.zip'.format(chunk_idx))
+                            original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
 
-                    reader.save_preview(os.path.join(db_data_dir, 'preview.jpeg'))
+                        reader.save_preview(os.path.join(db_data_dir, 'preview.jpeg'))
 
             # move logs
             for log_file in ('task.log', 'client.log'):
@@ -152,8 +177,8 @@ def create_data_objects(apps, schema_editor):
                 shutil.move(old_raw_dir, new_raw_dir)
 
         except Exception as e:
-            print('Cannot migrate data for the task: {}'.format(db_task.id))
-            print(str(e))
+            log.error('Cannot migrate data for the task: {}'.format(db_task.id))
+            log.error(str(e))
 
     # DL models migration
     if apps.is_installed('auto_annotation'):
@@ -174,8 +199,10 @@ def create_data_objects(apps, schema_editor):
 
                     db_model.save()
             except Exception as e:
-                print('Cannot migrate data for the DL model: {}'.format(db_model.id))
-                print(str(e))
+                log.error('Cannot migrate data for the DL model: {}'.format(db_model.id))
+                log.error(str(e))
+
+    sys.stdout.close()
 
 class Migration(migrations.Migration):
 
