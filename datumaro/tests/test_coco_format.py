@@ -176,17 +176,17 @@ class CocoConverterTest(TestCase):
                 return iter([
                     DatasetItem(id=1, subset='train',
                         annotations=[
-                            CaptionObject('hello', id=1),
-                            CaptionObject('world', id=2),
+                            CaptionObject('hello', id=1, group=1),
+                            CaptionObject('world', id=2, group=2),
                         ]),
                     DatasetItem(id=2, subset='train',
                         annotations=[
-                            CaptionObject('test', id=3),
+                            CaptionObject('test', id=3, group=3),
                         ]),
 
                     DatasetItem(id=3, subset='val',
                         annotations=[
-                            CaptionObject('word', id=1),
+                            CaptionObject('word', id=1, group=1),
                         ]
                     ),
                 ])
@@ -382,7 +382,7 @@ class CocoConverterTest(TestCase):
         class SrcTestExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=0, image=np.zeros((5, 10, 3)),
+                    DatasetItem(id=1, image=np.zeros((6, 10, 3)),
                         annotations=[
                             PolygonObject([0, 0, 4, 0, 4, 4],
                                 label=3, id=4, group=4),
@@ -504,17 +504,17 @@ class CocoConverterTest(TestCase):
                 return iter([
                     DatasetItem(id=1, subset='train',
                         annotations=[
-                            LabelObject(4, id=1),
-                            LabelObject(9, id=2),
+                            LabelObject(4, id=1, group=1),
+                            LabelObject(9, id=2, group=2),
                         ]),
                     DatasetItem(id=2, subset='train',
                         annotations=[
-                            LabelObject(4, id=4),
+                            LabelObject(4, id=4, group=4),
                         ]),
 
                     DatasetItem(id=3, subset='val',
                         annotations=[
-                            LabelObject(2, id=1),
+                            LabelObject(2, id=1, group=1),
                         ]),
                 ])
 
@@ -634,11 +634,11 @@ class CocoConverterTest(TestCase):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=1, annotations=[
-                        LabelObject(2, id=1),
+                        LabelObject(2, id=1, group=1),
                     ]),
 
                     DatasetItem(id=2, annotations=[
-                        LabelObject(3, id=2),
+                        LabelObject(3, id=2, group=2),
                     ]),
                 ])
 

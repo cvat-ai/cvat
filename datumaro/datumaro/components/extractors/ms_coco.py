@@ -120,8 +120,7 @@ class CocoExtractor(Extractor):
 
             anns = loader.getAnnIds(imgIds=img_id)
             anns = loader.loadAnns(anns)
-            anns = list(chain(*(
-                self._load_annotations(ann, image_info) for ann in anns)))
+            anns = sum((self._load_annotations(a, image_info) for a in anns), [])
 
             items[img_id] = DatasetItem(id=img_id, subset=self._subset,
                 image=image, annotations=anns)
@@ -143,16 +142,16 @@ class CocoExtractor(Extractor):
         if 'score' in ann:
             attributes['score'] = ann['score']
 
+        group = ann_id # make sure all tasks' annotations are merged
+
         if self._task in [CocoTask.instances, CocoTask.person_keypoints]:
             x, y, w, h = ann['bbox']
             label_id = self._get_label_id(ann)
-            group = None
 
             is_crowd = bool(ann['iscrowd'])
             attributes['is_crowd'] = is_crowd
 
             if self._task is CocoTask.person_keypoints:
-                group = ann_id
                 keypoints = ann['keypoints']
                 points = [p for i, p in enumerate(keypoints) if i % 3 != 2]
                 visibility = keypoints[2::3]
@@ -163,7 +162,6 @@ class CocoExtractor(Extractor):
 
             segmentation = ann.get('segmentation')
             if segmentation is not None:
-                group = ann_id
                 rle = None
 
                 if isinstance(segmentation, list):
@@ -171,7 +169,7 @@ class CocoExtractor(Extractor):
                     for polygon_points in segmentation:
                         parsed_annotations.append(PolygonObject(
                             points=polygon_points, label=label_id,
-                            id=ann_id, group=group, attributes=attributes
+                            id=ann_id, attributes=attributes, group=group
                         ))
 
                     if self._merge_instance_polygons:
@@ -190,7 +188,7 @@ class CocoExtractor(Extractor):
 
                 if rle is not None:
                     parsed_annotations.append(RleMask(rle=rle, label=label_id,
-                        id=ann_id, group=group, attributes=attributes
+                        id=ann_id, attributes=attributes, group=group
                     ))
 
             parsed_annotations.append(
@@ -200,13 +198,14 @@ class CocoExtractor(Extractor):
         elif self._task is CocoTask.labels:
             label_id = self._get_label_id(ann)
             parsed_annotations.append(
-                LabelObject(label=label_id, id=ann_id, attributes=attributes)
+                LabelObject(label=label_id,
+                    id=ann_id, attributes=attributes, group=group)
             )
         elif self._task is CocoTask.captions:
             caption = ann['caption']
             parsed_annotations.append(
                 CaptionObject(caption,
-                    id=ann_id, attributes=attributes)
+                    id=ann_id, attributes=attributes, group=group)
             )
         else:
             raise NotImplementedError()
