@@ -265,12 +265,13 @@ class ZipChunkWriter(IChunkWriter):
     def save_as_chunk(self, images, chunk_path):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, image_name) in enumerate(images):
-                arcname = '{:06d}.{}'.format(idx, os.path.splitext(image_name)[1])
+                arcname = '{:06d}{}'.format(idx, os.path.splitext(image_name)[1])
                 if isinstance(image, BytesIO):
                     zip_chunk.writestr(arcname, image.getvalue())
                 else:
                     zip_chunk.write(filename=image, arcname=arcname)
-        # We doesnot read images in this case and dont know img size
+        # return empty list because ZipChunkWriter write files as is
+        # and does not decode it to know img size.
         return []
 
 class ZipCompressedChunkWriter(IChunkWriter):
@@ -315,7 +316,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
             rate=self._output_fps,
             pix_format='yuv420p',
             options={
-                "crf": "15",
+                "crf": str(self._image_quality),
                 "preset": "ultrafast",
             },
         )

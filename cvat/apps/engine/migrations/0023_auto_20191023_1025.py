@@ -102,8 +102,8 @@ def create_data_objects(apps, schema_editor):
                         else:
                             print('No raw data found for task {}'.format(db_task.id))
 
-                    original_chunk_writer = ZipCompressedChunkWriter(100)
-                    compressed_chunk_writer = ZipChunkWriter(db_data.image_quality)
+                    original_chunk_writer = ZipChunkWriter(100)
+                    compressed_chunk_writer = ZipCompressedChunkWriter(db_data.image_quality)
 
                     for chunk_idx, chunk_images in enumerate(reader.slice_by_size(db_data.chunk_size)):
                         compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.zip'.format(chunk_idx))
