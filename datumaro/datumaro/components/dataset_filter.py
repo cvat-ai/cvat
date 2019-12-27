@@ -43,7 +43,8 @@ class DatasetItemEncoder:
     def encode_image(cls, image):
         image_elem = ET.Element('image')
 
-        h, w, c = image.shape
+        h, w = image.shape[:2]
+        c = 1 if len(image.shape) == 2 else image.shape[2]
         ET.SubElement(image_elem, 'width').text = str(w)
         ET.SubElement(image_elem, 'height').text = str(h)
         ET.SubElement(image_elem, 'depth').text = str(c)
