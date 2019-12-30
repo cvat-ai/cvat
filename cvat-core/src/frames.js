@@ -127,8 +127,9 @@
 
     async function getFrame(taskID, mode, frame) {
         if (!(taskID in frameDataCache)) {
-            frameDataCache[taskID] = {};
-            frameDataCache[taskID].meta = await serverProxy.frames.getMeta(taskID);
+            frameDataCache[taskID] = {
+                meta: await serverProxy.frames.getMeta(taskID),
+            };
 
             frameCache[taskID] = {};
         }

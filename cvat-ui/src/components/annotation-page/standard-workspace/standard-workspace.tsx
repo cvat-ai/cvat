@@ -5,6 +5,8 @@ import {
     Layout,
 } from 'antd';
 
+import { Canvas } from '../../../../../cvat-canvas/src/typescript/canvas';
+
 import ControlsSideBarComponent from './controls-side-bar';
 import CanvasWrapperComponent from './canvas-wrapper-component';
 import ObjectSideBarComponent from './objects-side-bar/objects-side-bar';
@@ -15,32 +17,42 @@ interface Props {
     onSetupCanvas(): void;
 }
 
-export default function StandardWorkspaceComponent(props: Props): JSX.Element {
-    const {
-        jobInstance,
-        frame,
-        onSetupCanvas,
-    } = props;
+interface State {
+    canvas: Canvas;
+}
 
-    const canvasWrapper = React.createRef<CanvasWrapperComponent>();
+export default class StandardWorkspaceComponent extends React.PureComponent<Props, State> {
+    public constructor(props: Props) {
+        super(props);
+        this.state = {
+            canvas: new Canvas(),
+        };
+    }
 
-    return (
-        <Layout>
-            <ControlsSideBarComponent />
-            <CanvasWrapperComponent
-                jobInstance={jobInstance}
-                frame={frame}
-                onSetupCanvas={onSetupCanvas}
-                ref={canvasWrapper}
-            />
-            <ObjectSideBarComponent
-                onSidebarFoldUnfold={(): void => {
-                    if (canvasWrapper.current) {
-                        canvasWrapper.current.canvas.updateSize();
-                        canvasWrapper.current.canvas.fit();
-                    }
-                }}
-            />
-        </Layout>
-    );
+    public render(): JSX.Element {
+        const {
+            jobInstance,
+            frame,
+            onSetupCanvas,
+        } = this.props;
+
+        const { canvas } = this.state;
+
+        return (
+            <Layout hasSider>
+                <ControlsSideBarComponent />
+                <CanvasWrapperComponent
+                    jobInstance={jobInstance}
+                    frame={frame}
+                    onSetupCanvas={onSetupCanvas}
+                    canvas={canvas}
+                />
+                <ObjectSideBarComponent
+                    onSidebarFoldUnfold={(): void => {
+                        canvas.updateSize();
+                    }}
+                />
+            </Layout>
+        );
+    }
 }

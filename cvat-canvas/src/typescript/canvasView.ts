@@ -726,6 +726,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             width: this.canvas.clientWidth,
         };
 
+
         this.controller.geometry = geometry;
         this.geometry = geometry;
     }
