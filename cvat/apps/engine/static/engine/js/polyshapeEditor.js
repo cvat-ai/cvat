@@ -313,7 +313,11 @@ class PolyshapeEditorView {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY
             };
+
             this._rescaleDrawPoints();
+            if (this._borderSticker) {
+                this._borderSticker.reset();
+            }
         });
 
         this._correctLine.on('drawstart', () => this._rescaleDrawPoints());

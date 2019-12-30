@@ -324,15 +324,16 @@ class ShapeCreatorView {
 
         if (this._polyShapeSize) {
             let size = this._polyShapeSize;
-            let sizeDecrement = function() {
-                if (!--size) {
+            const sizeDecrement = function sizeDecrement() {
+                size -= 1;
+                if (!size) {
                     numberOfPoints = this._polyShapeSize;
                     this._drawInstance.draw('done');
                 }
             }.bind(this);
 
-            let sizeIncrement = function() {
-                size ++;
+            const sizeIncrement = function sizeIncrement() {
+                size += 1;
             };
 
             this._drawInstance.on('drawstart', sizeDecrement);
@@ -340,6 +341,12 @@ class ShapeCreatorView {
             this._drawInstance.on('undopoint', sizeIncrement);
         }
         // Otherwise draw will stop by Ctrl + N press
+
+        this._drawInstance.on('drawpoint', () => {
+            if (this._borderSticker) {
+                this._borderSticker.reset();
+            }
+        });
 
         // Callbacks for point scale
         this._drawInstance.on('drawstart', this._rescaleDrawPoints.bind(this));
