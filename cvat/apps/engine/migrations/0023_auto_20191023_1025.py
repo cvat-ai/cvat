@@ -30,6 +30,7 @@ def create_data_objects(apps, schema_editor):
     migration_name = os.path.splitext(os.path.basename(__file__))[0]
     migration_log_file = '{}.log'.format(migration_name)
     stdout = sys.stdout
+    stderr = sys.stderr
     # redirect all stdout to the file
     log_file = open(os.path.join(settings.MIGRATIONS_LOGS_ROOT, migration_log_file), 'w')
     sys.stdout = log_file
@@ -204,7 +205,9 @@ def create_data_objects(apps, schema_editor):
                 log.error('Cannot migrate data for the DL model: {}'.format(db_model.id))
                 log.error(str(e))
 
-    sys.stdout.close()
+    log_file.close()
+    sys.stdout = stdout
+    sys.stderr = stderr
 
 class Migration(migrations.Migration):
 
