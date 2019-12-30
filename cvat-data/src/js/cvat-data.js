@@ -54,7 +54,7 @@ class FrameProvider {
     async _cleanup() {
         if (this._blocks_ranges.length > this._cachedBlockCount) {
             const shifted = this._blocks_ranges.shift(); // get the oldest block
-            const [start, end] = shifted.split(':').map(el => +el);
+            const [start, end] = shifted.split(':').map((el) => +el);
             delete this._blocks[start / this._blockSize];
             for (let i = start; i <= end; i++) {
                 delete this._frames[i];
@@ -64,7 +64,7 @@ class FrameProvider {
         // delete frames whose are not in areas of current frame
         const distance = Math.floor(this._decodedBlocksCacheSize / 2);
         for (let i = 0; i < this._blocks_ranges.length; i++) {
-            const [start, end] = this._blocks_ranges[i].split(':').map(el => +el);
+            const [start, end] = this._blocks_ranges[i].split(':').map((el) => +el);
             if (end < this._currFrame - distance * this._blockSize
                 || start > this._currFrame + distance * this._blockSize) {
                 for (let j = start; j <= end; j++) {

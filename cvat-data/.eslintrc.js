@@ -33,4 +33,11 @@ module.exports = {
         "no-bitwise": [0],
         "security/detect-object-injection": [0],
     },
+    'settings': {
+        'import/resolver': {
+            'node': {
+                'extensions': ['.tsx', '.ts', '.jsx', '.js', '.json'],
+            },
+        },
+    },
 };
