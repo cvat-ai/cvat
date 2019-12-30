@@ -27,19 +27,27 @@ def create_data_objects(apps, schema_editor):
         match = re.search("step\s*=\s*([1-9]\d*)", frame_filter)
         return int(match.group(1)) if match else 1
 
+    def get_task_on_disk():
+        folders = [os.path.relpath(f, settings.DATA_ROOT)
+            for f in glob.glob(os.path.join(settings.DATA_ROOT, '*'), recursive=False)]
+
+        return set(int(f) for f in folders if f.isdigit())
+
     migration_name = os.path.splitext(os.path.basename(__file__))[0]
     migration_log_file = '{}.log'.format(migration_name)
     stdout = sys.stdout
     stderr = sys.stderr
     # redirect all stdout to the file
-    log_file = open(os.path.join(settings.MIGRATIONS_LOGS_ROOT, migration_log_file), 'w')
-    sys.stdout = log_file
-    sys.stderr = log_file
+    log_file_object = open(os.path.join(settings.MIGRATIONS_LOGS_ROOT, migration_log_file), 'w')
+    sys.stdout = log_file_object
+    sys.stderr = log_file_object
 
     log = logging.getLogger(migration_name)
     log.addHandler(logging.StreamHandler(stdout))
-    log.addHandler(logging.StreamHandler(log_file))
+    log.addHandler(logging.StreamHandler(log_file_object))
     log.setLevel(logging.INFO)
+
+    disk_tasks = get_task_on_disk()
 
     Task = apps.get_model('engine', 'Task')
     Data = apps.get_model('engine', 'Data')
@@ -71,6 +79,8 @@ def create_data_objects(apps, schema_editor):
             db_data.save()
 
             db_task.data = db_data
+            db_task.save()
+            disk_tasks.remove(db_task.id)
 
             db_data_dir = os.path.join(settings.MEDIA_DATA_ROOT, str(db_data.id))
             os.makedirs(db_data_dir)
@@ -81,10 +91,13 @@ def create_data_objects(apps, schema_editor):
             os.makedirs(original_cache_dir)
 
             old_db_task_dir = os.path.join(settings.DATA_ROOT, str(db_task.id))
+            if not os.path.exists(old_db_task_dir):
+                log.error('could not find dir {} for the task {}'.format(old_db_task_dir, db_task.id))
+                continue
 
             # prepare media data
             old_task_data_dir = os.path.join(old_db_task_dir, 'data')
-            if os.path.exists(old_task_data_dir):
+            if os.path.exists(old_task_data_dir) and db_data.size != 0:
                 if hasattr(db_task, 'video'):
                     if os.path.exists(db_task.video.path):
                         reader = VideoReader([db_task.video.path], get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
@@ -183,6 +196,18 @@ def create_data_objects(apps, schema_editor):
             log.error('Cannot migrate data for the task: {}'.format(db_task.id))
             log.error(str(e))
 
+    if disk_tasks:
+        suspicious_tasks_dir = os.path.join(settings.DATA_ROOT, 'suspicious_tasks')
+        os.makedirs(suspicious_tasks_dir, exist_ok=True)
+        for tid in disk_tasks:
+            suspicious_task_path = os.path.join(settings.DATA_ROOT, str(tid))
+            try:
+                shutil.move(suspicious_task_path, suspicious_tasks_dir)
+            except Exception as e:
+                log.error('Cannot move data for the suspicious task {}, \
+                    that is not represented in the database.'.format(suspicious_task_path))
+                log.error(str(e))
+
     # DL models migration
     if apps.is_installed('auto_annotation'):
         DLModel = apps.get_model('auto_annotation', 'AnnotationModel')
@@ -205,7 +230,7 @@ def create_data_objects(apps, schema_editor):
                 log.error('Cannot migrate data for the DL model: {}'.format(db_model.id))
                 log.error(str(e))
 
-    log_file.close()
+    log_file_object.close()
     sys.stdout = stdout
     sys.stderr = stderr
 
