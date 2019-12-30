@@ -26,10 +26,10 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     function convert(items: ShareItem[], path?: string): TreeNodeNormal[] {
         return items.map((item): TreeNodeNormal => {
-            const key = `${path}/${item.name}`.replace(/\/+/g, '/'); // // => /
+            const key = `${path}${item.name}/`;
             return {
                 key,
-                title: item.name,
+                title: item.name || 'root',
                 isLeaf: item.type !== 'DIR',
                 children: convert(item.children, key),
             };
@@ -38,7 +38,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     const { root } = state.share;
     return {
-        treeData: convert(root.children, root.name),
+        treeData: convert([root], ''),
     };
 }
 
