@@ -264,10 +264,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         });
     }
 
-    public resize(width: number, height: number) {
-        this.model.resize(width, height);
-    }
-
     public activate(clientID: number, attributeID: number): void {
         if (this.data.mode !== Mode.IDLE) {
             // Exception or just return?

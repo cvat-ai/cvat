@@ -62,6 +62,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             ]).then(([frameData, annotations]) => {
                 canvas.setup(frameData, annotations);
             }).catch((error: any) => {
+                // temporary disabled
+                // eslint-disable-next-line
                 console.log(error);
             });
         }

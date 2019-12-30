@@ -32,7 +32,6 @@ import '../scss/canvas.scss';
 interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[]): void;
-    resize(width: number, height: number): void;
     activate(clientID: number, attributeID?: number): void;
     rotate(rotation: Rotation, remember?: boolean): void;
     focus(clientID: number, padding?: number): void;
