@@ -268,7 +268,7 @@ def _create_thread(tid, data):
             db_data.size += len(chunk_images)
             update_progress(db_data.size / total_len)
 
-    if db_data.compressed_chunk_type == models.DataChoice.IMAGESET:
+    if db_task.mode == 'annotation':
         for image_name, image_size in zip(image_names, image_sizes):
             db_images.append(models.Image(
                 data=db_data,
