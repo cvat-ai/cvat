@@ -54,12 +54,12 @@ class IMediaReader(ABC):
         pass
 
     def slice_by_size(self, size):
-        it = itertools.islice(self, self._start, self._stop if self._stop else None)
+        # stopFrame should be included
+        it = itertools.islice(self, self._start, self._stop + 1 if self._stop else None)
         frames = list(itertools.islice(it, 0, size * self._step, self._step))
         while frames:
             yield frames
             frames = list(itertools.islice(it, 0, size * self._step, self._step))
-
     @property
     @abstractmethod
     def image_names(self):
