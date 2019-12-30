@@ -81,7 +81,8 @@ def run_tensorflow_auto_segmentation(frame_provider, labels_mapping, treshold):
 
     ## RUN OBJECT DETECTION
     result = {}
-    for image_num, image_bytes in enumerate(frame_provider.get_original_frame_iter()):
+    frames = frame_provider.get_frames(frame_provider.Quality.ORIGINAL)
+    for image_num, image_bytes in enumerate(frames):
         job.refresh()
         if 'cancel' in job.meta:
             del job.meta['cancel']

@@ -426,20 +426,19 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
                 if data_type == 'chunk':
                     data_id = int(data_id)
-                    if data_quality == 'compressed':
-                        path = os.path.realpath(frame_provider.get_compressed_chunk(data_id))
-                    else:
-                        path = os.path.realpath(frame_provider.get_original_chunk(data_id))
+                    data_quality = FrameProvider.Quality.COMPRESSED \
+                        if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
+                    path = os.path.realpath(frame_provider.get_chunk(data_id, data_quality))
+
                     # Follow symbol links if the chunk is a link on a real image otherwise
                     # mimetype detection inside sendfile will work incorrectly.
                     return sendfile(request, path)
 
                 elif data_type == 'frame':
                     data_id = int(data_id)
-                    if data_quality == 'compressed':
-                        buf, mime = frame_provider.get_compressed_frame(data_id)
-                    else:
-                        buf, mime = frame_provider.get_original_frame(data_id)
+                    data_quality = FrameProvider.Quality.COMPRESSED \
+                        if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
+                    buf, mime = frame_provider.get_frame(data_id, data_quality)
 
                     return HttpResponse(buf.getvalue(), content_type=mime)
 

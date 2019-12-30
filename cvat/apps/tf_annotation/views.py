@@ -113,7 +113,8 @@ def run_tensorflow_annotation(frame_provider, labels_mapping, treshold):
             config = tf.ConfigProto()
             config.gpu_options.allow_growth=True
             sess = tf.Session(graph=detection_graph, config=config)
-            for image_num, image in enumerate(frame_provider.get_original_frame_iter()):
+            frames = frame_provider.get_frames(frame_provider.Quality.ORIGINAL)
+            for image_num, image in enumerate(frames):
 
                 job.refresh()
                 if 'cancel' in job.meta:

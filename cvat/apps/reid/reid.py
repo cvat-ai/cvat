@@ -40,9 +40,11 @@ class ReID:
         db_job = Job.objects.select_related('segment__task').get(pk = jid)
         db_segment = db_job.segment
         db_task = db_segment.task
-        self.__frame_iter = itertools.islice(FrameProvider(db_task.data).get_original_frame_iter(),
-                                             db_segment.start_frame,
-                                             db_segment.stop_frame + 1)
+        self.__frame_iter = itertools.islice(
+            FrameProvider(db_task.data).get_frames(FrameProvider.Quality.ORIGINAL),
+            db_segment.start_frame,
+            db_segment.stop_frame + 1,
+        )
 
         self.__stop_frame = db_segment.stop_frame
         for frame in range(db_segment.start_frame, db_segment.stop_frame + 1):

@@ -19,7 +19,8 @@ class CvatImagesExtractor(datumaro.Extractor):
         self._frame_provider = frame_provider
 
     def __iter__(self):
-        for item_id, image in enumerate(self._frame_provider.get_original_frame_iter()):
+        frames = self._frame_provider.get_frames(self._frame_provider.Quality.ORIGINAL)
+        for item_id, image in enumerate(frames):
             yield datumaro.DatasetItem(
                 id=item_id,
                 image=decode_image(image.getvalue())

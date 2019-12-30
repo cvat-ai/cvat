@@ -4,6 +4,7 @@
 
 import math
 from io import BytesIO
+from enum import Enum
 
 from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.models import DataChoice
@@ -11,6 +12,10 @@ from cvat.apps.engine.mime_types import mimetypes
 
 
 class FrameProvider():
+    class Quality(Enum):
+        COMPRESSED = 0
+        ORIGINAL = 100
+
     def __init__(self, db_data):
         self._db_data = db_data
         if db_data.compressed_chunk_type == DataChoice.IMAGESET:
@@ -45,6 +50,13 @@ class FrameProvider():
 
         return frame_number_, chunk_number, frame_offset
 
+    def _validate_chunk_number(self, chunk_number):
+        chunk_number_ = int(chunk_number)
+        if chunk_number_ < 0 or chunk_number_ >= math.ceil(self._db_data.size / self._db_data.chunk_size):
+            raise Exception('requested chunk does not exist')
+
+        return chunk_number_
+
     @staticmethod
     def _av_frame_to_png_bytes(av_frame):
         pil_img = av_frame.to_image()
@@ -66,57 +78,49 @@ class FrameProvider():
 
         return (frame, mimetypes.guess_type(frame_name))
 
-    def get_compressed_frame(self, frame_number):
-        return self._get_frame(
-            frame_number=frame_number,
-            chunk_path_getter=self._db_data.get_compressed_chunk_path,
-            extracted_chunk=self._extracted_compressed_chunk,
-            chunk_reader=self._compressed_chunk_reader,
-            reader_class=self._compressed_chunk_reader_class,
-        )
-
-    def get_original_frame(self, frame_number):
-        return self._get_frame(
-            frame_number=frame_number,
-            chunk_path_getter=self._db_data.get_original_chunk_path,
-            extracted_chunk=self._extracted_original_chunk,
-            chunk_reader=self._original_chunk_reader,
-            reader_class=self._original_chunk_reader_class,
-        )
-
-    def _get_frame_iter(self, chunk_path_getter, reader_class):
+    def _get_frames(self, chunk_path_getter, reader_class):
         for chunk_idx in range(math.ceil(self._db_data.size / self._db_data.chunk_size)):
             chunk_path = chunk_path_getter(chunk_idx)
             chunk_reader = reader_class([chunk_path])
             for frame, _ in chunk_reader:
                 yield self._av_frame_to_png_bytes(frame) if reader_class is VideoReader else frame
 
-    def get_original_frame_iter(self):
-        return self._get_frame_iter(
-            chunk_path_getter=self._db_data.get_original_chunk_path,
-            reader_class=self._original_chunk_reader_class,
-        )
-
-    def get_compressed_frame_iter(self):
-        return self._get_frame_iter(
-            chunk_path_getter=self._db_data.get_compressed_chunk_path,
-            reader_class=self._compressed_chunk_reader_class,
-        )
-
-    def _validate_chunk_number(self, chunk_number):
-        chunk_number_ = int(chunk_number)
-        if chunk_number_ < 0 or chunk_number_ >= math.ceil(self._db_data.size / self._db_data.chunk_size):
-            raise Exception('requested chunk does not exist')
-
-        return chunk_number_
-
-    def get_compressed_chunk(self, chunk_number):
-        chunk_number = self._validate_chunk_number(chunk_number)
-        return self._db_data.get_compressed_chunk_path(chunk_number)
-
-    def get_original_chunk(self, chunk_number):
-        chunk_number = self._validate_chunk_number(chunk_number)
-        return self._db_data.get_original_chunk_path(chunk_number)
-
     def get_preview(self):
         return self._db_data.get_preview_path()
+
+    def get_chunk(self, chunk_number, quality=Quality.ORIGINAL):
+        chunk_number = self._validate_chunk_number(chunk_number)
+        if quality == self.Quality.ORIGINAL:
+            return self._db_data.get_original_chunk_path(chunk_number)
+        elif quality == self.Quality.COMPRESSED:
+            return self._db_data.get_compressed_chunk_path(chunk_number)
+
+    def get_frame(self, frame_number, quality=Quality.ORIGINAL):
+        if quality == self.Quality.ORIGINAL:
+            return self._get_frame(
+                frame_number=frame_number,
+                chunk_path_getter=self._db_data.get_original_chunk_path,
+                extracted_chunk=self._extracted_original_chunk,
+                chunk_reader=self._original_chunk_reader,
+                reader_class=self._original_chunk_reader_class,
+            )
+        elif quality == self.Quality.COMPRESSED:
+            return self._get_frame(
+                frame_number=frame_number,
+                chunk_path_getter=self._db_data.get_compressed_chunk_path,
+                extracted_chunk=self._extracted_compressed_chunk,
+                chunk_reader=self._compressed_chunk_reader,
+                reader_class=self._compressed_chunk_reader_class,
+            )
+
+    def get_frames(self, quality=Quality.ORIGINAL):
+        if quality == self.Quality.ORIGINAL:
+            return self._get_frames(
+                chunk_path_getter=self._db_data.get_original_chunk_path,
+                reader_class=self._original_chunk_reader_class,
+            )
+        elif quality == self.Quality.COMPRESSED:
+            return self._get_frames(
+                chunk_path_getter=self._db_data.get_compressed_chunk_path,
+                reader_class=self._compressed_chunk_reader_class,
+            )
