@@ -461,11 +461,11 @@ class PlayerModel extends Listener {
     }
 
     pause() {
+        this._pauseFlag = true;
+        this._playing = false;
         if (this._playInterval) {
             clearInterval(this._playInterval);
             this._playInterval = null;
-            this._pauseFlag = true;
-            this._playing = false;
             this._frame.requested.clear();
             this.notify();
         }
