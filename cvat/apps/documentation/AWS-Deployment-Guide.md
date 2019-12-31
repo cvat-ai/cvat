@@ -6,4 +6,4 @@ Overall setup instruction is explained in [main readme file](https://github.com/
 
 2. **On Any other AWS Machine:** We can follow the same instruction guide mentioned in the [Readme file](https://github.com/opencv/cvat/). The additional step is to add a [security group and rule  to allow  incoming connections](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html).
 
-For any of above, don't forget to add exposed AWS public IP address to `docker-compose.override.com`.
+For any of above, don't forget to add exposed AWS public IP address to `docker-compose.override.yml`.
