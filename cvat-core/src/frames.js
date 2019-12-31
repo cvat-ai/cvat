@@ -261,14 +261,14 @@
         const getFrameSize = (meta) => {
             let size = null;
             if (mode === 'interpolation') {
-                [size] = meta;
+                [size] = meta.frames;
             } else if (mode === 'annotation') {
-                if (frame >= meta.length) {
+                if (frame >= meta.size) {
                     throw new ArgumentError(
                         `Meta information about frame ${frame} can't be received from the server`,
                     );
                 } else {
-                    size = meta[frame];
+                    size = meta.frames[frame];
                 }
             } else {
                 throw new ArgumentError(

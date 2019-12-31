@@ -352,9 +352,35 @@ class AboutSerializer(serializers.Serializer):
     description = serializers.CharField(max_length=2048)
     version = serializers.CharField(max_length=64)
 
-class ImageMetaSerializer(serializers.Serializer):
+class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
+    name = serializers.CharField(max_length=1024)
+
+class DataMetaSerializer(serializers.ModelSerializer):
+    frames = FrameMetaSerializer(many=True, allow_null=True)
+    image_quality = serializers.IntegerField(min_value=0, max_value=100)
+
+    class Meta:
+        model = models.Data
+        fields = (
+            'chunk_size',
+            'size',
+            'image_quality',
+            'start_frame',
+            'stop_frame',
+            'frame_filter',
+            'frames',
+        )
+        read_only_fields = (
+            'chunk_size',
+            'size',
+            'image_quality',
+            'start_frame',
+            'stop_frame',
+            'frame_filter',
+            'frames',
+        )
 
 class AttributeValSerializer(serializers.Serializer):
     spec_id = serializers.IntegerField()

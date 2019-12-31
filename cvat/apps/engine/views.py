@@ -35,7 +35,7 @@ from cvat.apps.authentication.decorators import login_required
 from .log import slogger, clogger
 from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
 from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
-   ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
+   ExceptionSerializer, AboutSerializer, JobSerializer, DataMetaSerializer,
    RqStatusSerializer, DataSerializer, LabeledDataSerializer,
    PluginSerializer, FileInfoSerializer, LogEventSerializer,
    ProjectSerializer, BasicUserSerializer)
@@ -600,15 +600,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         return response
 
     @staticmethod
-    @swagger_auto_schema(method='get', operation_summary='Method provides a list of sizes (width, height) of media files which are related with the task',
-        responses={'200': ImageMetaSerializer(many=True)})
-    @action(detail=True, methods=['GET'], serializer_class=ImageMetaSerializer,
+    @swagger_auto_schema(method='get', operation_summary='Method provides a meta information about media files which are related with the task',
+        responses={'200': DataMetaSerializer()})
+    @action(detail=True, methods=['GET'], serializer_class=DataMetaSerializer,
         url_path='data/meta')
     def data_info(request, pk):
-        data = {
-            'original_size': [],
-        }
-
         db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
 
         if db_task.mode == 'interpolation':
@@ -616,15 +612,17 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         else:
             media = list(db_task.data.images.order_by('frame'))
 
-        for item in media:
-            data['original_size'].append({
+        frame_meta = [{
             'width': item.width,
             'height': item.height,
-        })
+            'name': item.path,
+        } for item in media]
 
-        serializer = ImageMetaSerializer(many=True, data=data['original_size'])
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.data)
+        db_data = db_task.data
+        db_data.frames = frame_meta
+
+        serializer = DataMetaSerializer(db_data)
+        return Response(serializer.data)
 
     @swagger_auto_schema(method='get', operation_summary='Export task as a dataset in a specific format',
         manual_parameters=[openapi.Parameter('action', in_=openapi.IN_QUERY,
