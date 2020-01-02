@@ -1,3 +1,4 @@
+/* eslint-disable no-plusplus */
 /*
  * Copyright (C) 2018 Intel Corporation
  *
@@ -19,8 +20,6 @@
     CuboidModel:false
     Cuboid2PointViewModel:false
 */
-
-'use strict';
 
 class ShapeCreatorModel extends Listener {
     constructor(shapeCollection) {
@@ -146,7 +145,6 @@ class ShapeCreatorModel extends Listener {
 class ShapeCreatorController {
     constructor(drawerModel) {
         this._model = drawerModel;
-        setupShortkeys.call(this);
         function setupShortkeys() {
             const { shortkeys } = window.cvat.config;
 
@@ -156,6 +154,8 @@ class ShapeCreatorController {
 
             Mousetrap.bind(shortkeys.switch_draw_mode.value, switchDrawHandler.bind(this), 'keydown');
         }
+
+        setupShortkeys.call(this);
     }
 
     switchCreateMode(force, usingShortkey = false) {
@@ -269,7 +269,9 @@ class ShapeCreatorView {
 
         this._playerFrame.on('mousemove.shapeCreatorAIM', (e) => {
             if (!['polygon', 'polyline', 'points'].includes(this._type)) {
-                this._aimCoord = window.cvat.translate.point.clientToCanvas(this._frameContent.node, e.clientX, e.clientY);
+                this._aimCoord = window.cvat.translate.point.clientToCanvas(
+                    this._frameContent.node, e.clientX, e.clientY,
+                );
                 if (this._aim) {
                     this._aim.x.attr({
                         y1: this._aimCoord.y,
@@ -325,7 +327,8 @@ class ShapeCreatorView {
                 this._controller.switchCreateMode(true);
             })
             .on('drawupdate', (e) => {
-                sizeUI = drawBoxSize.call(sizeUI, this._frameContent, this._frameText, e.target.getBBox());
+                sizeUI = drawBoxSize.call(sizeUI, this._frameContent,
+                    this._frameText, e.target.getBBox());
             })
             .on('drawcancel', () => {
                 if (sizeUI) {
@@ -392,7 +395,7 @@ class ShapeCreatorView {
                 const lenBefore = this._drawInstance.array().value.length;
                 this._drawInstance.draw('undo');
                 const lenAfter = this._drawInstance.array().value.length;
-                if (lenBefore != lenAfter) {
+                if (lenBefore !== lenAfter) {
                     numberOfPoints--;
                 }
             }
@@ -403,7 +406,8 @@ class ShapeCreatorView {
                 if (lastPoint.x === null || lastPoint.y === null) {
                     this._drawInstance.draw('point', e);
                 } else {
-                    const delta = Math.sqrt(Math.pow(e.clientX - lastPoint.x, 2) + Math.pow(e.clientY - lastPoint.y, 2));
+                    const delta = Math.sqrt(Math.pow(e.clientX - lastPoint.x, 2)
+                        + Math.pow(e.clientY - lastPoint.y, 2));
                     const deltaTreshold = 15;
                     if (delta > deltaTreshold) {
                         this._drawInstance.draw('point', e);
@@ -431,7 +435,8 @@ class ShapeCreatorView {
                     showMessage('Min 2 points must be for polyline drawing.');
                 } else if (this._type === 'polygon' && actualPoints.length < 3) {
                     showMessage('Min 3 points must be for polygon drawing.');
-                } else if (this._type === 'cuboid' && (actualPoints.length != 4 || !this._checKValidCuboidTrace(actualPoints))) {
+                } else if (this._type === 'cuboid' && (actualPoints.length !== 4
+                    || !this._checKValidCuboidTrace(actualPoints))) {
                     showMessage('Exactly 4 points must be used for cuboid drawing.'
                         + ' Second point must be below the first point.'
                         + '(HINT) The first 3 points define the front face'
@@ -561,7 +566,8 @@ class ShapeCreatorView {
                     this._controller.switchCreateMode(true);
                 })
                 .on('drawupdate', (e) => {
-                    sizeUI = drawBoxSize.call(sizeUI, this._frameContent, this._frameText, e.target.getBBox());
+                    sizeUI = drawBoxSize.call(sizeUI, this._frameContent,
+                        this._frameText, e.target.getBBox());
                 })
                 .on('drawcancel', () => {
                     if (sizeUI) {
@@ -627,13 +633,15 @@ class ShapeCreatorView {
     _drawAim() {
         if (!(this._aim)) {
             this._aim = {
-                x: this._frameContent.line(0, this._aimCoord.y, this._frameContent.node.clientWidth, this._aimCoord.y)
+                x: this._frameContent.line(0, this._aimCoord.y,
+                    this._frameContent.node.clientWidth, this._aimCoord.y)
                     .attr({
                         'stroke-width': STROKE_WIDTH / this._scale,
                         stroke: 'red',
                         z_order: Number.MAX_SAFE_INTEGER,
                     }).addClass('aim'),
-                y: this._frameContent.line(this._aimCoord.x, 0, this._aimCoord.x, this._frameContent.node.clientHeight)
+                y: this._frameContent.line(this._aimCoord.x, 0, this._aimCoord.x,
+                    this._frameContent.node.clientHeight)
                     .attr({
                         'stroke-width': STROKE_WIDTH / this._scale,
                         stroke: 'red',
@@ -677,8 +685,9 @@ class ShapeCreatorView {
             document.oncontextmenu = null;
             if (this._drawInstance) {
                 // We save current result for poly shape if it's need
-                // drawInstance will be removed after save when drawdone handler calls switchCreateMode with force argument
-                if (model.saveCurrent && this._type != 'box') {
+                // drawInstance will be removed after save when draw done handler calls
+                // switchCreateMode with force argument
+                if (model.saveCurrent && this._type !== 'box') {
                     this._drawInstance.draw('done');
                 } else {
                     this._drawInstance.draw('cancel');
@@ -695,7 +704,7 @@ class ShapeCreatorView {
 
     onPlayerUpdate(player) {
         if (!player.ready()) return;
-        if (this._scale != player.geometry.scale) {
+        if (this._scale !== player.geometry.scale) {
             this._scale = player.geometry.scale;
             if (this._drawInstance) {
                 this._rescaleDrawPoints();

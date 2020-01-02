@@ -504,7 +504,7 @@
         }
 
         neighborsFrames(targetFrame) {
-            const frames = Object.keys(this.shapes).map(frame => +frame);
+            const frames = Object.keys(this.shapes).map((frame) => +frame);
             let lDiff = Number.MAX_SAFE_INTEGER;
             let rDiff = Number.MAX_SAFE_INTEGER;
 
@@ -888,7 +888,7 @@
 
             if (updated.attributes) {
                 const labelAttributes = copy.label
-                    .attributes.map(attr => `${attr.id}`);
+                    .attributes.map((attr) => `${attr.id}`);
 
                 for (const attrID of Object.keys(data.attributes)) {
                     if (labelAttributes.includes(attrID)) {
