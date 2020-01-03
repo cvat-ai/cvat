@@ -38,10 +38,15 @@ class AnnotationModel(models.Model):
         on_delete=models.SET_NULL)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)
+    model_type = SafeCharField(max_length=256,default='openvino')
+    # OpenVINO
     model_file = models.FileField(upload_to=upload_path_handler, storage=fs)
     weights_file = models.FileField(upload_to=upload_path_handler, storage=fs)
     labelmap_file = models.FileField(upload_to=upload_path_handler, storage=fs)
     interpretation_file = models.FileField(upload_to=upload_path_handler, storage=fs)
+    # TF Annotation
+    classes_file = models.FileField(upload_to=upload_path_handler, storage=fs, default=None)
+    tf_model_file = models.FileField(upload_to=upload_path_handler, storage=fs, default=None)
     shared = models.BooleanField(default=False)
     primary = models.BooleanField(default=False)
     framework = models.CharField(max_length=32, default=FrameworkChoice.OPENVINO)

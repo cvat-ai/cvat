@@ -7,7 +7,6 @@ import json
 import os
 
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
-from rest_framework.decorators import api_view
 from django.db.models import Q
 from rules.contrib.views import permission_required, objectgetter
 
@@ -51,25 +50,32 @@ def create_model(request):
     try:
         params = request.POST
         storage = params["storage"]
+        model_type = params["model_type"]
         name = params["name"]
         is_shared = params["shared"].lower() == "true"
         if is_shared and not has_admin_role(request.user):
             raise Exception("Only admin can create shared models")
 
         files = request.FILES if storage == "local" else params
-        model = files["xml"]
-        weights = files["bin"]
-        labelmap = files["json"]
-        interpretation_script = files["py"]
+
+        model_args = {}
+        if model_type == 'tfannotation':
+            model_args['classes'] = files["csv"]
+            model_args['tf_model'] = files["pb"]
+
+        if model_type == 'openvino':
+            model_args['model'] = files["xml"]
+            model_args['weights'] = files["bin"]
+            model_args['labelmap'] = files["json"]
+            model_args['interpretation_script'] = files["py"]
+
         owner = request.user
 
         rq_id = model_manager.create_or_update(
             dl_model_id=None,
             name=name,
-            model_file=model,
-            weights_file=weights,
-            labelmap_file=labelmap,
-            interpretation_file=interpretation_script,
+            model_type=model_type,
+            model_args=model_args,
             owner=owner,
             storage=storage,
             is_shared=is_shared,
@@ -90,23 +96,28 @@ def update_model(request, mid):
         params = request.POST
         storage = params["storage"]
         name = params.get("name")
+        model_type = params["model_type"]
         is_shared = params.get("shared")
         is_shared = is_shared.lower() == "true" if is_shared else None
         if is_shared and not has_admin_role(request.user):
             raise Exception("Only admin can create shared models")
         files = request.FILES
-        model = files.get("xml")
-        weights = files.get("bin")
-        labelmap = files.get("json")
-        interpretation_script = files.get("py")
+        model_args = {}
+        if model_type == 'tfannotation':
+            model_args['classes'] = files["csv"]
+            model_args['tf_model'] = files["pb"]
+
+        if model_type == 'openvino':
+            model_args['model'] = files["xml"]
+            model_args['weights'] = files["bin"]
+            model_args['labelmap'] = files["json"]
+            model_args['interpretation_script'] = files["py"]
 
         rq_id = model_manager.create_or_update(
             dl_model_id=mid,
             name=name,
-            model_file=model,
-            weights_file=weights,
-            labelmap_file=labelmap,
-            interpretation_file=interpretation_script,
+            model_type=model_type,
+            model_args=model_args,
             owner=None,
             storage=storage,
             is_shared=is_shared,
@@ -125,16 +136,70 @@ def delete_model(request, mid):
     model_manager.delete(mid)
     return HttpResponse()
 
-@api_view(['POST'])
 @login_required
 def get_meta_info(request):
     try:
-        tids = request.data
+        tids = json.loads(request.body.decode('utf-8'))
         response = {
             "admin": has_admin_role(request.user),
             "models": [],
+            "openvinoModels": [],
+            "tfAnnotationModels": [],
             "run": {},
         }
+
+        dl_model_openvino_list = list(
+            AnnotationModel.objects.filter
+            (Q(model_type='openvino') & Q(owner=request.user) | Q(primary=True) | Q(shared=True)).order_by('-created_date'))
+
+        for dl_model in dl_model_openvino_list:
+            labels = []
+            if dl_model.labelmap_file and os.path.exists(dl_model.labelmap_file.name):
+                with dl_model.labelmap_file.open('r') as f:
+                    labels = list(json.load(f)["label_map"].values())
+
+            response["openvinoModels"].append({
+                "id": dl_model.id,
+                "name": dl_model.name,
+                "primary": dl_model.primary,
+                "modelType": dl_model.model_type,
+                "uploadDate": dl_model.created_date,
+                "updateDate": dl_model.updated_date,
+                "labels": labels,
+            })
+
+        dl_model_tfannotation_list = list(
+            AnnotationModel.objects.filter
+            (Q(model_type='tfannotation') & Q(owner=request.user) | Q(primary=True) | Q(shared=True)).order_by('-created_date'))
+
+        for dl_model in dl_model_tfannotation_list:
+            labels = []
+            if dl_model.labelmap_file and os.path.exists(dl_model.labelmap_file.name):
+                with dl_model.labelmap_file.open('r') as f:
+                    labels = list(json.load(f)["label_map"].values())
+
+            # Generate the list of classes
+            tf_classes = []
+            if dl_model.classes_file and os.path.exists(dl_model.classes_file.name):
+                with dl_model.classes_file.open('r') as f:
+                    # Skip the first line, header
+                    _ = f.readline()
+                    line = f.readline().strip()
+                    while line:
+                        tf_classes.append(line)
+                        line = f.readline().strip()
+
+            response["tfAnnotationModels"].append({
+                "id": dl_model.id,
+                "name": dl_model.name,
+                "primary": dl_model.primary,
+                "modelType": dl_model.model_type,
+                "uploadDate": dl_model.created_date,
+                "updateDate": dl_model.updated_date,
+                "tfClasses": tf_classes,
+                "labels": labels,
+            })
+
         dl_model_list = list(AnnotationModel.objects.filter(Q(owner=request.user) | Q(primary=True) | Q(shared=True)).order_by('-created_date'))
         for dl_model in dl_model_list:
             labels = []
@@ -146,10 +211,10 @@ def get_meta_info(request):
                 "id": dl_model.id,
                 "name": dl_model.name,
                 "primary": dl_model.primary,
+                "modelType": dl_model.model_type,
                 "uploadDate": dl_model.created_date,
                 "updateDate": dl_model.updated_date,
                 "labels": labels,
-                "owner": dl_model.owner.id,
             })
 
         queue = django_rq.get_queue("low")

@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 Intel Corporation
+# Copyright (C) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,6 +9,7 @@ import os
 import rq
 import shutil
 import tempfile
+import itertools
 
 from django.db import transaction
 from django.utils import timezone
@@ -21,26 +22,32 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data, patch_task_data
 
 from .models import AnnotationModel, FrameworkChoice
-from .model_loader import load_labelmap
+from .model_loader import ModelLoader, load_labelmap
 from .image_loader import ImageLoader
 from .inference import run_inference_engine_annotation
+
 
 
 def _remove_old_file(model_file_field):
     if model_file_field and os.path.exists(model_file_field.name):
         os.remove(model_file_field.name)
 
-def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_file, labelmap_file,
-        interpretation_file, run_tests, is_local_storage, delete_if_test_fails, restricted=True):
+
+def _update_dl_model_thread(dl_model_id, name, is_shared, model_type,
+                            storage_of_files, run_tests, is_local_storage, delete_if_test_fails, restricted=True):
     def _get_file_content(filename):
         return os.path.basename(filename), open(filename, "rb")
 
     def _delete_source_files():
-        for f in [model_file, weights_file, labelmap_file, interpretation_file]:
-            if f:
-                os.remove(f)
+        for k, file in storage_of_files.items():
+            if file:
+                os.remove(file)
 
-    def _run_test(model_file, weights_file, labelmap_file, interpretation_file):
+    # todo
+    def _run_test_tf_annotation(classes_file,tf_model_file):
+        return True, ""
+
+    def _run_test_openvino(model_file, weights_file, labelmap_file, interpretation_file):
         test_image = np.ones((1024, 1980, 3), np.uint8) * 255
         try:
             dummy_labelmap = {key: key for key in load_labelmap(labelmap_file).keys()}
@@ -71,12 +78,19 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
             job.meta["progress"] = "Test started"
             job.save_meta()
 
-            test_res, message = _run_test(
-                model_file=model_file or dl_model.model_file.name,
-                weights_file=weights_file or dl_model.weights_file.name,
-                labelmap_file=labelmap_file or dl_model.labelmap_file.name,
-                interpretation_file=interpretation_file or dl_model.interpretation_file.name,
-            )
+            test_res = False
+            if model_type == 'openvino':
+                test_res, message = _run_test_openvino(
+                    model_file=storage_of_files['model_file'] or dl_model.model_file.name,
+                    weights_file=storage_of_files['weights_file'] or dl_model.weights_file.name,
+                    labelmap_file=storage_of_files['labelmap_file'] or dl_model.labelmap_file.name,
+                    interpretation_file=storage_of_files['interpretation_file'] or dl_model.interpretation_file.name,
+                )
+            if model_type == 'tfannotation':
+                test_res, message = _run_test_tf_annotation(
+                    classes_file=storage_of_files['classes_file'],
+                    tf_model_file=storage_of_files['tf_model_file']
+                )
 
             if not test_res:
                 job.meta["progress"] = "Test failed"
@@ -89,18 +103,32 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
 
         # update DL model
         if test_res:
-            if model_file:
-                _remove_old_file(dl_model.model_file)
-                dl_model.model_file.save(*_get_file_content(model_file))
-            if weights_file:
-                _remove_old_file(dl_model.weights_file)
-                dl_model.weights_file.save(*_get_file_content(weights_file))
-            if labelmap_file:
-                _remove_old_file(dl_model.labelmap_file)
-                dl_model.labelmap_file.save(*_get_file_content(labelmap_file))
-            if interpretation_file:
-                _remove_old_file(dl_model.interpretation_file)
-                dl_model.interpretation_file.save(*_get_file_content(interpretation_file))
+            if model_type == 'openvino':
+                model_file = storage_of_files['model_file']
+                weights_file = storage_of_files['weights_file']
+                labelmap_file = storage_of_files['labelmap_file']
+                interpretation_file = storage_of_files['interpretation_file']
+                if model_file:
+                    _remove_old_file(dl_model.model_file)
+                    dl_model.model_file.save(*_get_file_content(model_file))
+                if weights_file:
+                    _remove_old_file(dl_model.weights_file)
+                    dl_model.weights_file.save(*_get_file_content(weights_file))
+                if labelmap_file:
+                    _remove_old_file(dl_model.labelmap_file)
+                    dl_model.labelmap_file.save(*_get_file_content(labelmap_file))
+                if interpretation_file:
+                    _remove_old_file(dl_model.interpretation_file)
+                    dl_model.interpretation_file.save(*_get_file_content(interpretation_file))
+            if model_type == 'tfannotation':
+                classes_file = storage_of_files['classes_file']
+                tf_model_file = storage_of_files['tf_model_file']
+                if classes_file:
+                    _remove_old_file(dl_model.classes_file)
+                    dl_model.classes_file.save(*_get_file_content(classes_file))
+                if tf_model_file:
+                    _remove_old_file(dl_model.tf_model_file)
+                    dl_model.tf_model_file.save(*_get_file_content(tf_model_file))
 
             if name:
                 dl_model.name = name
@@ -108,6 +136,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
             if is_shared != None:
                 dl_model.shared = is_shared
 
+            dl_model.model_type = model_type
             dl_model.updated_date = timezone.now()
             dl_model.save()
 
@@ -117,7 +146,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
     if not test_res:
         raise Exception("Model was not properly created/updated. Test failed: {}".format(message))
 
-def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file, interpretation_file, owner, storage, is_shared):
+def create_or_update(dl_model_id, name, model_type, model_args, owner, storage, is_shared):
     def get_abs_path(share_path):
         if not share_path:
             return share_path
@@ -143,17 +172,35 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
     if is_create_request:
         dl_model_id = create_empty(owner=owner)
 
-    run_tests = bool(model_file or weights_file or labelmap_file or interpretation_file)
-    if storage != "local":
-        model_file = get_abs_path(model_file)
-        weights_file = get_abs_path(weights_file)
-        labelmap_file = get_abs_path(labelmap_file)
-        interpretation_file = get_abs_path(interpretation_file)
-    else:
-        model_file = save_file_as_tmp(model_file)
-        weights_file = save_file_as_tmp(weights_file)
-        labelmap_file = save_file_as_tmp(labelmap_file)
-        interpretation_file = save_file_as_tmp(interpretation_file)
+    storage_of_files = {}
+    run_tests = False
+    if model_type == 'tfannotation':
+        classes_file = model_args['classes']
+        tf_model_file = model_args['tf_model']
+        run_tests = bool(classes_file or tf_model_file)
+        if storage != "local":
+            storage_of_files['classes_file'] = get_abs_path(classes_file)
+            storage_of_files['tf_model_file'] = get_abs_path(tf_model_file)
+        else:
+            storage_of_files['classes_file'] = save_file_as_tmp(classes_file)
+            storage_of_files['tf_model_file'] = save_file_as_tmp(tf_model_file)
+
+    if model_type == 'openvino':
+        model_file = model_args['model']
+        weights_file = model_args['weights']
+        labelmap_file = model_args['labelmap']
+        interpretation_file = model_args['interpretation_script']
+        run_tests = bool(model_file or weights_file or labelmap_file or interpretation_file)
+        if storage != "local":
+            storage_of_files['model_file'] = get_abs_path(model_file)
+            storage_of_files['weights_file'] = get_abs_path(weights_file)
+            storage_of_files['labelmap_file'] = get_abs_path(labelmap_file)
+            storage_of_files['interpretation_file'] = get_abs_path(interpretation_file)
+        else:
+            storage_of_files['model_file'] = save_file_as_tmp(model_file)
+            storage_of_files['weights_file'] = save_file_as_tmp(weights_file)
+            storage_of_files['labelmap_file'] = save_file_as_tmp(labelmap_file)
+            storage_of_files['interpretation_file'] = save_file_as_tmp(interpretation_file)
 
     if owner:
         restricted = not has_admin_role(owner)
@@ -168,10 +215,8 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
             dl_model_id,
             name,
             is_shared,
-            model_file,
-            weights_file,
-            labelmap_file,
-            interpretation_file,
+            model_type,
+            storage_of_files,
             run_tests,
             storage == "local",
             is_create_request,
