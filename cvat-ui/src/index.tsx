@@ -11,6 +11,7 @@ import { authorizedAsync } from './actions/auth-actions';
 import { getFormatsAsync } from './actions/formats-actions';
 import { checkPluginsAsync } from './actions/plugins-actions';
 import { getUsersAsync } from './actions/users-actions';
+import { getServerInfoAsync } from './actions/serverInfo-actions';
 import {
     resetErrors,
     resetMessages,
@@ -30,6 +31,8 @@ interface StateToProps {
     userInitialized: boolean;
     usersInitialized: boolean;
     usersFetching: boolean;
+    serverInfoInitialized: boolean;
+    serverInfoFetching: boolean;
     formatsInitialized: boolean;
     formatsFetching: boolean;
     installedAutoAnnotation: boolean;
@@ -43,6 +46,7 @@ interface DispatchToProps {
     loadFormats: () => void;
     verifyAuthorized: () => void;
     loadUsers: () => void;
+    loadServerInfo: () => void;
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
@@ -53,6 +57,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { auth } = state;
     const { formats } = state;
     const { users } = state;
+    const { serverInfo } = state;
 
     return {
         userInitialized: auth.initialized,
@@ -60,6 +65,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         pluginsFetching: plugins.fetching,
         usersInitialized: users.initialized,
         usersFetching: users.fetching,
+        serverInfoInitialized: serverInfo.initialized,
+        serverInfoFetching: serverInfo.fetching,
         formatsInitialized: formats.initialized,
         formatsFetching: formats.fetching,
         installedAutoAnnotation: plugins.plugins.AUTO_ANNOTATION,
@@ -76,6 +83,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         verifyAuthorized: (): void => dispatch(authorizedAsync()),
         initPlugins: (): void => dispatch(checkPluginsAsync()),
         loadUsers: (): void => dispatch(getUsersAsync()),
+        loadServerInfo: (): void => dispatch(getServerInfoAsync()),
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
     };

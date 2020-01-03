@@ -3,6 +3,13 @@ import React from 'react';
 
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
+import {
+    BrowserRouter as Router,
+    Link,
+    Switch,
+    Route,
+  } from "react-router-dom";
+  
 
 import {
     Layout,
@@ -10,6 +17,9 @@ import {
     Button,
     Menu,
     Dropdown,
+    Modal,
+    Row,
+    Col,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -31,6 +41,7 @@ interface HeaderContainerProps {
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
     username: string;
+    serverInfo: string;
 }
 
 type Props = HeaderContainerProps & RouteComponentProps;
@@ -42,6 +53,7 @@ function HeaderContainer(props: Props): JSX.Element {
         installedTFAnnotation,
         installedAnalytics,
         username,
+        serverInfo,
         onLogout,
         logoutFetching,
     } = props;
@@ -49,14 +61,39 @@ function HeaderContainer(props: Props): JSX.Element {
     const renderModels = installedAutoAnnotation
         || installedTFAnnotation
         || installedTFSegmentation;
-
+    
+    function DataModal() {
+        Modal.info({
+            title: serverInfo.name,
+            content: (
+                <div className="modal_data_wrapper">
+                    <p>{serverInfo.description}</p>
+                    <p>Server Version : {serverInfo.version}</p>
+                    <p>Client Version: {core.client.version}</p>
+                    <Router>
+                    <Row type='flex' justify='center'>
+                        <Col span={4}><Link to= ''>What's new?</Link></Col>
+                        <Col span={4}><Link to=''>License</Link></Col>
+                        <Col span={4}><a href='https://gitter.im/opencv-cvat' target='_blank'>Need help?</a></Col>
+                        <Col span={4}><a href='https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit' target='_blank'>Forum on Intel Developer Zone</a></Col>
+                    </Row>  
+                    <Switch>
+                        <Route path=''/>
+                        <Route path=''/>
+                    </Switch>
+                    </Router> 
+                </div>
+            ),
+            width: 800,
+        })
+    }
     const menu = (
         <Menu className='cvat-header-menu' mode='vertical'>
             <Menu.Item>
                 <Icon type='setting' />
                 Settings
             </Menu.Item>
-            <Menu.Item>
+            <Menu.Item onClick={() => DataModal()} > 
                 <Icon type='info-circle' />
                 About
             </Menu.Item>

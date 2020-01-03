@@ -28,6 +28,7 @@ import { NotificationsState } from '../reducers/interfaces';
 type CVATAppProps = {
     loadFormats: () => void;
     loadUsers: () => void;
+    loadServerInfo: () => void;
     verifyAuthorized: () => void;
     initPlugins: () => void;
     resetErrors: () => void;
@@ -39,6 +40,8 @@ type CVATAppProps = {
     formatsFetching: boolean;
     usersInitialized: boolean;
     usersFetching: boolean;
+    serverInfoInitialized: boolean;
+    serverInfoFetching: boolean;
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
@@ -56,12 +59,15 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const {
             loadFormats,
             loadUsers,
+            loadServerInfo,
             initPlugins,
             userInitialized,
             formatsInitialized,
             formatsFetching,
             usersInitialized,
             usersFetching,
+            serverInfoFetching,
+            serverInfoInitialized,
             pluginsInitialized,
             pluginsFetching,
             user,
@@ -81,6 +87,10 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
 
         if (!usersInitialized && !usersFetching) {
             loadUsers();
+        }
+
+        if (!serverInfoInitialized && !serverInfoFetching) {
+            loadServerInfo();
         }
 
         if (!pluginsInitialized && !pluginsFetching) {
@@ -236,6 +246,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const {
             userInitialized,
             usersInitialized,
+            serverInfoInitialized,
             pluginsInitialized,
             formatsInitialized,
             installedAutoAnnotation,
@@ -246,7 +257,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
 
         const readyForRender = (userInitialized && user == null)
             || (userInitialized && formatsInitialized
-            && pluginsInitialized && usersInitialized);
+            && pluginsInitialized && usersInitialized && serverInfoInitialized);
 
         const withModels = installedAutoAnnotation
             || installedTFAnnotation || installedTFSegmentation;

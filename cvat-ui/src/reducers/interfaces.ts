@@ -2,6 +2,7 @@ export interface AuthState {
     initialized: boolean;
     fetching: boolean;
     user: any;
+    serverInfo: string;
 }
 
 export interface TasksQuery {
@@ -84,6 +85,12 @@ export interface PluginsState {
 
 export interface UsersState {
     users: any[];
+    fetching: boolean;
+    initialized: boolean;
+}
+
+export interface ServerInfoState {
+    serverInfo: string;
     fetching: boolean;
     initialized: boolean;
 }
@@ -175,6 +182,9 @@ export interface NotificationsState {
         users: {
             fetching: null | ErrorState;
         };
+        serverInfo: {
+            fetching: null | ErrorState;
+        };
         share: {
             fetching: null | ErrorState;
         };
@@ -201,6 +211,7 @@ export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
     users: UsersState;
+    serverInfo: ServerInfoState;
     share: ShareState;
     formats: FormatsState;
     plugins: PluginsState;

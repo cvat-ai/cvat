@@ -7,12 +7,14 @@ import formatsReducer from './formats-reducer';
 import pluginsReducer from './plugins-reducer';
 import modelsReducer from './models-reducer';
 import notificationsReducer from './notifications-reducer';
+import serverInfoReducer from './serverInfo-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
         auth: authReducer,
         tasks: tasksReducer,
         users: usersReducer,
+        serverInfo: serverInfoReducer,
         share: shareReducer,
         formats: formatsReducer,
         plugins: pluginsReducer,
