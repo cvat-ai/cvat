@@ -19,6 +19,7 @@ https://github.com/opencv/cvat/issues/750).
 - Datumaro is an experimental framework to build, analyze, debug and visualize datasets for DL algorithms
 - Text Detection Auto Annoation Script in OpenVINO format for version 4
 - Added in OpenVINO Semantic Segmentation for roads
+- Ability to visualize labels when using Auto Annotation runner
 
 ### Changed
 - page_size parameter for all REST API methods

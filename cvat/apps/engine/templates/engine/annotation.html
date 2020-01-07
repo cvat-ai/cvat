@@ -42,6 +42,7 @@
         <script type="text/javascript" src="{% static 'engine/js/server.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/listener.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/history.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/borderSticker.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/coordinateTranslator.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/labelsInfo.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/annotationParser.js' %}"></script>
@@ -192,6 +193,12 @@
                         <div style="float: left; margin-left: 10px;">
                             <label style="margin-right: 10px;"> Label </label>
                             <input type="radio" name="colorByRadio" id="colorByLabelRadio" class="settingsBox"/>
+                        </div>
+                        <div style="float: left; margin-left: 50px;" title="Press Ctrl to switch">
+                            <label style="display: none;">
+                                Common borders
+                                <input type="checkbox" id="commonBordersCheckbox" class="settingsBox" style="margin-left: 10px; display: none;"/>
+                            </label>
                         </div>
                     </td>
                 </tr>
@@ -438,7 +445,7 @@
             <option value="interpolation" class="regular"> Interpolation </option>
         </select>
         <select id="shapeTypeSelector" class="regular h2">
-            <option value="box" class="regular"> Box </option>
+            <option value="box" class="regular" selected> Box </option>
             <option value="polygon" class="regular"> Polygon </option>
             <option value="polyline" class="regular"> Polyline </option>
             <option value="points" class="regular"> Points </option>

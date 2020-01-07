@@ -137,9 +137,6 @@ class ProjectTest(TestCase):
                 for i in range(self.n):
                     yield DatasetItem(id=i, subset='train', image=i)
 
-            def subsets(self):
-                return ['train']
-
         class TestLauncher(Launcher):
             def __init__(self, **kwargs):
                 pass
@@ -178,9 +175,6 @@ class ProjectTest(TestCase):
                     yield DatasetItem(id=i, subset='train', image=i,
                         annotations=[ LabelObject(i) ])
 
-            def subsets(self):
-                return ['train']
-
         class TestLauncher(Launcher):
             def __init__(self, **kwargs):
                 pass
@@ -207,16 +201,9 @@ class ProjectTest(TestCase):
                         index = osp.splitext(osp.basename(path))[0]
                         subset = f.readline()[:-1]
                         label = int(f.readline()[:-1])
-                        assert(subset == 'train')
+                        assert subset == 'train'
                         yield DatasetItem(id=index, subset=subset,
                             annotations=[ LabelObject(label) ])
-
-            def __len__(self):
-                return len(self.items)
-
-            def subsets(self):
-                return ['train']
-
 
         model_name = 'model'
         launcher_name = 'custom_launcher'
@@ -251,9 +238,6 @@ class ProjectTest(TestCase):
                 for i in range(self.n):
                     yield DatasetItem(id=self.s + i, subset='train')
 
-            def subsets(self):
-                return ['train']
-
         e_name1 = 'e1'
         e_name2 = 'e2'
         n1 = 2
@@ -279,9 +263,6 @@ class ProjectTest(TestCase):
                 for i in range(self.n):
                     yield DatasetItem(id=i, subset='train')
 
-            def subsets(self):
-                return ['train']
-
         e_type = 'type'
         project = Project()
         project.env.extractors.register(e_type, TestExtractor)
@@ -291,6 +272,19 @@ class ProjectTest(TestCase):
         dataset = project.make_dataset()
 
         self.assertEqual(5, len(dataset))
+
+    def test_can_save_and_load_own_dataset(self):
+        with TestDir() as test_dir:
+            src_project = Project()
+            src_dataset = src_project.make_dataset()
+            item = DatasetItem(id=1)
+            src_dataset.put(item)
+            src_dataset.save(test_dir.path)
+
+            loaded_project = Project.load(test_dir.path)
+            loaded_dataset = loaded_project.make_dataset()
+
+            self.assertEqual(list(src_dataset), list(loaded_dataset))
 
     def test_project_own_dataset_can_be_modified(self):
         project = Project()
@@ -353,9 +347,6 @@ class ProjectTest(TestCase):
                 else:
                     yield v2_item
 
-            def subsets(self):
-                return ['train']
-
         project = Project()
         project.env.extractors.register('t1', lambda p: TestExtractor(p, v=1))
         project.env.extractors.register('t2', lambda p: TestExtractor(p, v=2))
@@ -378,9 +369,6 @@ class DatasetFilterTest(TestCase):
         def __iter__(self):
             for i in range(self.n):
                 yield DatasetItem(id=i, subset='train')
-
-        def subsets(self):
-            return ['train']
 
     def test_xpathfilter_can_be_applied(self):
         extractor = self.TestExtractor('', n=4)
@@ -432,9 +420,6 @@ class ExtractorTest(TestCase):
 
                     DatasetItem(id=3, subset='test'),
                 ])
-
-            def subsets(self):
-                return ['train', 'test']
 
         extractor_name = 'ext1'
         project = Project()

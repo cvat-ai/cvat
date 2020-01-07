@@ -3,70 +3,58 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import defaultdict
 import json
 import logging as log
 import os.path as osp
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    DEFAULT_SUBSET_NAME,
-    AnnotationType,
+    DEFAULT_SUBSET_NAME, AnnotationType,
     LabelObject, MaskObject, PointsObject, PolygonObject,
     PolyLineObject, BboxObject, CaptionObject,
     LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.components.formats.datumaro import DatumaroPath
-from datumaro.util import dir_items
 from datumaro.util.image import lazy_image
 from datumaro.util.mask_tools import lazy_mask
 
 
 class DatumaroExtractor(Extractor):
-    class Subset(Extractor):
-        def __init__(self, name, parent):
-            super().__init__()
-            self._parent = parent
-            self._name = name
-            self.items = []
-
-        def __iter__(self):
-            for item in self.items:
-                yield self._parent._get(item, self._name)
-
-        def __len__(self):
-            return len(self.items)
-
-        def categories(self):
-            return self._parent.categories()
-
     def __init__(self, path):
         super().__init__()
 
-        assert osp.isdir(path)
-        self._path = path
+        assert osp.isfile(path)
+        rootpath = path.rsplit(DatumaroPath.ANNOTATIONS_DIR, maxsplit=1)[0]
+        self._path = rootpath
 
-        annotations = defaultdict(list)
-        found_subsets = self._find_subsets(path)
-        parsed_anns = None
-        subsets = {}
-        for subset_name, subset_path in found_subsets.items():
-            if subset_name == DEFAULT_SUBSET_NAME:
-                subset_name = None
-            subset = self.Subset(subset_name, self)
-            with open(subset_path, 'r') as f:
-                parsed_anns = json.load(f)
+        subset_name = osp.splitext(osp.basename(path))[0]
+        if subset_name == DEFAULT_SUBSET_NAME:
+            subset_name = None
+        self._subset_name = subset_name
 
-            for index, _ in enumerate(parsed_anns['items']):
-                subset.items.append(index)
+        with open(path, 'r') as f:
+            parsed_anns = json.load(f)
+        self._categories = self._load_categories(parsed_anns)
+        self._items = self._load_items(parsed_anns)
 
-            annotations[subset_name] = parsed_anns
-            subsets[subset_name] = subset
-        self._annotations = dict(annotations)
-        self._subsets = subsets
+    def categories(self):
+        return self._categories
 
-        self._categories = {}
-        if parsed_anns is not None:
-            self._categories = self._load_categories(parsed_anns)
+    def __iter__(self):
+        for item in self._items:
+            yield item
+
+    def __len__(self):
+        return len(self._items)
+
+    def subsets(self):
+        if self._subset_name:
+            return [self._subset_name]
+        return None
+
+    def get_subset(self, name):
+        if name != self._subset_name:
+            return None
+        return self
 
     @staticmethod
     def _load_categories(parsed):
@@ -101,21 +89,24 @@ class DatumaroExtractor(Extractor):
 
         return categories
 
-    def _get(self, index, subset_name):
-        item = self._annotations[subset_name]['items'][index]
+    def _load_items(self, parsed):
+        items = []
+        for item_desc in parsed['items']:
+            item_id = item_desc['id']
+            image = None
+            image_path = osp.join(self._path, DatumaroPath.IMAGES_DIR,
+                item_id + DatumaroPath.IMAGE_EXT)
+            if osp.exists(image_path):
+                image = lazy_image(image_path)
 
-        item_id = item.get('id')
+            annotations = self._load_annotations(item_desc)
 
-        image_path = osp.join(self._path, DatumaroPath.IMAGES_DIR,
-            item_id + DatumaroPath.IMAGE_EXT)
-        image = None
-        if osp.isfile(image_path):
-            image = lazy_image(image_path)
+            item = DatasetItem(id=item_id, subset=self._subset_name,
+                annotations=annotations, image=image)
 
-        annotations = self._load_annotations(item)
+            items.append(item)
 
-        return DatasetItem(id=item_id, subset=subset_name,
-            annotations=annotations, image=image)
+        return items
 
     def _load_annotations(self, item):
         parsed = item['annotations']
@@ -182,33 +173,3 @@ class DatumaroExtractor(Extractor):
                 raise NotImplementedError()
 
         return loaded
-
-    def categories(self):
-        return self._categories
-
-    def __iter__(self):
-        for subset_name, subset in self._subsets.items():
-            for index in subset.items:
-                yield self._get(index, subset_name)
-
-    def __len__(self):
-        length = 0
-        for subset in self._subsets.values():
-            length += len(subset)
-        return length
-
-    def subsets(self):
-        return list(self._subsets)
-
-    def get_subset(self, name):
-        return self._subsets[name]
-
-    @staticmethod
-    def _find_subsets(path):
-        anno_dir = osp.join(path, DatumaroPath.ANNOTATIONS_DIR)
-        if not osp.isdir(anno_dir):
-            raise Exception('Datumaro dataset not found at "%s"' % path)
-
-        return { name: osp.join(anno_dir, name + '.json')
-            for name in dir_items(anno_dir, '.json', truncate_ext=True)
-        }

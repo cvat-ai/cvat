@@ -1,3 +1,4 @@
+import './styles.scss';
 import React from 'react';
 
 import {
@@ -388,7 +389,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
             visible && (
                 <Modal
                     closable={false}
-                    okType='danger'
+                    okType='primary'
                     okText='Submit'
                     onOk={(): void => {
                         runInference(
@@ -406,7 +407,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     visible
                 >
                     {!modelsInitialized
-                        && <Spin size='large' style={{ margin: '25% 50%' }} />}
+                        && <Spin size='large' className='cvat-spinner' />}
                     {modelsInitialized && this.renderContent()}
                 </Modal>
             )

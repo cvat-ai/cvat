@@ -587,7 +587,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
     const shapeCreatorController = new ShapeCreatorController(shapeCreatorModel);
     const shapeCreatorView = new ShapeCreatorView(shapeCreatorModel, shapeCreatorController);
 
-    const polyshapeEditorModel = new PolyshapeEditorModel();
+    const polyshapeEditorModel = new PolyshapeEditorModel(shapeCollectionModel);
     const polyshapeEditorController = new PolyshapeEditorController(polyshapeEditorModel);
     const polyshapeEditorView = new PolyshapeEditorView(polyshapeEditorModel,
         polyshapeEditorController);

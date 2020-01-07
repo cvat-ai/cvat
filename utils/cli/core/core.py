@@ -112,6 +112,23 @@ class CLI():
         with open(filename, 'wb') as fp:
             fp.write(response.content)
 
+    def tasks_upload(self, task_id, fileformat, filename, **kwargs):
+        """ Upload annotations for a task in the specified format
+        (e.g. 'YOLO ZIP 1.0')."""
+        url = self.api.tasks_id_annotations_format(task_id, fileformat)
+        while True:
+            response = self.session.put(
+                url,
+                files={'annotation_file':open(filename, 'rb')}
+                )
+            response.raise_for_status()
+            if response.status_code == 201:
+                break
+
+        logger_string = "Upload job for Task ID {} ".format(task_id) +\
+            "with annotation file {} finished".format(filename)
+        log.info(logger_string)
+
 
 class CVAT_API_V1():
     """ Build parameterized API URLs """
@@ -134,6 +151,10 @@ class CVAT_API_V1():
 
     def tasks_id_frame_id(self, task_id, frame_id):
         return self.tasks_id(task_id) + '/frames/{}'.format(frame_id)
+
+    def tasks_id_annotations_format(self, task_id, fileformat):
+        return self.tasks_id(task_id) + '/annotations?format={}' \
+            .format(fileformat)
 
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
         return self.tasks_id(task_id) + '/annotations/{}?format={}' \

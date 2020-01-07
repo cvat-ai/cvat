@@ -1,0 +1,148 @@
+@import '../../base.scss';
+
+.cvat-annotation-page.ant-layout {
+    height: 100%
+}
+
+.ant-layout-header.cvat-annotation-page-header {
+    background-color: $background-color-2;
+    border-bottom: 1px solid $border-color-1;
+    height: 54px;
+    padding: 0px;
+}
+
+.cvat-annotation-header-left-group {
+    height: 100%;
+
+    > div:first-child {
+        filter: invert(0.9);
+        background: $background-color-1;
+        border-radius: 0px;
+        width: 70px;
+    }
+}
+
+.cvat-annotation-header-button {
+    padding: 0px;
+    width: 54px;
+    height: 54px;
+    float: left;
+    text-align: center;
+    user-select: none;
+
+    > span {
+        font-size: 10px;
+    }
+
+    > i {
+        transform: scale(0.8);
+        padding: 3px;
+    }
+
+    &:hover > i {
+        transform: scale(0.9);
+    }
+
+    &:active > i {
+        transform: scale(0.8);
+    }
+
+    > * {
+        display: block;
+        line-height: 0px;
+    }
+}
+
+.cvat-annotation-header-player-group > div {
+    height: 54px;
+    line-height: 0px;
+}
+
+.cvat-annotation-header-player-buttons {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 100%;
+    margin-right: 10px;
+
+    > i {
+        transform: scale(0.6);
+
+        &:hover {
+            transform: scale(0.7);
+        }
+
+        &:active {
+            transform: scale(0.6);
+        }
+    }
+}
+
+.cvat-annotation-header-player-controls {
+    position: relative;
+    height: 100%;
+    line-height: 27px;
+
+    > div {
+        position: relative;
+        height: 50%;
+    }
+}
+
+.cvat-annotation-header-player-slider {
+    width: 350px;
+
+    > .ant-slider-rail {
+        background-color: $player-slider-color;
+    }
+}
+
+.cvat-annotation-header-filename-wrapper {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}
+
+.cvat-annotation-header-frame-selector {
+    width: 5em;
+    padding-right: 5px;
+    margin-left: 5px;
+}
+
+.cvat-annotation-header-right-group {
+    height: 100%;
+
+    > div {
+        height: 54px;
+        float: left;
+        text-align: center;
+        margin-right: 20px;
+
+        > span {
+            font-size: 10px;
+        }
+
+        > i {
+            transform: scale(0.8);
+            padding: 3px;
+        }
+
+        &:hover > i {
+            transform: scale(0.9);
+        }
+
+        &:active > i {
+            transform: scale(0.8);
+        }
+    }
+
+    > div:not(:nth-child(3)) > * {
+        display: block;
+        line-height: 0px;
+    }
+}
+
+.cvat-annotation-header-workspace-selector {
+    width: 150px;
+}

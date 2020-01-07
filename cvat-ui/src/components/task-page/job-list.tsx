@@ -45,7 +45,7 @@ export default function JobListComponent(props: Props): JSX.Element {
         title: 'Frames',
         dataIndex: 'frames',
         key: 'frames',
-        className: 'cvat-black-color',
+        className: 'cvat-text-color',
     }, {
         title: 'Status',
         dataIndex: 'status',
@@ -68,12 +68,12 @@ export default function JobListComponent(props: Props): JSX.Element {
         title: 'Started on',
         dataIndex: 'started',
         key: 'started',
-        className: 'cvat-black-color',
+        className: 'cvat-text-color',
     }, {
         title: 'Duration',
         dataIndex: 'duration',
         key: 'duration',
-        className: 'cvat-black-color',
+        className: 'cvat-text-color',
     }, {
         title: 'Assignee',
         dataIndex: 'assignee',
@@ -127,7 +127,7 @@ export default function JobListComponent(props: Props): JSX.Element {
         <div className='cvat-task-job-list'>
             <Row type='flex' justify='space-between' align='middle'>
                 <Col>
-                    <Text className='cvat-black-color cvat-jobs-header'> Jobs </Text>
+                    <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
                     <Tooltip trigger='click' title='Copied to clipboard!'>
                         <Button
                             type='link'
@@ -155,7 +155,7 @@ export default function JobListComponent(props: Props): JSX.Element {
                     </Tooltip>
                 </Col>
                 <Col>
-                    <Text className='cvat-black-color'>
+                    <Text className='cvat-text-color'>
                         {`${completed} of ${data.length} jobs`}
                     </Text>
                 </Col>

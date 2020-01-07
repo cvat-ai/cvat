@@ -1,3 +1,4 @@
+import './styles.scss';
 import React from 'react';
 
 import {
@@ -26,10 +27,6 @@ import {
 } from 'react-share';
 
 import Text from 'antd/lib/typography/Text';
-
-interface State {
-    active: boolean;
-}
 
 function renderContent(): JSX.Element {
     const githubURL = 'https://github.com/opencv/cvat';
@@ -95,7 +92,7 @@ export default function Feedback(): JSX.Element {
             <Popover
                 placement='leftTop'
                 title={
-                    <Text className='cvat-black-color'>Help to make CVAT better</Text>
+                    <Text className='cvat-text-color'>Help to make CVAT better</Text>
                 }
                 content={renderContent()}
                 visible={visible}

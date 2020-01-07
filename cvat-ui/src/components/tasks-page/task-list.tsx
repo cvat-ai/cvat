@@ -6,6 +6,7 @@ import {
     Pagination,
 } from 'antd';
 
+import ModelRunnerModalContainer from '../../containers/model-runner-dialog/model-runner-dialog';
 import TaskItem from '../../containers/tasks-page/task-item';
 
 export interface ContentListProps {
@@ -29,7 +30,7 @@ export default function TaskListComponent(props: ContentListProps): JSX.Element 
     return (
         <>
             <Row type='flex' justify='center' align='middle'>
-                <Col className='cvat-task-list' md={22} lg={18} xl={16} xxl={14}>
+                <Col className='cvat-tasks-list' md={22} lg={18} xl={16} xxl={14}>
                     { taskViews }
                 </Col>
             </Row>
@@ -45,6 +46,7 @@ export default function TaskListComponent(props: ContentListProps): JSX.Element 
                     />
                 </Col>
             </Row>
+            <ModelRunnerModalContainer />
         </>
     );
 }

@@ -1,4 +1,3 @@
-/* eslint-disable no-plusplus */
 /*
  * Copyright (C) 2018 Intel Corporation
  *
@@ -17,6 +16,7 @@
     showMessage:false
     STROKE_WIDTH:false
     SVG:false
+    BorderSticker: false
     CuboidModel:false
     Cuboid2PointViewModel:false
 */
@@ -105,6 +105,11 @@ class ShapeCreatorModel extends Listener {
         this.notify();
     }
 
+    get currentShapes() {
+        this._shapeCollection.update();
+        return this._shapeCollection.currentShapes;
+    }
+
     get saveCurrent() {
         return this._saveCurrent;
     }
@@ -177,6 +182,10 @@ class ShapeCreatorController {
     finish(result) {
         this._model.finish(result);
     }
+
+    get currentShapes() {
+        return this._model.currentShapes;
+    }
 }
 
 class ShapeCreatorView {
@@ -188,6 +197,7 @@ class ShapeCreatorView {
         this._modeSelector = $('#shapeModeSelector');
         this._typeSelector = $('#shapeTypeSelector');
         this._polyShapeSizeInput = $('#polyShapeSize');
+        this._commonBordersCheckbox = $('#commonBordersCheckbox');
         this._frameContent = SVG.adopt($('#frameContent')[0]);
         this._frameText = SVG.adopt($('#frameText')[0]);
         this._playerFrame = $('#playerFrame');
@@ -203,6 +213,7 @@ class ShapeCreatorView {
         this._mode = null;
         this._cancel = false;
         this._scale = 1;
+        this._borderSticker = null;
 
         const { shortkeys } = window.cvat.config;
         this._createButton.attr('title', `
@@ -212,11 +223,16 @@ class ShapeCreatorView {
             ${shortkeys.change_default_label.view_value} - ${shortkeys.change_default_label.description}`);
 
         const labels = window.cvat.labelsInfo.labels();
-        for (const labelId in labels) {
-            const option = $(`<option value=${labelId}> ${labels[labelId].normalize()} </option>`);
-            option.appendTo(this._labelSelector);
+        const labelsKeys = Object.keys(labels);
+        for (let i = 0; i < labelsKeys.length; i += 1) {
+            this._labelSelector.append(
+                // eslint-disable-next-line
+                $(`<option value=${labelsKeys[i]}> ${labels[labelsKeys[i]].normalize()} </option>`)
+            );
         }
+        this._labelSelector.val(labelsKeys[0]);
 
+        this._typeSelector.val('box');
         this._typeSelector.on('change', (e) => {
             // FIXME: In the future we have to make some generic solution
             const mode = this._modeSelector.prop('value');
@@ -285,6 +301,20 @@ class ShapeCreatorView {
                 }
             }
         });
+
+        this._commonBordersCheckbox.on('change.shapeCreator', (e) => {
+            if (this._drawInstance) {
+                if (!e.target.checked) {
+                    if (this._borderSticker) {
+                        this._borderSticker.disable();
+                        this._borderSticker = null;
+                    }
+                } else {
+                    this._borderSticker = new BorderSticker(this._drawInstance, this._frameContent,
+                        this._controller.currentShapes, this._scale);
+                }
+            }
+        });
     }
 
     _createCuboidEvent() {
@@ -350,15 +380,16 @@ class ShapeCreatorView {
 
         if (this._polyShapeSize) {
             let size = this._polyShapeSize;
-            const sizeDecrement = function () {
-                if (!--size) {
+            const sizeDecrement = function sizeDecrement() {
+                size -= 1;
+                if (!size) {
                     numberOfPoints = this._polyShapeSize;
                     this._drawInstance.draw('done');
                 }
             }.bind(this);
 
-            const sizeIncrement = function () {
-                size++;
+            const sizeIncrement = function sizeIncrement() {
+                size += 1;
             };
 
             this._drawInstance.on('drawstart', sizeDecrement);
@@ -366,6 +397,12 @@ class ShapeCreatorView {
             this._drawInstance.on('undopoint', sizeIncrement);
         }
         // Otherwise draw will stop by Ctrl + N press
+
+        this._drawInstance.on('drawpoint', () => {
+            if (this._borderSticker) {
+                this._borderSticker.reset();
+            }
+        });
 
         // Callbacks for point scale
         this._drawInstance.on('drawstart', this._rescaleDrawPoints.bind(this));
@@ -376,7 +413,7 @@ class ShapeCreatorView {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY,
             };
-            numberOfPoints++;
+            numberOfPoints += 1;
         });
 
         this._drawInstance.on('drawpoint', (e) => {
@@ -384,9 +421,18 @@ class ShapeCreatorView {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY,
             };
-            numberOfPoints++;
+            numberOfPoints += 1;
             if (this._type === 'cuboid' && numberOfPoints === 4) {
                 this._drawInstance.draw('done');
+            }
+        });
+
+        this._commonBordersCheckbox.css('display', '').trigger('change.shapeCreator');
+        this._commonBordersCheckbox.parent().css('display', '');
+        $('body').on('keydown.shapeCreator', (e) => {
+            if (e.ctrlKey && e.keyCode === 17) {
+                this._commonBordersCheckbox.prop('checked', !this._borderSticker);
+                this._commonBordersCheckbox.trigger('change.shapeCreator');
             }
         });
 
@@ -394,9 +440,12 @@ class ShapeCreatorView {
             if (e.which === 3) {
                 const lenBefore = this._drawInstance.array().value.length;
                 this._drawInstance.draw('undo');
+                if (this._borderSticker) {
+                    this._borderSticker.reset();
+                }
                 const lenAfter = this._drawInstance.array().value.length;
                 if (lenBefore !== lenAfter) {
-                    numberOfPoints--;
+                    numberOfPoints -= 1;
                 }
             }
         });
@@ -423,6 +472,13 @@ class ShapeCreatorView {
         this._drawInstance.on('drawstop', () => {
             this._frameContent.off('mousedown.shapeCreator');
             this._frameContent.off('mousemove.shapeCreator');
+            this._commonBordersCheckbox.css('display', 'none');
+            this._commonBordersCheckbox.parent().css('display', 'none');
+            $('body').off('keydown.shapeCreator');
+            if (this._borderSticker) {
+                this._borderSticker.disable();
+                this._borderSticker = null;
+            }
         });
         // Also we need callback on drawdone event for get points
         this._drawInstance.on('drawdone', (e) => {
@@ -577,9 +633,10 @@ class ShapeCreatorView {
                 });
             break;
         case 'points':
-            this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
-                'stroke-width': 0,
-            });
+            this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 })
+                .addClass('shapeCreation').attr({
+                    'stroke-width': 0,
+                });
             this._createPolyEvents();
             break;
         case 'polygon':
@@ -590,9 +647,10 @@ class ShapeCreatorView {
                 this._controller.switchCreateMode(true);
                 return;
             }
-            this._drawInstance = this._frameContent.polygon().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
-                'stroke-width': STROKE_WIDTH / this._scale,
-            });
+            this._drawInstance = this._frameContent.polygon().draw({ snapToGrid: 0.1 })
+                .addClass('shapeCreation').attr({
+                    'stroke-width': STROKE_WIDTH / this._scale,
+                });
             this._createPolyEvents();
             break;
         case 'polyline':
@@ -603,9 +661,10 @@ class ShapeCreatorView {
                 this._controller.switchCreateMode(true);
                 return;
             }
-            this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
-                'stroke-width': STROKE_WIDTH / this._scale,
-            });
+            this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 })
+                .addClass('shapeCreation').attr({
+                    'stroke-width': STROKE_WIDTH / this._scale,
+                });
             this._createPolyEvents();
             break;
         case 'cuboid':
@@ -708,6 +767,9 @@ class ShapeCreatorView {
             this._scale = player.geometry.scale;
             if (this._drawInstance) {
                 this._rescaleDrawPoints();
+                if (this._borderSticker) {
+                    this._borderSticker.scale(this._scale);
+                }
                 if (this._aim) {
                     this._aim.x.attr('stroke-width', STROKE_WIDTH / this._scale);
                     this._aim.y.attr('stroke-width', STROKE_WIDTH / this._scale);

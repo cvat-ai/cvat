@@ -3,7 +3,7 @@
     - [Authorization](#authorization)
     - [Administration panel](#administration-panel)
     - [Creating an annotation task](#creating-an-annotation-task)
-    - [Model manager](#model-manager)
+    - [Models](#models)
     - [Search](#search)
   - [Interface of the annotation tool](#interface-of-the-annotation-tool)
     - [Basic navigation](#basic-navigation)
@@ -28,8 +28,10 @@
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
   - [Annotation with points](#annotation-with-points)
+    - [Points in annotation mode](#points-in-annotation-mode)
+    - [Linear interpolation with one point](#linear-interpolation-with-one-point)
   - [Annotation with Auto Segmentation](#annotation-with-auto-segmentation)
-  - [Auto annotation](#auto-annotation)
+  - [Automatic annotation](#auto-annotation)
   - [Shape grouping](#shape-grouping)
   - [Filter](#filter)
   - [Analytics](#analytics)
@@ -54,6 +56,8 @@ computer vision tasks developed by our team.
 -   First of all, you have to log in to CVAT tool.
 
     ![](static/documentation/images/image001.jpg)
+
+-   For register a new user press "Create an account"
 
     ![](static/documentation/images/image002.jpg)
 
@@ -80,67 +84,71 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
 ### Creating an annotation task
 
-1.  Create an annotation task pressing ``Create New Task`` button on the main page.
+1.  Create an annotation task pressing ``Create new task`` button on the main page.
+![](static/documentation/images/image004.jpg)
 
-    ![](static/documentation/images/image004.jpg)
+1.  Specify parameters of the task:
 
-1.  Specify mandatory parameters of the task.
-    You have to fill in ``Name``, ``Labels`` and press the ``Select Files`` button.
-    After that you have to choose data you want to annotate.
+    #### Basic configuration
+
+    **Name** The name of the task to be created.
 
     ![](static/documentation/images/image005.jpg)
 
-    **Labels**. Use the following layout to create labels:
-    ``label_name <prefix>input_type=attribute_name:attribute_value1,attribute_value2``.
-    You can specify multiple labels and attributes and divide them pressing the space button.
-    Attributes belong to a previous label.
+    **Labels**. There are two ways of working with labels:
+    -   The ``Constructor`` is a simple way to add and adjust labels. To add a new label click the ``Add label`` button.
+          ![](static/documentation/images/image123.jpg)
+    
+        You can set a name of the label in the ``Label name`` field.
 
-    Example:
-    - ``vehicle @select=type:__undefined__,car,truck,bus,train ~radio=quality:good,bad ~checkbox=parked:false`` -
-    one label with multiple attributes
-    - ``car person bike`` - three labels without attributes
-    - ``circle @radio=color:green,red,blue @number=radius:0,10,0.1 line square`` -
-    one label with two attributes and two labels without attributes
+          ![](static/documentation/images/image124.jpg)
 
-    ``label_name``: for example _vehicle, person, face etc._
+        If necessary you can add an attribute and set its properties by clicking ``Add an attribute``:
 
-    ``<prefix>``:
-    - Use ``@`` for unique attributes which cannot be changed from frame to frame _(e.g. age, gender, color, etc.)_
-    - Use ``~`` for temporary attributes which can be changed on any frame _(e.g. quality, pose, truncated, etc.)_
+          ![](static/documentation/images/image125.jpg)
 
-    ``input_type``: the following input types are available ``select``, ``checkbox``, ``radio``, ``number``, ``text``.
+        The following actions are available here: 
+        1. Set the attribute’s name. 
+        1. Choose the way to display the attribute: 
+           - Select — drop down list of value 
+           - Radio — is used when it is necessary to choose just one option out of few suggested. 
+           - Checkbox — is used when it is necessary to choose any number of options out of suggested. 
+           - Text — is used when an attribute is entered as a text. 
+           - Number — is used when an attribute is entered as a number. 
+        1. Set values for the attribute. The values could be separated by pressing ``Enter``. 
+        The entered value is displayed as a separate element which could be deleted 
+        by pressing ``Backspace`` or clicking the close button (x). 
+        If the specified way of displaying the attribute is Text or Number, 
+        the entered value will be displayed as text by default (e.g. you can specify the text format).
+        1. Checkbox ``Mutable`` determines if an attribute would be changed frame to frame. 
+        1. You can delete the attribute by clicking the close button (x).
 
-    ``attribute_name``: for example, _age, quality, parked_
+        Click the ``Continue`` button to add more labels. 
+        If you need to cancel adding a label - press the ``Cancel`` button. 
+        After all the necessary labels are added click the ``Done`` button.  
+        After clicking ``Done`` the added labels would be displayed as separate elements of different colour. 
+        You can edit or delete labels by clicking ``Update attributes`` or ``Delete label``. 
 
-    ``attribute_value``: for example, _middle-age, good, true_
+    -   The ``Raw`` is a way of working with labels for an advanced user. 
+    Raw presents label data in _json_ format with an option of editing and copying labels as a text. 
+    The ``Done`` button applies the changes and the ``Reset`` button cancels the changes. 
+          ![](static/documentation/images/image126.jpg)
 
-    Default value for an attribute is the first value after "``:``".
+    **Select files**. Press tab ``My computer`` to choose some files for annotation from your PC. 
+    If you select tab ``Connected file share`` you can choose files for annotation from your network. 
+    If you select `` Remote source`` , you'll see a field where you can enter a list of URLs (one URL per line).
+    
+      ![](static/documentation/images/image127.jpg)
 
-    For ``select`` and ``radio`` input types the special value is available: ``__undefined__``.
-    Specify this value first if an attribute should be annotated explicitly.
+    #### Advanced configuration
 
-    **Bug Tracker**. Specify full bug tracker's URL if you have it.
-
-    **Dataset Repository**.  URL link of the repository optionally specifies the path to the repository for storage
-    (``default: annotation / <dump_file_name> .zip``).
-    The .zip and .xml file extension of annotation are supported.
-    Field format: ``URL [PATH]`` example: ``https://github.com/project/repos.git  [1/2/3/4/annotation.xml]``
-
-    Supported URL formats :
-    - ``https://github.com/project/repos[.git]``
-    - ``github.com/project/repos[.git]``
-    - ``git@github.com:project/repos[.git]``
-
-    The task will be highlighted in red after creation if annotation isn't synchronized with the repository.
-
-    **Use LFS**. If the annotation file is large, you can create a repository with
-    [LFS](https://git-lfs.github.com/) support.
-
-    **Source**. Choose "Local" if you want to use files from your PC.
-    Choose the "Remote" option if you want to use a one url-adress or a list.
-    To create huge tasks please use shared server directory (choose "Share"). 
+      ![](static/documentation/images/image128.jpg)  
 
     **Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
+    
+    **Image Quality**. Use this option to specify quality of uploaded images.
+    The option helps to load high resolution datasets faster.
+    Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
 
     **Overlap Size**. Use this option to make overlapped segments.
     The option makes tracks continuous from one segment into another.
@@ -168,17 +176,29 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     Thus using "segment size" you can create several jobs for the same annotation task.
     It will help you to parallel data annotation process.
 
-    **Image Quality**. Use this option to specify quality of uploaded images.
-    The option helps to load high resolution datasets faster.
-    Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
+    **Start frame**. Frame from which video in task begins.
+
+    **Stop frame**. Frame on which video in task ends.
 
     **Frame Filter**. Use this option to filter video frames.
     For example, enter ``step=25`` to leave every twenty fifth frame in the video. Use this option on video files only.
 
-    **Select files or URL list**. If you select `` Remote`` in `` Source``, you'll see a field where you can enter
-    a list of URLs (one URL per line).
-    Press `` Local`` or `` Share`` in the `` source`` field to choose some files
-    for anotation from your local PC or a network folder respectively.
+    **Dataset Repository**.  URL link of the repository optionally specifies the path to the repository for storage
+    (``default: annotation / <dump_file_name> .zip``).
+    The .zip and .xml file extension of annotation are supported.
+    Field format: ``URL [PATH]`` example: ``https://github.com/project/repos.git  [1/2/3/4/annotation.xml]``
+
+    Supported URL formats :
+    - ``https://github.com/project/repos[.git]``
+    - ``github.com/project/repos[.git]``
+    - ``git@github.com:project/repos[.git]``
+
+    The task will be highlighted in red after creation if annotation isn't synchronized with the repository.
+
+    **Use LFS**. If the annotation file is large, you can create a repository with
+    [LFS](https://git-lfs.github.com/) support.
+
+    **Issue tracker**. Specify full issue tracker's URL if it's necessary.
 
     Push ``Submit`` button and it will be added into the list of annotation tasks.
     Then, the created task will be displayed on a dashboard:
@@ -186,35 +206,63 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     ![](static/documentation/images/image006_DETRAC.jpg)
 
 1.  The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
-    Each element contains: task name, preview, execution status, buttons, and one or more links.
-    Each button is responsible for a specific function:
+    Each element contains: task name, preview, progress bar, button ``Open``, and menu ``Actions``.
+    Each button is responsible for a in menu ``Actions`` specific function:
     - ``Dump Annotation`` — download an annotation file from a task. Several formats are available:
       - [CVAT XML 1.1 for video](/cvat/apps/documentation/xml_format.md#interpolation)
-      is highlighted if a task has the interpolation mode 
+      is highlighted if a task has the interpolation mode.
       - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
-      is highlighted if a task has the annotation mode 
+      is highlighted if a task has the annotation mode. 
       - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
       - [COCO JSON 1.0](http://cocodataset.org/#format-data)
       - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file
-      with the value of each color
+      with the value of each color.
       - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records)
+      - [MOT CSV 1.0](https://motchallenge.net/)
+      - [LabelMe ZIP 3.0 for image](http://labelme.csail.mit.edu/Release3.0/)
     - ``Upload annotation`` is possible in same format as ``Dump annotation``, with exception of ``MASK ZIP 1.0``
-      format and without choosing whether [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md)
+      format and without choosing whether [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md) 
+      and [LabelMe ZIP 3.0](http://labelme.csail.mit.edu/Release3.0/)
       refers to an image or video.
-    - ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
-    - ``Delete Task`` — delete the task
-    - ``Git Repository Sync`` — sync annotation with the dataset repository.
-      It is available only if you specify a dataset repository when the task has been created.
-    - ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API.
-      Presence depends on how you build CVAT instance
-    - ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
+    - ``Export as a dataset`` — download a data set from a task. Several formats are available:
+      - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/docs/design.md)
+      - [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/)
+      - [MS COCO](http://cocodataset.org/#format-data)
+      - [YOLO](https://pjreddie.com/darknet/yolo/)
+    - ``Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
       Presence depends on how you build CVAT instance.
+    - ``Open bug tracker`` — opens a link to Issue tracker.
+    - ``Delete`` — delete task.
 
-    Item color depends on status of synchronization with the dataset repository:
-    ``red`` means annotations are not synchronized with the repository,
-    ``yellow`` means annotations are in a temporary branch of the repository,
-    ``green`` means annotations are merged into the repository.
+    Push ``Open`` button to go to task details.
+
+1.  Task details is a task page which contains a preview, a progress bar 
+    and the details of the task (specified when the task was created) and the jobs section.
+  
+    ![](static/documentation/images/image131.jpg)
+
+    - The next actions are available on this page:
+      1. Change the task’s title.
+      1. Open ``Actions`` menu.  
+      1. Change issue tracker or open issue tracker if it is specified.
+      1. Change labels.
+      You can add new labels or add attributes for the existing labels in the Raw mode or the        Constructor mode. 
+      By clicking ``Copy`` you will copy the labels to the clipboard.
+      1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or 
+      choose the right person out of the dropdown list.
+    - ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
+      - Jobs name whit a hyperlink to it.
+      - Frames — the frame interval. 
+      - A status of the job. The status is specified by the user in the menu inside the job. 
+      There are three types of status: annotation, validation or completed. 
+      The status of the job is changes the progress bar of the task.
+      - Started on — start date of this job.
+      - Duration — is the amount of time the job is being worked.
+      - Assignee is the user who is working on the job. 
+      You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
+      - ``Copy``. By clicking Copy you will copy the job list to the clipboard. 
+      The job list contains direct links to jobs. 
 
 1.  Follow a link inside ``Jobs`` section to start annotation process.
     In some cases, you can have several links. It depends on size of your
@@ -224,23 +272,41 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     ![](static/documentation/images/image007.jpg)
 
-### Model manager
+### Models
 
-The application will be enabled automatically if [OpenVINO™ component](/components/openvino/README.md) is installed.
-It allows to use custom models for auto annotation. Only models in OpenVINO™ toolkit format are supported.
-If you would like to annotate a task with a custom model,
-please convert it to the intermediate representation (IR) format via the model optimizer tool.
-See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
-You can "register" a model and "use" it after that to pre annotate your tasks.
+On the ``Models`` page allows you to manage your deep learning (DL) models uploaded for auto annotation. 
+Using the functionality you can upload, update or delete a specific DL model.  
+To open the model manager, click the ``Models`` button on the navigation bar. 
+The ``Models`` page contains information about all the existing models. The list of models is divided into two sections:
+- Primary — contains default CVAT models. Each model is a separate element. 
+It contains the model’s name, a framework on which the model was based on and 
+``Supported labels`` (a dropdown list of all supported labels).
+- Uploaded by a user — Contains models uploaded by a user. 
+The list of user models has additional columns with the following information: 
+name of the user who uploaded the model and the upload date. 
+Here you can delete models in the ``Actions`` menu.
 
 ![](static/documentation/images/image099.jpg)
 
-The model manager allows you to manage your deep learning (DL) models uploaded for auto annotation.
-Using the functionality you can upload, update or delete a specific DL model.
-Use "Auto annotation" button to pre annotate a task using one of your DL models.
-[Read more](/cvat/apps/auto_annotation)
+In order to add your model, click `` Create new model``. 
+Enter model name, and select model file using "Select files" button. 
+To annotate a task with a custom model you need to prepare 4 files:
+- ``Model config`` (*.xml) - a text file with network configuration. 
+- ``Model weights`` (*.bin) - a binary file with trained weights. 
+- ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with 
+string values for label numbers.
+- ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
+which can be processed by CVAT. 
+
+You can learn more about creating model files by pressing [(?)](/cvat/apps/auto_annotation).
+Check the box `` Load globally`` if you want everyone to be able to use the model. 
+Click the ``Submit`` button to submit  a model. 
 
 ![](static/documentation/images/image104.jpg)
+
+After the upload is complete your model can be found in the ``Uploaded by a user`` section.
+Use "Auto annotation" button to pre annotate a task using one of your DL models.
+[Read more](/cvat/apps/auto_annotation)
 
 ### Search
 
@@ -465,30 +531,21 @@ Usage examples:
 
 ### Task synchronization with a repository
 
-1.  At the end of the annotation process, a task is synchronized clicking
-    the `` Git Repository Sync`` on the main page. Notice: this feature
+1.  At the end of the annotation process, a task is synchronized by clicking
+    `` Synchronize`` on the task page. Notice: this feature
     works only if a git repository was specified when the task was created.
 
     ![](static/documentation/images/image106.jpg)
 
-1.  Clicking `` Sync`` starts synchronization of annotation with the
-    repository, the url address of which is specified in the
-    ``Repository URL`` field. The synchronization process may take some time.
-
-    ![](static/documentation/images/image107.jpg)
-
-    ![](static/documentation/images/image108.jpg)
-
-1.  After synchronization, the task in the list is highlighted in yellow. The
-    annotation is now in the repository, in a temporary branch.
+1.  After synchronization the button ``Sync`` is highlighted in green. The
+    annotation is now in the repository in a temporary branch.
 
     ![](static/documentation/images/image109.jpg)
 
 1.  The next step is to go to the repository and manually create a pull request to the main branch.
-1.  After confirming the PR, when the annotation is saved in the main branch, the color of the task changes to green.
+1.  After confirming the PR, when the annotation is saved in the main branch, the color of the task changes to blue.
 
     ![](static/documentation/images/image110.jpg)
-    ![](static/documentation/images/image111.jpg)
 
 ### Vocabulary
 
@@ -881,7 +938,7 @@ By default, objects in the mode are zoomed. Check
 
 It is used for semantic / instance segmentation.
 
-Be sure ``Z-Order`` flag in ``Create task`` dialog is enabled if you want to
+Be sure ``Z-Order`` flag in ``Create new task`` dialog is enabled if you want to
 annotate polygons. Z-Order flag defines order of drawing. It is necessary to
 get right annotation mask without extra work (additional drawing of borders).
 Z-Order can be changed by ``+``/``-`` which set maximum/minimum z-order
@@ -1012,50 +1069,47 @@ a shape is created and you can work with it as a polygon.
 
 ![](static/documentation/images/gif009_DETRAC.gif)
 
-## Auto annotation
+## Automatic annotation
 
-1.  First you need to upload deep learning (DL) models using model manager.
-    Only models in OpenVINO™ toolkit format are supported.
-    If you would like to annotate a task with a custom model please convert it
-    to the intermediate representation (IR) format via the model optimizer tool.
-    See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
+Automatic Annotation is used for creating preliminary annotations. 
+To use Automatic Annotation you need a DL model. You can use primary models or models uploaded by a user. 
+You can find the list of available models in the ``Models`` section.
 
-    ![](static/documentation/images/image099.jpg)
+1.  To launch automatic annotation, you should open the dashboard and find a task which you want to annotate. 
+    Then click the ``Actions`` button and choose option ``Automatic Annotation`` from the dropdown menu.
 
-1.  Enter model name, and select model file using "Select files" button. To annotate a task with a custom model
-    you need to prepare 4 files:
-    - ``Model config`` (*.xml) - a text file with network configuration. 
-    - ``Model weights`` (*.bin) - a binary file with trained weights. 
-    - ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with 
-    string values for label numbers.
-    - ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
-    which can be processed by CVAT. 
-    More about creating model files can be found [here](/cvat/apps/auto_annotation).
+    ![](static/documentation/images/image119_DETRAC.jpg)
 
-    ![](static/documentation/images/image104.jpg)
-
-1.  After downloading a model you have to  create a task or find an already created one and
-    click ``Run Auto Annotation`` button.
-
-    ![](static/documentation/images/image119.jpg)
-
-1.  In dialog window select a model you need. If it's necessary select the ``Delete current annotation`` checkbox.
-    Adjust the labels so that the task labels will correspond to the labels of the DL model.
-    Click ``Start`` to begin the auto annotatiton process.
+1.  In the dialog window select a model you need. DL models are created for specific labels, e.g. 
+    the Crossroad model was taught using footage from cameras located above the highway and it is best to 
+    use this model for the tasks with similar camera angles. 
+    If it's necessary select the ``Clean old annotations`` checkbox. 
+    Adjust the labels so that the task labels will correspond to the labels of the DL model. 
+    For example, let’s consider a task where you have to annotate labels “car” and “person”. 
+    You should connect the “person” label from the model to the “person” label in the task. 
+    As for the “car” label, you should choose the most fitting label available in the model - the “vehicle” label. 
+    The task requires to annotate cars only and choosing the “vehicle” label implies annotation of all vehicles, 
+    in this case using auto annotation will help you complete the task faster. 
+    Click ``Submit`` to begin the automatic annotation process.
 
     ![](static/documentation/images/image120.jpg)
 
-1.  At runtime, you can see percentage of completion. You can also cancel the auto annotation
-    process by clicking ``Cancel Auto Annotation``
+1.  At runtime, you can see the percentage of completion.
 
-    ![](static/documentation/images/image121.jpg)
+    ![](static/documentation/images/image121_DETRAC.jpg)
 
 1.  As a result, you will get an annotation with separate bounding boxes (or other shapes)
 
     ![](static/documentation/images/gif014_DETRAC.gif)
 
-1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects, and
-    merging into tracks using ``Merge Shape``
+1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects and
+    merging into tracks using ``ReID merge`` function. Click the ``ReID merge`` button in the menu. 
+    You can use the default settings (for more information click [here](cvat/apps/reid/README.md)). 
+    To launch the merging process click ``Merge``. Each frame of the track will be a key frame. 
+
+    ![](static/documentation/images/image133.jpg)
+
+1.  You can remove false positives and edit tracks using ``Split`` and ``Merge`` functions.
 
     ![](static/documentation/images/gif015_DETRAC.gif)
 
@@ -1150,7 +1204,7 @@ If your CVAT instance is created with analytics support, you can press the
 "analytics" button in dashboard, a new tab with analytics and journals will
 be opened.
 
-![](static/documentation/images/image113.jpg)
+![](static/documentation/images/image113_DETRAC.jpg)
 
 It allows you to see how much working time every user spend on each task and how much they did, over any time range.
 

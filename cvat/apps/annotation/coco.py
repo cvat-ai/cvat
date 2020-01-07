@@ -247,6 +247,10 @@ def dump(file_object, annotations):
         new_anno['image_id'] = image.frame
         new_anno['iscrowd'] = 0
         new_anno['segmentation'] = obj['points']
+        if len(obj['points'][0]) < 6:
+            raise Exception("Unable to export frame #{}: "
+                "a polygon has too few points ({})".format(
+                    image.frame, len(obj['points'][0])))
         area, bbox = polygon_area_and_bbox(obj['points'], image.height, image.width)
         new_anno['area'] = float(np.sum(area))
         new_anno['bbox'] = bbox
@@ -367,6 +371,10 @@ def load(file_object, annotations):
                     group = group_idx
 
                 for polygon in polygons:
+                    if len(polygon) < 6:
+                        raise Exception("Unable to import annotation #{}: "
+                            "a polygon has too few points ({})".format(
+                                ann['id'], len(polygon)))
                     annotations.add_shape(annotations.LabeledShape(
                         type='polygon',
                         frame=frame_number,
