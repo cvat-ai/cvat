@@ -23,7 +23,7 @@ window.cvatUI.tfAnnotation = {
 const TFAnnotationServer = {
     meta_annotation_models(tids, success, error) {
         $.ajax({
-            url: global_host + '/auto_annotation/meta/get',
+            url: '/auto_annotation/meta/get',
             type: 'POST',
             data: JSON.stringify(tids),
             contentType: 'application/json',
@@ -36,7 +36,7 @@ const TFAnnotationServer = {
     },
 
     cancelProcess(tid, button) {
-        $.get(global_host + `/tensorflow/annotation/cancel/task/${tid}`).done(() => {
+        $.get( `/tensorflow/annotation/cancel/task/${tid}`).done(() => {
             button.prop('disabled', true);
         }).fail((errorData) => {
             const message = `Can not cancel tf annotation. Code: ${errorData.status}. `
@@ -47,7 +47,7 @@ const TFAnnotationServer = {
 
     checkProcess(tid, button) {
         function checkCallback() {
-            $.get(global_host + `/tensorflow/annotation/check/task/${tid}`).done((statusData) => {
+            $.get( `/tensorflow/annotation/check/task/${tid}`).done((statusData) => {
                 if (['started', 'queued'].includes(statusData.status)) {
                     const progress = Math.round(statusData.progress) || '0';
                     button.text(`Cancel TF Annotation (${progress}%)`);
@@ -75,7 +75,7 @@ const TFAnnotationServer = {
         setTimeout(checkCallback, 5000);
     },
     runProcess(tid, mid, button, modalElem, labels_mapping) {
-        $.post(global_host + `/tensorflow/annotation/create/task/${tid}/${mid}`, JSON.stringify(labels_mapping)).done(() => {
+        $.post(`/tensorflow/annotation/create/task/${tid}/${mid}`, JSON.stringify(labels_mapping)).done(() => {
             showMessage('Process has started');
             button.text('Cancel TF Annotation (0%)');
             button.addClass('tfAnnotationProcess');
@@ -332,7 +332,7 @@ window.addEventListener('dashboardReady', (event) => {
     });
     $.ajax({
         type: 'POST',
-        url: global_host + '/tensorflow/annotation/meta/get',
+        url:'/tensorflow/annotation/meta/get',
         data: JSON.stringify(tids),
         contentType: 'application/json; charset=utf-8',
     }).done((metaData) => {
