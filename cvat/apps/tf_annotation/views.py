@@ -83,7 +83,7 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
             image_np = load_image_into_numpy(image)
             image_np = np.transpose(image_np, (2, 0, 1))
             prediction = \
-            executable_network.infer(inputs={input_blob_name: image_np[np.newaxis, ...]})[output_blob_name][0][0]
+                executable_network.infer(inputs={input_blob_name: image_np[np.newaxis, ...]})[output_blob_name][0][0]
             for obj in prediction:
                 obj_class = int(obj[1])
                 obj_value = obj[2]
@@ -102,14 +102,16 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
 
 def run_thread(task_id, model_path, label_mapping, threshold, split,
                start_of_image_list, end_of_image_list, split_size, is_cpu_instance):
-    cmd = 'python /home/onepanel/cvat/apps/tf_annotation/run_inference.py "{}::{}::{}::{}::{}::{}::{}::{}::{}"' \
+    # todo figure out a non-hardcoded path
+    cmd = 'python /home/django/cvat/apps/tf_annotation/run_inference.py "{}::{}::{}::{}::{}::{}::{}::{}::{}"' \
         .format(task_id, model_path, label_mapping, threshold, split,
                 start_of_image_list, end_of_image_list, split_size, is_cpu_instance)
     os.system(cmd)
 
 
 def run_progress_thread(task_id, num_gpus):
-    cmd = 'python /home/onepanel/cvat/apps/tf_annotation/progress_indicator_multi_gpu.py "{}::{}"' \
+    # todo figure out a non-hardcoded path
+    cmd = 'python /home/django/cvat/apps/tf_annotation/progress_indicator_multi_gpu.py "{}::{}"' \
         .format(task_id, num_gpus)
     os.system(cmd)
 
@@ -124,7 +126,6 @@ def run_tensorflow_annotation(tid, image_list_length, labels_mapping, treshold, 
     threads = []
     is_cpu_instance = 'no'
     if num_gpus == 0:
-        # todo check if this supports multi cpus
         split_size = image_list_length
         is_cpu_instance = 'yes'
     else:
