@@ -52,6 +52,226 @@ class Equation {
     }
 }
 
+class Figure {
+    constructor(indices, Vmodel) {
+        this.indices = indices;
+        this.viewmodel = Vmodel;
+    }
+
+    get points() {
+        const points = [];
+        for (const index of this.indices) {
+            points.push(this.viewmodel.points[index]);
+        }
+        return points;
+    }
+
+    // sets the point for a given edge, points must be given in
+    // array form in the same ordering as the getter
+    // if you only need to update a subset of the points,
+    // simply put null for the points you want to keep
+    set points(newPoints) {
+        const oldPoints = this.viewmodel.points;
+        for (let i = 0; i < newPoints.length; i += 1) {
+            if (newPoints[i] !== null) {
+                oldPoints[this.indices[i]] = { x: newPoints[i].x, y: newPoints[i].y };
+            }
+        }
+    }
+
+    get canvasPoints() {
+        let { points } = this;
+        points = window.cvat.translate.points.actualToCanvas(points);
+        return points;
+    }
+}
+
+class Edge extends Figure {
+    getEquation() {
+        let { points } = this;
+        points = convertToArray(points);
+        return new Equation(points[0], points[1]);
+    }
+}
+
+class Cuboid2PointViewModel {
+    constructor(points, leftFacing) {
+        this.points = points;
+        this._initEdges();
+        this._initFaces();
+        this._updateVanishingPoints();
+        this.buildBackEdge(leftFacing);
+        this.updatePoints();
+    }
+
+    getPoints() {
+        return this.points;
+    }
+
+    setPoints(points) {
+        this.points = points;
+    }
+
+    updatePoints() {
+        // making sure that the edges are vertical
+        this.fr.points[0].x = this.fr.points[1].x;
+        this.fl.points[0].x = this.fl.points[1].x;
+        this.dr.points[0].x = this.dr.points[1].x;
+        this.dl.points[0].x = this.dl.points[1].x;
+    }
+
+    computeSideEdgeConstraints(edge) {
+        const midLength = this.fr.canvasPoints[1].y - this.fr.canvasPoints[0].y - 1;
+
+        const minY = edge.canvasPoints[1].y - midLength;
+        const maxY = edge.canvasPoints[0].y + midLength;
+
+        const y1 = edge.points[0].y;
+        const y2 = edge.points[1].y;
+
+        const miny1 = y2 - midLength;
+        const maxy1 = y2 - MIN_EDGE_LENGTH;
+
+        const miny2 = y1 + MIN_EDGE_LENGTH;
+        const maxy2 = y1 + midLength;
+
+        return {
+            constraint: {
+                minY,
+                maxY,
+            },
+            y1_range: {
+                max: maxy1,
+                min: miny1,
+            },
+            y2_range: {
+                max: maxy2,
+                min: miny2,
+            },
+        };
+    }
+
+    // boolean value parameter controls which edges should be used to recalculate vanishing points
+    _updateVanishingPoints(buildright) {
+        let leftEdge = 0;
+        let rightEdge = 0;
+        let midEdge = 0;
+        if (buildright) {
+            leftEdge = convertToArray(this.fr.points);
+            rightEdge = convertToArray(this.dl.points);
+            midEdge = convertToArray(this.fl.points);
+        } else {
+            leftEdge = convertToArray(this.fl.points);
+            rightEdge = convertToArray(this.dr.points);
+            midEdge = convertToArray(this.fr.points);
+        }
+
+        this.vpl = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
+        this.vpr = intersection(rightEdge[0], midEdge[0], rightEdge[1], midEdge[1]);
+        if (this.vpl === null) {
+            // shift the edge slightly to avoid edge case
+            leftEdge[0][1] -= 0.001;
+            leftEdge[0][0] += 0.001;
+            leftEdge[1][0] += 0.001;
+            this.vpl = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
+        }
+        if (this.vpr === null) {
+            // shift the edge slightly to avoid edge case
+            rightEdge[0][1] -= 0.001;
+            rightEdge[0][0] -= 0.001;
+            rightEdge[1][0] -= 0.001;
+            this.vpr = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
+        }
+    }
+
+    _initEdges() {
+        this.fl = new Edge([0, 1], this);
+        this.fr = new Edge([2, 3], this);
+        this.dr = new Edge([4, 5], this);
+        this.dl = new Edge([6, 7], this);
+
+        this.ft = new Edge([0, 2], this);
+        this.lt = new Edge([0, 6], this);
+        this.rt = new Edge([2, 4], this);
+        this.dt = new Edge([6, 4], this);
+
+        this.fb = new Edge([1, 3], this);
+        this.lb = new Edge([1, 7], this);
+        this.rb = new Edge([3, 5], this);
+        this.db = new Edge([7, 5], this);
+
+        this.edgeList = [this.fl, this.fr, this.dl, this.dr, this.ft, this.lt,
+            this.rt, this.dt, this.fb, this.lb, this.rb, this.db];
+    }
+
+    _initFaces() {
+        this.front = new Figure([0, 1, 3, 2], this);
+        this.right = new Figure([2, 3, 5, 4], this);
+        this.dorsal = new Figure([4, 5, 7, 6], this);
+        this.left = new Figure([6, 7, 1, 0], this);
+        this.top = new Figure([0, 2, 4, 6], this);
+        this.bot = new Figure([1, 3, 5, 7], this);
+
+        this.facesList = [this.front, this.right, this.dorsal, this.left];
+    }
+
+    buildBackEdge(buildRight) {
+        let leftPoints = 0;
+        let rightPoints = 0;
+
+        let topIndex = 0;
+        let botIndex = 0;
+
+        if (buildRight == null) {
+            this._updateVanishingPoints();
+            leftPoints = this.dr.points;
+            rightPoints = this.fl.points;
+            topIndex = 6;
+            botIndex = 7;
+        } else {
+            this._updateVanishingPoints(true);
+            leftPoints = this.dl.points;
+            rightPoints = this.fr.points;
+            topIndex = 4;
+            botIndex = 5;
+        }
+
+        const vpLeft = this.vpl;
+        const vpRight = this.vpr;
+
+        leftPoints = convertToArray(leftPoints);
+        rightPoints = convertToArray(rightPoints);
+
+        let p1 = intersection(vpLeft, leftPoints[0], vpRight, rightPoints[0]);
+        let p2 = intersection(vpLeft, leftPoints[1], vpRight, rightPoints[1]);
+
+        if (p1 === null) {
+            p1 = [p2[0], vpLeft[1]];
+        } else if (p2 === null) {
+            p2 = [p1[0], vpLeft[1]];
+        }
+
+        this.points[topIndex] = { x: p1[0], y: p1[1] };
+        this.points[botIndex] = { x: p2[0], y: p2[1] };
+
+        // Making sure that the vertical edges stay vertical
+        this.updatePoints();
+    }
+
+    get vplCanvas() {
+        const { vpl } = this;
+        const vp = { x: vpl[0], y: vpl[1] };
+        return window.cvat.translate.points.actualToCanvas([vp])[0];
+    }
+
+    get vprCanvas() {
+        const { vpr } = this;
+        const vp = { x: vpr[0], y: vpr[1] };
+        return window.cvat.translate.points.actualToCanvas([vp])[0];
+    }
+}
+
+
 class CuboidController extends PolyShapeController {
     constructor(cuboidModel) {
         super(cuboidModel);
@@ -466,7 +686,7 @@ class CuboidController extends PolyShapeController {
     // returns the new position of a target point
     updatedEdge(target, base, pivot) {
         const targetX = target.x;
-        const line = CuboidController.createEquation(pivot,
+        const line = new Equation(pivot,
             [base.x, base.y]);
         const newY = line.getY(targetX);
         return { x: targetX, y: newY };
@@ -510,10 +730,6 @@ class CuboidController extends PolyShapeController {
 
     static removeEventsFromElement(edge) {
         edge.off().draggable(false);
-    }
-
-    static createEquation(p1, p2) {
-        return new Equation(p1, p2);
     }
 }
 
@@ -666,224 +882,6 @@ class CuboidModel extends PolyShapeModel {
 
     get draggable() {
         return this._draggable;
-    }
-}
-class Figure {
-    constructor(indices, Vmodel) {
-        this.indices = indices;
-        this.viewmodel = Vmodel;
-    }
-
-    get points() {
-        const points = [];
-        for (const index of this.indices) {
-            points.push(this.viewmodel.points[index]);
-        }
-        return points;
-    }
-
-    // sets the point for a given edge, points must be given in
-    // array form in the same ordering as the getter
-    // if you only need to update a subset of the points,
-    // simply put null for the points you want to keep
-    set points(newPoints) {
-        const oldPoints = this.viewmodel.points;
-        for (let i = 0; i < newPoints.length; i += 1) {
-            if (newPoints[i] !== null) {
-                oldPoints[this.indices[i]] = { x: newPoints[i].x, y: newPoints[i].y };
-            }
-        }
-    }
-
-    get canvasPoints() {
-        let { points } = this;
-        points = window.cvat.translate.points.actualToCanvas(points);
-        return points;
-    }
-}
-
-class Edge extends Figure {
-    getEquation() {
-        let { points } = this;
-        points = convertToArray(points);
-        return CuboidController.createEquation(points[0], points[1]);
-    }
-}
-
-class Cuboid2PointViewModel {
-    constructor(points, leftFacing) {
-        this.points = points;
-        this._initEdges();
-        this._initFaces();
-        this._updateVanishingPoints();
-        this.buildBackEdge(leftFacing);
-        this.updatePoints();
-    }
-
-    getPoints() {
-        return this.points;
-    }
-
-    setPoints(points) {
-        this.points = points;
-    }
-
-    updatePoints() {
-        // making sure that the edges are vertical
-        this.fr.points[0].x = this.fr.points[1].x;
-        this.fl.points[0].x = this.fl.points[1].x;
-        this.dr.points[0].x = this.dr.points[1].x;
-        this.dl.points[0].x = this.dl.points[1].x;
-    }
-
-    computeSideEdgeConstraints(edge) {
-        const midLength = this.fr.canvasPoints[1].y - this.fr.canvasPoints[0].y - 1;
-
-        const minY = edge.canvasPoints[1].y - midLength;
-        const maxY = edge.canvasPoints[0].y + midLength;
-
-        const y1 = edge.points[0].y;
-        const y2 = edge.points[1].y;
-
-        const miny1 = y2 - midLength;
-        const maxy1 = y2 - MIN_EDGE_LENGTH;
-
-        const miny2 = y1 + MIN_EDGE_LENGTH;
-        const maxy2 = y1 + midLength;
-
-        return {
-            constraint: {
-                minY,
-                maxY,
-            },
-            y1_range: {
-                max: maxy1,
-                min: miny1,
-            },
-            y2_range: {
-                max: maxy2,
-                min: miny2,
-            },
-        };
-    }
-
-    // boolean value parameter controls which edges should be used to recalculate vanishing points
-    _updateVanishingPoints(buildright) {
-        let leftEdge = 0;
-        let rightEdge = 0;
-        let midEdge = 0;
-        if (buildright) {
-            leftEdge = convertToArray(this.fr.points);
-            rightEdge = convertToArray(this.dl.points);
-            midEdge = convertToArray(this.fl.points);
-        } else {
-            leftEdge = convertToArray(this.fl.points);
-            rightEdge = convertToArray(this.dr.points);
-            midEdge = convertToArray(this.fr.points);
-        }
-
-        this.vpl = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
-        this.vpr = intersection(rightEdge[0], midEdge[0], rightEdge[1], midEdge[1]);
-        if (this.vpl === null) {
-            // shift the edge slightly to avoid edge case
-            leftEdge[0][1] -= 0.001;
-            leftEdge[0][0] += 0.001;
-            leftEdge[1][0] += 0.001;
-            this.vpl = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
-        }
-        if (this.vpr === null) {
-            // shift the edge slightly to avoid edge case
-            rightEdge[0][1] -= 0.001;
-            rightEdge[0][0] -= 0.001;
-            rightEdge[1][0] -= 0.001;
-            this.vpr = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
-        }
-    }
-
-    _initEdges() {
-        this.fl = new Edge([0, 1], this);
-        this.fr = new Edge([2, 3], this);
-        this.dr = new Edge([4, 5], this);
-        this.dl = new Edge([6, 7], this);
-
-        this.ft = new Edge([0, 2], this);
-        this.lt = new Edge([0, 6], this);
-        this.rt = new Edge([2, 4], this);
-        this.dt = new Edge([6, 4], this);
-
-        this.fb = new Edge([1, 3], this);
-        this.lb = new Edge([1, 7], this);
-        this.rb = new Edge([3, 5], this);
-        this.db = new Edge([7, 5], this);
-
-        this.edgeList = [this.fl, this.fr, this.dl, this.dr, this.ft, this.lt,
-            this.rt, this.dt, this.fb, this.lb, this.rb, this.db];
-    }
-
-    _initFaces() {
-        this.front = new Figure([0, 1, 3, 2], this);
-        this.right = new Figure([2, 3, 5, 4], this);
-        this.dorsal = new Figure([4, 5, 7, 6], this);
-        this.left = new Figure([6, 7, 1, 0], this);
-        this.top = new Figure([0, 2, 4, 6], this);
-        this.bot = new Figure([1, 3, 5, 7], this);
-
-        this.facesList = [this.front, this.right, this.dorsal, this.left];
-    }
-
-    buildBackEdge(buildRight) {
-        let leftPoints = 0;
-        let rightPoints = 0;
-
-        let topIndex = 0;
-        let botIndex = 0;
-
-        if (buildRight == null) {
-            this._updateVanishingPoints();
-            leftPoints = this.dr.points;
-            rightPoints = this.fl.points;
-            topIndex = 6;
-            botIndex = 7;
-        } else {
-            this._updateVanishingPoints(true);
-            leftPoints = this.dl.points;
-            rightPoints = this.fr.points;
-            topIndex = 4;
-            botIndex = 5;
-        }
-
-        const vpLeft = this.vpl;
-        const vpRight = this.vpr;
-
-        leftPoints = convertToArray(leftPoints);
-        rightPoints = convertToArray(rightPoints);
-
-        let p1 = intersection(vpLeft, leftPoints[0], vpRight, rightPoints[0]);
-        let p2 = intersection(vpLeft, leftPoints[1], vpRight, rightPoints[1]);
-
-        if (p1 === null) {
-            p1 = [p2[0], vpLeft[1]];
-        } else if (p2 === null) {
-            p2 = [p1[0], vpLeft[1]];
-        }
-
-        this.points[topIndex] = { x: p1[0], y: p1[1] };
-        this.points[botIndex] = { x: p2[0], y: p2[1] };
-
-        // Making sure that the vertical edges stay vertical
-        this.updatePoints();
-    }
-
-    get vplCanvas() {
-        const { vpl } = this;
-        const vp = { x: vpl[0], y: vpl[1] };
-        return window.cvat.translate.points.actualToCanvas([vp])[0];
-    }
-
-    get vprCanvas() {
-        const { vpr } = this;
-        const vp = { x: vpr[0], y: vpr[1] };
-        return window.cvat.translate.points.actualToCanvas([vp])[0];
     }
 }
 
