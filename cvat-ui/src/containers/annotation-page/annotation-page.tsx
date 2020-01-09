@@ -4,11 +4,10 @@ import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
 
 import AnnotationPageComponent from '../../components/annotation-page/annotation-page';
-import { getTasksAsync } from '../../actions/tasks-actions';
+import { getJobAsync } from '../../actions/annotation-actions';
 
 import {
     CombinedState,
-    Task,
 } from '../../reducers/interfaces';
 
 type OwnProps = RouteComponentProps<{
@@ -25,46 +24,23 @@ interface DispatchToProps {
     getJob(): void;
 }
 
-function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
-    const { tasks } = state;
-    const {
-        gettingQuery,
-        current,
-    } = tasks;
-    const { params } = own.match;
-    const taskID = +params.tid;
-    const jobID = +params.jid;
-
-    const filteredTasks = current
-        .filter((_task: Task) => _task.instance.id === taskID);
-    const task = filteredTasks[0] || (gettingQuery.id === taskID || Number.isNaN(taskID)
-        ? undefined : null);
-
-    const job = task ? task.instance.jobs
-        .filter((_job: any) => _job.id === jobID)[0] : task;
+function mapStateToProps(state: CombinedState): StateToProps {
+    const { annotation } = state;
 
     return {
-        jobInstance: job,
-        fetching: tasks.fetching,
+        jobInstance: annotation.jobInstance,
+        fetching: annotation.jobFetching,
     };
 }
 
 function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const { params } = own.match;
     const taskID = +params.tid;
+    const jobID = +params.jid;
 
     return {
         getJob(): void {
-            dispatch(getTasksAsync({
-                id: taskID,
-                page: 1,
-                search: null,
-                owner: null,
-                assignee: null,
-                name: null,
-                status: null,
-                mode: null,
-            }));
+            dispatch(getJobAsync(taskID, jobID));
         },
     };
 }
