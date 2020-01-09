@@ -283,17 +283,21 @@
                 : cvatData.BlockType.ARCHIVE;
 
             const meta = await serverProxy.frames.getMeta(taskID);
-            // limit of decoded frames cache by 2GB for video (max height of video frame is 1080)
-            // and 500 frames for archive
-            const decodedBlocksCacheSize = blockType === cvatData.BlockType.MP4VIDEO
-                ? Math.floor(2147483648 / 1920 / 1080 / 4 / chunkSize) || 1
-                : Math.floor(500 / chunkSize) || 1;
+            const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0)
+                / meta.frames.length;
+            const stdDev = Math.sqrt(meta.frames.map(
+                (x) => Math.pow(x.width * x.height - mean, 2),
+            ).reduce((a, b) => a + b) / meta.frames.length);
+
+            // limit of decoded frames cache by 2GB
+            const decodedBlocksCacheSize = Math.floor(2147483648 / (mean + stdDev) / 4 / chunkSize)
+                || 1;
 
             frameDataCache[taskID] = {
                 meta,
                 chunkSize,
                 provider: new cvatData.FrameProvider(
-                    blockType, chunkSize, 9,
+                    blockType, chunkSize, Math.max(decodedBlocksCacheSize, 9),
                     decodedBlocksCacheSize, 1,
                 ),
                 lastFrameRequest: frame,
