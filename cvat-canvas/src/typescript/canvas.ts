@@ -66,8 +66,11 @@ class CanvasImpl implements Canvas {
         this.model.setup(frameData, objectStates);
     }
 
-    public updateSize(): void {
-        this.view.updateSize();
+    public fitCanvas(): void {
+        this.model.fitCanvas(
+            this.view.html().clientWidth,
+            this.view.html().clientHeight,
+        );
     }
 
     public activate(clientID: number, attributeID: number = null): void {

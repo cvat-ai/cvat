@@ -78,6 +78,7 @@ export enum UpdateReasons {
     OBJECTS = 'objects',
     ZOOM = 'zoom',
     FIT = 'fit',
+    FIT_CANVAS = 'fit_canvas',
     MOVE = 'move',
     GRID = 'grid',
     FOCUS = 'focus',
@@ -123,6 +124,7 @@ export interface CanvasModel {
     rotate(rotation: Rotation, remember: boolean): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
+    fitCanvas(width: number, height: number): void;
     grid(stepX: number, stepY: number): void;
 
     draw(drawData: DrawData): void;
@@ -237,6 +239,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.top += topOffset;
         this.data.left += leftOffset;
         this.notify(UpdateReasons.MOVE);
+    }
+
+    public fitCanvas(width: number, height: number): void {
+        this.data.canvasSize.height = height;
+        this.data.canvasSize.width = width;
+
+        this.data.imageOffset = Math.floor(Math.max(
+            this.data.canvasSize.height / FrameZoom.MIN,
+            this.data.canvasSize.width / FrameZoom.MIN,
+        ));
+
+        this.notify(UpdateReasons.FIT_CANVAS);
+        this.notify(UpdateReasons.OBJECTS);
     }
 
     public setup(frameData: any, objectStates: any[]): void {

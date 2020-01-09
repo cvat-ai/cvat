@@ -42,7 +42,6 @@ import {
 
 export interface CanvasView {
     html(): HTMLDivElement;
-    updateSize(): void;
 }
 
 interface ShapeDict {
@@ -651,6 +650,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 resize.call(this);
                 transform.call(this);
             }
+        } else if (reason === UpdateReasons.FIT_CANVAS) {
+            move.call(this);
+            resize.call(this);
         } else if (reason === UpdateReasons.ZOOM || reason === UpdateReasons.FIT) {
             move.call(this);
             transform.call(this);
@@ -717,18 +719,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.editHandler.cancel();
             }
         }
-    }
-
-    public updateSize(): void {
-        const { geometry } = this.controller;
-        geometry.canvas = {
-            height: this.canvas.clientHeight,
-            width: this.canvas.clientWidth,
-        };
-
-
-        this.controller.geometry = geometry;
-        this.geometry = geometry;
     }
 
     public html(): HTMLDivElement {
