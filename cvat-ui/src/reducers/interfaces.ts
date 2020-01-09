@@ -1,3 +1,5 @@
+import { Canvas } from '../canvas';
+
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
@@ -197,6 +199,22 @@ export interface NotificationsState {
     };
 }
 
+export interface AnnotationState {
+    canvasInstance: Canvas;
+    canvasIsReady: boolean;
+    jobInstance: any | null | undefined;
+    frameData: any | null;
+    frame: number;
+    frameStep: number;
+    playing: boolean;
+    annotations: any[];
+    frameGrid: boolean;
+    frameGridWidth: number;
+    frameGridHeight: number;
+    jobFetching: boolean;
+    dataFetching: boolean;
+}
+
 export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
@@ -206,4 +224,5 @@ export interface CombinedState {
     plugins: PluginsState;
     models: ModelsState;
     notifications: NotificationsState;
+    annotation: AnnotationState;
 }
