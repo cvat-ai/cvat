@@ -15,7 +15,7 @@ window.cvatUI = window.cvatUI || {};
 const AutoAnnotationServer = {
     start(modelId, taskId, data, success, error, progress, check) {
         $.ajax({
-            url: global_host + `/auto_annotation/start/${modelId}/${taskId}`,
+            url: `/auto_annotation/start/${modelId}/${taskId}`,
             type: 'POST',
             data: JSON.stringify(data),
             contentType: 'application/json',
@@ -32,9 +32,9 @@ const AutoAnnotationServer = {
     update(data, success, error, progress, check, modelId) {
         let url = '';
         if (modelId === null) {
-            url = global_host + '/auto_annotation/create';
+            url = '/auto_annotation/create';
         } else {
-            url = global_host + `/auto_annotation/update/${modelId}`;
+            url = `/auto_annotation/update/${modelId}`;
         }
 
         $.ajax({
@@ -55,7 +55,7 @@ const AutoAnnotationServer = {
 
     delete(modelId, success, error) {
         $.ajax({
-            url: global_host + `/auto_annotation/delete/${modelId}`,
+            url: `/auto_annotation/delete/${modelId}`,
             type: 'DELETE',
             success,
             error: (data) => {
@@ -74,7 +74,7 @@ const AutoAnnotationServer = {
 
         function checkCallback() {
             $.ajax({
-                url: global_host + `/auto_annotation/check/${workerId}`,
+                url: `/auto_annotation/check/${workerId}`,
                 type: 'GET',
                 success: (data) => {
                     updateProgress(data, progress);
@@ -108,7 +108,7 @@ const AutoAnnotationServer = {
 
     meta(tids, success, error) {
         $.ajax({
-            url: global_host + '/auto_annotation/meta/get',
+            url: '/auto_annotation/meta/get',
             type: 'POST',
             data: JSON.stringify(tids),
             contentType: 'application/json',
@@ -122,7 +122,7 @@ const AutoAnnotationServer = {
 
     cancel(tid, success, error) {
         $.ajax({
-            url: global_host + `/auto_annotation/cancel/${tid}`,
+            url: `/auto_annotation/cancel/${tid}`,
             type: 'GET',
             success,
             error: (data) => {
