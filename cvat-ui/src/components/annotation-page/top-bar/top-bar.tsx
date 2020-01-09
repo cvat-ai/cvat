@@ -31,26 +31,35 @@ import {
     FullscreenIcon,
 } from '../../../icons';
 
-
 interface Props {
     jobInstance: any;
-    frame: number | null;
+    frame: number;
+    frameStep: number;
     playing: boolean;
-    onChangeFrame(frame: number): void;
-    onPlay(playing: boolean): void;
+    canvasIsReady: boolean;
+    onChangeFrame(frame: number, playing: boolean): void;
+    onSwitchPlay(playing: boolean): void;
 }
 
-export default function AnnotationPageComponent(props: Props): JSX.Element {
+export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     const {
         jobInstance,
         frame,
+        frameStep,
         playing,
+        canvasIsReady,
         onChangeFrame,
-        onPlay,
+        onSwitchPlay,
     } = props;
 
-    if (frame === null) {
-        onChangeFrame(jobInstance.startFrame);
+    if (playing && canvasIsReady) {
+        if (frame < jobInstance.stopFrame) {
+            setTimeout(() => {
+                onChangeFrame(frame + 1, true);
+            }, 30);
+        } else {
+            onSwitchPlay(false);
+        }
     }
 
     return (
@@ -81,11 +90,9 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 <Icon
                                     component={PlaycontrolFirstIcon}
                                     onClick={(): void => {
-                                        if (frame !== null) {
-                                            onPlay(false);
-                                            if (jobInstance.startFrame !== frame) {
-                                                onChangeFrame(jobInstance.startFrame);
-                                            }
+                                        if (jobInstance.startFrame !== frame) {
+                                            onSwitchPlay(false);
+                                            onChangeFrame(jobInstance.startFrame, false);
                                         }
                                     }}
                                 />
@@ -94,13 +101,11 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 <Icon
                                     component={PlaycontrolBackJumpIcon}
                                     onClick={(): void => {
-                                        if (frame !== null) {
-                                            onPlay(false);
-                                            const newFrame = Math
-                                                .max(jobInstance.startFrame, frame - 10);
-                                            if (newFrame !== frame) {
-                                                onChangeFrame(newFrame);
-                                            }
+                                        const newFrame = Math
+                                            .max(jobInstance.startFrame, frame - frameStep);
+                                        if (newFrame !== frame) {
+                                            onSwitchPlay(false);
+                                            onChangeFrame(newFrame, false);
                                         }
                                     }}
                                 />
@@ -109,13 +114,11 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 <Icon
                                     component={PlaycontrolPreviousIcon}
                                     onClick={(): void => {
-                                        if (frame !== null) {
-                                            onPlay(false);
-                                            const newFrame = Math
-                                                .max(jobInstance.startFrame, frame - 1);
-                                            if (newFrame !== frame) {
-                                                onChangeFrame(newFrame);
-                                            }
+                                        const newFrame = Math
+                                            .max(jobInstance.startFrame, frame - 1);
+                                        if (newFrame !== frame) {
+                                            onSwitchPlay(false);
+                                            onChangeFrame(newFrame, false);
                                         }
                                     }}
                                 />
@@ -127,8 +130,8 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                         <Icon
                                             component={PlaycontrolPlayIcon}
                                             onClick={(): void => {
-                                                if (frame !== null) {
-                                                    onPlay(true);
+                                                if (frame < jobInstance.stopFrame) {
+                                                    onSwitchPlay(true);
                                                 }
                                             }}
                                         />
@@ -139,9 +142,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                         <Icon
                                             component={PlaycontrolPauseIcon}
                                             onClick={(): void => {
-                                                if (frame !== null) {
-                                                    onPlay(false);
-                                                }
+                                                onSwitchPlay(false);
                                             }}
                                         />
                                     </Tooltip>
@@ -152,13 +153,11 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 <Icon
                                     component={PlaycontrolNextIcon}
                                     onClick={(): void => {
-                                        if (frame !== null) {
-                                            onPlay(false);
-                                            const newFrame = Math
-                                                .min(jobInstance.stopFrame, frame + 1);
-                                            if (newFrame !== frame) {
-                                                onChangeFrame(newFrame);
-                                            }
+                                        const newFrame = Math
+                                            .min(jobInstance.stopFrame, frame + 1);
+                                        if (newFrame !== frame) {
+                                            onSwitchPlay(false);
+                                            onChangeFrame(newFrame, false);
                                         }
                                     }}
                                 />
@@ -167,13 +166,11 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 <Icon
                                     component={PlaycontrolForwardJumpIcon}
                                     onClick={(): void => {
-                                        if (frame !== null) {
-                                            onPlay(false);
-                                            const newFrame = Math
-                                                .min(jobInstance.stopFrame, frame + 10);
-                                            if (newFrame !== frame) {
-                                                onChangeFrame(newFrame);
-                                            }
+                                        const newFrame = Math
+                                            .min(jobInstance.stopFrame, frame + frameStep);
+                                        if (newFrame !== frame) {
+                                            onSwitchPlay(false);
+                                            onChangeFrame(newFrame, false);
                                         }
                                     }}
                                 />
@@ -182,11 +179,9 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 <Icon
                                     component={PlaycontrolLastIcon}
                                     onClick={(): void => {
-                                        if (frame !== null) {
-                                            onPlay(false);
-                                            if (jobInstance.stopFrame !== frame) {
-                                                onChangeFrame(jobInstance.stopFrame);
-                                            }
+                                        if (jobInstance.stopFrame !== frame) {
+                                            onSwitchPlay(false);
+                                            onChangeFrame(jobInstance.stopFrame, false);
                                         }
                                     }}
                                 />
@@ -201,10 +196,8 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                         max={jobInstance.stopFrame}
                                         value={frame || 0}
                                         onChange={(value: SliderValue): void => {
-                                            if (frame !== null) {
-                                                onPlay(false);
-                                                onChangeFrame(value as number);
-                                            }
+                                            onSwitchPlay(false);
+                                            onChangeFrame(value as number, false);
                                         }}
                                     />
                                 </Col>
@@ -224,10 +217,8 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 value={frame || 0}
                                 // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
-                                    if (frame !== null) {
-                                        onPlay(false);
-                                        onChangeFrame(+e.target.value || jobInstance.startFrame);
-                                    }
+                                    onSwitchPlay(false);
+                                    onChangeFrame(+e.target.value, false);
                                 }}
                             />
                         </Col>

@@ -4,40 +4,40 @@ import {
     Layout,
 } from 'antd';
 
-import { Canvas } from '../../../../../cvat-canvas/src/typescript/canvas';
+import { Canvas } from '../../../canvas';
 
 interface Props {
+    canvasInstance: Canvas;
     jobInstance: any;
-    canvas: Canvas;
-    frame: number | null;
-    onSetupCanvas(): void;
+    annotations: any[];
+    frameData: any;
+    onCanvasSetup: () => void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
         const {
             jobInstance,
-            onSetupCanvas,
-            canvas,
+            canvasInstance,
+            onCanvasSetup,
         } = this.props;
 
         // It's awful approach from the point of view React
-        // But we do not have any choice because cvat-canvas returns regular DOM element
+        // But we do not have another way because cvat-canvas returns regular DOM element
         const [wrapper] = window.document
             .getElementsByClassName('cvat-annotation-page-canvas-container');
-        wrapper.appendChild(canvas.html());
-        canvas.updateSize();
+        wrapper.appendChild(canvasInstance.html());
+        canvasInstance.fitCanvas();
 
-
-        canvas.html().addEventListener('canvas.setup', () => {
-            onSetupCanvas();
+        canvasInstance.html().addEventListener('canvas.setup', (): void => {
+            onCanvasSetup();
             if (jobInstance.task.mode === 'annotation') {
-                canvas.fit();
+                canvasInstance.fit();
             }
         });
 
-        canvas.html().addEventListener('canvas.setup', () => {
-            canvas.fit();
+        canvasInstance.html().addEventListener('canvas.setup', () => {
+            canvasInstance.fit();
         }, { once: true });
 
         this.updateCanvas();
@@ -49,23 +49,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private updateCanvas(): void {
         const {
-            jobInstance,
-            frame,
-            canvas,
+            annotations,
+            frameData,
+            canvasInstance,
         } = this.props;
 
-        if (frame !== null) {
-            Promise.all([
-
-                jobInstance.frames.get(frame),
-                jobInstance.annotations.get(frame),
-            ]).then(([frameData, annotations]) => {
-                canvas.setup(frameData, annotations);
-            }).catch((error: any) => {
-                // temporary disabled
-                // eslint-disable-next-line
-                console.log(error);
-            });
+        if (frameData !== null) {
+            canvasInstance.setup(frameData, annotations);
         }
     }
 
