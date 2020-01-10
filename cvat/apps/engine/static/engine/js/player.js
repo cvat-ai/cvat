@@ -481,6 +481,9 @@ class PlayerModel extends Listener {
         const requestedFrame = Math.clamp(absolute ? delta : this._frame.current + delta,
             this._frame.start,
             this._frame.stop);
+        if (absolute) {
+            this._frame.requested.clear();
+        }
         this._frame.requested.add(requestedFrame);
 
         if (!isLoadFrame) {

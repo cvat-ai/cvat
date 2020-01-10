@@ -133,11 +133,13 @@
                 activeChunk.request = serverProxy.frames.getData(this.tid,
                     activeChunk.chunkNumber).then((chunk) => {
                     frameDataCache[this.tid].activeChunkRequest.completed = true;
-                    provider.requestDecodeBlock(chunk,
-                        taskDataCache.activeChunkRequest.start,
-                        taskDataCache.activeChunkRequest.stop,
-                        taskDataCache.activeChunkRequest.onDecodeAll,
-                        taskDataCache.activeChunkRequest.rejectRequestAll);
+                    if (!taskDataCache.nextChunkRequest) {
+                        provider.requestDecodeBlock(chunk,
+                            taskDataCache.activeChunkRequest.start,
+                            taskDataCache.activeChunkRequest.stop,
+                            taskDataCache.activeChunkRequest.onDecodeAll,
+                            taskDataCache.activeChunkRequest.rejectRequestAll);
+                    }
                 }).catch((exception) => {
                     if (exception instanceof Exception) {
                         reject(exception);
@@ -167,7 +169,8 @@
                         if (!provider.isChunkCached(start, stop)) {
                             if (!frameDataCache[this.tid].activeChunkRequest
                                 || (frameDataCache[this.tid].activeChunkRequest
-                                && frameDataCache[this.tid].activeChunkRequest.completed)) {
+                                && frameDataCache[this.tid].activeChunkRequest.completed
+                                && frameDataCache[this.tid].activeChunkRequest.chunkNumber !== chunkNumber)) {
                                 if (frameDataCache[this.tid].activeChunkRequest) {
                                     frameDataCache[this.tid].activeChunkRequest.rejectRequestAll();
                                 }
