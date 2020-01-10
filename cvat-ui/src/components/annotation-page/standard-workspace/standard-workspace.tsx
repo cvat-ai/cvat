@@ -7,37 +7,23 @@ import {
 
 import { Canvas } from '../../../canvas';
 
+import CanvasWrapperContainer from '../../../containers/annotation-page/standard-workspace/canvas-wrapper';
 import ControlsSideBarComponent from './controls-side-bar';
-import CanvasWrapperComponent from './canvas-wrapper-component';
 import ObjectSideBarComponent from './objects-side-bar/objects-side-bar';
 
 interface Props {
     canvasInstance: Canvas;
-    jobInstance: any;
-    annotations: any[];
-    frameData: any;
-    onCanvasSetup: () => void;
 }
 
 export default function StandardWorkspaceComponent(props: Props): JSX.Element {
     const {
         canvasInstance,
-        jobInstance,
-        annotations,
-        frameData,
-        onCanvasSetup,
     } = props;
 
     return (
         <Layout hasSider>
             <ControlsSideBarComponent />
-            <CanvasWrapperComponent
-                canvasInstance={canvasInstance}
-                onCanvasSetup={onCanvasSetup}
-                jobInstance={jobInstance}
-                annotations={annotations}
-                frameData={frameData}
-            />
+            <CanvasWrapperContainer />
             <ObjectSideBarComponent
                 onSidebarFoldUnfold={(): void => {
                     canvasInstance.fitCanvas();

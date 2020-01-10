@@ -11,7 +11,7 @@ interface Props {
     jobInstance: any;
     annotations: any[];
     frameData: any;
-    onCanvasSetup: () => void;
+    onSetupCanvas: () => void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -19,7 +19,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             jobInstance,
             canvasInstance,
-            onCanvasSetup,
+            onSetupCanvas,
         } = this.props;
 
         // It's awful approach from the point of view React
@@ -30,7 +30,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.fitCanvas();
 
         canvasInstance.html().addEventListener('canvas.setup', (): void => {
-            onCanvasSetup();
+            onSetupCanvas();
             if (jobInstance.task.mode === 'annotation') {
                 canvasInstance.fit();
             }
