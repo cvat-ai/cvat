@@ -21,6 +21,7 @@ import {
     FrameSpeed,
     GridColor,
 } from '../../reducers/interfaces';
+import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 
 interface Props {
     frameStep: number;
@@ -38,6 +39,10 @@ interface Props {
     onChangeFrameSpeed(speed: FrameSpeed): void;
     onSwitchResetZoom(enabled: boolean): void;
     onSwitchRotateAll(enabled: boolean): void;
+    onSwitchGrid(grid: boolean): void;
+    onChangeGridSize(gridSize: number): void;
+    onChangeGridColor(gridColor: GridColor): void;
+    onChangeGridOpacity(gridOpacity: number): void;
     onChangeBrightnessLevel(level: number): void;
     onChangeContrastLevel(level: number): void;
     onChangeSaturationLevel(level: number): void;
@@ -56,6 +61,10 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         brightnessLevel,
         contrastLevel,
         saturationLevel,
+        onSwitchGrid,
+        onChangeGridSize,
+        onChangeGridColor,
+        onChangeGridOpacity,
     } = props;
 
     return (
@@ -92,6 +101,9 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     <Checkbox
                         className='cvat-text-color cvat-player-settings-grid'
                         checked={grid}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchGrid(event.target.checked);
+                        }}
                     >
                         Show grid
                     </Checkbox>
@@ -100,11 +112,26 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             <Row type='flex' justify='space-between'>
                 <Col span={8} className='cvat-player-settings-grid-size'>
                     <Text className='cvat-text-color'> Grid size </Text>
-                    <InputNumber min={5} max={1000} step={1} value={gridSize} />
+                    <InputNumber
+                        min={5}
+                        max={1000}
+                        step={1}
+                        value={gridSize}
+                        onChange={(value: number | undefined): void => {
+                            if (value) {
+                                onChangeGridSize(value);
+                            }
+                        }}
+                    />
                 </Col>
                 <Col span={8} className='cvat-player-settings-grid-color'>
                     <Text className='cvat-text-color'> Grid color </Text>
-                    <Select value={gridColor}>
+                    <Select
+                        value={gridColor}
+                        onChange={(color: GridColor): void => {
+                            onChangeGridColor(color);
+                        }}
+                    >
                         <Select.Option key='white' value={GridColor.White}>White</Select.Option>
                         <Select.Option key='black' value={GridColor.Black}>Black</Select.Option>
                         <Select.Option key='red' value={GridColor.Red}>Red</Select.Option>
@@ -114,7 +141,16 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 </Col>
                 <Col span={8} className='cvat-player-settings-grid-opacity'>
                     <Text className='cvat-text-color'> Grid opacity </Text>
-                    <Slider min={0} max={100} value={gridOpacity} />
+                    <Slider
+                        min={0}
+                        max={100}
+                        value={gridOpacity}
+                        onChange={(value: number | undefined): void => {
+                            if (value) {
+                                onChangeGridOpacity(value);
+                            }
+                        }}
+                    />
                     <Text className='cvat-text-color'>{`${gridOpacity} %`}</Text>
                 </Col>
             </Row>

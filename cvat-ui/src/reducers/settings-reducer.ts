@@ -1,4 +1,5 @@
 import { AnyAction } from 'redux';
+import { SettingsActionTypes } from '../actions/settings-actions';
 
 import {
     SettingsState,
@@ -30,6 +31,42 @@ const defaultState: SettingsState = {
 
 export default (state = defaultState, action: AnyAction): SettingsState => {
     switch (action.type) {
+        case SettingsActionTypes.SWITCH_GRID: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    grid: action.payload.grid,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_GRID_SIZE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    gridSize: action.payload.gridSize,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_GRID_COLOR: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    gridColor: action.payload.gridColor,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_GRID_OPACITY: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    gridOpacity: action.payload.gridOpacity,
+                },
+            };
+        }
         default: {
             return {
                 ...state,

@@ -4,6 +4,13 @@ import { connect } from 'react-redux';
 import PlayerSettingsComponent from '../../components/settings-page/player-settings';
 
 import {
+    switchGrid,
+    changeGridSize,
+    changeGridColor,
+    changeGridOpacity,
+} from '../../actions/settings-actions';
+
+import {
     CombinedState,
     FrameSpeed,
     GridColor,
@@ -28,10 +35,10 @@ interface DispatchToProps {
     onChangeFrameSpeed(speed: FrameSpeed): void;
     onSwitchResetZoom(enabled: boolean): void;
     onSwitchRotateAll(enabled: boolean): void;
-    onSwitchGrid(enabled: boolean): void;
-    onChangeGridSize(size: number): void;
-    onChangeGridColor(color: GridColor): void;
-    onChangeGridOpacity(opacity: number): void;
+    onSwitchGrid(grid: boolean): void;
+    onChangeGridSize(gridSize: number): void;
+    onChangeGridColor(gridColor: GridColor): void;
+    onChangeGridOpacity(gridOpacity: number): void;
     onChangeBrightnessLevel(level: number): void;
     onChangeContrastLevel(level: number): void;
     onChangeSaturationLevel(level: number): void;
@@ -44,7 +51,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(): DispatchToProps {
+function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onChangeFrameStep(step: number): void {
 
@@ -58,17 +65,17 @@ function mapDispatchToProps(): DispatchToProps {
         onSwitchRotateAll(enabled: boolean): void {
 
         },
-        onSwitchGrid(enabled: boolean): void {
-
+        onSwitchGrid(grid: boolean): void {
+            dispatch(switchGrid(grid));
         },
-        onChangeGridSize(size: number): void {
-
+        onChangeGridSize(gridSize: number): void {
+            dispatch(changeGridSize(gridSize));
         },
-        onChangeGridColor(color: GridColor): void {
-
+        onChangeGridColor(gridColor: GridColor): void {
+            dispatch(changeGridColor(gridColor));
         },
-        onChangeGridOpacity(opacity: number): void {
-
+        onChangeGridOpacity(gridOpacity: number): void {
+            dispatch(changeGridOpacity(gridOpacity));
         },
         onChangeBrightnessLevel(level: number): void {
 

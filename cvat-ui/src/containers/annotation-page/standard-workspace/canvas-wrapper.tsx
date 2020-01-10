@@ -7,6 +7,7 @@ import {
     confirmCanvasReady,
 } from '../../../actions/annotation-actions';
 import {
+    GridColor,
     CombinedState,
 } from '../../../reducers/interfaces';
 
@@ -17,6 +18,10 @@ interface StateToProps {
     jobInstance: any;
     annotations: any[];
     frameData: any;
+    grid: boolean;
+    gridSize: number;
+    gridColor: GridColor;
+    gridOpacity: number;
 }
 
 interface DispatchToProps {
@@ -31,11 +36,22 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotations,
     } = state.annotation;
 
+    const {
+        grid,
+        gridSize,
+        gridColor,
+        gridOpacity,
+    } = state.settings.player;
+
     return {
         canvasInstance,
         jobInstance,
         frameData,
         annotations,
+        grid,
+        gridSize,
+        gridColor,
+        gridOpacity,
     };
 }
 
