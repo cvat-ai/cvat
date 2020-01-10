@@ -217,14 +217,6 @@ class CvatConverterTest(TestCase):
                             PolyLineObject([5, 0, 9, 0, 5, 5]), # will be skipped
                         ]
                     ),
-
-                    DatasetItem(id=4,
-                        annotations=[
-                            PolygonObject([0, 0, 4, 0, 4, 4],
-                                label=1,
-                                attributes={ 'z_order': 2, 'occluded': True }),
-                        ]
-                    ),
                 ])
 
             def categories(self):
@@ -263,14 +255,6 @@ class CvatConverterTest(TestCase):
                             PolygonObject([0, 0, 4, 0, 4, 4],
                                 label=3, group=4,
                                 attributes={ 'z_order': 1, 'occluded': False }),
-                        ]
-                    ),
-
-                    DatasetItem(id=4,
-                        annotations=[
-                            PolygonObject([0, 0, 4, 0, 4, 4],
-                                label=1,
-                                attributes={ 'z_order': 2, 'occluded': True }),
                         ]
                     ),
                 ])
