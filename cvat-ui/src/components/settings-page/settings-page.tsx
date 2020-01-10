@@ -5,14 +5,18 @@ import {
     Col,
     Tabs,
     Icon,
+    Button,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
 
+import { RouteComponentProps } from 'react-router';
+import { withRouter } from 'react-router-dom';
+
 import WorkspaceSettingsContainer from '../../containers/settings-page/workspace-settings';
 import PlayerSettingsContainer from '../../containers/settings-page/player-settings';
 
-export default function SettingsPage(): JSX.Element {
+function SettingsPage(props: RouteComponentProps): JSX.Element {
     return (
         <div className='cvat-settings-page'>
             <Row type='flex' justify='center'>
@@ -25,21 +29,7 @@ export default function SettingsPage(): JSX.Element {
                     <Tabs
                         type='card'
                         tabBarStyle={{ marginBottom: '0px', marginLeft: '-1px' }}
-                        defaultActiveKey='player'
                     >
-                        <Tabs.TabPane
-                            tab={
-                                (
-                                    <span>
-                                        <Icon type='laptop' />
-                                        <Text>Workspace</Text>
-                                    </span>
-                                )
-                            }
-                            key='workspace'
-                        >
-                            <WorkspaceSettingsContainer />
-                        </Tabs.TabPane>
                         <Tabs.TabPane
                             tab={
                                 (
@@ -53,10 +43,37 @@ export default function SettingsPage(): JSX.Element {
                         >
                             <PlayerSettingsContainer />
                         </Tabs.TabPane>
+                        <Tabs.TabPane
+                            tab={
+                                (
+                                    <span>
+                                        <Icon type='laptop' />
+                                        <Text>Workspace</Text>
+                                    </span>
+                                )
+                            }
+                            key='workspace'
+                        >
+                            <WorkspaceSettingsContainer />
+                        </Tabs.TabPane>
                     </Tabs>
                 </Col>
             </Row>
+            <Row type='flex' justify='center'>
+                <Col md={14} lg={12} xl={10} xxl={9} className='cvat-settings-page-back-button-wrapper'>
+                    <Button
+                        className='cvat-settings-page-back-button'
+                        type='primary'
+                        onClick={(): void => {
+                            props.history.goBack();
+                        }}
+                    >
+                        Go Back
+                    </Button>
+                </Col>
+            </Row>
         </div>
-
     );
 }
+
+export default withRouter(SettingsPage);

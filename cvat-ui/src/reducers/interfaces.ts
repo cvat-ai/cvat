@@ -205,12 +205,8 @@ export interface AnnotationState {
     jobInstance: any | null | undefined;
     frameData: any | null;
     frame: number;
-    frameStep: number;
     playing: boolean;
     annotations: any[];
-    frameGrid: boolean;
-    frameGridWidth: number;
-    frameGridHeight: number;
     jobFetching: boolean;
     dataFetching: boolean;
 }

@@ -10,13 +10,9 @@ const defaultState: AnnotationState = {
     canvasIsReady: false,
     jobInstance: null,
     frame: 0,
-    frameStep: 10,
     playing: false,
     annotations: [],
     frameData: null,
-    frameGrid: false,
-    frameGridWidth: 100,
-    frameGridHeight: 100,
     dataFetching: false,
     jobFetching: false,
 };

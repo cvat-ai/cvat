@@ -23,11 +23,15 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { annotation } = state;
+    const {
+        annotation,
+        settings,
+    } = state;
+
     return {
         jobInstance: annotation.jobInstance,
         frame: annotation.frame as number, // is number when jobInstance specified
-        frameStep: annotation.frameStep,
+        frameStep: settings.player.frameStep,
         playing: annotation.playing,
         canvasIsReady: annotation.canvasIsReady,
     };
