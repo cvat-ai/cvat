@@ -8,6 +8,7 @@ import pluginsReducer from './plugins-reducer';
 import modelsReducer from './models-reducer';
 import notificationsReducer from './notifications-reducer';
 import annotationReducer from './annotation-reducer';
+import settingsReducer from './settings-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
@@ -20,5 +21,6 @@ export default function createRootReducer(): Reducer {
         models: modelsReducer,
         notifications: notificationsReducer,
         annotation: annotationReducer,
+        settings: settingsReducer,
     });
 }

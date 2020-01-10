@@ -215,6 +215,49 @@ export interface AnnotationState {
     dataFetching: boolean;
 }
 
+export enum GridColor {
+    White = 'White',
+    Black = 'Black',
+    Red = 'Red',
+    Green = 'Green',
+    Blue = 'Blue',
+}
+
+export enum FrameSpeed {
+    Fastest = 100,
+    Fast = 50,
+    Usual = 25,
+    Slow = 15,
+    Slower = 12,
+    Slowest = 1,
+}
+
+export interface PlayerSettingsState {
+    frameStep: number;
+    frameSpeed: FrameSpeed;
+    resetZoom: boolean;
+    rotateAll: boolean;
+    grid: boolean;
+    gridSize: number;
+    gridColor: GridColor;
+    gridOpacity: number; // in %
+    brightnessLevel: number;
+    contrastLevel: number;
+    saturationLevel: number;
+}
+
+export interface WorkspaceSettingsState {
+    autoSave: boolean;
+    autoSaveInterval: number; // in ms
+    aamZoomMargin: number;
+    showAllInterpolationTracks: boolean;
+}
+
+export interface SettingsState {
+    workspace: WorkspaceSettingsState;
+    player: PlayerSettingsState;
+}
+
 export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
@@ -225,4 +268,5 @@ export interface CombinedState {
     models: ModelsState;
     notifications: NotificationsState;
     annotation: AnnotationState;
+    settings: SettingsState;
 }
