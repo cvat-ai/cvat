@@ -6,6 +6,7 @@ import { ModelsActionTypes } from '../actions/models-actions';
 import { ShareActionTypes } from '../actions/share-actions';
 import { TasksActionTypes } from '../actions/tasks-actions';
 import { UsersActionTypes } from '../actions/users-actions';
+import { AboutActionTypes } from '../actions/about-actions';
 import { NotificationsActionType } from '../actions/notification-actions';
 
 import { NotificationsState } from './interfaces';
@@ -31,6 +32,9 @@ const defaultState: NotificationsState = {
             fetching: null,
         },
         users: {
+            fetching: null,
+        },
+        about: {
             fetching: null,
         },
         share: {
@@ -270,6 +274,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.users,
                         fetching: {
                             message: 'Could not get users from the server',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AboutActionTypes.GET_ABOUT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    about: {
+                        ...state.errors.about,
+                        fetching: {
+                            message: 'Could not get data from the server',
                             reason: action.payload.error.toString(),
                         },
                     },

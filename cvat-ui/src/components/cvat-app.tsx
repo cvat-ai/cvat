@@ -28,7 +28,7 @@ import { NotificationsState } from '../reducers/interfaces';
 type CVATAppProps = {
     loadFormats: () => void;
     loadUsers: () => void;
-    loadServerInfo: () => void;
+    loadAbout: () => void;
     verifyAuthorized: () => void;
     initPlugins: () => void;
     resetErrors: () => void;
@@ -40,13 +40,14 @@ type CVATAppProps = {
     formatsFetching: boolean;
     usersInitialized: boolean;
     usersFetching: boolean;
-    serverInfoInitialized: boolean;
-    serverInfoFetching: boolean;
+    aboutInitialized: boolean;
+    aboutFetching: boolean;
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
     notifications: NotificationsState;
     user: any;
+    about: any;
 };
 
 export default class CVATApplication extends React.PureComponent<CVATAppProps> {
@@ -59,15 +60,15 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const {
             loadFormats,
             loadUsers,
-            loadServerInfo,
+            loadAbout,
             initPlugins,
             userInitialized,
             formatsInitialized,
             formatsFetching,
             usersInitialized,
             usersFetching,
-            serverInfoFetching,
-            serverInfoInitialized,
+            aboutInitialized,
+            aboutFetching,
             pluginsInitialized,
             pluginsFetching,
             user,
@@ -89,8 +90,8 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             loadUsers();
         }
 
-        if (!serverInfoInitialized && !serverInfoFetching) {
-            loadServerInfo();
+        if (!aboutInitialized && !aboutFetching) {
+            loadAbout();
         }
 
         if (!pluginsInitialized && !pluginsFetching) {
@@ -162,13 +163,14 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const { tasks } = notifications.errors;
         const { formats } = notifications.errors;
         const { users } = notifications.errors;
+        const { about } = notifications.errors;
         const { share } = notifications.errors;
         const { models } = notifications.errors;
 
         const shown = !!auth.authorized || !!auth.login || !!auth.logout || !!auth.register
             || !!tasks.fetching || !!tasks.updating || !!tasks.dumping || !!tasks.loading
             || !!tasks.exporting || !!tasks.deleting || !!tasks.creating || !!formats.fetching
-            || !!users.fetching || !!share.fetching || !!models.creating || !!models.starting
+            || !!users.fetching || !!about.fetching || !!share.fetching || !!models.creating || !!models.starting
             || !!models.fetching || !!models.deleting || !!models.inferenceStatusFetching
             || !!models.metaFetching;
 
@@ -211,6 +213,9 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         if (users.fetching) {
             showError(users.fetching.message, users.fetching.reason);
         }
+        if (about.fetching) {
+            showError(about.fetching.message, about.fetching.reason);
+        }
         if (share.fetching) {
             showError(share.fetching.message, share.fetching.reason);
         }
@@ -246,7 +251,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const {
             userInitialized,
             usersInitialized,
-            serverInfoInitialized,
+            aboutInitialized,
             pluginsInitialized,
             formatsInitialized,
             installedAutoAnnotation,
@@ -257,7 +262,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
 
         const readyForRender = (userInitialized && user == null)
             || (userInitialized && formatsInitialized
-            && pluginsInitialized && usersInitialized && serverInfoInitialized);
+            && pluginsInitialized && usersInitialized && aboutInitialized);
 
         const withModels = installedAutoAnnotation
             || installedTFAnnotation || installedTFSegmentation;

@@ -89,8 +89,8 @@ export interface UsersState {
     initialized: boolean;
 }
 
-export interface ServerInfoState {
-    serverInfo: string;
+export interface AboutState {
+    about: any;
     fetching: boolean;
     initialized: boolean;
 }
@@ -182,7 +182,7 @@ export interface NotificationsState {
         users: {
             fetching: null | ErrorState;
         };
-        serverInfo: {
+        about: {
             fetching: null | ErrorState;
         };
         share: {
@@ -211,7 +211,7 @@ export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
     users: UsersState;
-    serverInfo: ServerInfoState;
+    about: AboutState;
     share: ShareState;
     formats: FormatsState;
     plugins: PluginsState;

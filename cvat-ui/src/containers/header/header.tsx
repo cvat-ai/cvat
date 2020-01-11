@@ -16,7 +16,7 @@ interface StateToProps {
     installedTFSegmentation: boolean;
     installedTFAnnotation: boolean;
     username: string;
-    serverInfo: string;
+    about: any;
 }
 
 interface DispatchToProps {
@@ -26,7 +26,7 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const { auth } = state;
     const { plugins } = state.plugins;
-    const { serverInfo } = state.serverInfo;
+    const { about } = state.about;
     return {
         logoutFetching: state.auth.fetching,
         installedAnalytics: plugins[SupportedPlugins.ANALYTICS],
@@ -34,7 +34,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         installedTFSegmentation: plugins[SupportedPlugins.TF_SEGMENTATION],
         installedTFAnnotation: plugins[SupportedPlugins.TF_ANNOTATION],
         username: auth.user.username,
-        serverInfo: serverInfo,
+        about: about,
     };
 }
 

@@ -41,7 +41,7 @@ interface HeaderContainerProps {
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
     username: string;
-    serverInfo: string;
+    about: any;
 }
 
 type Props = HeaderContainerProps & RouteComponentProps;
@@ -53,7 +53,7 @@ function HeaderContainer(props: Props): JSX.Element {
         installedTFAnnotation,
         installedAnalytics,
         username,
-        serverInfo,
+        about,
         onLogout,
         logoutFetching,
     } = props;
@@ -61,39 +61,55 @@ function HeaderContainer(props: Props): JSX.Element {
     const renderModels = installedAutoAnnotation
         || installedTFAnnotation
         || installedTFSegmentation;
-    
-    function DataModal() {
+
+    function aboutModal() {
         Modal.info({
-            title: serverInfo.name,
+            title: `${about.name}`,
             content: (
-                <div className="modal_data_wrapper">
-                    <p>{serverInfo.description}</p>
-                    <p>Server Version : {serverInfo.version}</p>
-                    <p>Client Version: {core.client.version}</p>
-                    <Router>
-                    <Row type='flex' justify='center'>
-                        <Col span={4}><Link to= ''>What's new?</Link></Col>
-                        <Col span={4}><Link to=''>License</Link></Col>
-                        <Col span={4}><a href='https://gitter.im/opencv-cvat' target='_blank'>Need help?</a></Col>
-                        <Col span={4}><a href='https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit' target='_blank'>Forum on Intel Developer Zone</a></Col>
+                <div>
+                    <p>
+                        {`${about.description}`}
+                    </p>
+                    <p>
+                        <Text strong>
+                            Server version:
+                        </Text>
+                        <Text type='secondary'>
+                            {` ${about.version}`}
+                        </Text>
+                    </p>
+                    <p>
+                        <Text strong>
+                            Client version:
+                        </Text>
+                        <Text type='secondary'>
+                            {` ${core.client.version}`}
+                        </Text>
+                    </p>
+                    <Row type='flex' justify='space-around'>
+                        <Col span={4}><a href= 'https://github.com/opencv/cvat/blob/develop/CHANGELOG.md' target='_blank' rel="noopener noreferrer" >What's new?</a></Col>
+                        <Col span={4}><a href='https://github.com/opencv/cvat/blob/develop/LICENSE' target='_blank' rel="noopener noreferrer" >License</a></Col>
+                        <Col span={4}><a href='https://gitter.im/opencv-cvat' target='_blank' rel="noopener noreferrer" >Need help?</a></Col>
+                        <Col span={4}><a href='https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit' target='_blank' rel="noopener noreferrer" >Forum on Intel Developer Zone</a></Col>
                     </Row>  
-                    <Switch>
-                        <Route path=''/>
-                        <Route path=''/>
-                    </Switch>
-                    </Router> 
                 </div>
             ),
-            width: 800,
+            width : 800,
+            okButtonProps: {
+                style: {
+                    width: '100px',
+                },
+            },
         })
     }
+
     const menu = (
         <Menu className='cvat-header-menu' mode='vertical'>
             <Menu.Item>
                 <Icon type='setting' />
                 Settings
             </Menu.Item>
-            <Menu.Item onClick={() => DataModal()} > 
+            <Menu.Item onClick={() => aboutModal()}>
                 <Icon type='info-circle' />
                 About
             </Menu.Item>
