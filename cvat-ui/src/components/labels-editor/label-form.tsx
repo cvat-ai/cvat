@@ -67,6 +67,8 @@ class LabelForm extends React.PureComponent<Props, {}> {
                             }
                         }
 
+                        attrValues = attrValues.map((value: string) => value.trim());
+
                         return {
                             name: formValues.attrName[key],
                             type: formValues.type[key],
