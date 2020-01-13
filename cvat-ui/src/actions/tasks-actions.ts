@@ -377,6 +377,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             labels: data.labels,
             z_order: data.advanced.zOrder,
             image_quality: 70,
+            use_zip_chunks: data.advanced.useZipChunks,
         };
 
         if (data.advanced.bugTracker) {

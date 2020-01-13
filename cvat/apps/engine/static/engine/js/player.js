@@ -365,7 +365,6 @@ class PlayerModel extends Listener {
 
     async onFrameReady(last) { // callback for FrameProvider instance
         if (last === this._frame.current) {
-            // If need continue playing after load, set timeout for additional frame download
             if (this._continueAfterLoad) {
                 this._continueAfterLoad = false;
                 this.play();

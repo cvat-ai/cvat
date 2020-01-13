@@ -170,7 +170,8 @@
                             if (!frameDataCache[this.tid].activeChunkRequest
                                 || (frameDataCache[this.tid].activeChunkRequest
                                 && frameDataCache[this.tid].activeChunkRequest.completed
-                                && frameDataCache[this.tid].activeChunkRequest.chunkNumber !== chunkNumber)) {
+                                && frameDataCache[this.tid].activeChunkRequest.chunkNumber
+                                    !== chunkNumber)) {
                                 if (frameDataCache[this.tid].activeChunkRequest) {
                                     frameDataCache[this.tid].activeChunkRequest.rejectRequestAll();
                                 }

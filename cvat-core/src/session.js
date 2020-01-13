@@ -972,8 +972,7 @@
                     },
                 },
                 useZipChunks: {
-                    // TODO: add support in new dashboard
-                    get: () => true, // get: () => data.use_zip_chunks,
+                    get: () => data.use_zip_chunks,
                     set: (useZipChunks) => {
                         if (typeof (useZipChunks) !== 'boolean') {
                             throw new ArgumentError(

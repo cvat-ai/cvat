@@ -25,6 +25,7 @@ export interface AdvancedConfiguration {
     frameFilter?: string;
     lfs: boolean;
     repository?: string;
+    useZipChunks: boolean;
 }
 
 type Props = FormComponentProps & {
@@ -285,6 +286,24 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderUzeZipChunks(): JSX.Element {
+        const { form } = this.props;
+        return (
+            <Form.Item help='Force to use zip chunks as compressed data. Actual for videos only.'>
+                {form.getFieldDecorator('useZipChunks', {
+                    initialValue: true,
+                    valuePropName: 'checked',
+                })(
+                    <Checkbox>
+                        <Text className='cvat-text-color'>
+                            Use zip chunks
+                        </Text>
+                    </Checkbox>,
+                )}
+            </Form.Item>
+        );
+    }
+
     public render(): JSX.Element {
         const { installedGit } = this.props;
 
@@ -293,6 +312,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Row>
                     <Col>
                         {this.renderZOrder()}
+                    </Col>
+                </Row>
+
+                <Row>
+                    <Col>
+                        {this.renderUzeZipChunks()}
                     </Col>
                 </Row>
 
