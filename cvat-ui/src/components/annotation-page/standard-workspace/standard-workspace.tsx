@@ -8,7 +8,7 @@ import {
 import { Canvas } from '../../../canvas';
 
 import CanvasWrapperContainer from '../../../containers/annotation-page/standard-workspace/canvas-wrapper';
-import ControlsSideBarComponent from './controls-side-bar';
+import ControlsSideBarContainer from '../../../containers/annotation-page/standard-workspace/controls-side-bar';
 import ObjectSideBarComponent from './objects-side-bar/objects-side-bar';
 
 interface Props {
@@ -22,7 +22,7 @@ export default function StandardWorkspaceComponent(props: Props): JSX.Element {
 
     return (
         <Layout hasSider>
-            <ControlsSideBarComponent />
+            <ControlsSideBarContainer />
             <CanvasWrapperContainer />
             <ObjectSideBarComponent
                 onSidebarFoldUnfold={(): void => {

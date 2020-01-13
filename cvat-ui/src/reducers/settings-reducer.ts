@@ -31,6 +31,15 @@ const defaultState: SettingsState = {
 
 export default (state = defaultState, action: AnyAction): SettingsState => {
     switch (action.type) {
+        case SettingsActionTypes.SWITCH_ROTATE_ALL: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    rotateAll: action.payload.rotateAll,
+                },
+            };
+        }
         case SettingsActionTypes.SWITCH_GRID: {
             return {
                 ...state,

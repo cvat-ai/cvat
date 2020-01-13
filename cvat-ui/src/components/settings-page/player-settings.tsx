@@ -11,6 +11,7 @@ import {
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
+import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 
 import {
     PlaycontrolBackJumpIcon,
@@ -21,7 +22,6 @@ import {
     FrameSpeed,
     GridColor,
 } from '../../reducers/interfaces';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 
 interface Props {
     frameStep: number;
@@ -38,7 +38,7 @@ interface Props {
     onChangeFrameStep(step: number): void;
     onChangeFrameSpeed(speed: FrameSpeed): void;
     onSwitchResetZoom(enabled: boolean): void;
-    onSwitchRotateAll(enabled: boolean): void;
+    onSwitchRotateAll(rotateAll: boolean): void;
     onSwitchGrid(grid: boolean): void;
     onChangeGridSize(gridSize: number): void;
     onChangeGridColor(gridColor: GridColor): void;
@@ -61,6 +61,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         brightnessLevel,
         contrastLevel,
         saturationLevel,
+        onSwitchRotateAll,
         onSwitchGrid,
         onChangeGridSize,
         onChangeGridColor,
@@ -145,10 +146,8 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         min={0}
                         max={100}
                         value={gridOpacity}
-                        onChange={(value: number | undefined): void => {
-                            if (value) {
-                                onChangeGridOpacity(value);
-                            }
+                        onChange={(value: number | [number, number]): void => {
+                            onChangeGridOpacity(value as number);
                         }}
                     />
                     <Text className='cvat-text-color'>{`${gridOpacity} %`}</Text>
@@ -176,6 +175,9 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                             <Checkbox
                                 className='cvat-text-color'
                                 checked={rotateAll}
+                                onChange={(event: CheckboxChangeEvent): void => {
+                                    onSwitchRotateAll(event.target.checked);
+                                }}
                             >
                                 Rotate all images
                             </Checkbox>

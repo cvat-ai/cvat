@@ -40,15 +40,23 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(): DispatchToProps {
     return {
+        // will be implemented
+        // eslint-disable-next-line
         onSwitchAutoSave(enabled: boolean): void {
 
         },
+        // will be implemented
+        // eslint-disable-next-line
         onChangeAutoSaveInterval(interval: number): void {
 
         },
+        // will be implemented
+        // eslint-disable-next-line
         onChangeAAMZoomMargin(margin: number): void {
 
         },
+        // will be implemented
+        // eslint-disable-next-line
         onSwitchShowingInterpolatedTracks(enabled: boolean): void {
 
         },

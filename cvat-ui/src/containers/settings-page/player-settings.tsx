@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import PlayerSettingsComponent from '../../components/settings-page/player-settings';
 
 import {
+    switchRotateAll,
     switchGrid,
     changeGridSize,
     changeGridColor,
@@ -34,7 +35,7 @@ interface DispatchToProps {
     onChangeFrameStep(step: number): void;
     onChangeFrameSpeed(speed: FrameSpeed): void;
     onSwitchResetZoom(enabled: boolean): void;
-    onSwitchRotateAll(enabled: boolean): void;
+    onSwitchRotateAll(rotateAll: boolean): void;
     onSwitchGrid(grid: boolean): void;
     onChangeGridSize(gridSize: number): void;
     onChangeGridColor(gridColor: GridColor): void;
@@ -53,17 +54,23 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
+        // will be implemented
+        // eslint-disable-next-line
         onChangeFrameStep(step: number): void {
 
         },
+        // will be implemented
+        // eslint-disable-next-line
         onChangeFrameSpeed(speed: FrameSpeed): void {
 
         },
+        // will be implemented
+        // eslint-disable-next-line
         onSwitchResetZoom(enabled: boolean): void {
 
         },
-        onSwitchRotateAll(enabled: boolean): void {
-
+        onSwitchRotateAll(rotateAll: boolean): void {
+            dispatch(switchRotateAll(rotateAll));
         },
         onSwitchGrid(grid: boolean): void {
             dispatch(switchGrid(grid));
@@ -77,12 +84,18 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onChangeGridOpacity(gridOpacity: number): void {
             dispatch(changeGridOpacity(gridOpacity));
         },
+        // will be implemented
+        // eslint-disable-next-line
         onChangeBrightnessLevel(level: number): void {
 
         },
+        // will be implemented
+        // eslint-disable-next-line
         onChangeContrastLevel(level: number): void {
 
         },
+        // will be implemented
+        // eslint-disable-next-line
         onChangeSaturationLevel(level: number): void {
 
         },

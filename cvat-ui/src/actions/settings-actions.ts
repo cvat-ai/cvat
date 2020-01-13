@@ -4,10 +4,20 @@ import {
 } from '../reducers/interfaces';
 
 export enum SettingsActionTypes {
+    SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',
     SWITCH_GRID = 'SWITCH_GRID',
     CHANGE_GRID_SIZE = 'CHANGE_GRID_SIZE',
     CHANGE_GRID_COLOR = 'CHANGE_GRID_COLOR',
     CHANGE_GRID_OPACITY = 'CHANGE_GRID_OPACITY',
+}
+
+export function switchRotateAll(rotateAll: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_ROTATE_ALL,
+        payload: {
+            rotateAll,
+        },
+    };
 }
 
 export function switchGrid(grid: boolean): AnyAction {
