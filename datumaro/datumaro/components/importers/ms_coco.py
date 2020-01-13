@@ -37,7 +37,7 @@ class CocoImporter:
                 project.add_source(source_name, {
                     'url': ann_file,
                     'format': self._COCO_EXTRACTORS[ann_type],
-                    'options': extra_params,
+                    'options': dict(extra_params),
                 })
 
         return project

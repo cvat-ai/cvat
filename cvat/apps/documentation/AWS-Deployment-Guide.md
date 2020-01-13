@@ -6,4 +6,27 @@ Overall setup instruction is explained in [main readme file](https://github.com/
 
 2. **On Any other AWS Machine:** We can follow the same instruction guide mentioned in the [Readme file](https://github.com/opencv/cvat/). The additional step is to add a [security group and rule  to allow  incoming connections](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html).
 
-For any of above, don't forget to add exposed AWS public IP address to `docker-compose.override.com`.
+For any of above, don't forget to add exposed AWS public IP address and port to `docker-compose.override.yml`:
+
+You need at least 2 opened ports on your Amazon instance, for UI and Django apps.
+
+```
+version: "2.3"
+
+services:
+  cvat:
+    environment:
+      UI_HOST: *your Amazon AWS instance's url or IP*
+      UI_PORT: *port for UI app*
+    ports:
+      - "REACT_APP_API_PORT specified below:8080"
+
+
+  cvat_ui:
+    build:
+      args:
+        REACT_APP_API_HOST: *your Amazon AWS instance's url or IP*
+        REACT_APP_API_PORT: *port for Django app*
+    ports:
+      - "UI_PORT specified above":80"
+```

@@ -10,7 +10,7 @@ import {
 
 const defaultState: ShareState = {
     root: {
-        name: '/',
+        name: '',
         type: 'DIR',
         children: [],
     },

@@ -615,10 +615,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         rq_job = queue.fetch_job(rq_id)
         if rq_job:
-            task_time = timezone.localtime(db_task.updated_date)
-            request_time = rq_job.meta.get('request_time',
-                timezone.make_aware(datetime.min))
-            if request_time < task_time:
+            last_task_update_time = timezone.localtime(db_task.updated_date)
+            request_time = rq_job.meta.get('request_time', None)
+            if request_time is None or request_time < last_task_update_time:
                 rq_job.cancel()
                 rq_job.delete()
             else:
