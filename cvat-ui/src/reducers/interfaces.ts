@@ -199,9 +199,16 @@ export interface NotificationsState {
     };
 }
 
+export enum ActiveControl {
+    CURSOR = 'cursor',
+    DRAG_CANVAS = 'drag_canvas',
+    ZOOM_CANVAS = 'zoom_canvas',
+}
+
 export interface AnnotationState {
     canvasInstance: Canvas;
     canvasIsReady: boolean;
+    activeControls: ActiveControl[];
     jobInstance: any | null | undefined;
     frameData: any | null;
     frame: number;

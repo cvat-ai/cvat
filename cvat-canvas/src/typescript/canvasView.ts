@@ -438,7 +438,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.content.addEventListener('mousedown', (event): void => {
             if ((event.which === 1 && this.mode === Mode.IDLE) || (event.which === 2)) {
                 self.controller.enableDrag(event.clientX, event.clientY);
-
+                this.canvas.dispatchEvent(new CustomEvent('canvas.dragstart', {
+                    bubbles: false,
+                    cancelable: true,
+                }));
                 event.preventDefault();
             }
         });
@@ -446,12 +449,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
         window.document.addEventListener('mouseup', (event): void => {
             if (event.which === 1 || event.which === 2) {
                 self.controller.disableDrag();
+                this.canvas.dispatchEvent(new CustomEvent('canvas.dragstop', {
+                    bubbles: false,
+                    cancelable: true,
+                }));
             }
         });
 
         this.content.addEventListener('wheel', (event): void => {
             const point = translateToSVG(self.background, [event.clientX, event.clientY]);
             self.controller.zoom(point[0], point[1], event.deltaY > 0 ? -1 : 1);
+            this.canvas.dispatchEvent(new CustomEvent('canvas.zoom', {
+                bubbles: false,
+                cancelable: true,
+            }));
             event.preventDefault();
         });
 

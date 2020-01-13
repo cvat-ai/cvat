@@ -20,6 +20,8 @@ export enum AnnotationActionTypes {
     CHANGE_FRAME_FAILED = 'CHANGE_FRAME_FAILED',
     SWITCH_PLAY = 'SWITCH_PLAY',
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
+    DRAG_CANVAS = 'DRAG_CANVAS',
+    ZOOM_CANVAS = 'ZOOM_CANVAS',
 }
 
 export function switchPlay(playing: boolean): AnyAction {
@@ -73,6 +75,24 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 });
             }
         }
+    };
+}
+
+export function dragCanvas(inprogress: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.DRAG_CANVAS,
+        payload: {
+            inprogress,
+        },
+    };
+}
+
+export function zoomCanvas(inprogress: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.ZOOM_CANVAS,
+        payload: {
+            inprogress,
+        },
     };
 }
 

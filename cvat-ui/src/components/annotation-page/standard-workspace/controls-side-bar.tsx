@@ -24,6 +24,10 @@ import {
 } from '../../../icons';
 
 import {
+    ActiveControl,
+} from '../../../reducers/interfaces';
+
+import {
     Canvas,
     Rotation,
 } from '../../../canvas';
@@ -31,12 +35,14 @@ import {
 interface Props {
     canvasInstance: Canvas;
     rotateAll: boolean;
+    activeControls: ActiveControl[];
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
         rotateAll,
         canvasInstance,
+        activeControls,
     } = props;
 
     return (
@@ -46,11 +52,21 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             width={44}
         >
             <Tooltip overlay='Cursor' placement='right'>
-                <Icon component={CursorIcon} />
+                <Icon
+                    component={CursorIcon}
+                    className={activeControls.includes(ActiveControl.CURSOR)
+                        ? 'cvat-annotation-page-active-control' : ''
+                    }
+                />
             </Tooltip>
 
             <Tooltip overlay='Move the image' placement='right'>
-                <Icon component={MoveIcon} />
+                <Icon
+                    component={MoveIcon}
+                    className={activeControls.includes(ActiveControl.DRAG_CANVAS)
+                        ? 'cvat-annotation-page-active-control' : ''
+                    }
+                />
             </Tooltip>
 
             <Popover
@@ -82,11 +98,16 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
 
             <Tooltip overlay='Fit the image' placement='right'>
-                <Icon component={FitIcon} />
+                <Icon component={FitIcon} onClick={(): void => canvasInstance.fit()} />
             </Tooltip>
 
             <Tooltip overlay='Zoom the image' placement='right'>
-                <Icon component={ZoomIcon} />
+                <Icon
+                    component={ZoomIcon}
+                    className={activeControls.includes(ActiveControl.ZOOM_CANVAS)
+                        ? 'cvat-annotation-page-active-control' : ''
+                    }
+                />
             </Tooltip>
 
             <hr />

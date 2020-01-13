@@ -4,12 +4,16 @@ import { connect } from 'react-redux';
 import { Canvas } from '../../../canvas';
 
 import ControlsSideBarComponent from '../../../components/annotation-page/standard-workspace/controls-side-bar';
-import { CombinedState } from '../../../reducers/interfaces';
+import {
+    ActiveControl,
+    CombinedState,
+} from '../../../reducers/interfaces';
 
 
 interface StateToProps {
     canvasInstance: Canvas;
     rotateAll: boolean;
+    activeControls: ActiveControl[];
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -18,9 +22,15 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settings,
     } = state;
 
+    const {
+        canvasInstance,
+        activeControls,
+    } = annotation;
+
     return {
         rotateAll: settings.player.rotateAll,
-        canvasInstance: annotation.canvasInstance,
+        canvasInstance,
+        activeControls,
     };
 }
 

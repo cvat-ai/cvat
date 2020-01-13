@@ -39,13 +39,17 @@
     }
 }
 
+.cvat-annotation-page-active-control {
+    background: $header-color;
+    transform: scale(0.75);
+}
+
 .cvat-annotation-page-controls-rotate-left,
 .cvat-annotation-page-controls-rotate-right {
     transform: scale(0.65);
     border-radius: 5px;
 
     &:hover {
-        background: $header-color;
         transform: scale(0.75);
     }
     &:active {

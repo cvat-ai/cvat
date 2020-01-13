@@ -5,6 +5,8 @@ import CanvasWrapperComponent from '../../../components/annotation-page/standard
 
 import {
     confirmCanvasReady,
+    dragCanvas,
+    zoomCanvas,
 } from '../../../actions/annotation-actions';
 import {
     GridColor,
@@ -26,6 +28,8 @@ interface StateToProps {
 
 interface DispatchToProps {
     onSetupCanvas(): void;
+    onDragCanvas: (inprogress: boolean) => void;
+    onZoomCanvas: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -55,10 +59,26 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
+let zoomResetTimeout: null | number = null;
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onSetupCanvas(): void {
             dispatch(confirmCanvasReady());
+        },
+        onDragCanvas(inprogress: boolean): void {
+            dispatch(dragCanvas(inprogress));
+        },
+        onZoomCanvas(): void {
+            dispatch(zoomCanvas(true));
+            if (zoomResetTimeout !== null) {
+                clearTimeout(zoomResetTimeout);
+                zoomResetTimeout = null;
+            }
+
+            zoomResetTimeout = window.setTimeout(() => {
+                zoomResetTimeout = null;
+                dispatch(zoomCanvas(false));
+            }, 200);
         },
     };
 }

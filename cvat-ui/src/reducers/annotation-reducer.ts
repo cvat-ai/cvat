@@ -2,12 +2,16 @@ import { AnyAction } from 'redux';
 
 import { Canvas } from '../canvas';
 
-import { AnnotationState } from './interfaces';
+import {
+    AnnotationState,
+    ActiveControl,
+} from './interfaces';
 import { AnnotationActionTypes } from '../actions/annotation-actions';
 
 const defaultState: AnnotationState = {
     canvasInstance: new Canvas(),
     canvasIsReady: false,
+    activeControls: [ActiveControl.CURSOR],
     jobInstance: null,
     frame: 0,
     playing: false,
@@ -76,6 +80,24 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 canvasIsReady: true,
+            };
+        }
+        case AnnotationActionTypes.DRAG_CANVAS: {
+            const { inprogress } = action.payload;
+            return {
+                ...state,
+                activeControls: inprogress ? [...state.activeControls, ActiveControl.DRAG_CANVAS]
+                    : state.activeControls
+                        .filter((control: ActiveControl) => control !== ActiveControl.DRAG_CANVAS),
+            };
+        }
+        case AnnotationActionTypes.ZOOM_CANVAS: {
+            const { inprogress } = action.payload;
+            return {
+                ...state,
+                activeControls: inprogress ? [...state.activeControls, ActiveControl.ZOOM_CANVAS]
+                    : state.activeControls
+                        .filter((control: ActiveControl) => control !== ActiveControl.ZOOM_CANVAS),
             };
         }
         default: {

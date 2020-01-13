@@ -20,6 +20,8 @@ interface Props {
     gridColor: GridColor;
     gridOpacity: number;
     onSetupCanvas: () => void;
+    onDragCanvas: (inprogress: boolean) => void;
+    onZoomCanvas: () => void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -84,6 +86,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             canvasInstance,
             jobInstance,
             onSetupCanvas,
+            onDragCanvas,
+            onZoomCanvas,
         } = this.props;
 
         // Size
@@ -112,6 +116,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.setup', () => {
             canvasInstance.fit();
         }, { once: true });
+
+        canvasInstance.html().addEventListener('canvas.dragstart', () => {
+            onDragCanvas(true);
+        });
+
+        canvasInstance.html().addEventListener('canvas.dragstop', () => {
+            onDragCanvas(false);
+        });
+
+        canvasInstance.html().addEventListener('canvas.zoom', () => {
+            onZoomCanvas();
+        });
     }
 
     private updateCanvas(): void {
