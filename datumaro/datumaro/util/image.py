@@ -34,14 +34,14 @@ def load_image(path):
         from PIL import Image
         image = Image.open(path)
         image = np.asarray(image, dtype=np.float32)
-        if len(image.shape) == 3 and image.shape[2] in [3, 4]:
+        if len(image.shape) == 3 and image.shape[2] in {3, 4}:
             image[:, :, :3] = image[:, :, 2::-1] # RGB to BGR
     else:
         raise NotImplementedError()
 
-    assert len(image.shape) in [2, 3]
+    assert len(image.shape) in {2, 3}
     if len(image.shape) == 3:
-        assert image.shape[2] in [3, 4]
+        assert image.shape[2] in {3, 4}
     return image
 
 def save_image(path, image, params=None):
@@ -60,7 +60,7 @@ def save_image(path, image, params=None):
             params = {}
 
         image = image.astype(np.uint8)
-        if len(image.shape) == 3 and image.shape[2] in [3, 4]:
+        if len(image.shape) == 3 and image.shape[2] in {3, 4}:
             image[:, :, :3] = image[:, :, 2::-1] # BGR to RGB
         image = Image.fromarray(image)
         image.save(path, **params)
@@ -92,7 +92,7 @@ def encode_image(image, ext, params=None):
             params = {}
 
         image = image.astype(np.uint8)
-        if len(image.shape) == 3 and image.shape[2] in [3, 4]:
+        if len(image.shape) == 3 and image.shape[2] in {3, 4}:
             image[:, :, :3] = image[:, :, 2::-1] # BGR to RGB
         image = Image.fromarray(image)
         with BytesIO() as buffer:
@@ -111,14 +111,14 @@ def decode_image(image_bytes):
         from PIL import Image
         image = Image.open(BytesIO(image_bytes))
         image = np.asarray(image, dtype=np.float32)
-        if len(image.shape) == 3 and image.shape[2] in [3, 4]:
+        if len(image.shape) == 3 and image.shape[2] in {3, 4}:
             image[:, :, :3] = image[:, :, 2::-1] # RGB to BGR
     else:
         raise NotImplementedError()
 
-    assert len(image.shape) in [2, 3]
+    assert len(image.shape) in {2, 3}
     if len(image.shape) == 3:
-        assert image.shape[2] in [3, 4]
+        assert image.shape[2] in {3, 4}
     return image
 
 
@@ -131,7 +131,7 @@ class lazy_image:
         # - False: do not cache
         # - None: use default (don't store in a class variable)
         # - object: use this object as a cache
-        assert cache in [None, False] or isinstance(cache, object)
+        assert cache in {None, False} or isinstance(cache, object)
         self.cache = cache
 
     def __call__(self):
