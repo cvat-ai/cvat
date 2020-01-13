@@ -27,9 +27,7 @@ import {
     CanvasViewImpl,
 } from './canvasView';
 
-
-import '../css/canvas.css';
-
+import '../scss/canvas.scss';
 
 interface Canvas {
     html(): HTMLDivElement;
@@ -66,6 +64,13 @@ class CanvasImpl implements Canvas {
 
     public setup(frameData: any, objectStates: any[]): void {
         this.model.setup(frameData, objectStates);
+    }
+
+    public fitCanvas(): void {
+        this.model.fitCanvas(
+            this.view.html().clientWidth,
+            this.view.html().clientHeight,
+        );
     }
 
     public activate(clientID: number, attributeID: number = null): void {

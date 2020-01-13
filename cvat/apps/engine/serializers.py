@@ -22,7 +22,7 @@ class AttributeSerializer(serializers.ModelSerializer):
     # pylint: disable=no-self-use
     def to_internal_value(self, data):
         attribute = data.copy()
-        attribute['values'] = '\n'.join(data.get('values', []))
+        attribute['values'] = '\n'.join(map(lambda x: x.strip(), data.get('values', [])))
         return attribute
 
     def to_representation(self, instance):

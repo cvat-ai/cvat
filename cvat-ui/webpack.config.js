@@ -39,7 +39,7 @@ module.exports = {
                     }]],
                     presets: [
                         ['@babel/preset-env', {
-                            targets: '> 3%', // https://github.com/browserslist/browserslist
+                            targets: '> 2.5%', // https://github.com/browserslist/browserslist
                         }],
                         ['@babel/preset-react'],
                         ['@babel/typescript'],

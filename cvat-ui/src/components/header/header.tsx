@@ -105,7 +105,11 @@ function HeaderContainer(props: Props): JSX.Element {
 
     const menu = (
         <Menu className='cvat-header-menu' mode='vertical'>
-            <Menu.Item>
+            <Menu.Item
+                onClick={
+                    (): void => props.history.push('/settings')
+                }
+            >
                 <Icon type='setting' />
                 Settings
             </Menu.Item>

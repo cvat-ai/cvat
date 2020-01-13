@@ -11,7 +11,7 @@
 Intermediate Representations (IRs), so the version of OpenVINO in CVAT and the version used to translate the
 models needs to be the same.
 - Put downloaded file into ```cvat/components/openvino```.
-- Accept EULA in the `cvat/components/eula.cfg` file.
+- Accept EULA in the `cvat/components/openvino/eula.cfg` file.
 
 ### Build docker image
 ```bash

@@ -4,6 +4,7 @@ import {
     Icon,
     Layout,
     Tooltip,
+    Popover,
 } from 'antd';
 
 import {
@@ -22,8 +23,22 @@ import {
     SplitIcon,
 } from '../../../icons';
 
+import {
+    Canvas,
+    Rotation,
+} from '../../../canvas';
 
-export default function ControlsSideBarComponent(): JSX.Element {
+interface Props {
+    canvasInstance: Canvas;
+    rotateAll: boolean;
+}
+
+export default function ControlsSideBarComponent(props: Props): JSX.Element {
+    const {
+        rotateAll,
+        canvasInstance,
+    } = props;
+
     return (
         <Layout.Sider
             className='cvat-annotation-page-controls-sidebar'
@@ -38,9 +53,31 @@ export default function ControlsSideBarComponent(): JSX.Element {
                 <Icon component={MoveIcon} />
             </Tooltip>
 
-            <Tooltip overlay='Rotate the image' placement='right'>
-                <Icon component={RotateIcon} />
-            </Tooltip>
+            <Popover
+                overlayClassName='cvat-annotation-page-controls-rotate'
+                placement='right'
+                content={(
+                    <>
+                        <Icon
+                            className='cvat-annotation-page-controls-rotate-left'
+                            onClick={(): void => canvasInstance
+                                .rotate(Rotation.ANTICLOCKWISE90, rotateAll)}
+                            component={RotateIcon}
+                        />
+                        <Icon
+                            className='cvat-annotation-page-controls-rotate-right'
+                            onClick={(): void => canvasInstance
+                                .rotate(Rotation.CLOCKWISE90, rotateAll)}
+                            component={RotateIcon}
+                        />
+                    </>
+                )}
+                trigger='hover'
+            >
+                <Tooltip overlay='Rotate the image' placement='topRight'>
+                    <Icon component={RotateIcon} />
+                </Tooltip>
+            </Popover>
 
             <hr />
 

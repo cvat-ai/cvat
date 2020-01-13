@@ -480,20 +480,18 @@
         // Method is used to construct ObjectState objects
         get(frame) {
             if (!(frame in this.cache)) {
-                const interpolation = Object.assign(
-                    {}, this.getPosition(frame),
-                    {
-                        attributes: this.getAttributes(frame),
-                        group: this.group,
-                        objectType: ObjectType.TRACK,
-                        shapeType: this.shapeType,
-                        clientID: this.clientID,
-                        serverID: this.serverID,
-                        lock: this.lock,
-                        color: this.color,
-                        visibility: this.visibility,
-                    },
-                );
+                const interpolation = {
+                    ...this.getPosition(frame),
+                    attributes: this.getAttributes(frame),
+                    group: this.group,
+                    objectType: ObjectType.TRACK,
+                    shapeType: this.shapeType,
+                    clientID: this.clientID,
+                    serverID: this.serverID,
+                    lock: this.lock,
+                    color: this.color,
+                    visibility: this.visibility,
+                };
 
                 this.cache[frame] = interpolation;
             }
@@ -504,7 +502,7 @@
         }
 
         neighborsFrames(targetFrame) {
-            const frames = Object.keys(this.shapes).map(frame => +frame);
+            const frames = Object.keys(this.shapes).map((frame) => +frame);
             let lDiff = Number.MAX_SAFE_INTEGER;
             let rDiff = Number.MAX_SAFE_INTEGER;
 
@@ -773,13 +771,14 @@
             }
 
             if (rightPosition && leftPosition) {
-                return Object.assign({}, this.interpolatePosition(
-                    leftPosition,
-                    rightPosition,
-                    (targetFrame - leftFrame) / (rightFrame - leftFrame),
-                ), {
+                return {
+                    ...this.interpolatePosition(
+                        leftPosition,
+                        rightPosition,
+                        (targetFrame - leftFrame) / (rightFrame - leftFrame),
+                    ),
                     keyframe: false,
-                });
+                };
             }
 
             if (rightPosition) {
@@ -858,7 +857,7 @@
                 clientID: this.clientID,
                 serverID: this.serverID,
                 lock: this.lock,
-                attributes: Object.assign({}, this.attributes),
+                attributes: { ...this.attributes },
                 label: this.label,
                 group: this.group,
             };
@@ -888,7 +887,7 @@
 
             if (updated.attributes) {
                 const labelAttributes = copy.label
-                    .attributes.map(attr => `${attr.id}`);
+                    .attributes.map((attr) => `${attr.id}`);
 
                 for (const attrID of Object.keys(data.attributes)) {
                     if (labelAttributes.includes(attrID)) {
@@ -1399,8 +1398,8 @@
         // some points from source and target can absent in mapping
         // source, target - arrays of points. Target array size >= sourse array size
         appendMapping(mapping, source, target) {
-            const targetMatched = Object.values(mapping).map(x => +x);
-            const sourceMatched = Object.keys(mapping).map(x => +x);
+            const targetMatched = Object.values(mapping).map((x) => +x);
+            const sourceMatched = Object.keys(mapping).map((x) => +x);
             const orderForReceive = [];
 
             function findNeighbors(point) {

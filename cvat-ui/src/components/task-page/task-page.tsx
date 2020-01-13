@@ -27,8 +27,6 @@ interface TaskPageComponentProps {
 type Props = TaskPageComponentProps & RouteComponentProps<{id: string}>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
-    private attempts = 0;
-
     public componentDidUpdate(): void {
         const {
             deleteActivity,

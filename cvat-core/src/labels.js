@@ -192,7 +192,7 @@
         toJSON() {
             const object = {
                 name: this.name,
-                attributes: [...this.attributes.map(el => el.toJSON())],
+                attributes: [...this.attributes.map((el) => el.toJSON())],
             };
 
             if (typeof (this.id) !== 'undefined') {
