@@ -21,6 +21,7 @@ interface StateToProps {
     jobInstance: any;
     annotations: any[];
     frameData: any;
+    frame: number;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -39,6 +40,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasInstance,
         jobInstance,
         frameData,
+        frame,
         annotations,
     } = state.annotation;
 
@@ -53,6 +55,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasInstance,
         jobInstance,
         frameData,
+        frame,
         annotations,
         grid,
         gridSize,

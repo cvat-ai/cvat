@@ -8,13 +8,16 @@ import {
     GridColor,
 } from '../../../reducers/interfaces';
 
-import { Canvas } from '../../../canvas';
+import {
+    Canvas,
+} from '../../../canvas';
 
 interface Props {
     canvasInstance: Canvas;
     jobInstance: any;
     annotations: any[];
     frameData: any;
+    frame: number;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -78,6 +81,37 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         this.updateCanvas();
     }
 
+    private async onShapeEdit(event: any): Promise<void> {
+        const {
+            canvasInstance,
+            jobInstance,
+            frameData,
+            frame,
+        } = this.props;
+
+        const {
+            state,
+            points,
+        } = event.detail;
+        state.points = points;
+        state.save();
+
+        const annotations = await jobInstance.annotations.get(frame);
+        canvasInstance.setup(frameData, annotations);
+    }
+
+    private updateCanvas(): void {
+        const {
+            annotations,
+            frameData,
+            canvasInstance,
+        } = this.props;
+
+        if (frameData !== null) {
+            canvasInstance.setup(frameData, annotations);
+        }
+    }
+
     private initialSetup(): void {
         const {
             grid,
@@ -138,18 +172,27 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.zoomstop', () => {
             onZoomCanvas(false);
         });
-    }
 
-    private updateCanvas(): void {
-        const {
-            annotations,
-            frameData,
-            canvasInstance,
-        } = this.props;
+        canvasInstance.html().addEventListener('canvas.moved', async (event: any): Promise<void> => {
+            const threshold = 50;
+            const result = await jobInstance.annotations.select(
+                event.detail.states,
+                event.detail.x,
+                event.detail.y,
+            );
 
-        if (frameData !== null) {
-            canvasInstance.setup(frameData, annotations);
-        }
+            if (result && result.state) {
+                if (result.state.shapeType === 'polyline' || result.state.shapeType === 'points') {
+                    if (result.distance > threshold) {
+                        return;
+                    }
+                }
+
+                canvasInstance.activate(result.state.clientID);
+            }
+        });
+
+        canvasInstance.html().addEventListener('canvas.edited', this.onShapeEdit.bind(this));
     }
 
     public render(): JSX.Element {
