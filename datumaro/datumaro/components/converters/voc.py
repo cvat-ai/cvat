@@ -462,7 +462,7 @@ class _Converter:
         void_labels = [src_label for src_id, src_label in source_labels.items()
             if src_label not in target_labels]
         if void_labels:
-            log.warn("The following labels are remapped to background: %s" %
+            log.warning("The following labels are remapped to background: %s" %
                 ', '.join(void_labels))
 
         def map_id(src_id):
