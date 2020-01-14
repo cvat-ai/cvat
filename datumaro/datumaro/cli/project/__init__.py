@@ -188,7 +188,7 @@ def build_extract_parser(parser):
              "extract images with width < height: "
              "'/item[image/width < image/height]'; "
              "extract images with large-area bboxes: "
-             "'/item[annotation/type=\"bbox\" and annotation/area>2000]'"
+             "'/item[annotation/type=\"bbox\" and annotation/area>2000]' "
              "filter out irrelevant annotations from items: "
              "'/item/annotation[label = \"person\"]'"
         )
