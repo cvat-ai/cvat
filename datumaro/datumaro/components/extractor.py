@@ -580,9 +580,9 @@ class _DatasetFilter:
         return filter(self.predicate, self.iterable)
 
 class _ExtractorBase(IExtractor):
-    def __init__(self, length=None):
+    def __init__(self, length=None, subsets=None):
         self._length = length
-        self._subsets = None
+        self._subsets = subsets
 
     def _init_cache(self):
         subsets = set()
@@ -612,9 +612,12 @@ class _ExtractorBase(IExtractor):
         else:
             raise Exception("Unknown subset '%s' requested" % name)
 
+    def transform(self, method, *args, **kwargs):
+        return method(self, *args, **kwargs)
+
 class DatasetIteratorWrapper(_ExtractorBase):
-    def __init__(self, iterable, categories):
-        super().__init__(length=None)
+    def __init__(self, iterable, categories, subsets=None):
+        super().__init__(length=None, subsets=subsets)
         self._iterable = iterable
         self._categories = categories
 
@@ -626,7 +629,7 @@ class DatasetIteratorWrapper(_ExtractorBase):
 
     def select(self, pred):
         return DatasetIteratorWrapper(
-            _DatasetFilter(self, pred), self.categories())
+            _DatasetFilter(self, pred), self.categories(), self.subsets())
 
 class Extractor(_ExtractorBase):
     def __init__(self, length=None):
@@ -637,7 +640,7 @@ class Extractor(_ExtractorBase):
 
     def select(self, pred):
         return DatasetIteratorWrapper(
-            _DatasetFilter(self, pred), self.categories())
+            _DatasetFilter(self, pred), self.categories(), self.subsets())
 
 
 DEFAULT_SUBSET_NAME = 'default'

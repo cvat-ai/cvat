@@ -1,3 +1,4 @@
+import numpy as np
 import os
 import os.path as osp
 
@@ -7,9 +8,13 @@ from datumaro.components.project import Project, Environment
 from datumaro.components.project import Source, Model
 from datumaro.components.launcher import Launcher, InferenceWrapper
 from datumaro.components.converter import Converter
-from datumaro.components.extractor import Extractor, DatasetItem, LabelObject
+from datumaro.components.extractor import (Extractor, DatasetItem,
+    LabelObject, MaskObject, PointsObject, PolygonObject,
+    PolyLineObject, BboxObject, CaptionObject,
+)
 from datumaro.components.config import Config, DefaultConfig, SchemaBuilder
-from datumaro.components.dataset_filter import XPathDatasetFilter
+from datumaro.components.dataset_filter import \
+    XPathDatasetFilter, XPathAnnotationsFilter, DatasetItemEncoder
 from datumaro.util.test_utils import TestDir
 
 
@@ -217,7 +222,8 @@ class ProjectTest(TestCase):
         project.add_source('source', { 'format': extractor_name })
 
         with TestDir() as test_dir:
-            project.make_dataset().transform(model_name, test_dir.path)
+            project.make_dataset().apply_model(model_name=model_name,
+                save_dir=test_dir.path)
 
             result = Project.load(test_dir.path)
             result.env.extractors.register(extractor_name, TestExtractorDst)
@@ -267,9 +273,8 @@ class ProjectTest(TestCase):
         project = Project()
         project.env.extractors.register(e_type, TestExtractor)
         project.add_source('source', { 'format': e_type })
-        project.set_filter('/item[id < 5]')
 
-        dataset = project.make_dataset()
+        dataset = project.make_dataset().extract('/item[id < 5]')
 
         self.assertEqual(5, len(dataset))
 
@@ -361,22 +366,102 @@ class ProjectTest(TestCase):
         self.assertEqual(3, len(item.annotations))
 
 class DatasetFilterTest(TestCase):
-    class TestExtractor(Extractor):
-        def __init__(self, url, n=0):
-            super().__init__(length=n)
-            self.n = n
+    @staticmethod
+    def test_item_representations():
+        item = DatasetItem(id=1, subset='subset', path=['a', 'b'],
+            image=np.ones((5, 4, 3)),
+            annotations=[
+                LabelObject(0, attributes={'a1': 1, 'a2': '2'}, id=1, group=2),
+                CaptionObject('hello', id=1),
+                CaptionObject('world', group=5),
+                LabelObject(2, id=3, attributes={ 'x': 1, 'y': '2' }),
+                BboxObject(1, 2, 3, 4, label=4, id=4, attributes={ 'a': 1.0 }),
+                BboxObject(5, 6, 7, 8, id=5, group=5),
+                PointsObject([1, 2, 2, 0, 1, 1], label=0, id=5),
+                MaskObject(label=3, id=5, image=np.ones((2, 3))),
+                PolyLineObject([1, 2, 3, 4, 5, 6, 7, 8], id=11),
+                PolygonObject([1, 2, 3, 4, 5, 6, 7, 8]),
+            ]
+        )
 
-        def __iter__(self):
-            for i in range(self.n):
-                yield DatasetItem(id=i, subset='train')
+        encoded = DatasetItemEncoder.encode(item)
+        DatasetItemEncoder.to_string(encoded)
 
-    def test_xpathfilter_can_be_applied(self):
-        extractor = self.TestExtractor('', n=4)
-        dataset_filter = XPathDatasetFilter('/item[id > 1]')
+    def test_item_filter_can_be_applied(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                for i in range(4):
+                    yield DatasetItem(id=i, subset='train')
 
-        filtered = extractor.select(dataset_filter)
+        extractor = TestExtractor()
+
+        filtered = XPathDatasetFilter(extractor, '/item[id > 1]')
 
         self.assertEqual(2, len(filtered))
+
+    def test_annotations_filter_can_be_applied(self):
+        class SrcTestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=0),
+                    DatasetItem(id=1, annotations=[
+                        LabelObject(0),
+                        LabelObject(1),
+                    ]),
+                    DatasetItem(id=2, annotations=[
+                        LabelObject(0),
+                        LabelObject(2),
+                    ]),
+                ])
+
+        class DstTestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=0),
+                    DatasetItem(id=1, annotations=[
+                        LabelObject(0),
+                    ]),
+                    DatasetItem(id=2, annotations=[
+                        LabelObject(0),
+                    ]),
+                ])
+
+        extractor = SrcTestExtractor()
+
+        filtered = XPathAnnotationsFilter(extractor,
+            '/item/annotation[label_id = 0]')
+
+        self.assertListEqual(list(filtered), list(DstTestExtractor()))
+
+    def test_annotations_filter_can_remove_empty_items(self):
+        class SrcTestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=0),
+                    DatasetItem(id=1, annotations=[
+                        LabelObject(0),
+                        LabelObject(1),
+                    ]),
+                    DatasetItem(id=2, annotations=[
+                        LabelObject(0),
+                        LabelObject(2),
+                    ]),
+                ])
+
+        class DstTestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=2, annotations=[
+                        LabelObject(2),
+                    ]),
+                ])
+
+        extractor = SrcTestExtractor()
+
+        filtered = XPathAnnotationsFilter(extractor,
+            '/item/annotation[label_id = 2]', remove_empty=True)
+
+        self.assertListEqual(list(filtered), list(DstTestExtractor()))
 
 class ConfigTest(TestCase):
     def test_can_produce_multilayer_config_from_dict(self):
