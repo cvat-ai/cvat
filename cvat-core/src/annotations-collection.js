@@ -39,7 +39,7 @@
 
     const colors = [
         '#0066FF', '#AF593E', '#01A368', '#FF861F', '#ED0A3F', '#FF3F34', '#76D7EA',
-        '#8359A3', '#FBE870', '#C5E17A', '#03BB85', '#FFDF00', '#8B8680', '#0A6B0D',
+        '#8359A3', '#FBE870', '#C5E17A', '#03BB85', '#FFDF00', '#0A6B0D', '#D9D6CF',
         '#8FD8D8', '#A36F40', '#F653A6', '#CA3435', '#FFCBA4', '#FF99CC', '#FA9D5A',
         '#FFAE42', '#A78B00', '#788193', '#514E49', '#1164B4', '#F4FA9F', '#FED8B1',
         '#C32148', '#01796F', '#E90067', '#FF91A4', '#404E5A', '#6CDAE7', '#FFC1CC',
@@ -52,7 +52,7 @@
         '#FF7A00', '#4F69C6', '#A50B5E', '#F0E68C', '#FDFF00', '#F091A9', '#FFFF66',
         '#6F9940', '#FC74FD', '#652DC1', '#D6AEDD', '#EE34D2', '#BB3385', '#6B3FA0',
         '#33CC99', '#FFDB00', '#87FF2A', '#6EEB6E', '#FFC800', '#CC99BA', '#7A89B8',
-        '#006A93', '#867200', '#E2B631', '#D9D6CF',
+        '#006A93', '#867200', '#E2B631',
     ];
 
     function shapeFactory(shapeData, clientID, injection) {

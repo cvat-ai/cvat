@@ -142,7 +142,7 @@ polyline.cvat_canvas_shape_merging {
 }
 
 #cvat_canvas_content {
-    filter: brightness(200%) contrast(200%) saturate(150%);
+    filter: brightness(200%) contrast(120%) saturate(150%);
     position: absolute;
     z-index: 2;
     outline: 10px solid black;
