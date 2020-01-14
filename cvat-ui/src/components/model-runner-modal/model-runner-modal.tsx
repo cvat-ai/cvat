@@ -11,6 +11,7 @@ import {
     Select,
     Tooltip,
     Checkbox,
+    notification,
 } from 'antd';
 
 import { Model } from '../../reducers/interfaces';
@@ -118,6 +119,12 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                 .filter((model) => model.name === selectedModel)[0];
 
             if (!selectedModelInstance.primary) {
+                if (!selectedModelInstance.labels.length) {
+                    notification.warning({
+                        message: 'The selected model does not include any lables',
+                    });
+                }
+
                 let taskLabels: string[] = taskInstance.labels
                     .map((label: any): string => label.name);
                 const [defaultMapping, defaultColors]: StringObject[] = selectedModelInstance.labels
@@ -304,37 +311,24 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
         const model = selectedModel && models
             .filter((_model): boolean => _model.name === selectedModel)[0];
 
-        const excludedLabels: {
-            model: string[];
-            task: string[];
-        } = {
-            model: [],
-            task: [],
-        };
-
+        const excludedModelLabels: string[] = Object.keys(mapping);
         const withMapping = model && !model.primary;
-        const tags = withMapping ? Object.keys(mapping)
-            .map((modelLabel: string) => {
-                const taskLabel = mapping[modelLabel];
-                excludedLabels.model.push(modelLabel);
-                excludedLabels.task.push(taskLabel);
-                return this.renderMappingTag(
-                    modelLabel,
-                    mapping[modelLabel],
-                );
-            }) : [];
+        const tags = withMapping ? excludedModelLabels
+            .map((modelLabel: string) => this.renderMappingTag(
+                modelLabel,
+                mapping[modelLabel],
+            )) : [];
 
         const availableModelLabels = model ? model.labels
             .filter(
-                (label: string) => !excludedLabels.model.includes(label),
+                (label: string) => !excludedModelLabels.includes(label),
             ) : [];
-        const availableTaskLabels = taskInstance.labels
-            .map(
-                (label: any) => label.name,
-            ).filter((label: string): boolean => !excludedLabels.task.includes(label));
+        const taskLabels = taskInstance.labels.map(
+            (label: any) => label.name,
+        );
 
         const mappingISAvailable = !!availableModelLabels.length
-            && !!availableTaskLabels.length;
+            && !!taskLabels.length;
 
         return (
             <div className='cvat-run-model-dialog'>
@@ -342,7 +336,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                 { withMapping && tags}
                 { withMapping
                     && mappingISAvailable
-                    && this.renderMappingInput(availableModelLabels, availableTaskLabels)
+                    && this.renderMappingInput(availableModelLabels, taskLabels)
                 }
                 { withMapping
                     && (
