@@ -8,7 +8,7 @@ import {
 import { Canvas } from '../../../canvas';
 
 import CanvasWrapperContainer from '../../../containers/annotation-page/standard-workspace/canvas-wrapper';
-import ControlsSideBarContainer from '../../../containers/annotation-page/standard-workspace/controls-side-bar';
+import ControlsSideBarContainer from '../../../containers/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import ObjectSideBarComponent from './objects-side-bar/objects-side-bar';
 
 interface Props {

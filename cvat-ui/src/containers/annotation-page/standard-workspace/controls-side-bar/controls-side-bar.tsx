@@ -1,13 +1,13 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { Canvas } from '../../../canvas';
+import { Canvas } from '../../../../canvas';
 
-import ControlsSideBarComponent from '../../../components/annotation-page/standard-workspace/controls-side-bar';
+import ControlsSideBarComponent from '../../../../components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import {
     ActiveControl,
     CombinedState,
-} from '../../../reducers/interfaces';
+} from '../../../../reducers/interfaces';
 
 
 interface StateToProps {
