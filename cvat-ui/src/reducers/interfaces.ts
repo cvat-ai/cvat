@@ -188,6 +188,10 @@ export interface NotificationsState {
             metaFetching: null | ErrorState;
             inferenceStatusFetching: null | ErrorState;
         };
+        annotation: {
+            saving: null | ErrorState;
+            frameFetching: null | ErrorState;
+        };
     };
     messages: {
         tasks: {

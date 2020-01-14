@@ -155,13 +155,14 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const { users } = notifications.errors;
         const { share } = notifications.errors;
         const { models } = notifications.errors;
+        const { annotation } = notifications.errors;
 
         const shown = !!auth.authorized || !!auth.login || !!auth.logout || !!auth.register
             || !!tasks.fetching || !!tasks.updating || !!tasks.dumping || !!tasks.loading
             || !!tasks.exporting || !!tasks.deleting || !!tasks.creating || !!formats.fetching
             || !!users.fetching || !!share.fetching || !!models.creating || !!models.starting
             || !!models.fetching || !!models.deleting || !!models.inferenceStatusFetching
-            || !!models.metaFetching;
+            || !!models.metaFetching || !!annotation.frameFetching || !!annotation.saving;
 
         if (auth.authorized) {
             showError(auth.authorized.message, auth.authorized.reason);
@@ -225,6 +226,12 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                 models.inferenceStatusFetching.message,
                 models.inferenceStatusFetching.reason,
             );
+        }
+        if (annotation.frameFetching) {
+            showError(annotation.frameFetching.message, annotation.frameFetching.reason);
+        }
+        if (annotation.saving) {
+            showError(annotation.saving.message, annotation.saving.reason);
         }
 
         if (shown) {
