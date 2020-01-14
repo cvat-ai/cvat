@@ -20,8 +20,9 @@ interface Props {
     gridColor: GridColor;
     gridOpacity: number;
     onSetupCanvas: () => void;
-    onDragCanvas: (inprogress: boolean) => void;
-    onZoomCanvas: () => void;
+    onDragCanvas: (enabled: boolean) => void;
+    onZoomCanvas: (enabled: boolean) => void;
+    onResetCanvas: () => void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -88,6 +89,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onSetupCanvas,
             onDragCanvas,
             onZoomCanvas,
+            onResetCanvas,
         } = this.props;
 
         // Size
@@ -117,6 +119,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             canvasInstance.fit();
         }, { once: true });
 
+        canvasInstance.html().addEventListener('canvas.canceled', () => {
+            onResetCanvas();
+        });
+
         canvasInstance.html().addEventListener('canvas.dragstart', () => {
             onDragCanvas(true);
         });
@@ -125,8 +131,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onDragCanvas(false);
         });
 
-        canvasInstance.html().addEventListener('canvas.zoom', () => {
-            onZoomCanvas();
+        canvasInstance.html().addEventListener('canvas.zoomstart', () => {
+            onZoomCanvas(true);
+        });
+
+        canvasInstance.html().addEventListener('canvas.zoomstop', () => {
+            onZoomCanvas(false);
         });
     }
 

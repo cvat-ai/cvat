@@ -11,7 +11,7 @@ import { AnnotationActionTypes } from '../actions/annotation-actions';
 const defaultState: AnnotationState = {
     canvasInstance: new Canvas(),
     canvasIsReady: false,
-    activeControls: [ActiveControl.CURSOR],
+    activeControl: ActiveControl.CURSOR,
     jobInstance: null,
     frame: 0,
     playing: false,
@@ -83,21 +83,23 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.DRAG_CANVAS: {
-            const { inprogress } = action.payload;
+            const { enabled } = action.payload;
             return {
                 ...state,
-                activeControls: inprogress ? [...state.activeControls, ActiveControl.DRAG_CANVAS]
-                    : state.activeControls
-                        .filter((control: ActiveControl) => control !== ActiveControl.DRAG_CANVAS),
+                activeControl: enabled ? ActiveControl.DRAG_CANVAS : ActiveControl.CURSOR,
             };
         }
         case AnnotationActionTypes.ZOOM_CANVAS: {
-            const { inprogress } = action.payload;
+            const { enabled } = action.payload;
             return {
                 ...state,
-                activeControls: inprogress ? [...state.activeControls, ActiveControl.ZOOM_CANVAS]
-                    : state.activeControls
-                        .filter((control: ActiveControl) => control !== ActiveControl.ZOOM_CANVAS),
+                activeControl: enabled ? ActiveControl.ZOOM_CANVAS : ActiveControl.CURSOR,
+            };
+        }
+        case AnnotationActionTypes.RESET_CANVAS: {
+            return {
+                ...state,
+                activeControl: ActiveControl.CURSOR,
             };
         }
         default: {

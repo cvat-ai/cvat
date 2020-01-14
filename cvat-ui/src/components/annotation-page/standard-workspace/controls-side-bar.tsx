@@ -35,14 +35,14 @@ import {
 interface Props {
     canvasInstance: Canvas;
     rotateAll: boolean;
-    activeControls: ActiveControl[];
+    activeControl: ActiveControl;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
         rotateAll,
         canvasInstance,
-        activeControls,
+        activeControl,
     } = props;
 
     return (
@@ -54,18 +54,31 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <Tooltip overlay='Cursor' placement='right'>
                 <Icon
                     component={CursorIcon}
-                    className={activeControls.includes(ActiveControl.CURSOR)
+                    className={activeControl === ActiveControl.CURSOR
                         ? 'cvat-annotation-page-active-control' : ''
                     }
+                    onClick={(): void => {
+                        if (activeControl !== ActiveControl.CURSOR) {
+                            canvasInstance.cancel();
+                        }
+                    }}
                 />
             </Tooltip>
 
             <Tooltip overlay='Move the image' placement='right'>
                 <Icon
                     component={MoveIcon}
-                    className={activeControls.includes(ActiveControl.DRAG_CANVAS)
+                    className={activeControl === ActiveControl.DRAG_CANVAS
                         ? 'cvat-annotation-page-active-control' : ''
                     }
+                    onClick={(): void => {
+                        if (activeControl === ActiveControl.DRAG_CANVAS) {
+                            canvasInstance.dragCanvas(false);
+                        } else {
+                            canvasInstance.cancel();
+                            canvasInstance.dragCanvas(true);
+                        }
+                    }}
                 />
             </Tooltip>
 
@@ -74,25 +87,27 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 placement='right'
                 content={(
                     <>
-                        <Icon
-                            className='cvat-annotation-page-controls-rotate-left'
-                            onClick={(): void => canvasInstance
-                                .rotate(Rotation.ANTICLOCKWISE90, rotateAll)}
-                            component={RotateIcon}
-                        />
-                        <Icon
-                            className='cvat-annotation-page-controls-rotate-right'
-                            onClick={(): void => canvasInstance
-                                .rotate(Rotation.CLOCKWISE90, rotateAll)}
-                            component={RotateIcon}
-                        />
+                        <Tooltip overlay='Rotate the image anticlockwise' placement='topRight'>
+                            <Icon
+                                className='cvat-annotation-page-controls-rotate-left'
+                                onClick={(): void => canvasInstance
+                                    .rotate(Rotation.ANTICLOCKWISE90, rotateAll)}
+                                component={RotateIcon}
+                            />
+                        </Tooltip>
+                        <Tooltip overlay='Rotate the image clockwise' placement='topRight'>
+                            <Icon
+                                className='cvat-annotation-page-controls-rotate-right'
+                                onClick={(): void => canvasInstance
+                                    .rotate(Rotation.CLOCKWISE90, rotateAll)}
+                                component={RotateIcon}
+                            />
+                        </Tooltip>
                     </>
                 )}
                 trigger='hover'
             >
-                <Tooltip overlay='Rotate the image' placement='topRight'>
-                    <Icon component={RotateIcon} />
-                </Tooltip>
+                <Icon component={RotateIcon} />
             </Popover>
 
             <hr />
@@ -104,9 +119,17 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <Tooltip overlay='Zoom the image' placement='right'>
                 <Icon
                     component={ZoomIcon}
-                    className={activeControls.includes(ActiveControl.ZOOM_CANVAS)
+                    className={activeControl === ActiveControl.ZOOM_CANVAS
                         ? 'cvat-annotation-page-active-control' : ''
                     }
+                    onClick={(): void => {
+                        if (activeControl === ActiveControl.ZOOM_CANVAS) {
+                            canvasInstance.zoomCanvas(false);
+                        } else {
+                            canvasInstance.cancel();
+                            canvasInstance.zoomCanvas(true);
+                        }
+                    }}
                 />
             </Tooltip>
 

@@ -7,6 +7,7 @@ import {
     confirmCanvasReady,
     dragCanvas,
     zoomCanvas,
+    resetCanvas,
 } from '../../../actions/annotation-actions';
 import {
     GridColor,
@@ -28,8 +29,9 @@ interface StateToProps {
 
 interface DispatchToProps {
     onSetupCanvas(): void;
-    onDragCanvas: (inprogress: boolean) => void;
-    onZoomCanvas: () => void;
+    onDragCanvas: (enabled: boolean) => void;
+    onZoomCanvas: (enabled: boolean) => void;
+    onResetCanvas: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -59,26 +61,19 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-let zoomResetTimeout: null | number = null;
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onSetupCanvas(): void {
             dispatch(confirmCanvasReady());
         },
-        onDragCanvas(inprogress: boolean): void {
-            dispatch(dragCanvas(inprogress));
+        onDragCanvas(enabled: boolean): void {
+            dispatch(dragCanvas(enabled));
         },
-        onZoomCanvas(): void {
-            dispatch(zoomCanvas(true));
-            if (zoomResetTimeout !== null) {
-                clearTimeout(zoomResetTimeout);
-                zoomResetTimeout = null;
-            }
-
-            zoomResetTimeout = window.setTimeout(() => {
-                zoomResetTimeout = null;
-                dispatch(zoomCanvas(false));
-            }, 200);
+        onZoomCanvas(enabled: boolean): void {
+            dispatch(zoomCanvas(enabled));
+        },
+        onResetCanvas(): void {
+            dispatch(resetCanvas());
         },
     };
 }

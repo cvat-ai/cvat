@@ -208,7 +208,7 @@ export enum ActiveControl {
 export interface AnnotationState {
     canvasInstance: Canvas;
     canvasIsReady: boolean;
-    activeControls: ActiveControl[];
+    activeControl: ActiveControl;
     jobInstance: any | null | undefined;
     frameData: any | null;
     frame: number;

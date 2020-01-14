@@ -22,6 +22,7 @@ export enum AnnotationActionTypes {
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
     DRAG_CANVAS = 'DRAG_CANVAS',
     ZOOM_CANVAS = 'ZOOM_CANVAS',
+    RESET_CANVAS = 'RESET_CANVAS',
 }
 
 export function switchPlay(playing: boolean): AnyAction {
@@ -78,21 +79,28 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
-export function dragCanvas(inprogress: boolean): AnyAction {
+export function dragCanvas(enabled: boolean): AnyAction {
     return {
         type: AnnotationActionTypes.DRAG_CANVAS,
         payload: {
-            inprogress,
+            enabled,
         },
     };
 }
 
-export function zoomCanvas(inprogress: boolean): AnyAction {
+export function zoomCanvas(enabled: boolean): AnyAction {
     return {
         type: AnnotationActionTypes.ZOOM_CANVAS,
         payload: {
-            inprogress,
+            enabled,
         },
+    };
+}
+
+export function resetCanvas(): AnyAction {
+    return {
+        type: AnnotationActionTypes.RESET_CANVAS,
+        payload: {},
     };
 }
 

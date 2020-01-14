@@ -13,7 +13,7 @@ import {
 interface StateToProps {
     canvasInstance: Canvas;
     rotateAll: boolean;
-    activeControls: ActiveControl[];
+    activeControl: ActiveControl;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -24,13 +24,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     const {
         canvasInstance,
-        activeControls,
+        activeControl,
     } = annotation;
 
     return {
         rotateAll: settings.player.rotateAll,
         canvasInstance,
-        activeControls,
+        activeControl,
     };
 }
 
