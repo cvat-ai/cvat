@@ -60,7 +60,6 @@ PROJECT_SCHEMA = _SchemaBuilder() \
     .add('subsets', list) \
     .add('sources', lambda: _DefaultConfig(
         lambda v=None: Source(v))) \
-    .add('filter', str) \
     \
     .add('project_filename', str, internal=True) \
     .add('project_dir', str, internal=True) \
