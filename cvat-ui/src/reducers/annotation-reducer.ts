@@ -17,6 +17,8 @@ const defaultState: AnnotationState = {
     playing: false,
     annotations: [],
     frameData: null,
+    saving: false,
+    savingStatuses: [],
     dataFetching: false,
     jobFetching: false,
 };
@@ -69,6 +71,31 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 dataFetching: false,
             }; // add notification if failed
+        }
+        case AnnotationActionTypes.SAVE_ANNOTATIONS: {
+            return {
+                ...state,
+                saving: true,
+                savingStatuses: [],
+            };
+        }
+        case AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS: {
+            return {
+                ...state,
+                saving: false,
+            };
+        }
+        case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                saving: false,
+            }; // add notification if failed
+        }
+        case AnnotationActionTypes.SAVE_ANNOTATIONS_UPDATED_STATUS: {
+            return {
+                ...state,
+                savingStatuses: [...state.savingStatuses, action.payload.status],
+            };
         }
         case AnnotationActionTypes.SWITCH_PLAY: {
             return {

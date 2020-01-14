@@ -9,6 +9,8 @@ import {
     Input,
     Tooltip,
     Select,
+    Modal,
+    Timeline,
 } from 'antd';
 
 import { SliderValue } from 'antd/lib/slider';
@@ -36,9 +38,34 @@ interface Props {
     frame: number;
     frameStep: number;
     playing: boolean;
+    saving: boolean;
+    savingStatuses: string[];
     canvasIsReady: boolean;
     onChangeFrame(frame: number, playing: boolean): void;
     onSwitchPlay(playing: boolean): void;
+    onSaveAnnotation(sessionInstance: any): void;
+}
+
+function SavingOverlay(saving: boolean, statuses: string[]): JSX.Element {
+    return (
+        <Modal
+            title='Saving changes on the server'
+            visible={saving}
+            footer={[]}
+            closable={false}
+        >
+            <Timeline pending={statuses[statuses.length - 1] || 'Pending..'}>
+                {
+                    statuses.slice(0, -1)
+                        .map((
+                            status: string,
+                            id: number,
+                        // eslint-disable-next-line react/no-array-index-key
+                        ) => <Timeline.Item key={id}>{status}</Timeline.Item>)
+                }
+            </Timeline>
+        </Modal>
+    );
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -47,9 +74,12 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         frame,
         frameStep,
         playing,
+        saving,
+        savingStatuses,
         canvasIsReady,
         onChangeFrame,
         onSwitchPlay,
+        onSaveAnnotation,
     } = props;
 
     if (playing && canvasIsReady) {
@@ -62,6 +92,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         }
     }
 
+    const savingOverlay = SavingOverlay(saving, savingStatuses);
+
     return (
         <Layout.Header className='cvat-annotation-page-header'>
             <Row type='flex' justify='space-between'>
@@ -70,9 +102,17 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         <Icon component={MainMenuIcon} />
                         <span>Menu</span>
                     </div>
-                    <div className='cvat-annotation-header-button'>
-                        <Icon component={SaveIcon} />
-                        <span>Save</span>
+                    <div className={saving ? 'cvat-annotation-disabled-header-button' : 'cvat-annotation-header-button'}>
+                        <Icon
+                            component={SaveIcon}
+                            onClick={async (): Promise<void> => {
+                                onSaveAnnotation(jobInstance);
+                            }}
+                        />
+                        <span>
+                            { saving ? 'Saving...' : 'Save' }
+                        </span>
+                        { savingOverlay }
                     </div>
                     <div className='cvat-annotation-header-button'>
                         <Icon component={UndoIcon} />

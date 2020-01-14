@@ -204,16 +204,13 @@
                 const exported = this.collection.export();
                 const { flush } = this.collection;
                 if (flush) {
-                    onUpdate('New objects are being saved..');
+                    onUpdate('Created objects are being saved on the server');
                     const indexes = this._receiveIndexes(exported);
                     const savedData = await this._put({ ...exported, version: this.version });
                     this.version = savedData.version;
                     this.collection.flush = false;
 
-                    onUpdate('Saved objects are being updated in the client');
                     this._updateCreatedObjects(savedData, indexes);
-
-                    onUpdate('Initial state is being updated');
 
                     this._resetState();
                     for (const type of Object.keys(this.initialObjects)) {
@@ -228,39 +225,35 @@
                         deleted,
                     } = this._split(exported);
 
-                    onUpdate('New objects are being saved..');
+                    onUpdate('Created objects are being saved on the server');
                     const indexes = this._receiveIndexes(created);
                     const createdData = await this._create({ ...created, version: this.version });
                     this.version = createdData.version;
 
-                    onUpdate('Saved objects are being updated in the client');
                     this._updateCreatedObjects(createdData, indexes);
 
-                    onUpdate('Initial state is being updated');
                     for (const type of Object.keys(this.initialObjects)) {
                         for (const object of createdData[type]) {
                             this.initialObjects[type][object.id] = object;
                         }
                     }
 
-                    onUpdate('Changed objects are being saved..');
+                    onUpdate('Updated objects are being saved on the server');
                     this._receiveIndexes(updated);
                     const updatedData = await this._update({ ...updated, version: this.version });
                     this.version = updatedData.version;
 
-                    onUpdate('Initial state is being updated');
                     for (const type of Object.keys(this.initialObjects)) {
                         for (const object of updatedData[type]) {
                             this.initialObjects[type][object.id] = object;
                         }
                     }
 
-                    onUpdate('Changed objects are being saved..');
+                    onUpdate('Deleted objects are being deleted from the server');
                     this._receiveIndexes(deleted);
                     const deletedData = await this._delete({ ...deleted, version: this.version });
                     this._version = deletedData.version;
 
-                    onUpdate('Initial state is being updated');
                     for (const type of Object.keys(this.initialObjects)) {
                         for (const object of deletedData[type]) {
                             delete this.initialObjects[type][object.id];
@@ -269,9 +262,9 @@
                 }
 
                 this.hash = this._getHash();
-                onUpdate('Saving is done');
+                onUpdate('Annotations have been saved successfuly');
             } catch (error) {
-                onUpdate(`Can not save annotations: ${error.message}`);
+                onUpdate('Could not save annotations');
                 throw error;
             }
         }

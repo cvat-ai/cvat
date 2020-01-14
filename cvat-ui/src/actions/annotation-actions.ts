@@ -18,6 +18,10 @@ export enum AnnotationActionTypes {
     CHANGE_FRAME = 'CHANGE_FRAME',
     CHANGE_FRAME_SUCCESS = 'CHANGE_FRAME_SUCCESS',
     CHANGE_FRAME_FAILED = 'CHANGE_FRAME_FAILED',
+    SAVE_ANNOTATIONS = 'SAVE_ANNOTATIONS',
+    SAVE_ANNOTATIONS_SUCCESS = 'SAVE_ANNOTATIONS_SUCCESS',
+    SAVE_ANNOTATIONS_FAILED = 'SAVE_ANNOTATIONS_FAILED',
+    SAVE_ANNOTATIONS_UPDATED_STATUS = 'SAVE_ANNOTATIONS_UPDATED_STATUS',
     SWITCH_PLAY = 'SWITCH_PLAY',
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
     DRAG_CANVAS = 'DRAG_CANVAS',
@@ -151,6 +155,39 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function saveAnnotationsAsync(sessionInstance: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch({
+            type: AnnotationActionTypes.SAVE_ANNOTATIONS,
+            payload: {},
+        });
+
+        try {
+            await sessionInstance.annotations.save((status: string) => {
+                dispatch({
+                    type: AnnotationActionTypes.SAVE_ANNOTATIONS_UPDATED_STATUS,
+                    payload: {
+                        status,
+                    },
+                });
+            });
+
+            dispatch({
+                type: AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS,
+                payload: {},
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED,
                 payload: {
                     error,
                 },
