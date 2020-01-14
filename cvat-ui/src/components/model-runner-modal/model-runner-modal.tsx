@@ -121,7 +121,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
             if (!selectedModelInstance.primary) {
                 if (!selectedModelInstance.labels.length) {
                     notification.warning({
-                        message: 'Selected models does not include any lables',
+                        message: 'The selected model does not include any lables',
                     });
                 }
 
