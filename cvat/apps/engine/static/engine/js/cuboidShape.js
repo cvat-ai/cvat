@@ -222,18 +222,18 @@ class Cuboid2PointViewModel {
         let topIndex = 0;
         let botIndex = 0;
 
-        if (buildRight === null) {
-            this._updateVanishingPoints();
-            leftPoints = this.dr.points;
-            rightPoints = this.fl.points;
-            topIndex = 6;
-            botIndex = 7;
-        } else {
+        if (buildRight) {
             this._updateVanishingPoints(true);
             leftPoints = this.dl.points;
             rightPoints = this.fr.points;
             topIndex = 4;
             botIndex = 5;
+        } else {
+            this._updateVanishingPoints();
+            leftPoints = this.dr.points;
+            rightPoints = this.fl.points;
+            topIndex = 6;
+            botIndex = 7;
         }
 
         const vpLeft = this.vpl;
