@@ -169,7 +169,7 @@ class ShapeModel extends Listener {
     _setupKeyFrames() {
         for (let frame in this._attributes.mutable) {
             if (!(frame in this._positions)) {
-                let position = this.interpolatePosition(+frame);
+                const position = this.interpolatePosition(+frame);
                 this.updatePosition(+frame, position, true);
             }
         }
@@ -299,7 +299,7 @@ class ShapeModel extends Listener {
     interpolate(frame) {
         return {
             attributes: this._interpolateAttributes(frame),
-            position: this.interpolatePosition(frame)
+            position: this.interpolatePosition(frame),
         };
     }
 
