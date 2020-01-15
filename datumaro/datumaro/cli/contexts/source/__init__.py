@@ -9,14 +9,19 @@ import os
 import os.path as osp
 import shutil
 
-from ..util.project import load_project
+from ...util import add_subparser
+from ...util.project import load_project
 
 
-def build_create_parser(parser):
+def build_create_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
     parser.add_argument('-n', '--name', required=True,
         help="Name of the source to be created")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.set_defaults(command=create_command)
+
     return parser
 
 def create_command(args):
@@ -47,7 +52,12 @@ def create_command(args):
 
     return 0
 
-def build_import_parser(parser):
+def build_import_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
+    import datumaro.components.extractors as extractors_module
+    extractors_list = [name for name, cls in extractors_module.items]
+
     sp = parser.add_subparsers(dest='source_type')
 
     repo_parser = sp.add_parser('repo')
@@ -67,11 +77,14 @@ def build_import_parser(parser):
     parser.add_argument('-n', '--name', default=None,
         help="Name of the new source")
     parser.add_argument('-f', '--format', default=None,
-        help="Name of the source dataset format (default: 'project')")
+        help="Source dataset format (options: %s, default: 'project')" % \
+            (', '.join(extractors_list)))
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
     parser.add_argument('--skip-check', action='store_true',
         help="Skip source checking")
+    parser.set_defaults(command=import_command)
+
     return parser
 
 def import_command(args):
@@ -148,13 +161,17 @@ def import_command(args):
 
     return 0
 
-def build_remove_parser(parser):
+def build_remove_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
     parser.add_argument('-n', '--name', required=True,
         help="Name of the source to be removed")
     parser.add_argument('--force', action='store_true',
         help="Ignore possible errors during removal")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.set_defaults(command=remove_command)
+
     return parser
 
 def remove_command(args):
@@ -178,7 +195,12 @@ def remove_command(args):
 
     return 0
 
-def build_export_parser(parser):
+def build_export_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
+    import datumaro.components.converters as converters_module
+    converters_list = [name for name, cls in converters_module.items]
+
     parser.add_argument('-n', '--name', required=True,
         help="Source dataset to be extracted")
     parser.add_argument('-e', '--filter', default=None,
@@ -194,13 +216,15 @@ def build_export_parser(parser):
     parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
         help="Directory to save output")
     parser.add_argument('-f', '--output-format', required=True,
-        help="Output format")
+        help="Output format (options: %s)" % (', '.join(converters_list)))
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
     parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
         help="Additional arguments for converter (pass '-- -h' for help)")
+    parser.set_defaults(command=export_command)
+
     return parser
 
 def export_command(args):
@@ -229,26 +253,13 @@ def export_command(args):
 
     return 0
 
-def build_parser(parser=argparse.ArgumentParser()):
-    command_parsers = parser.add_subparsers(dest='command_name')
+def build_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
 
-    build_create_parser(command_parsers.add_parser('create')) \
-        .set_defaults(command=create_command)
-    build_import_parser(command_parsers.add_parser('import')) \
-        .set_defaults(command=import_command)
-    build_remove_parser(command_parsers.add_parser('remove')) \
-        .set_defaults(command=remove_command)
-    build_export_parser(command_parsers.add_parser('export')) \
-        .set_defaults(command=export_command)
+    subparsers = parser.add_subparsers()
+    add_subparser(subparsers, 'create', build_create_parser)
+    add_subparser(subparsers, 'import', build_import_parser)
+    add_subparser(subparsers, 'remove', build_remove_parser)
+    add_subparser(subparsers, 'export', build_export_parser)
 
     return parser
-
-
-def main(args=None):
-    parser = build_parser()
-    args = parser.parse_args(args)
-    if 'command' not in args:
-        parser.print_help()
-        return 1
-
-    return args.command(args)

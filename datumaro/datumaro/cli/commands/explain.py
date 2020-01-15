@@ -13,10 +13,12 @@ from datumaro.components.algorithms.rise import RISE
 from datumaro.util.command_targets import (TargetKinds, target_selector,
     ProjectTarget, SourceTarget, ImageTarget, is_project_path)
 from datumaro.util.image import load_image, save_image
-from .util.project import load_project
+from ..util.project import load_project
 
 
-def build_parser(parser=argparse.ArgumentParser()):
+def build_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
     parser.add_argument('-m', '--model', required=True,
         help="Model to use for inference")
     parser.add_argument('-t', '--target', default=None,
@@ -59,6 +61,21 @@ def build_parser(parser=argparse.ArgumentParser()):
     return parser
 
 def explain_command(args):
+    project_path = args.project_dir
+    if is_project_path(project_path):
+        project = Project.load(project_path)
+    else:
+        project = None
+    args.target = target_selector(
+        ProjectTarget(is_default=True, project=project),
+        SourceTarget(project=project),
+        ImageTarget()
+    )(args.target)
+    if args.target[0] == TargetKinds.project:
+        if is_project_path(args.target[1]):
+            args.project_dir = osp.dirname(osp.abspath(args.target[1]))
+
+
     import cv2
     from matplotlib import cm
 
@@ -162,31 +179,3 @@ def explain_command(args):
         raise NotImplementedError()
 
     return 0
-
-def main(args=None):
-    parser = build_parser()
-    args = parser.parse_args(args)
-    if 'command' not in args:
-        parser.print_help()
-        return 1
-
-    project_path = args.project_dir
-    if is_project_path(project_path):
-        project = Project.load(project_path)
-    else:
-        project = None
-    try:
-        args.target = target_selector(
-            ProjectTarget(is_default=True, project=project),
-            SourceTarget(project=project),
-            ImageTarget()
-        )(args.target)
-        if args.target[0] == TargetKinds.project:
-            if is_project_path(args.target[1]):
-                args.project_dir = osp.dirname(osp.abspath(args.target[1]))
-    except argparse.ArgumentTypeError as e:
-        print(e)
-        parser.print_help()
-        return 1
-
-    return args.command(args)

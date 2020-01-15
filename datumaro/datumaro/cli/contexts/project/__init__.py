@@ -13,16 +13,21 @@ from datumaro.components.project import Project
 from datumaro.components.comparator import Comparator
 from datumaro.components.dataset_filter import DatasetItemEncoder
 from .diff import DiffVisualizer
-from ..util.project import make_project_path, load_project
+from ...util import add_subparser
+from ...util.project import make_project_path, load_project
 
 
-def build_create_parser(parser):
+def build_create_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
     parser.add_argument('-d', '--dest', default='.', dest='dst_dir',
         help="Save directory for the new project (default: current dir")
     parser.add_argument('-n', '--name', default=None,
         help="Name of the new project (default: same as project dir)")
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
+    parser.set_defaults(command=create_command)
+
     return parser
 
 def create_command(args):
@@ -57,7 +62,9 @@ def create_command(args):
 
     return 0
 
-def build_import_parser(parser):
+def build_import_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
     import datumaro.components.importers as importers_module
     importers_list = [name for name, cls in importers_module.items]
 
@@ -77,6 +84,8 @@ def build_import_parser(parser):
         help="Skip source checking")
     # parser.add_argument('extra_args', nargs=argparse.REMAINDER,
     #     help="Additional arguments for importer (pass '-- -h' for help)")
+    parser.set_defaults(command=import_command)
+
     return parser
 
 def import_command(args):
@@ -122,10 +131,12 @@ def import_command(args):
 
     return 0
 
-def build_build_parser(parser):
-    return parser
+def build_export_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
 
-def build_export_parser(parser):
+    import datumaro.components.converters as converters_module
+    converters_list = [name for name, cls in converters_module.items]
+
     parser.add_argument('-e', '--filter', default=None,
         help="Filter expression for dataset items. Examples: "
              "extract images with width < height: "
@@ -141,13 +152,15 @@ def build_export_parser(parser):
     parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
         help="Directory to save output")
     parser.add_argument('-f', '--output-format', required=True,
-        help="Output format")
+        help="Output format (options: %s)" % (', '.join(converters_list)))
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
     parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
         help="Additional arguments for converter (pass '-- -h' for help)")
+    parser.set_defaults(command=export_command)
+
     return parser
 
 def export_command(args):
@@ -175,14 +188,9 @@ def export_command(args):
 
     return 0
 
-def build_stats_parser(parser):
-    parser.add_argument('name')
-    return parser
+def build_extract_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
 
-def build_docs_parser(parser):
-    return parser
-
-def build_extract_parser(parser):
     parser.add_argument('-e', '--filter', default=None,
         help="XML XPath filter expression for dataset items. Examples: "
              "extract images with width < height: "
@@ -234,13 +242,17 @@ def extract_command(args):
 
     return 0
 
-def build_merge_parser(parser):
+def build_merge_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
     parser.add_argument('other_project_dir',
         help="Directory of the project to get data updates from")
     parser.add_argument('-d', '--dest', dest='dst_dir', default=None,
         help="Output directory (default: current project's dir)")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.set_defaults(command=merge_command)
+
     return parser
 
 def merge_command(args):
@@ -260,7 +272,9 @@ def merge_command(args):
 
     return 0
 
-def build_diff_parser(parser):
+def build_diff_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
     parser.add_argument('other_project_dir',
         help="Directory of the second project to be compared")
     parser.add_argument('-d', '--dest', default=None, dest='dst_dir',
@@ -275,6 +289,8 @@ def build_diff_parser(parser):
         help="Confidence threshold for detections (default: %(default)s)")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the first project to be compared (default: current dir)")
+    parser.set_defaults(command=diff_command)
+
     return parser
 
 def diff_command(args):
@@ -289,6 +305,7 @@ def diff_command(args):
     if save_dir is not None:
         log.info("Saving diff to '%s'" % save_dir)
         os.makedirs(osp.abspath(save_dir))
+
     visualizer = DiffVisualizer(save_dir=save_dir, comparator=comparator,
         output_format=args.output_format)
     visualizer.save_dataset_diff(
@@ -297,65 +314,46 @@ def diff_command(args):
 
     return 0
 
-def build_transform_parser(parser):
-    parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
-        help="Directory to save output")
-    parser.add_argument('-m', '--model', dest='model_name', required=True,
+def build_transform_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
+    parser.add_argument('-m', '--method', required=True,
         help="Model to apply to the project")
-    parser.add_argument('-f', '--output-format', required=True,
-        help="Output format")
+    parser.add_argument('-d', '--dest', dest='dst_dir', default=None,
+        help="Directory to save output (default: current dir)")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.set_defaults(command=transform_command)
+
     return parser
 
 def transform_command(args):
     project = load_project(args.project_dir)
 
     dst_dir = osp.abspath(args.dst_dir)
-    os.makedirs(dst_dir, exist_ok=False)
-    project.make_dataset().apply_model(
-        save_dir=dst_dir,
-        model_name=args.model_name)
+    if dst_dir is not None:
+        os.makedirs(dst_dir, exist_ok=False)
+
+    project.make_dataset().transform_project(
+        method=args.method,
+        save_dir=dst_dir
+    )
 
     log.info("Transform results saved to '%s'" % (dst_dir))
 
     return 0
 
 
-def build_parser(parser=argparse.ArgumentParser()):
-    command_parsers = parser.add_subparsers(dest='command_name')
+def build_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
 
-    build_create_parser(command_parsers.add_parser('create')) \
-        .set_defaults(command=create_command)
-
-    build_import_parser(command_parsers.add_parser('import')) \
-        .set_defaults(command=import_command)
-
-    build_export_parser(command_parsers.add_parser('export')) \
-        .set_defaults(command=export_command)
-
-    build_extract_parser(command_parsers.add_parser('extract')) \
-        .set_defaults(command=extract_command)
-
-    build_merge_parser(command_parsers.add_parser('merge')) \
-        .set_defaults(command=merge_command)
-
-    build_build_parser(command_parsers.add_parser('build'))
-    build_stats_parser(command_parsers.add_parser('stats'))
-    build_docs_parser(command_parsers.add_parser('docs'))
-    build_diff_parser(command_parsers.add_parser('diff')) \
-        .set_defaults(command=diff_command)
-
-    build_transform_parser(command_parsers.add_parser('transform')) \
-        .set_defaults(command=transform_command)
+    subparsers = parser.add_subparsers()
+    add_subparser(subparsers, 'create', build_create_parser)
+    add_subparser(subparsers, 'import', build_import_parser)
+    add_subparser(subparsers, 'export', build_export_parser)
+    add_subparser(subparsers, 'extract', build_extract_parser)
+    add_subparser(subparsers, 'merge', build_merge_parser)
+    add_subparser(subparsers, 'diff', build_diff_parser)
+    add_subparser(subparsers, 'transform', build_transform_parser)
 
     return parser
-
-def main(args=None):
-    parser = build_parser()
-    args = parser.parse_args(args)
-    if 'command' not in args:
-        parser.print_help()
-        return 1
-
-    return args.command(args)
