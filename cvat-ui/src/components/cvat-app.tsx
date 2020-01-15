@@ -13,18 +13,18 @@ import {
     notification,
 } from 'antd';
 
-import SettingsPageComponent from './settings-page/settings-page';
-import TasksPageContainer from '../containers/tasks-page/tasks-page';
-import CreateTaskPageContainer from '../containers/create-task-page/create-task-page';
-import TaskPageContainer from '../containers/task-page/task-page';
-import ModelsPageContainer from '../containers/models-page/models-page';
-import CreateModelPageContainer from '../containers/create-model-page/create-model-page';
-import AnnotationPageContainer from '../containers/annotation-page/annotation-page';
-import LoginPageContainer from '../containers/login-page/login-page';
-import RegisterPageContainer from '../containers/register-page/register-page';
-import HeaderContainer from '../containers/header/header';
+import SettingsPageComponent from 'components/settings-page/settings-page';
+import TasksPageContainer from 'containers/tasks-page/tasks-page';
+import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
+import TaskPageContainer from 'containers/task-page/task-page';
+import ModelsPageContainer from 'containers/models-page/models-page';
+import CreateModelPageContainer from 'containers/create-model-page/create-model-page';
+import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
+import LoginPageContainer from 'containers/login-page/login-page';
+import RegisterPageContainer from 'containers/register-page/register-page';
+import HeaderContainer from 'containers/header/header';
 
-import { NotificationsState } from '../reducers/interfaces';
+import { NotificationsState } from 'reducers/interfaces';
 
 type CVATAppProps = {
     loadFormats: () => void;

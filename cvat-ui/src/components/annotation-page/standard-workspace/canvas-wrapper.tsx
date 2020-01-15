@@ -6,11 +6,16 @@ import {
 
 import {
     GridColor,
-} from '../../../reducers/interfaces';
+    ObjectType,
+} from 'reducers/interfaces';
 
 import {
     Canvas,
-} from '../../../canvas';
+} from 'cvat-canvas';
+
+import getCore from 'cvat-core';
+
+const cvat = getCore();
 
 interface Props {
     canvasInstance: Canvas;
@@ -22,10 +27,14 @@ interface Props {
     gridSize: number;
     gridColor: GridColor;
     gridOpacity: number;
+    activeLabelID: number;
+    activeObjectType: ObjectType;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
+    onShapeDrawn: () => void;
     onResetCanvas: () => void;
+    onAnnotationsUpdated: (annotations: any[]) => void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -81,12 +90,45 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         this.updateCanvas();
     }
 
-    private async onShapeEdit(event: any): Promise<void> {
+    private async onShapeDrawn(event: any): Promise<void> {
         const {
-            canvasInstance,
             jobInstance,
-            frameData,
+            activeLabelID,
+            activeObjectType,
             frame,
+            onShapeDrawn,
+            onAnnotationsUpdated,
+        } = this.props;
+
+        onShapeDrawn();
+
+        const { state } = event.detail;
+        if (!state.objectType) {
+            state.objectType = activeObjectType;
+        }
+
+        if (!state.label) {
+            [state.label] = jobInstance.task.labels
+                .filter((label: any) => label.id === activeLabelID);
+        }
+
+        if (!state.occluded) {
+            state.occluded = false;
+        }
+
+        state.frame = frame;
+        const objectState = new cvat.classes.ObjectState(state);
+        await jobInstance.annotations.put([objectState]);
+
+        const annotations = await jobInstance.annotations.get(frame);
+        onAnnotationsUpdated(annotations);
+    }
+
+    private async onShapeEdited(event: any): Promise<void> {
+        const {
+            jobInstance,
+            frame,
+            onAnnotationsUpdated,
         } = this.props;
 
         const {
@@ -97,7 +139,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.save();
 
         const annotations = await jobInstance.annotations.get(frame);
-        canvasInstance.setup(frameData, annotations);
+        onAnnotationsUpdated(annotations);
     }
 
     private updateCanvas(): void {
@@ -192,7 +234,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         });
 
-        canvasInstance.html().addEventListener('canvas.edited', this.onShapeEdit.bind(this));
+        canvasInstance.html().addEventListener('canvas.drawn', this.onShapeDrawn.bind(this));
+        canvasInstance.html().addEventListener('canvas.edited', this.onShapeEdited.bind(this));
     }
 
     public render(): JSX.Element {

@@ -1,12 +1,14 @@
 import { AnyAction } from 'redux';
 
-import { Canvas } from '../canvas';
-
+import { Canvas } from 'cvat-canvas';
+import { AnnotationActionTypes } from 'actions/annotation-actions';
 import {
     AnnotationState,
     ActiveControl,
+    ShapeType,
+    ObjectType,
 } from './interfaces';
-import { AnnotationActionTypes } from '../actions/annotation-actions';
+
 
 const defaultState: AnnotationState = {
     canvasInstance: new Canvas(),
@@ -21,6 +23,11 @@ const defaultState: AnnotationState = {
     savingStatuses: [],
     dataFetching: false,
     jobFetching: false,
+    drawing: {
+        activeShapeType: ShapeType.RECTANGLE,
+        activeLabelID: 0,
+        activeObjectType: ObjectType.SHAPE,
+    },
 };
 
 export default (state = defaultState, action: AnyAction): AnnotationState => {
@@ -32,13 +39,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
+            const { jobInstance } = action.payload;
             return {
                 ...defaultState,
                 jobFetching: false,
-                jobInstance: action.payload.jobInstance,
+                jobInstance,
                 frame: action.payload.frame,
                 frameData: action.payload.frameData,
                 annotations: action.payload.annotations,
+                drawing: {
+                    ...defaultState.drawing,
+                    activeLabelID: jobInstance.task.labels[0].id,
+                    activeObjectType: jobInstance.task.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
+                },
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
@@ -121,6 +134,38 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 activeControl: enabled ? ActiveControl.ZOOM_CANVAS : ActiveControl.CURSOR,
+            };
+        }
+        case AnnotationActionTypes.DRAW_SHAPE: {
+            const {
+                shapeType,
+                labelID,
+                objectType,
+                points,
+                activeControl,
+            } = action.payload;
+
+            return {
+                ...state,
+                activeControl,
+                drawing: {
+                    activeLabelID: labelID,
+                    activeNumOfPoints: points,
+                    activeObjectType: objectType,
+                    activeShapeType: shapeType,
+                },
+            };
+        }
+        case AnnotationActionTypes.SHAPE_DRAWN: {
+            return {
+                ...state,
+                activeControl: ActiveControl.CURSOR,
+            };
+        }
+        case AnnotationActionTypes.ANNOTATIONS_UPDATED: {
+            return {
+                ...state,
+                annotations: action.payload.annotations,
             };
         }
         case AnnotationActionTypes.RESET_CANVAS: {

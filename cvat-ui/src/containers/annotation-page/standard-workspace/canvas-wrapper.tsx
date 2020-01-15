@@ -1,20 +1,23 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import CanvasWrapperComponent from '../../../components/annotation-page/standard-workspace/canvas-wrapper';
+import CanvasWrapperComponent from 'components/annotation-page/standard-workspace/canvas-wrapper';
 
 import {
     confirmCanvasReady,
     dragCanvas,
     zoomCanvas,
     resetCanvas,
-} from '../../../actions/annotation-actions';
+    shapeDrawn,
+    annotationsUpdated,
+} from 'actions/annotation-actions';
 import {
     GridColor,
+    ObjectType,
     CombinedState,
-} from '../../../reducers/interfaces';
+} from 'reducers/interfaces';
 
-import { Canvas } from '../../../canvas';
+import { Canvas } from 'cvat-canvas';
 
 interface StateToProps {
     canvasInstance: Canvas;
@@ -26,6 +29,8 @@ interface StateToProps {
     gridSize: number;
     gridColor: GridColor;
     gridOpacity: number;
+    activeLabelID: number;
+    activeObjectType: ObjectType;
 }
 
 interface DispatchToProps {
@@ -33,6 +38,8 @@ interface DispatchToProps {
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
     onResetCanvas: () => void;
+    onShapeDrawn: () => void;
+    onAnnotationsUpdated: (annotations: any[]) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -42,7 +49,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameData,
         frame,
         annotations,
+        drawing,
     } = state.annotation;
+
+    const {
+        activeLabelID,
+        activeObjectType,
+    } = drawing;
 
     const {
         grid,
@@ -61,6 +74,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         gridSize,
         gridColor,
         gridOpacity,
+        activeLabelID,
+        activeObjectType,
     };
 }
 
@@ -77,6 +92,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onResetCanvas(): void {
             dispatch(resetCanvas());
+        },
+        onShapeDrawn(): void {
+            dispatch(shapeDrawn());
+        },
+        onAnnotationsUpdated(annotations: any[]): void {
+            dispatch(annotationsUpdated(annotations));
         },
     };
 }

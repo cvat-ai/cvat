@@ -1,13 +1,13 @@
 import { AnyAction } from 'redux';
 
-import { AuthActionTypes } from '../actions/auth-actions';
-import { FormatsActionTypes } from '../actions/formats-actions';
-import { ModelsActionTypes } from '../actions/models-actions';
-import { ShareActionTypes } from '../actions/share-actions';
-import { TasksActionTypes } from '../actions/tasks-actions';
-import { UsersActionTypes } from '../actions/users-actions';
-import { AnnotationActionTypes } from '../actions/annotation-actions';
-import { NotificationsActionType } from '../actions/notification-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
+import { FormatsActionTypes } from 'actions/formats-actions';
+import { ModelsActionTypes } from 'actions/models-actions';
+import { ShareActionTypes } from 'actions/share-actions';
+import { TasksActionTypes } from 'actions/tasks-actions';
+import { UsersActionTypes } from 'actions/users-actions';
+import { AnnotationActionTypes } from 'actions/annotation-actions';
+import { NotificationsActionType } from 'actions/notification-actions';
 
 import { NotificationsState } from './interfaces';
 

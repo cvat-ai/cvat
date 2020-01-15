@@ -13,6 +13,7 @@ import {
 
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
+import patterns from 'utils/validation-patterns';
 
 import {
     equalArrayHead,
@@ -20,7 +21,7 @@ import {
     Label,
     Attribute,
 } from './common';
-import patterns from '../../utils/validation-patterns';
+
 
 export enum AttributeType {
     SELECT = 'SELECT',

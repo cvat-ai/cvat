@@ -1,19 +1,35 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { Canvas } from '../../../../canvas';
+import { Canvas } from 'cvat-canvas';
 
-import ControlsSideBarComponent from '../../../../components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
+import { drawShape } from 'actions/annotation-actions';
+import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import {
     ActiveControl,
     CombinedState,
-} from '../../../../reducers/interfaces';
+    ShapeType,
+    ObjectType,
+} from 'reducers/interfaces';
 
+type StringObject = {
+    [index: number]: string;
+};
 
 interface StateToProps {
     canvasInstance: Canvas;
     rotateAll: boolean;
     activeControl: ActiveControl;
+    labels: StringObject;
+}
+
+interface DispatchToProps {
+    onDrawStart(
+        shapeType: ShapeType,
+        labelID: number,
+        objectType: ObjectType,
+        points?: number,
+    ): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -27,14 +43,34 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeControl,
     } = annotation;
 
+    const labels = annotation.jobInstance.task.labels
+        .reduce((acc: StringObject, label: any): StringObject => {
+            acc[label.id as number] = label.name;
+            return acc;
+        }, {});
+
     return {
         rotateAll: settings.player.rotateAll,
         canvasInstance,
         activeControl,
+        labels,
     };
 }
 
-function StandardWorkspaceContainer(props: StateToProps): JSX.Element {
+function dispatchToProps(dispatch: any): DispatchToProps {
+    return {
+        onDrawStart(
+            shapeType: ShapeType,
+            labelID: number,
+            objectType: ObjectType,
+            points?: number,
+        ): void {
+            dispatch(drawShape(shapeType, labelID, objectType, points));
+        },
+    };
+}
+
+function StandardWorkspaceContainer(props: StateToProps & DispatchToProps): JSX.Element {
     return (
         <ControlsSideBarComponent {...props} />
     );
@@ -42,4 +78,5 @@ function StandardWorkspaceContainer(props: StateToProps): JSX.Element {
 
 export default connect(
     mapStateToProps,
+    dispatchToProps,
 )(StandardWorkspaceContainer);

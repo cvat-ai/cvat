@@ -3,11 +3,14 @@ import { ThunkAction } from 'redux-thunk';
 
 import {
     CombinedState,
+    ActiveControl,
+    ShapeType,
+    ObjectType,
     Task,
-} from '../reducers/interfaces';
+} from 'reducers/interfaces';
 
-import getCore from '../core';
-import { getCVATStore } from '../store';
+import getCore from 'cvat-core';
+import { getCVATStore } from 'cvat-store';
 
 const cvat = getCore();
 
@@ -26,7 +29,10 @@ export enum AnnotationActionTypes {
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
     DRAG_CANVAS = 'DRAG_CANVAS',
     ZOOM_CANVAS = 'ZOOM_CANVAS',
+    DRAW_SHAPE = 'DRAW_SHAPE',
+    SHAPE_DRAWN = 'SHAPE_DRAWN',
     RESET_CANVAS = 'RESET_CANVAS',
+    ANNOTATIONS_UPDATED = 'ANNOTATIONS_UPDATED',
 }
 
 export function switchPlay(playing: boolean): AnyAction {
@@ -193,5 +199,48 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 },
             });
         }
+    };
+}
+
+export function drawShape(
+    shapeType: ShapeType,
+    labelID: number,
+    objectType: ObjectType,
+    points?: number,
+): AnyAction {
+    let activeControl = ActiveControl.DRAW_RECTANGLE;
+    if (shapeType === ShapeType.POLYGON) {
+        activeControl = ActiveControl.DRAW_POLYGON;
+    } else if (shapeType === ShapeType.POLYLINE) {
+        activeControl = ActiveControl.DRAW_POLYLINE;
+    } else if (shapeType === ShapeType.POINTS) {
+        activeControl = ActiveControl.DRAW_POINTS;
+    }
+
+    return {
+        type: AnnotationActionTypes.DRAW_SHAPE,
+        payload: {
+            shapeType,
+            labelID,
+            objectType,
+            points,
+            activeControl,
+        },
+    };
+}
+
+export function shapeDrawn(): AnyAction {
+    return {
+        type: AnnotationActionTypes.SHAPE_DRAWN,
+        payload: {},
+    };
+}
+
+export function annotationsUpdated(annotations: any[]): AnyAction {
+    return {
+        type: AnnotationActionTypes.ANNOTATIONS_UPDATED,
+        payload: {
+            annotations,
+        },
     };
 }

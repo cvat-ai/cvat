@@ -716,9 +716,21 @@
 
             // Add/update keyframe
             if (positionUpdated || (updated.keyframe && data.keyframe)) {
-                // Remove all cache after this keyframe because it have just become outdated
-                for (const cacheFrame in this.cache) {
-                    if (+cacheFrame > frame) {
+                // Remove affected cached frames
+                const {
+                    leftFrame,
+                    rightFrame,
+                } = this.neighborsFrames(frame);
+                for (const cacheFrame of Object.keys(this.cache)) {
+                    if (leftFrame === null && +cacheFrame < frame) {
+                        delete this.cache[cacheFrame];
+                    } else if (+cacheFrame < frame && +cacheFrame > leftFrame) {
+                        delete this.cache[cacheFrame];
+                    }
+
+                    if (rightFrame === null && +cacheFrame > frame) {
+                        delete this.cache[cacheFrame];
+                    } else if (+cacheFrame > frame && +cacheFrame < rightFrame) {
                         delete this.cache[cacheFrame];
                     }
                 }

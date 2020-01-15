@@ -8,12 +8,12 @@ import {
 
 import {
     RotateIcon,
-} from '../../../../icons';
+} from 'icons';
 
 import {
     Rotation,
     Canvas,
-} from '../../../../canvas';
+} from 'cvat-canvas';
 
 interface Props {
     canvasInstance: Canvas;

@@ -6,8 +6,8 @@ import {
     Pagination,
 } from 'antd';
 
-import ModelRunnerModalContainer from '../../containers/model-runner-dialog/model-runner-dialog';
-import TaskItem from '../../containers/tasks-page/task-item';
+import ModelRunnerModalContainer from 'containers/model-runner-dialog/model-runner-dialog';
+import TaskItem from 'containers/tasks-page/task-item';
 
 export interface ContentListProps {
     onSwitchPage(page: number): void;

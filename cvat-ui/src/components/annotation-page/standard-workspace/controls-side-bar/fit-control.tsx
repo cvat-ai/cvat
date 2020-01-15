@@ -7,11 +7,11 @@ import {
 
 import {
     FitIcon,
-} from '../../../../icons';
+} from 'icons';
 
 import {
     Canvas,
-} from '../../../../canvas';
+} from 'cvat-canvas';
 
 interface Props {
     canvasInstance: Canvas;

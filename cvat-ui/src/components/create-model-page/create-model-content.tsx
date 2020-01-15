@@ -13,13 +13,14 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
+import ConnectedFileManager, {
+    FileManagerContainer,
+} from 'containers/file-manager/file-manager';
+import { ModelFiles } from 'reducers/interfaces';
+
 import CreateModelForm, {
     CreateModelForm as WrappedCreateModelForm,
 } from './create-model-form';
-import ConnectedFileManager, {
-    FileManagerContainer,
-} from '../../containers/file-manager/file-manager';
-import { ModelFiles } from '../../reducers/interfaces';
 
 interface Props {
     createModel(name: string, files: ModelFiles, global: boolean): void;

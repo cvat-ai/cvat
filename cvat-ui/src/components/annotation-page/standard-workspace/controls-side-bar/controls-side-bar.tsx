@@ -7,34 +7,46 @@ import {
 } from 'antd';
 
 import {
-    RectangleIcon,
-    PolygonIcon,
-    PointIcon,
-    PolylineIcon,
+    ActiveControl,
+    ShapeType,
+    ObjectType,
+} from 'reducers/interfaces';
+
+import {
     TagIcon,
     MergeIcon,
     GroupIcon,
     SplitIcon,
-} from '../../../../icons';
-
-import {
-    ActiveControl,
-} from '../../../../reducers/interfaces';
+} from 'icons';
 
 import {
     Canvas,
-} from '../../../../canvas';
+} from 'cvat-canvas';
 
 import CursorControl from './cursor-control';
 import MoveControl from './move-control';
 import RotateControl from './rotate-control';
 import FitControl from './fit-control';
 import ResizeControl from './resize-control';
+import DrawRectangleControl from './draw-rectangle-control';
+import DrawPolygonControl from './draw-polygon-control';
+import DrawPolylineControl from './draw-polyline-control';
+import DrawPointsControl from './draw-points-control';
 
 interface Props {
     canvasInstance: Canvas;
     rotateAll: boolean;
     activeControl: ActiveControl;
+
+    labels: {
+        [index: number]: string;
+    };
+    onDrawStart(
+        shapeType: ShapeType,
+        labelID: number,
+        objectType: ObjectType,
+        points?: number,
+    ): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
@@ -55,21 +67,10 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
             <hr />
 
-            <Tooltip overlay='Draw a rectangle' placement='right'>
-                <Icon component={RectangleIcon} />
-            </Tooltip>
-
-            <Tooltip overlay='Draw a polygon' placement='right'>
-                <Icon component={PolygonIcon} />
-            </Tooltip>
-
-            <Tooltip overlay='Draw a polyline' placement='right'>
-                <Icon component={PolylineIcon} />
-            </Tooltip>
-
-            <Tooltip overlay='Draw points' placement='right'>
-                <Icon component={PointIcon} />
-            </Tooltip>
+            <DrawRectangleControl {...props} />
+            <DrawPolygonControl {...props} />
+            <DrawPolylineControl {...props} />
+            <DrawPointsControl {...props} />
 
             <Tooltip overlay='Setup a tag' placement='right'>
                 <Icon component={TagIcon} />

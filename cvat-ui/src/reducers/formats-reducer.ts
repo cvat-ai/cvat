@@ -1,6 +1,6 @@
 import { AnyAction } from 'redux';
-import { FormatsActionTypes } from '../actions/formats-actions';
-import { AuthActionTypes } from '../actions/auth-actions';
+import { FormatsActionTypes } from 'actions/formats-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
 
 import { FormatsState } from './interfaces';
 

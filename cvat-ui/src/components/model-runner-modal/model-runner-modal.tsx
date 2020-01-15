@@ -14,7 +14,7 @@ import {
     notification,
 } from 'antd';
 
-import { Model } from '../../reducers/interfaces';
+import { Model } from 'reducers/interfaces';
 
 interface StringObject {
     [index: string]: string;

@@ -5,10 +5,10 @@ import {
     changeFrameAsync,
     switchPlay as switchPlayAction,
     saveAnnotationsAsync,
-} from '../../../actions/annotation-actions';
+} from 'actions/annotation-actions';
 
-import AnnotationTopBarComponent from '../../../components/annotation-page/top-bar/top-bar';
-import { CombinedState } from '../../../reducers/interfaces';
+import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
+import { CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
     jobInstance: any;

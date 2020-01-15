@@ -1,7 +1,7 @@
 import { AnyAction } from 'redux';
 import {
     GridColor,
-} from '../reducers/interfaces';
+} from 'reducers/interfaces';
 
 export enum SettingsActionTypes {
     SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',

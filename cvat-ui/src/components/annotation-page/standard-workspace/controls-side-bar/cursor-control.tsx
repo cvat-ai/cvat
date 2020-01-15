@@ -7,15 +7,15 @@ import {
 
 import {
     CursorIcon,
-} from '../../../../icons';
+} from 'icons';
 
 import {
     ActiveControl,
-} from '../../../../reducers/interfaces';
+} from 'reducers/interfaces';
 
 import {
     Canvas,
-} from '../../../../canvas';
+} from 'cvat-canvas';
 
 interface Props {
     canvasInstance: Canvas;
