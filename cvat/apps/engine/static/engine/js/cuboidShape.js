@@ -222,7 +222,7 @@ class Cuboid2PointViewModel {
         let topIndex = 0;
         let botIndex = 0;
 
-        if (buildRight == null) {
+        if (buildRight === null) {
             this._updateVanishingPoints();
             leftPoints = this.dr.points;
             rightPoints = this.fl.points;
@@ -1040,8 +1040,8 @@ SVG.Cube = SVG.invent({
         setupGrabPoints() {
             this.fl_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_l');
             this.fr_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_r');
-            this.dr_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_r');
-            this.dl_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_l');
+            this.dr_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_ew');
+            this.dl_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_ew');
 
             this.ft_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_t');
             this.fb_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_b');
