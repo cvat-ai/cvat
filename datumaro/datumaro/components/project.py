@@ -14,9 +14,10 @@ import sys
 
 from datumaro.components.config import Config, DEFAULT_FORMAT
 from datumaro.components.config_model import *
-from datumaro.components.extractor import *
-from datumaro.components.launcher import *
-from datumaro.components.dataset_filter import XPathDatasetFilter
+from datumaro.components.extractor import DatasetItem, Extractor
+from datumaro.components.launcher import InferenceWrapper
+from datumaro.components.dataset_filter import \
+    XPathDatasetFilter, XPathAnnotationsFilter
 
 
 def import_foreign_module(name, path):
@@ -305,18 +306,137 @@ class DatasetItemWrapper(DatasetItem):
             return self._image
         return self._item.image
 
-class ProjectDataset(Extractor):
+class Dataset(Extractor):
+    @classmethod
+    def from_extractors(cls, *sources):
+        # merge categories
+        # TODO: implement properly with merging and annotations remapping
+        categories = {}
+        for source in sources:
+            categories.update(source.categories())
+        for source in sources:
+            for cat_type, source_cat in source.categories().items():
+                assert categories[cat_type] == source_cat
+        dataset = Dataset(categories=categories)
+
+        # merge items
+        subsets = defaultdict(lambda: Subset(dataset))
+        for source in sources:
+            for item in source:
+                path = None # NOTE: merge everything into our own dataset
+
+                existing_item = subsets[item.subset].items.get(item.id)
+                if existing_item is not None:
+                    image = None
+                    if existing_item.has_image:
+                        # TODO: think of image comparison
+                        image = cls._lazy_image(existing_item)
+
+                    item = DatasetItemWrapper(item=item, path=path,
+                        image=image, annotations=self._merge_anno(
+                            existing_item.annotations, item.annotations))
+                else:
+                    item = DatasetItemWrapper(item=item, path=path,
+                        annotations=item.annotations)
+
+                subsets[item.subset].items[item.id] = item
+
+        self._subsets = dict(subsets)
+
+    def __init__(self, categories=None):
+        super().__init__()
+
+        self._subsets = {}
+
+        if not categories:
+            categories = {}
+        self._categories = categories
+
+    def __iter__(self):
+        for subset in self._subsets.values():
+            for item in subset:
+                yield item
+
+    def __len__(self):
+        if self._length is None:
+            self._length = reduce(lambda s, x: s + len(x),
+                self._subsets.values(), 0)
+        return self._length
+
+    def get_subset(self, name):
+        return self._subsets[name]
+
+    def subsets(self):
+        return list(self._subsets)
+
+    def categories(self):
+        return self._categories
+
+    def get(self, item_id, subset=None, path=None):
+        if path:
+            raise KeyError("Requested dataset item path is not found")
+        return self._subsets[subset].items[item_id]
+
+    def put(self, item, item_id=None, subset=None, path=None):
+        if path:
+            raise KeyError("Requested dataset item path is not found")
+
+        if item_id is None:
+            item_id = item.id
+        if subset is None:
+            subset = item.subset
+
+        item = DatasetItemWrapper(item=item, path=None,
+            annotations=item.annotations)
+        if item.subset not in self._subsets:
+            self._subsets[item.subset] = Subset(self)
+        self._subsets[subset].items[item_id] = item
+        self._length = None
+
+        return item
+
+    def extract(self, filter_expr, filter_annotations=False, **kwargs):
+        if filter_annotations:
+            return self.transform(XPathAnnotationsFilter, filter_expr, **kwargs)
+        else:
+            return self.transform(XPathDatasetFilter, filter_expr, **kwargs)
+
+    def update(self, items):
+        for item in items:
+            self.put(item)
+        return self
+
+    def define_categories(self, categories):
+        assert not self._categories
+        self._categories = categories
+
+    @staticmethod
+    def _lazy_image(item):
+        # NOTE: avoid https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
+        return lambda: item.image
+
+    @staticmethod
+    def _merge_anno(a, b):
+        from itertools import chain
+        merged = []
+        for item in chain(a, b):
+            found = False
+            for elem in merged:
+                if elem == item:
+                    found = True
+                    break
+            if not found:
+                merged.append(item)
+
+        return merged
+
+class ProjectDataset(Dataset):
     def __init__(self, project):
         super().__init__()
 
         self._project = project
         config = self.config
         env = self.env
-
-        dataset_filter = None
-        if config.filter:
-            dataset_filter = XPathDatasetFilter(config.filter)
-        self._filter = dataset_filter
 
         sources = {}
         for s_name, source in config.sources.items():
@@ -335,7 +455,7 @@ class ProjectDataset(Extractor):
 
         own_source = None
         own_source_dir = osp.join(config.project_dir, config.dataset_dir)
-        if osp.isdir(config.project_dir) and osp.isdir(own_source_dir):
+        if config.project_dir and osp.isdir(own_source_dir):
             log.disable(log.INFO)
             own_source = env.make_importer(DEFAULT_FORMAT)(own_source_dir) \
                 .make_dataset()
@@ -358,9 +478,6 @@ class ProjectDataset(Extractor):
         for source_name, source in self._sources.items():
             log.debug("Loading '%s' source contents..." % source_name)
             for item in source:
-                if dataset_filter and not dataset_filter(item):
-                    continue
-
                 existing_item = subsets[item.subset].items.get(item.id)
                 if existing_item is not None:
                     image = None
@@ -370,14 +487,14 @@ class ProjectDataset(Extractor):
 
                     path = existing_item.path
                     if item.path != path:
-                        path = None
+                        path = None # NOTE: move to our own dataset
                     item = DatasetItemWrapper(item=item, path=path,
                         image=image, annotations=self._merge_anno(
                             existing_item.annotations, item.annotations))
                 else:
                     s_config = config.sources[source_name]
                     if s_config and \
-                            s_config.format != self.env.PROJECT_EXTRACTOR_NAME:
+                            s_config.format != env.PROJECT_EXTRACTOR_NAME:
                         # NOTE: consider imported sources as our own dataset
                         path = None
                     else:
@@ -394,9 +511,6 @@ class ProjectDataset(Extractor):
         if own_source is not None:
             log.debug("Loading own dataset...")
             for item in own_source:
-                if dataset_filter and not dataset_filter(item):
-                    continue
-
                 if not item.has_image:
                     existing_item = subsets[item.subset].items.get(item.id)
                     if existing_item is not None:
@@ -417,54 +531,8 @@ class ProjectDataset(Extractor):
 
         self._length = None
 
-    @staticmethod
-    def _lazy_image(item):
-        # NOTE: avoid https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
-        return lambda: item.image
-
-    @staticmethod
-    def _merge_anno(a, b):
-        from itertools import chain
-        merged = []
-        for item in chain(a, b):
-            found = False
-            for elem in merged:
-                if elem == item:
-                    found = True
-                    break
-            if not found:
-                merged.append(item)
-
-        return merged
-
     def iterate_own(self):
         return self.select(lambda item: not item.path)
-
-    def __iter__(self):
-        for subset in self._subsets.values():
-            for item in subset:
-                if self._filter and not self._filter(item):
-                    continue
-                yield item
-
-    def __len__(self):
-        if self._length is None:
-            self._length = reduce(lambda s, x: s + len(x),
-                self._subsets.values(), 0)
-        return self._length
-
-    def get_subset(self, name):
-        return self._subsets[name]
-
-    def subsets(self):
-        return list(self._subsets)
-
-    def categories(self):
-        return self._categories
-
-    def define_categories(self, categories):
-        assert not self._categories
-        self._categories = categories
 
     def get(self, item_id, subset=None, path=None):
         if path:
@@ -497,54 +565,6 @@ class ProjectDataset(Extractor):
         self._length = None
 
         return item
-
-    def build(self, tasks=None):
-        pass
-
-    def docs(self):
-        pass
-
-    def transform(self, model_name, save_dir=None):
-        project = Project(self.config)
-        project.config.remove('sources')
-
-        if save_dir is None:
-            save_dir = self.config.project_dir
-        project.config.project_dir = save_dir
-
-        dataset = project.make_dataset()
-        launcher = self._project.make_executable_model(model_name)
-        inference = InferenceWrapper(self, launcher)
-        dataset.update(inference)
-
-        dataset.save(merge=True)
-
-    def export(self, save_dir, output_format,
-            filter_expr=None, **converter_kwargs):
-        save_dir = osp.abspath(save_dir)
-        os.makedirs(save_dir, exist_ok=True)
-
-        dataset = self
-        if filter_expr:
-            dataset_filter = XPathDatasetFilter(filter_expr)
-            dataset = dataset.select(dataset_filter)
-
-        converter = self.env.make_converter(output_format, **converter_kwargs)
-        converter(dataset, save_dir)
-
-    def extract(self, save_dir, filter_expr=None):
-        project = Project(self.config)
-        if filter_expr:
-            XPathDatasetFilter(filter_expr)
-            project.set_filter(filter_expr)
-        project.save(save_dir)
-
-    def update(self, items):
-        for item in items:
-            if self._filter and not self._filter(item):
-                continue
-            self.put(item)
-        return self
 
     def save(self, save_dir=None, merge=False, recursive=True,
             save_images=False):
@@ -599,6 +619,60 @@ class ProjectDataset(Extractor):
     @property
     def sources(self):
         return self._sources
+
+    def _save_branch_project(self, extractor, save_dir=None):
+        # NOTE: probably this function should be in the ViewModel layer
+        save_dir = osp.abspath(save_dir)
+        if save_dir:
+            dst_project = Project()
+        else:
+            if not self.config.project_dir:
+                raise Exception("Either a save directory or a project "
+                    "directory should be specified")
+            save_dir = self.config.project_dir
+
+            dst_project = Project(Config(self.config))
+            dst_project.config.remove('project_dir')
+            dst_project.config.remove('sources')
+
+        dst_dataset = dst_project.make_dataset()
+        dst_dataset.define_categories(extractor.categories())
+        dst_dataset.update(extractor)
+
+        dst_dataset.save(save_dir=save_dir, merge=True)
+
+    def transform_project(self, method, *args, save_dir=None, **kwargs):
+        # NOTE: probably this function should be in the ViewModel layer
+        transformed = self.transform(method, *args, **kwargs)
+        self._save_branch_project(transformed, save_dir=save_dir)
+
+    def apply_model(self, model_name, save_dir=None):
+        # NOTE: probably this function should be in the ViewModel layer
+        launcher = self._project.make_executable_model(model_name)
+        self.transform_project(InferenceWrapper, launcher, save_dir=save_dir)
+
+    def export_project(self, save_dir, output_format,
+            filter_expr=None, filter_annotations=False, **converter_kwargs):
+        # NOTE: probably this function should be in the ViewModel layer
+        save_dir = osp.abspath(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
+
+        dataset = self
+        if filter_expr:
+            dataset = dataset.extract(filter_expr, filter_annotations)
+
+        converter = self.env.make_converter(output_format, **converter_kwargs)
+        converter(dataset, save_dir)
+
+    def extract_project(self, filter_expr, filter_annotations=False,
+            save_dir=None, remove_empty=False):
+        # NOTE: probably this function should be in the ViewModel layer
+        filtered = self
+        if filter_expr:
+            filtered = self.extract(filter_expr,
+                filter_annotations=filter_annotations,
+                remove_empty=remove_empty)
+        self._save_branch_project(filtered, save_dir=save_dir)
 
 class Project:
     @staticmethod
@@ -697,23 +771,9 @@ class Project:
         config = Config(self.config)
         config.remove('sources')
         config.remove('subsets')
-        config.remove('filter')
         project = Project(config)
         project.add_source(name, source)
         return project
-
-    def get_filter(self):
-        if 'filter' in self.config:
-            return self.config.filter
-        return ''
-
-    def set_filter(self, value=None):
-        if not value:
-            self.config.remove('filter')
-        else:
-            # check filter
-            XPathDatasetFilter(value)
-            self.config.filter = value
 
     def local_model_dir(self, model_name):
         return osp.join(
