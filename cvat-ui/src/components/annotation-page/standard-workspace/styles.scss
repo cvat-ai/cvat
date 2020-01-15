@@ -10,6 +10,7 @@
     left: auto;
     background-color: $background-color-2;
     border-left: 1px solid $border-color-1;
+    z-index: 2;
 }
 
 .cvat-annotation-page-controls-sidebar {
@@ -36,4 +37,29 @@
             }
         }
     }
+}
+
+.cvat-annotation-page-controls-rotate-left,
+.cvat-annotation-page-controls-rotate-right {
+    transform: scale(0.65);
+    border-radius: 5px;
+
+    &:hover {
+        background: $header-color;
+        transform: scale(0.75);
+    }
+    &:active {
+        transform: scale(0.65);
+    }
+}
+
+.cvat-annotation-page-controls-rotate >
+.ant-popover-content >
+.ant-popover-inner > div >
+.ant-popover-inner-content {
+	padding: 0px;
+}
+
+.cvat-annotation-page-controls-rotate-right > svg {
+    transform: scaleX(-1);
 }

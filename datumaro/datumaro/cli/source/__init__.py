@@ -188,6 +188,9 @@ def build_export_parser(parser):
              "extract images with large-area bboxes: "
              "'/item[annotation/type=\"bbox\" and annotation/area>2000]'"
         )
+    parser.add_argument('-a', '--filter-annotations', action='store_true',
+        help="Filter annotations instead of dataset "
+            "items (default: %(default)s)")
     parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
         help="Directory to save output")
     parser.add_argument('-f', '--output-format', required=True,
@@ -215,10 +218,11 @@ def export_command(args):
     dataset = source_project.make_dataset()
 
     log.info("Exporting the project...")
-    dataset.export(
+    dataset.export_project(
         save_dir=dst_dir,
         output_format=args.output_format,
         filter_expr=args.filter,
+        filter_annotations=args.filter_annotations,
         cmdline_args=args.extra_args)
     log.info("Source '%s' exported to '%s' as '%s'" % \
         (args.name, dst_dir, args.output_format))

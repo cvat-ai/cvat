@@ -31,7 +31,7 @@
     - [Points in annotation mode](#points-in-annotation-mode)
     - [Linear interpolation with one point](#linear-interpolation-with-one-point)
   - [Annotation with Auto Segmentation](#annotation-with-auto-segmentation)
-  - [Automatic annotation](#auto-annotation)
+  - [Automatic annotation](#automatic-annotation)
   - [Shape grouping](#shape-grouping)
   - [Filter](#filter)
   - [Analytics](#analytics)

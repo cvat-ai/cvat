@@ -238,7 +238,7 @@ class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
     id = models.BigAutoField(primary_key=True)
     spec = models.ForeignKey(AttributeSpec, on_delete=models.CASCADE)
-    value = SafeCharField(max_length=64)
+    value = SafeCharField(max_length=4096)
 
     class Meta:
         abstract = True

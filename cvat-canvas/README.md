@@ -74,6 +74,7 @@ Canvas itself handles:
         activate(clientID: number, attributeID?: number): void;
         rotate(rotation: Rotation, remember?: boolean): void;
         focus(clientID: number, padding?: number): void;
+        fitCanvas(): void;
         fit(): void;
         grid(stepX: number, stepY: number): void;
 
@@ -99,7 +100,7 @@ Canvas itself handles:
 - Drawn texts have the class ```cvat_canvas_text```
 - Tags have the class ```cvat_canvas_tag```
 - Canvas image has ID ```cvat_canvas_image```
-- Grid on the canvas has ID ```cvat_canvas_grid_pattern```
+- Grid on the canvas has ID ```cvat_canvas_grid``` and ```cvat_canvas_grid_pattern```
 - Crosshair during a draw has class ```cvat_canvas_crosshair```
 
 ### Events
@@ -126,6 +127,7 @@ Standard JS events are used.
 
     // Put canvas to a html container
     htmlContainer.appendChild(canvas.html());
+    canvas.fitCanvas();
 
     // Next you can use its API methods. For example:
     canvas.rotate(window.Canvas.Rotation.CLOCKWISE90);
@@ -182,17 +184,18 @@ Than you can use it in TypeScript:
 
 ## API Reaction
 
-|            | IDLE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING |
-|------------|------|----------|-----------|---------|---------|---------|
-| html()     | +    | +        | +         | +       | +       | +       |
-| setup()    | +    | +        | +         | +       | +       | -       |
-| activate() | +    | -        | -         | -       | -       | -       |
-| rotate()   | +    | +        | +         | +       | +       | +       |
-| focus()    | +    | +        | +         | +       | +       | +       |
-| fit()      | +    | +        | +         | +       | +       | +       |
-| grid()     | +    | +        | +         | +       | +       | +       |
-| draw()     | +    | -        | -         | -       | -       | -       |
-| split()    | +    | -        | +         | -       | -       | -       |
-| group      | +    | +        | -         | -       | -       | -       |
-| merge()    | +    | -        | -         | -       | +       | -       |
-| cancel()   | -    | +        | +         | +       | +       | +       |
+|             | IDLE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING |
+|-------------|------|----------|-----------|---------|---------|---------|
+| html()      | +    | +        | +         | +       | +       | +       |
+| setup()     | +    | +        | +         | +       | +       | -       |
+| activate()  | +    | -        | -         | -       | -       | -       |
+| rotate()    | +    | +        | +         | +       | +       | +       |
+| focus()     | +    | +        | +         | +       | +       | +       |
+| fit()       | +    | +        | +         | +       | +       | +       |
+| fitCanvas() | +    | +        | +         | +       | +       | +       |
+| grid()      | +    | +        | +         | +       | +       | +       |
+| draw()      | +    | -        | -         | -       | -       | -       |
+| split()     | +    | -        | +         | -       | -       | -       |
+| group       | +    | +        | -         | -       | -       | -       |
+| merge()     | +    | -        | -         | -       | +       | -       |
+| cancel()    | -    | +        | +         | +       | +       | +       |

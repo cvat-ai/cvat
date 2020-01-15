@@ -25,12 +25,12 @@ import SVGPlaycontrolFirstIcon from './assets/playcontrol-first-icon.svg';
 import SVGPlaycontrolBackJumpIcon from './assets/playcontrol-back-jump-icon.svg';
 import SVGPlaycontrolPreviousIcon from './assets/playcontrol-previous-icon.svg';
 import SVGPlaycontrolPlayIcon from './assets/playcontrol-play-icon.svg';
+import SVGPlaycontrolPauseIcon from './assets/playcontrol-pause-icon.svg';
 import SVGPlaycontrolNextIcon from './assets/playcontrol-next-icon.svg';
 import SVGPlaycontrolForwardJumpIcon from './assets/playcontrol-forward-jump-icon.svg';
 import SVGPlaycontrolLastIcon from './assets/playcontrol-last-icon.svg';
 import SVGInfoIcon from './assets/info-icon.svg';
 import SVGFullscreenIcon from './assets/fullscreen-icon.svg';
-
 
 export const CVATLogo = (): JSX.Element => <SVGCVATLogo />;
 export const AccountIcon = (): JSX.Element => <SVGAccountIcon />;
@@ -56,6 +56,7 @@ export const RedoIcon = (): JSX.Element => <SVGRedoIcon />;
 export const PlaycontrolFirstIcon = (): JSX.Element => <SVGPlaycontrolFirstIcon />;
 export const PlaycontrolBackJumpIcon = (): JSX.Element => <SVGPlaycontrolBackJumpIcon />;
 export const PlaycontrolPreviousIcon = (): JSX.Element => <SVGPlaycontrolPreviousIcon />;
+export const PlaycontrolPauseIcon = (): JSX.Element => <SVGPlaycontrolPauseIcon />;
 export const PlaycontrolPlayIcon = (): JSX.Element => <SVGPlaycontrolPlayIcon />;
 export const PlaycontrolNextIcon = (): JSX.Element => <SVGPlaycontrolNextIcon />;
 export const PlaycontrolForwardJumpIcon = (): JSX.Element => <SVGPlaycontrolForwardJumpIcon />;

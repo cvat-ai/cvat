@@ -13,6 +13,7 @@ import {
     notification,
 } from 'antd';
 
+import SettingsPageComponent from './settings-page/settings-page';
 import TasksPageContainer from '../containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from '../containers/create-task-page/create-task-page';
 import TaskPageContainer from '../containers/task-page/task-page';
@@ -259,6 +260,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                             <HeaderContainer> </HeaderContainer>
                             <Layout.Content>
                                 <Switch>
+                                    <Route exact path='/settings' component={SettingsPageComponent} />
                                     <Route exact path='/tasks' component={TasksPageContainer} />
                                     <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                     <Route exact path='/tasks/:id' component={TaskPageContainer} />

@@ -43,7 +43,6 @@ RUN apt-get update && \
         unzip \
         unrar \
         p7zip-full \
-        vim \
         git-core \
         libsm6 \
         libxext6 && \
