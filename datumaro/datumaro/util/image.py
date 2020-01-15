@@ -14,7 +14,7 @@ _IMAGE_BACKEND = None
 try:
     import cv2
     _IMAGE_BACKEND = _IMAGE_BACKENDS.cv2
-except ModuleNotFoundError:
+except ImportError:
     import PIL
     _IMAGE_BACKEND = _IMAGE_BACKENDS.PIL
 
