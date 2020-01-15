@@ -26,7 +26,6 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const { auth } = state;
     const { plugins } = state.plugins;
-    const { about } = state.about;
     return {
         logoutFetching: state.auth.fetching,
         installedAnalytics: plugins[SupportedPlugins.ANALYTICS],
@@ -34,7 +33,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         installedTFSegmentation: plugins[SupportedPlugins.TF_SEGMENTATION],
         installedTFAnnotation: plugins[SupportedPlugins.TF_ANNOTATION],
         username: auth.user.username,
-        about: about,
+        about: state.about,
     };
 }
 

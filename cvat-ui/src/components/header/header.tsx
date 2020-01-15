@@ -4,14 +4,6 @@ import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import {
-    BrowserRouter as Router,
-    Link,
-    Switch,
-    Route,
-  } from "react-router-dom";
-  
-
-import {
     Layout,
     Icon,
     Button,
@@ -87,10 +79,10 @@ function HeaderContainer(props: Props): JSX.Element {
                         </Text>
                     </p>
                     <Row type='flex' justify='space-around'>
-                        <Col span={4}><a href= 'https://github.com/opencv/cvat/blob/develop/CHANGELOG.md' target='_blank' rel="noopener noreferrer" >What's new?</a></Col>
-                        <Col span={4}><a href='https://github.com/opencv/cvat/blob/develop/LICENSE' target='_blank' rel="noopener noreferrer" >License</a></Col>
-                        <Col span={4}><a href='https://gitter.im/opencv-cvat' target='_blank' rel="noopener noreferrer" >Need help?</a></Col>
-                        <Col span={4}><a href='https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit' target='_blank' rel="noopener noreferrer" >Forum on Intel Developer Zone</a></Col>
+                        <Col><a href='https://github.com/opencv/cvat/blob/develop/CHANGELOG.md' target='_blank' rel='noopener noreferrer' >What's new?</a></Col>
+                        <Col><a href='https://github.com/opencv/cvat/blob/develop/LICENSE' target='_blank' rel='noopener noreferrer' >License</a></Col>
+                        <Col><a href='https://gitter.im/opencv-cvat' target='_blank' rel='noopener noreferrer' >Need help?</a></Col>
+                        <Col><a href='https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit' target='_blank' rel='noopener noreferrer' >Forum on Intel Developer Zone</a></Col>
                     </Row>  
                 </div>
             ),

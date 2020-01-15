@@ -4,7 +4,6 @@ export interface AuthState {
     initialized: boolean;
     fetching: boolean;
     user: any;
-    serverInfo: string;
 }
 
 export interface TasksQuery {
