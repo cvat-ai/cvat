@@ -119,7 +119,7 @@ export default class DrawShapePopoverComponent extends React.PureComponent<Props
             <div className='cvat-draw-shape-popover-content'>
                 <Row type='flex' justify='start'>
                     <Col>
-                        <Text className='cvat-text-color' strong>{`Create new ${shapeType}`}</Text>
+                        <Text className='cvat-text-color' strong>{`Draw new ${shapeType}`}</Text>
                     </Col>
                 </Row>
                 <Row type='flex' justify='start'>

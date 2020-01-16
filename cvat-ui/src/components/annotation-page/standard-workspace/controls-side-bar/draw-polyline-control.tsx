@@ -24,20 +24,25 @@ export default function DrawRectangleControl(props: Props): JSX.Element {
         activeControl,
     } = props;
 
-    if (activeControl === ActiveControl.DRAW_POLYLINE) {
-        return (
-            <Icon
-                className='cvat-annotation-page-active-control'
-                onClick={(): void => {
-                    canvasInstance.draw({ enabled: false });
-                }}
-                component={PolylineIcon}
-            />
-        );
-    }
+    const dynamcPopoverPros = activeControl === ActiveControl.DRAW_POLYLINE
+        ? {
+            overlayStyle: {
+                display: 'none',
+            },
+        } : {};
+
+    const dynamicIconProps = activeControl === ActiveControl.DRAW_POLYLINE
+        ? {
+            className: activeControl === ActiveControl.DRAW_POLYLINE
+                ? 'cvat-annotation-page-active-control' : '',
+            onClick: (): void => {
+                canvasInstance.draw({ enabled: false });
+            },
+        } : {};
 
     return (
         <Popover
+            {...dynamcPopoverPros}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
             content={(
@@ -45,6 +50,7 @@ export default function DrawRectangleControl(props: Props): JSX.Element {
             )}
         >
             <Icon
+                {...dynamicIconProps}
                 component={PolylineIcon}
             />
         </Popover>

@@ -24,20 +24,25 @@ export default function DrawRectangleControl(props: Props): JSX.Element {
         activeControl,
     } = props;
 
-    if (activeControl === ActiveControl.DRAW_POINTS) {
-        return (
-            <Icon
-                className='cvat-annotation-page-active-control'
-                onClick={(): void => {
-                    canvasInstance.draw({ enabled: false });
-                }}
-                component={PointIcon}
-            />
-        );
-    }
+    const dynamcPopoverPros = activeControl === ActiveControl.DRAW_POINTS
+        ? {
+            overlayStyle: {
+                display: 'none',
+            },
+        } : {};
+
+    const dynamicIconProps = activeControl === ActiveControl.DRAW_POINTS
+        ? {
+            className: activeControl === ActiveControl.DRAW_POINTS
+                ? 'cvat-annotation-page-active-control' : '',
+            onClick: (): void => {
+                canvasInstance.draw({ enabled: false });
+            },
+        } : {};
 
     return (
         <Popover
+            {...dynamcPopoverPros}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
             content={(
@@ -45,6 +50,7 @@ export default function DrawRectangleControl(props: Props): JSX.Element {
             )}
         >
             <Icon
+                {...dynamicIconProps}
                 component={PointIcon}
             />
         </Popover>
