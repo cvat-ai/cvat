@@ -39,7 +39,7 @@ class Equation {
 
         const temp = { x: p1[0], y: p1[1] };
         const p1Canvas = window.cvat.translate.points.actualToCanvas([temp])[0];
-        this.c_canvas = this.b * p1Canvas.y + this.a * p1Canvas.x;
+        this.cCanvas = this.b * p1Canvas.y + this.a * p1Canvas.x;
     }
 
     // get the line equation in actual coordinates
@@ -49,7 +49,7 @@ class Equation {
 
     // get the line equation in canvas coordinates
     getYCanvas(x) {
-        return (this.c_canvas - this.a * x) / this.b;
+        return (this.cCanvas - this.a * x) / this.b;
     }
 }
 
@@ -1011,19 +1011,19 @@ SVG.Cube = SVG.invent({
         },
 
         setupProjections(viewModel) {
-            this.ft_proj = this.line(this.updateProjectionLine(viewModel.ft.getEquation(),
+            this.ftProj = this.line(this.updateProjectionLine(viewModel.ft.getEquation(),
                 viewModel.ft.canvasPoints[0], viewModel.vplCanvas));
-            this.fb_proj = this.line(this.updateProjectionLine(viewModel.fb.getEquation(),
+            this.fbProj = this.line(this.updateProjectionLine(viewModel.fb.getEquation(),
                 viewModel.ft.canvasPoints[0], viewModel.vplCanvas));
-            this.rt_proj = this.line(this.updateProjectionLine(viewModel.rt.getEquation(),
+            this.rtProj = this.line(this.updateProjectionLine(viewModel.rt.getEquation(),
                 viewModel.rt.canvasPoints[1], viewModel.vprCanvas));
-            this.rb_proj = this.line(this.updateProjectionLine(viewModel.rb.getEquation(),
+            this.rbProj = this.line(this.updateProjectionLine(viewModel.rb.getEquation(),
                 viewModel.rb.canvasPoints[1], viewModel.vprCanvas));
 
-            this.ft_proj.stroke({ color: "#C0C0C0" });
-            this.fb_proj.stroke({ color: "#C0C0C0" });
-            this.rt_proj.stroke({ color: "#C0C0C0" });
-            this.rb_proj.stroke({ color: "#C0C0C0" });
+            this.ftProj.stroke({ color: "#C0C0C0" });
+            this.fbProj.stroke({ color: "#C0C0C0" });
+            this.rtProj.stroke({ color: "#C0C0C0" });
+            this.rbProj.stroke({ color: "#C0C0C0" });
         },
 
         setupEdges(viewModel) {
@@ -1080,18 +1080,18 @@ SVG.Cube = SVG.invent({
 
         showProjections() {
             if (this.projectionLineEnable) {
-                this.ft_proj.show();
-                this.fb_proj.show();
-                this.rt_proj.show();
-                this.rb_proj.show();
+                this.ftProj.show();
+                this.fbProj.show();
+                this.rtProj.show();
+                this.rbProj.show();
             }
         },
 
         hideProjections() {
-            this.ft_proj.hide();
-            this.fb_proj.hide();
-            this.rt_proj.hide();
-            this.rb_proj.hide();
+            this.ftProj.hide();
+            this.fbProj.hide();
+            this.rtProj.hide();
+            this.rbProj.hide();
         },
 
         showGrabPoints() {
@@ -1153,13 +1153,13 @@ SVG.Cube = SVG.invent({
         },
 
         updateProjections(viewModel) {
-            this.ft_proj.plot(this.updateProjectionLine(viewModel.ft.getEquation(),
+            this.ftProj.plot(this.updateProjectionLine(viewModel.ft.getEquation(),
                 viewModel.ft.canvasPoints[0], viewModel.vplCanvas));
-            this.fb_proj.plot(this.updateProjectionLine(viewModel.fb.getEquation(),
+            this.fbProj.plot(this.updateProjectionLine(viewModel.fb.getEquation(),
                 viewModel.ft.canvasPoints[0], viewModel.vplCanvas));
-            this.rt_proj.plot(this.updateProjectionLine(viewModel.rt.getEquation(),
+            this.rtProj.plot(this.updateProjectionLine(viewModel.rt.getEquation(),
                 viewModel.rt.canvasPoints[1], viewModel.vprCanvas));
-            this.rb_proj.plot(this.updateProjectionLine(viewModel.rb.getEquation(),
+            this.rbProj.plot(this.updateProjectionLine(viewModel.rb.getEquation(),
                 viewModel.rt.canvasPoints[1], viewModel.vprCanvas));
         },
 
