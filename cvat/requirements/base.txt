@@ -46,3 +46,6 @@ h5py==2.9.0
 imgaug==0.2.9
 django-cors-headers==3.2.0
 furl==2.0.0
+# The package is used by pyunpack as a command line tool to support multiple
+# archives. Don't use as a python module because it has GPL license.
+patool==1.12
