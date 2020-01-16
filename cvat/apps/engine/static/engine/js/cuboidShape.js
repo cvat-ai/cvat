@@ -321,7 +321,7 @@ class CuboidController extends PolyShapeController {
             edge.on("resizestart", () => {
                 cuboidview._flags.resizing = true;
                 cuboidview._hideShapeText();
-                cuboidview.notify('resize');
+                cuboidview.notify("resize");
             }).on("resizedone", () => {
                 cuboidview._flags.resizing = false;
                 controller.updateModel();
@@ -382,7 +382,7 @@ class CuboidController extends PolyShapeController {
         if (this.orientation === orientationEnum.LEFT) {
             if (viewModel.dl.points[0].x > viewModel.fl.points[0].x) {
                 view.dorsal_right_edge.selectize({
-                    points: 't,b',
+                    points: "t,b",
                     rotationPoint: false,
                 }).resize().on("resizing", function (e) {
                     if (e.detail.event.shiftKey) {
@@ -406,7 +406,7 @@ class CuboidController extends PolyShapeController {
         } else if (this.orientation === orientationEnum.RIGHT) {
             if (viewModel.dl.points[0].x <= viewModel.fl.points[0].x) {
                 view.dorsal_left_edge.selectize({
-                    points: 't,b',
+                    points: "t,b",
                     rotationPoint: false,
                 }).resize().on("resizing", function (e) {
                     if (e.detail.event.shiftKey) {
@@ -610,7 +610,7 @@ class CuboidController extends PolyShapeController {
         });
 
         view.front_right_edge.selectize({
-            points: 't,b',
+            points: "t,b",
             rotationPoint: false,
         }).resize().on("resizing", () => {
             const midPointUp = convertPlainArrayToActual([view.front_right_edge.attr("x1"), view.front_right_edge.attr("y1")])[0];
@@ -903,10 +903,10 @@ class CuboidView extends PolyShapeView {
             .fill(this._appearance.colors.shape).attr({
                 fill: this._appearance.fill || this._appearance.colors.shape,
                 stroke: this._appearance.stroke || this._appearance.colors.shape,
-                'stroke-width': STROKE_WIDTH / window.cvat.player.geometry.scale,
+                "stroke-width": STROKE_WIDTH / window.cvat.player.geometry.scale,
                 z_order: position.z_order,
-                'fill-opacity': this._appearance.fillOpacity,
-            }).addClass('shape');
+                "fill-opacity": this._appearance.fillOpacity,
+            }).addClass("shape");
         this._uis.shape.projectionLineEnable = this._appearance.projectionLineEnable;
         this._controller.updateViewModel();
         this._uis.shape.addMouseOverEvents();
@@ -941,9 +941,9 @@ class CuboidView extends PolyShapeView {
             this._controller.addEventsToCube();
             const scaledR = POINT_RADIUS / window.cvat.player.geometry.scale;
             const scaledPointStroke = SELECT_POINT_STROKE_WIDTH / window.cvat.player.geometry.scale;
-            $('.svg_select_points').each(function () {
+            $(".svg_select_points").each(function () {
                 this.instance.radius(scaledR);
-                this.instance.attr('stroke-width', scaledPointStroke);
+                this.instance.attr("stroke-width", scaledPointStroke);
             });
         }
     }
@@ -968,8 +968,8 @@ class CuboidView extends PolyShapeView {
     updateColorSettings(settings) {
         ShapeView.prototype.updateColorSettings.call(this, settings);
         if (this._uis.shape) {
-            this._appearance.projectionLineEnable = settings['projection-lines'];
-            this.switchProjectionLine(settings['projection-lines']);
+            this._appearance.projectionLineEnable = settings["projection-lines"];
+            this.switchProjectionLine(settings["projection-lines"]);
             this._uis.shape.paintOrientationLines();
         }
     }
@@ -985,12 +985,12 @@ class CuboidView extends PolyShapeView {
 
 // Definition of the svg object
 SVG.Cube = SVG.invent({
-    create: 'g',
+    create: "g",
     inherit: SVG.G,
     extend: {
 
         constructorMethod(viewModel) {
-            this.attr('points', viewModel.getPoints());
+            this.attr("points", viewModel.getPoints());
             this.projectionLineEnable = false;
             this.setupFaces(viewModel);
             this.setupEdges(viewModel);
@@ -1019,10 +1019,10 @@ SVG.Cube = SVG.invent({
             this.rb_proj = this.line(this.updateProjectionLine(viewModel.rb.getEquation(),
                 viewModel.rb.canvasPoints[1], viewModel.vprCanvas));
 
-            this.ft_proj.stroke({ color: '#C0C0C0' });
-            this.fb_proj.stroke({ color: '#C0C0C0' });
-            this.rt_proj.stroke({ color: '#C0C0C0' });
-            this.rb_proj.stroke({ color: '#C0C0C0' });
+            this.ft_proj.stroke({ color: "#C0C0C0" });
+            this.fb_proj.stroke({ color: "#C0C0C0" });
+            this.rt_proj.stroke({ color: "#C0C0C0" });
+            this.rb_proj.stroke({ color: "#C0C0C0" });
         },
 
         setupEdges(viewModel) {
@@ -1038,20 +1038,20 @@ SVG.Cube = SVG.invent({
         },
 
         setupGrabPoints() {
-            this.fl_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_l');
-            this.fr_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_r');
-            this.dr_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_ew');
-            this.dl_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_ew');
+            this.fl_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_l");
+            this.fr_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_r");
+            this.dr_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_ew");
+            this.dl_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_ew");
 
-            this.ft_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_t');
-            this.fb_center = this.circle().addClass('svg_select_points').addClass('svg_select_points_b');
+            this.ft_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_t");
+            this.fb_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_b");
 
             const grabPoints = this.getGrabPoints();
             const edges = this.getEdges();
             for (let i = 0; i < grabPoints.length; i += 1) {
                 const edge = edges[i];
-                const cx = (edge.attr('x2') + edge.attr('x1')) / 2;
-                const cy = (edge.attr('y2') + edge.attr('y1')) / 2;
+                const cx = (edge.attr("x2") + edge.attr("x1")) / 2;
+                const cy = (edge.attr("y2") + edge.attr("y1")) / 2;
                 grabPoints[i].center(cx, cy);
             }
         },
@@ -1115,7 +1115,7 @@ SVG.Cube = SVG.invent({
             this.updateLines(viewModel);
             this.updateProjections(viewModel);
             this.updateGrabPoints();
-            this.attr('points', convertedPoints);
+            this.attr("points", convertedPoints);
         },
 
         updatePolygons(viewModel) {
@@ -1139,15 +1139,15 @@ SVG.Cube = SVG.invent({
 
         updateThickness() {
             const edges = this.getEdges();
-            const width = this.attr('stroke-width');
+            const width = this.attr("stroke-width");
             const baseWidthOffset = 1.75;
             const expandedWidthOffset = 3;
             edges.forEach((edge) => {
-                edge.on('mouseover', function () {
-                    this.attr({ 'stroke-width': width * expandedWidthOffset });
-                }).on('mouseout', function () {
-                    this.attr({ 'stroke-width': width * baseWidthOffset });
-                }).stroke({ width: width * baseWidthOffset, linecap: 'round' });
+                edge.on("mouseover", function () {
+                    this.attr({ "stroke-width": width * expandedWidthOffset });
+                }).on("mouseout", function () {
+                    this.attr({ "stroke-width": width * baseWidthOffset });
+                }).stroke({ width: width * baseWidthOffset, linecap: "round" });
             });
         },
 
@@ -1163,8 +1163,8 @@ SVG.Cube = SVG.invent({
         },
 
         paintOrientationLines() {
-            const fillColor = this.attr('fill');
-            const selectedColor = '#ff007f';
+            const fillColor = this.attr("fill");
+            const selectedColor = "#ff007f";
             this.front_top_edge.stroke({ color: selectedColor });
             this.front_left_edge.stroke({ color: selectedColor });
             this.front_bot_edge.stroke({ color: selectedColor });
@@ -1220,60 +1220,60 @@ SVG.Cube = SVG.invent({
 
         _addFaceEvents() {
             const group = this;
-            this.left.on('mouseover', function () {
-                this.attr({ 'fill-opacity': 0.5 });
-            }).on('mouseout', function () {
-                this.attr({ 'fill-opacity': group.attr('fill-opacity') });
+            this.left.on("mouseover", function () {
+                this.attr({ "fill-opacity": 0.5 });
+            }).on("mouseout", function () {
+                this.attr({ "fill-opacity": group.attr("fill-opacity") });
             });
-            this.dorsal.on('mouseover', function () {
-                this.attr({ 'fill-opacity': 0.5 });
-            }).on('mouseout', function () {
-                this.attr({ 'fill-opacity': group.attr('fill-opacity') });
+            this.dorsal.on("mouseover", function () {
+                this.attr({ "fill-opacity": 0.5 });
+            }).on("mouseout", function () {
+                this.attr({ "fill-opacity": group.attr("fill-opacity") });
             });
-            this.right.on('mouseover', function () {
-                this.attr({ 'fill-opacity': 0.5 });
-            }).on('mouseout', function () {
-                this.attr({ 'fill-opacity': group.attr('fill-opacity') });
+            this.right.on("mouseover", function () {
+                this.attr({ "fill-opacity": 0.5 });
+            }).on("mouseout", function () {
+                this.attr({ "fill-opacity": group.attr("fill-opacity") });
             });
         },
 
         removeMouseOverEvents() {
             const edges = this.getEdges();
             edges.forEach((edge) => {
-                edge.off('mouseover').off('mouseout');
+                edge.off("mouseover").off("mouseout");
             });
-            this.left.off('mouseover').off('mouseout');
-            this.dorsal.off('mouseover').off('mouseout');
-            this.right.off('mouseover').off('mouseout');
+            this.left.off("mouseover").off("mouseout");
+            this.dorsal.off("mouseover").off("mouseout");
+            this.right.off("mouseover").off("mouseout");
         },
 
         resetFaceOpacity() {
             const group = this;
-            this.left.attr({ 'fill-opacity': group.attr('fill-opacity') });
-            this.dorsal.attr({ 'fill-opacity': group.attr('fill-opacity') });
-            this.right.attr({ 'fill-opacity': group.attr('fill-opacity') });
+            this.left.attr({ "fill-opacity": group.attr("fill-opacity") });
+            this.dorsal.attr({ "fill-opacity": group.attr("fill-opacity") });
+            this.right.attr({ "fill-opacity": group.attr("fill-opacity") });
         },
 
         addOccluded() {
             const edges = this.getEdges();
             edges.forEach((edge) => {
-                edge.node.classList.add('occludedShape');
+                edge.node.classList.add("occludedShape");
             });
-            this.face.attr('stroke-width', 0);
-            this.right.attr('stroke-width', 0);
-            this.left.node.classList.add('occludedShape');
-            this.dorsal.node.classList.add('occludedShape');
+            this.face.attr("stroke-width", 0);
+            this.right.attr("stroke-width", 0);
+            this.left.node.classList.add("occludedShape");
+            this.dorsal.node.classList.add("occludedShape");
         },
 
         removeOccluded() {
             const edges = this.getEdges();
             edges.forEach((edge) => {
-                edge.node.classList.remove('occludedShape');
+                edge.node.classList.remove("occludedShape");
             });
-            this.face.attr('stroke-width', this.attr('stroke-width'));
-            this.right.attr('stroke-width', this.attr('stroke-width'));
-            this.left.node.classList.remove('occludedShape');
-            this.dorsal.node.classList.remove('occludedShape');
+            this.face.attr("stroke-width", this.attr("stroke-width"));
+            this.right.attr("stroke-width", this.attr("stroke-width"));
+            this.left.node.classList.remove("occludedShape");
+            this.dorsal.node.classList.remove("occludedShape");
         },
     },
     construct: {

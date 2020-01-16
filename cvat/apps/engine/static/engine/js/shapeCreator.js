@@ -23,7 +23,7 @@
 
 class ShapeCreatorModel extends Listener {
     constructor(shapeCollection) {
-        super('onShapeCreatorUpdate', () => this);
+        super("onShapeCreatorUpdate", () => this);
         this._createMode = false;
         this._saveCurrent = false;
         this._defaultType = null;
@@ -56,7 +56,7 @@ class ShapeCreatorModel extends Listener {
         }
 
         // FIXME: In the future we have to make some generic solution
-        if (this._defaultMode === 'interpolation' && ['box', 'points'].includes(this._defaultType)) {
+        if (this._defaultMode === "interpolation" && ["box", "points"].includes(this._defaultType)) {
             data.shapes = [];
             data.shapes.push(Object.assign({}, result, data));
             this._shapeCollection.add(data, `interpolation_${this._defaultType}`);
@@ -68,7 +68,7 @@ class ShapeCreatorModel extends Listener {
         const model = this._shapeCollection.shapes.slice(-1)[0];
 
         // Undo/redo code
-        window.cvat.addAction('Draw Object', () => {
+        window.cvat.addAction("Draw Object", () => {
             model.removed = true;
             model.unsubscribe(this._shapeCollection);
         }, () => {
@@ -87,13 +87,13 @@ class ShapeCreatorModel extends Listener {
             this._createMode = !this._createMode && window.cvat.mode == null;
             if (this._createMode) {
                 this._createEvent = Logger.addContinuedEvent(Logger.EventType.drawObject);
-                window.cvat.mode = 'creation';
-            } else if (window.cvat.mode === 'creation') {
+                window.cvat.mode = "creation";
+            } else if (window.cvat.mode === "creation") {
                 window.cvat.mode = null;
             }
         } else {
             this._createMode = false;
-            if (window.cvat.mode === 'creation') {
+            if (window.cvat.mode === "creation") {
                 window.cvat.mode = null;
                 if (this._createEvent) {
                     this._createEvent.close();
@@ -127,7 +127,7 @@ class ShapeCreatorModel extends Listener {
     }
 
     set defaultType(type) {
-        if (!['box', 'points', 'polygon', 'polyline', 'cuboid'].includes(type)) {
+        if (!["box", "points", "polygon", "polyline", "cuboid"].includes(type)) {
             throw Error(`Unknown shape type found ${type}`);
         }
         this._defaultType = type;
@@ -157,7 +157,7 @@ class ShapeCreatorController {
                 this.switchCreateMode(false, true);
             });
 
-            Mousetrap.bind(shortkeys.switch_draw_mode.value, switchDrawHandler.bind(this), 'keydown');
+            Mousetrap.bind(shortkeys.switch_draw_mode.value, switchDrawHandler.bind(this), "keydown");
         }
 
         setupShortkeys.call(this);
@@ -192,16 +192,16 @@ class ShapeCreatorView {
     constructor(drawerModel, drawerController) {
         drawerModel.subscribe(this);
         this._controller = drawerController;
-        this._createButton = $('#createShapeButton');
-        this._labelSelector = $('#shapeLabelSelector');
-        this._modeSelector = $('#shapeModeSelector');
-        this._typeSelector = $('#shapeTypeSelector');
-        this._polyShapeSizeInput = $('#polyShapeSize');
-        this._commonBordersCheckbox = $('#commonBordersCheckbox');
-        this._frameContent = SVG.adopt($('#frameContent')[0]);
-        this._frameText = SVG.adopt($('#frameText')[0]);
-        this._playerFrame = $('#playerFrame');
-        this._createButton.on('click', () => this._controller.switchCreateMode(false));
+        this._createButton = $("#createShapeButton");
+        this._labelSelector = $("#shapeLabelSelector");
+        this._modeSelector = $("#shapeModeSelector");
+        this._typeSelector = $("#shapeTypeSelector");
+        this._polyShapeSizeInput = $("#polyShapeSize");
+        this._commonBordersCheckbox = $("#commonBordersCheckbox");
+        this._frameContent = SVG.adopt($("#frameContent")[0]);
+        this._frameText = SVG.adopt($("#frameText")[0]);
+        this._playerFrame = $("#playerFrame");
+        this._createButton.on("click", () => this._controller.switchCreateMode(false));
         this._drawInstance = null;
         this._aim = null;
         this._aimCoord = {
@@ -216,10 +216,10 @@ class ShapeCreatorView {
         this._borderSticker = null;
 
         const { shortkeys } = window.cvat.config;
-        this._createButton.attr('title', `
+        this._createButton.attr("title", `
             ${shortkeys.switch_draw_mode.view_value} - ${shortkeys.switch_draw_mode.description}`);
 
-        this._labelSelector.attr('title', `
+        this._labelSelector.attr("title", `
             ${shortkeys.change_default_label.view_value} - ${shortkeys.change_default_label.description}`);
 
         const labels = window.cvat.labelsInfo.labels();
@@ -232,59 +232,59 @@ class ShapeCreatorView {
         }
         this._labelSelector.val(labelsKeys[0]);
 
-        this._typeSelector.val('box');
-        this._typeSelector.on('change', (e) => {
+        this._typeSelector.val("box");
+        this._typeSelector.on("change", (e) => {
             // FIXME: In the future we have to make some generic solution
-            const mode = this._modeSelector.prop('value');
-            const type = $(e.target).prop('value');
-            if (type !== 'box' && !(type === 'points' && this._polyShapeSize === 1)
-                && mode !== 'annotation') {
-                this._modeSelector.prop('value', 'annotation');
-                this._controller.setDefaultShapeMode('annotation');
-                showMessage('Only the annotation mode allowed for the shape');
+            const mode = this._modeSelector.prop("value");
+            const type = $(e.target).prop("value");
+            if (type !== "box" && !(type === "points" && this._polyShapeSize === 1)
+                && mode !== "annotation") {
+                this._modeSelector.prop("value", "annotation");
+                this._controller.setDefaultShapeMode("annotation");
+                showMessage("Only the annotation mode allowed for the shape");
             }
             this._controller.setDefaultShapeType(type);
-        }).trigger('change');
+        }).trigger("change");
 
-        this._labelSelector.on('change', (e) => {
-            this._controller.setDefaultShapeLabel($(e.target).prop('value'));
-        }).trigger('change');
+        this._labelSelector.on("change", (e) => {
+            this._controller.setDefaultShapeLabel($(e.target).prop("value"));
+        }).trigger("change");
 
-        this._modeSelector.on('change', (e) => {
+        this._modeSelector.on("change", (e) => {
             // FIXME: In the future we have to make some generic solution
-            const mode = $(e.target).prop('value');
-            const type = this._typeSelector.prop('value');
-            if (mode !== 'annotation' && !(type === 'points' && this._polyShapeSize === 1)
-                && type !== 'box') {
-                this._typeSelector.prop('value', 'box');
-                this._controller.setDefaultShapeType('box');
-                showMessage('Only boxes and single point allowed in the interpolation mode');
+            const mode = $(e.target).prop("value");
+            const type = this._typeSelector.prop("value");
+            if (mode !== "annotation" && !(type === "points" && this._polyShapeSize === 1)
+                && type !== "box") {
+                this._typeSelector.prop("value", "box");
+                this._controller.setDefaultShapeType("box");
+                showMessage("Only boxes and single point allowed in the interpolation mode");
             }
             this._controller.setDefaultShapeMode(mode);
-        }).trigger('change');
+        }).trigger("change");
 
-        this._polyShapeSizeInput.on('change', (e) => {
+        this._polyShapeSizeInput.on("change", (e) => {
             e.stopPropagation();
             let size = +e.target.value;
             if (size < 0) size = 0;
             if (size > 100) size = 0;
-            const mode = this._modeSelector.prop('value');
-            const type = this._typeSelector.prop('value');
-            if (mode === 'interpolation' && type === 'points' && size !== 1) {
-                showMessage('Only single point allowed in the interpolation mode');
+            const mode = this._modeSelector.prop("value");
+            const type = this._typeSelector.prop("value");
+            if (mode === "interpolation" && type === "points" && size !== 1) {
+                showMessage("Only single point allowed in the interpolation mode");
                 size = 1;
             }
 
-            e.target.value = size || '';
+            e.target.value = size || "";
             this._polyShapeSize = size;
-        }).trigger('change');
+        }).trigger("change");
 
-        this._polyShapeSizeInput.on('keydown', (e) => {
+        this._polyShapeSizeInput.on("keydown", (e) => {
             e.stopPropagation();
         });
 
-        this._playerFrame.on('mousemove.shapeCreatorAIM', (e) => {
-            if (!['polygon', 'polyline', 'points'].includes(this._type)) {
+        this._playerFrame.on("mousemove.shapeCreatorAIM", (e) => {
+            if (!["polygon", "polyline", "points"].includes(this._type)) {
                 this._aimCoord = window.cvat.translate.point.clientToCanvas(
                     this._frameContent.node, e.clientX, e.clientY,
                 );
@@ -302,7 +302,7 @@ class ShapeCreatorView {
             }
         });
 
-        this._commonBordersCheckbox.on('change.shapeCreator', (e) => {
+        this._commonBordersCheckbox.on("change.shapeCreator", (e) => {
             if (this._drawInstance) {
                 if (!e.target.checked) {
                     if (this._borderSticker) {
@@ -320,10 +320,10 @@ class ShapeCreatorView {
     _createCuboidEvent() {
         let sizeUI = null;
         const backFaceOffset = 20;
-        this._drawInstance = this._frameContent.rect().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
-            'stroke-width': STROKE_WIDTH / this._scale,
+        this._drawInstance = this._frameContent.rect().draw({ snapToGrid: 0.1 }).addClass("shapeCreation").attr({
+            "stroke-width": STROKE_WIDTH / this._scale,
         })
-            .on('drawstop', (e) => {
+            .on("drawstop", (e) => {
                 if (this._cancel) return;
                 if (sizeUI) {
                     sizeUI.rm();
@@ -351,16 +351,16 @@ class ShapeCreatorView {
                 points = viewModel.getPoints();
 
                 points = PolyShapeModel.convertNumberArrayToString(points);
-                e.target.setAttribute('points',
+                e.target.setAttribute("points",
                     window.cvat.translate.points.actualToCanvas(points));
                 this._controller.finish({ points }, this._type);
                 this._controller.switchCreateMode(true);
             })
-            .on('drawupdate', (e) => {
+            .on("drawupdate", (e) => {
                 sizeUI = drawBoxSize.call(sizeUI, this._frameContent,
                     this._frameText, e.target.getBBox());
             })
-            .on('drawcancel', () => {
+            .on("drawcancel", () => {
                 if (sizeUI) {
                     sizeUI.rm();
                     sizeUI = null;
@@ -384,7 +384,7 @@ class ShapeCreatorView {
                 size -= 1;
                 if (!size) {
                     numberOfPoints = this._polyShapeSize;
-                    this._drawInstance.draw('done');
+                    this._drawInstance.draw("done");
                 }
             }.bind(this);
 
@@ -392,23 +392,23 @@ class ShapeCreatorView {
                 size += 1;
             };
 
-            this._drawInstance.on('drawstart', sizeDecrement);
-            this._drawInstance.on('drawpoint', sizeDecrement);
-            this._drawInstance.on('undopoint', sizeIncrement);
+            this._drawInstance.on("drawstart", sizeDecrement);
+            this._drawInstance.on("drawpoint", sizeDecrement);
+            this._drawInstance.on("undopoint", sizeIncrement);
         }
         // Otherwise draw will stop by Ctrl + N press
 
-        this._drawInstance.on('drawpoint', () => {
+        this._drawInstance.on("drawpoint", () => {
             if (this._borderSticker) {
                 this._borderSticker.reset();
             }
         });
 
         // Callbacks for point scale
-        this._drawInstance.on('drawstart', this._rescaleDrawPoints.bind(this));
-        this._drawInstance.on('drawpoint', this._rescaleDrawPoints.bind(this));
+        this._drawInstance.on("drawstart", this._rescaleDrawPoints.bind(this));
+        this._drawInstance.on("drawpoint", this._rescaleDrawPoints.bind(this));
 
-        this._drawInstance.on('drawstart', (e) => {
+        this._drawInstance.on("drawstart", (e) => {
             lastPoint = {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY,
@@ -416,30 +416,30 @@ class ShapeCreatorView {
             numberOfPoints += 1;
         });
 
-        this._drawInstance.on('drawpoint', (e) => {
+        this._drawInstance.on("drawpoint", (e) => {
             lastPoint = {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY,
             };
             numberOfPoints += 1;
-            if (this._type === 'cuboid' && numberOfPoints === 4) {
-                this._drawInstance.draw('done');
+            if (this._type === "cuboid" && numberOfPoints === 4) {
+                this._drawInstance.draw("done");
             }
         });
 
-        this._commonBordersCheckbox.css('display', '').trigger('change.shapeCreator');
-        this._commonBordersCheckbox.parent().css('display', '');
-        $('body').on('keydown.shapeCreator', (e) => {
+        this._commonBordersCheckbox.css("display", "").trigger("change.shapeCreator");
+        this._commonBordersCheckbox.parent().css("display", "");
+        $("body").on("keydown.shapeCreator", (e) => {
             if (e.ctrlKey && e.keyCode === 17) {
-                this._commonBordersCheckbox.prop('checked', !this._borderSticker);
-                this._commonBordersCheckbox.trigger('change.shapeCreator');
+                this._commonBordersCheckbox.prop("checked", !this._borderSticker);
+                this._commonBordersCheckbox.trigger("change.shapeCreator");
             }
         });
 
-        this._frameContent.on('mousedown.shapeCreator', (e) => {
+        this._frameContent.on("mousedown.shapeCreator", (e) => {
             if (e.which === 3) {
                 const lenBefore = this._drawInstance.array().value.length;
-                this._drawInstance.draw('undo');
+                this._drawInstance.draw("undo");
                 if (this._borderSticker) {
                     this._borderSticker.reset();
                 }
@@ -450,16 +450,16 @@ class ShapeCreatorView {
             }
         });
 
-        this._frameContent.on('mousemove.shapeCreator', (e) => {
-            if (e.shiftKey && ['polygon', 'polyline'].includes(this._type)) {
+        this._frameContent.on("mousemove.shapeCreator", (e) => {
+            if (e.shiftKey && ["polygon", "polyline"].includes(this._type)) {
                 if (lastPoint.x === null || lastPoint.y === null) {
-                    this._drawInstance.draw('point', e);
+                    this._drawInstance.draw("point", e);
                 } else {
                     const delta = Math.sqrt(Math.pow(e.clientX - lastPoint.x, 2)
                         + Math.pow(e.clientY - lastPoint.y, 2));
                     const deltaTreshold = 15;
                     if (delta > deltaTreshold) {
-                        this._drawInstance.draw('point', e);
+                        this._drawInstance.draw("point", e);
                         lastPoint = {
                             x: e.clientX,
                             y: e.clientY,
@@ -469,35 +469,35 @@ class ShapeCreatorView {
             }
         });
 
-        this._drawInstance.on('drawstop', () => {
-            this._frameContent.off('mousedown.shapeCreator');
-            this._frameContent.off('mousemove.shapeCreator');
-            this._commonBordersCheckbox.css('display', 'none');
-            this._commonBordersCheckbox.parent().css('display', 'none');
-            $('body').off('keydown.shapeCreator');
+        this._drawInstance.on("drawstop", () => {
+            this._frameContent.off("mousedown.shapeCreator");
+            this._frameContent.off("mousemove.shapeCreator");
+            this._commonBordersCheckbox.css("display", "none");
+            this._commonBordersCheckbox.parent().css("display", "none");
+            $("body").off("keydown.shapeCreator");
             if (this._borderSticker) {
                 this._borderSticker.disable();
                 this._borderSticker = null;
             }
         });
         // Also we need callback on drawdone event for get points
-        this._drawInstance.on('drawdone', (e) => {
-            let actualPoints = window.cvat.translate.points.canvasToActual(e.target.getAttribute('points'));
+        this._drawInstance.on("drawdone", (e) => {
+            let actualPoints = window.cvat.translate.points.canvasToActual(e.target.getAttribute("points"));
             actualPoints = PolyShapeModel.convertStringToNumberArray(actualPoints);
 
             // Min 2 points for polyline and 3 points for polygon
             if (actualPoints.length) {
-                if (this._type === 'polyline' && actualPoints.length < 2) {
-                    showMessage('Min 2 points must be for polyline drawing.');
-                } else if (this._type === 'polygon' && actualPoints.length < 3) {
-                    showMessage('Min 3 points must be for polygon drawing.');
-                } else if (this._type === 'cuboid' && (actualPoints.length !== 4
+                if (this._type === "polyline" && actualPoints.length < 2) {
+                    showMessage("Min 2 points must be for polyline drawing.");
+                } else if (this._type === "polygon" && actualPoints.length < 3) {
+                    showMessage("Min 3 points must be for polygon drawing.");
+                } else if (this._type === "cuboid" && (actualPoints.length !== 4
                     || !this._checKValidCuboidTrace(actualPoints))) {
-                    showMessage('Exactly 4 points must be used for cuboid drawing.'
-                        + ' Second point must be below the first point.'
-                        + '(HINT) The first 3 points define the front face'
-                        + ' and the last point should define the depth and orientation of the cuboid ');
-                } else if (this._type === 'cuboid') {
+                    showMessage("Exactly 4 points must be used for cuboid drawing."
+                        + " Second point must be below the first point."
+                        + "(HINT) The first 3 points define the front face"
+                        + " and the last point should define the depth and orientation of the cuboid ");
+                } else if (this._type === "cuboid") {
                     // actualPoints =  PolyShapeModel.convertNumberArrayToString(actualPoints);
                     let p1; let p2; let p3; let p4; let p5; let p6 = null;
                     let points = null;
@@ -547,7 +547,7 @@ class ShapeCreatorView {
                     points = viewModel.getPoints();
 
                     points = PolyShapeModel.convertNumberArrayToString(points);
-                    e.target.setAttribute('points',
+                    e.target.setAttribute("points",
                         window.cvat.translate.points.actualToCanvas(points));
                     this._controller.finish({ points }, this._type);
                     this._controller.switchCreateMode(true);
@@ -561,14 +561,14 @@ class ShapeCreatorView {
                     actualPoints = PolyShapeModel.convertNumberArrayToString(actualPoints);
 
                     // Update points in a view in order to get an updated box
-                    e.target.setAttribute('points', window.cvat.translate.points.actualToCanvas(actualPoints));
+                    e.target.setAttribute("points", window.cvat.translate.points.actualToCanvas(actualPoints));
                     const polybox = e.target.getBBox();
                     const w = polybox.width;
                     const h = polybox.height;
                     const area = w * h;
                     const type = this._type;
 
-                    if (area >= AREA_TRESHOLD || type === 'points' && numberOfPoints || type === 'polyline' && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
+                    if (area >= AREA_TRESHOLD || type === "points" && numberOfPoints || type === "polyline" && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
                         this._controller.finish({ points: actualPoints }, type);
                     }
                 }
@@ -585,11 +585,11 @@ class ShapeCreatorView {
     _create() {
         let sizeUI = null;
         switch (this._type) {
-        case 'box':
-            this._drawInstance = this._frameContent.rect().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
-                'stroke-width': STROKE_WIDTH / this._scale,
+        case "box":
+            this._drawInstance = this._frameContent.rect().draw({ snapToGrid: 0.1 }).addClass("shapeCreation").attr({
+                "stroke-width": STROKE_WIDTH / this._scale,
             })
-                .on('drawstop', (e) => {
+                .on("drawstop", (e) => {
                     if (this._cancel) return;
                     if (sizeUI) {
                         sizeUI.rm();
@@ -612,7 +612,7 @@ class ShapeCreatorView {
                             ybr,
                         };
 
-                        if (this._mode === 'interpolation') {
+                        if (this._mode === "interpolation") {
                             box.outside = false;
                         }
 
@@ -621,55 +621,55 @@ class ShapeCreatorView {
 
                     this._controller.switchCreateMode(true);
                 })
-                .on('drawupdate', (e) => {
+                .on("drawupdate", (e) => {
                     sizeUI = drawBoxSize.call(sizeUI, this._frameContent,
                         this._frameText, e.target.getBBox());
                 })
-                .on('drawcancel', () => {
+                .on("drawcancel", () => {
                     if (sizeUI) {
                         sizeUI.rm();
                         sizeUI = null;
                     }
                 });
             break;
-        case 'points':
+        case "points":
             this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 })
-                .addClass('shapeCreation').attr({
-                    'stroke-width': 0,
+                .addClass("shapeCreation").attr({
+                    "stroke-width": 0,
                 });
             this._createPolyEvents();
             break;
-        case 'polygon':
+        case "polygon":
             if (this._polyShapeSize && this._polyShapeSize < 3) {
-                if (!$('.drawAllert').length) {
-                    showMessage('Min 3 points must be for polygon drawing.').addClass('drawAllert');
+                if (!$(".drawAllert").length) {
+                    showMessage("Min 3 points must be for polygon drawing.").addClass("drawAllert");
                 }
                 this._controller.switchCreateMode(true);
                 return;
             }
             this._drawInstance = this._frameContent.polygon().draw({ snapToGrid: 0.1 })
-                .addClass('shapeCreation').attr({
-                    'stroke-width': STROKE_WIDTH / this._scale,
+                .addClass("shapeCreation").attr({
+                    "stroke-width": STROKE_WIDTH / this._scale,
                 });
             this._createPolyEvents();
             break;
-        case 'polyline':
+        case "polyline":
             if (this._polyShapeSize && this._polyShapeSize < 2) {
-                if (!$('.drawAllert').length) {
-                    showMessage('Min 2 points must be for polyline drawing.').addClass('drawAllert');
+                if (!$(".drawAllert").length) {
+                    showMessage("Min 2 points must be for polyline drawing.").addClass("drawAllert");
                 }
                 this._controller.switchCreateMode(true);
                 return;
             }
             this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 })
-                .addClass('shapeCreation').attr({
-                    'stroke-width': STROKE_WIDTH / this._scale,
+                .addClass("shapeCreation").attr({
+                    "stroke-width": STROKE_WIDTH / this._scale,
                 });
             this._createPolyEvents();
             break;
-        case 'cuboid':
-            this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
-                'stroke-width': STROKE_WIDTH / this._scale,
+        case "cuboid":
+            this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 }).addClass("shapeCreation").attr({
+                "stroke-width": STROKE_WIDTH / this._scale,
             });
             this._createPolyEvents();
             break;
@@ -684,8 +684,8 @@ class ShapeCreatorView {
 
     _rescaleDrawPoints() {
         const scale = this._scale;
-        $('.svg_draw_point').each(function () {
-            this.instance.radius(2.5 / scale).attr('stroke-width', 1 / scale);
+        $(".svg_draw_point").each(function () {
+            this.instance.radius(2.5 / scale).attr("stroke-width", 1 / scale);
         });
     }
 
@@ -695,17 +695,17 @@ class ShapeCreatorView {
                 x: this._frameContent.line(0, this._aimCoord.y,
                     this._frameContent.node.clientWidth, this._aimCoord.y)
                     .attr({
-                        'stroke-width': STROKE_WIDTH / this._scale,
-                        stroke: 'red',
+                        "stroke-width": STROKE_WIDTH / this._scale,
+                        stroke: "red",
                         z_order: Number.MAX_SAFE_INTEGER,
-                    }).addClass('aim'),
+                    }).addClass("aim"),
                 y: this._frameContent.line(this._aimCoord.x, 0, this._aimCoord.x,
                     this._frameContent.node.clientHeight)
                     .attr({
-                        'stroke-width': STROKE_WIDTH / this._scale,
-                        stroke: 'red',
+                        "stroke-width": STROKE_WIDTH / this._scale,
+                        stroke: "red",
                         z_order: Number.MAX_SAFE_INTEGER,
-                    }).addClass('aim'),
+                    }).addClass("aim"),
             };
         }
     }
@@ -724,7 +724,7 @@ class ShapeCreatorView {
             this._type = model.defaultType;
             this._mode = model.defaultMode;
 
-            if (!['polygon', 'polyline', 'points'].includes(this._type)) {
+            if (!["polygon", "polyline", "points"].includes(this._type)) {
                 if (!model.usingShortkey) {
                     this._aimCoord = {
                         x: 0,
@@ -734,31 +734,31 @@ class ShapeCreatorView {
                 this._drawAim();
             }
 
-            this._createButton.text('Stop Creation');
+            this._createButton.text("Stop Creation");
             document.oncontextmenu = () => false;
             this._create();
         } else {
             this._removeAim();
             this._cancel = true;
-            this._createButton.text('Create Shape');
+            this._createButton.text("Create Shape");
             document.oncontextmenu = null;
             if (this._drawInstance) {
                 // We save current result for poly shape if it's need
                 // drawInstance will be removed after save when draw done handler calls
                 // switchCreateMode with force argument
-                if (model.saveCurrent && this._type !== 'box') {
-                    this._drawInstance.draw('done');
+                if (model.saveCurrent && this._type !== "box") {
+                    this._drawInstance.draw("done");
                 } else {
-                    this._drawInstance.draw('cancel');
+                    this._drawInstance.draw("cancel");
                     this._drawInstance.remove();
                     this._drawInstance = null;
                 }
             }
         }
 
-        this._typeSelector.prop('disabled', model.createMode);
-        this._modeSelector.prop('disabled', model.createMode);
-        this._polyShapeSizeInput.prop('disabled', model.createMode);
+        this._typeSelector.prop("disabled", model.createMode);
+        this._modeSelector.prop("disabled", model.createMode);
+        this._polyShapeSizeInput.prop("disabled", model.createMode);
     }
 
     onPlayerUpdate(player) {
@@ -771,11 +771,11 @@ class ShapeCreatorView {
                     this._borderSticker.scale(this._scale);
                 }
                 if (this._aim) {
-                    this._aim.x.attr('stroke-width', STROKE_WIDTH / this._scale);
-                    this._aim.y.attr('stroke-width', STROKE_WIDTH / this._scale);
+                    this._aim.x.attr("stroke-width", STROKE_WIDTH / this._scale);
+                    this._aim.y.attr("stroke-width", STROKE_WIDTH / this._scale);
                 }
-                if (['box', 'polygon', 'polyline'].includes(this._type)) {
-                    this._drawInstance.attr('stroke-width', STROKE_WIDTH / this._scale);
+                if (["box", "polygon", "polyline"].includes(this._type)) {
+                    this._drawInstance.attr("stroke-width", STROKE_WIDTH / this._scale);
                 }
             }
         }
