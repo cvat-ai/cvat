@@ -9,23 +9,13 @@ import { PolygonIcon } from 'icons';
 import {
     ShapeType,
     ActiveControl,
-    ObjectType,
 } from 'reducers/interfaces';
 
-import DrawShapePopoverContent from './draw-shape-popover-content';
+import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
-    labels: {
-        [index: number]: string;
-    };
-    onDrawStart(
-        shapeType: ShapeType,
-        labelID: number,
-        objectType: ObjectType,
-        points?: number,
-    ): void;
 }
 
 export default function DrawRectangleControl(props: Props): JSX.Element {
@@ -51,10 +41,7 @@ export default function DrawRectangleControl(props: Props): JSX.Element {
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
             content={(
-                <DrawShapePopoverContent
-                    {...props}
-                    shapeType={ShapeType.POLYGON}
-                />
+                <DrawShapePopoverContainer shapeType={ShapeType.POLYGON} />
             )}
         >
             <Icon

@@ -39,14 +39,20 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
-            const { jobInstance } = action.payload;
+            const {
+                jobInstance,
+                frame,
+                frameData,
+                annotations,
+            } = action.payload;
+
             return {
                 ...defaultState,
                 jobFetching: false,
                 jobInstance,
-                frame: action.payload.frame,
-                frameData: action.payload.frameData,
-                annotations: action.payload.annotations,
+                frame,
+                frameData,
+                annotations,
                 drawing: {
                     ...defaultState.drawing,
                     activeLabelID: jobInstance.task.labels[0].id,

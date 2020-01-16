@@ -1,5 +1,9 @@
 import { Canvas } from 'cvat-canvas';
 
+export type StringObject = {
+    [index: string]: string;
+};
+
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;

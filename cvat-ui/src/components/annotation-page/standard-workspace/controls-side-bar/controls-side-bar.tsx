@@ -8,8 +8,6 @@ import {
 
 import {
     ActiveControl,
-    ShapeType,
-    ObjectType,
 } from 'reducers/interfaces';
 
 import {
@@ -37,16 +35,6 @@ interface Props {
     canvasInstance: Canvas;
     rotateAll: boolean;
     activeControl: ActiveControl;
-
-    labels: {
-        [index: number]: string;
-    };
-    onDrawStart(
-        shapeType: ShapeType,
-        labelID: number,
-        objectType: ObjectType,
-        points?: number,
-    ): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {

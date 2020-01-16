@@ -13,6 +13,7 @@ import Text from 'antd/lib/typography/Text';
 import {
     ShapeType,
     ObjectType,
+    StringObject,
 } from 'reducers/interfaces';
 
 import {
@@ -22,9 +23,7 @@ import {
 interface Props {
     canvasInstance: Canvas;
     shapeType: ShapeType;
-    labels: {
-        [index: number]: string;
-    };
+    labels: StringObject;
     onDrawStart(
         shapeType: ShapeType,
         labelID: number,
@@ -38,7 +37,20 @@ interface State {
     selectedLabeID: number;
 }
 
-export default class DrawShapePopoverContent extends React.PureComponent<Props, State> {
+function defineMinimumPoints(shapeType: ShapeType): number {
+    if (shapeType === ShapeType.POLYGON) {
+        return 3;
+    }
+    if (shapeType === ShapeType.POLYLINE) {
+        return 2;
+    }
+    if (shapeType === ShapeType.POINTS) {
+        return 1;
+    }
+    return 0;
+}
+
+export default class DrawShapePopoverComponent extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
         const defaultLabelID = +Object.keys(props.labels)[0];
@@ -47,7 +59,27 @@ export default class DrawShapePopoverContent extends React.PureComponent<Props, 
         };
     }
 
-    public render(): JSX.Element {
+    private onChangePoints = (value: number | undefined): void => {
+        this.setState({
+            numberOfPoints: value,
+        });
+    };
+
+    private onChangeLabel = (value: string): void => {
+        this.setState({
+            selectedLabeID: +value,
+        });
+    };
+
+    private onDrawTrackStart = (): void => {
+        this.onDrawStart(ObjectType.TRACK);
+    };
+
+    private onDrawShapeStart = (): void => {
+        this.onDrawStart(ObjectType.SHAPE);
+    };
+
+    private onDrawStart = (objectType: ObjectType): void => {
         const {
             numberOfPoints,
             selectedLabeID,
@@ -55,19 +87,33 @@ export default class DrawShapePopoverContent extends React.PureComponent<Props, 
 
         const {
             shapeType,
-            labels,
             onDrawStart,
             canvasInstance,
         } = this.props;
 
-        let minimumPoints = 0;
-        if (shapeType === ShapeType.POLYGON) {
-            minimumPoints = 3;
-        } else if (shapeType === ShapeType.POLYLINE) {
-            minimumPoints = 2;
-        } else if (shapeType === ShapeType.POINTS) {
-            minimumPoints = 1;
-        }
+        canvasInstance.cancel();
+        canvasInstance.draw({
+            enabled: true,
+            numberOfPoints,
+            shapeType,
+            crosshair: shapeType === ShapeType.RECTANGLE,
+        });
+
+        onDrawStart(shapeType, selectedLabeID,
+            objectType, numberOfPoints);
+    };
+
+    public render(): JSX.Element {
+        const {
+            selectedLabeID,
+        } = this.state;
+
+        const {
+            shapeType,
+            labels,
+        } = this.props;
+
+        const minimumPoints = defineMinimumPoints(shapeType);
 
         return (
             <div className='cvat-draw-shape-popover-content'>
@@ -85,11 +131,7 @@ export default class DrawShapePopoverContent extends React.PureComponent<Props, 
                     <Col span={24}>
                         <Select
                             value={labels[selectedLabeID]}
-                            onChange={(value: string): void => {
-                                this.setState({
-                                    selectedLabeID: +value,
-                                });
-                            }}
+                            onChange={this.onChangeLabel}
                         >
                             {
                                 Object.keys(labels).map((key: string) => (
@@ -112,11 +154,7 @@ export default class DrawShapePopoverContent extends React.PureComponent<Props, 
                             </Col>
                             <Col span={10}>
                                 <InputNumber
-                                    onChange={(value: number | undefined): void => {
-                                        this.setState({
-                                            numberOfPoints: value,
-                                        });
-                                    }}
+                                    onChange={this.onChangePoints}
                                     className='cvat-draw-shape-popover-points-selector'
                                     min={minimumPoints}
                                     step={1}
@@ -128,36 +166,14 @@ export default class DrawShapePopoverContent extends React.PureComponent<Props, 
                 <Row type='flex' justify='space-around'>
                     <Col span={12}>
                         <Button
-                            onClick={(): void => {
-                                canvasInstance.cancel();
-                                canvasInstance.draw({
-                                    enabled: true,
-                                    numberOfPoints,
-                                    shapeType,
-                                    crosshair: shapeType === ShapeType.RECTANGLE,
-                                });
-
-                                onDrawStart(shapeType, selectedLabeID,
-                                    ObjectType.SHAPE, numberOfPoints);
-                            }}
+                            onClick={this.onDrawShapeStart}
                         >
                             Shape
                         </Button>
                     </Col>
                     <Col span={12}>
                         <Button
-                            onClick={(): void => {
-                                canvasInstance.cancel();
-                                canvasInstance.draw({
-                                    enabled: true,
-                                    numberOfPoints,
-                                    shapeType,
-                                    crosshair: shapeType === ShapeType.RECTANGLE,
-                                });
-
-                                onDrawStart(shapeType, selectedLabeID,
-                                    ObjectType.TRACK, numberOfPoints);
-                            }}
+                            onClick={this.onDrawTrackStart}
                         >
                             Track
                         </Button>

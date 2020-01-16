@@ -10,11 +10,8 @@ import {
     CombinedState,
     ShapeType,
     ObjectType,
+    StringObject,
 } from 'reducers/interfaces';
-
-type StringObject = {
-    [index: number]: string;
-};
 
 interface StateToProps {
     canvasInstance: Canvas;
