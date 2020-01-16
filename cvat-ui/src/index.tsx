@@ -40,7 +40,6 @@ interface StateToProps {
     installedTFAnnotation: boolean;
     notifications: NotificationsState;
     user: any;
-    about: any;
 }
 
 interface DispatchToProps {
