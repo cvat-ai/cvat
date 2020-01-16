@@ -62,7 +62,7 @@ class Figure {
     get points() {
         const points = [];
         for (const index of this.indices) {
-            points.push(this.viewmodel.points[index]);
+            points.push(this.viewmodel.points[`${index}`]);
         }
         return points;
     }
@@ -74,8 +74,8 @@ class Figure {
     set points(newPoints) {
         const oldPoints = this.viewmodel.points;
         for (let i = 0; i < newPoints.length; i += 1) {
-            if (newPoints[i] !== null) {
-                oldPoints[this.indices[i]] = { x: newPoints[i].x, y: newPoints[i].y };
+            if (newPoints[`${i}`] !== null) {
+                oldPoints[this.indices[`${i}`]] = { x: newPoints[`${i}`].x, y: newPoints[`${i}`].y };
             }
         }
     }
@@ -252,8 +252,8 @@ class Cuboid2PointViewModel {
             p2 = [p1[0], vpLeft[1]];
         }
 
-        this.points[topIndex] = { x: p1[0], y: p1[1] };
-        this.points[botIndex] = { x: p2[0], y: p2[1] };
+        this.points[`${topIndex}`] = { x: p1[0], y: p1[1] };
+        this.points[`${botIndex}`] = { x: p2[0], y: p2[1] };
 
         // Making sure that the vertical edges stay vertical
         this.updatePoints();
@@ -713,7 +713,7 @@ class CuboidController extends PolyShapeController {
         const grabPoints = view.getGrabPoints();
         view.off("dragmove").off("dragend").off("dragstart").off("mousedown");
         for (let i = 0; i < edges.length; i += 1) {
-            CuboidController.removeEventsFromElement(edges[i]);
+            CuboidController.removeEventsFromElement(edges[`${i}`]);
         }
         grabPoints.forEach((grabPoint) => {
             CuboidController.removeEventsFromElement(grabPoint);
@@ -744,7 +744,7 @@ class CuboidModel extends PolyShapeModel {
     static isWithinFrame(points) {
         // Ensure at least one point is within the frame
         const { frameWidth, frameHeight } = window.cvat.player.geometry;
-        return points.some(point => point.x >= 0
+        return points.some((point) => point.x >= 0
             && point.x <= frameWidth
             && point.y >= 0
             && point.y <= frameHeight);
@@ -801,7 +801,7 @@ class CuboidModel extends PolyShapeModel {
 
             const upperHull = [];
             for (let i = 0; i < points.length; i += 1) {
-                const p = points[i];
+                const p = points[`${i}`];
                 while (upperHull.length >= 2) {
                     const q = upperHull[upperHull.length - 1];
                     const r = upperHull[upperHull.length - 2];
@@ -814,7 +814,7 @@ class CuboidModel extends PolyShapeModel {
 
             const lowerHull = [];
             for (let i = points.length - 1; i >= 0; i -= 1) {
-                const p = points[i];
+                const p = points[`${i}`];
                 while (lowerHull.length >= 2) {
                     const q = lowerHull[lowerHull.length - 1];
                     const r = lowerHull[lowerHull.length - 2];
@@ -852,7 +852,7 @@ class CuboidModel extends PolyShapeModel {
         const points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let minDistance = Number.MAX_SAFE_INTEGER;
         for (let i = 0; i < points.length; i += 1) {
-            const p1 = points[i];
+            const p1 = points[`${i}`];
             const p2 = points[i + 1] || points[0];
 
             // perpendicular from point to straight length
@@ -1053,7 +1053,7 @@ SVG.Cube = SVG.invent({
                 const edge = edges[i];
                 const cx = (edge.attr("x2") + edge.attr("x1")) / 2;
                 const cy = (edge.attr("y2") + edge.attr("y1")) / 2;
-                grabPoints[i].center(cx, cy);
+                grabPoints[`${i}`].center(cx, cy);
             }
         },
 
@@ -1061,8 +1061,8 @@ SVG.Cube = SVG.invent({
             const centers = this.getGrabPoints();
             const edges = this.getEdges();
             for (let i = 0; i < centers.length; i += 1) {
-                const edge = edges[i];
-                centers[i].center(edge.cx(), edge.cy());
+                const edge = edges[`${i}`];
+                centers[`${i}`].center(edge.cx(), edge.cy());
             }
         },
 
