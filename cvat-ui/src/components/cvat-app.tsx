@@ -48,7 +48,6 @@ type CVATAppProps = {
     installedTFSegmentation: boolean;
     notifications: NotificationsState;
     user: any;
-    about: any;
 };
 
 export default class CVATApplication extends React.PureComponent<CVATAppProps> {
