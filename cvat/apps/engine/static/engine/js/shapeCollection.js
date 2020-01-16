@@ -380,7 +380,37 @@ class ShapeCollectionModel extends Listener {
         this._idx = 0;
         this._colorIdx = 0;
         this._interpolate();
+           
     }
+
+
+    empty1(entry){
+        this._flush = true;
+        let annotate=this._annotationShapes;
+
+        if (entry.length==2){
+            Object.keys(annotate).forEach(key=>{
+                if (entry[0]<=Number(key) && entry[1]>=Number(key)){
+                delete annotate [key];
+                }
+
+            });
+        }
+
+        else if (entry.length==1) {
+            delete annotate [entry];
+        }
+
+        else{
+            alert('Error, incorrect input. Please try again!');
+        }
+
+        console.log(annotate);
+        
+
+    }
+
+    
 
     add(data, type) {
         this._idx += 1;
