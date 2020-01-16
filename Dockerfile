@@ -50,7 +50,7 @@ RUN apt-get update && \
     else \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
     fi && \
-    python3 -m pip install -U pip setuptools && \
+    python3 -m pip install --no-cache-dir -U pip setuptools && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \
@@ -90,29 +90,6 @@ ENV AUTO_SEGMENTATION=${AUTO_SEGMENTATION}
 ENV AUTO_SEGMENTATION_PATH=${HOME}/Mask_RCNN
 RUN if [ "$AUTO_SEGMENTATION" = "yes" ]; then \
     bash -i /tmp/components/auto_segmentation/install.sh; \
-    fi
-
-ARG WITH_TESTS
-RUN if [ "$WITH_TESTS" = "yes" ]; then \
-        curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-        echo 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' | tee /etc/apt/sources.list.d/google-chrome.list && \
-        curl https://deb.nodesource.com/setup_9.x | bash - && \
-        apt-get update && \
-        DEBIAN_FRONTEND=noninteractive apt-get install -yq \
-            google-chrome-stable \
-            nodejs && \
-        rm -rf /var/lib/apt/lists/*; \
-        mkdir tests && cd tests && npm install \
-            eslint \
-            eslint-detailed-reporter \
-            karma \
-            karma-chrome-launcher \
-            karma-coveralls \
-            karma-coverage \
-            karma-junit-reporter \
-            karma-qunit \
-            qunit; \
-        echo "export PATH=~/tests/node_modules/.bin:${PATH}" >> ~/.bashrc; \
     fi
 
 # Install and initialize CVAT, copy all necessary files
