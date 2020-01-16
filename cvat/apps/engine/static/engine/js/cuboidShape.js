@@ -1,5 +1,6 @@
 /* eslint-disable func-names */
 /* eslint-disable no-underscore-dangle */
+/* eslint-disable curly */
 /*
  * Copyright (C) 2018 Intel Corporation
  *
@@ -381,7 +382,7 @@ class CuboidController extends PolyShapeController {
         const controller = this;
         if (this.orientation === orientationEnum.LEFT) {
             if (viewModel.dl.points[0].x > viewModel.fl.points[0].x) {
-                view.dorsal_right_edge.selectize({
+                view.dorsalRightEdge.selectize({
                     points: "t,b",
                     rotationPoint: false,
                 }).resize().on("resizing", function (e) {
@@ -390,22 +391,22 @@ class CuboidController extends PolyShapeController {
                             this,
                             viewModel.computeSideEdgeConstraints(viewModel.dr));
                     } else {
-                        const midPointUp = convertPlainArrayToActual([view.dorsal_right_edge.attr("x1"), view.dorsal_right_edge.attr("y1")])[0];
-                        const midPointDown = convertPlainArrayToActual([view.dorsal_right_edge.attr("x2"), view.dorsal_right_edge.attr("y2")])[0];
+                        const midPointUp = convertPlainArrayToActual([view.dorsalRightEdge.attr("x1"), view.dorsalRightEdge.attr("y1")])[0];
+                        const midPointDown = convertPlainArrayToActual([view.dorsalRightEdge.attr("x2"), view.dorsalRightEdge.attr("y2")])[0];
                         viewModel.top.points = controller.computeHeightFace(midPointUp, 3);
                         viewModel.bot.points = controller.computeHeightFace(midPointDown, 3);
                     }
                     controller.updateViewAndVM();
                 });
-                view.dr_center.show();
+                view.drCenter.show();
 
-                view.dorsal_left_edge.selectize(false);
-                view.dl_center.hide();
+                view.dorsalLeftEdge.selectize(false);
+                view.dlCenter.hide();
                 this.orientation = orientationEnum.RIGHT;
             }
         } else if (this.orientation === orientationEnum.RIGHT) {
             if (viewModel.dl.points[0].x <= viewModel.fl.points[0].x) {
-                view.dorsal_left_edge.selectize({
+                view.dorsalLeftEdge.selectize({
                     points: "t,b",
                     rotationPoint: false,
                 }).resize().on("resizing", function (e) {
@@ -414,17 +415,17 @@ class CuboidController extends PolyShapeController {
                             this,
                             viewModel.computeSideEdgeConstraints(viewModel.dl));
                     } else {
-                        const midPointUp = convertPlainArrayToActual([view.dorsal_left_edge.attr("x1"), view.dorsal_left_edge.attr("y1")])[0];
-                        const midPointDown = convertPlainArrayToActual([view.dorsal_left_edge.attr("x2"), view.dorsal_left_edge.attr("y2")])[0];
+                        const midPointUp = convertPlainArrayToActual([view.dorsalLeftEdge.attr("x1"), view.dorsalLeftEdge.attr("y1")])[0];
+                        const midPointDown = convertPlainArrayToActual([view.dorsalLeftEdge.attr("x2"), view.dorsalLeftEdge.attr("y2")])[0];
                         viewModel.top.points = controller.computeHeightFace(midPointUp, 4);
                         viewModel.bot.points = controller.computeHeightFace(midPointDown, 4);
                     }
                     controller.updateViewAndVM(true);
                 });
-                view.dl_center.show();
+                view.dlCenter.show();
 
-                view.dorsal_right_edge.selectize(false);
-                view.dr_center.hide();
+                view.dorsalRightEdge.selectize(false);
+                view.drCenter.hide();
                 this.orientation = orientationEnum.LEFT;
             }
         }
@@ -451,13 +452,13 @@ class CuboidController extends PolyShapeController {
             });
 
         // Controllable vertical edges
-        view.fl_center.draggable(function (x) {
+        view.flCenter.draggable(function (x) {
             const vpX = this.cx() - viewModel.vplCanvas.x > 0 ? viewModel.vplCanvas.x : 0;
             return { x: x < viewModel.fr.canvasPoints[0].x && x > vpX + MIN_EDGE_LENGTH };
         }).on("dragmove", function () {
-            view.front_left_edge.center(this.cx(), this.cy());
+            view.frontLeftEdge.center(this.cx(), this.cy());
 
-            const position = convertPlainArrayToActual([view.front_left_edge.attr("x1"), view.front_left_edge.attr("y1")])[0];
+            const position = convertPlainArrayToActual([view.frontLeftEdge.attr("x1"), view.frontLeftEdge.attr("y1")])[0];
             const { x } = position;
 
             const y1 = viewModel.ft.getEquation().getY(x);
@@ -470,7 +471,7 @@ class CuboidController extends PolyShapeController {
             controller.updateViewAndVM();
         });
 
-        view.dr_center.draggable(function (x) {
+        view.drCenter.draggable(function (x) {
             let xStatus;
             if (this.cx() < viewModel.fr.canvasPoints[0].x) {
                 xStatus = x < viewModel.fr.canvasPoints[0].x - MIN_EDGE_LENGTH
@@ -481,9 +482,9 @@ class CuboidController extends PolyShapeController {
             }
             return { x: xStatus, y: this.attr("y1") };
         }).on("dragmove", function () {
-            view.dorsal_right_edge.center(this.cx(), this.cy());
+            view.dorsalRightEdge.center(this.cx(), this.cy());
 
-            const position = convertPlainArrayToActual([view.dorsal_right_edge.attr("x1"), view.dorsal_right_edge.attr("y1")])[0];
+            const position = convertPlainArrayToActual([view.dorsalRightEdge.attr("x1"), view.dorsalRightEdge.attr("y1")])[0];
             const { x } = position;
 
             const y1 = viewModel.rt.getEquation().getY(x);
@@ -496,7 +497,7 @@ class CuboidController extends PolyShapeController {
             controller.updateViewAndVM();
         });
 
-        view.dl_center.draggable(function (x) {
+        view.dlCenter.draggable(function (x) {
             let xStatus;
             if (this.cx() < viewModel.fl.canvasPoints[0].x) {
                 xStatus = x < viewModel.fl.canvasPoints[0].x - MIN_EDGE_LENGTH;
@@ -505,9 +506,9 @@ class CuboidController extends PolyShapeController {
             }
             return { x: xStatus, y: this.attr("y1") };
         }).on("dragmove", function () {
-            view.dorsal_left_edge.center(this.cx(), this.cy());
+            view.dorsalLeftEdge.center(this.cx(), this.cy());
 
-            const position = convertPlainArrayToActual([view.dorsal_left_edge.attr("x1"), view.dorsal_left_edge.attr("y1")])[0];
+            const position = convertPlainArrayToActual([view.dorsalLeftEdge.attr("x1"), view.dorsalLeftEdge.attr("y1")])[0];
             const { x } = position;
 
             const y1 = viewModel.lt.getEquation().getY(x);
@@ -520,12 +521,12 @@ class CuboidController extends PolyShapeController {
             controller.updateViewAndVM(true);
         });
 
-        view.fr_center.draggable(function (x) {
+        view.frCenter.draggable(function (x) {
             return { x: x > viewModel.fl.canvasPoints[0].x, y: this.attr("y1") };
         }).on("dragmove", function () {
-            view.front_right_edge.center(this.cx(), this.cy());
+            view.frontRightEdge.center(this.cx(), this.cy());
 
-            const position = convertPlainArrayToActual([view.front_right_edge.attr("x1"), view.front_right_edge.attr("y1")])[0];
+            const position = convertPlainArrayToActual([view.frontRightEdge.attr("x1"), view.frontRightEdge.attr("y1")])[0];
             const { x } = position;
 
             const y1 = viewModel.ft.getEquation().getY(x);
@@ -540,19 +541,19 @@ class CuboidController extends PolyShapeController {
 
 
         // Controllable "horizontal" edges
-        view.ft_center.draggable(function (x, y) {
-            return { x: x === this.cx(), y: y < view.fb_center.cy() - MIN_EDGE_LENGTH };
+        view.ftCenter.draggable(function (x, y) {
+            return { x: x === this.cx(), y: y < view.fbCenter.cy() - MIN_EDGE_LENGTH };
         }).on("dragmove", function () {
-            view.front_top_edge.center(this.cx(), this.cy());
-            controller.horizontalEdgeControl(viewModel.top, view.front_top_edge.attr("x2"), view.front_top_edge.attr("y2"));
+            view.frontTopEdge.center(this.cx(), this.cy());
+            controller.horizontalEdgeControl(viewModel.top, view.frontTopEdge.attr("x2"), view.frontTopEdge.attr("y2"));
             controller.updateViewAndVM();
         });
 
-        view.fb_center.draggable(function (x, y) {
-            return { x: x === this.cx(), y: y > view.ft_center.cy() + MIN_EDGE_LENGTH };
+        view.fbCenter.draggable(function (x, y) {
+            return { x: x === this.cx(), y: y > view.ftCenter.cy() + MIN_EDGE_LENGTH };
         }).on("dragmove", function () {
-            view.front_bot_edge.center(this.cx(), this.cy());
-            controller.horizontalEdgeControl(viewModel.bot, view.front_bot_edge.attr("x2"), view.front_bot_edge.attr("y2"));
+            view.frontBotEdge.center(this.cx(), this.cy());
+            controller.horizontalEdgeControl(viewModel.bot, view.frontBotEdge.attr("x2"), view.frontBotEdge.attr("y2"));
             controller.updateViewAndVM();
         });
 
@@ -598,23 +599,23 @@ class CuboidController extends PolyShapeController {
         const controller = this;
         const view = this.cuboidView._uis.shape;
         const { viewModel } = this;
-        view.front_left_edge.selectize({
+        view.frontLeftEdge.selectize({
             points: "t,b",
             rotationPoint: false,
         }).resize().on("resizing", () => {
-            const midPointUp = convertPlainArrayToActual([view.front_left_edge.attr("x1"), view.front_left_edge.attr("y1")])[0];
-            const midPointDown = convertPlainArrayToActual([view.front_left_edge.attr("x2"), view.front_left_edge.attr("y2")])[0];
+            const midPointUp = convertPlainArrayToActual([view.frontLeftEdge.attr("x1"), view.frontLeftEdge.attr("y1")])[0];
+            const midPointDown = convertPlainArrayToActual([view.frontLeftEdge.attr("x2"), view.frontLeftEdge.attr("y2")])[0];
             viewModel.top.points = this.computeHeightFace(midPointUp, 1);
             viewModel.bot.points = this.computeHeightFace(midPointDown, 1);
             controller.updateViewAndVM();
         });
 
-        view.front_right_edge.selectize({
+        view.frontRightEdge.selectize({
             points: "t,b",
             rotationPoint: false,
         }).resize().on("resizing", () => {
-            const midPointUp = convertPlainArrayToActual([view.front_right_edge.attr("x1"), view.front_right_edge.attr("y1")])[0];
-            const midPointDown = convertPlainArrayToActual([view.front_right_edge.attr("x2"), view.front_right_edge.attr("y2")])[0];
+            const midPointUp = convertPlainArrayToActual([view.frontRightEdge.attr("x1"), view.frontRightEdge.attr("y1")])[0];
+            const midPointDown = convertPlainArrayToActual([view.frontRightEdge.attr("x2"), view.frontRightEdge.attr("y2")])[0];
             viewModel.top.points = this.computeHeightFace(midPointUp, 2);
             viewModel.bot.points = this.computeHeightFace(midPointDown, 2);
             controller.updateViewAndVM();
@@ -718,10 +719,10 @@ class CuboidController extends PolyShapeController {
             CuboidController.removeEventsFromElement(grabPoint);
         });
 
-        view.front_left_edge.selectize(false);
-        view.front_right_edge.selectize(false);
-        view.dorsal_right_edge.selectize(false);
-        view.dorsal_left_edge.selectize(false);
+        view.frontLeftEdge.selectize(false);
+        view.frontRightEdge.selectize(false);
+        view.dorsalRightEdge.selectize(false);
+        view.dorsalLeftEdge.selectize(false);
 
         view.dorsal.off();
         view.left.off();
@@ -1026,25 +1027,25 @@ SVG.Cube = SVG.invent({
         },
 
         setupEdges(viewModel) {
-            this.front_left_edge = this.line(viewModel.fl.canvasPoints);
-            this.front_right_edge = this.line(viewModel.fr.canvasPoints);
-            this.dorsal_right_edge = this.line(viewModel.dr.canvasPoints);
-            this.dorsal_left_edge = this.line(viewModel.dl.canvasPoints);
+            this.frontLeftEdge = this.line(viewModel.fl.canvasPoints);
+            this.frontRightEdge = this.line(viewModel.fr.canvasPoints);
+            this.dorsalRightEdge = this.line(viewModel.dr.canvasPoints);
+            this.dorsalLeftEdge = this.line(viewModel.dl.canvasPoints);
 
-            this.front_top_edge = this.line(viewModel.ft.canvasPoints);
-            this.right_top_edge = this.line(viewModel.rt.canvasPoints);
-            this.front_bot_edge = this.line(viewModel.fb.canvasPoints);
-            this.right_bot_edge = this.line(viewModel.rb.canvasPoints);
+            this.frontTopEdge = this.line(viewModel.ft.canvasPoints);
+            this.rightTopEdge = this.line(viewModel.rt.canvasPoints);
+            this.frontBotEdge = this.line(viewModel.fb.canvasPoints);
+            this.rightBotEdge = this.line(viewModel.rb.canvasPoints);
         },
 
         setupGrabPoints() {
-            this.fl_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_l");
-            this.fr_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_r");
-            this.dr_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_ew");
-            this.dl_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_ew");
+            this.flCenter = this.circle().addClass("svg_select_points").addClass("svg_select_points_l");
+            this.frCenter = this.circle().addClass("svg_select_points").addClass("svg_select_points_r");
+            this.drCenter = this.circle().addClass("svg_select_points").addClass("svg_select_points_ew");
+            this.dlCenter = this.circle().addClass("svg_select_points").addClass("svg_select_points_ew");
 
-            this.ft_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_t");
-            this.fb_center = this.circle().addClass("svg_select_points").addClass("svg_select_points_b");
+            this.ftCenter = this.circle().addClass("svg_select_points").addClass("svg_select_points_t");
+            this.fbCenter = this.circle().addClass("svg_select_points").addClass("svg_select_points_b");
 
             const grabPoints = this.getGrabPoints();
             const edges = this.getEdges();
@@ -1126,15 +1127,15 @@ SVG.Cube = SVG.invent({
         },
 
         updateLines(viewModel) {
-            this.front_left_edge.plot(viewModel.fl.canvasPoints);
-            this.front_right_edge.plot(viewModel.fr.canvasPoints);
-            this.dorsal_right_edge.plot(viewModel.dr.canvasPoints);
-            this.dorsal_left_edge.plot(viewModel.dl.canvasPoints);
+            this.frontLeftEdge.plot(viewModel.fl.canvasPoints);
+            this.frontRightEdge.plot(viewModel.fr.canvasPoints);
+            this.dorsalRightEdge.plot(viewModel.dr.canvasPoints);
+            this.dorsalLeftEdge.plot(viewModel.dl.canvasPoints);
 
-            this.front_top_edge.plot(viewModel.ft.canvasPoints);
-            this.right_top_edge.plot(viewModel.rt.canvasPoints);
-            this.front_bot_edge.plot(viewModel.fb.canvasPoints);
-            this.right_bot_edge.plot(viewModel.rb.canvasPoints);
+            this.frontTopEdge.plot(viewModel.ft.canvasPoints);
+            this.rightTopEdge.plot(viewModel.rt.canvasPoints);
+            this.frontBotEdge.plot(viewModel.fb.canvasPoints);
+            this.rightBotEdge.plot(viewModel.rb.canvasPoints);
         },
 
         updateThickness() {
@@ -1165,15 +1166,15 @@ SVG.Cube = SVG.invent({
         paintOrientationLines() {
             const fillColor = this.attr("fill");
             const selectedColor = "#ff007f";
-            this.front_top_edge.stroke({ color: selectedColor });
-            this.front_left_edge.stroke({ color: selectedColor });
-            this.front_bot_edge.stroke({ color: selectedColor });
-            this.front_right_edge.stroke({ color: selectedColor });
+            this.frontTopEdge.stroke({ color: selectedColor });
+            this.frontLeftEdge.stroke({ color: selectedColor });
+            this.frontBotEdge.stroke({ color: selectedColor });
+            this.frontRightEdge.stroke({ color: selectedColor });
 
-            this.right_top_edge.stroke({ color: fillColor });
-            this.right_bot_edge.stroke({ color: fillColor });
-            this.dorsal_right_edge.stroke({ color: fillColor });
-            this.dorsal_left_edge.stroke({ color: fillColor });
+            this.rightTopEdge.stroke({ color: fillColor });
+            this.rightBotEdge.stroke({ color: fillColor });
+            this.dorsalRightEdge.stroke({ color: fillColor });
+            this.dorsalLeftEdge.stroke({ color: fillColor });
 
             this.face.stroke({ color: fillColor, width: 0 });
             this.right.stroke({ color: fillColor });
@@ -1183,25 +1184,25 @@ SVG.Cube = SVG.invent({
 
         getEdges() {
             const arr = [];
-            arr.push(this.front_left_edge);
-            arr.push(this.front_right_edge);
-            arr.push(this.dorsal_right_edge);
-            arr.push(this.front_top_edge);
-            arr.push(this.front_bot_edge);
-            arr.push(this.dorsal_left_edge);
-            arr.push(this.right_top_edge);
-            arr.push(this.right_bot_edge);
+            arr.push(this.frontLeftEdge);
+            arr.push(this.frontRightEdge);
+            arr.push(this.dorsalRightEdge);
+            arr.push(this.frontTopEdge);
+            arr.push(this.frontBotEdge);
+            arr.push(this.dorsalLeftEdge);
+            arr.push(this.rightTopEdge);
+            arr.push(this.rightBotEdge);
             return arr;
         },
 
         getGrabPoints() {
             const arr = [];
-            arr.push(this.fl_center);
-            arr.push(this.fr_center);
-            arr.push(this.dr_center);
-            arr.push(this.ft_center);
-            arr.push(this.fb_center);
-            arr.push(this.dl_center);
+            arr.push(this.flCenter);
+            arr.push(this.frCenter);
+            arr.push(this.drCenter);
+            arr.push(this.ftCenter);
+            arr.push(this.fbCenter);
+            arr.push(this.dlCenter);
             return arr;
         },
 
