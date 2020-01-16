@@ -1,8 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { registerAsync } from '../../actions/auth-actions';
-import RegisterPageComponent from '../../components/register-page/register-page';
-import { CombinedState } from '../../reducers/interfaces';
+import { registerAsync } from 'actions/auth-actions';
+import RegisterPageComponent from 'components/register-page/register-page';
+import { CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
     fetching: boolean;

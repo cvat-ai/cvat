@@ -14,9 +14,9 @@ import {
 
 import moment from 'moment';
 
-import ActionsMenuContainer from '../../containers/actions-menu/actions-menu';
-import { ActiveInference } from '../../reducers/interfaces';
-import { MenuIcon } from '../../icons';
+import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
+import { ActiveInference } from 'reducers/interfaces';
+import { MenuIcon } from 'icons';
 
 export interface TaskItemProps {
     taskInstance: any;

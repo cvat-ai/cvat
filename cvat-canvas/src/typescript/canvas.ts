@@ -44,6 +44,10 @@ interface Canvas {
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
 
+    fitCanvas(): void;
+    dragCanvas(enable: boolean): void;
+    zoomCanvas(enable: boolean): void;
+
     cancel(): void;
 }
 
@@ -73,7 +77,15 @@ class CanvasImpl implements Canvas {
         );
     }
 
-    public activate(clientID: number, attributeID: number = null): void {
+    public dragCanvas(enable: boolean): void {
+        this.model.dragCanvas(enable);
+    }
+
+    public zoomCanvas(enable: boolean): void {
+        this.model.zoomCanvas(enable);
+    }
+
+    public activate(clientID: number, attributeID: number | null = null): void {
         this.model.activate(clientID, attributeID);
     }
 

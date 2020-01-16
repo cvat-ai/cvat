@@ -33,8 +33,8 @@ export interface FocusData {
 }
 
 export interface ActiveElement {
-    clientID: number;
-    attributeID: number;
+    clientID: number | null;
+    attributeID: number | null;
 }
 
 export interface DrawData {
@@ -74,21 +74,26 @@ export enum Rotation {
 }
 
 export enum UpdateReasons {
-    IMAGE = 'image',
-    OBJECTS = 'objects',
-    ZOOM = 'zoom',
-    FIT = 'fit',
-    FIT_CANVAS = 'fit_canvas',
-    MOVE = 'move',
-    GRID = 'grid',
-    FOCUS = 'focus',
-    ACTIVATE = 'activate',
+    IMAGE_CHANGED = 'image_changed',
+    IMAGE_ZOOMED = 'image_zoomed',
+    IMAGE_FITTED = 'image_fitted',
+    IMAGE_MOVED = 'image_moved',
+    GRID_UPDATED = 'grid_updated',
+
+    OBJECTS_UPDATED = 'objects_updated',
+    SHAPE_ACTIVATED = 'shape_activated',
+    SHAPE_FOCUSED = 'shape_focused',
+
+    FITTED_CANVAS = 'fitted_canvas',
+
     DRAW = 'draw',
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
     SELECT = 'select',
     CANCEL = 'cancel',
+    DRAG_CANVAS = 'drag_canvas',
+    ZOOM_CANVAS = 'ZOOM_CANVAS',
 }
 
 export enum Mode {
@@ -100,6 +105,8 @@ export enum Mode {
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
+    DRAG_CANVAS = 'drag_canvas',
+    ZOOM_CANVAS = 'zoom_canvas',
 }
 
 export interface CanvasModel {
@@ -120,11 +127,10 @@ export interface CanvasModel {
     move(topOffset: number, leftOffset: number): void;
 
     setup(frameData: any, objectStates: any[]): void;
-    activate(clientID: number, attributeID: number): void;
+    activate(clientID: number, attributeID: number | null): void;
     rotate(rotation: Rotation, remember: boolean): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
-    fitCanvas(width: number, height: number): void;
     grid(stepX: number, stepY: number): void;
 
     draw(drawData: DrawData): void;
@@ -132,6 +138,10 @@ export interface CanvasModel {
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
+
+    fitCanvas(width: number, height: number): void;
+    dragCanvas(enable: boolean): void;
+    zoomCanvas(enable: boolean): void;
 
     cancel(): void;
 }
@@ -193,8 +203,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             top: 0,
             drawData: {
                 enabled: false,
-                shapeType: null,
-                numberOfPoints: null,
                 initialState: null,
             },
             mergeData: {
@@ -207,7 +215,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 enabled: false,
             },
             selected: null,
-            mode: null,
+            mode: Mode.IDLE,
         };
     }
 
@@ -232,13 +240,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 * (oldScale / this.data.scale - 1)) * this.data.scale;
         }
 
-        this.notify(UpdateReasons.ZOOM);
+        this.notify(UpdateReasons.IMAGE_ZOOMED);
     }
 
     public move(topOffset: number, leftOffset: number): void {
         this.data.top += topOffset;
         this.data.left += leftOffset;
-        this.notify(UpdateReasons.MOVE);
+        this.notify(UpdateReasons.IMAGE_MOVED);
     }
 
     public fitCanvas(width: number, height: number): void {
@@ -250,15 +258,41 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.canvasSize.width / FrameZoom.MIN,
         ));
 
-        this.notify(UpdateReasons.FIT_CANVAS);
-        this.notify(UpdateReasons.OBJECTS);
+        this.notify(UpdateReasons.FITTED_CANVAS);
+        this.notify(UpdateReasons.OBJECTS_UPDATED);
+    }
+
+    public dragCanvas(enable: boolean): void {
+        if (enable && this.data.mode !== Mode.IDLE) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (!enable && this.data.mode !== Mode.DRAG_CANVAS) {
+            throw Error(`Canvas is not in the drag mode. Action: ${this.data.mode}`);
+        }
+
+        this.data.mode = enable ? Mode.DRAG_CANVAS : Mode.IDLE;
+        this.notify(UpdateReasons.DRAG_CANVAS);
+    }
+
+    public zoomCanvas(enable: boolean): void {
+        if (enable && this.data.mode !== Mode.IDLE) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (!enable && this.data.mode !== Mode.ZOOM_CANVAS) {
+            throw Error(`Canvas is not in the zoom mode. Action: ${this.data.mode}`);
+        }
+
+        this.data.mode = enable ? Mode.ZOOM_CANVAS : Mode.IDLE;
+        this.notify(UpdateReasons.ZOOM_CANVAS);
     }
 
     public setup(frameData: any, objectStates: any[]): void {
         frameData.data(
             (): void => {
                 this.data.image = '';
-                this.notify(UpdateReasons.IMAGE);
+                this.notify(UpdateReasons.IMAGE_CHANGED);
             },
         ).then((data: string): void => {
             this.data.imageSize = {
@@ -271,15 +305,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             }
 
             this.data.image = data;
-            this.notify(UpdateReasons.IMAGE);
+            this.notify(UpdateReasons.IMAGE_CHANGED);
             this.data.objects = objectStates;
-            this.notify(UpdateReasons.OBJECTS);
+            this.notify(UpdateReasons.OBJECTS_UPDATED);
         }).catch((exception: any): void => {
             throw exception;
         });
     }
 
-    public activate(clientID: number, attributeID: number): void {
+    public activate(clientID: number, attributeID: number | null): void {
         if (this.data.mode !== Mode.IDLE) {
             // Exception or just return?
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -290,7 +324,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             attributeID,
         };
 
-        this.notify(UpdateReasons.ACTIVATE);
+        this.notify(UpdateReasons.SHAPE_ACTIVATED);
     }
 
     public rotate(rotation: Rotation, remember: boolean = false): void {
@@ -311,7 +345,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             padding,
         };
 
-        this.notify(UpdateReasons.FOCUS);
+        this.notify(UpdateReasons.SHAPE_FOCUSED);
     }
 
     public fit(): void {
@@ -338,7 +372,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.top = (this.data.canvasSize.height / 2 - this.data.imageSize.height / 2);
         this.data.left = (this.data.canvasSize.width / 2 - this.data.imageSize.width / 2);
 
-        this.notify(UpdateReasons.FIT);
+        this.notify(UpdateReasons.IMAGE_FITTED);
     }
 
     public grid(stepX: number, stepY: number): void {
@@ -347,7 +381,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             width: stepX,
         };
 
-        this.notify(UpdateReasons.GRID);
+        this.notify(UpdateReasons.GRID_UPDATED);
     }
 
     public draw(drawData: DrawData): void {

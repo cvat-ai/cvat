@@ -1,8 +1,8 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 
-import { ShareFileInfo } from '../reducers/interfaces';
-import getCore from '../core';
+import { ShareFileInfo } from 'reducers/interfaces';
+import getCore from 'cvat-core';
 
 const core = getCore();
 

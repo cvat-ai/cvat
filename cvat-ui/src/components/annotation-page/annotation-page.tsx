@@ -7,8 +7,8 @@ import {
     Result,
 } from 'antd';
 
-import AnnotationTopBarContainer from '../../containers/annotation-page/top-bar/top-bar';
-import StandardWorkspaceContainer from '../../containers/annotation-page/standard-workspace/standard-workspace';
+import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
+import StandardWorkspaceContainer from 'containers/annotation-page/standard-workspace/standard-workspace';
 
 interface Props {
     jobInstance: any | null | undefined;

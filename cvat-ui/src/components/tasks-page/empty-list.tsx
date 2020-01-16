@@ -8,7 +8,7 @@ import {
     Icon,
 } from 'antd';
 
-import { EmptyTasksIcon } from '../../icons';
+import { EmptyTasksIcon } from 'icons';
 
 export default function EmptyListComponent(): JSX.Element {
     return (

@@ -16,12 +16,12 @@ import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import {
     PlaycontrolBackJumpIcon,
     PlaycontrolForwardJumpIcon,
-} from '../../icons';
+} from 'icons';
 
 import {
     FrameSpeed,
     GridColor,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
 interface Props {
     frameStep: number;

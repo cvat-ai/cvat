@@ -1,12 +1,13 @@
 import { AnyAction } from 'redux';
 
-import { AuthActionTypes } from '../actions/auth-actions';
-import { FormatsActionTypes } from '../actions/formats-actions';
-import { ModelsActionTypes } from '../actions/models-actions';
-import { ShareActionTypes } from '../actions/share-actions';
-import { TasksActionTypes } from '../actions/tasks-actions';
-import { UsersActionTypes } from '../actions/users-actions';
-import { NotificationsActionType } from '../actions/notification-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
+import { FormatsActionTypes } from 'actions/formats-actions';
+import { ModelsActionTypes } from 'actions/models-actions';
+import { ShareActionTypes } from 'actions/share-actions';
+import { TasksActionTypes } from 'actions/tasks-actions';
+import { UsersActionTypes } from 'actions/users-actions';
+import { AnnotationActionTypes } from 'actions/annotation-actions';
+import { NotificationsActionType } from 'actions/notification-actions';
 
 import { NotificationsState } from './interfaces';
 
@@ -43,6 +44,11 @@ const defaultState: NotificationsState = {
             fetching: null,
             metaFetching: null,
             inferenceStatusFetching: null,
+        },
+        annotation: {
+            saving: null,
+            jobFetching: null,
+            frameFetching: null,
         },
     },
     messages: {
@@ -399,6 +405,51 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         starting: {
                             message: 'Could not infer model for the '
                                 + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_JOB_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        jobFetching: {
+                            message: 'Error during fetching a job',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_FRAME_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        frameFetching: {
+                            message: `Could not receive frame ${action.payload.frame}`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        saving: {
+                            message: 'Could not save annotations',
                             reason: action.payload.error.toString(),
                         },
                     },

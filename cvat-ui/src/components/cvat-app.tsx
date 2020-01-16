@@ -13,18 +13,18 @@ import {
     notification,
 } from 'antd';
 
-import SettingsPageComponent from './settings-page/settings-page';
-import TasksPageContainer from '../containers/tasks-page/tasks-page';
-import CreateTaskPageContainer from '../containers/create-task-page/create-task-page';
-import TaskPageContainer from '../containers/task-page/task-page';
-import ModelsPageContainer from '../containers/models-page/models-page';
-import CreateModelPageContainer from '../containers/create-model-page/create-model-page';
-import AnnotationPageContainer from '../containers/annotation-page/annotation-page';
-import LoginPageContainer from '../containers/login-page/login-page';
-import RegisterPageContainer from '../containers/register-page/register-page';
-import HeaderContainer from '../containers/header/header';
+import SettingsPageComponent from 'components/settings-page/settings-page';
+import TasksPageContainer from 'containers/tasks-page/tasks-page';
+import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
+import TaskPageContainer from 'containers/task-page/task-page';
+import ModelsPageContainer from 'containers/models-page/models-page';
+import CreateModelPageContainer from 'containers/create-model-page/create-model-page';
+import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
+import LoginPageContainer from 'containers/login-page/login-page';
+import RegisterPageContainer from 'containers/register-page/register-page';
+import HeaderContainer from 'containers/header/header';
 
-import { NotificationsState } from '../reducers/interfaces';
+import { NotificationsState } from 'reducers/interfaces';
 
 type CVATAppProps = {
     loadFormats: () => void;
@@ -155,13 +155,15 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const { users } = notifications.errors;
         const { share } = notifications.errors;
         const { models } = notifications.errors;
+        const { annotation } = notifications.errors;
 
         const shown = !!auth.authorized || !!auth.login || !!auth.logout || !!auth.register
             || !!tasks.fetching || !!tasks.updating || !!tasks.dumping || !!tasks.loading
             || !!tasks.exporting || !!tasks.deleting || !!tasks.creating || !!formats.fetching
             || !!users.fetching || !!share.fetching || !!models.creating || !!models.starting
             || !!models.fetching || !!models.deleting || !!models.inferenceStatusFetching
-            || !!models.metaFetching;
+            || !!models.metaFetching || !!annotation.frameFetching || !!annotation.saving
+            || !!annotation.jobFetching;
 
         if (auth.authorized) {
             showError(auth.authorized.message, auth.authorized.reason);
@@ -225,6 +227,15 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                 models.inferenceStatusFetching.message,
                 models.inferenceStatusFetching.reason,
             );
+        }
+        if (annotation.jobFetching) {
+            showError(annotation.jobFetching.message, annotation.jobFetching.reason);
+        }
+        if (annotation.frameFetching) {
+            showError(annotation.frameFetching.message, annotation.frameFetching.reason);
+        }
+        if (annotation.saving) {
+            showError(annotation.saving.message, annotation.saving.reason);
         }
 
         if (shown) {

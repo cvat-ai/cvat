@@ -1,7 +1,7 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
-import { SupportedPlugins } from '../reducers/interfaces';
-import PluginChecker from '../utils/plugin-checker';
+import { SupportedPlugins } from 'reducers/interfaces';
+import PluginChecker from 'utils/plugin-checker';
 
 export enum PluginsActionTypes {
     CHECK_PLUGINS = 'CHECK_PLUGINS',

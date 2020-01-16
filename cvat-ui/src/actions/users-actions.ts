@@ -1,7 +1,7 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 
-import getCore from '../core';
+import getCore from 'cvat-core';
 
 const core = getCore();
 

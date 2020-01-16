@@ -14,11 +14,11 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
-import getCore from '../../core';
+import getCore from 'cvat-core';
 import {
     CVATLogo,
     AccountIcon,
-} from '../../icons';
+} from 'icons';
 
 const core = getCore();
 const serverHost = core.config.backendAPI.slice(0, -7);

@@ -10,8 +10,8 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
-import ActionsMenuContainer from '../../containers/actions-menu/actions-menu';
-import { MenuIcon } from '../../icons';
+import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
+import { MenuIcon } from 'icons';
 
 interface DetailsComponentProps {
     taskInstance: any;
