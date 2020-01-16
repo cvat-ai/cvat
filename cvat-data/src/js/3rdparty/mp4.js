@@ -1,3 +1,5 @@
+module.exports = (function(){
+
 'use strict';
 
 
@@ -9,7 +11,7 @@ function assert(condition, message) {
 
 
 /**
- * Represents a 2-dimensional size value. 
+ * Represents a 2-dimensional size value.
  */
 var Size = (function size() {
   function constructor(w, h) {
@@ -791,14 +793,14 @@ var MP4Player = (function reader() {
         height: 368
       }
     });
-    
+
     this.webgl = this.avc.webgl;
-    
+
     var self = this;
     this.avc.onPictureDecoded = function(){
       updateStatistics.call(self);
     };
-    
+
     this.canvas = this.avc.canvas;
   }
 
@@ -897,10 +899,10 @@ var Broadway = (function broadway() {
     this.info.setAttribute('style', "font-size: 14px; font-weight: bold; padding: 6px; color: lime;");
     controls.appendChild(this.info);
     div.appendChild(controls);
-    
+
     var useWorkers = div.attributes.workers ? div.attributes.workers.value == "true" : false;
     var render = div.attributes.render ? div.attributes.render.value == "true" : false;
-    
+
     var webgl = "auto";
     if (div.attributes.webgl){
       if (div.attributes.webgl.value == "true"){
@@ -910,7 +912,7 @@ var Broadway = (function broadway() {
         webgl = false;
       };
     };
-    
+
     var infoStrPre = "Click canvas to load and play - ";
     var infoStr = "";
     if (useWorkers){
@@ -925,11 +927,11 @@ var Broadway = (function broadway() {
       this.play();
     }.bind(this);
     div.appendChild(this.canvas);
-    
-    
+
+
     infoStr += " - webgl: " + this.player.webgl;
     this.info.innerHTML = infoStrPre + infoStr;
-    
+
 
     this.score = null;
     this.player.onStatisticsUpdated = function (statistics) {
@@ -960,4 +962,16 @@ var Broadway = (function broadway() {
     }
   };
   return constructor;
+})();
+
+
+return {
+  Size,
+  Track,
+  MP4Reader,
+  MP4Player,
+  Bytestream,
+  Broadway,
+}
+
 })();

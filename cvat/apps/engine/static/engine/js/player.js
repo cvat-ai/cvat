@@ -24,40 +24,78 @@ class FrameProviderWrapper extends Listener {
         this._required = null;
     }
 
-    async require(frameNumber) {
+    async require(frameNumber, isPlaying, step) {
+        if (frameNumber === this._loaded && this._result && !isPlaying) {
+            return this._result;
+        }
+
         this._required = frameNumber;
-        const frameData = await window.cvatTask.frames.get(frameNumber);
         const ranges = await window.cvatTask.frames.ranges();
-        for (const range of ranges) {
-            const [start, stop] = range.split(':').map((el) => +el);
-            if (frameNumber >= start && frameNumber <= stop) {
-                const data = await frameData.data();
+        if (!isPlaying) {
+            const frameData = await window.cvatTask.frames.get(frameNumber, isPlaying, step);
+            for (const range of ranges.decoded) {
+                const [start, stop] = range.split(':').map((el) => +el);
+                if (frameNumber >= start && frameNumber <= stop) {
+                    const data = await frameData.data();
+                    this._loaded = frameNumber;
+                    this._result = {
+                        data,
+                        renderWidth: frameData.width,
+                        renderHeight: frameData.height,
+                    };
+                    return this._result;
+                }
+            }
+
+            frameData.data().then((data) => {
                 this._loaded = frameNumber;
                 this._result = {
                     data,
                     renderWidth: frameData.width,
                     renderHeight: frameData.height,
                 };
-                return this._result;
-            }
+
+                this.notify();
+            }).catch(() => {
+                this._loaded = { frameNumber };
+                this.notify();
+            });
+
+            return null;
         }
 
-        // fetching from server
-        // we don't want to wait it
-        // but we promise to notify the player when frame is loaded
-        frameData.data().then((data) => {
+        if (ranges.buffered.includes(frameNumber)) {
+            const frameData = await window.cvatTask.frames.get(frameNumber, isPlaying, step);
+            const data = await frameData.data();
             this._loaded = frameNumber;
             this._result = {
                 data,
                 renderWidth: frameData.width,
                 renderHeight: frameData.height,
             };
+            return this._result;
+        }
 
-            this.notify();
-        }).catch(() => {
-            this._loaded = { frameNumber };
-            this.notify();
-        });
+        // fetching from server
+        // we don't want to wait it
+        // but we promise to notify the player when frame is loaded
+        console.log(`Play frame ${frameNumber} is not buffered ${ranges.buffered}`);
+        setTimeout(async () => {
+            const frameData = await window.cvatTask.frames.get(frameNumber, isPlaying, step);
+            frameData.data().then((data) => {
+                this._loaded = frameNumber;
+                this._result = {
+                    data,
+                    renderWidth: frameData.width,
+                    renderHeight: frameData.height,
+                };
+
+                this.notify();
+            }).catch(() => {
+                this._loaded = { frameNumber };
+                this.notify();
+            });
+        }, 1);
 
         return null;
     }
@@ -68,172 +106,6 @@ class FrameProviderWrapper extends Listener {
 
     get result() {
         return this._result;
-    }
-}
-
-class FrameBuffer extends Listener {
-    constructor(size, frameProvider, chunkSize, stopFrame) {
-        super('onFrameReady', () => this._loaded);
-        this._size = size;
-        this._buffer = {};
-        this._requestedChunks = {};
-        this._frameProvider = frameProvider;
-        this._chunkSize = chunkSize;
-        this._frameProvider.subscribe(this);
-        this._loaded = null;
-        this._stopFrame = stopFrame;
-    }
-
-    getFreeBufferSize() {
-        let requestedFrameCount = 0;
-        for (const chunkIdx in this._requestedChunks) {
-            if (Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)) {
-                requestedFrameCount += this._requestedChunks[chunkIdx].requestedFrames.size;
-            }
-        }
-        return this._size - Object.keys(this._buffer).length - requestedFrameCount;
-    }
-
-    async onFrameLoad(last) { // callback for FrameProvider instance
-        const isReject = typeof (last) === 'object';
-        if (isReject) {
-            last = last.frameNumber;
-        }
-        const chunkIdx = Math.floor(last / this._chunkSize);
-        if (chunkIdx in this._requestedChunks
-            && this._requestedChunks[chunkIdx].requestedFrames.has(last)) {
-            if (isReject && this._requestedChunks[chunkIdx].reject) {
-                this._requestedChunks[chunkIdx].reject(last);
-                this._requestedChunks[chunkIdx].requestedFrames.clear();
-            }
-            const frameData = await this._frameProvider.require(last);
-            if (chunkIdx in this._requestedChunks
-                && this._requestedChunks[chunkIdx].requestedFrames.has(last)) {
-                this._requestedChunks[chunkIdx].buffer[last] = frameData;
-                this._requestedChunks[chunkIdx].requestedFrames.delete(last);
-                if (this._requestedChunks[chunkIdx].requestedFrames.size === 0) {
-                    if (this._requestedChunks[chunkIdx].resolve) {
-                        const bufferedframes = Object.keys(
-                            this._requestedChunks[chunkIdx].buffer,
-                        ).map(f => +f);
-                        this._requestedChunks[chunkIdx].resolve(new Set(bufferedframes));
-                    }
-                }
-            }
-        } else if (!isReject) {
-            this._loaded = last;
-            this.notify();
-        }
-    }
-
-    requestOneChunkFrames(chunkIdx) {
-        return new Promise((resolve, reject) => {
-            this._requestedChunks[chunkIdx] = {
-                ...this._requestedChunks[chunkIdx],
-                resolve,
-                reject,
-            };
-            for (const frame of this._requestedChunks[chunkIdx].requestedFrames.entries()) {
-                const requestedFrame = frame[1];
-                this._frameProvider.require(requestedFrame).then(frameData => {
-                    if (!(chunkIdx in this._requestedChunks)
-                        || !this._requestedChunks[chunkIdx].requestedFrames.has(requestedFrame)) {
-                        reject(requestedFrame);
-                    }
-
-                    if (frameData !== null) {
-                        this._requestedChunks[chunkIdx].requestedFrames.delete(requestedFrame);
-                        this._requestedChunks[chunkIdx].buffer[requestedFrame] = frameData;
-                        if (this._requestedChunks[chunkIdx].requestedFrames.size === 0) {
-                            const bufferedframes = Object.keys(
-                                this._requestedChunks[chunkIdx].buffer,
-                            ).map(f => +f);
-                            this._requestedChunks[chunkIdx].resolve(new Set(bufferedframes));
-                        }
-                    }
-                }).catch(error => {
-                    reject(error);
-                });
-            }
-        });
-    }
-
-    fillBuffer(startFrame, frameStep = 1, count = null) {
-        const freeSize = this.getFreeBufferSize();
-
-        let stopFrame = Math.min(startFrame + frameStep * freeSize, this._stopFrame + 1);
-        if (count) {
-            stopFrame = Math.min(stopFrame, count);
-        }
-
-        for (let i = startFrame; i < stopFrame; i += frameStep) {
-            const chunkIdx = Math.floor(i / this._chunkSize);
-            if (!(chunkIdx in this._requestedChunks)) {
-                this._requestedChunks[chunkIdx] = {
-                    requestedFrames: new Set(),
-                    resolve: null,
-                    reject: null,
-                    buffer: {},
-                };
-            }
-            this._requestedChunks[chunkIdx].requestedFrames.add(i);
-        }
-
-        let bufferedFrames = new Set();
-
-        // Need to decode chunks in sequence
-        // eslint-disable-next-line no-async-promise-executor
-        return new Promise(async (resolve, reject) => {
-            for (const chunkIdx in this._requestedChunks) {
-                if (Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)) {
-                    try {
-                        const chunkFrames = await this.requestOneChunkFrames(chunkIdx);
-                        if (chunkIdx in this._requestedChunks) {
-                            bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
-                            this._buffer = {
-                                ...this._buffer,
-                                ...this._requestedChunks[chunkIdx].buffer,
-                            };
-                            delete this._requestedChunks[chunkIdx];
-                            if (Object.keys(this._requestedChunks).length === 0) {
-                                resolve(bufferedFrames);
-                            }
-                        } else {
-                            reject(chunkIdx);
-                        }
-                    } catch (error) {
-                        this._requestedChunks = {};
-                        resolve(bufferedFrames);
-                    }
-                }
-            }
-        });
-    }
-
-    require(frameNumber) {
-        if (frameNumber in this._buffer) {
-            const frame = this._buffer[frameNumber];
-            delete this._buffer[frameNumber];
-            return frame;
-        }
-        return this._frameProvider.require(frameNumber);
-    }
-
-    clear() {
-        for (const chunkIdx in this._requestedChunks) {
-            if (Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)
-                && this._requestedChunks[chunkIdx].reject) {
-                this._requestedChunks[chunkIdx].reject();
-            }
-        }
-        this._requestedChunks = {};
-        this._buffer = {};
-    }
-
-    deleteFrame(frameNumber) {
-        if (frameNumber in this._buffer) {
-            delete this._buffer[frameNumber];
-        }
     }
 }
 
@@ -264,15 +136,10 @@ class PlayerModel extends Listener {
         this._pauseFlag = null;
         this._chunkSize = window.cvat.job.chunk_size;
         this._frameProvider = new FrameProviderWrapper(this._frame.stop);
-        this._bufferSize = 200;
-        this._frameBuffer = new FrameBuffer(
-            this._bufferSize, this._frameProvider,
-            this._chunkSize, this._frame.stop,
-        );
         this._continueAfterLoad = false;
         this._image = null;
         this._activeBufrequest = false;
-        this._bufferedFrames = new Set();
+        // this._bufferedFrames = new Set();
         this._step = 1;
         this._timeout = 1000 / this._settings.fps;
 
@@ -292,7 +159,7 @@ class PlayerModel extends Listener {
         window.cvat.translate.playerOffset = this._geometry.frameOffset;
         window.cvat.player.rotation = this._geometry.rotation;
 
-        this._frameBuffer.subscribe(this);
+        this._frameProvider.subscribe(this);
     }
 
     get bufferSize() {
@@ -363,7 +230,7 @@ class PlayerModel extends Listener {
         return this._frame.previous === this._frame.current;
     }
 
-    async onFrameReady(last) { // callback for FrameProvider instance
+    async onFrameLoad(last) { // callback for FrameProvider instance
         if (last === this._frame.current) {
             if (this._continueAfterLoad) {
                 this._continueAfterLoad = false;
@@ -374,27 +241,27 @@ class PlayerModel extends Listener {
         }
     }
 
-    fillBuffer(startFrame, step, count = null) {
-        if (this._activeBufrequest) {
-            return;
-        }
+    // fillBuffer(startFrame, step, count = null) {
+    //     if (this._activeBufrequest) {
+    //         return;
+    //     }
 
-        this._activeBufrequest = true;
-        this._frameBuffer.fillBuffer(startFrame, step, count).then((bufferedFrames) => {
-            this._bufferedFrames = new Set([...this._bufferedFrames, ...bufferedFrames]);
-            if ((!this._pauseFlag || this._continueAfterLoad) && !this._playInterval) {
-                this._continueAfterLoad = false;
-                this._pauseFlag = false;
-                this._playInterval = setInterval(() => this._playFunction(), this._timeout);
-            }
-        }).catch(error => {
-            if (typeof (error) !== 'number') {
-                throw error;
-            }
-        }).finally(() => {
-            this._activeBufrequest = false;
-        });
-    }
+    //     this._activeBufrequest = true;
+    //     this._frameBuffer.fillBuffer(startFrame, step, count).then((bufferedFrames) => {
+    //         this._bufferedFrames = new Set([...this._bufferedFrames, ...bufferedFrames]);
+    //         if ((!this._pauseFlag || this._continueAfterLoad) && !this._playInterval) {
+    //             this._continueAfterLoad = false;
+    //             this._pauseFlag = false;
+    //             this._playInterval = setInterval(() => this._playFunction(), this._timeout);
+    //         }
+    //     }).catch(error => {
+    //         if (typeof (error) !== 'number') {
+    //             throw error;
+    //         }
+    //     }).finally(() => {
+    //         this._activeBufrequest = false;
+    //     });
+    // }
 
     async _playFunction() {
         if (this._pauseFlag) { // pause method without notify (for frame downloading)
@@ -405,34 +272,35 @@ class PlayerModel extends Listener {
             return;
         }
 
-        const requestedFrame = this._frame.current + this._step;
-        if (this._bufferedFrames.size < this._bufferSize / 2
-            && requestedFrame <= this._frame.stop) {
-            if (this._bufferedFrames.size !== 0) {
-                const maxBufFrame = Math.max(...this._bufferedFrames);
-                if (maxBufFrame !== this._frame.stop) {
-                    this.fillBuffer(maxBufFrame + 1, this._step);
-                }
-            } else {
-                this.fillBuffer(requestedFrame, this._step);
-            }
-        }
+        // const requestedFrame = this._frame.current + this._step;
+        // if (this._bufferedFrames.size < this._bufferSize / 2
+        //     && requestedFrame <= this._frame.stop) {
+        //     if (this._bufferedFrames.size !== 0) {
+        //         const maxBufFrame = Math.max(...this._bufferedFrames);
+        //         if (maxBufFrame !== this._frame.stop) {
+        //             this.fillBuffer(maxBufFrame + 1, this._step);
+        //         }
+        //     } else {
+        //         this.fillBuffer(requestedFrame, this._step);
+        //     }
+        // }
 
-        if (!this._bufferedFrames.size) {
-            if (this._frame.current === this._frame.stop) {
-                this.pause();
-            } else {
-                setTimeout(() => {
-                    if (this._activeBufrequest && !this._bufferedFrames.size) {
-                        this._image = null;
-                        this._continueAfterLoad = this.playing;
-                        this._pauseFlag = true;
-                        this.notify();
-                    }
-                }, 500);
-            }
-            return;
-        }
+        // if (!this._bufferedFrames.size) {
+        //     if (this._frame.current === this._frame.stop) {
+        //         this.pause();
+        //     } else {
+        //         // loading frames
+        //         setTimeout(() => {
+        //             if (this._activeBufrequest && !this._bufferedFrames.size) {
+        //                 this._image = null;
+        //                 this._continueAfterLoad = this.playing;
+        //                 this._pauseFlag = true;
+        //                 this.notify();
+        //             }
+        //         }, 500);
+        //     }
+        //     return;
+        // }
 
         const res = await this.shift(this._step);
         if (!res) {
@@ -449,13 +317,14 @@ class PlayerModel extends Listener {
         this._timeout = 1000 / this._settings.fps;
         this._frame.requested.clear();
 
-        this._bufferedFrames.forEach(bufferedFrame => {
-            if (bufferedFrame <= this._frame.current
-                || bufferedFrame >= this._frame.current + this._bufferSize) {
-                this._bufferedFrames.delete(bufferedFrame);
-                this._frameBuffer.deleteFrame(bufferedFrame);
-            }
-        });
+        // clear
+        // this._bufferedFrames.forEach(bufferedFrame => {
+        //     if (bufferedFrame <= this._frame.current
+        //         || bufferedFrame >= this._frame.current + this._bufferSize) {
+        //         this._bufferedFrames.delete(bufferedFrame);
+        //         this._frameBuffer.deleteFrame(bufferedFrame);
+        //     }
+        // });
         this._playFunction();
     }
 
@@ -498,12 +367,12 @@ class PlayerModel extends Listener {
         }
 
         try {
-            if (!this._bufferedFrames.has(requestedFrame)) {
-                this._bufferedFrames.clear();
-                this._frameBuffer.clear();
-            }
-            const frame = await this._frameBuffer.require(requestedFrame);
-            this._bufferedFrames.delete(requestedFrame);
+            // if (!this._bufferedFrames.has(requestedFrame)) {
+            //     this._bufferedFrames.clear();
+            //     // this._frameBuffer.clear();
+            // }
+            const frame = await this._frameProvider.require(requestedFrame, this._playing, this._step);
+            // this._bufferedFrames.delete(requestedFrame);
             if (!this._frame.requested.has(requestedFrame)) {
                 return false;
             }

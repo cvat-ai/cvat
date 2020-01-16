@@ -640,9 +640,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
     playerModel.subscribe(shapeBufferView);
     playerModel.subscribe(shapeGrouperView);
     playerModel.subscribe(polyshapeEditorView);
-    playerModel.shift(window.cvat.search.get('frame') || 0, true).then(() => {
-        setTimeout(() => playerModel.fillBuffer(1 + (window.cvat.search.get('frame') || 0), 1, playerModel.bufferSize), 5000);
-    });
+    playerModel.shift(window.cvat.search.get('frame') || 0, true);
 
     const { shortkeys } = window.cvat.config;
 

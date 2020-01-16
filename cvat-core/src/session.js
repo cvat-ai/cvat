@@ -111,9 +111,9 @@
             }),
             frames: Object.freeze({
                 value: {
-                    async get(frame) {
+                    async get(frame, isPlaying = false, step = 1) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.frames.get, frame);
+                            .apiWrapper.call(this, prototype.frames.get, frame, isPlaying, step);
                         return result;
                     },
                     async ranges() {
@@ -1444,7 +1444,7 @@
         return result;
     };
 
-    Task.prototype.frames.get.implementation = async function (frame) {
+    Task.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
         if (!Number.isInteger(frame) || frame < 0) {
             throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
@@ -1465,6 +1465,8 @@
             frame,
             0,
             this.size - 1,
+            isPlaying,
+            step,
         );
         return result;
     };
