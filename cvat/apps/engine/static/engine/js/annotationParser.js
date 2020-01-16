@@ -231,13 +231,13 @@ class AnnotationParser {
                             occluded,
                             points,
                         });
-                    } else if (shapeType === 'cuboid') {
+                    } else if (shapeType === "cuboid") {
                         const [points, occluded, zOrder] = this._getPolyPosition(shape, frame);
                         data[shapeTarget[shapeType]].push({
                             label_id: labelId,
                             group: +group,
                             attributes: attributeList,
-                            type: 'cuboid',
+                            type: "cuboid",
                             z_order: zOrder,
                             frame,
                             occluded,
