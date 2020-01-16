@@ -129,6 +129,7 @@ export default class DrawShapePopoverContent extends React.PureComponent<Props, 
                     <Col span={12}>
                         <Button
                             onClick={(): void => {
+                                canvasInstance.cancel();
                                 canvasInstance.draw({
                                     enabled: true,
                                     numberOfPoints,
@@ -146,6 +147,7 @@ export default class DrawShapePopoverContent extends React.PureComponent<Props, 
                     <Col span={12}>
                         <Button
                             onClick={(): void => {
+                                canvasInstance.cancel();
                                 canvasInstance.draw({
                                     enabled: true,
                                     numberOfPoints,
