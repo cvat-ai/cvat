@@ -3,13 +3,15 @@ import { connect } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas';
 
-import { drawShape } from 'actions/annotation-actions';
+import {
+    mergeObjects,
+    groupObjects,
+    splitTrack,
+} from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import {
     ActiveControl,
     CombinedState,
-    ShapeType,
-    ObjectType,
     StringObject,
 } from 'reducers/interfaces';
 
@@ -21,12 +23,9 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onDrawStart(
-        shapeType: ShapeType,
-        labelID: number,
-        objectType: ObjectType,
-        points?: number,
-    ): void;
+    onMergeStart(): void;
+    onGroupStart(): void;
+    onSplitStart(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -56,13 +55,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function dispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onDrawStart(
-            shapeType: ShapeType,
-            labelID: number,
-            objectType: ObjectType,
-            points?: number,
-        ): void {
-            dispatch(drawShape(shapeType, labelID, objectType, points));
+        onMergeStart(): void {
+            dispatch(mergeObjects());
+        },
+        onGroupStart(): void {
+            dispatch(groupObjects());
+        },
+        onSplitStart(): void {
+            dispatch(splitTrack());
         },
     };
 }

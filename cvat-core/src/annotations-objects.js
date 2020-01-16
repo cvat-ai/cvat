@@ -278,6 +278,7 @@
                 group: this.group,
                 color: this.color,
                 visibility: this.visibility,
+                frame,
             };
         }
 
@@ -491,6 +492,7 @@
                     lock: this.lock,
                     color: this.color,
                     visibility: this.visibility,
+                    frame,
                 };
 
                 this.cache[frame] = interpolation;
@@ -872,6 +874,7 @@
                 attributes: { ...this.attributes },
                 label: this.label,
                 group: this.group,
+                frame,
             };
         }
 

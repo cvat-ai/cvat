@@ -33,8 +33,7 @@ export default function DrawRectangleControl(props: Props): JSX.Element {
 
     const dynamicIconProps = activeControl === ActiveControl.DRAW_POLYGON
         ? {
-            className: activeControl === ActiveControl.DRAW_POLYGON
-                ? 'cvat-annotation-page-active-control' : '',
+            className: 'cvat-annotation-page-active-control',
             onClick: (): void => {
                 canvasInstance.draw({ enabled: false });
             },

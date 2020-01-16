@@ -9,6 +9,9 @@ import {
     zoomCanvas,
     resetCanvas,
     shapeDrawn,
+    objectsMerged,
+    objectsGroupped,
+    trackSplitted,
     annotationsUpdated,
 } from 'actions/annotation-actions';
 import {
@@ -39,6 +42,9 @@ interface DispatchToProps {
     onZoomCanvas: (enabled: boolean) => void;
     onResetCanvas: () => void;
     onShapeDrawn: () => void;
+    onObjectsMerged: () => void;
+    onObjectsGroupped: () => void;
+    onTrackSplitted: () => void;
     onAnnotationsUpdated: (annotations: any[]) => void;
 }
 
@@ -95,6 +101,15 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onShapeDrawn(): void {
             dispatch(shapeDrawn());
+        },
+        onObjectsMerged(): void {
+            dispatch(objectsMerged());
+        },
+        onObjectsGroupped(): void {
+            dispatch(objectsGroupped());
+        },
+        onTrackSplitted(): void {
+            dispatch(trackSplitted());
         },
         onAnnotationsUpdated(annotations: any[]): void {
             dispatch(annotationsUpdated(annotations));

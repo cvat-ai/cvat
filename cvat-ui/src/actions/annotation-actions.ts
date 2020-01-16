@@ -31,6 +31,12 @@ export enum AnnotationActionTypes {
     ZOOM_CANVAS = 'ZOOM_CANVAS',
     DRAW_SHAPE = 'DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
+    MERGE_OBJECTS = 'MERGE_OBJECTS',
+    OBJECTS_MERGED = 'OBJECTS_MERGED',
+    GROUP_OBJECTS = 'GROUP_OBJECTS',
+    OBJECTS_GROUPPED = 'OBJECTS_GROUPPED',
+    SPLIT_TRACK = 'SPLIT_TRACK',
+    TRACK_SPLITTED = 'TRACK_SPLITTED',
     RESET_CANVAS = 'RESET_CANVAS',
     ANNOTATIONS_UPDATED = 'ANNOTATIONS_UPDATED',
 }
@@ -232,6 +238,48 @@ export function drawShape(
 export function shapeDrawn(): AnyAction {
     return {
         type: AnnotationActionTypes.SHAPE_DRAWN,
+        payload: {},
+    };
+}
+
+export function mergeObjects(): AnyAction {
+    return {
+        type: AnnotationActionTypes.MERGE_OBJECTS,
+        payload: {},
+    };
+}
+
+export function objectsMerged(): AnyAction {
+    return {
+        type: AnnotationActionTypes.OBJECTS_MERGED,
+        payload: {},
+    };
+}
+
+export function groupObjects(): AnyAction {
+    return {
+        type: AnnotationActionTypes.GROUP_OBJECTS,
+        payload: {},
+    };
+}
+
+export function objectsGroupped(): AnyAction {
+    return {
+        type: AnnotationActionTypes.OBJECTS_GROUPPED,
+        payload: {},
+    };
+}
+
+export function splitTrack(): AnyAction {
+    return {
+        type: AnnotationActionTypes.SPLIT_TRACK,
+        payload: {},
+    };
+}
+
+export function trackSplitted(): AnyAction {
+    return {
+        type: AnnotationActionTypes.TRACK_SPLITTED,
         payload: {},
     };
 }

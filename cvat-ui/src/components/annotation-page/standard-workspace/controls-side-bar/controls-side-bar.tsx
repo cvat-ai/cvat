@@ -12,9 +12,6 @@ import {
 
 import {
     TagIcon,
-    MergeIcon,
-    GroupIcon,
-    SplitIcon,
 } from 'icons';
 
 import {
@@ -30,11 +27,18 @@ import DrawRectangleControl from './draw-rectangle-control';
 import DrawPolygonControl from './draw-polygon-control';
 import DrawPolylineControl from './draw-polyline-control';
 import DrawPointsControl from './draw-points-control';
+import MergeControl from './merge-control';
+import GroupControl from './group-control';
+import SplitControl from './split-control';
 
 interface Props {
     canvasInstance: Canvas;
     rotateAll: boolean;
     activeControl: ActiveControl;
+
+    onMergeStart(): void;
+    onGroupStart(): void;
+    onSplitStart(): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
@@ -63,18 +67,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <Tooltip overlay='Setup a tag' placement='right'>
                 <Icon component={TagIcon} />
             </Tooltip>
+
             <hr />
-            <Tooltip overlay='Merge shapes/tracks' placement='right'>
-                <Icon component={MergeIcon} />
-            </Tooltip>
 
-            <Tooltip overlay='Group shapes/tracks' placement='right'>
-                <Icon component={GroupIcon} />
-            </Tooltip>
-
-            <Tooltip overlay='Split a track' placement='right'>
-                <Icon component={SplitIcon} />
-            </Tooltip>
+            <MergeControl {...props} />
+            <GroupControl {...props} />
+            <SplitControl {...props} />
         </Layout.Sider>
     );
 }

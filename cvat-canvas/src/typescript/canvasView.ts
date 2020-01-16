@@ -207,7 +207,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onGroupDone(objects: any[]): void {
+    private onGroupDone(objects?: any[]): void {
         if (objects) {
             const event: CustomEvent = new CustomEvent('canvas.groupped', {
                 bubbles: false,
@@ -666,7 +666,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.IMAGE_MOVED) {
             this.moveCanvas();
         } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
+            if (this.mode === Mode.GROUP) {
+                this.groupHandler.resetSelectedObjects();
+            }
             setupObjects.call(this, this.controller.objects);
+            if (this.mode === Mode.MERGE) {
+                this.mergeHandler.repeatSelection();
+            }
             const event: CustomEvent = new CustomEvent('canvas.setup');
             this.canvas.dispatchEvent(event);
         } else if (reason === UpdateReasons.GRID_UPDATED) {

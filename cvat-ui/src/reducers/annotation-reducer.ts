@@ -162,6 +162,27 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.MERGE_OBJECTS: {
+            return {
+                ...state,
+                activeControl: ActiveControl.MERGE,
+            };
+        }
+        case AnnotationActionTypes.GROUP_OBJECTS: {
+            return {
+                ...state,
+                activeControl: ActiveControl.GROUP,
+            };
+        }
+        case AnnotationActionTypes.SPLIT_TRACK: {
+            return {
+                ...state,
+                activeControl: ActiveControl.SPLIT,
+            };
+        }
+        case AnnotationActionTypes.OBJECTS_MERGED:
+        case AnnotationActionTypes.OBJECTS_GROUPPED:
+        case AnnotationActionTypes.TRACK_SPLITTED:
         case AnnotationActionTypes.SHAPE_DRAWN: {
             return {
                 ...state,

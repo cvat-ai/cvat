@@ -8,7 +8,9 @@ import {
     StringObject,
 } from 'reducers/interfaces';
 
-import { drawShape } from 'actions/annotation-actions';
+import {
+    drawShape,
+} from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 

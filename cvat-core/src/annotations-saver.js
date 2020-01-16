@@ -200,73 +200,67 @@
                 };
             }
 
-            try {
-                const exported = this.collection.export();
-                const { flush } = this.collection;
-                if (flush) {
-                    onUpdate('Created objects are being saved on the server');
-                    const indexes = this._receiveIndexes(exported);
-                    const savedData = await this._put({ ...exported, version: this.version });
-                    this.version = savedData.version;
-                    this.collection.flush = false;
+            const exported = this.collection.export();
+            const { flush } = this.collection;
+            if (flush) {
+                onUpdate('Created objects are being saved on the server');
+                const indexes = this._receiveIndexes(exported);
+                const savedData = await this._put({ ...exported, version: this.version });
+                this.version = savedData.version;
+                this.collection.flush = false;
 
-                    this._updateCreatedObjects(savedData, indexes);
+                this._updateCreatedObjects(savedData, indexes);
 
-                    this._resetState();
-                    for (const type of Object.keys(this.initialObjects)) {
-                        for (const object of savedData[type]) {
-                            this.initialObjects[type][object.id] = object;
-                        }
+                this._resetState();
+                for (const type of Object.keys(this.initialObjects)) {
+                    for (const object of savedData[type]) {
+                        this.initialObjects[type][object.id] = object;
                     }
-                } else {
-                    const {
-                        created,
-                        updated,
-                        deleted,
-                    } = this._split(exported);
+                }
+            } else {
+                const {
+                    created,
+                    updated,
+                    deleted,
+                } = this._split(exported);
 
-                    onUpdate('Created objects are being saved on the server');
-                    const indexes = this._receiveIndexes(created);
-                    const createdData = await this._create({ ...created, version: this.version });
-                    this.version = createdData.version;
+                onUpdate('Created objects are being saved on the server');
+                const indexes = this._receiveIndexes(created);
+                const createdData = await this._create({ ...created, version: this.version });
+                this.version = createdData.version;
 
-                    this._updateCreatedObjects(createdData, indexes);
+                this._updateCreatedObjects(createdData, indexes);
 
-                    for (const type of Object.keys(this.initialObjects)) {
-                        for (const object of createdData[type]) {
-                            this.initialObjects[type][object.id] = object;
-                        }
-                    }
-
-                    onUpdate('Updated objects are being saved on the server');
-                    this._receiveIndexes(updated);
-                    const updatedData = await this._update({ ...updated, version: this.version });
-                    this.version = updatedData.version;
-
-                    for (const type of Object.keys(this.initialObjects)) {
-                        for (const object of updatedData[type]) {
-                            this.initialObjects[type][object.id] = object;
-                        }
-                    }
-
-                    onUpdate('Deleted objects are being deleted from the server');
-                    this._receiveIndexes(deleted);
-                    const deletedData = await this._delete({ ...deleted, version: this.version });
-                    this._version = deletedData.version;
-
-                    for (const type of Object.keys(this.initialObjects)) {
-                        for (const object of deletedData[type]) {
-                            delete this.initialObjects[type][object.id];
-                        }
+                for (const type of Object.keys(this.initialObjects)) {
+                    for (const object of createdData[type]) {
+                        this.initialObjects[type][object.id] = object;
                     }
                 }
 
-                this.hash = this._getHash();
-                onUpdate('Annotations have been saved successfuly');
-            } catch (error) {
-                onUpdate('Could not save annotations');
-                throw error;
+                onUpdate('Updated objects are being saved on the server');
+                this._receiveIndexes(updated);
+                const updatedData = await this._update({ ...updated, version: this.version });
+                this.version = updatedData.version;
+
+                for (const type of Object.keys(this.initialObjects)) {
+                    for (const object of updatedData[type]) {
+                        this.initialObjects[type][object.id] = object;
+                    }
+                }
+
+                onUpdate('Deleted objects are being deleted from the server');
+                this._receiveIndexes(deleted);
+                const deletedData = await this._delete({ ...deleted, version: this.version });
+                this._version = deletedData.version;
+
+                for (const type of Object.keys(this.initialObjects)) {
+                    for (const object of deletedData[type]) {
+                        delete this.initialObjects[type][object.id];
+                    }
+                }
             }
+
+            this.hash = this._getHash();
         }
 
         hasUnsavedChanges() {

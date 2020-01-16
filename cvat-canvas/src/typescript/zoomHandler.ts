@@ -27,7 +27,7 @@ export class ZoomHandlerImpl implements ZoomHandler {
     private startSelectionPoint: {
         x: number;
         y: number;
-    } | null;
+    };
 
     private onSelectStart(event: MouseEvent): void {
         if (!this.selectionRect && event.which === 1) {
@@ -89,7 +89,10 @@ export class ZoomHandlerImpl implements ZoomHandler {
             const box = this.getSelectionBox(event);
             this.selectionRect.remove();
             this.selectionRect = null;
-            this.startSelectionPoint = null;
+            this.startSelectionPoint = {
+                x: 0,
+                y: 0,
+            };
             const threshold = 5;
             if (box.width > threshold && box.height > threshold) {
                 this.onZoomRegion(box.x, box.y, box.width, box.height);
@@ -106,7 +109,10 @@ export class ZoomHandlerImpl implements ZoomHandler {
         this.canvas = canvas;
         this.geometry = geometry;
         this.selectionRect = null;
-        this.startSelectionPoint = null;
+        this.startSelectionPoint = {
+            x: 0,
+            y: 0,
+        };
         this.bindedOnSelectStart = this.onSelectStart.bind(this);
         this.bindedOnSelectUpdate = this.onSelectUpdate.bind(this);
         this.bindedOnSelectStop = this.onSelectStop.bind(this);

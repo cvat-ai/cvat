@@ -24,6 +24,7 @@ interface Props {
     canvasInstance: Canvas;
     shapeType: ShapeType;
     labels: StringObject;
+
     onDrawStart(
         shapeType: ShapeType,
         labelID: number,
