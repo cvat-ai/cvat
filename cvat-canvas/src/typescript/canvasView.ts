@@ -1047,7 +1047,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
-            stroke: darker(state.color, 50),
+            stroke: darker(state.color, 20),
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             zOrder: state.zOrder,
         }).move(xtl, ytl)
@@ -1067,7 +1067,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
-            stroke: darker(state.color, 50),
+            stroke: darker(state.color, 20),
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');
@@ -1086,7 +1086,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
-            stroke: darker(state.color, 50),
+            stroke: darker(state.color, 20),
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');

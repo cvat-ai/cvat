@@ -162,7 +162,8 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             || !!tasks.exporting || !!tasks.deleting || !!tasks.creating || !!formats.fetching
             || !!users.fetching || !!share.fetching || !!models.creating || !!models.starting
             || !!models.fetching || !!models.deleting || !!models.inferenceStatusFetching
-            || !!models.metaFetching || !!annotation.frameFetching || !!annotation.saving;
+            || !!models.metaFetching || !!annotation.frameFetching || !!annotation.saving
+            || !!annotation.jobFetching;
 
         if (auth.authorized) {
             showError(auth.authorized.message, auth.authorized.reason);
@@ -226,6 +227,9 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                 models.inferenceStatusFetching.message,
                 models.inferenceStatusFetching.reason,
             );
+        }
+        if (annotation.jobFetching) {
+            showError(annotation.jobFetching.message, annotation.jobFetching.reason);
         }
         if (annotation.frameFetching) {
             showError(annotation.frameFetching.message, annotation.frameFetching.reason);

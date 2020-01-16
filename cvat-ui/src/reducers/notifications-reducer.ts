@@ -47,6 +47,7 @@ const defaultState: NotificationsState = {
         },
         annotation: {
             saving: null,
+            jobFetching: null,
             frameFetching: null,
         },
     },
@@ -404,6 +405,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         starting: {
                             message: 'Could not infer model for the '
                                 + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_JOB_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        jobFetching: {
+                            message: 'Error during fetching a job',
                             reason: action.payload.error.toString(),
                         },
                     },
