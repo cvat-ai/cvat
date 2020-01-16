@@ -324,7 +324,9 @@ class ShapeCreatorView {
             "stroke-width": STROKE_WIDTH / this._scale,
         })
             .on("drawstop", (e) => {
-                if (this._cancel) return;
+                if (this._cancel) {
+                    return;
+                }
                 if (sizeUI) {
                     sizeUI.rm();
                     sizeUI = null;
@@ -678,6 +680,7 @@ class ShapeCreatorView {
         }
 
         this._drawInstance.attr({
+            // eslint-disable-next-line
             z_order: Number.MAX_SAFE_INTEGER,
         });
     }
@@ -697,6 +700,7 @@ class ShapeCreatorView {
                     .attr({
                         "stroke-width": STROKE_WIDTH / this._scale,
                         stroke: "red",
+                        // eslint-disable-next-line
                         z_order: Number.MAX_SAFE_INTEGER,
                     }).addClass("aim"),
                 y: this._frameContent.line(this._aimCoord.x, 0, this._aimCoord.x,
@@ -704,6 +708,7 @@ class ShapeCreatorView {
                     .attr({
                         "stroke-width": STROKE_WIDTH / this._scale,
                         stroke: "red",
+                        // eslint-disable-next-line
                         z_order: Number.MAX_SAFE_INTEGER,
                     }).addClass("aim"),
             };
@@ -762,7 +767,9 @@ class ShapeCreatorView {
     }
 
     onPlayerUpdate(player) {
-        if (!player.ready()) return;
+        if (!player.ready()) {
+            return;
+        }
         if (this._scale !== player.geometry.scale) {
             this._scale = player.geometry.scale;
             if (this._drawInstance) {

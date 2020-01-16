@@ -14,10 +14,10 @@
 
 /* eslint no-underscore-dangle: 0 */
 
-window.addEventListener('DOMContentLoaded', () => {
-    $('<option value="auto_segmentation" class="regular"> Auto Segmentation </option>').appendTo('#shapeTypeSelector');
+window.addEventListener("DOMContentLoaded", () => {
+    $("<option value=\"auto_segmentation\" class=\"regular\"> Auto Segmentation </option>").appendTo("#shapeTypeSelector");
 
-    const dextrCancelButtonId = 'dextrCancelButton';
+    const dextrCancelButtonId = "dextrCancelButton";
     const dextrOverlay = $(`
         <div class="modal hidden force-modal">
             <div class="modal-content" style="width: 300px; height: 70px;">
@@ -26,21 +26,21 @@ window.addEventListener('DOMContentLoaded', () => {
                     <button id="${dextrCancelButtonId}" class="regular h2" style="width: 250px;"> Cancel </button>
                 </center>
             </div>
-        </div>`).appendTo('body');
+        </div>`).appendTo("body");
 
     const dextrCancelButton = $(`#${dextrCancelButtonId}`);
-    dextrCancelButton.on('click', () => {
-        dextrCancelButton.prop('disabled', true);
+    dextrCancelButton.on("click", () => {
+        dextrCancelButton.prop("disabled", true);
         $.ajax({
             url: `/dextr/cancel/${window.cvat.job.id}`,
-            type: 'GET',
+            type: "GET",
             error: (errorData) => {
                 const message = `Can not cancel segmentation. Code: ${errorData.status}.
                     Message: ${errorData.responseText || errorData.statusText}`;
                 showMessage(message);
             },
             complete: () => {
-                dextrCancelButton.prop('disabled', false);
+                dextrCancelButton.prop("disabled", false);
             },
         });
     });
@@ -51,13 +51,13 @@ window.addEventListener('DOMContentLoaded', () => {
             const instance = new OriginalClass(...args);
 
             // Decorator for the defaultType property
-            Object.defineProperty(instance, 'defaultType', {
+            Object.defineProperty(instance, "defaultType", {
                 get: () => instance._defaultType,
                 set: (type) => {
                     // FIXME: it is code cloning of shapeCreator.
                     // Need to find a better solution.
-                    if (!['box', 'points', 'polygon', 'polyline',
-                        'auto_segmentation', 'cuboid'].includes(type)) {
+                    if (!["box", "points", "polygon", "polyline",
+                        "auto_segmentation", "cuboid"].includes(type)) {
                         throw Error(`Unknown shape type found ${type}`);
                     }
                     instance._defaultType = type;
@@ -67,12 +67,12 @@ window.addEventListener('DOMContentLoaded', () => {
             // Decorator for finish method.
             const decoratedFinish = instance.finish;
             instance.finish = (result) => {
-                if (instance._defaultType === 'auto_segmentation') {
+                if (instance._defaultType === "auto_segmentation") {
                     try {
-                        instance._defaultType = 'polygon';
+                        instance._defaultType = "polygon";
                         decoratedFinish.call(instance, result);
                     } finally {
-                        instance._defaultType = 'auto_segmentation';
+                        instance._defaultType = "auto_segmentation";
                     }
                 } else {
                     decoratedFinish.call(instance, result);
@@ -97,13 +97,13 @@ window.addEventListener('DOMContentLoaded', () => {
             // We save the decorated _create() and we will use it if type != 'auto_segmentation'
             const decoratedCreate = instance._create;
             instance._create = () => {
-                if (instance._type !== 'auto_segmentation') {
+                if (instance._type !== "auto_segmentation") {
                     decoratedCreate.call(instance);
                     return;
                 }
 
-                instance._drawInstance = instance._frameContent.polyline().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
-                    'stroke-width': 0,
+                instance._drawInstance = instance._frameContent.polyline().draw({ snapToGrid: 0.1 }).addClass("shapeCreation").attr({
+                    "stroke-width": 0,
                     z_order: Number.MAX_SAFE_INTEGER,
                 });
                 instance._createPolyEvents();
@@ -113,12 +113,12 @@ window.addEventListener('DOMContentLoaded', () => {
                 * because of that reason we remove the handler and
                 * create the valid handler instead
                 */
-                instance._drawInstance.off('drawdone').on('drawdone', (e) => {
-                    let actualPoints = window.cvat.translate.points.canvasToActual(e.target.getAttribute('points'));
+                instance._drawInstance.off("drawdone").on("drawdone", (e) => {
+                    let actualPoints = window.cvat.translate.points.canvasToActual(e.target.getAttribute("points"));
                     actualPoints = PolyShapeModel.convertStringToNumberArray(actualPoints);
 
                     if (actualPoints.length < 4) {
-                        showMessage('It is need to specify minimum four extreme points for an object');
+                        showMessage("It is need to specify minimum four extreme points for an object");
                         instance._controller.switchCreateMode(true);
                         return;
                     }
@@ -131,7 +131,7 @@ window.addEventListener('DOMContentLoaded', () => {
                         point.y = Math.clamp(point.y, 0, frameHeight);
                     }
 
-                    e.target.setAttribute('points',
+                    e.target.setAttribute("points",
                         window.cvat.translate.points.actualToCanvas(
                             PolyShapeModel.convertNumberArrayToString(actualPoints),
                         ));
@@ -142,30 +142,30 @@ window.addEventListener('DOMContentLoaded', () => {
                     if (area > AREA_TRESHOLD) {
                         $.ajax({
                             url: `/dextr/create/${window.cvat.job.id}`,
-                            type: 'POST',
+                            type: "POST",
                             data: JSON.stringify({
                                 frame: window.cvat.player.frames.current,
                                 points: actualPoints,
                             }),
-                            contentType: 'application/json',
+                            contentType: "application/json",
                             success: () => {
                                 function intervalCallback() {
                                     $.ajax({
                                         url: `/dextr/check/${window.cvat.job.id}`,
-                                        type: 'GET',
+                                        type: "GET",
                                         success: (jobData) => {
-                                            if (['queued', 'started'].includes(jobData.status)) {
-                                                if (jobData.status === 'queued') {
-                                                    dextrCancelButton.prop('disabled', false);
+                                            if (["queued", "started"].includes(jobData.status)) {
+                                                if (jobData.status === "queued") {
+                                                    dextrCancelButton.prop("disabled", false);
                                                 }
                                                 setTimeout(intervalCallback, 1000);
                                             } else {
-                                                dextrOverlay.addClass('hidden');
-                                                if (jobData.status === 'finished') {
+                                                dextrOverlay.addClass("hidden");
+                                                if (jobData.status === "finished") {
                                                     if (jobData.result) {
-                                                        instance._controller.finish({ points: jobData.result }, 'polygon');
+                                                        instance._controller.finish({ points: jobData.result }, "polygon");
                                                     }
-                                                } else if (jobData.status === 'failed') {
+                                                } else if (jobData.status === "failed") {
                                                     const message = `Segmentation has fallen. Error: '${jobData.stderr}'`;
                                                     showMessage(message);
                                                 } else {
@@ -178,7 +178,7 @@ window.addEventListener('DOMContentLoaded', () => {
                                             }
                                         },
                                         error: (errorData) => {
-                                            dextrOverlay.addClass('hidden');
+                                            dextrOverlay.addClass("hidden");
                                             const message = `Can not check segmentation. Code: ${errorData.status}.`
                                                 + ` Message: ${errorData.responseText || errorData.statusText}`;
                                             showMessage(message);
@@ -186,8 +186,8 @@ window.addEventListener('DOMContentLoaded', () => {
                                     });
                                 }
 
-                                dextrCancelButton.prop('disabled', true);
-                                dextrOverlay.removeClass('hidden');
+                                dextrCancelButton.prop("disabled", true);
+                                dextrOverlay.removeClass("hidden");
                                 setTimeout(intervalCallback, 1000);
                             },
                             error: (errorData) => {

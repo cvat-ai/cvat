@@ -370,7 +370,7 @@ class CuboidController extends PolyShapeController {
         const dy = currentPosition.y - startPoint.y;
         const newPoints = [];
         for (let i = 0; i < startPosition.length; i += 1) {
-            newPoints[i] = { x: startPosition[i].x + dx, y: startPosition[i].y + dy };
+            newPoints[`${i}`] = { x: startPosition[`${i}`].x + dx, y: startPosition[`${i}`].y + dy };
         }
         this.viewModel.setPoints(newPoints);
     }
@@ -771,7 +771,7 @@ class CuboidModel extends PolyShapeModel {
         points = this.makeHull(points);
         let wn = 0;
         for (let i = 0; i < points.length; i += 1) {
-            const p1 = points[i];
+            const p1 = points[`${i}`];
             const p2 = points[i + 1] || points[0];
 
             if (p1.y <= mousePos.y) {
@@ -905,7 +905,8 @@ class CuboidView extends PolyShapeView {
                 fill: this._appearance.fill || this._appearance.colors.shape,
                 stroke: this._appearance.stroke || this._appearance.colors.shape,
                 "stroke-width": STROKE_WIDTH / window.cvat.player.geometry.scale,
-                z_order: position.z_order,
+                // eslint-disable-next-line
+                "z_order" : position.z_order,
                 "fill-opacity": this._appearance.fillOpacity,
             }).addClass("shape");
         this._uis.shape.projectionLineEnable = this._appearance.projectionLineEnable;
@@ -1050,7 +1051,7 @@ SVG.Cube = SVG.invent({
             const grabPoints = this.getGrabPoints();
             const edges = this.getEdges();
             for (let i = 0; i < grabPoints.length; i += 1) {
-                const edge = edges[i];
+                const edge = edges[`${i}`];
                 const cx = (edge.attr("x2") + edge.attr("x1")) / 2;
                 const cy = (edge.attr("y2") + edge.attr("y1")) / 2;
                 grabPoints[`${i}`].center(cx, cy);

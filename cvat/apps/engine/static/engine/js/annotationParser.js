@@ -29,10 +29,10 @@ class AnnotationParser {
         const imWidth = this._im_meta[frame].width;
         const imHeight = this._im_meta[frame].height;
 
-        const xtl = +box.getAttribute('xtl');
-        const ytl = +box.getAttribute('ytl');
-        const xbr = +box.getAttribute('xbr');
-        const ybr = +box.getAttribute('ybr');
+        const xtl = +box.getAttribute("xtl");
+        const ytl = +box.getAttribute("ytl");
+        const xbr = +box.getAttribute("xbr");
+        const ybr = +box.getAttribute("ybr");
 
         if (xtl < 0 || ytl < 0 || xbr < 0 || ybr < 0
             || xtl > imWidth || ytl > imHeight || xbr > imWidth || ybr > imHeight) {
