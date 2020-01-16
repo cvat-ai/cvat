@@ -56,7 +56,12 @@ class HistoryModel extends Listener {
         }
 
         this.notify();
+        console.log(this._redo_stack);
+        console.log(this._undo_stack);
+        
     }
+
+    
 
     redo() {
         let frame = window.cvat.player.frames.current;
@@ -87,7 +92,15 @@ class HistoryModel extends Listener {
         }
 
         this.notify();
+        console.log(this._undo_stack);
+        console.log(this._redo_stack);
+        
+
+
+
     }
+
+    
 
     addAction(name, undo, redo, frame) {
         if (this._locked) return;
@@ -113,6 +126,25 @@ class HistoryModel extends Listener {
         this.notify();
     }
 
+    empty1(entry) {
+        let undo1= this._undo_stack ;
+        if(undo1!=[]){
+            undo1=undo1.filter(item=> (item.frame<entry[0] || item.frame>entry[1]));
+            this._undo_stack=undo1;
+        }
+        console.log (undo1);
+         let redo1= this._redo_stack;
+
+         if (redo1!= []){
+             redo1=redo1.filter(item=> (item.frame<entry[0] || item.frame>entry[1]));
+             this._redo_stack=redo1;
+         }
+        console.log(redo1);
+        this._id=0;
+        this.notify();
+        
+    }
+
     get undoLength() {
         return this._undo_stack.length;
     }
@@ -127,6 +159,8 @@ class HistoryModel extends Listener {
             return `${lastUndo.name} [Frame ${lastUndo.frame}] [Id ${lastUndo.id}]`;
         }
         else return 'None';
+        
+        
     }
 
     get lastRedoText() {
@@ -135,7 +169,10 @@ class HistoryModel extends Listener {
             return `${lastRedo.name} [Frame ${lastRedo.frame}] [Id ${lastRedo.id}]`;
         }
         else return 'None';
+        
     }
+
+ 
 }
 
 
