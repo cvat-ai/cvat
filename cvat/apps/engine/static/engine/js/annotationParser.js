@@ -164,14 +164,14 @@ class AnnotationParser {
             polygon: this._getShapeFromPath('polygon', tracks),
             polyline: this._getShapeFromPath('polyline', tracks),
             points: this._getShapeFromPath('points', tracks),
-            cuboid: this._getShapeFromPath('cuboid', tracks),
+            cuboid: this._getShapeFromPath("cuboid", tracks),
         };
         const shapeTarget = {
             box: 'boxes',
             polygon: 'polygons',
             polyline: 'polylines',
             points: 'points',
-            cuboid: 'cuboids',
+            cuboid: "cuboids",
         };
 
         const images = xml.getElementsByTagName('image');
@@ -197,8 +197,8 @@ class AnnotationParser {
                 points.setAttribute('frame', frame);
                 parsed.points.push(points);
             }
-            for (const cuboid of image.getElementsByTagName('cuboid')) {
-                cuboid.setAttribute('frame', frame);
+            for (const cuboid of image.getElementsByTagName("cuboid")) {
+                cuboid.setAttribute("frame", frame);
                 parsed.cuboid.push(cuboid);
             }
         }

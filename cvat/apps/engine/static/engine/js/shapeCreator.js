@@ -592,7 +592,9 @@ class ShapeCreatorView {
                 "stroke-width": STROKE_WIDTH / this._scale,
             })
                 .on("drawstop", (e) => {
-                    if (this._cancel) return;
+                    if (this._cancel){
+                        return;
+                    }
                     if (sizeUI) {
                         sizeUI.rm();
                         sizeUI = null;
