@@ -392,6 +392,7 @@ class ShapeCollectionModel extends Listener {
             Object.keys(annotate).forEach(key=>{
                 if (entry[0]<=Number(key) && entry[1]>=Number(key)){
                 delete annotate [key];
+                this._annotationShapes=annotate;
                 }
 
             });
@@ -399,6 +400,7 @@ class ShapeCollectionModel extends Listener {
 
         else if (entry.length==1) {
             delete annotate [entry];
+            this._annotationShapes=annotate;
         }
 
         else{
