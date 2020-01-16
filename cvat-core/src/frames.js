@@ -433,10 +433,10 @@
             if (frameNumber in this._buffer) {
                 frame = this._buffer[frameNumber];
                 delete this._buffer[frameNumber];
-                // const cachedFrames = this.cachedFrames();
-                // if (fillBuffer && cachedFrames.length <= this.size / 2) {
-                //     this.makeFillRequest(Math.max(frame + 1, ...cachedFrames), frameStep);
-                // }
+                const cachedFrames = this.cachedFrames();
+                if (fillBuffer && !this._activeFillBufferRequest && cachedFrames.length < this._size / 2) {
+                    this.makeFillRequest(Math.max(frameNumber + 1, ...cachedFrames), frameStep);
+                }
             } else if (fillBuffer) {
                 console.log(`FrameBuffer::require frame ${frameNumber} is not buffered`);
                 this.clear();
@@ -453,6 +453,7 @@
                     this._requestedChunks[chunkIdx].reject();
                 }
             }
+            this._activeFillBufferRequest = false;
             this._requestedChunks = {};
             this._buffer = {};
         }
