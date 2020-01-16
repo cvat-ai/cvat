@@ -1,4 +1,8 @@
-import { Canvas } from '../canvas';
+import { Canvas } from 'cvat-canvas';
+
+export type StringObject = {
+    [index: string]: string;
+};
 
 export interface AuthState {
     initialized: boolean;
@@ -197,6 +201,11 @@ export interface NotificationsState {
             metaFetching: null | ErrorState;
             inferenceStatusFetching: null | ErrorState;
         };
+        annotation: {
+            saving: null | ErrorState;
+            jobFetching: null | ErrorState;
+            frameFetching: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -208,16 +217,51 @@ export interface NotificationsState {
     };
 }
 
+export enum ActiveControl {
+    CURSOR = 'cursor',
+    DRAG_CANVAS = 'drag_canvas',
+    ZOOM_CANVAS = 'zoom_canvas',
+    DRAW_RECTANGLE = 'draw_rectangle',
+    DRAW_POLYGON = 'draw_polygon',
+    DRAW_POLYLINE = 'draw_polyline',
+    DRAW_POINTS = 'draw_points',
+    MERGE = 'merge',
+    GROUP = 'group',
+    SPLIT = 'split',
+}
+
+export enum ShapeType {
+    RECTANGLE = 'rectangle',
+    POLYGON = 'polygon',
+    POLYLINE = 'polyline',
+    POINTS = 'points',
+}
+
+export enum ObjectType {
+    SHAPE = 'shape',
+    TRACK = 'track',
+    TAG = 'tag',
+}
+
 export interface AnnotationState {
     canvasInstance: Canvas;
     canvasIsReady: boolean;
+    activeControl: ActiveControl;
     jobInstance: any | null | undefined;
     frameData: any | null;
     frame: number;
     playing: boolean;
     annotations: any[];
+    saving: boolean;
+    savingStatuses: string[];
     jobFetching: boolean;
     dataFetching: boolean;
+    drawing: {
+        activeShapeType: ShapeType;
+        activeNumOfPoints?: number;
+        activeLabelID: number;
+        activeObjectType: ObjectType;
+    };
 }
 
 export enum GridColor {

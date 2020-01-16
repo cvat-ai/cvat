@@ -7,8 +7,8 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
+import { Model } from 'reducers/interfaces';
 import BuiltModelItemComponent from './built-model-item';
-import { Model } from '../../reducers/interfaces';
 
 interface Props {
     models: Model[];

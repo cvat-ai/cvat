@@ -14,9 +14,8 @@ import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import copy from 'copy-to-clipboard';
 
+import getCore from 'cvat-core';
 import UserSelector from './user-selector';
-import getCore from '../../core';
-
 
 const core = getCore();
 

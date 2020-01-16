@@ -1,16 +1,16 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import ModelRunnerModalComponent from '../../components/model-runner-modal/model-runner-modal';
+import ModelRunnerModalComponent from 'components/model-runner-modal/model-runner-modal';
 import {
     Model,
     CombinedState,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 import {
     getModelsAsync,
     inferModelAsync,
     closeRunModelDialog,
-} from '../../actions/models-actions';
+} from 'actions/models-actions';
 
 
 interface StateToProps {

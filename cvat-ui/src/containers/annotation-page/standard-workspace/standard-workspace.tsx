@@ -1,10 +1,10 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { Canvas } from '../../../canvas';
+import { Canvas } from 'cvat-canvas';
 
-import StandardWorkspaceComponent from '../../../components/annotation-page/standard-workspace/standard-workspace';
-import { CombinedState } from '../../../reducers/interfaces';
+import StandardWorkspaceComponent from 'components/annotation-page/standard-workspace/standard-workspace';
+import { CombinedState } from 'reducers/interfaces';
 
 
 interface StateToProps {

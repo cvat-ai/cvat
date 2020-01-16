@@ -5,7 +5,7 @@ import { connect, Provider } from 'react-redux';
 import CVATApplication from './components/cvat-app';
 
 import createRootReducer from './reducers/root-reducer';
-import createCVATStore, { getCVATStore } from './store';
+import createCVATStore, { getCVATStore } from './cvat-store';
 
 import { authorizedAsync } from './actions/auth-actions';
 import { getFormatsAsync } from './actions/formats-actions';

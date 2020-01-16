@@ -1,7 +1,7 @@
 import { AnyAction } from 'redux';
 
-import { ShareActionTypes } from '../actions/share-actions';
-import { AuthActionTypes } from '../actions/auth-actions';
+import { ShareActionTypes } from 'actions/share-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
 import {
     ShareState,
     ShareFileInfo,
