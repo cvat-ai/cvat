@@ -458,7 +458,28 @@ function setupMenu(job, task, shapeCollectionModel,
                     shapeCollectionModel.empty();
                 });
         }
+    
+    
     });
+
+    $('#removeAnnotationButton1').on('click', () => {
+        if (!window.cvat.mode) {
+            hide();
+            let some= prompt('Enter range of frames: ', 'eg: 2,10/eg: 3');
+            let  some1 = some.split(",").map(Number);
+            console.log(some1);
+            shapeCollectionModel.empty1(some1);
+            historyModel.empty1(some1);
+
+            
+            
+        }
+    
+    
+    });
+
+
+
 
     // JS function cancelFullScreen don't work after pressing
     // and it is famous problem.
