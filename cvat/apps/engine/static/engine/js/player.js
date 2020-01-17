@@ -217,13 +217,13 @@ class PlayerModel extends Listener {
         return this._frame.previous === this._frame.current;
     }
 
-    async onFrameLoad(last) { // callback for FrameProvider instance
+    onFrameLoad(last) { // callback for FrameProvider instance
         if (last === this._frame.current) {
-            const isPlay = this._continueAfterLoad;
-            await this.shift(0);
-            if (isPlay) {
+            if (this._continueAfterLoad) {
                 this._continueAfterLoad = false;
                 this.play();
+            } else {
+                this.shift(0);
             }
         }
     }
