@@ -31,6 +31,7 @@ import SVGPlaycontrolForwardJumpIcon from './assets/playcontrol-forward-jump-ico
 import SVGPlaycontrolLastIcon from './assets/playcontrol-last-icon.svg';
 import SVGInfoIcon from './assets/info-icon.svg';
 import SVGFullscreenIcon from './assets/fullscreen-icon.svg';
+import SVGExpandObjectsIcon from './assets/expand-all-objects-icon.svg';
 
 export const CVATLogo = (): JSX.Element => <SVGCVATLogo />;
 export const AccountIcon = (): JSX.Element => <SVGAccountIcon />;
@@ -63,3 +64,4 @@ export const PlaycontrolForwardJumpIcon = (): JSX.Element => <SVGPlaycontrolForw
 export const PlaycontrolLastIcon = (): JSX.Element => <SVGPlaycontrolLastIcon />;
 export const InfoIcon = (): JSX.Element => <SVGInfoIcon />;
 export const FullscreenIcon = (): JSX.Element => <SVGFullscreenIcon />;
+export const ExpandObjectsIcon = (): JSX.Element => <SVGExpandObjectsIcon />;

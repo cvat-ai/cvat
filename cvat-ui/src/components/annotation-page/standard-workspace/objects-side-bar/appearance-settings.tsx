@@ -12,13 +12,13 @@ interface Props {
 
 export default function AppearanceSettingsComponent(props: Props): JSX.Element {
     return (
-        <Collapse defaultActiveKey={['1']}>
+        <Collapse defaultActiveKey={['appearance']} className='cvat-objects-appearance-collapse'>
             <Collapse.Panel
                 header={
                     <Text strong>Appearance</Text>
                 }
                 key='appearance'
-                className='cvat-objects-appearance-collapse'
+
             >
 
             </Collapse.Panel>

@@ -12,11 +12,11 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(): StateToProps {
-
+    return {};
 }
 
 function mapDispatchToProps(): DispatchToProps {
-
+    return {};
 }
 
 function AppearanceSettingsContainer(props: StateToProps & DispatchToProps): JSX.Element {

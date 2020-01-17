@@ -101,9 +101,89 @@
     }
 }
 
-.cvat-objects-appearance-collapse.ant-collapse-item
-> .ant-collapse-header {
-    padding-top: 2.5px;
-    padding-bottom: 2.5px;
+.cvat-objects-appearance-collapse.ant-collapse {
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    border-radius: 0px;
+
+    > .ant-collapse-item {
+        border: none;
+        > .ant-collapse-header {
+            padding-top: 2.5px;
+            padding-bottom: 2.5px;
+            background: $header-color;
+            border-radius: 0px;
+        }
+        > .ant-collapse-content {
+            background: $background-color-2;
+            border-bottom: none;
+        }
+    }
+}
+
+
+
+.cvat-objects-side-bar-tabs.ant-tabs.ant-tabs-card {
     background: $header-color;
+    padding-top: 25px;
+    border: none;
+
+    .ant-tabs-card-bar {
+        border: none;
+        margin-bottom: 0px;
+
+        .ant-tabs-tab {
+            background: $transparent-color;
+            border: none;
+
+            &:nth-child(1) {
+                margin-left: 5px;
+            }
+        }
+
+        .ant-tabs-tab.ant-tabs-tab-active {
+            background: $objects-bar-tabs-color;
+        }
+    }
+}
+
+.cvat-side-bar-objects-header {
+    background: $objects-bar-tabs-color;
+    padding: 5px;
+
+    > div:nth-child(1) > div > span > input {
+        text-indent: 10px;
+    }
+
+    > div:nth-child(2) {
+        margin-top: 5px;
+
+        > div {
+            text-align: center;
+            margin: 0px 2px;
+
+            &:nth-child(4) {
+                text-align: right;
+
+                > .ant-select {
+                    margin-left: 5px;
+                    width: 60%;
+                }
+            }
+        }
+    }
+
+    i {
+        fill: $objects-bar-icons-color;
+        font-size: 20px;
+
+        &:hover {
+            transform: scale(1.2);
+        }
+
+        &:active {
+            transform: scale(1);
+        }
+    }
 }
