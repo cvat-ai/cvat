@@ -177,9 +177,6 @@ class Task(models.Model):
     def get_task_artifacts_dirname(self):
         return os.path.join(self.get_task_dirname(), 'artifacts')
 
-    def get_task_datumaro_dirname(self):
-        return os.path.join(self.get_task_dirname(), 'datumaro')
-
     def __str__(self):
         return self.name
 

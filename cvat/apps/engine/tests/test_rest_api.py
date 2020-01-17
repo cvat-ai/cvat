@@ -65,7 +65,6 @@ def create_db_task(data):
     os.makedirs(db_task.get_task_dirname())
     os.makedirs(db_task.get_task_logs_dirname())
     os.makedirs(db_task.get_task_artifacts_dirname())
-    os.makedirs(db_task.get_task_datumaro_dirname())
     db_task.data = db_data
     db_task.save()
 

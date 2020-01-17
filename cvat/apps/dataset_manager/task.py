@@ -43,7 +43,7 @@ EXPORT_FORMAT_DATUMARO_PROJECT = "datumaro_project"
 class TaskProject:
     @staticmethod
     def _get_datumaro_project_dir(db_task):
-        return db_task.get_task_datumaro_dirname()
+        return osp.join(db_task.get_task_dirname(), 'datumaro')
 
     @staticmethod
     def create(db_task):

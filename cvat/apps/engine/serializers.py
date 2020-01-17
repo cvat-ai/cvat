@@ -246,7 +246,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         os.makedirs(db_task.get_task_logs_dirname())
         os.makedirs(db_task.get_task_artifacts_dirname())
-        os.makedirs(db_task.get_task_datumaro_dirname())
 
         db_task.save()
         return db_task
