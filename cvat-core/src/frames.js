@@ -488,7 +488,12 @@
                     blockType, chunkSize, Math.max(decodedBlocksCacheSize, 9),
                     decodedBlocksCacheSize, 1,
                 ),
-                frameBuffer: new FrameBuffer(200, chunkSize, stopFrame, taskID),
+                frameBuffer: new FrameBuffer(
+                    Math.min(180, decodedBlocksCacheSize * chunkSize),
+                    chunkSize,
+                    stopFrame,
+                    taskID,
+                ),
                 decodedBlocksCacheSize,
                 activeChunkRequest: undefined,
                 nextChunkRequest: undefined,
