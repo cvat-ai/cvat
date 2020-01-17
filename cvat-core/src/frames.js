@@ -264,15 +264,14 @@
     };
 
     class FrameBuffer {
-        constructor(size, chunkSize, stopFrame) {
+        constructor(size, chunkSize, stopFrame, taskID) {
             this._size = size;
             this._buffer = {};
             this._requestedChunks = {};
             this._chunkSize = chunkSize;
-            this._loaded = null;
             this._stopFrame = stopFrame;
             this._activeFillBufferRequest = false;
-            this._requestedFrame = null;
+            this._taskID = taskID;
         }
 
         getFreeBufferSize() {
@@ -285,38 +284,6 @@
             return this._size - Object.keys(this._buffer).length - requestedFrameCount;
         }
 
-        async onFrameLoad(last) { // callback for FrameProvider instance
-            const isReject = typeof (last) === 'object';
-            if (isReject) {
-                last = last.frameNumber;
-            }
-            const chunkIdx = Math.floor(last / this._chunkSize);
-            if (chunkIdx in this._requestedChunks
-                && this._requestedChunks[chunkIdx].requestedFrames.has(last)) {
-                if (isReject && this._requestedChunks[chunkIdx].reject) {
-                    this._requestedChunks[chunkIdx].reject(last);
-                    this._requestedChunks[chunkIdx].requestedFrames.clear();
-                }
-                const frameData = await this._frameProvider.require(last);
-                if (chunkIdx in this._requestedChunks
-                    && this._requestedChunks[chunkIdx].requestedFrames.has(last)) {
-                    this._requestedChunks[chunkIdx].buffer[last] = frameData;
-                    this._requestedChunks[chunkIdx].requestedFrames.delete(last);
-                    if (this._requestedChunks[chunkIdx].requestedFrames.size === 0) {
-                        if (this._requestedChunks[chunkIdx].resolve) {
-                            const bufferedframes = Object.keys(
-                                this._requestedChunks[chunkIdx].buffer,
-                            ).map((f) => +f);
-                            this._requestedChunks[chunkIdx].resolve(new Set(bufferedframes));
-                        }
-                    }
-                }
-            } else if (!isReject) {
-                this._loaded = last;
-                this.notify();
-            }
-        }
-
         requestOneChunkFrames(chunkIdx) {
             return new Promise((resolve, reject) => {
                 this._requestedChunks[chunkIdx] = {
@@ -326,10 +293,15 @@
                 };
                 for (const frame of this._requestedChunks[chunkIdx].requestedFrames.entries()) {
                     const requestedFrame = frame[1];
-                    //FIXME
-                    const size = getFrameSize(589, frame);
-                    const frameData = new FrameData(size.width, size.height, 589, requestedFrame,
-                        frameDataCache[589].startFrame, frameDataCache[589].stopFrame);
+                    const size = getFrameSize(this._taskID, frame);
+                    const frameData = new FrameData(
+                        size.width,
+                        size.height,
+                        this._taskID,
+                        requestedFrame,
+                        frameDataCache[this._taskID].startFrame,
+                        frameDataCache[this._taskID].stopFrame,
+                    );
 
                     frameData.data().then(() => {
                         if (!(chunkIdx in this._requestedChunks)
@@ -337,7 +309,6 @@
                             reject(requestedFrame);
                         }
 
-                        // if (frameData !== null) {
                         this._requestedChunks[chunkIdx].requestedFrames.delete(requestedFrame);
                         this._requestedChunks[chunkIdx].buffer[requestedFrame] = frameData;
                         if (this._requestedChunks[chunkIdx].requestedFrames.size === 0) {
@@ -346,7 +317,6 @@
                             ).map((f) => +f);
                             this._requestedChunks[chunkIdx].resolve(new Set(bufferedframes));
                         }
-                        // }
                     }).catch((error) => {
                         reject(error);
                     });
@@ -434,11 +404,14 @@
                 frame = this._buffer[frameNumber];
                 delete this._buffer[frameNumber];
                 const cachedFrames = this.cachedFrames();
-                if (fillBuffer && !this._activeFillBufferRequest && cachedFrames.length < this._size / 2) {
-                    this.makeFillRequest(Math.max(frameNumber + 1, ...cachedFrames), frameStep);
+                if (fillBuffer && !this._activeFillBufferRequest
+                    && cachedFrames.length < this._size / 2) {
+                    const maxFrame = Math.max(...cachedFrames);
+                    if (maxFrame < this._stopFrame) {
+                        this.makeFillRequest(maxFrame + 1, frameStep);
+                    }
                 }
             } else if (fillBuffer) {
-                console.log(`FrameBuffer::require frame ${frameNumber} is not buffered`);
                 this.clear();
                 await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
             }
@@ -515,8 +488,7 @@
                     blockType, chunkSize, Math.max(decodedBlocksCacheSize, 9),
                     decodedBlocksCacheSize, 1,
                 ),
-                frameBuffer: new FrameBuffer(200, chunkSize, stopFrame),
-                lastFrameRequest: frame,
+                frameBuffer: new FrameBuffer(200, chunkSize, stopFrame, taskID),
                 decodedBlocksCacheSize,
                 activeChunkRequest: undefined,
                 nextChunkRequest: undefined,
@@ -526,12 +498,7 @@
             frameDataCache[taskID].provider.setRenderSize(size.width, size.height);
         }
 
-        // const size = getFrameSize(frameDataCache[taskID].meta);
-        frameDataCache[taskID].lastFrameRequest = frame;
-
-        const r = await frameDataCache[taskID].frameBuffer.require(frame, taskID, isPlaying, step);
-        return r;
-        // return new FrameData(size.width, size.height, taskID, frame, startFrame, stopFrame);
+        return frameDataCache[taskID].frameBuffer.require(frame, taskID, isPlaying, step);
     }
 
     function getRanges(taskID) {
