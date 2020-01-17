@@ -16,6 +16,7 @@ interface StateToProps {
     installedTFSegmentation: boolean;
     installedTFAnnotation: boolean;
     username: string;
+    about: any;
 }
 
 interface DispatchToProps {
@@ -32,6 +33,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         installedTFSegmentation: plugins[SupportedPlugins.TF_SEGMENTATION],
         installedTFAnnotation: plugins[SupportedPlugins.TF_ANNOTATION],
         username: auth.user.username,
+        about: state.about.about,
     };
 }
 

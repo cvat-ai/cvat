@@ -94,6 +94,12 @@ export interface UsersState {
     initialized: boolean;
 }
 
+export interface AboutState {
+    about: any;
+    fetching: boolean;
+    initialized: boolean;
+}
+
 export interface ShareFileInfo { // get this data from cvat-core
     name: string;
     type: 'DIR' | 'REG';
@@ -179,6 +185,9 @@ export interface NotificationsState {
             fetching: null | ErrorState;
         };
         users: {
+            fetching: null | ErrorState;
+        };
+        about: {
             fetching: null | ErrorState;
         };
         share: {
@@ -302,6 +311,7 @@ export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
     users: UsersState;
+    about: AboutState;
     share: ShareState;
     formats: FormatsState;
     plugins: PluginsState;
