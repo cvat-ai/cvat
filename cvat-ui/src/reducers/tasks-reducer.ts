@@ -1,6 +1,6 @@
 import { AnyAction } from 'redux';
-import { TasksActionTypes } from '../actions/tasks-actions';
-import { AuthActionTypes } from '../actions/auth-actions';
+import { TasksActionTypes } from 'actions/tasks-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
 
 import { TasksState, Task } from './interfaces';
 

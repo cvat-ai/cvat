@@ -12,7 +12,7 @@ import {
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
 
-import patterns from '../../utils/validation-patterns';
+import patterns from 'utils/validation-patterns';
 
 export interface AdvancedConfiguration {
     bugTracker?: string;

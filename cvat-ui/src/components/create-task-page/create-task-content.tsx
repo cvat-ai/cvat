@@ -11,10 +11,10 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
+import FileManagerContainer from 'containers/file-manager/file-manager';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import AdvancedConfigurationForm, { AdvancedConfiguration } from './advanced-configuration-form';
 import LabelsEditor from '../labels-editor/labels-editor';
-import FileManagerContainer from '../../containers/file-manager/file-manager';
 import { Files } from '../file-manager/file-manager';
 
 export interface CreateTaskData {

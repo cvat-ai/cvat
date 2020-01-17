@@ -26,9 +26,9 @@
                         return result;
                     },
 
-                    async save() {
+                    async save(onUpdate) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.save);
+                            .apiWrapper.call(this, prototype.annotations.save, onUpdate);
                         return result;
                     },
 

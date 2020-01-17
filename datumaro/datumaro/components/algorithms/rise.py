@@ -80,10 +80,10 @@ class RISE:
     def apply(self, image, progressive=False):
         import cv2
 
-        assert len(image.shape) == 3, \
+        assert len(image.shape) in [2, 3], \
             "Expected an input image in (H, W, C) format"
-        assert image.shape[2] in [3, 4], \
-            "Expected BGR or BGRA input"
+        if len(image.shape) == 3:
+            assert image.shape[2] in [3, 4], "Expected BGR or BGRA input"
         image = image[:, :, :3].astype(np.float32)
 
         model = self.model

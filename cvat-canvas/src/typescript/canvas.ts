@@ -27,9 +27,7 @@ import {
     CanvasViewImpl,
 } from './canvasView';
 
-
-import '../css/canvas.css';
-
+import '../scss/canvas.scss';
 
 interface Canvas {
     html(): HTMLDivElement;
@@ -45,6 +43,10 @@ interface Canvas {
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
+
+    fitCanvas(): void;
+    dragCanvas(enable: boolean): void;
+    zoomCanvas(enable: boolean): void;
 
     cancel(): void;
 }
@@ -68,7 +70,22 @@ class CanvasImpl implements Canvas {
         this.model.setup(frameData, objectStates);
     }
 
-    public activate(clientID: number, attributeID: number = null): void {
+    public fitCanvas(): void {
+        this.model.fitCanvas(
+            this.view.html().clientWidth,
+            this.view.html().clientHeight,
+        );
+    }
+
+    public dragCanvas(enable: boolean): void {
+        this.model.dragCanvas(enable);
+    }
+
+    public zoomCanvas(enable: boolean): void {
+        this.model.zoomCanvas(enable);
+    }
+
+    public activate(clientID: number, attributeID: number | null = null): void {
         this.model.activate(clientID, attributeID);
     }
 

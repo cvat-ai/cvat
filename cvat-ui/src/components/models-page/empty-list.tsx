@@ -10,7 +10,7 @@ import {
 
 import {
     EmptyTasksIcon as EmptyModelsIcon,
-} from '../../icons';
+} from 'icons';
 
 export default function EmptyListComponent(): JSX.Element {
     return (

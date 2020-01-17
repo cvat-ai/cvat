@@ -52,8 +52,7 @@ RUN apt-get update && \
         python3-pip \
         supervisor \
         tzdata \
-        unrar \
-        vim && \
+        unrar && \
     python3 -m pip install -U pip && \
     python3 -m pip install -U setuptools && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \

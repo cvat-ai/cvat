@@ -10,7 +10,7 @@ from datumaro.components.extractor import DatasetItem, Extractor
 
 # pylint: disable=no-self-use
 class Launcher:
-    def __init__(self):
+    def __init__(self, model_dir=None):
         pass
 
     def launch(self, inputs):

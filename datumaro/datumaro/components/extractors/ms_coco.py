@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict
-from itertools import chain
-import numpy as np
 import os.path as osp
 
 from pycocotools.coco import COCO
@@ -13,35 +11,13 @@ import pycocotools.mask as mask_utils
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
     DEFAULT_SUBSET_NAME, AnnotationType,
-    LabelObject, MaskObject, PointsObject, PolygonObject,
+    LabelObject, RleMask, PointsObject, PolygonObject,
     BboxObject, CaptionObject,
     LabelCategories, PointsCategories
 )
 from datumaro.components.formats.ms_coco import CocoTask, CocoPath
 from datumaro.util.image import lazy_image
 
-
-class RleMask(MaskObject):
-    # pylint: disable=redefined-builtin
-    def __init__(self, rle=None, label=None,
-            id=None, attributes=None, group=None):
-        lazy_decode = lambda: mask_utils.decode(rle).astype(np.bool)
-        super().__init__(image=lazy_decode, label=label,
-            id=id, attributes=attributes, group=group)
-
-        self._rle = rle
-    # pylint: enable=redefined-builtin
-
-    def area(self):
-        return mask_utils.area(self._rle)
-
-    def bbox(self):
-        return mask_utils.toBbox(self._rle)
-
-    def __eq__(self, other):
-        if not isinstance(other, __class__):
-            return super().__eq__(other)
-        return self._rle == other._rle
 
 class CocoExtractor(Extractor):
     def __init__(self, path, task, merge_instance_polygons=False):
@@ -144,8 +120,7 @@ class CocoExtractor(Extractor):
 
             anns = loader.getAnnIds(imgIds=img_id)
             anns = loader.loadAnns(anns)
-            anns = list(chain(*(
-                self._load_annotations(ann, image_info) for ann in anns)))
+            anns = sum((self._load_annotations(a, image_info) for a in anns), [])
 
             items[img_id] = DatasetItem(id=img_id, subset=self._subset,
                 image=image, annotations=anns)
@@ -167,17 +142,26 @@ class CocoExtractor(Extractor):
         if 'score' in ann:
             attributes['score'] = ann['score']
 
-        if self._task is CocoTask.instances:
+        group = ann_id # make sure all tasks' annotations are merged
+
+        if self._task in [CocoTask.instances, CocoTask.person_keypoints]:
             x, y, w, h = ann['bbox']
             label_id = self._get_label_id(ann)
-            group = None
 
             is_crowd = bool(ann['iscrowd'])
             attributes['is_crowd'] = is_crowd
 
+            if self._task is CocoTask.person_keypoints:
+                keypoints = ann['keypoints']
+                points = [p for i, p in enumerate(keypoints) if i % 3 != 2]
+                visibility = keypoints[2::3]
+                parsed_annotations.append(
+                    PointsObject(points, visibility, label=label_id,
+                        id=ann_id, attributes=attributes, group=group)
+                )
+
             segmentation = ann.get('segmentation')
             if segmentation is not None:
-                group = ann_id
                 rle = None
 
                 if isinstance(segmentation, list):
@@ -185,7 +169,7 @@ class CocoExtractor(Extractor):
                     for polygon_points in segmentation:
                         parsed_annotations.append(PolygonObject(
                             points=polygon_points, label=label_id,
-                            id=ann_id, group=group, attributes=attributes
+                            id=ann_id, attributes=attributes, group=group
                         ))
 
                     if self._merge_instance_polygons:
@@ -204,7 +188,7 @@ class CocoExtractor(Extractor):
 
                 if rle is not None:
                     parsed_annotations.append(RleMask(rle=rle, label=label_id,
-                        id=ann_id, group=group, attributes=attributes
+                        id=ann_id, attributes=attributes, group=group
                     ))
 
             parsed_annotations.append(
@@ -214,30 +198,14 @@ class CocoExtractor(Extractor):
         elif self._task is CocoTask.labels:
             label_id = self._get_label_id(ann)
             parsed_annotations.append(
-                LabelObject(label=label_id, id=ann_id, attributes=attributes)
-            )
-        elif self._task is CocoTask.person_keypoints:
-            keypoints = ann['keypoints']
-            points = [p for i, p in enumerate(keypoints) if i % 3 != 2]
-            visibility = keypoints[2::3]
-            bbox = ann.get('bbox')
-            label_id = self._get_label_id(ann)
-            group = None
-            if bbox is not None:
-                group = ann_id
-            parsed_annotations.append(
-                PointsObject(points, visibility, label=label_id,
+                LabelObject(label=label_id,
                     id=ann_id, attributes=attributes, group=group)
             )
-            if bbox is not None:
-                parsed_annotations.append(
-                    BboxObject(*bbox, label=label_id, group=group)
-                )
         elif self._task is CocoTask.captions:
             caption = ann['caption']
             parsed_annotations.append(
                 CaptionObject(caption,
-                    id=ann_id, attributes=attributes)
+                    id=ann_id, attributes=attributes, group=group)
             )
         else:
             raise NotImplementedError()

@@ -10,6 +10,8 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     LabelCategories,
 )
 from datumaro.components.importers.cvat import CvatImporter
+from datumaro.components.converters.cvat import CvatConverter
+from datumaro.components.project import Project
 import datumaro.components.formats.cvat as Cvat
 from datumaro.util.image import save_image
 from datumaro.util.test_utils import TestDir
@@ -146,3 +148,121 @@ class CvatExtractorTest(TestCase):
                     self.assertEqual(len(item_a.annotations), len(item_b.annotations))
                     for ann_a, ann_b in zip(item_a.annotations, item_b.annotations):
                         self.assertEqual(ann_a, ann_b)
+
+
+class CvatConverterTest(TestCase):
+    def _test_save_and_load(self, source_dataset, converter, test_dir,
+            importer_params=None, target_dataset=None):
+        converter(source_dataset, test_dir.path)
+
+        if not importer_params:
+            importer_params = {}
+        project = Project.import_from(test_dir.path, 'cvat', **importer_params)
+        parsed_dataset = project.make_dataset()
+
+        if target_dataset is not None:
+            source_dataset = target_dataset
+        self.assertListEqual(
+            sorted(source_dataset.subsets()),
+            sorted(parsed_dataset.subsets()),
+        )
+
+        self.assertEqual(len(source_dataset), len(parsed_dataset))
+
+        for subset_name in source_dataset.subsets():
+            source_subset = source_dataset.get_subset(subset_name)
+            parsed_subset = parsed_dataset.get_subset(subset_name)
+            self.assertEqual(len(source_subset), len(parsed_subset))
+            for idx, (item_a, item_b) in enumerate(
+                    zip(source_subset, parsed_subset)):
+                self.assertEqual(item_a, item_b, str(idx))
+
+    def test_can_save_and_load(self):
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+        label_categories.items[2].attributes.update(['a1', 'a2'])
+        label_categories.attributes.update(['z_order', 'occluded'])
+
+        class SrcTestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
+                        annotations=[
+                            PolygonObject([0, 0, 4, 0, 4, 4],
+                                label=1, group=4,
+                                attributes={ 'occluded': True }),
+                            PolygonObject([5, 0, 9, 0, 5, 5],
+                                label=2, group=4,
+                                attributes={ 'unknown': 'bar' }),
+                            PointsObject([1, 1, 3, 2, 2, 3],
+                                label=2,
+                                attributes={ 'a1': 'x', 'a2': 42 }),
+                        ]
+                    ),
+                    DatasetItem(id=1, subset='s1',
+                        annotations=[
+                            PolyLineObject([0, 0, 4, 0, 4, 4],
+                                label=3, id=4, group=4),
+                            BboxObject(5, 0, 1, 9,
+                                label=3, id=4, group=4),
+                        ]
+                    ),
+
+                    DatasetItem(id=0, subset='s2', image=np.zeros((5, 10, 3)),
+                        annotations=[
+                            PolygonObject([0, 0, 4, 0, 4, 4],
+                                label=3, group=4,
+                                attributes={ 'z_order': 1, 'occluded': False }),
+                            PolyLineObject([5, 0, 9, 0, 5, 5]), # will be skipped
+                        ]
+                    ),
+                ])
+
+            def categories(self):
+                return { AnnotationType.label: label_categories }
+
+        class DstTestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
+                        annotations=[
+                            PolygonObject([0, 0, 4, 0, 4, 4],
+                                label=1, group=4,
+                                attributes={ 'z_order': 0, 'occluded': True }),
+                            PolygonObject([5, 0, 9, 0, 5, 5],
+                                label=2, group=4,
+                                attributes={ 'z_order': 0, 'occluded': False }),
+                            PointsObject([1, 1, 3, 2, 2, 3],
+                                label=2,
+                                attributes={ 'z_order': 0, 'occluded': False,
+                                    'a1': 'x', 'a2': '42' }),
+                        ]
+                    ),
+                    DatasetItem(id=1, subset='s1',
+                        annotations=[
+                            PolyLineObject([0, 0, 4, 0, 4, 4],
+                                label=3, group=4,
+                                attributes={ 'z_order': 0, 'occluded': False }),
+                            BboxObject(5, 0, 1, 9,
+                                label=3, group=4,
+                                attributes={ 'z_order': 0, 'occluded': False }),
+                        ]
+                    ),
+
+                    DatasetItem(id=0, subset='s2', image=np.zeros((5, 10, 3)),
+                        annotations=[
+                            PolygonObject([0, 0, 4, 0, 4, 4],
+                                label=3, group=4,
+                                attributes={ 'z_order': 1, 'occluded': False }),
+                        ]
+                    ),
+                ])
+
+            def categories(self):
+                return { AnnotationType.label: label_categories }
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(SrcTestExtractor(),
+                CvatConverter(save_images=True), test_dir,
+                target_dataset=DstTestExtractor())

@@ -1,4 +1,4 @@
-import getCore from '../core';
+import getCore from 'cvat-core';
 
 const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);

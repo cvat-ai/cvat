@@ -216,11 +216,13 @@ export default class FileManager extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const { withRemote } = this.props;
+        const { active } = this.state;
 
         return (
             <>
                 <Tabs
                     type='card'
+                    activeKey={active}
                     tabBarGutter={5}
                     onChange={
                         (activeKey: string): void => this.setState({

@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 Intel Corporation
+ * SPDX-License-Identifier: MIT
+*/
+
 /* eslint-disable */
 const path = require('path');
 const DtsBundleWebpack = require('dts-bundle-webpack')
@@ -70,15 +75,23 @@ const webConfig = {
                 loader: 'babel-loader',
                 options: {
                     presets: [
-                        ['@babel/preset-env'],
+                        ['@babel/preset-env', {
+                            targets: '> 2.5%', // https://github.com/browserslist/browserslist
+                        }],
                         ['@babel/typescript'],
                     ],
                     sourceType: 'unambiguous',
                 },
             },
         }, {
-            test: /\.css$/,
-            use: ['style-loader', 'css-loader']
+            test: /\.scss$/,
+            exclude: /node_modules/,
+            use: ['style-loader', {
+                loader: 'css-loader',
+                options: {
+                    importLoaders: 2,
+                },
+            }, 'postcss-loader', 'sass-loader']
         }],
     },
     plugins: [

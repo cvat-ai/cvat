@@ -11,6 +11,7 @@ import shutil
 
 from datumaro.components.project import Project
 from datumaro.components.comparator import Comparator
+from datumaro.components.dataset_filter import DatasetItemEncoder
 from .diff import DiffVisualizer
 from ..util.project import make_project_path, load_project
 
@@ -131,7 +132,12 @@ def build_export_parser(parser):
              "'/item[image/width < image/height]'; "
              "extract images with large-area bboxes: "
              "'/item[annotation/type=\"bbox\" and annotation/area>2000]'"
+            "filter out irrelevant annotations from items: "
+             "'/item/annotation[label = \"person\"]'"
         )
+    parser.add_argument('-a', '--filter-annotations', action='store_true',
+        help="Filter annotations instead of dataset "
+            "items (default: %(default)s)")
     parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
         help="Directory to save output")
     parser.add_argument('-f', '--output-format', required=True,
@@ -158,10 +164,11 @@ def export_command(args):
     dataset = project.make_dataset()
 
     log.info("Exporting the project...")
-    dataset.export(
+    dataset.export_project(
         save_dir=dst_dir,
         output_format=args.output_format,
         filter_expr=args.filter,
+        filter_annotations=args.filter_annotations,
         cmdline_args=args.extra_args)
     log.info("Project exported to '%s' as '%s'" % \
         (dst_dir, args.output_format))
@@ -177,12 +184,21 @@ def build_docs_parser(parser):
 
 def build_extract_parser(parser):
     parser.add_argument('-e', '--filter', default=None,
-        help="Filter expression for dataset items. Examples: "
+        help="XML XPath filter expression for dataset items. Examples: "
              "extract images with width < height: "
              "'/item[image/width < image/height]'; "
              "extract images with large-area bboxes: "
-             "'/item[annotation/type=\"bbox\" and annotation/area>2000]'"
+             "'/item[annotation/type=\"bbox\" and annotation/area>2000]' "
+             "filter out irrelevant annotations from items: "
+             "'/item/annotation[label = \"person\"]'"
         )
+    parser.add_argument('-a', '--filter-annotations', action='store_true',
+        help="Filter annotations instead of dataset "
+            "items (default: %(default)s)")
+    parser.add_argument('--remove-empty', action='store_true',
+        help="Remove an item if there are no annotations left after filtration")
+    parser.add_argument('--dry-run', action='store_true',
+        help="Print XML representations to be filtered and exit")
     parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
         help="Output directory")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
@@ -193,9 +209,27 @@ def extract_command(args):
     project = load_project(args.project_dir)
 
     dst_dir = osp.abspath(args.dst_dir)
-    os.makedirs(dst_dir, exist_ok=False)
+    if not args.dry_run:
+        os.makedirs(dst_dir, exist_ok=False)
 
-    project.make_dataset().extract(filter_expr=args.filter, save_dir=dst_dir)
+    dataset = project.make_dataset()
+
+    kwargs = {}
+    if args.filter_annotations:
+        kwargs['remove_empty'] = args.remove_empty
+
+    if args.dry_run:
+        dataset = dataset.extract(filter_expr=args.filter,
+            filter_annotations=args.filter_annotations, **kwargs)
+        for item in dataset:
+            encoded_item = DatasetItemEncoder.encode(item, dataset.categories())
+            xml_item = DatasetItemEncoder.to_string(encoded_item)
+            print(xml_item)
+        return 0
+
+    dataset.extract_project(save_dir=dst_dir, filter_expr=args.filter,
+        filter_annotations=args.filter_annotations, **kwargs)
+
     log.info("Subproject extracted to '%s'" % (dst_dir))
 
     return 0
@@ -279,7 +313,7 @@ def transform_command(args):
 
     dst_dir = osp.abspath(args.dst_dir)
     os.makedirs(dst_dir, exist_ok=False)
-    project.make_dataset().transform(
+    project.make_dataset().apply_model(
         save_dir=dst_dir,
         model_name=args.model_name)
 

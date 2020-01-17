@@ -1,8 +1,8 @@
 import { AnyAction } from 'redux';
-import { UsersState } from './interfaces';
 
-import { AuthActionTypes } from '../actions/auth-actions';
-import { UsersActionTypes } from '../actions/users-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
+import { UsersActionTypes } from 'actions/users-actions';
+import { UsersState } from './interfaces';
 
 const defaultState: UsersState = {
     users: [],

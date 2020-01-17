@@ -9,7 +9,7 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
-import { Model } from '../../reducers/interfaces';
+import { Model } from 'reducers/interfaces';
 
 interface Props {
     model: Model;

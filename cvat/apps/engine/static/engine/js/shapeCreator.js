@@ -194,9 +194,9 @@ class ShapeCreatorView {
         this._modeSelector = $('#shapeModeSelector');
         this._typeSelector = $('#shapeTypeSelector');
         this._polyShapeSizeInput = $('#polyShapeSize');
-        this._autoBorderingCheckbox = $('#autoBorderingCheckbox');
+        this._commonBordersCheckbox = $('#commonBordersCheckbox');
         this._frameContent = SVG.adopt($('#frameContent')[0]);
-        this._frameText = SVG.adopt($("#frameText")[0]);
+        this._frameText = SVG.adopt($('#frameText')[0]);
         this._playerFrame = $('#playerFrame');
         this._createButton.on('click', () => this._controller.switchCreateMode(false));
         this._drawInstance = null;
@@ -297,11 +297,13 @@ class ShapeCreatorView {
             }
         });
 
-        this._autoBorderingCheckbox.on('change.shapeCreator', (e) => {
+        this._commonBordersCheckbox.on('change.shapeCreator', (e) => {
             if (this._drawInstance) {
                 if (!e.target.checked) {
-                    this._borderSticker.disable();
-                    this._borderSticker = null;
+                    if (this._borderSticker) {
+                        this._borderSticker.disable();
+                        this._borderSticker = null;
+                    }
                 } else {
                     this._borderSticker = new BorderSticker(this._drawInstance, this._frameContent,
                         this._controller.currentShapes, this._scale);
@@ -322,15 +324,16 @@ class ShapeCreatorView {
 
         if (this._polyShapeSize) {
             let size = this._polyShapeSize;
-            let sizeDecrement = function() {
-                if (!--size) {
+            const sizeDecrement = function sizeDecrement() {
+                size -= 1;
+                if (!size) {
                     numberOfPoints = this._polyShapeSize;
                     this._drawInstance.draw('done');
                 }
             }.bind(this);
 
-            let sizeIncrement = function() {
-                size ++;
+            const sizeIncrement = function sizeIncrement() {
+                size += 1;
             };
 
             this._drawInstance.on('drawstart', sizeDecrement);
@@ -338,6 +341,12 @@ class ShapeCreatorView {
             this._drawInstance.on('undopoint', sizeIncrement);
         }
         // Otherwise draw will stop by Ctrl + N press
+
+        this._drawInstance.on('drawpoint', () => {
+            if (this._borderSticker) {
+                this._borderSticker.reset();
+            }
+        });
 
         // Callbacks for point scale
         this._drawInstance.on('drawstart', this._rescaleDrawPoints.bind(this));
@@ -359,11 +368,12 @@ class ShapeCreatorView {
             numberOfPoints ++;
         });
 
-        this._autoBorderingCheckbox[0].disabled = false;
+        this._commonBordersCheckbox.css('display', '').trigger('change.shapeCreator');
+        this._commonBordersCheckbox.parent().css('display', '');
         $('body').on('keydown.shapeCreator', (e) => {
             if (e.ctrlKey && e.keyCode === 17) {
-                this._autoBorderingCheckbox[0].checked = !this._borderSticker;
-                this._autoBorderingCheckbox.trigger('change.shapeCreator');
+                this._commonBordersCheckbox.prop('checked', !this._borderSticker);
+                this._commonBordersCheckbox.trigger('change.shapeCreator');
             }
         });
 
@@ -403,8 +413,8 @@ class ShapeCreatorView {
         this._drawInstance.on('drawstop', () => {
             this._frameContent.off('mousedown.shapeCreator');
             this._frameContent.off('mousemove.shapeCreator');
-            this._autoBorderingCheckbox[0].disabled = true;
-            this._autoBorderingCheckbox[0].checked = false;
+            this._commonBordersCheckbox.css('display', 'none');
+            this._commonBordersCheckbox.parent().css('display', 'none');
             $('body').off('keydown.shapeCreator');
             if (this._borderSticker) {
                 this._borderSticker.disable();

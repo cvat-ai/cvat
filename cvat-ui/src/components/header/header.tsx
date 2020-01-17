@@ -14,11 +14,11 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
-import getCore from '../../core';
+import getCore from 'cvat-core';
 import {
     CVATLogo,
     AccountIcon,
-} from '../../icons';
+} from 'icons';
 
 const core = getCore();
 const serverHost = core.config.backendAPI.slice(0, -7);
@@ -52,7 +52,11 @@ function HeaderContainer(props: Props): JSX.Element {
 
     const menu = (
         <Menu className='cvat-header-menu' mode='vertical'>
-            <Menu.Item>
+            <Menu.Item
+                onClick={
+                    (): void => props.history.push('/settings')
+                }
+            >
                 <Icon type='setting' />
                 Settings
             </Menu.Item>

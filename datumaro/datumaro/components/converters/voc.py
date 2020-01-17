@@ -153,7 +153,9 @@ class _Converter:
                     ET.SubElement(source_elem, 'image').text = 'Unknown'
 
                     if item.has_image:
-                        h, w, c = item.image.shape
+                        image_shape = item.image.shape
+                        h, w = image_shape[:2]
+                        c = 1 if len(image_shape) == 2 else image_shape[2]
                         size_elem = ET.SubElement(root_elem, 'size')
                         ET.SubElement(size_elem, 'width').text = str(w)
                         ET.SubElement(size_elem, 'height').text = str(h)
@@ -460,7 +462,7 @@ class _Converter:
         void_labels = [src_label for src_id, src_label in source_labels.items()
             if src_label not in target_labels]
         if void_labels:
-            log.warn("The following labels are remapped to background: %s" %
+            log.warning("The following labels are remapped to background: %s" %
                 ', '.join(void_labels))
 
         def map_id(src_id):

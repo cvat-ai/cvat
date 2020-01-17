@@ -1,8 +1,8 @@
 import { AnyAction } from 'redux';
 
-import { PluginsActionTypes } from '../actions/plugins-actions';
-import { AuthActionTypes } from '../actions/auth-actions';
-import { registerGitPlugin } from '../utils/git-utils';
+import { PluginsActionTypes } from 'actions/plugins-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
+import { registerGitPlugin } from 'utils/git-utils';
 import {
     PluginsState,
 } from './interfaces';

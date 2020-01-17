@@ -83,6 +83,10 @@ Canvas itself handles:
         merge(mergeData: MergeData): void;
         select(objectState: any): void;
 
+        fitCanvas(): void;
+        dragCanvas(enable: boolean): void;
+        zoomCanvas(enable: boolean): void;
+
         cancel(): void;
     }
 ```
@@ -99,7 +103,7 @@ Canvas itself handles:
 - Drawn texts have the class ```cvat_canvas_text```
 - Tags have the class ```cvat_canvas_tag```
 - Canvas image has ID ```cvat_canvas_image```
-- Grid on the canvas has ID ```cvat_canvas_grid_pattern```
+- Grid on the canvas has ID ```cvat_canvas_grid``` and ```cvat_canvas_grid_pattern```
 - Crosshair during a draw has class ```cvat_canvas_crosshair```
 
 ### Events
@@ -117,6 +121,10 @@ Standard JS events are used.
     - canvas.groupped => {states: ObjectState[]}
     - canvas.merged => {states: ObjectState[]}
     - canvas.canceled
+    - canvas.dragstart
+    - canvas.dragstop
+    - canvas.zoomstart
+    - canvas.zoomstop
 ```
 
 ### WEB
@@ -126,49 +134,10 @@ Standard JS events are used.
 
     // Put canvas to a html container
     htmlContainer.appendChild(canvas.html());
+    canvas.fitCanvas();
 
     // Next you can use its API methods. For example:
     canvas.rotate(window.Canvas.Rotation.CLOCKWISE90);
-    canvas.draw({
-        enabled: true,
-        shapeType: 'rectangle',
-        crosshair: true,
-    });
-```
-
-### TypeScript
-- Add to ```tsconfig.json```:
-```json
-    "compilerOptions": {
-        "paths": {
-            "cvat-canvas.node": ["3rdparty/cvat-canvas.node"]
-        }
-    }
-```
-
-- ```3rdparty``` directory contains both ```cvat-canvas.node.js``` and ```cvat-canvas.node.d.ts```.
-- Add alias to ```webpack.config.js```:
-```js
-module.exports = {
-    resolve: {
-        alias: {
-            'cvat-canvas.node': path.resolve(__dirname, '3rdparty/cvat-canvas.node.js'),
-        }
-    }
-}
-```
-
-Than you can use it in TypeScript:
-```ts
-    import * as CANVAS from 'cvat-canvas.node';
-    // Create an instance of a canvas
-    const canvas = new CANVAS.Canvas();
-
-    // Put canvas to a html container
-    htmlContainer.appendChild(canvas.html());
-
-    // Next you can use its API methods. For example:
-    canvas.rotate(CANVAS.Rotation.CLOCKWISE90);
     canvas.draw({
         enabled: true,
         shapeType: 'rectangle',
@@ -182,17 +151,20 @@ Than you can use it in TypeScript:
 
 ## API Reaction
 
-|            | IDLE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING |
-|------------|------|----------|-----------|---------|---------|---------|
-| html()     | +    | +        | +         | +       | +       | +       |
-| setup()    | +    | +        | +         | +       | +       | -       |
-| activate() | +    | -        | -         | -       | -       | -       |
-| rotate()   | +    | +        | +         | +       | +       | +       |
-| focus()    | +    | +        | +         | +       | +       | +       |
-| fit()      | +    | +        | +         | +       | +       | +       |
-| grid()     | +    | +        | +         | +       | +       | +       |
-| draw()     | +    | -        | -         | -       | -       | -       |
-| split()    | +    | -        | +         | -       | -       | -       |
-| group      | +    | +        | -         | -       | -       | -       |
-| merge()    | +    | -        | -         | -       | +       | -       |
-| cancel()   | -    | +        | +         | +       | +       | +       |
+|              | IDLE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING | DRAG | ZOOM |
+|--------------|------|----------|-----------|---------|---------|---------|------|------|
+| html()       | +    | +        | +         | +       | +       | +       | +    | +    |
+| setup()      | +    | +        | +         | +       | +       | -       | +    | +    |
+| activate()   | +    | -        | -         | -       | -       | -       | -    | -    |
+| rotate()     | +    | +        | +         | +       | +       | +       | +    | +    |
+| focus()      | +    | +        | +         | +       | +       | +       | +    | +    |
+| fit()        | +    | +        | +         | +       | +       | +       | +    | +    |
+| grid()       | +    | +        | +         | +       | +       | +       | +    | +    |
+| draw()       | +    | -        | -         | -       | -       | -       | -    | -    |
+| split()      | +    | -        | +         | -       | -       | -       | -    | -    |
+| group()      | +    | +        | -         | -       | -       | -       | -    | -    |
+| merge()      | +    | -        | -         | -       | +       | -       | -    | -    |
+| fitCanvas()  | +    | +        | +         | +       | +       | +       | +    | +    |
+| dragCanvas() | +    | -        | -         | -       | -       | -       | +    | -    |
+| zoomCanvas() | +    | -        | -         | -       | -       | -       | -    | +    |
+| cancel()     | -    | +        | +         | +       | +       | +       | +    | +    |

@@ -22,10 +22,11 @@ RUN apt update && apt install -yq nodejs npm curl && \
     npm install -g n && n 10.16.3
 
 # Create output directories
-RUN mkdir /tmp/cvat-ui /tmp/cvat-core /tmp/cvat-data
+RUN mkdir /tmp/cvat-ui /tmp/cvat-core /tmp/cvat-canvas /tmp/cvat-data
 
 # Install dependencies
 COPY cvat-core/package*.json /tmp/cvat-core/
+COPY cvat-canvas/package*.json /tmp/cvat-canvas/
 COPY cvat-ui/package*.json /tmp/cvat-ui/
 COPY cvat-data/package*.json /tmp/cvat-data/
 
@@ -37,6 +38,10 @@ RUN npm install
 WORKDIR /tmp/cvat-core/
 RUN npm install
 
+# Install cvat-canvas dependencies
+WORKDIR /tmp/cvat-canvas/
+RUN npm install
+
 # Install cvat-ui dependencies
 WORKDIR /tmp/cvat-ui/
 RUN npm install
@@ -44,6 +49,7 @@ RUN npm install
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/
 COPY cvat-core/ /tmp/cvat-core/
+COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
 RUN npm run build
 

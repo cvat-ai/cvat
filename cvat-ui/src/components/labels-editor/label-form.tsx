@@ -13,6 +13,7 @@ import {
 
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
+import patterns from 'utils/validation-patterns';
 
 import {
     equalArrayHead,
@@ -20,7 +21,7 @@ import {
     Label,
     Attribute,
 } from './common';
-import patterns from '../../utils/validation-patterns';
+
 
 export enum AttributeType {
     SELECT = 'SELECT',
@@ -66,6 +67,8 @@ class LabelForm extends React.PureComponent<Props, {}> {
                                 attrValues = [attrValues];
                             }
                         }
+
+                        attrValues = attrValues.map((value: string) => value.trim());
 
                         return {
                             name: formValues.attrName[key],
