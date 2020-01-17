@@ -3,13 +3,15 @@ import React from 'react';
 
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
-
 import {
     Layout,
     Icon,
     Button,
     Menu,
     Dropdown,
+    Modal,
+    Row,
+    Col,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -31,6 +33,7 @@ interface HeaderContainerProps {
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
     username: string;
+    about: any;
 }
 
 type Props = HeaderContainerProps & RouteComponentProps;
@@ -42,6 +45,7 @@ function HeaderContainer(props: Props): JSX.Element {
         installedTFAnnotation,
         installedAnalytics,
         username,
+        about,
         onLogout,
         logoutFetching,
     } = props;
@@ -49,6 +53,47 @@ function HeaderContainer(props: Props): JSX.Element {
     const renderModels = installedAutoAnnotation
         || installedTFAnnotation
         || installedTFSegmentation;
+
+    function aboutModal() {
+        Modal.info({
+            title: `${about.name}`,
+            content: (
+                <div>
+                    <p>
+                        {`${about.description}`}
+                    </p>
+                    <p>
+                        <Text strong>
+                            Server version:
+                        </Text>
+                        <Text type='secondary'>
+                            {` ${about.version}`}
+                        </Text>
+                    </p>
+                    <p>
+                        <Text strong>
+                            Client version:
+                        </Text>
+                        <Text type='secondary'>
+                            {` ${core.client.version}`}
+                        </Text>
+                    </p>
+                    <Row type='flex' justify='space-around'>
+                        <Col><a href='https://github.com/opencv/cvat/blob/develop/CHANGELOG.md' target='_blank' rel='noopener noreferrer' >What's new?</a></Col>
+                        <Col><a href='https://github.com/opencv/cvat/blob/develop/LICENSE' target='_blank' rel='noopener noreferrer' >License</a></Col>
+                        <Col><a href='https://gitter.im/opencv-cvat' target='_blank' rel='noopener noreferrer' >Need help?</a></Col>
+                        <Col><a href='https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit' target='_blank' rel='noopener noreferrer' >Forum on Intel Developer Zone</a></Col>
+                    </Row>  
+                </div>
+            ),
+            width : 800,
+            okButtonProps: {
+                style: {
+                    width: '100px',
+                },
+            },
+        })
+    }
 
     const menu = (
         <Menu className='cvat-header-menu' mode='vertical'>
@@ -60,7 +105,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 <Icon type='setting' />
                 Settings
             </Menu.Item>
-            <Menu.Item>
+            <Menu.Item onClick={() => aboutModal()}>
                 <Icon type='info-circle' />
                 About
             </Menu.Item>
