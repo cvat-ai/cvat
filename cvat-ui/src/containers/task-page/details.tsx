@@ -22,11 +22,11 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { plugins } = state.plugins;
+    const { list } = state.plugins;
 
     return {
         registeredUsers: state.users.users,
-        installedGit: plugins.GIT_INTEGRATION,
+        installedGit: list.GIT_INTEGRATION,
     };
 }
 

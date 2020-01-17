@@ -45,13 +45,13 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const { dumps } = activities;
     const { loads } = activities;
     const activeExports = activities.exports;
-    const { plugins } = state.plugins;
+    const { list } = state.plugins;
     const { id } = own.taskInstance;
 
     return {
-        installedTFAnnotation: plugins.TF_ANNOTATION,
-        installedTFSegmentation: plugins.TF_SEGMENTATION,
-        installedAutoAnnotation: plugins.AUTO_ANNOTATION,
+        installedTFAnnotation: list.TF_ANNOTATION,
+        installedTFSegmentation: list.TF_SEGMENTATION,
+        installedAutoAnnotation: list.AUTO_ANNOTATION,
         dumpActivities: dumps.byTask[id] ? dumps.byTask[id] : null,
         exportActivities: activeExports.byTask[id] ? activeExports.byTask[id] : null,
         loadActivity: loads.byTask[id] ? loads.byTask[id] : null,

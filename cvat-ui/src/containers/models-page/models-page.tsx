@@ -27,13 +27,13 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { plugins } = state.plugins;
+    const { list } = state.plugins;
     const { models } = state;
 
     return {
-        installedAutoAnnotation: plugins.AUTO_ANNOTATION,
-        installedTFAnnotation: plugins.TF_ANNOTATION,
-        installedTFSegmentation: plugins.TF_SEGMENTATION,
+        installedAutoAnnotation: list.AUTO_ANNOTATION,
+        installedTFAnnotation: list.TF_ANNOTATION,
+        installedTFSegmentation: list.TF_SEGMENTATION,
         modelsInitialized: models.initialized,
         modelsFetching: models.fetching,
         models: models.models,

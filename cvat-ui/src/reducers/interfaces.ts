@@ -83,7 +83,7 @@ export enum SupportedPlugins {
 export interface PluginsState {
     fetching: boolean;
     initialized: boolean;
-    plugins: {
+    list: {
         [name in SupportedPlugins]: boolean;
     };
 }
@@ -95,7 +95,7 @@ export interface UsersState {
 }
 
 export interface AboutState {
-    about: any;
+    server: any;
     fetching: boolean;
     initialized: boolean;
 }

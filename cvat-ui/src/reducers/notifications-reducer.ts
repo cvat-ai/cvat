@@ -6,7 +6,7 @@ import { ModelsActionTypes } from 'actions/models-actions';
 import { ShareActionTypes } from 'actions/share-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { UsersActionTypes } from 'actions/users-actions';
-import { AboutActionTypes } from '../actions/about-actions';
+import { AboutActionTypes } from 'actions/about-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
 
@@ -294,7 +294,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     about: {
                         ...state.errors.about,
                         fetching: {
-                            message: 'Could not get data from the server',
+                            message: 'Could not get info about the server',
                             reason: action.payload.error.toString(),
                         },
                     },
