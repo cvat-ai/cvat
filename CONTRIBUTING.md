@@ -12,51 +12,60 @@ patches and features.
 
 Next steps should work on clear Ubuntu 18.04.
 
-- Install necessary dependencies:
+-   Install necessary dependencies:
+    ```sh
+    $ sudo apt-get install -y curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
+    ```
+    Also please make sure that you have installed ffmpeg with all necessary libav* libraries.
+    ```sh
+    # General dependencies
+    sudo apt-get install -y python-dev pkg-config
 
-```sh
-$ sudo apt-get install -y curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
-```
+    # Library components
+    sudo apt-get install -y \
+        libavformat-dev libavcodec-dev libavdevice-dev \
+        libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
+    ```
+    See [PyAV Dependencies installation guide](http://docs.mikeboers.com/pyav/develop/overview/installation.html#dependencies)
+    for details.
 
 -   Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
 for development
 
 -   Install CVAT on your local host:
+    ```sh
+    git clone https://github.com/opencv/cvat
+    cd cvat && mkdir logs keys
+    python3 -m venv .env
+    . .env/bin/activate
+    pip install -U pip wheel
+    pip install -r cvat/requirements/development.txt
+    pip install -r datumaro/requirements.txt
+    python manage.py migrate
+    python manage.py collectstatic
+    ```
 
-```sh
-git clone https://github.com/opencv/cvat
-cd cvat && mkdir logs keys
-python3 -m venv .env
-. .env/bin/activate
-pip install -U pip wheel
-pip install -r cvat/requirements/development.txt
-pip install -r datumaro/requirements.txt
-python manage.py migrate
-python manage.py collectstatic
-```
+-   Create a super user for CVAT:
+    ```sh
+    $ python manage.py createsuperuser
+    Username (leave blank to use 'django'): ***
+    Email address: ***
+    Password: ***
+    Password (again): ***
+    ```
 
-- Create a super user for CVAT:
+-   Install UI packages and start UI debug server:
+    ```sh
+    cd cvat-core && npm install
+    cd ../cvat-data && npm install
+    cd ../cvat-ui && npm install
+    npm start
+    ```
 
-```sh
-$ python manage.py createsuperuser
-Username (leave blank to use 'django'): ***
-Email address: ***
-Password: ***
-Password (again): ***
-```
-
-- Install UI packages and start UI debug server:
-```sh
-cd cvat-core && npm install
-cd ../cvat-ui && npm install
-npm start
-```
-
-- Run Visual Studio Code from the virtual environment
-
-```sh
- code .
-```
+-   Run Visual Studio Code from the virtual environment
+    ```sh
+    code .
+    ```
 
 -   Inside Visual Studio Code install [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome) and [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extensions
 
