@@ -26,7 +26,7 @@ class DatumaroConverterTest(TestCase):
                             'y': '2',
                         }),
                         BboxObject(1, 2, 3, 4, label=4, id=4, attributes={
-                            'score': 10.0,
+                            'score': 1.0,
                         }),
                         BboxObject(5, 6, 7, 8, id=5, group=5),
                         PointsObject([1, 2, 2, 0, 1, 1], label=0, id=5),
