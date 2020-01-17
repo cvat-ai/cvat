@@ -100,3 +100,10 @@
         }
     }
 }
+
+.cvat-objects-appearance-collapse.ant-collapse-item
+> .ant-collapse-header {
+    padding-top: 2.5px;
+    padding-bottom: 2.5px;
+    background: $header-color;
+}

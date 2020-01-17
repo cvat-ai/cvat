@@ -5,6 +5,9 @@ import {
     Layout,
 } from 'antd';
 
+import AppearanceSettingsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/appearance-settings';
+import ObjectsBlockContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-block';
+
 interface Props {
     onSidebarFoldUnfold(): void;
 }
@@ -17,14 +20,28 @@ export default class StandardWorkspaceComponent extends React.PureComponent<Prop
     public constructor(props: any) {
         super(props);
         this.state = {
-            collapsed: true,
+            collapsed: false,
         };
     }
 
-    public render(): JSX.Element {
-        const { collapsed } = this.state;
+    private onSideCollapserClick = (): void => {
         const { onSidebarFoldUnfold } = this.props;
 
+        this.setState(
+            (prevState: State): State => ({
+                collapsed: !prevState.collapsed,
+            }),
+        );
+
+        const [sidebar] = window.document
+            .getElementsByClassName('cvat-annotation-page-objects-sidebar');
+        sidebar.addEventListener('transitionend', () => {
+            onSidebarFoldUnfold();
+        }, { once: true });
+    };
+
+    public render(): JSX.Element {
+        const { collapsed } = this.state;
         return (
             <Layout.Sider
                 className='cvat-annotation-page-objects-sidebar'
@@ -41,25 +58,14 @@ export default class StandardWorkspaceComponent extends React.PureComponent<Prop
                     className={`cvat-annotation-page-objects-sidebar
                         ant-layout-sider-zero-width-trigger
                         ant-layout-sider-zero-width-trigger-left`}
-                    onClick={(): void => {
-                        this.setState(
-                            (prevState: State): State => ({
-                                collapsed: !prevState.collapsed,
-                            }),
-                        );
-
-                        const [sidebar] = window.document
-                            .getElementsByClassName('cvat-annotation-page-objects-sidebar');
-                        sidebar.addEventListener('transitionend', () => {
-                            onSidebarFoldUnfold();
-                        }, { once: true });
-                    }}
+                    onClick={this.onSideCollapserClick}
                 >
                     {collapsed ? <Icon type='menu-fold' title='Show' />
                         : <Icon type='menu-unfold' title='Hide' />}
                 </span>
 
-                Right sidebar
+                <ObjectsBlockContainer />
+                <AppearanceSettingsContainer />
             </Layout.Sider>
         );
     }
