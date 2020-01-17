@@ -6,6 +6,8 @@ import math
 from io import BytesIO
 from enum import Enum
 
+from PIL import Image
+
 from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.models import DataChoice
 from cvat.apps.engine.mime_types import mimetypes
@@ -78,12 +80,15 @@ class FrameProvider():
 
         return (frame, mimetypes.guess_type(frame_name))
 
-    def _get_frames(self, chunk_path_getter, reader_class):
+    def _get_frames(self, chunk_path_getter, reader_class, convert_to_pil):
         for chunk_idx in range(math.ceil(self._db_data.size / self._db_data.chunk_size)):
             chunk_path = chunk_path_getter(chunk_idx)
             chunk_reader = reader_class([chunk_path])
             for frame, _ in chunk_reader:
-                yield self._av_frame_to_png_bytes(frame) if reader_class is VideoReader else frame
+                if convert_to_pil:
+                    yield frame.to_image() if reader_class is VideoReader else Image.open(frame)
+                else:
+                    yield self._av_frame_to_png_bytes(frame) if reader_class is VideoReader else frame
 
     def get_preview(self):
         return self._db_data.get_preview_path()
@@ -113,14 +118,16 @@ class FrameProvider():
                 reader_class=self._compressed_chunk_reader_class,
             )
 
-    def get_frames(self, quality=Quality.ORIGINAL):
+    def get_frames(self, quality=Quality.ORIGINAL, convert_to_pil=False):
         if quality == self.Quality.ORIGINAL:
             return self._get_frames(
                 chunk_path_getter=self._db_data.get_original_chunk_path,
                 reader_class=self._original_chunk_reader_class,
+                convert_to_pil=convert_to_pil,
             )
         elif quality == self.Quality.COMPRESSED:
             return self._get_frames(
                 chunk_path_getter=self._db_data.get_compressed_chunk_path,
                 reader_class=self._compressed_chunk_reader_class,
+                convert_to_pil=convert_to_pil,
             )

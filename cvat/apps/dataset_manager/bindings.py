@@ -7,23 +7,27 @@ from cvat.apps.engine.annotation import TaskAnnotation
 from cvat.apps.engine.models import ShapeType
 
 import datumaro.components.extractor as datumaro
-from datumaro.util.image import decode_image
+from datumaro.util.image import lazy_image
 
 
 class CvatImagesExtractor(datumaro.Extractor):
-    # _SUPPORTED_FORMATS = ['.png', '.jpg']
-
     def __init__(self, url, frame_provider):
         super().__init__()
 
         self._frame_provider = frame_provider
 
     def __iter__(self):
-        frames = self._frame_provider.get_frames(self._frame_provider.Quality.ORIGINAL)
+        def rgb_to_bgr(image):
+            image = np.asarray(image, dtype=np.float32)
+            if len(image.shape) == 3 and image.shape[2] in {3, 4}:
+                image[:, :, :3] = image[:, :, 2::-1] # RGB to BGR
+            return image
+
+        frames = self._frame_provider.get_frames(self._frame_provider.Quality.ORIGINAL, True)
         for item_id, image in enumerate(frames):
             yield datumaro.DatasetItem(
                 id=item_id,
-                image=decode_image(image.getvalue())
+                image=lazy_image(image, loader=rgb_to_bgr),
             )
 
     def __len__(self):
