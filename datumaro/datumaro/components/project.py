@@ -651,8 +651,8 @@ class ProjectDataset(Dataset):
         launcher = self._project.make_executable_model(model_name)
         self.transform_project(InferenceWrapper, launcher, save_dir=save_dir)
 
-    def export_project(self, save_dir, output_format,
-            filter_expr=None, filter_annotations=False, **converter_kwargs):
+    def export_project(self, save_dir, converter,
+            filter_expr=None, filter_annotations=False):
         # NOTE: probably this function should be in the ViewModel layer
         save_dir = osp.abspath(save_dir)
         os.makedirs(save_dir, exist_ok=True)
@@ -661,7 +661,6 @@ class ProjectDataset(Dataset):
         if filter_expr:
             dataset = dataset.extract(filter_expr, filter_annotations)
 
-        converter = self.env.make_converter(output_format, **converter_kwargs)
         converter(dataset, save_dir)
 
     def extract_project(self, filter_expr, filter_annotations=False,

@@ -9,7 +9,7 @@ import os
 import os.path as osp
 import shutil
 
-from ...util import add_subparser
+from ...util import add_subparser, CliException
 from ...util.project import load_project
 
 
@@ -31,13 +31,11 @@ def create_command(args):
     name = args.name
 
     if project.env.git.has_submodule(name):
-        log.fatal("Submodule '%s' already exists" % (name))
-        return 1
+        raise CliException("Submodule '%s' already exists" % name)
 
     try:
         project.get_source(name)
-        log.fatal("Source '%s' already exists" % (name))
-        return 1
+        raise CliException("Source '%s' already exists" % name)
     except KeyError:
         pass
 
@@ -79,10 +77,10 @@ def build_import_parser(parser_ctor=argparse.ArgumentParser):
     parser.add_argument('-f', '--format', default=None,
         help="Source dataset format (options: %s, default: 'project')" % \
             (', '.join(extractors_list)))
-    parser.add_argument('-p', '--project', dest='project_dir', default='.',
-        help="Directory of the project to operate on (default: current dir)")
     parser.add_argument('--skip-check', action='store_true',
         help="Skip source checking")
+    parser.add_argument('-p', '--project', dest='project_dir', default='.',
+        help="Directory of the project to operate on (default: current dir)")
     parser.set_defaults(command=import_command)
 
     return parser
@@ -96,13 +94,11 @@ def import_command(args):
             name = osp.splitext(osp.basename(args.url))[0]
 
         if project.env.git.has_submodule(name):
-            log.fatal("Submodule '%s' already exists" % (name))
-            return 1
+            raise CliException("Submodule '%s' already exists" % name)
 
         try:
             project.get_source(name)
-            log.fatal("Source '%s' already exists" % (name))
-            return 1
+            raise CliException("Source '%s' already exists" % name)
         except KeyError:
             pass
 
@@ -125,8 +121,7 @@ def import_command(args):
     elif args.source_type == 'dir':
         url = osp.abspath(args.url)
         if not osp.exists(url):
-            log.fatal("Source path '%s' does not exist" % url)
-            return 1
+            raise CliException("Source path '%s' does not exist" % url)
 
         name = args.name
         if name is None:
@@ -134,8 +129,7 @@ def import_command(args):
 
         try:
             project.get_source(name)
-            log.fatal("Source '%s' already exists" % (name))
-            return 1
+            raise CliException("Source '%s' already exists" % name)
         except KeyError:
             pass
 
@@ -179,19 +173,18 @@ def remove_command(args):
 
     name = args.name
     if name is None:
-        log.fatal("Expected source name")
-        return
+        raise CliException("Expected source name")
 
     if project.env.git.has_submodule(name):
         if args.force:
-            log.warning("Forcefully removing the '%s' source..." % (name))
+            log.warning("Forcefully removing the '%s' source..." % name)
 
         project.env.git.remove_submodule(name, force=args.force)
 
     project.remove_source(name)
     project.save()
 
-    log.info("Source '%s' has been removed from the project" % (name))
+    log.info("Source '%s' has been removed from the project" % name)
 
     return 0
 
@@ -199,7 +192,7 @@ def build_export_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor()
 
     import datumaro.components.converters as converters_module
-    converters_list = [name for name, cls in converters_module.items]
+    builtin_converters = [name for name, cls in converters_module.items]
 
     parser.add_argument('-n', '--name', required=True,
         help="Source dataset to be extracted")
@@ -208,7 +201,9 @@ def build_export_parser(parser_ctor=argparse.ArgumentParser):
              "extract images with width < height: "
              "'/item[image/width < image/height]'; "
              "extract images with large-area bboxes: "
-             "'/item[annotation/type=\"bbox\" and annotation/area>2000]'"
+             "'/item[annotation/type=\"bbox\" and annotation/area>2000]' "
+             "filter out irrelevant annotations from items: "
+             "'/item/annotation[label = \"person\"]'"
         )
     parser.add_argument('-a', '--filter-annotations', action='store_true',
         help="Filter annotations instead of dataset "
@@ -216,11 +211,11 @@ def build_export_parser(parser_ctor=argparse.ArgumentParser):
     parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
         help="Directory to save output")
     parser.add_argument('-f', '--output-format', required=True,
-        help="Output format (options: %s)" % (', '.join(converters_list)))
-    parser.add_argument('-p', '--project', dest='project_dir', default='.',
-        help="Directory of the project to operate on (default: current dir)")
+        help="Output format (options: %s)" % (', '.join(builtin_converters)))
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
+    parser.add_argument('-p', '--project', dest='project_dir', default='.',
+        help="Directory of the project to operate on (default: current dir)")
     parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
         help="Additional arguments for converter (pass '-- -h' for help)")
     parser.set_defaults(command=export_command)
@@ -230,25 +225,37 @@ def build_export_parser(parser_ctor=argparse.ArgumentParser):
 def export_command(args):
     project = load_project(args.project_dir)
 
-    dst_dir = osp.abspath(args.dst_dir)
-    if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
-        log.error("Directory '%s' already exists "
-            "(pass --overwrite to force creation)" % dst_dir)
-        return 1
-    os.makedirs(dst_dir, exist_ok=args.overwrite)
+    dst_dir = args.dst_dir
+    if dst_dir:
+        if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
+            raise CliException("Directory '%s' already exists "
+                "(pass --overwrite to force creation)" % dst_dir)
+    else:
+        dst_dir = generate_next_dir_name('export_' + args.output_format)
+    dst_dir = osp.abspath(dst_dir)
+
+    try:
+        converter = project.env.make_converter(args.output_format,
+            cmdline_args=args.extra_args)
+    except KeyError:
+        raise CliException("Converter for format '%s' is not found" % \
+            args.output_format)
 
     log.info("Loading the project...")
+    try:
+        project.get_source(args.name)
+    except KeyError:
+        raise CliException("Source '%s' is not found in the project" % args.name)
     source_project = project.make_source_project(args.name)
     dataset = source_project.make_dataset()
 
     log.info("Exporting the project...")
     dataset.export_project(
         save_dir=dst_dir,
-        output_format=args.output_format,
+        converter=converter,
         filter_expr=args.filter,
-        filter_annotations=args.filter_annotations,
-        cmdline_args=args.extra_args)
-    log.info("Source '%s' exported to '%s' as '%s'" % \
+        filter_annotations=args.filter_annotations)
+    log.info("Source '%s' has been exported to '%s' as '%s'" % \
         (args.name, dst_dir, args.output_format))
 
     return 0

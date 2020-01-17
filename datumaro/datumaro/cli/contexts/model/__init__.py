@@ -138,7 +138,7 @@ def run_command(args):
         save_dir=dst_dir,
         model_name=args.model_name)
 
-    log.info("Inference results saved to '%s'" % (dst_dir))
+    log.info("Inference results have been saved to '%s'" % dst_dir)
 
     return 0
 

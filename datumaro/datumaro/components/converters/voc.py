@@ -502,7 +502,7 @@ class VocConverter(Converter):
     def build_cmdline_parser(cls, parser=None):
         import argparse
         if not parser:
-            parser = argparse.ArgumentParser()
+            parser = argparse.ArgumentParser(prog='voc')
 
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")

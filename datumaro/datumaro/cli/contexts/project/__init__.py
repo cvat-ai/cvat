@@ -8,13 +8,15 @@ import logging as log
 import os
 import os.path as osp
 import shutil
+import textwrap
 
 from datumaro.components.project import Project
 from datumaro.components.comparator import Comparator
 from datumaro.components.dataset_filter import DatasetItemEncoder
 from .diff import DiffVisualizer
-from ...util import add_subparser
-from ...util.project import make_project_path, load_project
+from ...util import add_subparser, CliException
+from ...util.project import make_project_path, load_project, \
+    generate_next_dir_name
 
 
 def build_create_parser(parser_ctor=argparse.ArgumentParser):
@@ -36,29 +38,27 @@ def create_command(args):
 
     if osp.isdir(project_dir) and os.listdir(project_dir):
         if not args.overwrite:
-            log.error("Directory '%s' already exists "
+            raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % project_dir)
-            return 1
         else:
             shutil.rmtree(project_dir)
     os.makedirs(project_dir, exist_ok=args.overwrite)
 
     if not args.overwrite and osp.isfile(project_path):
-        log.error("Project file '%s' already exists "
+        raise CliException("Project file '%s' already exists "
             "(pass --overwrite to force creation)" % project_path)
-        return 1
 
     project_name = args.name
     if project_name is None:
         project_name = osp.basename(project_dir)
 
-    log.info("Creating project at '%s'" % (project_dir))
+    log.info("Creating project at '%s'" % project_dir)
 
     Project.generate(project_dir, {
         'project_name': project_name,
     })
 
-    log.info("Project has been created at '%s'" % (project_dir))
+    log.info("Project has been created at '%s'" % project_dir)
 
     return 0
 
@@ -66,22 +66,22 @@ def build_import_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor()
 
     import datumaro.components.importers as importers_module
-    importers_list = [name for name, cls in importers_module.items]
+    builtin_importers = [name for name, cls in importers_module.items]
 
     parser.add_argument('-s', '--source', required=True,
         help="Path to import a project from")
     parser.add_argument('-f', '--format', required=True,
-        help="Source project format (options: %s)" % (', '.join(importers_list)))
+        help="Source project format (options: %s)" % (', '.join(builtin_importers)))
     parser.add_argument('-d', '--dest', default='.', dest='dst_dir',
         help="Directory to save the new project to (default: current dir)")
     parser.add_argument('-n', '--name', default=None,
         help="Name of the new project (default: same as project dir)")
-    parser.add_argument('--overwrite', action='store_true',
-        help="Overwrite existing files in the save directory")
     parser.add_argument('--copy', action='store_true',
         help="Copy the dataset instead of saving source links")
     parser.add_argument('--skip-check', action='store_true',
         help="Skip source checking")
+    parser.add_argument('--overwrite', action='store_true',
+        help="Overwrite existing files in the save directory")
     # parser.add_argument('extra_args', nargs=argparse.REMAINDER,
     #     help="Additional arguments for importer (pass '-- -h' for help)")
     parser.set_defaults(command=import_command)
@@ -94,17 +94,15 @@ def import_command(args):
 
     if osp.isdir(project_dir) and os.listdir(project_dir):
         if not args.overwrite:
-            log.error("Directory '%s' already exists "
+            raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % project_dir)
-            return 1
         else:
             shutil.rmtree(project_dir)
     os.makedirs(project_dir, exist_ok=args.overwrite)
 
     if not args.overwrite and osp.isfile(project_path):
-        log.error("Project file '%s' already exists "
+        raise CliException("Project file '%s' already exists "
             "(pass --overwrite to force creation)" % project_path)
-        return 1
 
     project_name = args.name
     if project_name is None:
@@ -127,36 +125,33 @@ def import_command(args):
     else:
         project.save()
 
-    log.info("Project has been created at '%s'" % (project_dir))
+    log.info("Project has been created at '%s'" % project_dir)
 
     return 0
 
 def build_export_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
+    parser = parser_ctor(description=textwrap.dedent("""
+        Exports the project dataset in some format.
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter)
 
     import datumaro.components.converters as converters_module
-    converters_list = [name for name, cls in converters_module.items]
+    builtin_converters = [name for name, cls in converters_module.items]
 
     parser.add_argument('-e', '--filter', default=None,
-        help="Filter expression for dataset items. Examples: "
-             "extract images with width < height: "
-             "'/item[image/width < image/height]'; "
-             "extract images with large-area bboxes: "
-             "'/item[annotation/type=\"bbox\" and annotation/area>2000]'"
-            "filter out irrelevant annotations from items: "
-             "'/item/annotation[label = \"person\"]'"
-        )
+        help="Filter expression for dataset items "
+            "(check 'extract' command description)")
     parser.add_argument('-a', '--filter-annotations', action='store_true',
         help="Filter annotations instead of dataset "
             "items (default: %(default)s)")
-    parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
-        help="Directory to save output")
+    parser.add_argument('-d', '--dest', dest='dst_dir', default=None,
+        help="Directory to save output (default: a subdir in the current one)")
     parser.add_argument('-f', '--output-format', required=True,
-        help="Output format (options: %s)" % (', '.join(converters_list)))
-    parser.add_argument('-p', '--project', dest='project_dir', default='.',
-        help="Directory of the project to operate on (default: current dir)")
+        help="Output format (options: %s)" % (', '.join(builtin_converters)))
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
+    parser.add_argument('-p', '--project', dest='project_dir', default='.',
+        help="Directory of the project to operate on (default: current dir)")
     parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
         help="Additional arguments for converter (pass '-- -h' for help)")
     parser.set_defaults(command=export_command)
@@ -166,12 +161,21 @@ def build_export_parser(parser_ctor=argparse.ArgumentParser):
 def export_command(args):
     project = load_project(args.project_dir)
 
-    dst_dir = osp.abspath(args.dst_dir)
-    if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
-        log.error("Directory '%s' already exists "
-            "(pass --overwrite to force creation)" % dst_dir)
-        return 1
-    os.makedirs(dst_dir, exist_ok=args.overwrite)
+    dst_dir = args.dst_dir
+    if dst_dir:
+        if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
+            raise CliException("Directory '%s' already exists "
+                "(pass --overwrite to force creation)" % dst_dir)
+    else:
+        dst_dir = generate_next_dir_name('export_' + args.output_format)
+    dst_dir = osp.abspath(dst_dir)
+
+    try:
+        converter = project.env.make_converter(args.output_format,
+            cmdline_args=args.extra_args)
+    except KeyError:
+        raise CliException("Converter for format '%s' is not found" % \
+            args.output_format)
 
     log.info("Loading the project...")
     dataset = project.make_dataset()
@@ -179,27 +183,40 @@ def export_command(args):
     log.info("Exporting the project...")
     dataset.export_project(
         save_dir=dst_dir,
-        output_format=args.output_format,
+        converter=converter,
         filter_expr=args.filter,
-        filter_annotations=args.filter_annotations,
-        cmdline_args=args.extra_args)
+        filter_annotations=args.filter_annotations)
     log.info("Project exported to '%s' as '%s'" % \
         (dst_dir, args.output_format))
 
     return 0
 
 def build_extract_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
+    parser = parser_ctor(description=textwrap.dedent("""
+        Creates a project that contains only items corresponding
+        to the filter expression.
 
-    parser.add_argument('-e', '--filter', default=None,
-        help="XML XPath filter expression for dataset items. Examples: "
-             "extract images with width < height: "
-             "'/item[image/width < image/height]'; "
-             "extract images with large-area bboxes: "
-             "'/item[annotation/type=\"bbox\" and annotation/area>2000]' "
-             "filter out irrelevant annotations from items: "
-             "'/item/annotation[label = \"person\"]'"
-        )
+        Examples:
+        - extract images with width < height:
+            extract -e '/item[image/width < image/height]'
+
+        - extract images with large-area bboxes:
+            extract -e '/item[annotation/type=\"bbox\" and annotation/area>2000]'
+
+        - filter out all irrelevant annotations from items:
+            extract -a -e '/item/annotation[label = \"person\"]'
+
+        Check '--dry-run' parameter to see XML representations of the dataset items.
+
+        When filtering mode is annotations ('-a'), use '--remove-empty'
+        parameter to specify is annotation-less dataset items should be
+        kept or removed. To select an annotation, write an XPath that returns
+        'annotation' elements (see examples).
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument('-e', '--filter', required=True,
+        help="XML XPath filter expression for dataset items")
     parser.add_argument('-a', '--filter-annotations', action='store_true',
         help="Filter annotations instead of dataset "
             "items (default: %(default)s)")
@@ -207,10 +224,12 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
         help="Remove an item if there are no annotations left after filtration")
     parser.add_argument('--dry-run', action='store_true',
         help="Print XML representations to be filtered and exit")
-    parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
-        help="Output directory")
+    parser.add_argument('-d', '--dest', dest='dst_dir', default=None,
+        help="Output directory (default: update current project)")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.set_defaults(command=extract_command)
+
     return parser
 
 def extract_command(args):
@@ -238,7 +257,7 @@ def extract_command(args):
     dataset.extract_project(save_dir=dst_dir, filter_expr=args.filter,
         filter_annotations=args.filter_annotations, **kwargs)
 
-    log.info("Subproject extracted to '%s'" % (dst_dir))
+    log.info("Subproject has been extracted to '%s'" % dst_dir)
 
     return 0
 
@@ -268,7 +287,7 @@ def merge_command(args):
     if dst_dir is None:
         dst_dir = first_project.config.project_dir
     dst_dir = osp.abspath(dst_dir)
-    log.info("Merge result saved to '%s'" % (dst_dir))
+    log.info("Merge results have been saved to '%s'" % dst_dir)
 
     return 0
 
@@ -317,8 +336,8 @@ def diff_command(args):
 def build_transform_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor()
 
-    parser.add_argument('-m', '--method', required=True,
-        help="Model to apply to the project")
+    parser.add_argument('-t', '--transform', required=True,
+        help="Transform to apply to the project")
     parser.add_argument('-d', '--dest', dest='dst_dir', default=None,
         help="Directory to save output (default: current dir)")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
@@ -335,7 +354,7 @@ def transform_command(args):
         os.makedirs(dst_dir, exist_ok=False)
 
     project.make_dataset().transform_project(
-        method=args.method,
+        method=args.transform,
         save_dir=dst_dir
     )
 
