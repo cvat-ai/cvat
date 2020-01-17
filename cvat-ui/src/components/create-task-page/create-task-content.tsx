@@ -39,6 +39,7 @@ const defaultState = {
     advanced: {
         zOrder: false,
         lfs: false,
+        useZipChunks: true,
     },
     labels: [],
     files: {
