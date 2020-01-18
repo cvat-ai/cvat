@@ -28,7 +28,7 @@ export default function GroupControl(props: Props): JSX.Element {
 
     const dynamicIconProps = activeControl === ActiveControl.GROUP
         ? {
-            className: 'cvat-annotation-page-active-control',
+            className: 'cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.group({ enabled: false });
             },

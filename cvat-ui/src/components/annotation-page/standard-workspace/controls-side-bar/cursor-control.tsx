@@ -33,7 +33,7 @@ export default function CursorControl(props: Props): JSX.Element {
             <Icon
                 component={CursorIcon}
                 className={activeControl === ActiveControl.CURSOR
-                    ? 'cvat-annotation-page-active-control' : ''
+                    ? 'cvat-active-canvas-control' : ''
                 }
                 onClick={(): void => {
                     if (activeControl !== ActiveControl.CURSOR) {

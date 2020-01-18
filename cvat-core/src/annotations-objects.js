@@ -703,8 +703,9 @@
             // Remove keyframe
             if (updated.keyframe && !data.keyframe) {
                 // Remove all cache after this keyframe because it have just become outdated
+                const [, rightFrame] = this.neighborsFrames(frame);
                 for (const cacheFrame in this.cache) {
-                    if (+cacheFrame > frame) {
+                    if (+cacheFrame > frame && +cacheFrame < rightFrame) {
                         delete this.cache[cacheFrame];
                     }
                 }

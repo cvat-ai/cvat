@@ -1,7 +1,12 @@
 import React from 'react';
 
-export default function LabelsList(): JSX.Element {
+interface Props {
+    annotations: any[];
+    onAnnotationsUpdated(annotations: any[]): void;
+}
+
+export default function LabelsList(props: Props): JSX.Element {
     return (
-        <>Labels list</>
+        <div className='cvat-objects-sidebar-labels-list' />
     );
 }

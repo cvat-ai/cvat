@@ -14,10 +14,21 @@ import {
     ExpandObjectsIcon,
 } from 'icons';
 
-export default function ObjectsList(): JSX.Element {
+import ObjectItem from './object-item';
+
+interface Props {
+    annotations: any[];
+    onAnnotationsUpdated(annotations: any[]): void;
+}
+
+export default function ObjectsList(props: Props): JSX.Element {
+    const {
+        annotations,
+    } = props;
+
     return (
         <>
-            <div className='cvat-side-bar-objects-header'>
+            <div className='cvat-objects-sidebar-states-header'>
                 <Row>
                     <Col>
                         <Input
@@ -45,8 +56,14 @@ export default function ObjectsList(): JSX.Element {
                     </Col>
                 </Row>
             </div>
-            <div className='cvat-side-bar-objects-list'>
-
+            <div className='cvat-objects-sidebar-states-list'>
+                { annotations.map((state: any) => (
+                    <ObjectItem
+                        key={state.clientID}
+                        objectState={state}
+                        {...props}
+                    />
+                ))}
             </div>
         </>
     );

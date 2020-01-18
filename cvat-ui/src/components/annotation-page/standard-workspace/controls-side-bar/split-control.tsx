@@ -28,7 +28,7 @@ export default function SplitControl(props: Props): JSX.Element {
 
     const dynamicIconProps = activeControl === ActiveControl.SPLIT
         ? {
-            className: 'cvat-annotation-page-active-control',
+            className: 'cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.split({ enabled: false });
             },

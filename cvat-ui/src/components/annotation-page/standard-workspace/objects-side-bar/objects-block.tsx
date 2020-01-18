@@ -10,14 +10,16 @@ import ObjectsList from './objects-list';
 import LabelsList from './labels-list';
 
 interface Props {
-
+    annotations: any[];
+    height: number;
+    onAnnotationsUpdated(annotations: any[]): void;
 }
 
-export default function AppearanceSettingsComponent(props: Props): JSX.Element {
+export default function ObjectsBlockComponent(props: Props): JSX.Element {
+    const { height } = props;
     return (
-        <Tabs type='card' defaultActiveKey='objects' className='cvat-objects-side-bar-tabs'>
+        <Tabs type='card' style={{ height }} defaultActiveKey='objects' className='cvat-objects-sidebar-tabs'>
             <Tabs.TabPane
-                className='t1'
                 tab={<Text strong>Objects</Text>}
                 key='objects'
             >

@@ -2,26 +2,43 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import ObjectsBlockComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-block';
+import { CombinedState } from 'reducers/interfaces';
+import { annotationsUpdated } from 'actions/annotation-actions';
+
+interface OwnProps {
+    height: number;
+}
 
 interface StateToProps {
-
+    annotations: any[];
 }
 
 interface DispatchToProps {
-
+    onAnnotationsUpdated(annotations: any[]): void;
 }
 
-function mapStateToProps(): StateToProps {
-    return {};
+function mapStateToProps(state: CombinedState): StateToProps {
+    const { annotation } = state;
+
+    return {
+        annotations: annotation.annotations,
+    };
 }
 
 function mapDispatchToProps(): DispatchToProps {
-    return {};
+    return {
+        onAnnotationsUpdated(annotations: []): void {
+            annotationsUpdated(annotations);
+        },
+    };
 }
 
-function AppearanceSettingsContainer(props: StateToProps & DispatchToProps): JSX.Element {
+function AppearanceSettingsContainer(
+    props: StateToProps & DispatchToProps,
+    own: OwnProps,
+): JSX.Element {
     return (
-        <ObjectsBlockComponent {...props} />
+        <ObjectsBlockComponent {...own} {...props} />
     );
 }
 

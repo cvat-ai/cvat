@@ -44,7 +44,7 @@ interface Props {
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     return (
         <Layout.Sider
-            className='cvat-annotation-page-controls-sidebar'
+            className='cvat-canvas-controls-sidebar'
             theme='light'
             width={44}
         >

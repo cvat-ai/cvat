@@ -28,7 +28,7 @@ export default function MergeControl(props: Props): JSX.Element {
 
     const dynamicIconProps = activeControl === ActiveControl.MERGE
         ? {
-            className: 'cvat-annotation-page-active-control',
+            className: 'cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.merge({ enabled: false });
             },

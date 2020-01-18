@@ -95,14 +95,19 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     const savingOverlay = SavingOverlay(saving, savingStatuses);
 
     return (
-        <Layout.Header className='cvat-annotation-page-header'>
+        <Layout.Header className='cvat-annotation-header'>
             <Row type='flex' justify='space-between'>
                 <Col className='cvat-annotation-header-left-group'>
                     <div className='cvat-annotation-header-button'>
                         <Icon component={MainMenuIcon} />
                         <span>Menu</span>
                     </div>
-                    <div className={saving ? 'cvat-annotation-disabled-header-button' : 'cvat-annotation-header-button'}>
+                    <div
+                        className={saving
+                            ? 'cvat-annotation-disabled-header-button'
+                            : 'cvat-annotation-header-button'
+                        }
+                    >
                         <Icon
                             component={SaveIcon}
                             onClick={async (): Promise<void> => {
@@ -125,7 +130,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 </Col>
                 <Col className='cvat-annotation-header-player-group'>
                     <Row type='flex' align='middle'>
-                        <Col className='cvat-annotation-header-player-buttons'>
+                        <Col className='cvat-player-buttons'>
                             <Tooltip overlay='Go to the first frame'>
                                 <Icon
                                     component={PlaycontrolFirstIcon}
@@ -227,11 +232,11 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                                 />
                             </Tooltip>
                         </Col>
-                        <Col className='cvat-annotation-header-player-controls'>
+                        <Col className='cvat-player-controls'>
                             <Row type='flex'>
                                 <Col>
                                     <Slider
-                                        className='cvat-annotation-header-player-slider'
+                                        className='cvat-player-slider'
                                         min={jobInstance.startFrame}
                                         max={jobInstance.stopFrame}
                                         value={frame || 0}
@@ -243,7 +248,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                                 </Col>
                             </Row>
                             <Row type='flex' justify='space-around'>
-                                <Col className='cvat-annotation-header-filename-wrapper'>
+                                <Col className='cvat-player-filename-wrapper'>
                                     <Tooltip overlay='filename.png'>
                                         <Text type='secondary'>filename.png</Text>
                                     </Tooltip>
@@ -252,7 +257,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         </Col>
                         <Col>
                             <Input
-                                className='cvat-annotation-header-frame-selector'
+                                className='cvat-player-frame-selector'
                                 type='number'
                                 value={frame || 0}
                                 // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
@@ -274,7 +279,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         <span>Info</span>
                     </div>
                     <div>
-                        <Select className='cvat-annotation-header-workspace-selector' defaultValue='standard'>
+                        <Select className='cvat-workspace-selector' defaultValue='standard'>
                             <Select.Option key='standard' value='standard'>Standard</Select.Option>
                             <Select.Option key='aam' value='aam'>Attribute annotation</Select.Option>
                         </Select>

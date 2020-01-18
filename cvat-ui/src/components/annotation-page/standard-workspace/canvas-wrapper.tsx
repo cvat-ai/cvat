@@ -51,7 +51,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         // It's awful approach from the point of view React
         // But we do not have another way because cvat-canvas returns regular DOM element
         const [wrapper] = window.document
-            .getElementsByClassName('cvat-annotation-page-canvas-container');
+            .getElementsByClassName('cvat-canvas-container');
         wrapper.appendChild(canvasInstance.html());
 
         this.initialSetup();
@@ -124,16 +124,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.frame = frame;
         const objectState = new cvat.classes.ObjectState(state);
         await jobInstance.annotations.put([objectState]);
-
         const annotations = await jobInstance.annotations.get(frame);
         onAnnotationsUpdated(annotations);
     }
 
     private async onShapeEdited(event: any): Promise<void> {
         const {
-            jobInstance,
-            frame,
             onAnnotationsUpdated,
+            annotations,
         } = this.props;
 
         const {
@@ -141,10 +139,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             points,
         } = event.detail;
         state.points = points;
-        state.save();
-
-        const annotations = await jobInstance.annotations.get(frame);
-        onAnnotationsUpdated(annotations);
+        const updatedState = await state.save();
+        const indexOf = annotations.indexOf(state);
+        if (indexOf !== -1) {
+            const updatedAnnotations = [...annotations];
+            updatedAnnotations[indexOf] = updatedState;
+            onAnnotationsUpdated(updatedAnnotations);
+        }
     }
 
     private async onObjectsMerged(event: any): Promise<void> {
@@ -314,7 +315,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             // So, React isn't going to rerender it
             // And it's a reason why cvat-canvas appended in mount function works
             <Layout.Content
-                className='cvat-annotation-page-canvas-container'
+                className='cvat-canvas-container'
             />
         );
     }
