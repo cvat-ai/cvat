@@ -240,9 +240,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         // Events
         canvasInstance.html().addEventListener('canvas.setup', (): void => {
             onSetupCanvas();
-            if (jobInstance.task.mode === 'annotation') {
-                canvasInstance.fit();
-            }
         });
 
         canvasInstance.html().addEventListener('canvas.setup', () => {

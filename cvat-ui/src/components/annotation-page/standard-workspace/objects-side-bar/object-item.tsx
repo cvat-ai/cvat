@@ -42,23 +42,6 @@ export default function ObjectItem(props: Props): JSX.Element {
 
                 </Col>
             </Row>
-            <Row type='flex'>
-                <Col span={10}>
-                    <Text style={{ fontSize: 16 }}>{objectState.clientID}</Text>
-                    <br />
-                    <Text style={{ fontSize: 10 }}>{type}</Text>
-                </Col>
-                <Col span={12}>
-                    <Select>
-                        <Select.Option key='Test'>
-                            Test
-                        </Select.Option>
-                    </Select>
-                </Col>
-                <Col span={2}>
-
-                </Col>
-            </Row>
         </div>
     );
 }
