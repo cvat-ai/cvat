@@ -48,6 +48,7 @@ Password (again): ***
 - Install UI packages and start UI debug server:
 ```sh
 cd cvat-core && npm install
+cd ../cvat-canvas && npm install
 cd ../cvat-ui && npm install
 npm start
 ```
