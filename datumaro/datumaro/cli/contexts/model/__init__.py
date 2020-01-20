@@ -121,8 +121,6 @@ def build_run_parser(parser_ctor=argparse.ArgumentParser):
         help="Directory to save output")
     parser.add_argument('-m', '--model', dest='model_name', required=True,
         help="Model to apply to the project")
-    parser.add_argument('-f', '--output-format', default=DEFAULT_FORMAT,
-        help="Output format (default: %(default)s)")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
     parser.set_defaults(command=run_command)

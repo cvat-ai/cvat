@@ -206,7 +206,8 @@ def export_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('export_' + args.output_format)
+        dst_dir = generate_next_dir_name('%s-export-%s' % \
+            (project.config.project_name, args.output_format))
     dst_dir = osp.abspath(dst_dir)
 
     try:
@@ -256,6 +257,8 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
         """,
         formatter_class=MultilineFormatter)
 
+    parser.add_argument('-e', '--filter', default=None,
+        help="XML XPath filter expression for dataset items")
     parser.add_argument('-a', '--filter-annotations', action='store_true',
         help="Filter annotations instead of dataset "
             "items (default: %(default)s)")
@@ -267,8 +270,6 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
         help="Output directory (default: update current project)")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
-    parser.add_argument('-e', '--filter', required=True,
-        help="XML XPath filter expression for dataset items")
     parser.set_defaults(command=extract_command)
 
     return parser
@@ -276,9 +277,10 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
 def extract_command(args):
     project = load_project(args.project_dir)
 
-    dst_dir = osp.abspath(args.dst_dir)
-    if not args.dry_run:
-        os.makedirs(dst_dir, exist_ok=False)
+    if not args.dst_dir:
+        dst_dir = generate_next_dir_name('%s-filter' % \
+            project.config.project_name)
+    dst_dir = osp.abspath(dst_dir)
 
     dataset = project.make_dataset()
 
@@ -295,6 +297,10 @@ def extract_command(args):
             print(xml_item)
         return 0
 
+    if not args.filter:
+        raise CliException("Expected a filter expression ('-e' argument)")
+
+    os.makedirs(dst_dir, exist_ok=False)
     dataset.extract_project(save_dir=dst_dir, filter_expr=args.filter,
         filter_annotations=args.filter_annotations, **kwargs)
 
@@ -305,7 +311,8 @@ def extract_command(args):
 def build_merge_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Merge projects",
         description="""
-        Updates items of the current project with items from the other project.
+            Updates items of the current project with items
+            from the other project.
         """,
         formatter_class=MultilineFormatter)
 
@@ -337,7 +344,8 @@ def merge_command(args):
     return 0
 
 def build_diff_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor(help="Compare projects")
+    parser = parser_ctor(help="Compare projects",
+        description="Compares two projects.")
 
     parser.add_argument('other_project_dir',
         help="Directory of the second project to be compared")
@@ -366,9 +374,14 @@ def diff_command(args):
         conf_threshold=args.conf_thresh)
 
     save_dir = args.dst_dir
+    if not save_dir:
+        save_dir = generate_next_dir_name('%s-%s-diff' % (
+            first_project.config.project_name,
+            second_project.config.project_name)
+        )
+    save_dir = osp.abspath(save_dir)
     if save_dir is not None:
         log.info("Saving diff to '%s'" % save_dir)
-        os.makedirs(osp.abspath(save_dir))
 
     visualizer = DiffVisualizer(save_dir=save_dir, comparator=comparator,
         output_format=args.output_format)
@@ -381,8 +394,8 @@ def diff_command(args):
 def build_transform_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Transform project",
         description="""
-        Applies some operation to dataset items in the project
-        and produces a new project.
+            Applies some operation to dataset items in the project
+            and produces a new project.
         """,
         formatter_class=MultilineFormatter)
 
