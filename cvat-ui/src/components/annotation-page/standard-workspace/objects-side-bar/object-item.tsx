@@ -31,49 +31,54 @@ interface Props {
 
 function renderShapeButtonsBlock(): JSX.Element {
     return (
-        <>
-            <Col span={2}>
-                <Icon type='lock' />
-            </Col>
-            <Col span={2}>
-                <Icon type='user' />
-            </Col>
-            <Col span={2}>
-                <Icon type='eye-invisible' />
-            </Col>
-        </>
+        <Col span={16} style={{ textAlign: 'center' }}>
+            <Row type='flex' justify='space-around'>
+                <Col span={8}>
+                    <Icon type='lock' />
+                </Col>
+                <Col span={8}>
+                    <Icon type='user' />
+                </Col>
+                <Col span={8}>
+                    <Icon type='eye-invisible' />
+                </Col>
+            </Row>
+        </Col>
     );
 }
 
 function renderTrackButtonsBlock(): JSX.Element {
     return (
-        <>
-            <Col span={2}>
-                <Icon component={FirstIcon} />
-            </Col>
-            <Col span={2}>
-                <Icon component={PreviousIcon} />
-            </Col>
-            <Col span={2}>
-                <Icon component={NextIcon} />
-            </Col>
-            <Col span={2}>
-                <Icon component={LastIcon} />
-            </Col>
-
-            <Col span={2} offset={1}>
-                <Icon component={ObjectOutsideIcon} />
-            </Col>
-            <Col span={2}>
-                <Icon type='lock' />
-            </Col>
-            <Col span={2}>
-                <Icon type='user' />
-            </Col>
-            <Col span={2}>
-                <Icon type='eye-invisible' />
-            </Col>
-        </>
+        <Col span={16} style={{ textAlign: 'center' }}>
+            <Row type='flex' justify='space-around'>
+                <Col span={6}>
+                    <Icon component={FirstIcon} />
+                </Col>
+                <Col span={6}>
+                    <Icon component={PreviousIcon} />
+                </Col>
+                <Col span={6}>
+                    <Icon component={NextIcon} />
+                </Col>
+                <Col span={6}>
+                    <Icon component={LastIcon} />
+                </Col>
+            </Row>
+            <Row type='flex' justify='space-around'>
+                <Col span={6}>
+                    <Icon component={ObjectOutsideIcon} />
+                </Col>
+                <Col span={6}>
+                    <Icon type='lock' />
+                </Col>
+                <Col span={6}>
+                    <Icon type='user' />
+                </Col>
+                <Col span={6}>
+                    <Icon type='eye-invisible' />
+                </Col>
+            </Row>
+        </Col>
     );
 }
 

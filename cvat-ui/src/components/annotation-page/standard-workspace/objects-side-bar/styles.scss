@@ -139,34 +139,12 @@
         }
     }
 
-    > div:nth-child(2) {
-        i {
-            @extend .cvat-object-sidebar-icon;
-        }
+    > div:nth-child(2) i {
+        @extend .cvat-object-sidebar-icon;
+    }
 
-        > div:nth-child(4) {
-            text-align: right;
-
-            > button {
-                > i, span {
-                    color: $text-color;
-                    font-size: 12px;
-                    opacity: 0.8;
-                }
-
-                &:hover {
-                    > i, span {
-                        opacity: 1;
-                    }
-                }
-
-                &:active {
-                    > i, span {
-                        opacity: 0.8;
-                    }
-                }
-            }
-        }
+    > div:nth-child(3) {
+        margin-top: 10px;
     }
 
     &:hover {
@@ -179,7 +157,7 @@
     background: none;
 
     > .ant-collapse-item > .ant-collapse-header {
-            padding-top: 2px;
-            padding-bottom: 2px;
+        padding-top: 2px;
+        padding-bottom: 2px;
     }
 }
