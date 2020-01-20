@@ -1,0 +1,177 @@
+@import 'base.scss';
+
+.cvat-objects-appearance-collapse.ant-collapse {
+    width: 100%;
+    bottom: 0px;
+    position: absolute;
+    border-radius: 0px;
+
+    > .ant-collapse-item {
+        border: none;
+        > .ant-collapse-header {
+            padding-top: 2.5px;
+            padding-bottom: 2.5px;
+            background: $header-color;
+            border-radius: 0px;
+            height: 25px;
+        }
+        > .ant-collapse-content {
+            background: $background-color-2;
+            border-bottom: none;
+            height: 150px;
+        }
+    }
+}
+
+.cvat-object-sidebar-icon {
+    fill: $objects-bar-icons-color;
+    color: $objects-bar-icons-color;
+
+    font-size: 21px;
+
+    &:hover {
+        transform: scale(1.1);
+    }
+
+    &:active {
+        transform: scale(1);
+    }
+}
+
+.cvat-objects-sidebar-tabs.ant-tabs.ant-tabs-card {
+    background: $header-color;
+    box-sizing: border-box;
+    padding-top: 25px;
+    border: none;
+
+    > .ant-tabs-content {
+        height: calc(100% - 40px);
+
+        > .ant-tabs-tabpane {
+            height: 100%;
+        }
+    }
+
+    .ant-tabs-card-bar {
+        border: none;
+        margin-bottom: 0px;
+        height: 40px;
+
+        .ant-tabs-tab {
+            background: $transparent-color;
+            border: none;
+
+            &:nth-child(1) {
+                margin-left: 5px;
+            }
+        }
+
+        .ant-tabs-tab.ant-tabs-tab-active {
+            background: $objects-bar-tabs-color;
+        }
+    }
+}
+
+.cvat-objects-sidebar-states-header {
+    background: $objects-bar-tabs-color;
+    padding: 5px;
+
+    > div:nth-child(1) > div > span {
+        > input {
+            text-indent: 10px;
+        }
+
+        i {
+            @extend .cvat-object-sidebar-icon;
+        }
+    }
+
+    > div:nth-child(2) {
+        margin-top: 5px;
+
+        > div {
+            text-align: center;
+            margin: 0px 2px;
+
+            > i {
+                @extend .cvat-object-sidebar-icon;
+            }
+
+            &:nth-child(4) {
+                text-align: right;
+
+                > .ant-select {
+                    margin-left: 5px;
+                    width: 60%;
+                }
+            }
+        }
+    }
+}
+
+.cvat-objects-sidebar-states-header {
+    height: 80px;
+}
+
+.cvat-objects-sidebar-states-list {
+    background-color: $background-color-2;
+    height: calc(100% - 80px);
+    overflow-y: auto;
+}
+
+.cvat-objects-sidebar-state-item {
+    width: 100%;
+    padding: 5px 5px 5px 5px;
+    border-bottom: 1px solid $border-color-1;
+
+    > div:nth-child(1) {
+        > div:nth-child(3) > i {
+            @extend .cvat-object-sidebar-icon;
+            font-size: 25px;
+        }
+
+        > div:nth-child(2) > .ant-select {
+            width: 100%;
+        }
+    }
+
+    > div:nth-child(2) {
+        i {
+            @extend .cvat-object-sidebar-icon;
+        }
+
+        > div:nth-child(4) {
+            text-align: right;
+
+            > button {
+                > i, span {
+                    color: $text-color;
+                    font-size: 12px;
+                    opacity: 0.8;
+                }
+
+                &:hover {
+                    > i, span {
+                        opacity: 1;
+                    }
+                }
+
+                &:active {
+                    > i, span {
+                        opacity: 0.8;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.cvat-objects-sidebar-state-item-collapse {
+    border: 0px;
+    background: none;
+
+    > .ant-collapse-item > .ant-collapse-header {
+            padding-top: 2px;
+            padding-bottom: 2px;
+    }
+}

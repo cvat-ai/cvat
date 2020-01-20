@@ -21,14 +21,14 @@ import {
     SaveIcon,
     UndoIcon,
     RedoIcon,
-    PlaycontrolFirstIcon,
-    PlaycontrolBackJumpIcon,
-    PlaycontrolPreviousIcon,
-    PlaycontrolPlayIcon,
-    PlaycontrolPauseIcon,
-    PlaycontrolNextIcon,
-    PlaycontrolForwardJumpIcon,
-    PlaycontrolLastIcon,
+    FirstIcon,
+    BackJumpIcon,
+    PreviousIcon,
+    PlayIcon,
+    PauseIcon,
+    NextIcon,
+    ForwardJumpIcon,
+    LastIcon,
     InfoIcon,
     FullscreenIcon,
 } from '../../../icons';
@@ -133,7 +133,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         <Col className='cvat-player-buttons'>
                             <Tooltip overlay='Go to the first frame'>
                                 <Icon
-                                    component={PlaycontrolFirstIcon}
+                                    component={FirstIcon}
                                     onClick={(): void => {
                                         if (jobInstance.startFrame !== frame) {
                                             onSwitchPlay(false);
@@ -144,7 +144,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                             </Tooltip>
                             <Tooltip overlay='Go back with a step'>
                                 <Icon
-                                    component={PlaycontrolBackJumpIcon}
+                                    component={BackJumpIcon}
                                     onClick={(): void => {
                                         const newFrame = Math
                                             .max(jobInstance.startFrame, frame - frameStep);
@@ -157,7 +157,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                             </Tooltip>
                             <Tooltip overlay='Go back'>
                                 <Icon
-                                    component={PlaycontrolPreviousIcon}
+                                    component={PreviousIcon}
                                     onClick={(): void => {
                                         const newFrame = Math
                                             .max(jobInstance.startFrame, frame - 1);
@@ -173,7 +173,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                                 ? (
                                     <Tooltip overlay='Play'>
                                         <Icon
-                                            component={PlaycontrolPlayIcon}
+                                            component={PlayIcon}
                                             onClick={(): void => {
                                                 if (frame < jobInstance.stopFrame) {
                                                     onSwitchPlay(true);
@@ -185,7 +185,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                                 : (
                                     <Tooltip overlay='Pause'>
                                         <Icon
-                                            component={PlaycontrolPauseIcon}
+                                            component={PauseIcon}
                                             onClick={(): void => {
                                                 onSwitchPlay(false);
                                             }}
@@ -196,7 +196,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
 
                             <Tooltip overlay='Go next'>
                                 <Icon
-                                    component={PlaycontrolNextIcon}
+                                    component={NextIcon}
                                     onClick={(): void => {
                                         const newFrame = Math
                                             .min(jobInstance.stopFrame, frame + 1);
@@ -209,7 +209,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                             </Tooltip>
                             <Tooltip overlay='Go next with a step'>
                                 <Icon
-                                    component={PlaycontrolForwardJumpIcon}
+                                    component={ForwardJumpIcon}
                                     onClick={(): void => {
                                         const newFrame = Math
                                             .min(jobInstance.stopFrame, frame + frameStep);
@@ -222,7 +222,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                             </Tooltip>
                             <Tooltip overlay='Go to the last frame'>
                                 <Icon
-                                    component={PlaycontrolLastIcon}
+                                    component={LastIcon}
                                     onClick={(): void => {
                                         if (jobInstance.stopFrame !== frame) {
                                             onSwitchPlay(false);

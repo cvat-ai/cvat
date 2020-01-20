@@ -21,17 +21,19 @@ import SVGMainMenuIcon from './assets/main-menu-icon.svg';
 import SVGSaveIcon from './assets/save-icon.svg';
 import SVGUndoIcon from './assets/undo-icon.svg';
 import SVGRedoIcon from './assets/redo-icon.svg';
-import SVGPlaycontrolFirstIcon from './assets/playcontrol-first-icon.svg';
-import SVGPlaycontrolBackJumpIcon from './assets/playcontrol-back-jump-icon.svg';
-import SVGPlaycontrolPreviousIcon from './assets/playcontrol-previous-icon.svg';
-import SVGPlaycontrolPlayIcon from './assets/playcontrol-play-icon.svg';
-import SVGPlaycontrolPauseIcon from './assets/playcontrol-pause-icon.svg';
-import SVGPlaycontrolNextIcon from './assets/playcontrol-next-icon.svg';
-import SVGPlaycontrolForwardJumpIcon from './assets/playcontrol-forward-jump-icon.svg';
-import SVGPlaycontrolLastIcon from './assets/playcontrol-last-icon.svg';
+import SVGFirstIcon from './assets/first-icon.svg';
+import SVGBackJumpIcon from './assets/back-jump-icon.svg';
+import SVGPreviousIcon from './assets/previous-icon.svg';
+import SVGPlayIcon from './assets/play-icon.svg';
+import SVGPauseIcon from './assets/pause-icon.svg';
+import SVGNextIcon from './assets/next-icon.svg';
+import SVGForwardJumpIcon from './assets/forward-jump-icon.svg';
+import SVGLastIcon from './assets/last-icon.svg';
 import SVGInfoIcon from './assets/info-icon.svg';
 import SVGFullscreenIcon from './assets/fullscreen-icon.svg';
 import SVGExpandObjectsIcon from './assets/expand-all-objects-icon.svg';
+import SVGObjectOutsideIcon from './assets/object-outside-icon.svg';
+import SVGObjectInsideIcon from './assets/object-inside-icon.svg';
 
 export const CVATLogo = React.memo(
     (): JSX.Element => <SVGCVATLogo />,
@@ -96,29 +98,29 @@ export const UndoIcon = React.memo(
 export const RedoIcon = React.memo(
     (): JSX.Element => <SVGRedoIcon />,
 );
-export const PlaycontrolFirstIcon = React.memo(
-    (): JSX.Element => <SVGPlaycontrolFirstIcon />,
+export const FirstIcon = React.memo(
+    (): JSX.Element => <SVGFirstIcon />,
 );
-export const PlaycontrolBackJumpIcon = React.memo(
-    (): JSX.Element => <SVGPlaycontrolBackJumpIcon />,
+export const BackJumpIcon = React.memo(
+    (): JSX.Element => <SVGBackJumpIcon />,
 );
-export const PlaycontrolPreviousIcon = React.memo(
-    (): JSX.Element => <SVGPlaycontrolPreviousIcon />,
+export const PreviousIcon = React.memo(
+    (): JSX.Element => <SVGPreviousIcon />,
 );
-export const PlaycontrolPauseIcon = React.memo(
-    (): JSX.Element => <SVGPlaycontrolPauseIcon />,
+export const PauseIcon = React.memo(
+    (): JSX.Element => <SVGPauseIcon />,
 );
-export const PlaycontrolPlayIcon = React.memo(
-    (): JSX.Element => <SVGPlaycontrolPlayIcon />,
+export const PlayIcon = React.memo(
+    (): JSX.Element => <SVGPlayIcon />,
 );
-export const PlaycontrolNextIcon = React.memo(
-    (): JSX.Element => <SVGPlaycontrolNextIcon />,
+export const NextIcon = React.memo(
+    (): JSX.Element => <SVGNextIcon />,
 );
-export const PlaycontrolForwardJumpIcon = React.memo(
-    (): JSX.Element => <SVGPlaycontrolForwardJumpIcon />,
+export const ForwardJumpIcon = React.memo(
+    (): JSX.Element => <SVGForwardJumpIcon />,
 );
-export const PlaycontrolLastIcon = React.memo(
-    (): JSX.Element => <SVGPlaycontrolLastIcon />,
+export const LastIcon = React.memo(
+    (): JSX.Element => <SVGLastIcon />,
 );
 export const InfoIcon = React.memo(
     (): JSX.Element => <SVGInfoIcon />,
@@ -128,4 +130,10 @@ export const FullscreenIcon = React.memo(
 );
 export const ExpandObjectsIcon = React.memo(
     (): JSX.Element => <SVGExpandObjectsIcon />,
+);
+export const ObjectOutsideIcon = React.memo(
+    (): JSX.Element => <SVGObjectOutsideIcon />,
+);
+export const ObjectInsideIcon = React.memo(
+    (): JSX.Element => <SVGObjectInsideIcon />,
 );
