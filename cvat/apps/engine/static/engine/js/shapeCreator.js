@@ -321,6 +321,9 @@ class ShapeCreatorView {
         };
 
         let numberOfPoints = 0;
+        this._drawInstance.attr({
+            z_order: Number.MAX_SAFE_INTEGER,
+        });
 
         if (this._polyShapeSize) {
             let size = this._polyShapeSize;
@@ -467,6 +470,7 @@ class ShapeCreatorView {
         case 'box':
             this._drawInstance = this._frameContent.rect().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
                 'stroke-width': STROKE_WIDTH / this._scale,
+                z_order: Number.MAX_SAFE_INTEGER,
             }).on('drawstop', function(e) {
                 if (this._cancel) return;
                 if (sizeUI) {
@@ -545,10 +549,6 @@ class ShapeCreatorView {
         default:
             throw Error(`Bad type found ${this._type}`);
         }
-
-        this._drawInstance.attr({
-            'z_order': Number.MAX_SAFE_INTEGER,
-        });
     }
 
     _rescaleDrawPoints() {

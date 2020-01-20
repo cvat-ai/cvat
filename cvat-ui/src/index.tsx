@@ -11,6 +11,7 @@ import { authorizedAsync } from './actions/auth-actions';
 import { getFormatsAsync } from './actions/formats-actions';
 import { checkPluginsAsync } from './actions/plugins-actions';
 import { getUsersAsync } from './actions/users-actions';
+import { getAboutAsync } from './actions/about-actions';
 import {
     resetErrors,
     resetMessages,
@@ -30,6 +31,8 @@ interface StateToProps {
     userInitialized: boolean;
     usersInitialized: boolean;
     usersFetching: boolean;
+    aboutInitialized: boolean;
+    aboutFetching: boolean;
     formatsInitialized: boolean;
     formatsFetching: boolean;
     installedAutoAnnotation: boolean;
@@ -43,6 +46,7 @@ interface DispatchToProps {
     loadFormats: () => void;
     verifyAuthorized: () => void;
     loadUsers: () => void;
+    loadAbout: () => void;
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
@@ -53,6 +57,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { auth } = state;
     const { formats } = state;
     const { users } = state;
+    const { about } = state;
 
     return {
         userInitialized: auth.initialized,
@@ -60,6 +65,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         pluginsFetching: plugins.fetching,
         usersInitialized: users.initialized,
         usersFetching: users.fetching,
+        aboutInitialized: about.initialized,
+        aboutFetching: about.fetching,
         formatsInitialized: formats.initialized,
         formatsFetching: formats.fetching,
         installedAutoAnnotation: plugins.plugins.AUTO_ANNOTATION,
@@ -67,6 +74,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         installedTFAnnotation: plugins.plugins.TF_ANNOTATION,
         notifications: { ...state.notifications },
         user: auth.user,
+        about: state.about,
     };
 }
 
@@ -76,6 +84,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         verifyAuthorized: (): void => dispatch(authorizedAsync()),
         initPlugins: (): void => dispatch(checkPluginsAsync()),
         loadUsers: (): void => dispatch(getUsersAsync()),
+        loadAbout: (): void => dispatch(getAboutAsync()),
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
     };

@@ -29,6 +29,7 @@ import { NotificationsState } from 'reducers/interfaces';
 type CVATAppProps = {
     loadFormats: () => void;
     loadUsers: () => void;
+    loadAbout: () => void;
     verifyAuthorized: () => void;
     initPlugins: () => void;
     resetErrors: () => void;
@@ -40,6 +41,8 @@ type CVATAppProps = {
     formatsFetching: boolean;
     usersInitialized: boolean;
     usersFetching: boolean;
+    aboutInitialized: boolean;
+    aboutFetching: boolean;
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
@@ -57,12 +60,15 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const {
             loadFormats,
             loadUsers,
+            loadAbout,
             initPlugins,
             userInitialized,
             formatsInitialized,
             formatsFetching,
             usersInitialized,
             usersFetching,
+            aboutInitialized,
+            aboutFetching,
             pluginsInitialized,
             pluginsFetching,
             user,
@@ -82,6 +88,10 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
 
         if (!usersInitialized && !usersFetching) {
             loadUsers();
+        }
+
+        if (!aboutInitialized && !aboutFetching) {
+            loadAbout();
         }
 
         if (!pluginsInitialized && !pluginsFetching) {
@@ -153,6 +163,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const { tasks } = notifications.errors;
         const { formats } = notifications.errors;
         const { users } = notifications.errors;
+        const { about } = notifications.errors;
         const { share } = notifications.errors;
         const { models } = notifications.errors;
         const { annotation } = notifications.errors;
@@ -160,7 +171,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const shown = !!auth.authorized || !!auth.login || !!auth.logout || !!auth.register
             || !!tasks.fetching || !!tasks.updating || !!tasks.dumping || !!tasks.loading
             || !!tasks.exporting || !!tasks.deleting || !!tasks.creating || !!formats.fetching
-            || !!users.fetching || !!share.fetching || !!models.creating || !!models.starting
+            || !!users.fetching || !!about.fetching || !!share.fetching || !!models.creating || !!models.starting
             || !!models.fetching || !!models.deleting || !!models.inferenceStatusFetching
             || !!models.metaFetching || !!annotation.frameFetching || !!annotation.saving
             || !!annotation.jobFetching;
@@ -203,6 +214,9 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         }
         if (users.fetching) {
             showError(users.fetching.message, users.fetching.reason);
+        }
+        if (about.fetching) {
+            showError(about.fetching.message, about.fetching.reason);
         }
         if (share.fetching) {
             showError(share.fetching.message, share.fetching.reason);
@@ -248,6 +262,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const {
             userInitialized,
             usersInitialized,
+            aboutInitialized,
             pluginsInitialized,
             formatsInitialized,
             installedAutoAnnotation,
@@ -258,7 +273,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
 
         const readyForRender = (userInitialized && user == null)
             || (userInitialized && formatsInitialized
-            && pluginsInitialized && usersInitialized);
+            && pluginsInitialized && usersInitialized && aboutInitialized);
 
         const withModels = installedAutoAnnotation
             || installedTFAnnotation || installedTFSegmentation;
