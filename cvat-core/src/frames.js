@@ -88,6 +88,16 @@
 
     FrameData.prototype.data.implementation = async function (onServerRequest) {
         return new Promise((resolve, reject) => {
+            const resolveWrapper = (data) => {
+                this._data = data;
+                return resolve(this._data);
+            };
+
+            if (this._data) {
+                resolve(this._data);
+                return;
+            }
+
             const { provider } = frameDataCache[this.tid];
             const { chunkSize } = frameDataCache[this.tid];
             const start = Math.max(
@@ -100,7 +110,7 @@
             );
             const chunkNumber = Math.floor(this.number / chunkSize);
 
-            const onDecodeAll = (frameNumber) => {
+            const onDecodeAll = async (frameNumber) => {
                 if (frameDataCache[this.tid].activeChunkRequest
                     && chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber) {
                     const callbackArray = frameDataCache[this.tid].activeChunkRequest.callbacks;
@@ -108,7 +118,7 @@
                         if (callbackArray[i].frameNumber === frameNumber) {
                             const callback = callbackArray[i];
                             callbackArray.splice(i, 1);
-                            callback.resolve(provider.frame(callback.frameNumber));
+                            callback.resolve(await provider.frame(callback.frameNumber));
                         }
                     }
                     if (callbackArray.length === 0) {
@@ -184,7 +194,7 @@
                                     rejectRequestAll,
                                     completed: false,
                                     callbacks: [{
-                                        resolve,
+                                        resolve: resolveWrapper,
                                         reject,
                                         frameNumber: this.number,
                                     }],
@@ -193,7 +203,7 @@
                             } else if (frameDataCache[this.tid].activeChunkRequest.chunkNumber
                                         === chunkNumber) {
                                 frameDataCache[this.tid].activeChunkRequest.callbacks.push({
-                                    resolve,
+                                    resolve: resolveWrapper,
                                     reject,
                                     frameNumber: this.number,
                                 });
@@ -213,7 +223,7 @@
                                     rejectRequestAll,
                                     completed: false,
                                     callbacks: [{
-                                        resolve,
+                                        resolve: resolveWrapper,
                                         reject,
                                         frameNumber: this.number,
                                     }],
@@ -221,7 +231,7 @@
                             }
                         } else {
                             frameDataCache[this.tid].activeChunkRequest.callbacks.push({
-                                resolve,
+                                resolve: resolveWrapper,
                                 reject,
                                 frameNumber: this.number,
                             });
@@ -229,7 +239,7 @@
                                 onDecodeAll, rejectRequestAll);
                         }
                     } else {
-                        resolve(frame);
+                        resolveWrapper(frame);
                     }
                 }).catch((exception) => {
                     if (exception instanceof Exception) {
@@ -272,6 +282,7 @@
             this._stopFrame = stopFrame;
             this._activeFillBufferRequest = false;
             this._taskID = taskID;
+            this._required = null;
         }
 
         getFreeBufferSize() {
@@ -293,7 +304,7 @@
                 };
                 for (const frame of this._requestedChunks[chunkIdx].requestedFrames.entries()) {
                     const requestedFrame = frame[1];
-                    const size = getFrameSize(this._taskID, frame);
+                    const size = getFrameSize(this._taskID, requestedFrame);
                     const frameData = new FrameData(
                         size.width,
                         size.height,
@@ -362,11 +373,11 @@
                                     resolve(bufferedFrames);
                                 }
                             } else {
-                                reject(chunkIdx);
+                                reject(startFrame);
                             }
                         } catch (error) {
                             this._requestedChunks = {};
-                            resolve(bufferedFrames);
+                            reject(startFrame);
                         }
                     }
                 }
@@ -378,12 +389,10 @@
                 this._activeFillBufferRequest = true;
                 try {
                     await this.fillBuffer(start, step, count);
-                } catch (error) {
-                    if (typeof (error) !== 'number') {
-                        throw error;
-                    }
-                } finally {
                     this._activeFillBufferRequest = false;
+                } catch (error) {
+                    this._activeFillBufferRequest = false;
+                    throw error;
                 }
             }
         }
@@ -396,6 +405,7 @@
                 }
             }
 
+            this._required = frameNumber;
             const size = getFrameSize(taskID, frameNumber);
             let frame = new FrameData(size.width, size.height, taskID, frameNumber,
                 frameDataCache[taskID].startFrame, frameDataCache[taskID].stopFrame);
@@ -405,6 +415,7 @@
                 delete this._buffer[frameNumber];
                 const cachedFrames = this.cachedFrames();
                 if (fillBuffer && !this._activeFillBufferRequest
+                    && this._size > this._chunkSize
                     && cachedFrames.length < this._size / 2) {
                     const maxFrame = Math.max(...cachedFrames);
                     if (maxFrame < this._stopFrame) {
@@ -413,7 +424,20 @@
                 }
             } else if (fillBuffer) {
                 this.clear();
-                await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
+                try {
+                    await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
+                } catch (error) {
+                    if (typeof (error) === 'number') {
+                        if (error === this._required) {
+                            throw Exception(`Required frame ${this._required} was rejected`);
+                        }
+                    } else {
+                        throw error;
+                    }
+                }
+
+                frame = this._buffer[frameNumber];
+                delete this._buffer[frameNumber];
             }
 
             return frame;

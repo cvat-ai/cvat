@@ -83,7 +83,9 @@ class FrameProviderWrapper extends Listener {
         // but we promise to notify the player when frame is loaded
         setTimeout(async () => {
             const frameData = await window.cvatTask.frames.get(frameNumber, isPlaying, step);
-            loadFrame(frameData);
+            if (frameData) {
+                loadFrame(frameData);
+            }
         }, 0);
         return null;
     }
