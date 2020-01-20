@@ -91,8 +91,8 @@ to changes in ``.env/bin/activate`` file are active.
 - Perform all steps in the automatic annotation section
 - Download ReID model and save it somewhere:
 ```sh
-    wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -O reid.xml
-    wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -O reid.bin
+    curl https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -o reid.xml
+    curl https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -o reid.bin
 ```
 - Add next line to ``.env/bin/activate``:
 ```sh
@@ -103,7 +103,7 @@ to changes in ``.env/bin/activate`` file are active.
 - Perform all steps in the automatic annotation section
 - Download Deep Extreme Cut model, unpack it, and save somewhere:
 ```sh
-wget https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip -O dextr.zip
+curl https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip -o dextr.zip
 unzip dextr.zip
 ```
 - Add next lines to ``.env/bin/activate``:
@@ -115,7 +115,7 @@ unzip dextr.zip
 ### Tensorflow RCNN
 - Download RCNN model, unpack it, and save it somewhere:
 ```sh
-wget -O model.tar.gz http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_resnet_v2_atrous_coco_2018_01_28.tar.gz && \
+curl http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_resnet_v2_atrous_coco_2018_01_28.tar.gz -o model.tar.gz && \
 tar -xzf model.tar.gz
 ```
 - Add next lines to ``.env/bin/activate``:
@@ -127,7 +127,7 @@ tar -xzf model.tar.gz
 ### Tensorflow Mask RCNN
 - Download Mask RCNN model, and save it somewhere:
 ```sh
-wget https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5
+curl https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o mask_rcnn_coco.h5
 ```
 - Add next lines to ``.env/bin/activate``:
 ```sh
