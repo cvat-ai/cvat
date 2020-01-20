@@ -19,7 +19,7 @@ interface Props {
     onSplitStart(): void;
 }
 
-export default function SplitControl(props: Props): JSX.Element {
+function SplitControl(props: Props): JSX.Element {
     const {
         activeControl,
         canvasInstance,
@@ -46,3 +46,5 @@ export default function SplitControl(props: Props): JSX.Element {
         </Tooltip>
     );
 }
+
+export default React.memo(SplitControl);

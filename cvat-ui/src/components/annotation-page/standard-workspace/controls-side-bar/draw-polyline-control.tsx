@@ -18,7 +18,7 @@ interface Props {
     activeControl: ActiveControl;
 }
 
-export default function DrawRectangleControl(props: Props): JSX.Element {
+function DrawPolylineControl(props: Props): JSX.Element {
     const {
         canvasInstance,
         activeControl,
@@ -55,3 +55,5 @@ export default function DrawRectangleControl(props: Props): JSX.Element {
         </Popover>
     );
 }
+
+export default React.memo(DrawPolylineControl);

@@ -261,9 +261,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         ));
 
         this.notify(UpdateReasons.FITTED_CANVAS);
-        if (this.data.image) { // fixes firefox specific exception
-            this.notify(UpdateReasons.OBJECTS_UPDATED);
-        }
+        this.notify(UpdateReasons.OBJECTS_UPDATED);
     }
 
     public dragCanvas(enable: boolean): void {

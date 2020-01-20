@@ -44,14 +44,6 @@ export interface CanvasView {
     html(): HTMLDivElement;
 }
 
-interface ShapeDict {
-    [index: number]: SVG.Shape;
-}
-
-interface TextDict {
-    [index: number]: SVG.Text;
-}
-
 function darker(color: string, percentage: number): string {
     const R = Math.round(parseInt(color.slice(1, 3), 16) * (1 - percentage / 100));
     const G = Math.round(parseInt(color.slice(3, 5), 16) * (1 - percentage / 100));
@@ -78,8 +70,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private gridPath: SVGPathElement;
     private gridPattern: SVGPatternElement;
     private controller: CanvasController;
-    private svgShapes: ShapeDict;
-    private svgTexts: TextDict;
+    private svgShapes: Record<number, SVG.Shape>;
+    private svgTexts: Record<number, SVG.Text>;
+    private drawnStates: Record<number, any>;
     private geometry: Geometry;
     private drawHandler: DrawHandler;
     private editHandler: EditHandler;
@@ -382,6 +375,49 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
+    private setupObjects(states: any[]): void {
+        const contentCTM = this.content.getScreenCTM();
+        const backgroundCTM = this.background.getScreenCTM();
+        if (contentCTM === null || backgroundCTM === null) {
+            return;
+        }
+
+        const ctm = contentCTM.inverse().multiply(backgroundCTM);
+        this.deactivate();
+
+        const created = [];
+        const updated = [];
+        for (const state of states) {
+            if (!(state.clientID in this.drawnStates)) {
+                created.push(state);
+            } else {
+                const drawState = this.drawnStates[state.clientID];
+                if (drawState.updated !== state.updated || drawState.frame !== state.frame) {
+                    updated.push(state);
+                }
+            }
+        }
+        const newIDs = states.map((state: any): number => state.id);
+        const deleted = Object.keys(this.drawnStates).map((state: any): number => state.id)
+            .filter((id: number): boolean => !newIDs.includes(id))
+            .map((id: number): any => this.drawnStates[id]);
+
+        // TODO: Smart update
+        for (const state of deleted.concat(updated)) {
+            if (state.clientID in this.svgTexts) {
+                this.svgTexts[state.clientID].remove();
+            }
+
+            this.svgShapes[state.clientID].remove();
+            delete this.drawnStates[state.clientID];
+        }
+
+        for (const state of created.concat(updated)) {
+            this.drawnStates[state.clientID] = state;
+        }
+        this.addObjects(ctm, created.concat(updated));
+    }
+
     private selectize(value: boolean, shape: SVG.Element): void {
         const self = this;
 
@@ -457,6 +493,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.geometry = controller.geometry;
         this.svgShapes = {};
         this.svgTexts = {};
+        this.drawnStates = {};
         this.activeElement = null;
         this.mode = Mode.IDLE;
 
@@ -621,31 +658,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
-        function setupObjects(objects: any[]): void {
-            const ctm = this.content.getScreenCTM()
-                .inverse().multiply(this.background.getScreenCTM());
-
-            this.deactivate();
-
-            // TODO: Compute difference
-
-            // Instead of simple clearing let's remove all objects properly
-            for (const id of Object.keys(this.svgShapes)) {
-                if (id in this.svgTexts) {
-                    this.svgTexts[id].remove();
-                }
-
-                this.svgShapes[id].remove();
-            }
-
-            this.svgTexts = {};
-            this.svgShapes = {};
-
-            this.addObjects(ctm, objects);
-            // TODO: Update objects
-            // TODO: Delete objects
-        }
-
         this.geometry = this.controller.geometry;
         if (reason === UpdateReasons.IMAGE_CHANGED) {
             if (!model.image.length) {
@@ -669,7 +681,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (this.mode === Mode.GROUP) {
                 this.groupHandler.resetSelectedObjects();
             }
-            setupObjects.call(this, this.controller.objects);
+            this.setupObjects(this.controller.objects);
             if (this.mode === Mode.MERGE) {
                 this.mergeHandler.repeatSelection();
             }
@@ -852,12 +864,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const shape = this.svgShapes[this.activeElement.state.clientID];
             shape.removeClass('cvat_canvas_shape_activated');
 
+            (shape as any).off('dragstart');
+            (shape as any).off('dragend');
             (shape as any).draggable(false);
 
             if (state.shapeType !== 'points') {
                 this.selectize(false, shape);
             }
 
+            (shape as any).off('resizestart');
+            (shape as any).off('resizing');
+            (shape as any).off('resizedone');
             (shape as any).resize(false);
 
             // Hide text only if it is hidden by settings

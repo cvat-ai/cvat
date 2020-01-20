@@ -20,7 +20,7 @@ interface Props {
     rotateAll: boolean;
 }
 
-export default function RotateControl(props: Props): JSX.Element {
+function RotateControl(props: Props): JSX.Element {
     const {
         rotateAll,
         canvasInstance,
@@ -56,3 +56,5 @@ export default function RotateControl(props: Props): JSX.Element {
         </Popover>
     );
 }
+
+export default React.memo(RotateControl);

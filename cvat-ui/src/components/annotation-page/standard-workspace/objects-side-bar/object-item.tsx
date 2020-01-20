@@ -13,12 +13,12 @@ import {
 } from 'reducers/interfaces';
 
 interface Props {
-    annotations: any[];
     objectState: any;
+    annotations: any[];
     onAnnotationsUpdated(annotations: any[]): void;
 }
 
-export default function ObjectItem(props: Props): JSX.Element {
+function ObjectItem(props: Props): JSX.Element {
     const { objectState } = props;
     const type = objectState.objectType === ObjectType.TAG ? ObjectType.TAG.toUpperCase()
         : `${objectState.shapeType.toUpperCase()} ${objectState.objectType.toUpperCase()}`;
@@ -45,3 +45,8 @@ export default function ObjectItem(props: Props): JSX.Element {
         </div>
     );
 }
+
+// render depends only on objectState
+// but we need annotations array and callback to update state
+export default React.memo(ObjectItem,
+    (prevProps: Props, curProps: Props) => prevProps.objectState === curProps.objectState);

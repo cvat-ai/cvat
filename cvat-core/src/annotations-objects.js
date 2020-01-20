@@ -140,6 +140,7 @@
             this.frame = data.frame;
             this.removed = false;
             this.lock = false;
+            this.updated = Date.now();
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
@@ -155,6 +156,17 @@
                 if (!(attribute.id in this.attributes)) {
                     this.attributes[attribute.id] = attribute.defaultValue;
                 }
+            }
+        }
+
+        updateTimestamp(updated) {
+            const anyChanges = updated.label || updated.attributes || updated.points
+                || updated.outside || updated.occluded || updated.keyframe
+                || updated.group || updated.zOrder || updated.lock
+                || updated.color || updated.visibility;
+
+            if (anyChanges) {
+                this.updated = Date.now();
             }
         }
 
@@ -278,6 +290,7 @@
                 group: this.group,
                 color: this.color,
                 visibility: this.visibility,
+                updated: this.updated,
                 frame,
             };
         }
@@ -391,7 +404,9 @@
             }
 
             // Reset flags and commit all changes
+            this.updateTimestamp(updated);
             updated.reset();
+
             for (const prop of Object.keys(copy)) {
                 if (prop in this) {
                     this[prop] = copy[prop];
@@ -492,6 +507,7 @@
                     lock: this.lock,
                     color: this.color,
                     visibility: this.visibility,
+                    updated: this.updated,
                     frame,
                 };
 
@@ -712,6 +728,7 @@
 
                 this.cache[frame].keyframe = false;
                 delete this.shapes[frame];
+                this.updateTimestamp(updated);
                 updated.reset();
 
                 return objectStateFactory.call(this, frame, this.get(frame));
@@ -761,6 +778,7 @@
                 }
             }
 
+            this.updateTimestamp(updated);
             updated.reset();
 
             return objectStateFactory.call(this, frame, this.get(frame));
@@ -875,6 +893,7 @@
                 attributes: { ...this.attributes },
                 label: this.label,
                 group: this.group,
+                updated: this.updated,
                 frame,
             };
         }
@@ -923,6 +942,7 @@
             }
 
             // Reset flags and commit all changes
+            this.updateTimestamp(updated);
             updated.reset();
             for (const prop of Object.keys(copy)) {
                 if (prop in this) {

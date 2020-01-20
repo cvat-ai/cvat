@@ -41,28 +41,38 @@ interface Props {
     onSplitStart(): void;
 }
 
-export default function ControlsSideBarComponent(props: Props): JSX.Element {
+function ControlsSideBarComponent(props: Props): JSX.Element {
+    const {
+        canvasInstance,
+        activeControl,
+        rotateAll,
+
+        onMergeStart,
+        onGroupStart,
+        onSplitStart,
+    } = props;
+
     return (
         <Layout.Sider
             className='cvat-canvas-controls-sidebar'
             theme='light'
             width={44}
         >
-            <CursorControl {...props} />
-            <MoveControl {...props} />
-            <RotateControl {...props} />
+            <CursorControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <RotateControl canvasInstance={canvasInstance} rotateAll={rotateAll} />
 
             <hr />
 
-            <FitControl {...props} />
-            <ResizeControl {...props} />
+            <FitControl canvasInstance={canvasInstance} />
+            <ResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
             <hr />
 
-            <DrawRectangleControl {...props} />
-            <DrawPolygonControl {...props} />
-            <DrawPolylineControl {...props} />
-            <DrawPointsControl {...props} />
+            <DrawRectangleControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <DrawPolygonControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <DrawPolylineControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <DrawPointsControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
             <Tooltip overlay='Setup a tag' placement='right'>
                 <Icon component={TagIcon} />
@@ -70,9 +80,29 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
             <hr />
 
-            <MergeControl {...props} />
-            <GroupControl {...props} />
-            <SplitControl {...props} />
+            <MergeControl
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                onMergeStart={onMergeStart}
+            />
+            <GroupControl
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                onGroupStart={onGroupStart}
+            />
+            <SplitControl
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                onSplitStart={onSplitStart}
+            />
         </Layout.Sider>
     );
 }
+
+export default React.memo(
+    ControlsSideBarComponent,
+    (prevProps: Props, curProps: Props): boolean => (
+        prevProps.rotateAll === curProps.rotateAll
+        && prevProps.activeControl === curProps.activeControl
+    ),
+);

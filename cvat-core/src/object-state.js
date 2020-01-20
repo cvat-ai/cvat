@@ -19,10 +19,7 @@
         /**
             * @param {Object} serialized - is an dictionary which contains
             * initial information about an ObjectState;
-            * Necessary fields: objectType, shapeType
-            * (don't have setters)
-            * Necessary fields for objects which haven't been added to collection yet: frame
-            * (doesn't have setters)
+            * Necessary fields: objectType, shapeType, frame, updated
             * Optional fields: points, group, zOrder, outside, occluded,
             * attributes, lock, label, mode, color, keyframe, clientID, serverID
             * These fields can be set later via setters
@@ -42,6 +39,7 @@
                 lock: null,
                 color: null,
                 visibility: null,
+                updated: serialized.updated,
 
                 clientID: serialized.clientID,
                 serverID: serialized.serverID,
@@ -68,6 +66,8 @@
                     this.lock = false;
                     this.color = false;
                     this.visibility = false;
+
+                    return reset;
                 },
                 writable: false,
             });
@@ -265,6 +265,17 @@
                         data.updateFlags.lock = true;
                         data.lock = lock;
                     },
+                },
+                updated: {
+                    /**
+                        * Timestamp of the latest updated of the object
+                        * @name updated
+                        * @type {number}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @instance
+                        * @readonly
+                    */
+                    get: () => data.updated,
                 },
                 attributes: {
                     /**

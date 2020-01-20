@@ -22,7 +22,7 @@ interface Props {
     activeControl: ActiveControl;
 }
 
-export default function MoveControl(props: Props): JSX.Element {
+function MoveControl(props: Props): JSX.Element {
     const {
         canvasInstance,
         activeControl,
@@ -47,3 +47,5 @@ export default function MoveControl(props: Props): JSX.Element {
         </Tooltip>
     );
 }
+
+export default React.memo(MoveControl);
