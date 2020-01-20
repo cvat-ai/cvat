@@ -9,15 +9,16 @@ import os
 import os.path as osp
 
 from datumaro.components.project import Project
-from datumaro.components.algorithms.rise import RISE
 from datumaro.util.command_targets import (TargetKinds, target_selector,
     ProjectTarget, SourceTarget, ImageTarget, is_project_path)
 from datumaro.util.image import load_image, save_image
+from ..util import MultilineFormatter
 from ..util.project import load_project
 
 
 def build_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
+    parser = parser_ctor(help="Run Explainable AI algorithm",
+        description="Runs an explainable AI algorithm for a model.")
 
     parser.add_argument('-m', '--model', required=True,
         help="Model to use for inference")
@@ -29,7 +30,14 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
 
     method_sp = parser.add_subparsers(dest='algorithm')
 
-    rise_parser = method_sp.add_parser('rise')
+    rise_parser = method_sp.add_parser('rise',
+        description="""
+        RISE: Randomized Input Sampling for
+        Explanation of Black-box Models algorithm|n
+        |n
+        See explanations at: https://arxiv.org/pdf/1806.07421.pdf
+        """,
+        formatter_class=MultilineFormatter)
     rise_parser.add_argument('-s', '--max-samples', default=None, type=int,
         help="Number of algorithm iterations (default: mask size ^ 2)")
     rise_parser.add_argument('--mw', '--mask-width',
@@ -48,7 +56,7 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
         help="IoU match threshold in Non-maxima suppression (default: no NMS)")
     rise_parser.add_argument('--conf', '--det-conf-thresh',
         dest='det_conf_thresh', default=0.0, type=float,
-        help="Confidence threshold for detections (default: do not filter)")
+        help="Confidence threshold for detections (default: include all)")
     rise_parser.add_argument('-b', '--batch-size', default=1, type=int,
         help="Inference batch size (default: %(default)s)")
     rise_parser.add_argument('--progressive', action='store_true',
@@ -86,6 +94,7 @@ def explain_command(args):
     if str(args.algorithm).lower() != 'rise':
         raise NotImplementedError()
 
+    from datumaro.components.algorithms.rise import RISE
     rise = RISE(model,
         max_samples=args.max_samples,
         mask_width=args.mask_width,

@@ -9,12 +9,13 @@ import os
 import os.path as osp
 import shutil
 
-from ...util import add_subparser, CliException
+from ...util import add_subparser, CliException, MultilineFormatter
 from ...util.project import load_project
 
 
 def build_create_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
+    parser = parser_ctor(help="Add new source to project",
+        description="Create an empty data source in a project.")
 
     parser.add_argument('-n', '--name', required=True,
         help="Name of the source to be created")
@@ -26,7 +27,6 @@ def build_create_parser(parser_ctor=argparse.ArgumentParser):
 
 def create_command(args):
     project = load_project(args.project_dir)
-    config = project.config
 
     name = args.name
 
@@ -39,7 +39,7 @@ def create_command(args):
     except KeyError:
         pass
 
-    dst_dir = osp.join(config.project_dir, config.sources_dir, name)
+    dst_dir = project.local_source_dir(name)
     project.env.git.init(dst_dir)
 
     project.add_source(name, { 'url': name })
@@ -51,10 +51,36 @@ def create_command(args):
     return 0
 
 def build_import_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
-
     import datumaro.components.extractors as extractors_module
     extractors_list = [name for name, cls in extractors_module.items]
+
+    parser = parser_ctor(help="Add existing source to project",
+        description="""
+            Adds an existing data source to a project. The source can be:|n
+            - a dataset in a supported format (check 'formats' section below)|n
+            - a Datumaro project|n
+            |n
+            The source can be either a local directory or a remote
+            git repository.|n
+            |n
+            Formats:|n
+            Datasets come in a wide variety of formats. Each dataset
+            format defines its own data structure and rules on how to
+            interpret the data. For example, the following data structure
+            is used in COCO format:|n
+            /dataset/|n
+            - /images/<id>.jpg|n
+            - /annotations/|n
+            |n
+            In Datumaro dataset formats are supported by Extractor-s.
+            An Extractor produces a list of dataset items corresponding
+            to the dataset. It is possible to add a custom Extractor.
+            To do this, you need to put an Extractor
+            definition script to <project_dir>/.datumaro/extractors.|n
+            |n
+            List of supported dataset formats: %s
+        """ % ', '.join(extractors_list),
+        formatter_class=MultilineFormatter)
 
     sp = parser.add_subparsers(dest='source_type')
 
@@ -75,8 +101,7 @@ def build_import_parser(parser_ctor=argparse.ArgumentParser):
     parser.add_argument('-n', '--name', default=None,
         help="Name of the new source")
     parser.add_argument('-f', '--format', default=None,
-        help="Source dataset format (options: %s, default: 'project')" % \
-            (', '.join(extractors_list)))
+        help="Source dataset format (default: 'project')")
     parser.add_argument('--skip-check', action='store_true',
         help="Skip source checking")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
@@ -103,21 +128,9 @@ def import_command(args):
             pass
 
         dst_dir = project.local_source_dir(name)
+        url = args.url
         project.env.git.create_submodule(name, dst_dir,
-            url=args.url, branch=args.branch, no_checkout=not args.checkout)
-
-        source = { 'url': args.url }
-        if args.format:
-            source['format'] = args.format
-        project.add_source(name, source)
-
-        if not args.skip_check:
-            log.info("Checking the source...")
-            project.make_source_project(name)
-        project.save()
-
-        log.info("Source '%s' has been added to the project, location: '%s'" \
-            % (name, dst_dir))
+            url=url, branch=args.branch, no_checkout=not args.checkout)
     elif args.source_type == 'dir':
         url = osp.abspath(args.url)
         if not osp.exists(url):
@@ -140,23 +153,25 @@ def import_command(args):
             shutil.copytree(url, dst_dir)
             url = name
 
-        source = { 'url': url }
-        if args.format:
-            source['format'] = args.format
-        project.add_source(name, source)
+    source = { 'url': url }
+    if args.format:
+        source['format'] = args.format
+    project.add_source(name, source)
 
-        if not args.skip_check:
-            log.info("Checking the source...")
-            project.make_source_project(name)
-        project.save()
+    if not args.skip_check:
+        log.info("Checking the source...")
+        project.make_source_project(name)
 
-        log.info("Source '%s' has been added to the project, location: '%s'" \
-            % (name, dst_dir))
+    project.save()
+
+    log.info("Source '%s' has been added to the project, location: '%s'" \
+        % (name, dst_dir))
 
     return 0
 
 def build_remove_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
+    parser = parser_ctor(help="Remove source from project",
+        description="Remove a source from a project.")
 
     parser.add_argument('-n', '--name', required=True,
         help="Name of the source to be removed")
@@ -188,85 +203,24 @@ def remove_command(args):
 
     return 0
 
-def build_export_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
-
-    import datumaro.components.converters as converters_module
-    builtin_converters = [name for name, cls in converters_module.items]
-
-    parser.add_argument('-n', '--name', required=True,
-        help="Source dataset to be extracted")
-    parser.add_argument('-e', '--filter', default=None,
-        help="Filter expression for dataset items. Examples: "
-             "extract images with width < height: "
-             "'/item[image/width < image/height]'; "
-             "extract images with large-area bboxes: "
-             "'/item[annotation/type=\"bbox\" and annotation/area>2000]' "
-             "filter out irrelevant annotations from items: "
-             "'/item/annotation[label = \"person\"]'"
-        )
-    parser.add_argument('-a', '--filter-annotations', action='store_true',
-        help="Filter annotations instead of dataset "
-            "items (default: %(default)s)")
-    parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
-        help="Directory to save output")
-    parser.add_argument('-f', '--output-format', required=True,
-        help="Output format (options: %s)" % (', '.join(builtin_converters)))
-    parser.add_argument('--overwrite', action='store_true',
-        help="Overwrite existing files in the save directory")
-    parser.add_argument('-p', '--project', dest='project_dir', default='.',
-        help="Directory of the project to operate on (default: current dir)")
-    parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
-        help="Additional arguments for converter (pass '-- -h' for help)")
-    parser.set_defaults(command=export_command)
-
-    return parser
-
-def export_command(args):
-    project = load_project(args.project_dir)
-
-    dst_dir = args.dst_dir
-    if dst_dir:
-        if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
-            raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % dst_dir)
-    else:
-        dst_dir = generate_next_dir_name('export_' + args.output_format)
-    dst_dir = osp.abspath(dst_dir)
-
-    try:
-        converter = project.env.make_converter(args.output_format,
-            cmdline_args=args.extra_args)
-    except KeyError:
-        raise CliException("Converter for format '%s' is not found" % \
-            args.output_format)
-
-    log.info("Loading the project...")
-    try:
-        project.get_source(args.name)
-    except KeyError:
-        raise CliException("Source '%s' is not found in the project" % args.name)
-    source_project = project.make_source_project(args.name)
-    dataset = source_project.make_dataset()
-
-    log.info("Exporting the project...")
-    dataset.export_project(
-        save_dir=dst_dir,
-        converter=converter,
-        filter_expr=args.filter,
-        filter_annotations=args.filter_annotations)
-    log.info("Source '%s' has been exported to '%s' as '%s'" % \
-        (args.name, dst_dir, args.output_format))
-
-    return 0
-
 def build_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
+    parser = parser_ctor(description="""
+            Manipulate data sources inside of a project.|n
+            |n
+            A data source is a source of data for a project.
+            The project combines multiple data sources into one dataset.
+            The role of a data source is to provide dataset items - images
+            and/or annotations.|n
+            |n
+            By default, the project to be operated on is searched for
+            in the current directory. An additional '-p' argument can be
+            passed to specify project location.
+        """,
+        formatter_class=MultilineFormatter)
 
     subparsers = parser.add_subparsers()
     add_subparser(subparsers, 'create', build_create_parser)
     add_subparser(subparsers, 'import', build_import_parser)
     add_subparser(subparsers, 'remove', build_remove_parser)
-    add_subparser(subparsers, 'export', build_export_parser)
 
     return parser

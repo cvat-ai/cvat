@@ -8,19 +8,19 @@ import logging as log
 import os
 import os.path as osp
 import shutil
-import textwrap
 
 from datumaro.components.project import Project
 from datumaro.components.comparator import Comparator
 from datumaro.components.dataset_filter import DatasetItemEncoder
 from .diff import DiffVisualizer
-from ...util import add_subparser, CliException
+from ...util import add_subparser, CliException, MultilineFormatter
 from ...util.project import make_project_path, load_project, \
     generate_next_dir_name
 
 
 def build_create_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
+    parser = parser_ctor(help="Create empty project",
+        description="Create a new empty project.")
 
     parser.add_argument('-d', '--dest', default='.', dest='dst_dir',
         help="Save directory for the new project (default: current dir")
@@ -63,15 +63,39 @@ def create_command(args):
     return 0
 
 def build_import_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
-
     import datumaro.components.importers as importers_module
     builtin_importers = [name for name, cls in importers_module.items]
 
-    parser.add_argument('-s', '--source', required=True,
-        help="Path to import a project from")
-    parser.add_argument('-f', '--format', required=True,
-        help="Source project format (options: %s)" % (', '.join(builtin_importers)))
+    parser = parser_ctor(help="Create project from existing dataset",
+        description="""
+            Creates a project from an existing dataset. The source can be:|n
+            - a dataset in a supported format (check 'formats' section below)|n
+            - a Datumaro project|n
+            |n
+            Formats:|n
+            Datasets come in a wide variety of formats. Each dataset
+            format defines its own data structure and rules on how to
+            interpret the data. For example, the following data structure
+            is used in COCO format:|n
+            /dataset/|n
+            - /images/<id>.jpg|n
+            - /annotations/|n
+            |n
+            In Datumaro dataset formats are supported by
+            Extractor-s and Importer-s.
+            An Extractor produces a list of dataset items corresponding
+            to the dataset. An Importer creates a project from the
+            data source location.
+            It is possible to add a custom Extractor and Importer.
+            To do this, you need to put an Extractor and
+            Importer implementation scripts to
+            <project_dir>/.datumaro/extractors
+            and <project_dir>/.datumaro/importers.|n
+            |n
+            List of supported dataset formats: %s
+        """ % ', '.join(builtin_importers),
+        formatter_class=MultilineFormatter)
+
     parser.add_argument('-d', '--dest', default='.', dest='dst_dir',
         help="Directory to save the new project to (default: current dir)")
     parser.add_argument('-n', '--name', default=None,
@@ -82,6 +106,10 @@ def build_import_parser(parser_ctor=argparse.ArgumentParser):
         help="Skip source checking")
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
+    parser.add_argument('-s', '--source', required=True,
+        help="Path to import a project from")
+    parser.add_argument('-f', '--format', required=True,
+        help="Source project format")
     # parser.add_argument('extra_args', nargs=argparse.REMAINDER,
     #     help="Additional arguments for importer (pass '-- -h' for help)")
     parser.set_defaults(command=import_command)
@@ -130,13 +158,24 @@ def import_command(args):
     return 0
 
 def build_export_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor(description=textwrap.dedent("""
-        Exports the project dataset in some format.
-        """),
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-
     import datumaro.components.converters as converters_module
     builtin_converters = [name for name, cls in converters_module.items]
+
+    parser = parser_ctor(help="Export project",
+        description="""
+            Exports the project dataset in some format. Optionally, a filter
+            can be passed.|n
+            |n
+            Formats:|n
+            In Datumaro dataset formats are supported by Converter-s.
+            A Converter produces a dataset of a specific format
+            from dataset items. It is possible to add a custom Converter.
+            To do this, you need to put an Converter
+            definition script to <project_dir>/.datumaro/converters.|n
+            |n
+            List of supported dataset formats: %s
+        """ % ', '.join(builtin_converters),
+        formatter_class=MultilineFormatter)
 
     parser.add_argument('-e', '--filter', default=None,
         help="Filter expression for dataset items "
@@ -146,12 +185,12 @@ def build_export_parser(parser_ctor=argparse.ArgumentParser):
             "items (default: %(default)s)")
     parser.add_argument('-d', '--dest', dest='dst_dir', default=None,
         help="Directory to save output (default: a subdir in the current one)")
-    parser.add_argument('-f', '--output-format', required=True,
-        help="Output format (options: %s)" % (', '.join(builtin_converters)))
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.add_argument('-f', '--output-format', required=True,
+        help="Output format")
     parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
         help="Additional arguments for converter (pass '-- -h' for help)")
     parser.set_defaults(command=export_command)
@@ -192,31 +231,31 @@ def export_command(args):
     return 0
 
 def build_extract_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor(description=textwrap.dedent("""
-        Creates a project that contains only items corresponding
-        to the filter expression.
+    parser = parser_ctor(help="Extract subproject",
+        description="""
+            Extracts a subproject that contains only items matching filter.
+            A filter is an XPath expression, which is applied to XML
+            representation of a dataset item. Check '--dry-run' parameter
+            to see XML representations of the dataset items.|n
+            |n
+            When filtering mode is annotations ('-a'), use '--remove-empty'
+            parameter to specify if annotation-less dataset items should be
+            kept or removed. To select an annotation,
+            write an XPath that returns 'annotation' elements (see examples).|n
+            |n
+            Examples:|n
+            - extract images with width < height:|n
+            |s|s|s|sextract -e '/item[image/width < image/height]'|n
+            |n
+            - extract images with large-area bboxes:|n
+            |s|s|s|sextract -e '/item[annotation/type=\"bbox\" and
+                annotation/area>2000]'|n
+            |n
+            - filter out all irrelevant annotations from items:|n
+            |s|s|s|sextract -a -e '/item/annotation[label = \"person\"]'
+        """,
+        formatter_class=MultilineFormatter)
 
-        Examples:
-        - extract images with width < height:
-            extract -e '/item[image/width < image/height]'
-
-        - extract images with large-area bboxes:
-            extract -e '/item[annotation/type=\"bbox\" and annotation/area>2000]'
-
-        - filter out all irrelevant annotations from items:
-            extract -a -e '/item/annotation[label = \"person\"]'
-
-        Check '--dry-run' parameter to see XML representations of the dataset items.
-
-        When filtering mode is annotations ('-a'), use '--remove-empty'
-        parameter to specify is annotation-less dataset items should be
-        kept or removed. To select an annotation, write an XPath that returns
-        'annotation' elements (see examples).
-        """),
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-
-    parser.add_argument('-e', '--filter', required=True,
-        help="XML XPath filter expression for dataset items")
     parser.add_argument('-a', '--filter-annotations', action='store_true',
         help="Filter annotations instead of dataset "
             "items (default: %(default)s)")
@@ -228,6 +267,8 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
         help="Output directory (default: update current project)")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.add_argument('-e', '--filter', required=True,
+        help="XML XPath filter expression for dataset items")
     parser.set_defaults(command=extract_command)
 
     return parser
@@ -262,7 +303,11 @@ def extract_command(args):
     return 0
 
 def build_merge_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
+    parser = parser_ctor(help="Merge projects",
+        description="""
+        Updates items of the current project with items from the other project.
+        """,
+        formatter_class=MultilineFormatter)
 
     parser.add_argument('other_project_dir',
         help="Directory of the project to get data updates from")
@@ -292,7 +337,7 @@ def merge_command(args):
     return 0
 
 def build_diff_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
+    parser = parser_ctor(help="Compare projects")
 
     parser.add_argument('other_project_dir',
         help="Directory of the second project to be compared")
@@ -334,7 +379,12 @@ def diff_command(args):
     return 0
 
 def build_transform_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
+    parser = parser_ctor(help="Transform project",
+        description="""
+        Applies some operation to dataset items in the project
+        and produces a new project.
+        """,
+        formatter_class=MultilineFormatter)
 
     parser.add_argument('-t', '--transform', required=True,
         help="Transform to apply to the project")
@@ -364,7 +414,15 @@ def transform_command(args):
 
 
 def build_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor()
+    parser = parser_ctor(
+        description="""
+            Manipulate projects.|n
+            |n
+            By default, the project to be operated on is searched for
+            in the current directory. An additional '-p' argument can be
+            passed to specify project location.
+        """,
+        formatter_class=MultilineFormatter)
 
     subparsers = parser.add_subparsers()
     add_subparser(subparsers, 'create', build_create_parser)
