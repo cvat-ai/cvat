@@ -119,10 +119,14 @@
     overflow-y: auto;
 }
 
+.cvat-objects-sidebar-state-active-item {
+    background: $active-object-item-background-color;
+}
+
 .cvat-objects-sidebar-state-item {
     width: 100%;
     padding: 5px 5px 5px 5px;
-    border-bottom: 1px solid $border-color-1;
+    border-left-width: 5px;
 
     > div:nth-child(1) {
         > div:nth-child(3) > i {
@@ -163,6 +167,10 @@
                 }
             }
         }
+    }
+
+    &:hover {
+        @extend .cvat-objects-sidebar-state-active-item;
     }
 }
 

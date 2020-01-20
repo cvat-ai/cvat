@@ -84,7 +84,10 @@ function ObjectItem(props: Props): JSX.Element {
     const withAttributes = !!Object.keys(objectState.attributes).length;
 
     return (
-        <div className='cvat-objects-sidebar-state-item' style={{ borderLeft: `5px solid ${objectState.color}` }}>
+        <div
+            className='cvat-objects-sidebar-state-item'
+            style={{ borderLeftStyle: 'solid', borderColor: ` ${objectState.color}` }}
+        >
             <Row type='flex' align='middle'>
                 <Col span={10}>
                     <Text style={{ fontSize: 16 }}>{objectState.clientID}</Text>
