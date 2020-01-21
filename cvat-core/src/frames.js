@@ -419,7 +419,7 @@
                 if (fillBuffer && !this._activeFillBufferRequest
                     && this._size > this._chunkSize
                     && cachedFrames.length < this._size / 2) {
-                    const maxFrame = Math.max(...cachedFrames);
+                    const maxFrame = cachedFrames ? Math.max(...cachedFrames) : frameNumber;
                     if (maxFrame < this._stopFrame) {
                         this.makeFillRequest(maxFrame + 1, frameStep);
                     }
@@ -435,7 +435,6 @@
                 }
 
                 frame = this._buffer[frameNumber];
-                delete this._buffer[frameNumber];
             } else {
                 this.clear();
             }

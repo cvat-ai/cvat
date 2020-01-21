@@ -223,6 +223,8 @@ class PlayerModel extends Listener {
         if (last === this._frame.current) {
             if (this._continueAfterLoad) {
                 this._continueAfterLoad = false;
+                // play starts from next frame, but there need to show current requested frame
+                this._frame.current = this._frame.previous;
                 this.play();
             } else {
                 this.shift(0);
