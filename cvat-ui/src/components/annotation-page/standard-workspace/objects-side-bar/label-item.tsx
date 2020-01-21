@@ -77,7 +77,6 @@ export default function LabelItem(props: Props): JSX.Element {
 
     return (
         <Row
-            style={{ borderColor: label.color }}
             type='flex'
             align='middle'
             justify='space-around'
