@@ -12,6 +12,11 @@
   - [Filter a project](#filter-project)
   - [Merge projects](#merge-project)
   - [Export a project](#export-project)
+  - [Compare projects](#compare-projects)
+  - [Transform a project](#transform-project)
+  - [Register a model](#register-model)
+  - [Run inference](#run-inference)
+  - [Run inference explanation](#explain-inference)
 - [Links](#links)
 
 ## Installation
@@ -328,7 +333,29 @@ datum project export \
      -f voc
 ```
 
-### Register a model
+### Transform project
+
+This command applies some operation to dataset items in the project
+and produces a new project.
+
+Usage:
+
+``` bash
+datum project transform --help
+
+datum project transform \
+     -t <transform name> \
+     -o <output dir>
+```
+
+Example:
+
+``` bash
+datum project import <...>
+datum project transform -t mytransform.py -o inference
+```
+
+### Register model
 
 Supported models:
 - OpenVINO
@@ -394,17 +421,17 @@ def get_categories():
      return { AnnotationType.label: label_categories }
 ```
 
-### Transform project
+### Run model
 
-This command applies some operation to dataset items in the project
-and produces a new project.
+This command applies model to dataset images and produces a new project.
 
 Usage:
 
 ``` bash
-datum project transform --help
+datum model run --help
 
-datum project transform \
+datum model run \
+     -p <project dir> \
      -t <model_name> \
      -o <save_dir>
 ```
@@ -414,7 +441,7 @@ Example:
 ``` bash
 datum project import <...>
 datum model add mymodel <...>
-datum project transform -t mymodel -o inference
+datum model run -t mymodel -o inference
 ```
 
 ### Compare projects
@@ -438,7 +465,7 @@ datum project transform <...> -o inference
 datum project diff inference -o diff
 ```
 
-### Run inference explanation
+### Explain inference
 
 Usage:
 
@@ -447,7 +474,7 @@ datum explain --help
 
 datum explain \
      -m <model_name> \
-     -d <save_dir> \
+     -o <save_dir> \
      -t <target> \
      <method> \
      <method_params>
@@ -468,4 +495,4 @@ datum explain \
 ## Links
 - [TensorFlow detection model zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)
 - [How to convert model to OpenVINO format](https://docs.openvinotoolkit.org/latest/_docs_MO_DG_prepare_model_convert_model_tf_specific_Convert_Object_Detection_API_Models.html)
-- [Model convert script for this model](https://github.com/opencv/cvat/blob/3e09503ba6c6daa6469a6c4d275a5a8b168dfa2c/components/tf_annotation/install.sh#L23)
+- [Model conversion script example](https://github.com/opencv/cvat/blob/3e09503ba6c6daa6469a6c4d275a5a8b168dfa2c/components/tf_annotation/install.sh#L23)
