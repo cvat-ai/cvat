@@ -1,3 +1,8 @@
+
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from collections import OrderedDict
 import os
 import os.path as osp
