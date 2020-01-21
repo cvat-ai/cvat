@@ -103,22 +103,6 @@
     });
 
     /**
-        * Object visibility states
-        * @enum {string}
-        * @name ObjectShape
-        * @memberof module:API.cvat.enums
-        * @property {string} ALL 'all'
-        * @property {string} SHAPE 'shape'
-        * @property {string} NONE 'none'
-        * @readonly
-    */
-    const VisibleState = Object.freeze({
-        ALL: 'all',
-        SHAPE: 'shape',
-        NONE: 'none',
-    });
-
-    /**
         * Event types
         * @enum {number}
         * @name LogType
@@ -189,7 +173,6 @@
         AttributeType,
         ObjectType,
         ObjectShape,
-        VisibleState,
         LogType,
     };
 })();

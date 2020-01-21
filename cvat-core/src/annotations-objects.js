@@ -17,7 +17,6 @@
         ObjectShape,
         ObjectType,
         AttributeType,
-        VisibleState,
     } = require('./enums');
 
     const {
@@ -163,7 +162,7 @@
             const anyChanges = updated.label || updated.attributes || updated.points
                 || updated.outside || updated.occluded || updated.keyframe
                 || updated.group || updated.zOrder || updated.lock
-                || updated.color || updated.visibility;
+                || updated.color || updated.hidden;
 
             if (anyChanges) {
                 this.updated = Date.now();
@@ -185,7 +184,7 @@
 
             this.frameMeta = injection.frameMeta;
             this.collectionZ = injection.collectionZ;
-            this.visibility = VisibleState.SHAPE;
+            this.hidden = false;
 
             this.color = color;
             this.shapeType = null;
@@ -289,7 +288,7 @@
                 label: this.label,
                 group: this.group,
                 color: this.color,
-                visibility: this.visibility,
+                hidden: this.hidden,
                 updated: this.updated,
                 frame,
             };
@@ -393,14 +392,9 @@
                 copy.color = data.color;
             }
 
-            if (updated.visibility) {
-                if (!isEnum.call(VisibleState, data.visibility)) {
-                    throw new ArgumentError(
-                        `Got invalid visibility value: "${data.visibility}"`,
-                    );
-                }
-
-                copy.visibility = data.visibility;
+            if (updated.hidden) {
+                checkObjectType('hidden', data.hidden, 'boolean', null);
+                copy.hidden = data.hidden;
             }
 
             // Reset flags and commit all changes
@@ -506,7 +500,7 @@
                     serverID: this.serverID,
                     lock: this.lock,
                     color: this.color,
-                    visibility: this.visibility,
+                    hidden: this.hidden,
                     updated: this.updated,
                     frame,
                 };
@@ -676,14 +670,9 @@
                 copy.color = data.color;
             }
 
-            if (updated.visibility) {
-                if (!isEnum.call(VisibleState, data.visibility)) {
-                    throw new ArgumentError(
-                        `Got invalid visibility value: "${data.visibility}"`,
-                    );
-                }
-
-                copy.visibility = data.visibility;
+            if (updated.hidden) {
+                checkObjectType('hidden', data.hidden, 'boolean', null);
+                copy.hidden = data.hidden;
             }
 
             if (updated.keyframe) {

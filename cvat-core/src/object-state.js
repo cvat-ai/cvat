@@ -20,7 +20,7 @@
             * @param {Object} serialized - is an dictionary which contains
             * initial information about an ObjectState;
             * Necessary fields: objectType, shapeType, frame, updated
-            * Optional fields: points, group, zOrder, outside, occluded,
+            * Optional fields: points, group, zOrder, outside, occluded, hidden,
             * attributes, lock, label, mode, color, keyframe, clientID, serverID
             * These fields can be set later via setters
         */
@@ -38,7 +38,7 @@
                 zOrder: null,
                 lock: null,
                 color: null,
-                visibility: null,
+                hidden: null,
                 updated: serialized.updated,
 
                 clientID: serialized.clientID,
@@ -65,7 +65,7 @@
                     this.zOrder = false;
                     this.lock = false;
                     this.color = false;
-                    this.visibility = false;
+                    this.hidden = false;
 
                     return reset;
                 },
@@ -153,17 +153,17 @@
                         data.color = color;
                     },
                 },
-                visibility: {
+                hidden: {
                     /**
-                        * @name visibility
-                        * @type {module:API.cvat.enums.VisibleState}
+                        * @name hidden
+                        * @type {boolean}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @instance
                     */
-                    get: () => data.visibility,
-                    set: (visibility) => {
-                        data.updateFlags.visibility = true;
-                        data.visibility = visibility;
+                    get: () => data.hidden,
+                    set: (hidden) => {
+                        data.updateFlags.hidden = true;
+                        data.hidden = hidden;
                     },
                 },
                 points: {
@@ -313,7 +313,7 @@
             this.occluded = serialized.occluded;
             this.color = serialized.color;
             this.lock = serialized.lock;
-            this.visibility = serialized.visibility;
+            this.hidden = serialized.hidden;
 
             // It can be undefined in a constructor and it can be defined later
             if (typeof (serialized.points) !== 'undefined') {

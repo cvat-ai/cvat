@@ -67,10 +67,22 @@ const ItemTop = React.memo((props: ItemTopProps): JSX.Element => {
 
 interface ItemButtonsProps {
     objectType: ObjectType;
+    outsided: boolean;
+    occluded: boolean;
+    hidden: boolean;
+    locked: boolean;
+    keyframe: boolean;
 }
 
 const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
-    const { objectType } = props;
+    const {
+        objectType,
+        outsided,
+        occluded,
+        hidden,
+        locked,
+        keyframe,
+    } = props;
 
     if (objectType === ObjectType.TRACK) {
         return (
@@ -91,17 +103,35 @@ const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
                         </Col>
                     </Row>
                     <Row type='flex' justify='space-around'>
-                        <Col span={6}>
-                            <Icon component={ObjectOutsideIcon} />
+                        <Col span={4}>
+                            { outsided
+                                ? <Icon component={ObjectOutsideIcon} />
+                                : <Icon type='select' />
+                            }
                         </Col>
-                        <Col span={6}>
-                            <Icon type='lock' />
+                        <Col span={4}>
+                            { locked
+                                ? <Icon type='lock' />
+                                : <Icon type='unlock' />
+                            }
                         </Col>
-                        <Col span={6}>
-                            <Icon type='user' />
+                        <Col span={4}>
+                            { occluded
+                                ? <Icon type='team' />
+                                : <Icon type='user' />
+                            }
                         </Col>
-                        <Col span={6}>
-                            <Icon type='eye-invisible' />
+                        <Col span={4}>
+                            { hidden
+                                ? <Icon type='eye-invisible' />
+                                : <Icon type='eye' />
+                            }
+                        </Col>
+                        <Col span={4}>
+                            { keyframe
+                                ? <Icon type='star' theme='filled' />
+                                : <Icon type='star' />
+                            }
                         </Col>
                     </Row>
                 </Col>
@@ -299,6 +329,11 @@ export default function ObjectItem(props: Props): JSX.Element {
         objectType,
         shapeType,
         attributes,
+        occluded,
+        outside,
+        lock,
+        hidden,
+        keyframe,
     } = objectState;
 
     const type = objectType === ObjectType.TAG ? ObjectType.TAG.toUpperCase()
@@ -310,7 +345,14 @@ export default function ObjectItem(props: Props): JSX.Element {
             style={{ borderLeftStyle: 'solid', borderColor: ` ${objectState.color}` }}
         >
             <ItemTop type={type} labels={labels} clientID={clientID} label={label} />
-            <ItemButtons objectType={objectType} />
+            <ItemButtons
+                objectType={objectType}
+                occluded={occluded}
+                outside={outside}
+                locked={lock}
+                hidden={hidden}
+                keyframe={keyframe}
+            />
             { label.attributes.length
                 && (
                     <ItemAttributes

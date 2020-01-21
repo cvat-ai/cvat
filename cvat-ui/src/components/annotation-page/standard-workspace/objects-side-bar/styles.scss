@@ -141,7 +141,9 @@
     }
 
     > div:nth-child(2)  {
-        margin-top: 10px;
+        > div > div {
+            margin-top: 10px;
+        }
 
         i {
             @extend .cvat-object-sidebar-icon;
