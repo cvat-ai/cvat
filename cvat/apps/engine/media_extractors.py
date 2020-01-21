@@ -80,7 +80,7 @@ class PDFExtractor(MediaExtractor):
         from pdf2image import convert_from_path
         self._temp_directory = tempfile.mkdtemp(prefix='cvat-')
         super().__init__(
-            source_path=source_path[0],
+            source_path=sorted(source_path),
             dest_path=dest_path,
             image_quality=image_quality,
             step=1,
@@ -89,12 +89,14 @@ class PDFExtractor(MediaExtractor):
         )
 
         self._dimensions = []
-        file_ = convert_from_path(self._source_path)
-        self._basename = os.path.splitext(os.path.basename(self._source_path))[0]
-        for page_num, page in enumerate(file_):
-            output = os.path.join(self._temp_directory, self._basename + str(page_num) + '.jpg')
-            self._dimensions.append(page.size)
-            page.save(output, 'JPEG')
+        count = 0
+        for source in source_path:
+            pages = convert_from_path(source)
+            for page in pages:
+                output = os.path.join(self._temp_directory, str(count) + '.jpg')
+                count += 1
+                self._dimensions.append(page.size)
+                page.save(output, 'JPEG')
 
         self._length = len(os.listdir(self._temp_directory))
 
