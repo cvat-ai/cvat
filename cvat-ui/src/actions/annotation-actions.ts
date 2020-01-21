@@ -39,6 +39,8 @@ export enum AnnotationActionTypes {
     TRACK_SPLITTED = 'TRACK_SPLITTED',
     RESET_CANVAS = 'RESET_CANVAS',
     ANNOTATIONS_UPDATED = 'ANNOTATIONS_UPDATED',
+    CHANGE_LABEL_COLOR_SUCCESS = 'CHANGE_LABEL_COLOR_SUCCESS',
+    CHANGE_LABEL_COLOR_FAILED = 'CHANGE_LABEL_COLOR_FAILED',
 }
 
 export function switchPlay(playing: boolean): AnyAction {
@@ -154,6 +156,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             const frame = Math.min(0, job.startFrame);
             const frameData = await job.frames.get(frame);
             const annotations = await job.annotations.get(frame);
+            const colors = [...cvat.enums.colors];
 
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_SUCCESS,
@@ -162,6 +165,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                     frameData,
                     annotations,
                     frame,
+                    colors,
                 },
             });
         } catch (error) {
@@ -291,4 +295,25 @@ export function annotationsUpdated(annotations: any[]): AnyAction {
             annotations,
         },
     };
+}
+
+export function changeLabelColor(label: any, color: string): AnyAction {
+    try {
+        const updatedLabel = label;
+        updatedLabel.color = color;
+
+        return {
+            type: AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS,
+            payload: {
+                label: updatedLabel,
+            },
+        };
+    } catch (error) {
+        return {
+            type: AnnotationActionTypes.CHANGE_LABEL_COLOR_FAILED,
+            payload: {
+                error,
+            },
+        };
+    }
 }

@@ -2,6 +2,7 @@ import { AnyAction } from 'redux';
 
 import { Canvas } from 'cvat-canvas';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
 import {
     AnnotationState,
     ActiveControl,
@@ -9,13 +10,13 @@ import {
     ObjectType,
 } from './interfaces';
 
-
 const defaultState: AnnotationState = {
     canvasInstance: new Canvas(),
     canvasIsReady: false,
     activeControl: ActiveControl.CURSOR,
     jobInstance: null,
     frame: 0,
+    colors: [],
     playing: false,
     annotations: [],
     frameData: null,
@@ -44,6 +45,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 frame,
                 frameData,
                 annotations,
+                colors,
             } = action.payload;
 
             return {
@@ -53,6 +55,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 frame,
                 frameData,
                 annotations,
+                colors,
                 drawing: {
                     ...defaultState.drawing,
                     activeLabelID: jobInstance.task.labels[0].id,
@@ -195,10 +198,30 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: action.payload.annotations,
             };
         }
+        case AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS: {
+            const {
+                label,
+            } = action.payload;
+            const { jobInstance } = state;
+
+            const updatedLabels = [...state.jobInstance.task.labels];
+            const index = updatedLabels.indexOf(label);
+            updatedLabels[index] = label;
+            jobInstance.task.labels = updatedLabels;
+
+            return {
+                ...state,
+            };
+        }
         case AnnotationActionTypes.RESET_CANVAS: {
             return {
                 ...state,
                 activeControl: ActiveControl.CURSOR,
+            };
+        }
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return {
+                ...defaultState,
             };
         }
         default: {

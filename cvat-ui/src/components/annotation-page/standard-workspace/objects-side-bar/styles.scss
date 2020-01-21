@@ -110,12 +110,6 @@
     overflow-y: auto;
 }
 
-.cvat-objects-sidebar-labels-list {
-    background-color: $background-color-2;
-    height: 100%;
-    overflow-y: auto;
-}
-
 .cvat-objects-sidebar-state-active-item {
     background: $active-object-item-background-color;
 }
@@ -201,7 +195,6 @@
         width: unset;
         text-overflow: ellipsis;
         max-width: 80%;
-        word-wrap: break-word;
         overflow: hidden;
         max-height: 1.2em;
         font-size: 1.2em;
@@ -215,4 +208,41 @@
         display: grid;
         padding: 5px
     }
+}
+
+.cvat-objects-sidebar-labels-list {
+    background-color: $background-color-2;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.cvat-objects-sidebar-label-active-item {
+    background: $active-object-item-background-color;
+}
+
+.cvat-objects-sidebar-label-item {
+    height: 2.5em;
+    border-bottom: 1px dashed;
+    padding: 5px;
+
+    i {
+        @extend .cvat-object-sidebar-icon;
+    }
+
+    > div:nth-child(2) {
+        text-overflow: ellipsis;
+        overflow: hidden;
+        max-height: 1.1em;
+        font-size: 1em;
+    }
+
+    &:hover {
+        @extend .cvat-objects-sidebar-label-active-item;
+    }
+}
+
+.cvat-label-item-color-button {
+    width: 30px;
+    height: 20px;
+    border-radius: 5px;
 }

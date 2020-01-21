@@ -3,7 +3,10 @@ import { connect } from 'react-redux';
 
 import ObjectsBlockComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-block';
 import { CombinedState } from 'reducers/interfaces';
-import { annotationsUpdated } from 'actions/annotation-actions';
+import {
+    annotationsUpdated,
+    changeLabelColor,
+} from 'actions/annotation-actions';
 
 interface OwnProps {
     listHeight: number;
@@ -12,10 +15,12 @@ interface OwnProps {
 interface StateToProps {
     annotations: any[];
     labels: any[];
+    colors: string[];
 }
 
 interface DispatchToProps {
     onAnnotationsUpdated(annotations: any[]): void;
+    onChangeLabelColor(label: any, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -23,14 +28,18 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         annotations: annotation.annotations,
-        labels: annotation.jobInstance.task.labels,
+        labels: [...annotation.jobInstance.task.labels],
+        colors: annotation.colors,
     };
 }
 
-function mapDispatchToProps(): DispatchToProps {
+function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onAnnotationsUpdated(annotations: []): void {
-            annotationsUpdated(annotations);
+            dispatch(annotationsUpdated(annotations));
+        },
+        onChangeLabelColor(label: any, color: string): void {
+            dispatch(changeLabelColor(label, color));
         },
     };
 }

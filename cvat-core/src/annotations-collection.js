@@ -34,13 +34,9 @@
     const {
         ObjectShape,
         ObjectType,
+        colors,
     } = require('./enums');
     const ObjectState = require('./object-state');
-    const colors = [
-        '#FF355E', '#E936A7', '#FD5B78', '#FF007C', '#FF00CC', '#66FF66',
-        '#50BFE6', '#CCFF00', '#FFFF66', '#FF9966', '#FF6037', '#FFCC33',
-        '#AAF0D1', '#FF3855', '#FFF700', '#A7F432', '#FF5470', '#FAFA37',
-        '#FF7A00', '#FF9933', '#AFE313', '#00CC99', '#FF5050', '#733380'];
 
     function shapeFactory(shapeData, clientID, injection) {
         const { type } = shapeData;

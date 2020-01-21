@@ -12,8 +12,10 @@ import LabelsList from './labels-list';
 interface Props {
     annotations: any[];
     labels: any[];
+    colors: string[];
     listHeight: number;
     onAnnotationsUpdated(annotations: any[]): void;
+    onChangeLabelColor(label: any, color: string): void;
 }
 
 export default function ObjectsBlockComponent(props: Props): JSX.Element {
@@ -21,7 +23,9 @@ export default function ObjectsBlockComponent(props: Props): JSX.Element {
         listHeight,
         annotations,
         labels,
+        colors,
         onAnnotationsUpdated,
+        onChangeLabelColor,
     } = props;
 
     const childProps = {
@@ -42,7 +46,12 @@ export default function ObjectsBlockComponent(props: Props): JSX.Element {
                 tab={<Text strong>Labels</Text>}
                 key='labels'
             >
-                <LabelsList listHeight={listHeight} {...childProps} />
+                <LabelsList
+                    listHeight={listHeight}
+                    {...childProps}
+                    colors={colors}
+                    onChangeLabelColor={onChangeLabelColor}
+                />
             </Tabs.TabPane>
         </Tabs>
     );

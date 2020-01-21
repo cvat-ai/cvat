@@ -252,6 +252,7 @@ export interface AnnotationState {
     frame: number;
     playing: boolean;
     annotations: any[];
+    colors: any[];
     saving: boolean;
     savingStatuses: string[];
     jobFetching: boolean;
