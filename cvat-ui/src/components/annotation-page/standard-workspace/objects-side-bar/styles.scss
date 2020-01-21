@@ -127,6 +127,7 @@
     width: 100%;
     padding: 5px 5px 5px 5px;
     border-left-width: 5px;
+    border-bottom: 1px dashed;
 
     > div:nth-child(1) {
         > div:nth-child(3) > i {
@@ -139,8 +140,12 @@
         }
     }
 
-    > div:nth-child(2) i {
-        @extend .cvat-object-sidebar-icon;
+    > div:nth-child(2)  {
+        margin-top: 10px;
+
+        i {
+            @extend .cvat-object-sidebar-icon;
+        }
     }
 
     > div:nth-child(3) {
@@ -154,10 +159,61 @@
 
 .cvat-objects-sidebar-state-item-collapse {
     border: 0px;
-    background: none;
+    background: inherit;
 
-    > .ant-collapse-item > .ant-collapse-header {
-        padding-top: 2px;
-        padding-bottom: 2px;
+    > .ant-collapse-item {
+        background: inherit;
+        border: none;
+
+        > .ant-collapse-header {
+            background: inherit;
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+
+        > .ant-collapse-content {
+            background: inherit;
+        }
+    }
+}
+
+.cvat-object-item-attribute-wrapper {
+    margin-top: 5px;
+}
+
+.cvat-object-item-select-attribute {
+    width: 100%;
+}
+
+.cvat-object-item-number-attribute {
+    width: 100%;
+}
+
+.cvat-object-item-text-attribute {
+    width: 100%;
+}
+
+.cvat-object-item-radio-attribute {
+    border: 1px double $border-color-hover;
+    border-radius: 7px 7px 7px 7px;
+
+    > legend {
+        text-align: center;
+        width: unset;
+        text-overflow: ellipsis;
+        max-width: 80%;
+        word-wrap: break-word;
+        overflow: hidden;
+        max-height: 1.2em;
+        font-size: 1.2em;
+
+        > span {
+            padding: 0 10px;
+        }
+    }
+
+    > .ant-radio-group {
+        display: grid;
+        padding: 5px
     }
 }

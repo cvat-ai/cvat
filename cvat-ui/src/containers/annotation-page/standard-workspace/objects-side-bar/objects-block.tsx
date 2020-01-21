@@ -11,6 +11,7 @@ interface OwnProps {
 
 interface StateToProps {
     annotations: any[];
+    labels: any[];
 }
 
 interface DispatchToProps {
@@ -22,6 +23,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         annotations: annotation.annotations,
+        labels: annotation.jobInstance.task.labels,
     };
 }
 
@@ -42,7 +44,7 @@ function AppearanceSettingsContainer(
     );
 }
 
-export default connect(
+export default connect<StateToProps, DispatchToProps, OwnProps, CombinedState>(
     mapStateToProps,
     mapDispatchToProps,
 )(AppearanceSettingsContainer);

@@ -232,7 +232,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
     private renderNumberRangeInput(key: number, attr: Attribute | null): JSX.Element {
         const locked = attr ? attr.id >= 0 : false;
-        const value = attr ? attr.values[0] : '';
+        const value = attr ? attr.values.join(';') : '';
         const { form } = this.props;
 
         const validator = (_: any, strNumbers: string, callback: any): void => {
