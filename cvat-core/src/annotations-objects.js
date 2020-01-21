@@ -11,7 +11,6 @@
     const ObjectState = require('./object-state');
     const {
         checkObjectType,
-        isEnum,
     } = require('./common');
     const {
         ObjectShape,
@@ -162,7 +161,7 @@
             const anyChanges = updated.label || updated.attributes || updated.points
                 || updated.outside || updated.occluded || updated.keyframe
                 || updated.group || updated.zOrder || updated.lock
-                || updated.color || updated.hidden;
+                || updated.color || updated.visible;
 
             if (anyChanges) {
                 this.updated = Date.now();
@@ -184,7 +183,7 @@
 
             this.frameMeta = injection.frameMeta;
             this.collectionZ = injection.collectionZ;
-            this.hidden = false;
+            this.visible = true;
 
             this.color = color;
             this.shapeType = null;
@@ -288,7 +287,7 @@
                 label: this.label,
                 group: this.group,
                 color: this.color,
-                hidden: this.hidden,
+                visible: this.visible,
                 updated: this.updated,
                 frame,
             };
@@ -392,9 +391,9 @@
                 copy.color = data.color;
             }
 
-            if (updated.hidden) {
-                checkObjectType('hidden', data.hidden, 'boolean', null);
-                copy.hidden = data.hidden;
+            if (updated.visible) {
+                checkObjectType('visible', data.visible, 'boolean', null);
+                copy.visible = data.visible;
             }
 
             // Reset flags and commit all changes
@@ -500,7 +499,7 @@
                     serverID: this.serverID,
                     lock: this.lock,
                     color: this.color,
-                    hidden: this.hidden,
+                    visible: this.visible,
                     updated: this.updated,
                     frame,
                 };
@@ -670,9 +669,9 @@
                 copy.color = data.color;
             }
 
-            if (updated.hidden) {
-                checkObjectType('hidden', data.hidden, 'boolean', null);
-                copy.hidden = data.hidden;
+            if (updated.visible) {
+                checkObjectType('visible', data.visible, 'boolean', null);
+                copy.visible = data.visible;
             }
 
             if (updated.keyframe) {

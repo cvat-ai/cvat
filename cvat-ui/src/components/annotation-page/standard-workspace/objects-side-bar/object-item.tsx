@@ -16,7 +16,6 @@ import Text from 'antd/lib/typography/Text';
 
 import {
     ObjectOutsideIcon,
-    ObjectInsideIcon,
     FirstIcon,
     LastIcon,
     PreviousIcon,
@@ -67,7 +66,7 @@ const ItemTop = React.memo((props: ItemTopProps): JSX.Element => {
 
 interface ItemButtonsProps {
     objectType: ObjectType;
-    outsided: boolean;
+    outside: boolean;
     occluded: boolean;
     hidden: boolean;
     locked: boolean;
@@ -77,7 +76,7 @@ interface ItemButtonsProps {
 const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
     const {
         objectType,
-        outsided,
+        outside,
         occluded,
         hidden,
         locked,
@@ -104,7 +103,7 @@ const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
                     </Row>
                     <Row type='flex' justify='space-around'>
                         <Col span={4}>
-                            { outsided
+                            { outside
                                 ? <Icon component={ObjectOutsideIcon} />
                                 : <Icon type='select' />
                             }
