@@ -13,6 +13,8 @@ import {
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
+import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import { RadioChangeEvent } from 'antd/lib/radio';
 
 import {
     ObjectOutsideIcon,
@@ -31,6 +33,8 @@ interface ItemTopProps {
     label: any;
     labels: any[];
     type: string;
+    state: any;
+    onUpdate(state: any): void;
 }
 
 const ItemTop = React.memo((props: ItemTopProps): JSX.Element => {
@@ -39,6 +43,8 @@ const ItemTop = React.memo((props: ItemTopProps): JSX.Element => {
         label,
         labels,
         type,
+        state,
+        onUpdate,
     } = props;
 
     return (
@@ -49,7 +55,14 @@ const ItemTop = React.memo((props: ItemTopProps): JSX.Element => {
                 <Text style={{ fontSize: 10 }}>{type}</Text>
             </Col>
             <Col span={12}>
-                <Select value={label.id}>
+                <Select
+                    value={label.id}
+                    onChange={async (value: string): Promise<void> => {
+                        const id = +value;
+                        [state.label] = labels.filter((_label: any) => _label.id === id);
+                        onUpdate(state);
+                    }}
+                >
                     { labels.map((_label: any): JSX.Element => (
                         <Select.Option key={_label.id} value={_label.id}>
                             {_label.name}
@@ -65,23 +78,24 @@ const ItemTop = React.memo((props: ItemTopProps): JSX.Element => {
 });
 
 interface ItemButtonsProps {
-    objectType: ObjectType;
-    outside: boolean;
-    occluded: boolean;
-    hidden: boolean;
-    locked: boolean;
-    keyframe: boolean;
+    objectState: any;
+    onUpdate(state: any): void;
 }
 
 const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
     const {
-        objectType,
-        outside,
-        occluded,
-        hidden,
-        locked,
-        keyframe,
+        objectState,
+        onUpdate,
     } = props;
+
+    const {
+        objectType,
+        occluded,
+        outside,
+        lock: locked,
+        visible,
+        keyframe,
+    } = objectState;
 
     if (objectType === ObjectType.TRACK) {
         return (
@@ -104,32 +118,113 @@ const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
                     <Row type='flex' justify='space-around'>
                         <Col span={4}>
                             { outside
-                                ? <Icon component={ObjectOutsideIcon} />
-                                : <Icon type='select' />
+                                ? (
+                                    <Icon
+                                        component={ObjectOutsideIcon}
+                                        onClick={(): void => {
+                                            objectState.outside = false;
+                                            onUpdate(objectState);
+                                        }}
+                                    />
+                                )
+                                : (
+                                    <Icon
+                                        type='select'
+                                        onClick={(): void => {
+                                            objectState.outside = true;
+                                            onUpdate(objectState);
+                                        }}
+                                    />
+                                )
                             }
                         </Col>
                         <Col span={4}>
                             { locked
-                                ? <Icon type='lock' />
-                                : <Icon type='unlock' />
+                                ? (
+                                    <Icon
+                                        type='lock'
+                                        onClick={(): void => {
+                                            objectState.lock = false;
+                                            onUpdate(objectState);
+                                        }}
+                                    />
+                                )
+                                : (
+                                    <Icon
+                                        type='unlock'
+                                        onClick={(): void => {
+                                            objectState.lock = true;
+                                            onUpdate(objectState);
+                                        }}
+                                    />
+                                )
                             }
                         </Col>
                         <Col span={4}>
                             { occluded
-                                ? <Icon type='team' />
-                                : <Icon type='user' />
+                                ? (
+                                    <Icon
+                                        type='team'
+                                        onClick={(): void => {
+                                            objectState.occluded = false;
+                                            onUpdate(objectState);
+                                        }}
+                                    />
+                                )
+                                : (
+                                    <Icon
+                                        type='user'
+                                        onClick={(): void => {
+                                            objectState.occluded = true;
+                                            onUpdate(objectState);
+                                        }}
+                                    />
+                                )
                             }
                         </Col>
                         <Col span={4}>
-                            { hidden
-                                ? <Icon type='eye-invisible' />
-                                : <Icon type='eye' />
+                            { visible
+                                ? (
+                                    <Icon
+                                        type='eye'
+                                        onClick={(): void => {
+                                            objectState.visible = false;
+                                            onUpdate(objectState);
+                                        }}
+                                    />
+                                )
+                                : (
+                                    <Icon
+                                        type='eye-invisible'
+                                        onClick={(): void => {
+                                            objectState.visible = true;
+                                            onUpdate(objectState);
+                                        }}
+                                    />
+                                )
                             }
                         </Col>
                         <Col span={4}>
                             { keyframe
-                                ? <Icon type='star' theme='filled' />
-                                : <Icon type='star' />
+                                ? (
+                                    <Icon
+                                        type='star'
+                                        theme='filled'
+                                        onClick={(): void => {
+                                            objectState.keyframe = false;
+                                            onUpdate(objectState);
+                                        }}
+                                    />
+                                )
+                                : (
+                                    <Icon
+                                        type='star'
+                                        onClick={(): void => {
+                                            objectState.keyframe = true;
+                                            onUpdate(objectState);
+                                        }}
+                                    />
+                                )
                             }
                         </Col>
                     </Row>
@@ -143,13 +238,70 @@ const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
             <Col span={20} style={{ textAlign: 'center' }}>
                 <Row type='flex' justify='space-around'>
                     <Col span={8}>
-                        <Icon type='lock' />
+                        { locked
+                            ? (
+                                <Icon
+                                    type='lock'
+                                    onClick={(): void => {
+                                        objectState.lock = false;
+                                        onUpdate(objectState);
+                                    }}
+                                />
+                            )
+                            : (
+                                <Icon
+                                    type='unlock'
+                                    onClick={(): void => {
+                                        objectState.lock = true;
+                                        onUpdate(objectState);
+                                    }}
+                                />
+                            )
+                        }
                     </Col>
                     <Col span={8}>
-                        <Icon type='user' />
+                        { occluded
+                            ? (
+                                <Icon
+                                    type='team'
+                                    onClick={(): void => {
+                                        objectState.occluded = false;
+                                        onUpdate(objectState);
+                                    }}
+                                />
+                            )
+                            : (
+                                <Icon
+                                    type='user'
+                                    onClick={(): void => {
+                                        objectState.occluded = true;
+                                        onUpdate(objectState);
+                                    }}
+                                />
+                            )
+                        }
                     </Col>
                     <Col span={8}>
-                        <Icon type='eye-invisible' />
+                        { visible
+                            ? (
+                                <Icon
+                                    type='eye'
+                                    onClick={(): void => {
+                                        objectState.visible = false;
+                                        onUpdate(objectState);
+                                    }}
+                                />
+                            )
+                            : (
+                                <Icon
+                                    type='eye-invisible'
+                                    onClick={(): void => {
+                                        objectState.visible = true;
+                                        onUpdate(objectState);
+                                    }}
+                                />
+                            )
+                        }
                     </Col>
                 </Row>
             </Col>
@@ -161,18 +313,31 @@ const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
 interface ItemAttributeProps {
     attribute: any;
     attrValue: string;
+    objectState: any;
+    onUpdate(objectState: any): void;
 }
 
 const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
     const {
         attribute,
         attrValue,
+        objectState,
+        onUpdate,
     } = props;
 
     if (attribute.inputType === 'checkbox') {
         return (
             <Col span={24}>
-                <Checkbox className='cvat-object-item-checkbox-attribute' checked={attrValue === 'true'}>
+                <Checkbox
+                    className='cvat-object-item-checkbox-attribute'
+                    checked={attrValue === 'true'}
+                    onChange={(event: CheckboxChangeEvent): void => {
+                        const attr: Record<number, string> = {};
+                        attr[attribute.id] = event.target.checked ? 'true' : 'false';
+                        objectState.attributes = attr;
+                        onUpdate(objectState);
+                    }}
+                >
                     <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
                         {attribute.name}
                     </Text>
@@ -188,7 +353,15 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
                     <legend>
                         <Text strong className='cvat-text'>{attribute.name}</Text>
                     </legend>
-                    <Radio.Group value={attrValue}>
+                    <Radio.Group
+                        value={attrValue}
+                        onChange={(event: RadioChangeEvent): void => {
+                            const attr: Record<number, string> = {};
+                            attr[attribute.id] = event.target.value;
+                            objectState.attributes = attr;
+                            onUpdate(objectState);
+                        }}
+                    >
                         { attribute.values.map((value: string): JSX.Element => (
                             <Radio key={value} value={value}>{value}</Radio>
                         )) }
@@ -207,7 +380,16 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
                     </Text>
                 </Col>
                 <Col span={24}>
-                    <Select value={attrValue} className='cvat-object-item-select-attribute'>
+                    <Select
+                        onChange={(value: string): void => {
+                            const attr: Record<number, string> = {};
+                            attr[attribute.id] = value;
+                            objectState.attributes = attr;
+                            onUpdate(objectState);
+                        }}
+                        value={attrValue}
+                        className='cvat-object-item-select-attribute'
+                    >
                         { attribute.values.map((value: string): JSX.Element => (
                             <Select.Option key={value} value={value}>{value}</Select.Option>
                         )) }
@@ -229,6 +411,14 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
                 </Col>
                 <Col span={24}>
                     <InputNumber
+                        onChange={(value: number | undefined): void => {
+                            if (typeof (value) !== 'undefined') {
+                                const attr: Record<number, string> = {};
+                                attr[attribute.id] = `${value}`;
+                                objectState.attributes = attr;
+                                onUpdate(objectState);
+                            }
+                        }}
                         value={+attrValue}
                         className='cvat-object-item-number-attribute'
                         min={+min}
@@ -248,7 +438,16 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
                 </Text>
             </Col>
             <Col span={24}>
-                <Input value={attrValue} className='cvat-object-item-text-attribute' />
+                <Input
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
+                        const attr: Record<number, string> = {};
+                        attr[attribute.id] = event.target.value;
+                        objectState.attributes = attr;
+                        onUpdate(objectState);
+                    }}
+                    value={attrValue}
+                    className='cvat-object-item-text-attribute'
+                />
             </Col>
         </>
     );
@@ -261,6 +460,8 @@ interface ItemAttributesProps {
     collapsed: boolean;
     clientID: number;
     onCollapse(clientID: number, key: string | string[]): void;
+    objectState: any;
+    onUpdate(state: any): void;
 }
 
 const ItemAttributes = React.memo((props: ItemAttributesProps): JSX.Element => {
@@ -270,6 +471,8 @@ const ItemAttributes = React.memo((props: ItemAttributesProps): JSX.Element => {
         collapsed,
         clientID,
         onCollapse,
+        objectState,
+        onUpdate,
     } = props;
 
     const sorted = [...labelAttributes]
@@ -297,6 +500,8 @@ const ItemAttributes = React.memo((props: ItemAttributesProps): JSX.Element => {
                             <ItemAttribute
                                 attribute={attribute}
                                 attrValue={attributes[attribute.id]}
+                                objectState={objectState}
+                                onUpdate={onUpdate}
                             />
                         </Row>
                     ))}
@@ -320,6 +525,7 @@ export default function ObjectItem(props: Props): JSX.Element {
         labels,
         collapsed,
         onCollapse,
+        onUpdate,
     } = props;
 
     const {
@@ -328,11 +534,6 @@ export default function ObjectItem(props: Props): JSX.Element {
         objectType,
         shapeType,
         attributes,
-        occluded,
-        outside,
-        lock,
-        visible,
-        keyframe,
     } = objectState;
 
     const type = objectType === ObjectType.TAG ? ObjectType.TAG.toUpperCase()
@@ -343,16 +544,19 @@ export default function ObjectItem(props: Props): JSX.Element {
             className='cvat-objects-sidebar-state-item'
             style={{ borderLeftStyle: 'solid', borderColor: ` ${objectState.color}` }}
         >
-            <ItemTop type={type} labels={labels} clientID={clientID} label={label} />
-            <ItemButtons
-                objectType={objectType}
-                occluded={occluded}
-                outside={outside}
-                locked={lock}
-                hidden={!visible}
-                keyframe={keyframe}
+            <ItemTop
+                type={type}
+                labels={labels}
+                clientID={clientID}
+                label={label}
+                state={objectState}
+                onUpdate={onUpdate}
             />
-            { label.attributes.length
+            <ItemButtons
+                objectState={objectState}
+                onUpdate={onUpdate}
+            />
+            { !!label.attributes.length
                 && (
                     <ItemAttributes
                         collapsed={collapsed}
@@ -360,6 +564,8 @@ export default function ObjectItem(props: Props): JSX.Element {
                         attributes={attributes}
                         labelAttributes={label.attributes}
                         onCollapse={onCollapse}
+                        objectState={objectState}
+                        onUpdate={onUpdate}
                     />
                 )
             }

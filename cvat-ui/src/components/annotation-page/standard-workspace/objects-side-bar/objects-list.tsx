@@ -1,72 +1,7 @@
 import React from 'react';
 
-import {
-    Row,
-    Col,
-    Icon,
-    Input,
-    Select,
-} from 'antd';
-
-import Text from 'antd/lib/typography/Text';
-
+import Header from './objects-list-header';
 import ObjectItem from './object-item';
-
-interface HeaderProps {
-    statesHidden: boolean;
-    statesLocked: boolean;
-    statesExpanded: boolean;
-    onStatesCollapse(value: boolean): void;
-}
-
-const Header = React.memo((props: HeaderProps): JSX.Element => {
-    const {
-        statesHidden,
-        statesLocked,
-        statesExpanded,
-        onStatesCollapse,
-    } = props;
-
-    return (
-        <div className='cvat-objects-sidebar-states-header'>
-            <Row>
-                <Col>
-                    <Input
-                        placeholder='Filter e.g. car[attr/model="mazda"]'
-                        prefix={<Icon type='filter' />}
-                    />
-                </Col>
-            </Row>
-            <Row type='flex' justify='space-between' align='middle'>
-                <Col span={2}>
-                    { statesLocked
-                        ? <Icon type='lock' />
-                        : <Icon type='unlock' />
-                    }
-                </Col>
-                <Col span={2}>
-                    { statesHidden
-                        ? <Icon type='eye-invisible' />
-                        : <Icon type='eye' />
-                    }
-                </Col>
-                <Col span={2}>
-                    { statesExpanded
-                        ? <Icon type='caret-up' onClick={(): void => onStatesCollapse(true)} />
-                        : <Icon type='caret-down' onClick={(): void => onStatesCollapse(false)} />
-                    }
-                </Col>
-                <Col span={16}>
-                    <Text strong>Sort by</Text>
-                    <Select defaultValue='id'>
-                        <Select.Option key='id'> ID </Select.Option>
-                        <Select.Option key='updated'> Updated </Select.Option>
-                    </Select>
-                </Col>
-            </Row>
-        </div>
-    );
-});
 
 interface Props {
     annotations: any[];
@@ -86,6 +21,36 @@ export default class ObjectsList extends React.PureComponent<Props, State> {
             itemCollapseStatuses: {},
         };
     }
+
+    private onStatesHide = async (value: boolean): Promise<void> => {
+        const {
+            annotations,
+            onAnnotationsUpdated,
+        } = this.props;
+        const promises = [];
+        for (const state of annotations) {
+            state.visible = !value;
+            promises.push(state.save());
+        }
+
+        const updatedAnnotations = await Promise.all(promises);
+        onAnnotationsUpdated(updatedAnnotations);
+    };
+
+    private onStatesLock = async (value: boolean): Promise<void> => {
+        const {
+            annotations,
+            onAnnotationsUpdated,
+        } = this.props;
+        const promises = [];
+        for (const state of annotations) {
+            state.lock = value;
+            promises.push(state.save());
+        }
+
+        const updatedAnnotations = await Promise.all(promises);
+        onAnnotationsUpdated(updatedAnnotations);
+    };
 
     private onStatesCollapse = (value: boolean): void => {
         const { itemCollapseStatuses } = this.state;
@@ -164,8 +129,8 @@ export default class ObjectsList extends React.PureComponent<Props, State> {
 
         const { itemCollapseStatuses } = this.state;
 
-        const statesHidden = annotations
-            .reduce((acc: boolean, state: any) => acc && !state.visible, true);
+        const statesVisible = annotations
+            .reduce((acc: boolean, state: any) => acc && state.visible, true);
         const statesLocked = annotations
             .reduce((acc: boolean, state: any) => acc && state.lock, true);
         const statesExpanded = Object.keys(itemCollapseStatuses)
@@ -174,10 +139,12 @@ export default class ObjectsList extends React.PureComponent<Props, State> {
         return (
             <div style={{ height: listHeight }}>
                 <Header
-                    statesHidden={statesHidden}
+                    statesVisible={statesVisible}
                     statesLocked={statesLocked}
                     statesExpanded={statesExpanded}
+                    onStatesLock={this.onStatesLock}
                     onStatesCollapse={this.onStatesCollapse}
+                    onStatesHide={this.onStatesHide}
                 />
                 <div className='cvat-objects-sidebar-states-list'>
                     { annotations.map((objectState: any): JSX.Element => (

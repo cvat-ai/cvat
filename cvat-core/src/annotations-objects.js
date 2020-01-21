@@ -126,6 +126,10 @@
             return ['true', 'false'].includes(value.toLowerCase());
         }
 
+        if (type === AttributeType.TEXT) {
+            return true;
+        }
+
         return values.includes(value);
     }
 
@@ -325,9 +329,14 @@
 
                 for (const attrID of Object.keys(data.attributes)) {
                     const value = data.attributes[attrID];
-                    if (attrID in labelAttributes
-                        && validateAttributeValue(value, labelAttributes[attrID])) {
-                        copy.attributes[attrID] = value;
+                    if (attrID in labelAttributes) {
+                        if (validateAttributeValue(value, labelAttributes[attrID])) {
+                            copy.attributes[attrID] = value;
+                        } else {
+                            throw new ArgumentError(
+                                `Trying to save an attribute attribute with id ${attrID} and invalid value ${value}`,
+                            );
+                        }
                     } else {
                         throw new ArgumentError(
                             `Trying to save unknown attribute with id ${attrID} and value ${value}`,
@@ -594,9 +603,14 @@
             if (updated.attributes) {
                 for (const attrID of Object.keys(data.attributes)) {
                     const value = data.attributes[attrID];
-                    if (attrID in labelAttributes
-                        && validateAttributeValue(value, labelAttributes[attrID])) {
-                        copy.attributes[attrID] = value;
+                    if (attrID in labelAttributes) {
+                        if (validateAttributeValue(value, labelAttributes[attrID])) {
+                            copy.attributes[attrID] = value;
+                        } else {
+                            throw new ArgumentError(
+                                `Trying to save an attribute attribute with id ${attrID} and invalid value ${value}`,
+                            );
+                        }
                     } else {
                         throw new ArgumentError(
                             `Trying to save unknown attribute with id ${attrID} and value ${value}`,
@@ -708,7 +722,7 @@
             // Remove keyframe
             if (updated.keyframe && !data.keyframe) {
                 // Remove all cache after this keyframe because it have just become outdated
-                const [, rightFrame] = this.neighborsFrames(frame);
+                const { rightFrame } = this.neighborsFrames(frame);
                 for (const cacheFrame in this.cache) {
                     if (+cacheFrame > frame && +cacheFrame < rightFrame) {
                         delete this.cache[cacheFrame];

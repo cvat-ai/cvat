@@ -31,7 +31,6 @@ import SVGForwardJumpIcon from './assets/forward-jump-icon.svg';
 import SVGLastIcon from './assets/last-icon.svg';
 import SVGInfoIcon from './assets/info-icon.svg';
 import SVGFullscreenIcon from './assets/fullscreen-icon.svg';
-import SVGExpandObjectsIcon from './assets/expand-all-objects-icon.svg';
 import SVGObjectOutsideIcon from './assets/object-outside-icon.svg';
 import SVGObjectInsideIcon from './assets/object-inside-icon.svg';
 
@@ -127,9 +126,6 @@ export const InfoIcon = React.memo(
 );
 export const FullscreenIcon = React.memo(
     (): JSX.Element => <SVGFullscreenIcon />,
-);
-export const ExpandObjectsIcon = React.memo(
-    (): JSX.Element => <SVGExpandObjectsIcon />,
 );
 export const ObjectOutsideIcon = React.memo(
     (): JSX.Element => <SVGObjectOutsideIcon />,

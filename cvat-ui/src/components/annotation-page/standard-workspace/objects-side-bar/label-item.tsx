@@ -59,8 +59,8 @@ function PopoverContent(props: PopoverContentProps): JSX.Element {
 
 interface Props {
     label: any;
-    hidden: boolean;
-    locked: boolean;
+    statesVisible: boolean;
+    statesLocked: boolean;
     colors: string[];
 
     onChangeLabelColor(label: any, color: string): void;
@@ -69,8 +69,8 @@ interface Props {
 export default function LabelItem(props: Props): JSX.Element {
     const {
         label,
-        locked,
-        hidden,
+        statesVisible,
+        statesLocked,
         colors,
         onChangeLabelColor,
     } = props;
@@ -102,18 +102,17 @@ export default function LabelItem(props: Props): JSX.Element {
                 <Text strong className='cvat-text'>{label.name}</Text>
             </Col>
             <Col span={3}>
-                { locked
+                { statesLocked
                     ? <Icon type='lock' />
                     : <Icon type='unlock' />
                 }
             </Col>
             <Col span={3}>
-                { hidden
-                    ? <Icon type='eye-invisible' />
-                    : <Icon type='eye' />
+                { statesVisible
+                    ? <Icon type='eye' />
+                    : <Icon type='eye-invisible' />
                 }
             </Col>
         </Row>
-
     );
 }
