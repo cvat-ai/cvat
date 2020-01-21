@@ -29,6 +29,7 @@ from datumaro.components.extractors.voc import (
 from datumaro.components.extractors.yolo import YoloExtractor
 from datumaro.components.extractors.tfrecord import DetectionApiExtractor
 from datumaro.components.extractors.cvat import CvatExtractor
+from datumaro.components.extractors.images_dir import ImagesDirExtractor
 
 items = [
     ('datumaro', DatumaroExtractor),
@@ -56,4 +57,6 @@ items = [
     ('tf_detection_api', DetectionApiExtractor),
 
     ('cvat', CvatExtractor),
+
+    ('images_dir', ImagesDirExtractor),
 ]

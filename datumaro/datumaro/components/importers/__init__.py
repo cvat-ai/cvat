@@ -14,6 +14,7 @@ from datumaro.components.importers.voc import (
 from datumaro.components.importers.tfrecord import DetectionApiImporter
 from datumaro.components.importers.yolo import YoloImporter
 from datumaro.components.importers.cvat import CvatImporter
+from datumaro.components.importers.images_dir import ImagesDirImporter
 
 
 items = [
@@ -29,4 +30,6 @@ items = [
     ('tf_detection_api', DetectionApiImporter),
 
     ('cvat', CvatImporter),
+
+    ('images_dir', ImagesDirImporter),
 ]

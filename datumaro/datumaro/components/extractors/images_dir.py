@@ -11,20 +11,21 @@ from datumaro.components.extractor import DatasetItem, Extractor
 from datumaro.util.image import lazy_image
 
 
-class CvatImagesDirExtractor(Extractor):
+class ImagesDirExtractor(Extractor):
     _SUPPORTED_FORMATS = ['.png', '.jpg']
 
     def __init__(self, url):
         super().__init__()
 
+        assert osp.isdir(url)
+
         items = []
-        for (dirpath, _, filenames) in os.walk(url):
-            for name in filenames:
-                path = osp.join(dirpath, name)
-                if self._is_image(path):
-                    item_id = osp.splitext(name)[0]
-                    item = DatasetItem(id=item_id, image=lazy_image(path))
-                    items.append((item.id, item))
+        for name in os.listdir(url):
+            path = osp.join(url, name)
+            if self._is_image(path):
+                item_id = osp.splitext(name)[0]
+                item = DatasetItem(id=item_id, image=lazy_image(path))
+                items.append((item.id, item))
 
         items = sorted(items, key=lambda e: e[0])
         items = OrderedDict(items)
