@@ -25,7 +25,7 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
     parser.add_argument('-t', '--target', default=None,
         help="Inference target - image, source, project "
              "(default: current dir)")
-    parser.add_argument('-d', '--save-dir', default=None,
+    parser.add_argument('-o', '--output-dir', dest='save_dir', default=None,
         help="Directory to save output (default: display only)")
 
     method_sp = parser.add_subparsers(dest='algorithm')

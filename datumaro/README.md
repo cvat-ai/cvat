@@ -54,40 +54,46 @@ VOC-like dataset  --                              ---> Publication etc.
 
 - Convert PASCAL VOC to COCO, keep only images with 'cat' class presented:
   ```bash
-  datum project import -f voc -s <path/to/voc>
-  datum project export -f coco -e '/item[annotation/label="cat"]'
+  datum project import --format voc --input-path <path/to/voc>
+  datum project export --format coco --filter '/item[annotation/label="cat"]'
   ```
 
 - Convert only non-occluded annotations from a CVAT-annotated project to TFrecord:
   ```bash
   # export Datumaro dataset in CVAT UI, extract somewhere, go to the project dir
-  datum project extract -a -e '/item/annotation[occluded="False"]' --remove-empty
-  datum project export -f tf_detection_api -- --save-images
+  datum project extract --filter '/item/annotation[occluded="False"]' \
+    --mode items+anno --output-dir not_occluded
+  datum project export --project not_occluded \
+    --format tf_detection_api -- --save-images
   ```
 
 - Annotate COCO, extract image subset, re-annotate it in CVAT, update old dataset:
   ```bash
-  datum project import -f coco -s <path/to/coco>
-  datum project export -e '/image[some_condition]' -f cvat -d reannotation
+  datum project import --format coco --input-path <path/to/coco>
+  datum project export --filter '/image[images_I_dont_like]' --format cvat \
+    --output-dir reannotation
   # import dataset and images to CVAT, re-annotate
   # export Datumaro project, extract to 'reannotation-upd'
   datum project project merge reannotation-upd
-  datum project export -f coco
+  datum project export --format coco
   ```
 
 - Apply an OpenVINO detection model to some COCO-like dataset,
   then compare annotations with ground truth and visualize in TensorBoard:
   ```bash
-  datum project import -f coco -s <path/to/coco>
+  datum project import --format coco --input-path <path/to/coco>
   # create model results interpretation script
-  datum model add mymodel openvino -w model.bin -d model.xml -i parse_results.py
-  datum model run -m mymodel -d mymodel-inference/
-  datum project diff mymodel-inference/ -f tensorboard -d diff
+  datum model add mymodel openvino \
+    --weights model.bin --description model.xml \
+    --interpretation-script parse_results.py
+  datum model run --model mymodel --output-dir mymodel_inference/
+  datum project diff mymodel_inference/ --format tensorboard --output-dir diff
   ```
 
 ## Documentation
 
-- [Quick start guide](docs/quickstart.md)
+- [User manual](docs/user_manual.md)
+- [Design document](docs/design.md)
 
 ## Installation
 
@@ -146,11 +152,17 @@ To install into a virtual environment do:
 python -m pip install virtualenv
 python -m virtualenv venv
 . venv/bin/activate
-pip install -r requirements.txt
+while read -r p; do pip install $p; done < requirements.txt
 ```
 
 ### Testing
 
 ``` bash
 python -m unittest discover -s tests
+```
+
+If you're working inside CVAT environment, you can also use:
+
+``` bash
+python manage.py test datumaro/
 ```

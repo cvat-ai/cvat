@@ -117,7 +117,7 @@ def remove_command(args):
 def build_run_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor()
 
-    parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
+    parser.add_argument('-o', '--output-dir', dest='dst_dir', required=True,
         help="Directory to save output")
     parser.add_argument('-m', '--model', dest='model_name', required=True,
         help="Model to apply to the project")

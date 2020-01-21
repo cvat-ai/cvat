@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
+from enum import Enum
 import logging as log
 import os
 import os.path as osp
@@ -20,9 +21,19 @@ from ...util.project import make_project_path, load_project, \
 
 def build_create_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Create empty project",
-        description="Create a new empty project.")
+        description="""
+            Create a new empty project.|n
+            |n
+            Examples:|n
+            - Create a project in the current directory:|n
+            |s|screate -n myproject|n
+            |n
+            - Create a project in other directory:|n
+            |s|screate -o path/I/like/
+        """,
+        formatter_class=MultilineFormatter)
 
-    parser.add_argument('-d', '--dest', default='.', dest='dst_dir',
+    parser.add_argument('-o', '--output-dir', default='.', dest='dst_dir',
         help="Save directory for the new project (default: current dir")
     parser.add_argument('-n', '--name', default=None,
         help="Name of the new project (default: same as project dir)")
@@ -92,11 +103,18 @@ def build_import_parser(parser_ctor=argparse.ArgumentParser):
             <project_dir>/.datumaro/extractors
             and <project_dir>/.datumaro/importers.|n
             |n
-            List of supported dataset formats: %s
+            List of supported dataset formats: %s|n
+            |n
+            Examples:|n
+            - Create a project from VOC dataset in the current directory:|n
+            |s|simport -f voc -i path/to/voc|n
+            |n
+            - Create a project from COCO dataset in other directory:|n
+            |s|simport -f coco -i path/to/coco -o path/I/like/
         """ % ', '.join(builtin_importers),
         formatter_class=MultilineFormatter)
 
-    parser.add_argument('-d', '--dest', default='.', dest='dst_dir',
+    parser.add_argument('-o', '--output-dir', default='.', dest='dst_dir',
         help="Directory to save the new project to (default: current dir)")
     parser.add_argument('-n', '--name', default=None,
         help="Name of the new project (default: same as project dir)")
@@ -106,8 +124,8 @@ def build_import_parser(parser_ctor=argparse.ArgumentParser):
         help="Skip source checking")
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
-    parser.add_argument('-s', '--source', required=True,
-        help="Path to import a project from")
+    parser.add_argument('-i', '--input-path', required=True, dest='source',
+        help="Path to import project from")
     parser.add_argument('-f', '--format', required=True,
         help="Source project format")
     # parser.add_argument('extra_args', nargs=argparse.REMAINDER,
@@ -157,6 +175,44 @@ def import_command(args):
 
     return 0
 
+
+class FilterModes(Enum):
+    # primary
+    items = 1
+    annotations = 2
+    items_annotations = 3
+
+    # shortcuts
+    i = 1
+    a = 2
+    i_a = 3
+
+    @staticmethod
+    def parse(s):
+        s = s.lower()
+        s = s.replace('+', '_')
+        return FilterModes[s]
+
+    @classmethod
+    def make_filter_args(cls, mode):
+        if mode == cls.items:
+            return {}
+        elif mode == cls.annotations:
+            return {
+                'filter_annotations': True
+            }
+        elif mode == cls.items_annotations:
+            return {
+                'filter_annotations': True,
+                'remove_empty': True,
+            }
+        else:
+            raise NotImplementedError()
+
+    @classmethod
+    def list_options(cls):
+        return [m.name.replace('_', '+') for m in cls]
+
 def build_export_parser(parser_ctor=argparse.ArgumentParser):
     import datumaro.components.converters as converters_module
     builtin_converters = [name for name, cls in converters_module.items]
@@ -164,32 +220,40 @@ def build_export_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Export project",
         description="""
             Exports the project dataset in some format. Optionally, a filter
-            can be passed.|n
+            can be passed, check 'extract' command description for
+            explanations on this.|n
             |n
             Formats:|n
             In Datumaro dataset formats are supported by Converter-s.
             A Converter produces a dataset of a specific format
             from dataset items. It is possible to add a custom Converter.
-            To do this, you need to put an Converter
+            To do this, you need to put a Converter
             definition script to <project_dir>/.datumaro/converters.|n
             |n
-            List of supported dataset formats: %s
+            List of supported dataset formats: %s|n
+            |n
+            Examples:|n
+            - Export project as a VOC-like dataset:|n
+            |s|sexport -f voc|n
+            |n
+            - Export project as a COCO-like dataset in other directory:|n
+            |s|sexport -f coco -o path/I/like/
         """ % ', '.join(builtin_converters),
         formatter_class=MultilineFormatter)
 
     parser.add_argument('-e', '--filter', default=None,
-        help="Filter expression for dataset items "
-            "(check 'extract' command description)")
-    parser.add_argument('-a', '--filter-annotations', action='store_true',
-        help="Filter annotations instead of dataset "
-            "items (default: %(default)s)")
-    parser.add_argument('-d', '--dest', dest='dst_dir', default=None,
+        help="Filter expression for dataset items")
+    parser.add_argument('--filter-mode', default=FilterModes.i.name,
+        type=FilterModes.parse,
+        help="Filter mode (options: %s; default: %s)" % \
+            (', '.join(FilterModes.list_options()) , '%(default)s'))
+    parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Directory to save output (default: a subdir in the current one)")
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
-    parser.add_argument('-f', '--output-format', required=True,
+    parser.add_argument('-f', '--format', required=True,
         help="Output format")
     parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
         help="Additional arguments for converter (pass '-- -h' for help)")
@@ -207,15 +271,17 @@ def export_command(args):
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
         dst_dir = generate_next_dir_name('%s-export-%s' % \
-            (project.config.project_name, args.output_format))
+            (project.config.project_name, args.format))
     dst_dir = osp.abspath(dst_dir)
 
     try:
-        converter = project.env.make_converter(args.output_format,
+        converter = project.env.make_converter(args.format,
             cmdline_args=args.extra_args)
     except KeyError:
         raise CliException("Converter for format '%s' is not found" % \
-            args.output_format)
+            args.format)
+
+    filter_args = FilterModes.make_filter_args(args.filter_mode)
 
     log.info("Loading the project...")
     dataset = project.make_dataset()
@@ -225,9 +291,9 @@ def export_command(args):
         save_dir=dst_dir,
         converter=converter,
         filter_expr=args.filter,
-        filter_annotations=args.filter_annotations)
+        **filter_args)
     log.info("Project exported to '%s' as '%s'" % \
-        (dst_dir, args.output_format))
+        (dst_dir, args.format))
 
     return 0
 
@@ -239,34 +305,37 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
             representation of a dataset item. Check '--dry-run' parameter
             to see XML representations of the dataset items.|n
             |n
-            When filtering mode is annotations ('-a'), use '--remove-empty'
-            parameter to specify if annotation-less dataset items should be
-            kept or removed. To select an annotation,
-            write an XPath that returns 'annotation' elements (see examples).|n
+            To filter annotations use '-m' parameter.
+            When filtering annotations, use 'items+annotations'
+            mode to point that annotation-less dataset items should be
+            removed. To select an annotation, write an XPath that
+            returns 'annotation' elements (see examples).|n
             |n
             Examples:|n
-            - extract images with width < height:|n
-            |s|s|s|sextract -e '/item[image/width < image/height]'|n
+            - Filter images with width < height:|n
+            |s|sextract -e '/item[image/width < image/height]'|n
             |n
-            - extract images with large-area bboxes:|n
-            |s|s|s|sextract -e '/item[annotation/type=\"bbox\" and
+            - Filter images with large-area bboxes:|n
+            |s|sextract -e '/item[annotation/type=\"bbox\" and
                 annotation/area>2000]'|n
             |n
-            - filter out all irrelevant annotations from items:|n
-            |s|s|s|sextract -a -e '/item/annotation[label = \"person\"]'
+            - Filter out all irrelevant annotations from items:|n
+            |s|sextract -m a -e '/item/annotation[label = \"person\"]'|n
+            |n
+            - Filter occluded annotations and items, if no annotations left:|n
+            |s|sextract -m i+a -e '/item/annotation[occluded="True"]'
         """,
         formatter_class=MultilineFormatter)
 
     parser.add_argument('-e', '--filter', default=None,
         help="XML XPath filter expression for dataset items")
-    parser.add_argument('-a', '--filter-annotations', action='store_true',
-        help="Filter annotations instead of dataset "
-            "items (default: %(default)s)")
-    parser.add_argument('--remove-empty', action='store_true',
-        help="Remove an item if there are no annotations left after filtration")
+    parser.add_argument('-m', '--mode', default=FilterModes.i.name,
+        type=FilterModes.parse,
+        help="Filter mode (options: %s; default: %s)" % \
+            (', '.join(FilterModes.list_options()) , '%(default)s'))
     parser.add_argument('--dry-run', action='store_true',
         help="Print XML representations to be filtered and exit")
-    parser.add_argument('-d', '--dest', dest='dst_dir', default=None,
+    parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Output directory (default: update current project)")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
@@ -284,9 +353,7 @@ def extract_command(args):
 
     dataset = project.make_dataset()
 
-    kwargs = {}
-    if args.filter_annotations:
-        kwargs['remove_empty'] = args.remove_empty
+    filter_args = FilterModes.make_filter_args(args.filter_mode)
 
     if args.dry_run:
         dataset = dataset.extract(filter_expr=args.filter,
@@ -302,7 +369,7 @@ def extract_command(args):
 
     os.makedirs(dst_dir, exist_ok=False)
     dataset.extract_project(save_dir=dst_dir, filter_expr=args.filter,
-        filter_annotations=args.filter_annotations, **kwargs)
+        **filter_args)
 
     log.info("Subproject has been extracted to '%s'" % dst_dir)
 
@@ -312,13 +379,17 @@ def build_merge_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Merge projects",
         description="""
             Updates items of the current project with items
-            from the other project.
+            from the other project.|n
+            |n
+            Examples:|n
+            - Update a project with items from other project:|n
+            |s|smerge -p path/to/first/project path/to/other/project
         """,
         formatter_class=MultilineFormatter)
 
     parser.add_argument('other_project_dir',
         help="Directory of the project to get data updates from")
-    parser.add_argument('-d', '--dest', dest='dst_dir', default=None,
+    parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Output directory (default: current project's dir)")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
@@ -345,13 +416,21 @@ def merge_command(args):
 
 def build_diff_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Compare projects",
-        description="Compares two projects.")
+        description="""
+        Compares two projects.|n
+        |n
+        Examples:|n
+        - Compare two projects, consider bboxes matching if their IoU > 0.7,|n
+        |s|s|s|sprint results to Tensorboard:
+        |s|sdiff path/to/other/project -o diff/ -f tensorboard --iou-thresh 0.7
+        """,
+        formatter_class=MultilineFormatter)
 
     parser.add_argument('other_project_dir',
         help="Directory of the second project to be compared")
-    parser.add_argument('-d', '--dest', default=None, dest='dst_dir',
+    parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Directory to save comparison results (default: do not save)")
-    parser.add_argument('-f', '--output-format',
+    parser.add_argument('-f', '--format',
         default=DiffVisualizer.DEFAULT_FORMAT,
         choices=[f.name for f in DiffVisualizer.Format],
         help="Output format (default: %(default)s)")
@@ -384,7 +463,7 @@ def diff_command(args):
         log.info("Saving diff to '%s'" % save_dir)
 
     visualizer = DiffVisualizer(save_dir=save_dir, comparator=comparator,
-        output_format=args.output_format)
+        output_format=args.format)
     visualizer.save_dataset_diff(
         first_project.make_dataset(),
         second_project.make_dataset())
@@ -401,7 +480,7 @@ def build_transform_parser(parser_ctor=argparse.ArgumentParser):
 
     parser.add_argument('-t', '--transform', required=True,
         help="Transform to apply to the project")
-    parser.add_argument('-d', '--dest', dest='dst_dir', default=None,
+    parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Directory to save output (default: current dir)")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")

@@ -144,13 +144,15 @@ can be downloaded by user to be operated on with Datumaro CLI.
 
 ### Features
 
-- Dataset format support (reading, exporting)
+- Dataset format support (reading, writing)
   - [x] Own format
+  - [x] CVAT
   - [x] COCO
   - [x] PASCAL VOC
+  - [x] YOLO
+  - [x] TF Detection API
   - [ ] Cityscapes
   - [ ] ImageNet
-  - [ ] CVAT
 
 - Dataset visualization (`show`)
   - [ ] Ability to visualize a dataset

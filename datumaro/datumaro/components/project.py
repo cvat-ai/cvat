@@ -105,15 +105,17 @@ class GitWrapper:
     def _git_dir(base_path):
         return osp.join(base_path, '.git')
 
-    def init(self, path):
-        spawn = not osp.isdir(GitWrapper._git_dir(path))
-        self.repo = git.Repo.init(path=path)
+    @classmethod
+    def spawn(cls, path):
+        spawn = not osp.isdir(cls._git_dir(path))
+        repo = git.Repo.init(path=path)
         if spawn:
             author = git.Actor("Nobody", "nobody@example.com")
-            self.repo.index.commit('Initial commit', author=author)
-        return self.repo
+            repo.index.commit('Initial commit', author=author)
+        return repo
 
-    def get_repo(self):
+    def init(self, path):
+        self.repo = self.spawn(path)
         return self.repo
 
     def is_initialized(self):
@@ -652,14 +654,16 @@ class ProjectDataset(Dataset):
         self.transform_project(InferenceWrapper, launcher, save_dir=save_dir)
 
     def export_project(self, save_dir, converter,
-            filter_expr=None, filter_annotations=False):
+            filter_expr=None, filter_annotations=False, remove_empty=False):
         # NOTE: probably this function should be in the ViewModel layer
         save_dir = osp.abspath(save_dir)
         os.makedirs(save_dir, exist_ok=True)
 
         dataset = self
         if filter_expr:
-            dataset = dataset.extract(filter_expr, filter_annotations)
+            dataset = dataset.extract(filter_expr,
+                filter_annotations=filter_annotations,
+                remove_empty=remove_empty)
 
         converter(dataset, save_dir)
 

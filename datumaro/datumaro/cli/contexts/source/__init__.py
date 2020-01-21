@@ -13,55 +13,20 @@ from ...util import add_subparser, CliException, MultilineFormatter
 from ...util.project import load_project
 
 
-def build_create_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor(help="Add new source to project",
-        description="Create an empty data source in a project.")
-
-    parser.add_argument('-n', '--name', required=True,
-        help="Name of the source to be created")
-    parser.add_argument('-p', '--project', dest='project_dir', default='.',
-        help="Directory of the project to operate on (default: current dir)")
-    parser.set_defaults(command=create_command)
-
-    return parser
-
-def create_command(args):
-    project = load_project(args.project_dir)
-
-    name = args.name
-
-    if project.env.git.has_submodule(name):
-        raise CliException("Submodule '%s' already exists" % name)
-
-    try:
-        project.get_source(name)
-        raise CliException("Source '%s' already exists" % name)
-    except KeyError:
-        pass
-
-    dst_dir = project.local_source_dir(name)
-    project.env.git.init(dst_dir)
-
-    project.add_source(name, { 'url': name })
-    project.save()
-
-    log.info("Source '%s' has been added to the project, location: '%s'" \
-        % (name, dst_dir))
-
-    return 0
-
-def build_import_parser(parser_ctor=argparse.ArgumentParser):
+def build_add_parser(parser_ctor=argparse.ArgumentParser):
     import datumaro.components.extractors as extractors_module
     extractors_list = [name for name, cls in extractors_module.items]
 
-    parser = parser_ctor(help="Add existing source to project",
+    parser = parser_ctor(help="Add data source to project",
         description="""
-            Adds an existing data source to a project. The source can be:|n
+            Adds a data source to a project. The source can be:|n
             - a dataset in a supported format (check 'formats' section below)|n
             - a Datumaro project|n
             |n
             The source can be either a local directory or a remote
-            git repository.|n
+            git repository. Each source type has its own parameters, which can
+            be checked by:|n
+            '%s'.|n
             |n
             Formats:|n
             Datasets come in a wide variety of formats. Each dataset
@@ -78,25 +43,27 @@ def build_import_parser(parser_ctor=argparse.ArgumentParser):
             To do this, you need to put an Extractor
             definition script to <project_dir>/.datumaro/extractors.|n
             |n
-            List of supported dataset formats: %s
-        """ % ', '.join(extractors_list),
+            List of supported source formats: %s
+        """ % ('%(prog)s SOURCE_TYPE --help', ', '.join(extractors_list)),
         formatter_class=MultilineFormatter)
 
-    sp = parser.add_subparsers(dest='source_type')
+    sp = parser.add_subparsers(dest='source_type', metavar='SOURCE_TYPE',
+        help="The type of the data source "
+            "(call '%s SOURCE_TYPE --help' for more info)" % parser.prog)
 
-    repo_parser = sp.add_parser('repo')
+    dir_parser = sp.add_parser('path', help="Add local path as source")
+    dir_parser.add_argument('url',
+        help="Path to the source")
+    dir_parser.add_argument('--copy', action='store_true',
+        help="Copy the dataset instead of saving source links")
+
+    repo_parser = sp.add_parser('git', help="Add git repository as source")
     repo_parser.add_argument('url',
         help="URL of the source git repository")
     repo_parser.add_argument('-b', '--branch', default='master',
         help="Branch of the source repository (default: %(default)s)")
     repo_parser.add_argument('--checkout', action='store_true',
         help="Do branch checkout")
-
-    dir_parser = sp.add_parser('dir')
-    dir_parser.add_argument('url',
-        help="Path to the source directory")
-    dir_parser.add_argument('--copy', action='store_true',
-        help="Copy the dataset instead of saving source links")
 
     parser.add_argument('-n', '--name', default=None,
         help="Name of the new source")
@@ -106,20 +73,22 @@ def build_import_parser(parser_ctor=argparse.ArgumentParser):
         help="Skip source checking")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
-    parser.set_defaults(command=import_command)
+    parser.set_defaults(command=add_command)
+
+    # TODO: needed distinction on how to add an extractor or a remote source
 
     return parser
 
-def import_command(args):
+def add_command(args):
     project = load_project(args.project_dir)
 
-    if args.source_type == 'repo':
+    if args.source_type == 'git':
         name = args.name
         if name is None:
             name = osp.splitext(osp.basename(args.url))[0]
 
         if project.env.git.has_submodule(name):
-            raise CliException("Submodule '%s' already exists" % name)
+            raise CliException("Git submodule '%s' already exists" % name)
 
         try:
             project.get_source(name)
@@ -127,11 +96,12 @@ def import_command(args):
         except KeyError:
             pass
 
-        dst_dir = project.local_source_dir(name)
+        rel_local_dir = project.local_source_dir(name)
+        local_dir = osp.join(project.config.project_dir, rel_local_dir)
         url = args.url
-        project.env.git.create_submodule(name, dst_dir,
+        project.env.git.create_submodule(name, local_dir,
             url=url, branch=args.branch, no_checkout=not args.checkout)
-    elif args.source_type == 'dir':
+    elif args.source_type == 'path':
         url = osp.abspath(args.url)
         if not osp.exists(url):
             raise CliException("Source path '%s' does not exist" % url)
@@ -140,18 +110,32 @@ def import_command(args):
         if name is None:
             name = osp.splitext(osp.basename(url))[0]
 
+        if project.env.git.has_submodule(name):
+            raise CliException("Git submodule '%s' already exists" % name)
+
         try:
             project.get_source(name)
             raise CliException("Source '%s' already exists" % name)
         except KeyError:
             pass
 
-        dst_dir = url
+        rel_local_dir = project.local_source_dir(name)
+        local_dir = osp.join(project.config.project_dir, rel_local_dir)
+
         if args.copy:
-            dst_dir = project.local_source_dir(name)
-            log.info("Copying from '%s' to '%s'" % (url, dst_dir))
-            shutil.copytree(url, dst_dir)
-            url = name
+            log.info("Copying from '%s' to '%s'" % (url, local_dir))
+            if osp.isdir(url):
+                # copytree requires destination dir not to exist
+                shutil.copytree(url, local_dir)
+                url = rel_local_dir
+            elif osp.isfile(url):
+                os.makedirs(local_dir)
+                shutil.copy2(url, local_dir)
+                url = osp.join(rel_local_dir, osp.basename(url))
+            else:
+                raise Exception("Expected file or directory")
+        else:
+            os.makedirs(local_dir)
 
     source = { 'url': url }
     if args.format:
@@ -165,7 +149,7 @@ def import_command(args):
     project.save()
 
     log.info("Source '%s' has been added to the project, location: '%s'" \
-        % (name, dst_dir))
+        % (name, rel_local_dir))
 
     return 0
 
@@ -219,8 +203,7 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
         formatter_class=MultilineFormatter)
 
     subparsers = parser.add_subparsers()
-    add_subparser(subparsers, 'create', build_create_parser)
-    add_subparser(subparsers, 'import', build_import_parser)
+    add_subparser(subparsers, 'add', build_add_parser)
     add_subparser(subparsers, 'remove', build_remove_parser)
 
     return parser
