@@ -37,7 +37,7 @@ interface ItemTopProps {
     onUpdate(state: any): void;
 }
 
-const ItemTop = React.memo((props: ItemTopProps): JSX.Element => {
+const ItemTop = (props: ItemTopProps): JSX.Element => {
     const {
         clientID,
         label,
@@ -75,14 +75,14 @@ const ItemTop = React.memo((props: ItemTopProps): JSX.Element => {
             </Col>
         </Row>
     );
-});
+};
 
 interface ItemButtonsProps {
     objectState: any;
     onUpdate(state: any): void;
 }
 
-const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
+const ItemButtons = (props: ItemButtonsProps): JSX.Element => {
     const {
         objectState,
         onUpdate,
@@ -307,7 +307,7 @@ const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
             </Col>
         </Row>
     );
-});
+};
 
 
 interface ItemAttributeProps {
@@ -317,7 +317,7 @@ interface ItemAttributeProps {
     onUpdate(objectState: any): void;
 }
 
-const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
+const ItemAttribute = (props: ItemAttributeProps): JSX.Element => {
     const {
         attribute,
         attrValue,
@@ -451,7 +451,7 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
             </Col>
         </>
     );
-});
+};
 
 
 interface ItemAttributesProps {
@@ -464,7 +464,7 @@ interface ItemAttributesProps {
     onUpdate(state: any): void;
 }
 
-const ItemAttributes = React.memo((props: ItemAttributesProps): JSX.Element => {
+const ItemAttributes = (props: ItemAttributesProps): JSX.Element => {
     const {
         labelAttributes,
         attributes,
@@ -509,7 +509,7 @@ const ItemAttributes = React.memo((props: ItemAttributesProps): JSX.Element => {
             </Collapse>
         </Row>
     );
-});
+};
 
 interface Props {
     objectState: any;

@@ -19,7 +19,7 @@ interface Props {
     onMergeStart(): void;
 }
 
-function MergeControl(props: Props): JSX.Element {
+export default function MergeControl(props: Props): JSX.Element {
     const {
         activeControl,
         canvasInstance,
@@ -46,5 +46,3 @@ function MergeControl(props: Props): JSX.Element {
         </Tooltip>
     );
 }
-
-export default React.memo(MergeControl);

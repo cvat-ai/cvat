@@ -19,7 +19,7 @@ interface Props {
     onGroupStart(): void;
 }
 
-function GroupControl(props: Props): JSX.Element {
+export default function GroupControl(props: Props): JSX.Element {
     const {
         activeControl,
         canvasInstance,
@@ -46,5 +46,3 @@ function GroupControl(props: Props): JSX.Element {
         </Tooltip>
     );
 }
-
-export default React.memo(GroupControl);

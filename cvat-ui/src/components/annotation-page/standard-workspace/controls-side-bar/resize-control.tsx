@@ -22,7 +22,7 @@ interface Props {
     activeControl: ActiveControl;
 }
 
-function ResizeControl(props: Props): JSX.Element {
+export default function ResizeControl(props: Props): JSX.Element {
     const {
         activeControl,
         canvasInstance,
@@ -47,5 +47,3 @@ function ResizeControl(props: Props): JSX.Element {
         </Tooltip>
     );
 }
-
-export default React.memo(ResizeControl);

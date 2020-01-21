@@ -41,7 +41,7 @@ interface Props {
     onSplitStart(): void;
 }
 
-function ControlsSideBarComponent(props: Props): JSX.Element {
+export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
         canvasInstance,
         activeControl,
@@ -98,11 +98,3 @@ function ControlsSideBarComponent(props: Props): JSX.Element {
         </Layout.Sider>
     );
 }
-
-export default React.memo(
-    ControlsSideBarComponent,
-    (prevProps: Props, curProps: Props): boolean => (
-        prevProps.rotateAll === curProps.rotateAll
-        && prevProps.activeControl === curProps.activeControl
-    ),
-);

@@ -18,7 +18,7 @@ interface Props {
     activeControl: ActiveControl;
 }
 
-function DrawPointsControl(props: Props): JSX.Element {
+export default function DrawPointsControl(props: Props): JSX.Element {
     const {
         canvasInstance,
         activeControl,
@@ -55,5 +55,3 @@ function DrawPointsControl(props: Props): JSX.Element {
         </Popover>
     );
 }
-
-export default React.memo(DrawPointsControl);

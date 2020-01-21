@@ -18,7 +18,7 @@ interface Props {
     activeControl: ActiveControl;
 }
 
-function DrawRectangleControl(props: Props): JSX.Element {
+export default function DrawRectangleControl(props: Props): JSX.Element {
     const {
         canvasInstance,
         activeControl,
@@ -55,5 +55,3 @@ function DrawRectangleControl(props: Props): JSX.Element {
         </Popover>
     );
 }
-
-export default React.memo(DrawRectangleControl);

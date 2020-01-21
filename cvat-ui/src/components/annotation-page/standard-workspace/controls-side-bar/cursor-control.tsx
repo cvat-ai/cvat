@@ -22,7 +22,7 @@ interface Props {
     activeControl: ActiveControl;
 }
 
-function CursorControl(props: Props): JSX.Element {
+export default function CursorControl(props: Props): JSX.Element {
     const {
         canvasInstance,
         activeControl,
@@ -44,5 +44,3 @@ function CursorControl(props: Props): JSX.Element {
         </Tooltip>
     );
 }
-
-export default React.memo(CursorControl);

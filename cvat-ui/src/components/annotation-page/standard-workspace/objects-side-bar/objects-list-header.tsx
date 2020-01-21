@@ -19,7 +19,7 @@ interface Props {
     onStatesHide(value: boolean): void;
 }
 
-const Header = React.memo((props: Props): JSX.Element => {
+const Header = (props: Props): JSX.Element => {
     const {
         statesVisible,
         statesLocked,
@@ -68,6 +68,6 @@ const Header = React.memo((props: Props): JSX.Element => {
             </Row>
         </div>
     );
-});
+};
 
 export default Header;
