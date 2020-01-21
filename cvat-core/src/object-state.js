@@ -393,8 +393,8 @@
 
     // Updates element in collection which contains it
     ObjectState.prototype.save.implementation = async function () {
-        if (this.hidden && this.hidden.save) {
-            return this.hidden.save();
+        if (this.__internal && this.__internal.save) {
+            return this.__internal.save();
         }
 
         return this;
@@ -402,24 +402,24 @@
 
     // Delete element from a collection which contains it
     ObjectState.prototype.delete.implementation = async function (force) {
-        if (this.hidden && this.hidden.delete) {
-            return this.hidden.delete(force);
+        if (this.__internal && this.__internal.delete) {
+            return this.__internal.delete(force);
         }
 
         return false;
     };
 
     ObjectState.prototype.up.implementation = async function () {
-        if (this.hidden && this.hidden.up) {
-            return this.hidden.up();
+        if (this.__internal && this.__internal.up) {
+            return this.__internal.up();
         }
 
         return false;
     };
 
     ObjectState.prototype.down.implementation = async function () {
-        if (this.hidden && this.hidden.down) {
-            return this.hidden.down();
+        if (this.__internal && this.__internal.down) {
+            return this.__internal.down();
         }
 
         return false;

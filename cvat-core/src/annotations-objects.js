@@ -30,7 +30,8 @@
     function objectStateFactory(frame, data) {
         const objectState = new ObjectState(data);
 
-        objectState.hidden = {
+        // eslint-disable-next-line no-underscore-dangle
+        objectState.__internal = {
             save: this.save.bind(this, frame, objectState),
             delete: this.delete.bind(this),
             up: this.up.bind(this, frame, objectState),
