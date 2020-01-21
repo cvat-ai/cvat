@@ -6,7 +6,7 @@ import { CombinedState } from 'reducers/interfaces';
 import { annotationsUpdated } from 'actions/annotation-actions';
 
 interface OwnProps {
-    height: number;
+    listHeight: number;
 }
 
 interface StateToProps {

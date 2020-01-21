@@ -19,6 +19,7 @@ import ObjectItem from './object-item';
 interface Props {
     annotations: any[];
     labels: any[];
+    listHeight: number;
     onAnnotationsUpdated(annotations: any[]): void;
 }
 
@@ -123,11 +124,12 @@ export default class ObjectsList extends React.PureComponent<Props, State> {
         const {
             annotations,
             labels,
+            listHeight,
         } = this.props;
         const { collapsedStates } = this.state;
 
         return (
-            <>
+            <div style={{ height: listHeight }}>
                 <Header />
                 <div className='cvat-objects-sidebar-states-list'>
                     { annotations.map((objectState: any): JSX.Element => (
@@ -141,7 +143,7 @@ export default class ObjectsList extends React.PureComponent<Props, State> {
                         />
                     ))}
                 </div>
-            </>
+            </div>
         );
     }
 }

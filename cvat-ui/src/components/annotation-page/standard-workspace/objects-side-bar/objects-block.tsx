@@ -12,13 +12,13 @@ import LabelsList from './labels-list';
 interface Props {
     annotations: any[];
     labels: any[];
-    height: number;
+    listHeight: number;
     onAnnotationsUpdated(annotations: any[]): void;
 }
 
 export default function ObjectsBlockComponent(props: Props): JSX.Element {
     const {
-        height,
+        listHeight,
         annotations,
         labels,
         onAnnotationsUpdated,
@@ -31,18 +31,18 @@ export default function ObjectsBlockComponent(props: Props): JSX.Element {
     };
 
     return (
-        <Tabs type='card' style={{ height }} defaultActiveKey='objects' className='cvat-objects-sidebar-tabs'>
+        <Tabs type='card' defaultActiveKey='labels' className='cvat-objects-sidebar-tabs'>
             <Tabs.TabPane
                 tab={<Text strong>Objects</Text>}
                 key='objects'
             >
-                <ObjectsList {...childProps} />
+                <ObjectsList listHeight={listHeight} {...childProps} />
             </Tabs.TabPane>
             <Tabs.TabPane
                 tab={<Text strong>Labels</Text>}
                 key='labels'
             >
-                <LabelsList {...childProps} />
+                <LabelsList listHeight={listHeight} {...childProps} />
             </Tabs.TabPane>
         </Tabs>
     );

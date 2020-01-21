@@ -16,7 +16,7 @@ interface Props {
 interface State {
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
-    tabsHeight: number;
+    listHeight: number;
 }
 
 export default class StandardWorkspaceComponent extends React.PureComponent<Props, State> {
@@ -25,12 +25,12 @@ export default class StandardWorkspaceComponent extends React.PureComponent<Prop
         this.state = {
             sidebarCollapsed: false,
             appearanceCollapsed: false,
-            tabsHeight: 0,
+            listHeight: 0,
         };
     }
 
     public componentDidMount(): void {
-        this.computeTabsHeight();
+        this.computeListHeight();
     }
 
     private onAppearanceCollapse = (key: string | string[]): void => {
@@ -43,7 +43,7 @@ export default class StandardWorkspaceComponent extends React.PureComponent<Prop
             });
 
             collapser.addEventListener('transitionend', () => {
-                this.computeTabsHeight();
+                this.computeListHeight();
             }, { once: true });
         }
     };
@@ -65,15 +65,19 @@ export default class StandardWorkspaceComponent extends React.PureComponent<Prop
         }, { once: true });
     };
 
-    private computeTabsHeight(): void {
+    private computeListHeight(): void {
         const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
         const [appearance] = window.document.getElementsByClassName('cvat-objects-appearance-collapse');
+        const [tabs] = Array.from(
+            window.document.querySelectorAll('.cvat-objects-sidebar-tabs > .ant-tabs-card-bar'),
+        );
 
         const maxHeight = sidebar ? sidebar.clientHeight : 0;
         const appearanceHeight = appearance ? appearance.clientHeight : 0;
-        const tabsHeight = maxHeight - appearanceHeight;
+        const tabsHeight = tabs ? tabs.clientHeight : 0;
+        const listHeight = maxHeight - appearanceHeight - tabsHeight;
         this.setState({
-            tabsHeight,
+            listHeight,
         });
     }
 
@@ -81,7 +85,7 @@ export default class StandardWorkspaceComponent extends React.PureComponent<Prop
         const {
             sidebarCollapsed,
             appearanceCollapsed,
-            tabsHeight,
+            listHeight,
         } = this.state;
 
         return (
@@ -106,7 +110,7 @@ export default class StandardWorkspaceComponent extends React.PureComponent<Prop
                         : <Icon type='menu-unfold' title='Hide' />}
                 </span>
 
-                <ObjectsBlockContainer height={tabsHeight} />
+                <ObjectsBlockContainer listHeight={listHeight} />
                 <AppearanceSettingsComponent
                     collapsed={appearanceCollapsed}
                     onCollapse={this.onAppearanceCollapse}
