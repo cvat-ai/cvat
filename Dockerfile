@@ -43,6 +43,7 @@ RUN apt-get update && \
         libswscale-dev \
         libldap2-dev \
         libsasl2-dev \
+        pkg-config \
         python3-dev \
         python3-pip \
         tzdata \

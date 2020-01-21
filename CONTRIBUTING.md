@@ -16,7 +16,7 @@ Next steps should work on clear Ubuntu 18.04.
     ```sh
     $ sudo apt-get install -y curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
     ```
-    Also please make sure that you have installed ffmpeg with all necessary libav* libraries.
+    Also please make sure that you have installed ffmpeg with all necessary libav* libraries and pkg-config package.
     ```sh
     # General dependencies
     sudo apt-get install -y python-dev pkg-config
