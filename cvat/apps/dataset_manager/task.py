@@ -217,7 +217,7 @@ class TaskProject:
         if dst_format == EXPORT_FORMAT_DATUMARO_PROJECT:
             self._remote_export(save_dir=save_dir, server_url=server_url)
         else:
-            self._dataset.export(output_format=dst_format,
+            self._dataset.export_project(output_format=dst_format,
                 save_dir=save_dir, save_images=save_images)
 
     def _remote_image_converter(self, save_dir, server_url=None):
