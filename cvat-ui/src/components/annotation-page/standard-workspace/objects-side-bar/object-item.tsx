@@ -331,7 +331,7 @@ export default function ObjectItem(props: Props): JSX.Element {
         occluded,
         outside,
         lock,
-        hidden,
+        visible,
         keyframe,
     } = objectState;
 
@@ -349,7 +349,7 @@ export default function ObjectItem(props: Props): JSX.Element {
                 occluded={occluded}
                 outside={outside}
                 locked={lock}
-                hidden={hidden}
+                hidden={!visible}
                 keyframe={keyframe}
             />
             { label.attributes.length
