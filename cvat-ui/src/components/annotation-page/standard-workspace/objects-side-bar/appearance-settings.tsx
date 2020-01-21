@@ -20,7 +20,7 @@ export default function AppearanceSettingsComponent(props: Props): JSX.Element {
     return (
         <Collapse
             onChange={onCollapse}
-            activeKey={collapsed ? ['appearance'] : []}
+            activeKey={collapsed ? [] : ['appearance']}
             className='cvat-objects-appearance-collapse'
         >
             <Collapse.Panel

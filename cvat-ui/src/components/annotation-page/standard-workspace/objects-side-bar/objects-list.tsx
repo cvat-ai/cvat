@@ -66,14 +66,14 @@ export default class ObjectsList extends React.PureComponent<Props, State> {
         };
     }
 
-    private onStateCollapse = (state: any, key: string | string[]): void => {
+    private onStateCollapse = (clientID: number, key: string | string[]): void => {
         const { collapsedStates } = this.state;
-        const collapsedItem = key === 'appearance' || key.includes('appearance');
+        const collapsedItem = key !== 'details' && !key.includes('details');
 
         const updatedcollapsedStates = {
             ...collapsedStates,
         };
-        updatedcollapsedStates[state.clientID] = collapsedItem;
+        updatedcollapsedStates[clientID] = collapsedItem;
 
         this.setState({
             collapsedStates: updatedcollapsedStates,

@@ -143,7 +143,7 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
     if (attribute.inputType === 'checkbox') {
         return (
             <Col span={24}>
-                <Checkbox className='cvat-object-item-checkbox-attribute'>
+                <Checkbox className='cvat-object-item-checkbox-attribute' checked={attrValue === 'true'}>
                     <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
                         {attribute.name}
                     </Text>
@@ -159,7 +159,7 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
                     <legend>
                         <Text strong className='cvat-text'>{attribute.name}</Text>
                     </legend>
-                    <Radio.Group>
+                    <Radio.Group value={attrValue}>
                         { attribute.values.map((value: string): JSX.Element => (
                             <Radio key={value} value={value}>{value}</Radio>
                         )) }
@@ -178,7 +178,7 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
                     </Text>
                 </Col>
                 <Col span={24}>
-                    <Select className='cvat-object-item-select-attribute'>
+                    <Select value={attrValue} className='cvat-object-item-select-attribute'>
                         { attribute.values.map((value: string): JSX.Element => (
                             <Select.Option key={value} value={value}>{value}</Select.Option>
                         )) }
@@ -199,7 +199,13 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
                     </Text>
                 </Col>
                 <Col span={24}>
-                    <InputNumber className='cvat-object-item-number-attribute' min={+min} max={+max} step={+step} />
+                    <InputNumber
+                        value={+attrValue}
+                        className='cvat-object-item-number-attribute'
+                        min={+min}
+                        max={+max}
+                        step={+step}
+                    />
                 </Col>
             </>
         );
@@ -213,7 +219,7 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
                 </Text>
             </Col>
             <Col span={24}>
-                <Input className='cvat-object-item-text-attribute' />
+                <Input value={attrValue} className='cvat-object-item-text-attribute' />
             </Col>
         </>
     );
@@ -223,12 +229,18 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
 interface ItemAttributesProps {
     attributes: Record<number, string>;
     labelAttributes: any[];
+    collapsed: boolean;
+    clientID: number;
+    onCollapse(clientID: number, key: string | string[]): void;
 }
 
 const ItemAttributes = React.memo((props: ItemAttributesProps): JSX.Element => {
     const {
         labelAttributes,
         attributes,
+        collapsed,
+        clientID,
+        onCollapse,
     } = props;
 
     const sorted = [...labelAttributes]
@@ -238,6 +250,8 @@ const ItemAttributes = React.memo((props: ItemAttributesProps): JSX.Element => {
         <Row>
             <Collapse
                 className='cvat-objects-sidebar-state-item-collapse'
+                activeKey={collapsed ? [] : ['details']}
+                onChange={(key: string | string[]): void => onCollapse(clientID, key)}
             >
                 <Collapse.Panel
                     header='Details'
@@ -268,13 +282,15 @@ interface Props {
     collapsed: boolean;
     labels: any[];
     onUpdate(state: any): void;
-    onCollapse(state: any, key: string | string[]): void;
+    onCollapse(clientID: number, key: string | string[]): void;
 }
 
 export default function ObjectItem(props: Props): JSX.Element {
     const {
         objectState,
         labels,
+        collapsed,
+        onCollapse,
     } = props;
 
     const {
@@ -296,7 +312,15 @@ export default function ObjectItem(props: Props): JSX.Element {
             <ItemTop type={type} labels={labels} clientID={clientID} label={label} />
             <ItemButtons objectType={objectType} />
             { label.attributes.length
-                && <ItemAttributes attributes={attributes} labelAttributes={label.attributes} />
+                && (
+                    <ItemAttributes
+                        collapsed={collapsed}
+                        clientID={clientID}
+                        attributes={attributes}
+                        labelAttributes={label.attributes}
+                        onCollapse={onCollapse}
+                    />
+                )
             }
         </div>
     );

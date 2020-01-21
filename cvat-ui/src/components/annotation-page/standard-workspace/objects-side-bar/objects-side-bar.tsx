@@ -39,7 +39,7 @@ export default class StandardWorkspaceComponent extends React.PureComponent<Prop
 
         if (collapser) {
             this.setState({
-                appearanceCollapsed: key === 'appearance' || key.includes('appearance'),
+                appearanceCollapsed: key !== 'appearance' && !key.includes('appearance'),
             });
 
             collapser.addEventListener('transitionend', () => {
