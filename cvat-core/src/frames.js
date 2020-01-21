@@ -282,7 +282,6 @@
             this._stopFrame = stopFrame;
             this._activeFillBufferRequest = false;
             this._taskID = taskID;
-            this._required = null;
         }
 
         getFreeBufferSize() {
@@ -317,19 +316,19 @@
                     frameData.data().then(() => {
                         if (!(chunkIdx in this._requestedChunks)
                           || !this._requestedChunks[chunkIdx].requestedFrames.has(requestedFrame)) {
-                            reject(requestedFrame);
+                            reject(chunkIdx);
+                        } else {
+                            this._requestedChunks[chunkIdx].requestedFrames.delete(requestedFrame);
+                            this._requestedChunks[chunkIdx].buffer[requestedFrame] = frameData;
+                            if (this._requestedChunks[chunkIdx].requestedFrames.size === 0) {
+                                const bufferedframes = Object.keys(
+                                    this._requestedChunks[chunkIdx].buffer,
+                                ).map((f) => +f);
+                                this._requestedChunks[chunkIdx].resolve(new Set(bufferedframes));
+                            }
                         }
-
-                        this._requestedChunks[chunkIdx].requestedFrames.delete(requestedFrame);
-                        this._requestedChunks[chunkIdx].buffer[requestedFrame] = frameData;
-                        if (this._requestedChunks[chunkIdx].requestedFrames.size === 0) {
-                            const bufferedframes = Object.keys(
-                                this._requestedChunks[chunkIdx].buffer,
-                            ).map((f) => +f);
-                            this._requestedChunks[chunkIdx].resolve(new Set(bufferedframes));
-                        }
-                    }).catch((error) => {
-                        reject(error);
+                    }).catch(() => {
+                        reject(chunkIdx);
                     });
                 }
             });
@@ -373,11 +372,12 @@
                                     resolve(bufferedFrames);
                                 }
                             } else {
-                                reject(startFrame);
+                                reject(chunkIdx);
+                                break;
                             }
                         } catch (error) {
-                            this._requestedChunks = {};
-                            reject(startFrame);
+                            reject(error);
+                            break;
                         }
                     }
                 }
@@ -391,8 +391,10 @@
                     await this.fillBuffer(start, step, count);
                     this._activeFillBufferRequest = false;
                 } catch (error) {
-                    this._activeFillBufferRequest = false;
-                    throw error;
+                    if (typeof (error) === 'number' && error in this._requestedChunks) {
+                        this._activeFillBufferRequest = false;
+                        throw error;
+                    }
                 }
             }
         }
@@ -427,17 +429,15 @@
                 try {
                     await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
                 } catch (error) {
-                    if (typeof (error) === 'number') {
-                        if (error === this._required) {
-                            throw Exception(`Required frame ${this._required} was rejected`);
-                        }
-                    } else {
+                    if (error !== 'not needed') {
                         throw error;
                     }
                 }
 
                 frame = this._buffer[frameNumber];
                 delete this._buffer[frameNumber];
+            } else {
+                this.clear();
             }
 
             return frame;
@@ -447,18 +447,12 @@
             for (const chunkIdx in this._requestedChunks) {
                 if (Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)
                     && this._requestedChunks[chunkIdx].reject) {
-                    this._requestedChunks[chunkIdx].reject();
+                    this._requestedChunks[chunkIdx].reject('not needed');
                 }
             }
             this._activeFillBufferRequest = false;
             this._requestedChunks = {};
             this._buffer = {};
-        }
-
-        deleteFrame(frameNumber) {
-            if (frameNumber in this._buffer) {
-                delete this._buffer[frameNumber];
-            }
         }
 
         cachedFrames() {
