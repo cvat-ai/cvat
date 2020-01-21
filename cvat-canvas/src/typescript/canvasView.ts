@@ -397,8 +397,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
         }
-        const newIDs = states.map((state: any): number => state.id);
-        const deleted = Object.keys(this.drawnStates).map((state: any): number => state.id)
+        const newIDs = states.map((state: any): number => state.clientID);
+        const deleted = Object.keys(this.drawnStates).map((clientID: string): number => +clientID)
             .filter((id: number): boolean => !newIDs.includes(id))
             .map((id: number): any => this.drawnStates[id]);
 
@@ -670,6 +670,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.transformCanvas();
             }
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
+            // Canvas geometry is going to be changed. Old object positions aren't valid any more
+            this.setupObjects([]);
             this.moveCanvas();
             this.resizeCanvas();
         } else if (reason === UpdateReasons.IMAGE_ZOOMED || reason === UpdateReasons.IMAGE_FITTED) {
@@ -845,15 +847,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             .addPoints(stringified, state);
                     }
                 }
-
-                // TODO: Use enums after typification cvat-core
-                if (state.visibility === 'all') {
-                    this.svgTexts[state.clientID] = this.addText(state);
-                    this.updateTextPosition(
-                        this.svgTexts[state.clientID],
-                        this.svgShapes[state.clientID],
-                    );
-                }
             }
         }
     }
@@ -877,9 +870,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).off('resizedone');
             (shape as any).resize(false);
 
-            // Hide text only if it is hidden by settings
+            // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[state.clientID];
-            if (text && state.visibility === 'shape') {
+            if (text) {
                 text.remove();
                 delete this.svgTexts[state.clientID];
             }
@@ -910,7 +903,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         shape.addClass('cvat_canvas_shape_activated');
         let text = this.svgTexts[activeElement.clientID];
         // Draw text if it's hidden by default
-        if (!text && state.visibility === 'shape') {
+        if (!text) {
             text = this.addText(state);
             this.svgTexts[state.clientID] = text;
             this.updateTextPosition(
