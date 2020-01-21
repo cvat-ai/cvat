@@ -10,11 +10,63 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
-import {
-    ExpandObjectsIcon,
-} from 'icons';
-
 import ObjectItem from './object-item';
+
+interface HeaderProps {
+    statesHidden: boolean;
+    statesLocked: boolean;
+    statesExpanded: boolean;
+    onStatesCollapse(value: boolean): void;
+}
+
+const Header = React.memo((props: HeaderProps): JSX.Element => {
+    const {
+        statesHidden,
+        statesLocked,
+        statesExpanded,
+        onStatesCollapse,
+    } = props;
+
+    return (
+        <div className='cvat-objects-sidebar-states-header'>
+            <Row>
+                <Col>
+                    <Input
+                        placeholder='Filter e.g. car[attr/model="mazda"]'
+                        prefix={<Icon type='filter' />}
+                    />
+                </Col>
+            </Row>
+            <Row type='flex' justify='space-between' align='middle'>
+                <Col span={2}>
+                    { statesLocked
+                        ? <Icon type='lock' />
+                        : <Icon type='unlock' />
+                    }
+                </Col>
+                <Col span={2}>
+                    { statesHidden
+                        ? <Icon type='eye-invisible' />
+                        : <Icon type='eye' />
+                    }
+                </Col>
+                <Col span={2}>
+                    { statesExpanded
+                        ? <Icon type='caret-up' onClick={(): void => onStatesCollapse(true)} />
+                        : <Icon type='caret-down' onClick={(): void => onStatesCollapse(false)} />
+                    }
+                </Col>
+                <Col span={16}>
+                    <Text strong>Sort by</Text>
+                    <Select defaultValue='id'>
+                        <Select.Option key='id'> ID </Select.Option>
+                        <Select.Option key='updated'> Updated </Select.Option>
+                    </Select>
+                </Col>
+            </Row>
+        </div>
+    );
+});
 
 interface Props {
     annotations: any[];
@@ -24,60 +76,43 @@ interface Props {
 }
 
 interface State {
-    collapsedStates: Record<number, boolean>;
+    itemCollapseStatuses: Record<number, boolean>;
 }
-
-const Header = React.memo((): JSX.Element => (
-    <div className='cvat-objects-sidebar-states-header'>
-        <Row>
-            <Col>
-                <Input
-                    placeholder='Filter e.g. car[attr/model="mazda"]'
-                    prefix={<Icon type='filter' />}
-                />
-            </Col>
-        </Row>
-        <Row type='flex' justify='space-between' align='middle'>
-            <Col span={2}>
-                <Icon type='lock' />
-            </Col>
-            <Col span={2}>
-                <Icon type='eye-invisible' />
-            </Col>
-            <Col span={2}>
-                <Icon component={ExpandObjectsIcon} />
-            </Col>
-            <Col span={16}>
-                <Text strong>Sort by</Text>
-                <Select defaultValue='id'>
-                    <Select.Option key='id'> ID </Select.Option>
-                    <Select.Option key='updated'> Updated </Select.Option>
-                </Select>
-            </Col>
-        </Row>
-    </div>
-));
-
 
 export default class ObjectsList extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
         super(props);
         this.state = {
-            collapsedStates: {},
+            itemCollapseStatuses: {},
         };
     }
 
-    private onStateCollapse = (clientID: number, key: string | string[]): void => {
-        const { collapsedStates } = this.state;
-        const collapsedItem = key !== 'details' && !key.includes('details');
-
-        const updatedcollapsedStates = {
-            ...collapsedStates,
+    private onStatesCollapse = (value: boolean): void => {
+        const { itemCollapseStatuses } = this.state;
+        const updatedItemCollapseStatuses = {
+            ...itemCollapseStatuses,
         };
-        updatedcollapsedStates[clientID] = collapsedItem;
+
+        for (const key of Object.keys(updatedItemCollapseStatuses)) {
+            updatedItemCollapseStatuses[+key] = value;
+        }
 
         this.setState({
-            collapsedStates: updatedcollapsedStates,
+            itemCollapseStatuses: updatedItemCollapseStatuses,
+        });
+    };
+
+    private onStateCollapse = (clientID: number, key: string | string[]): void => {
+        const { itemCollapseStatuses } = this.state;
+        const collapsedItem = key !== 'details' && !key.includes('details');
+
+        const updatedItemCollapseStatuses = {
+            ...itemCollapseStatuses,
+        };
+        updatedItemCollapseStatuses[clientID] = collapsedItem;
+
+        this.setState({
+            itemCollapseStatuses: updatedItemCollapseStatuses,
         });
     };
 
@@ -98,25 +133,25 @@ export default class ObjectsList extends React.PureComponent<Props, State> {
     };
 
     static getDerivedStateFromProps(props: Props, state: State): State | null {
-        const updatedCollapsedStates = { ...state.collapsedStates };
+        const updateditemCollapseStatuses = { ...state.itemCollapseStatuses };
 
         const clientIdxs = [];
         for (const objectState of props.annotations) {
             clientIdxs.push(objectState.clientID);
-            if (!(objectState.clientID in updatedCollapsedStates)) {
-                updatedCollapsedStates[objectState.clientID] = true;
+            if (!(objectState.clientID in updateditemCollapseStatuses)) {
+                updateditemCollapseStatuses[objectState.clientID] = true;
             }
         }
 
-        for (const key of Object.keys(updatedCollapsedStates)) {
+        for (const key of Object.keys(updateditemCollapseStatuses)) {
             if (!clientIdxs.includes(+key)) {
-                delete updatedCollapsedStates[+key];
+                delete updateditemCollapseStatuses[+key];
             }
         }
 
         return {
             ...state,
-            collapsedStates: updatedCollapsedStates,
+            itemCollapseStatuses: updateditemCollapseStatuses,
         };
     }
 
@@ -126,18 +161,31 @@ export default class ObjectsList extends React.PureComponent<Props, State> {
             labels,
             listHeight,
         } = this.props;
-        const { collapsedStates } = this.state;
+
+        const { itemCollapseStatuses } = this.state;
+
+        const statesHidden = annotations
+            .reduce((acc: boolean, state: any) => acc && !state.visible, true);
+        const statesLocked = annotations
+            .reduce((acc: boolean, state: any) => acc && state.lock, true);
+        const statesExpanded = Object.keys(itemCollapseStatuses)
+            .reduce((acc: boolean, key: string) => acc && !itemCollapseStatuses[+key], true);
 
         return (
             <div style={{ height: listHeight }}>
-                <Header />
+                <Header
+                    statesHidden={statesHidden}
+                    statesLocked={statesLocked}
+                    statesExpanded={statesExpanded}
+                    onStatesCollapse={this.onStatesCollapse}
+                />
                 <div className='cvat-objects-sidebar-states-list'>
                     { annotations.map((objectState: any): JSX.Element => (
                         <ObjectItem
                             key={objectState.clientID}
                             objectState={objectState}
                             labels={labels}
-                            collapsed={collapsedStates[objectState.clientID]}
+                            collapsed={itemCollapseStatuses[objectState.clientID]}
                             onCollapse={this.onStateCollapse}
                             onUpdate={this.onStateUpdate}
                         />

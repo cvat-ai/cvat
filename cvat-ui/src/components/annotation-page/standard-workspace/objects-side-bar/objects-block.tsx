@@ -35,7 +35,7 @@ export default function ObjectsBlockComponent(props: Props): JSX.Element {
     };
 
     return (
-        <Tabs type='card' defaultActiveKey='labels' className='cvat-objects-sidebar-tabs'>
+        <Tabs type='card' defaultActiveKey='objects' className='cvat-objects-sidebar-tabs'>
             <Tabs.TabPane
                 tab={<Text strong>Objects</Text>}
                 key='objects'
