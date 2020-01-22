@@ -28,14 +28,21 @@
 
 ### Installation steps
 
-Set up a virtual environment:
+Optionally, set up a virtual environment:
 
 ``` bash
 python -m pip install virtualenv
 python -m virtualenv venv
 . venv/bin/activate
+```
+
+Install Datumaro:
+``` bash
 pip install 'git+https://github.com/opencv/cvat#egg=datumaro&subdirectory=datumaro'
 ```
+
+> You can change the installation branch with `.../cvat@<branch_name>#egg...`
+> Also note `--force-reinstall` parameter in this case.
 
 ## Interfaces
 
@@ -46,13 +53,13 @@ datum --help
 ```
 
 As a python module:
-The directory containing Datumaro should be in the `PYTHONPATH`
-environment variable.
+> The directory containing Datumaro should be in the `PYTHONPATH`
+environment variable or `cvat/datumaro/` should be the current directory.
 
 ``` bash
-datum --help
+python -m datumaro --help
 python datumaro/ --help
-datum --help
+python datum.py --help
 ```
 
 As a python library:
@@ -74,6 +81,7 @@ List of supported formats:
 - TF Detection API (`bboxes`, `masks`)
   - Format specifications: [bboxes](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/using_your_own_dataset.md), [masks](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/instance_segmentation.md)
 - CVAT
+  - [Format specification](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md)
 
 List of supported annotation types:
 - Labels
