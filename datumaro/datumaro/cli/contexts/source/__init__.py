@@ -20,8 +20,8 @@ def build_add_parser(parser_ctor=argparse.ArgumentParser):
     base_parser = argparse.ArgumentParser(add_help=False)
     base_parser.add_argument('-n', '--name', default=None,
         help="Name of the new source")
-    base_parser.add_argument('-f', '--format', default=None,
-        help="Source dataset format (default: 'project')")
+    base_parser.add_argument('-f', '--format', required=True,
+        help="Source dataset format")
     base_parser.add_argument('--skip-check', action='store_true',
         help="Skip source checking")
     base_parser.add_argument('-p', '--project', dest='project_dir', default='.',
@@ -162,10 +162,7 @@ def add_command(args):
         else:
             os.makedirs(local_dir)
 
-    source = { 'url': url }
-    if args.format:
-        source['format'] = args.format
-    project.add_source(name, source)
+    project.add_source(name, { 'url': url, 'format': args.format })
 
     if not args.skip_check:
         log.info("Checking the source...")
