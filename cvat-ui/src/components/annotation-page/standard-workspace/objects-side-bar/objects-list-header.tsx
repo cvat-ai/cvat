@@ -10,10 +10,18 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
+export enum SortingMethods {
+    ID_DESCENT = 'ID - descent',
+    ID_ASCENT = 'ID - ascent',
+    UPDATED = 'Updated time',
+}
+
 interface Props {
     statesVisible: boolean;
     statesLocked: boolean;
     statesExpanded: boolean;
+    sortingMethod: SortingMethods;
+    onChangeSortingMethod(sortingMethod: SortingMethods): void;
     onStatesCollapse(value: boolean): void;
     onStatesLock(value: boolean): void;
     onStatesHide(value: boolean): void;
@@ -24,6 +32,8 @@ const Header = (props: Props): JSX.Element => {
         statesVisible,
         statesLocked,
         statesExpanded,
+        sortingMethod,
+        onChangeSortingMethod,
         onStatesCollapse,
         onStatesLock,
         onStatesHide,
@@ -60,9 +70,22 @@ const Header = (props: Props): JSX.Element => {
                 </Col>
                 <Col span={16}>
                     <Text strong>Sort by</Text>
-                    <Select defaultValue='id'>
-                        <Select.Option key='id'> ID </Select.Option>
-                        <Select.Option key='updated'> Updated </Select.Option>
+                    <Select value={sortingMethod} onChange={onChangeSortingMethod}>
+                        <Select.Option
+                            key={SortingMethods.ID_DESCENT}
+                        >
+                            {SortingMethods.ID_DESCENT}
+                        </Select.Option>
+                        <Select.Option
+                            key={SortingMethods.ID_ASCENT}
+                        >
+                            {SortingMethods.ID_ASCENT}
+                        </Select.Option>
+                        <Select.Option
+                            key={SortingMethods.UPDATED}
+                        >
+                            {SortingMethods.UPDATED}
+                        </Select.Option>
                     </Select>
                 </Col>
             </Row>

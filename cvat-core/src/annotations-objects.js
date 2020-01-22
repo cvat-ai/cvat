@@ -442,8 +442,6 @@
 
                 return shapeAccumulator;
             }, {});
-
-            this.cache = {};
         }
 
         // Method is used to export data to the server
@@ -498,28 +496,21 @@
 
         // Method is used to construct ObjectState objects
         get(frame) {
-            if (!(frame in this.cache)) {
-                const interpolation = {
-                    ...this.getPosition(frame),
-                    attributes: this.getAttributes(frame),
-                    group: this.group,
-                    objectType: ObjectType.TRACK,
-                    shapeType: this.shapeType,
-                    clientID: this.clientID,
-                    serverID: this.serverID,
-                    lock: this.lock,
-                    color: this.color,
-                    visible: this.visible,
-                    updated: this.updated,
-                    frame,
-                };
-
-                this.cache[frame] = interpolation;
-            }
-
-            const result = JSON.parse(JSON.stringify(this.cache[frame]));
-            result.label = this.label;
-            return result;
+            return {
+                ...this.getPosition(frame),
+                attributes: this.getAttributes(frame),
+                group: this.group,
+                objectType: ObjectType.TRACK,
+                shapeType: this.shapeType,
+                clientID: this.clientID,
+                serverID: this.serverID,
+                lock: this.lock,
+                color: this.color,
+                visible: this.visible,
+                updated: this.updated,
+                label: this.label,
+                frame,
+            };
         }
 
         neighborsFrames(targetFrame) {
@@ -699,8 +690,6 @@
                 if (prop in this) {
                     this[prop] = copy[prop];
                 }
-
-                this.cache[frame][prop] = copy[prop];
             }
 
             if (updated.attributes) {
@@ -721,15 +710,6 @@
 
             // Remove keyframe
             if (updated.keyframe && !data.keyframe) {
-                // Remove all cache after this keyframe because it have just become outdated
-                const { rightFrame } = this.neighborsFrames(frame);
-                for (const cacheFrame in this.cache) {
-                    if (+cacheFrame > frame && +cacheFrame < rightFrame) {
-                        delete this.cache[cacheFrame];
-                    }
-                }
-
-                this.cache[frame].keyframe = false;
                 delete this.shapes[frame];
                 this.updateTimestamp(updated);
                 updated.reset();
@@ -739,26 +719,6 @@
 
             // Add/update keyframe
             if (positionUpdated || (updated.keyframe && data.keyframe)) {
-                // Remove affected cached frames
-                const {
-                    leftFrame,
-                    rightFrame,
-                } = this.neighborsFrames(frame);
-                for (const cacheFrame of Object.keys(this.cache)) {
-                    if (leftFrame === null && +cacheFrame < frame) {
-                        delete this.cache[cacheFrame];
-                    } else if (+cacheFrame < frame && +cacheFrame > leftFrame) {
-                        delete this.cache[cacheFrame];
-                    }
-
-                    if (rightFrame === null && +cacheFrame > frame) {
-                        delete this.cache[cacheFrame];
-                    } else if (+cacheFrame > frame && +cacheFrame < rightFrame) {
-                        delete this.cache[cacheFrame];
-                    }
-                }
-
-                this.cache[frame].keyframe = true;
                 data.keyframe = true;
 
                 this.shapes[frame] = {
@@ -845,14 +805,9 @@
         delete(force) {
             if (!this.lock || force) {
                 this.removed = true;
-                this.resetCache();
             }
 
             return true;
-        }
-
-        resetCache() {
-            this.cache = {};
         }
     }
 
