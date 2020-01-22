@@ -169,7 +169,11 @@ def add_command(args):
 
     if not args.skip_check:
         log.info("Checking the source...")
-        project.make_source_project(name)
+        try:
+            project.make_source_project(name).make_dataset()
+        except Exception:
+            shutil.rmtree(local_dir, ignore_errors=True)
+            raise
 
     project.save()
 
@@ -186,6 +190,8 @@ def build_remove_parser(parser_ctor=argparse.ArgumentParser):
         help="Name of the source to be removed")
     parser.add_argument('--force', action='store_true',
         help="Ignore possible errors during removal")
+    parser.add_argument('--keep-data', action='store_true',
+        help="Do not remove source data")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
     parser.set_defaults(command=remove_command)
@@ -198,6 +204,11 @@ def remove_command(args):
     name = args.name
     if not name:
         raise CliException("Expected source name")
+    try:
+        project.get_source(name)
+    except KeyError:
+        if not args.force:
+            raise CliException("Source '%s' does not exist" % name)
 
     if project.env.git.has_submodule(name):
         if args.force:
@@ -205,8 +216,13 @@ def remove_command(args):
 
         project.env.git.remove_submodule(name, force=args.force)
 
+    source_dir = osp.join(project.config.project_dir,
+        project.local_source_dir(name))
     project.remove_source(name)
     project.save()
+
+    if not args.keep_data:
+        shutil.rmtree(source_dir, ignore_errors=True)
 
     log.info("Source '%s' has been removed from the project" % name)
 
