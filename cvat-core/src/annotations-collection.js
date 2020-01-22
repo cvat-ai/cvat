@@ -377,9 +377,6 @@
             // Remove other shapes
             for (const object of objectsForMerge) {
                 object.removed = true;
-                if (typeof (object.resetCache) === 'function') {
-                    object.resetCache();
-                }
             }
         }
 
@@ -466,7 +463,6 @@
 
             // Remove source object
             object.removed = true;
-            object.resetCache();
         }
 
         group(objectStates, reset) {
@@ -486,9 +482,6 @@
             const groupIdx = reset ? 0 : ++this.groups.max;
             for (const object of objectsForGroup) {
                 object.group = groupIdx;
-                if (typeof (object.resetCache) === 'function') {
-                    object.resetCache();
-                }
             }
 
             return groupIdx;
