@@ -1,7 +1,7 @@
 import { AnyAction } from 'redux';
 
-import { ModelsActionTypes } from '../actions/models-actions';
-import { AuthActionTypes } from '../actions/auth-actions';
+import { ModelsActionTypes } from 'actions/models-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
 import { ModelsState } from './interfaces';
 
 const defaultState: ModelsState = {

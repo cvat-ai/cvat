@@ -6,20 +6,40 @@ import {
 
 import {
     GridColor,
-} from '../../../reducers/interfaces';
+    ObjectType,
+} from 'reducers/interfaces';
 
-import { Canvas } from '../../../canvas';
+import {
+    Canvas,
+} from 'cvat-canvas';
+
+import getCore from 'cvat-core';
+
+const cvat = getCore();
+
+const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
 
 interface Props {
     canvasInstance: Canvas;
     jobInstance: any;
     annotations: any[];
     frameData: any;
+    frame: number;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
     gridOpacity: number;
+    activeLabelID: number;
+    activeObjectType: ObjectType;
     onSetupCanvas: () => void;
+    onDragCanvas: (enabled: boolean) => void;
+    onZoomCanvas: (enabled: boolean) => void;
+    onShapeDrawn: () => void;
+    onObjectsMerged: () => void;
+    onObjectsGroupped: () => void;
+    onTrackSplitted: () => void;
+    onResetCanvas: () => void;
+    onAnnotationsUpdated: (annotations: any[]) => void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -75,6 +95,118 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         this.updateCanvas();
     }
 
+    private async onShapeDrawn(event: any): Promise<void> {
+        const {
+            jobInstance,
+            activeLabelID,
+            activeObjectType,
+            frame,
+            onShapeDrawn,
+            onAnnotationsUpdated,
+        } = this.props;
+
+        onShapeDrawn();
+
+        const { state } = event.detail;
+        if (!state.objectType) {
+            state.objectType = activeObjectType;
+        }
+
+        if (!state.label) {
+            [state.label] = jobInstance.task.labels
+                .filter((label: any) => label.id === activeLabelID);
+        }
+
+        if (!state.occluded) {
+            state.occluded = false;
+        }
+
+        state.frame = frame;
+        const objectState = new cvat.classes.ObjectState(state);
+        await jobInstance.annotations.put([objectState]);
+
+        const annotations = await jobInstance.annotations.get(frame);
+        onAnnotationsUpdated(annotations);
+    }
+
+    private async onShapeEdited(event: any): Promise<void> {
+        const {
+            jobInstance,
+            frame,
+            onAnnotationsUpdated,
+        } = this.props;
+
+        const {
+            state,
+            points,
+        } = event.detail;
+        state.points = points;
+        state.save();
+
+        const annotations = await jobInstance.annotations.get(frame);
+        onAnnotationsUpdated(annotations);
+    }
+
+    private async onObjectsMerged(event: any): Promise<void> {
+        const {
+            jobInstance,
+            frame,
+            onAnnotationsUpdated,
+            onObjectsMerged,
+        } = this.props;
+
+        onObjectsMerged();
+
+        const { states } = event.detail;
+        await jobInstance.annotations.merge(states);
+        const annotations = await jobInstance.annotations.get(frame);
+        onAnnotationsUpdated(annotations);
+    }
+
+    private async onObjectsGroupped(event: any): Promise<void> {
+        const {
+            jobInstance,
+            frame,
+            onAnnotationsUpdated,
+            onObjectsGroupped,
+        } = this.props;
+
+        onObjectsGroupped();
+
+        const { states } = event.detail;
+        await jobInstance.annotations.group(states);
+        const annotations = await jobInstance.annotations.get(frame);
+        onAnnotationsUpdated(annotations);
+    }
+
+    private async onTrackSplitted(event: any): Promise<void> {
+        const {
+            jobInstance,
+            frame,
+            onAnnotationsUpdated,
+            onTrackSplitted,
+        } = this.props;
+
+        onTrackSplitted();
+
+        const { state } = event.detail;
+        await jobInstance.annotations.split(state, frame);
+        const annotations = await jobInstance.annotations.get(frame);
+        onAnnotationsUpdated(annotations);
+    }
+
+    private updateCanvas(): void {
+        const {
+            annotations,
+            frameData,
+            canvasInstance,
+        } = this.props;
+
+        if (frameData !== null) {
+            canvasInstance.setup(frameData, annotations);
+        }
+    }
+
     private initialSetup(): void {
         const {
             grid,
@@ -84,6 +216,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             canvasInstance,
             jobInstance,
             onSetupCanvas,
+            onDragCanvas,
+            onZoomCanvas,
+            onResetCanvas,
         } = this.props;
 
         // Size
@@ -112,18 +247,65 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.setup', () => {
             canvasInstance.fit();
         }, { once: true });
-    }
 
-    private updateCanvas(): void {
-        const {
-            annotations,
-            frameData,
-            canvasInstance,
-        } = this.props;
+        canvasInstance.html().addEventListener('canvas.canceled', () => {
+            onResetCanvas();
+        });
 
-        if (frameData !== null) {
-            canvasInstance.setup(frameData, annotations);
-        }
+        canvasInstance.html().addEventListener('canvas.dragstart', () => {
+            onDragCanvas(true);
+        });
+
+        canvasInstance.html().addEventListener('canvas.dragstop', () => {
+            onDragCanvas(false);
+        });
+
+        canvasInstance.html().addEventListener('canvas.zoomstart', () => {
+            onZoomCanvas(true);
+        });
+
+        canvasInstance.html().addEventListener('canvas.zoomstop', () => {
+            onZoomCanvas(false);
+        });
+
+        canvasInstance.html().addEventListener('canvas.moved', async (event: any): Promise<void> => {
+            const result = await jobInstance.annotations.select(
+                event.detail.states,
+                event.detail.x,
+                event.detail.y,
+            );
+
+            if (result && result.state) {
+                if (result.state.shapeType === 'polyline' || result.state.shapeType === 'points') {
+                    if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
+                        return;
+                    }
+                }
+
+                canvasInstance.activate(result.state.clientID);
+            }
+        });
+
+        canvasInstance.html().addEventListener('canvas.find', async (e: any) => {
+            const result = await jobInstance.annotations
+                .select(e.detail.states, e.detail.x, e.detail.y);
+
+            if (result && result.state) {
+                if (result.state.shapeType === 'polyline' || result.state.shapeType === 'points') {
+                    if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
+                        return;
+                    }
+                }
+
+                canvasInstance.select(result.state);
+            }
+        });
+
+        canvasInstance.html().addEventListener('canvas.edited', this.onShapeEdited.bind(this));
+        canvasInstance.html().addEventListener('canvas.drawn', this.onShapeDrawn.bind(this));
+        canvasInstance.html().addEventListener('canvas.merged', this.onObjectsMerged.bind(this));
+        canvasInstance.html().addEventListener('canvas.groupped', this.onObjectsGroupped.bind(this));
+        canvasInstance.html().addEventListener('canvas.splitted', this.onTrackSplitted.bind(this));
     }
 
     public render(): JSX.Element {

@@ -7,9 +7,8 @@ import {
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
-
+import { ModelFiles } from 'reducers/interfaces';
 import CreateModelContent from './create-model-content';
-import { ModelFiles } from '../../reducers/interfaces';
 
 interface Props {
     createModel(name: string, files: ModelFiles, global: boolean): void;

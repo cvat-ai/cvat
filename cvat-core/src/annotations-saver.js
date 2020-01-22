@@ -200,80 +200,67 @@
                 };
             }
 
-            try {
-                const exported = this.collection.export();
-                const { flush } = this.collection;
-                if (flush) {
-                    onUpdate('New objects are being saved..');
-                    const indexes = this._receiveIndexes(exported);
-                    const savedData = await this._put({ ...exported, version: this.version });
-                    this.version = savedData.version;
-                    this.collection.flush = false;
+            const exported = this.collection.export();
+            const { flush } = this.collection;
+            if (flush) {
+                onUpdate('Created objects are being saved on the server');
+                const indexes = this._receiveIndexes(exported);
+                const savedData = await this._put({ ...exported, version: this.version });
+                this.version = savedData.version;
+                this.collection.flush = false;
 
-                    onUpdate('Saved objects are being updated in the client');
-                    this._updateCreatedObjects(savedData, indexes);
+                this._updateCreatedObjects(savedData, indexes);
 
-                    onUpdate('Initial state is being updated');
-
-                    this._resetState();
-                    for (const type of Object.keys(this.initialObjects)) {
-                        for (const object of savedData[type]) {
-                            this.initialObjects[type][object.id] = object;
-                        }
+                this._resetState();
+                for (const type of Object.keys(this.initialObjects)) {
+                    for (const object of savedData[type]) {
+                        this.initialObjects[type][object.id] = object;
                     }
-                } else {
-                    const {
-                        created,
-                        updated,
-                        deleted,
-                    } = this._split(exported);
+                }
+            } else {
+                const {
+                    created,
+                    updated,
+                    deleted,
+                } = this._split(exported);
 
-                    onUpdate('New objects are being saved..');
-                    const indexes = this._receiveIndexes(created);
-                    const createdData = await this._create({ ...created, version: this.version });
-                    this.version = createdData.version;
+                onUpdate('Created objects are being saved on the server');
+                const indexes = this._receiveIndexes(created);
+                const createdData = await this._create({ ...created, version: this.version });
+                this.version = createdData.version;
 
-                    onUpdate('Saved objects are being updated in the client');
-                    this._updateCreatedObjects(createdData, indexes);
+                this._updateCreatedObjects(createdData, indexes);
 
-                    onUpdate('Initial state is being updated');
-                    for (const type of Object.keys(this.initialObjects)) {
-                        for (const object of createdData[type]) {
-                            this.initialObjects[type][object.id] = object;
-                        }
-                    }
-
-                    onUpdate('Changed objects are being saved..');
-                    this._receiveIndexes(updated);
-                    const updatedData = await this._update({ ...updated, version: this.version });
-                    this.version = updatedData.version;
-
-                    onUpdate('Initial state is being updated');
-                    for (const type of Object.keys(this.initialObjects)) {
-                        for (const object of updatedData[type]) {
-                            this.initialObjects[type][object.id] = object;
-                        }
-                    }
-
-                    onUpdate('Changed objects are being saved..');
-                    this._receiveIndexes(deleted);
-                    const deletedData = await this._delete({ ...deleted, version: this.version });
-                    this._version = deletedData.version;
-
-                    onUpdate('Initial state is being updated');
-                    for (const type of Object.keys(this.initialObjects)) {
-                        for (const object of deletedData[type]) {
-                            delete this.initialObjects[type][object.id];
-                        }
+                for (const type of Object.keys(this.initialObjects)) {
+                    for (const object of createdData[type]) {
+                        this.initialObjects[type][object.id] = object;
                     }
                 }
 
-                this.hash = this._getHash();
-                onUpdate('Saving is done');
-            } catch (error) {
-                onUpdate(`Can not save annotations: ${error.message}`);
-                throw error;
+                onUpdate('Updated objects are being saved on the server');
+                this._receiveIndexes(updated);
+                const updatedData = await this._update({ ...updated, version: this.version });
+                this.version = updatedData.version;
+
+                for (const type of Object.keys(this.initialObjects)) {
+                    for (const object of updatedData[type]) {
+                        this.initialObjects[type][object.id] = object;
+                    }
+                }
+
+                onUpdate('Deleted objects are being deleted from the server');
+                this._receiveIndexes(deleted);
+                const deletedData = await this._delete({ ...deleted, version: this.version });
+                this._version = deletedData.version;
+
+                for (const type of Object.keys(this.initialObjects)) {
+                    for (const object of deletedData[type]) {
+                        delete this.initialObjects[type][object.id];
+                    }
+                }
             }
+
+            this.hash = this._getHash();
         }
 
         hasUnsavedChanges() {

@@ -3,12 +3,12 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
 
-import AnnotationPageComponent from '../../components/annotation-page/annotation-page';
-import { getJobAsync } from '../../actions/annotation-actions';
+import AnnotationPageComponent from 'components/annotation-page/annotation-page';
+import { getJobAsync } from 'actions/annotation-actions';
 
 import {
     CombinedState,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
 type OwnProps = RouteComponentProps<{
     tid: string;

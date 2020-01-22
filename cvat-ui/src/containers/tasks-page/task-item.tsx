@@ -5,13 +5,13 @@ import {
     TasksQuery,
     CombinedState,
     ActiveInference,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
-import TaskItemComponent from '../../components/tasks-page/task-item';
+import TaskItemComponent from 'components/tasks-page/task-item';
 
 import {
     getTasksAsync,
-} from '../../actions/tasks-actions';
+} from 'actions/tasks-actions';
 
 interface StateToProps {
     deleted: boolean;

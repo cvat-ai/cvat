@@ -26,6 +26,7 @@ import {
 
 export interface DrawHandler {
     draw(drawData: DrawData, geometry: Geometry): void;
+    transform(geometry: Geometry): void;
     cancel(): void;
 }
 

@@ -39,13 +39,17 @@
     }
 }
 
+.cvat-annotation-page-active-control {
+    background: $header-color;
+    transform: scale(0.75);
+}
+
 .cvat-annotation-page-controls-rotate-left,
 .cvat-annotation-page-controls-rotate-right {
     transform: scale(0.65);
     border-radius: 5px;
 
     &:hover {
-        background: $header-color;
         transform: scale(0.75);
     }
     &:active {
@@ -62,4 +66,37 @@
 
 .cvat-annotation-page-controls-rotate-right > svg {
     transform: scaleX(-1);
+}
+
+.cvat-draw-shape-popover >
+.ant-popover-content >
+.ant-popover-inner > div >
+.ant-popover-inner-content {
+	padding: 0px;
+}
+
+.cvat-draw-shape-popover-points-selector {
+    width: 100%;
+}
+
+.cvat-draw-shape-popover-content {
+    padding: 10px;
+    border-radius: 5px;
+    background: $background-color-2;
+    width: 250px;
+    > div {
+        margin-top: 5px;
+    }
+    > div:nth-child(3) > div > div {
+        width: 100%;
+    }
+    div:last-child > div > button {
+        width: 100%;
+        &:nth-child(1) {
+            border-radius: 3px 0px 0px 3px;
+        }
+        &:nth-child(2) {
+            border-radius: 0px 3px 3px 0px;
+        }
+    }
 }
