@@ -49,7 +49,6 @@ services:
         AUTO_SEGMENTATION: "no"
         USER: "django"
         DJANGO_CONFIGURATION: "production"
-        WITH_TESTS: "no"
         TZ: "Etc/UTC"
         OPENVINO_TOOLKIT: "no"
     environment:
