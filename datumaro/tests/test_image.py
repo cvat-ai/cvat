@@ -31,7 +31,7 @@ class ImageTest(TestCase):
                 image_module._IMAGE_BACKEND = load_backend
                 dst_image = image_module.load_image(path)
 
-                self.assertTrue(np.all(src_image == dst_image),
+                self.assertTrue(np.array_equal(src_image, dst_image),
                     'save: %s, load: %s' % (save_backend, load_backend))
 
     def test_encode_and_decode_backends(self):
@@ -48,5 +48,5 @@ class ImageTest(TestCase):
             image_module._IMAGE_BACKEND = load_backend
             dst_image = image_module.decode_image(buffer)
 
-            self.assertTrue(np.all(src_image == dst_image),
+            self.assertTrue(np.array_equal(src_image, dst_image),
                 'save: %s, load: %s' % (save_backend, load_backend))
