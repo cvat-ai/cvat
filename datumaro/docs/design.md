@@ -70,53 +70,6 @@ Datumaro is:
 - guidance for key frame selection for tracking ([paper](https://arxiv.org/abs/1903.11779))
   Use case: more effective annotation, better predictions
 
-## Design
-
-### Command-line
-
-Use Docker as an example. Basically, the interface is partitioned
-on contexts and shortcuts. Contexts are semantically grouped commands,
-related to a single topic or target. Shortcuts are handy shorter
-alternatives for the most used commands and also special commands,
-which are hard to be put into specific context.
-
-![cli-design-image](images/cli_design.png)
-
-- [FreeMind tool link](http://freemind.sourceforge.net/wiki/index.php/Main_Page)
-
-### High-level architecture
-
-- Using MVVM UI pattern
-
-![mvvm-image](images/mvvm.png)
-
-### Datumaro project and environment structure
-
-<!--lint disable fenced-code-flag-->
-```
-├── [datumaro module]
-└── [project folder]
-    ├── .datumaro/
-    │   ├── config.yml
-    │   ├── .git/
-    │   ├── importers/
-    │   │   ├── custom_format_importer1.py
-    │   │   └── ...
-    │   ├── statistics/
-    │   │   ├── custom_statistic1.py
-    │   │   └── ...
-    │   ├── visualizers/
-    │   │   ├── custom_visualizer1.py
-    │   │   └── ...
-    │   └── extractors/
-    │       ├── custom_extractor1.py
-    │       └── ...
-    └── sources/
-        ├── source1
-        └── ...
-```
-<!--lint enable fenced-code-flag-->
-
 ## RC 1 vision
 
 In the first version Datumaro should be a project manager for CVAT.
@@ -139,7 +92,7 @@ can be downloaded by user to be operated on with Datumaro CLI.
 ### Interfaces
 
 - [x] Python API for user code
-  - [ ] Installation as a package
+  - [x] Installation as a package
 - [x] A command-line tool for dataset manipulations
 
 ### Features
@@ -201,6 +154,7 @@ can be downloaded by user to be operated on with Datumaro CLI.
     - export the task
     - convert to a training format
     - train a DL model
+  - [x] Use case "annotate - reannotate problematic images - merge"
   - [ ] Use case "annotate and estimate quality"
     - create a task
     - annotate

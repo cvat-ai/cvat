@@ -14,9 +14,16 @@ VOC-like dataset  --                              ---> Publication etc.
 
 # Contents
 
+- [Documentation](#documentation)
 - [Features](#features)
 - [Installation](#installation)
-- [Development](#development)
+- [Contributing](#contributing)
+
+## Documentation
+
+- [User manual](docs/user_manual.md)
+- [Design document](docs/design.md)
+- [Contributing](CONTRIBUTING.md)
 
 ## Features
 
@@ -31,6 +38,7 @@ VOC-like dataset  --                              ---> Publication etc.
   - TF Detection API (`bboxes`, `masks`)
     - Format specifications: [bboxes](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/using_your_own_dataset.md), [masks](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/instance_segmentation.md)
   - CVAT
+    - [Format specification](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md)
 - Dataset building operations:
   - Merging multiple datasets into one
   - Dataset filtering with custom conditions, for instance:
@@ -90,11 +98,6 @@ VOC-like dataset  --                              ---> Publication etc.
   datum project diff mymodel_inference/ --format tensorboard --output-dir diff
   ```
 
-## Documentation
-
-- [User manual](docs/user_manual.md)
-- [Design document](docs/design.md)
-
 ## Installation
 
 ``` bash
@@ -136,33 +139,8 @@ import datumaro.components.extractor # annotations and high-level interfaces
 project = Project.load('directory')
 ```
 
-## Development
+## Contributing
 
-### Installation
-
-``` bash
-git clone https://github.com/opencv/cvat
-```
-
-Python3.5+ is required.
-
-To install into a virtual environment do:
-
-``` bash
-python -m pip install virtualenv
-python -m virtualenv venv
-. venv/bin/activate
-while read -r p; do pip install $p; done < requirements.txt
-```
-
-### Testing
-
-``` bash
-python -m unittest discover -s tests
-```
-
-If you're working inside CVAT environment, you can also use:
-
-``` bash
-python manage.py test datumaro/
-```
+Feel free to [open an Issue](https://github.com/opencv/cvat/issues/new) if you
+think something needs be changed. You are welcome to participate in development,
+development instructions are available in our [developer manual](CONTRIBUTING.md).
