@@ -221,7 +221,11 @@ def build_export_parser(parser_ctor=argparse.ArgumentParser):
         description="""
             Exports the project dataset in some format. Optionally, a filter
             can be passed, check 'extract' command description for
-            explanations on this.|n
+            explanations on this. Each dataset format has its own options, they
+            are passed after '--' separator (see examples), pass '-- -h'
+            for more info. If not stated otherwise, by default
+            only annotations are exported, to include images pass
+            '--save-images' parameter.|n
             |n
             Formats:|n
             In Datumaro dataset formats are supported by Converter-s.
@@ -233,8 +237,8 @@ def build_export_parser(parser_ctor=argparse.ArgumentParser):
             List of supported dataset formats: %s|n
             |n
             Examples:|n
-            - Export project as a VOC-like dataset:|n
-            |s|sexport -f voc|n
+            - Export project as a VOC-like dataset, include images:|n
+            |s|sexport -f voc -- --save-images|n
             |n
             - Export project as a COCO-like dataset in other directory:|n
             |s|sexport -f coco -o path/I/like/

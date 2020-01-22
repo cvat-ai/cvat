@@ -9,7 +9,7 @@
   - [Create a project](#create-project)
   - [Add and remove data](#add-and-remove-data)
   - [Import a project](#import-project)
-  - [Filter a project](#filter-project)
+  - [Extract a subproject](#extract-subproject)
   - [Merge projects](#merge-project)
   - [Export a project](#export-project)
   - [Compare projects](#compare-projects)
@@ -131,7 +131,7 @@ datum project import \
      -f <format>
 ```
 
-Example:
+Example: create a project from COCO-like dataset
 
 ``` bash
 datum project import \
@@ -170,7 +170,7 @@ datum project create \
   -o <project_dir>
 ```
 
-Example:
+Example: create an empty project `my_dataset`
 
 ``` bash
 datum project create -o my_dataset/
@@ -231,9 +231,9 @@ datum source add path <path/to/images/dir> -f images_dir
 datum project export -f tf_detection_api
 ```
 
-### Filter project
+### Extract subproject
 
-This command allows to create a sub-Project form a Project. The new project
+This command allows to create a sub-Project from a Project. The new project
 includes only items satisfying some condition. XPath is used as a query
 format.
 
@@ -248,7 +248,7 @@ datum project extract \
      -e '<filter expression>'
 ```
 
-Example:
+Example: extract a sub-dataset, where only images which width < height
 
 ``` bash
 datum project extract \
@@ -257,7 +257,7 @@ datum project extract \
      -e '/item[image/width < image/height]'
 ```
 
-Item representation (available with `--dry-run` parameter):
+Item representations are available with `--dry-run` parameter:
 
 ``` xml
 <item>
@@ -294,8 +294,7 @@ Item representation (available with `--dry-run` parameter):
 
 ### Merge projects
 
-This command combines multiple Projects into one and does somewhat opposite
-actions to the `filter` command.
+This command combines multiple Projects into one.
 
 Usage:
 
@@ -308,13 +307,14 @@ datum project merge \
      <other project dir>
 ```
 
-Example:
+Example: update annotations in the `first_project` with annotations
+from the `second_project` and save the result as `merged_project`
 
 ``` bash
 datum project merge \
-     -p test_project \
-     -o test_project-merge \
-     other_project
+     -p first_project \
+     -o merged_project \
+     second_project
 ```
 
 ### Export project
@@ -336,16 +336,18 @@ datum project export --help
 datum project export \
      -p <project dir> \
      -o <output dir> \
-     -f <format>
+     -f <format> \
+     [-- <additional format parameters>]
 ```
 
-Example:
+Example: save project as VOC-like dataset, include images
 
 ``` bash
 datum project export \
      -p test_project \
      -o test_project-export \
-     -f voc
+     -f voc \
+     -- --save-images
 ```
 
 ### Transform project
@@ -364,7 +366,7 @@ datum project transform \
      -o <output dir>
 ```
 
-Example:
+Example: apply custom transformation to project
 
 ``` bash
 datum project import <...>
@@ -383,12 +385,13 @@ Usage:
 datum model add --help
 ```
 
-Example: register OpenVINO model
+Example: register an OpenVINO model
 
 A model consists of a graph description and weights. There is also a script
 used to convert model outputs to internal data structures.
 
 ``` bash
+datum project create
 datum model add \
      -n <model_name> openvino \
      -d <path_to_xml> -w <path_to_bin> -i <path_to_interpretation_script>
@@ -452,7 +455,7 @@ datum model run \
      -o <save_dir>
 ```
 
-Example:
+Example: launch inference on a dataset
 
 ``` bash
 datum project import <...>
