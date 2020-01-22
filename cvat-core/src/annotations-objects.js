@@ -406,15 +406,16 @@
                 copy.visible = data.visible;
             }
 
-            // Reset flags and commit all changes
-            this.updateTimestamp(updated);
-            updated.reset();
-
+            // Commit state
             for (const prop of Object.keys(copy)) {
                 if (prop in this) {
                     this[prop] = copy[prop];
                 }
             }
+
+            // Reset flags and commit all changes
+            this.updateTimestamp(updated);
+            updated.reset();
 
             return objectStateFactory.call(this, frame, this.get(frame));
         }
@@ -899,14 +900,16 @@
                 copy.lock = data.lock;
             }
 
-            // Reset flags and commit all changes
-            this.updateTimestamp(updated);
-            updated.reset();
+            // Commit state
             for (const prop of Object.keys(copy)) {
                 if (prop in this) {
                     this[prop] = copy[prop];
                 }
             }
+
+            // Reset flags and commit all changes
+            this.updateTimestamp(updated);
+            updated.reset();
 
             return objectStateFactory.call(this, frame, this.get(frame));
         }
