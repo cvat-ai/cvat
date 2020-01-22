@@ -100,6 +100,54 @@ Available CLI commands:
 
 If you want to interact with models, you need to add them to project first.
 
+### Import project
+
+This command creates a Project from an existing dataset.
+
+Supported formats are listed in the command help.
+In Datumaro dataset formats are supported by Extractors and Importers.
+An Extractor produces a list of dataset items corresponding
+to the dataset. An Importer creates a Project from the
+data source location. It is possible to add a custom Extractor and Importer.
+To do this, you need to put an Extractor and Importer implementation scripts to
+`<project_dir>/.datumaro/extractors` and `<project_dir>/.datumaro/importers`.
+
+Usage:
+
+``` bash
+datum project import --help
+
+datum project import \
+     -i <dataset_path> \
+     -o <project_dir> \
+     -f <format>
+```
+
+Example:
+
+``` bash
+datum project import \
+     -i /home/coco_dir \
+     -o /home/project_dir \
+     -f coco
+```
+
+An _MS COCO_-like dataset should have the following directory structure:
+
+<!--lint disable fenced-code-flag-->
+```
+COCO/
+├── annotations/
+│   ├── instances_val2017.json
+│   ├── instances_train2017.json
+├── images/
+│   ├── val2017
+│   ├── train2017
+```
+<!--lint enable fenced-code-flag-->
+
+Everything after the last `_` is considered a subset name in the COCO format.
+
 ### Create project
 
 The command creates an empty project. Once a Project is created, there are
@@ -149,72 +197,31 @@ Usage:
 
 ``` bash
 datum source add --help
+datum source remove --help
 
 datum source add \
+     path <path> \
      -p <project dir> \
-     path <path>
+     -n <name>
+
+datum source remove \
+     -p <project dir> \
+     -n <name>
 ```
 
 Example: create a project from a bunch of different annotations and images,
-and generate TFrecord for model training
+and generate TFrecord for TF Detection API for model training
 
 ``` bash
 datum project create
-datum source add path <path/to/coco-instances.json> -f coco_instances
-datum source add path <path/to/cvat.xml> -f cvat
+# 'default' is the name of the subset below
+datum source add path <path/to/coco/instances_default.json> -f coco_instances
+datum source add path <path/to/cvat/default.xml> -f cvat
 datum source add path <path/to/voc> -f voc_detection
-datum source add path <path/to/datumaro.json> -f datumaro
+datum source add path <path/to/datumaro/default.json> -f datumaro
 datum source add path <path/to/images/dir> -f images_dir
 datum project export -f tf_detection_api
 ```
-
-### Import project
-
-This command creates a Project from an existing dataset.
-
-Supported formats are listed in the command help.
-In Datumaro dataset formats are supported by Extractors and Importers.
-An Extractor produces a list of dataset items corresponding
-to the dataset. An Importer creates a Project from the
-data source location. It is possible to add a custom Extractor and Importer.
-To do this, you need to put an Extractor and Importer implementation scripts to
-`<project_dir>/.datumaro/extractors` and `<project_dir>/.datumaro/importers`.
-
-Usage:
-
-``` bash
-datum project import --help
-
-datum project import \
-     -i <dataset_path> \
-     -o <project_dir> \
-     -f <format>
-```
-
-Example:
-
-``` bash
-datum project import \
-     -i /home/coco_dir \
-     -o /home/project_dir \
-     -f coco
-```
-
-An _MS COCO_-like dataset should have the following directory structure:
-
-<!--lint disable fenced-code-flag-->
-```
-COCO/
-├── annotations/
-│   ├── instances_val2017.json
-│   ├── instances_train2017.json
-├── images/
-│   ├── val2017
-│   ├── train2017
-```
-<!--lint enable fenced-code-flag-->
-
-Everything after the last `_` is considered a subset name.
 
 ### Filter project
 
@@ -344,6 +351,7 @@ Usage:
 datum project transform --help
 
 datum project transform \
+     -p <project dir> \
      -t <transform name> \
      -o <output dir>
 ```
@@ -432,7 +440,7 @@ datum model run --help
 
 datum model run \
      -p <project dir> \
-     -t <model_name> \
+     -m <model_name> \
      -o <save_dir>
 ```
 
@@ -441,7 +449,7 @@ Example:
 ``` bash
 datum project import <...>
 datum model add mymodel <...>
-datum model run -t mymodel -o inference
+datum model run -m mymodel -o inference
 ```
 
 ### Compare projects

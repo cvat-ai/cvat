@@ -17,6 +17,16 @@ def build_add_parser(parser_ctor=argparse.ArgumentParser):
     import datumaro.components.extractors as extractors_module
     extractors_list = [name for name, cls in extractors_module.items]
 
+    base_parser = argparse.ArgumentParser(add_help=False)
+    base_parser.add_argument('-n', '--name', default=None,
+        help="Name of the new source")
+    base_parser.add_argument('-f', '--format', default=None,
+        help="Source dataset format (default: 'project')")
+    base_parser.add_argument('--skip-check', action='store_true',
+        help="Skip source checking")
+    base_parser.add_argument('-p', '--project', dest='project_dir', default='.',
+        help="Directory of the project to operate on (default: current dir)")
+
     parser = parser_ctor(help="Add data source to project",
         description="""
             Adds a data source to a project. The source can be:|n
@@ -43,21 +53,32 @@ def build_add_parser(parser_ctor=argparse.ArgumentParser):
             To do this, you need to put an Extractor
             definition script to <project_dir>/.datumaro/extractors.|n
             |n
-            List of supported source formats: %s
+            List of supported source formats: %s|n
+            |n
+            Examples:|n
+            - Add a local directory with VOC-like dataset:|n
+            |s|sadd path path/to/voc -f voc_detection|n
+            - Add a local file with CVAT annotations, call it 'mysource'|n
+            |s|s|s|sto the project somewhere else:|n
+            |s|sadd path path/to/cvat.xml -f cvat -n mysource -p somewhere/else/
         """ % ('%(prog)s SOURCE_TYPE --help', ', '.join(extractors_list)),
-        formatter_class=MultilineFormatter)
+        formatter_class=MultilineFormatter,
+        add_help=False)
+    parser.set_defaults(command=add_command)
 
     sp = parser.add_subparsers(dest='source_type', metavar='SOURCE_TYPE',
         help="The type of the data source "
             "(call '%s SOURCE_TYPE --help' for more info)" % parser.prog)
 
-    dir_parser = sp.add_parser('path', help="Add local path as source")
+    dir_parser = sp.add_parser('path', help="Add local path as source",
+        parents=[base_parser])
     dir_parser.add_argument('url',
         help="Path to the source")
     dir_parser.add_argument('--copy', action='store_true',
         help="Copy the dataset instead of saving source links")
 
-    repo_parser = sp.add_parser('git', help="Add git repository as source")
+    repo_parser = sp.add_parser('git', help="Add git repository as source",
+        parents=[base_parser])
     repo_parser.add_argument('url',
         help="URL of the source git repository")
     repo_parser.add_argument('-b', '--branch', default='master',
@@ -65,15 +86,19 @@ def build_add_parser(parser_ctor=argparse.ArgumentParser):
     repo_parser.add_argument('--checkout', action='store_true',
         help="Do branch checkout")
 
-    parser.add_argument('-n', '--name', default=None,
-        help="Name of the new source")
-    parser.add_argument('-f', '--format', default=None,
-        help="Source dataset format (default: 'project')")
-    parser.add_argument('--skip-check', action='store_true',
-        help="Skip source checking")
-    parser.add_argument('-p', '--project', dest='project_dir', default='.',
-        help="Directory of the project to operate on (default: current dir)")
-    parser.set_defaults(command=add_command)
+    # NOTE: add common parameters to the parent help output
+    # the other way could be to use parse_known_args()
+    display_parser = argparse.ArgumentParser(
+        parents=[base_parser, parser],
+        prog=parser.prog,
+        description=parser.description, formatter_class=MultilineFormatter)
+    class HelpAction(argparse._HelpAction):
+        def __call__(self, parser, namespace, values, option_string=None):
+            display_parser.print_help()
+            parser.exit()
+
+    parser.add_argument('-h', '--help', action=HelpAction,
+        help='show this help message and exit')
 
     # TODO: needed distinction on how to add an extractor or a remote source
 
@@ -171,7 +196,7 @@ def remove_command(args):
     project = load_project(args.project_dir)
 
     name = args.name
-    if name is None:
+    if not name:
         raise CliException("Expected source name")
 
     if project.env.git.has_submodule(name):
