@@ -205,7 +205,10 @@ export interface NotificationsState {
             saving: null | ErrorState;
             jobFetching: null | ErrorState;
             frameFetching: null | ErrorState;
+            changingLabelColor: null | ErrorState;
         };
+
+        [index: string]: any;
     };
     messages: {
         tasks: {
@@ -214,6 +217,8 @@ export interface NotificationsState {
         models: {
             inferenceDone: string;
         };
+
+        [index: string]: any;
     };
 }
 
@@ -244,24 +249,36 @@ export enum ObjectType {
 }
 
 export interface AnnotationState {
-    canvasInstance: Canvas;
-    canvasIsReady: boolean;
-    activeControl: ActiveControl;
-    jobInstance: any | null | undefined;
-    frameData: any | null;
-    frame: number;
-    playing: boolean;
-    annotations: any[];
-    colors: any[];
-    saving: boolean;
-    savingStatuses: string[];
-    jobFetching: boolean;
-    dataFetching: boolean;
+    canvas: {
+        instance: Canvas;
+        ready: boolean;
+        activeControl: ActiveControl;
+    };
+    job: {
+        instance: any | null | undefined;
+        fetching: boolean;
+    };
+    player: {
+        frame: {
+            number: number;
+            data: any | null;
+            fetching: boolean;
+        };
+        playing: boolean;
+    };
     drawing: {
         activeShapeType: ShapeType;
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;
+    };
+    annotations: {
+        states: any[];
+        colors: any[];
+        saving: {
+            uploading: boolean;
+            statuses: string[];
+        };
     };
 }
 

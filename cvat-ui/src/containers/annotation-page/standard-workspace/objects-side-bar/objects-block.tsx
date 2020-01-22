@@ -24,12 +24,26 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { annotation } = state;
+    const {
+        annotation: {
+            annotations: {
+                states: annotations,
+                colors,
+            },
+            job: {
+                instance: {
+                    task: {
+                        labels,
+                    },
+                },
+            },
+        },
+    } = state;
 
     return {
-        annotations: annotation.annotations,
-        labels: [...annotation.jobInstance.task.labels],
-        colors: annotation.colors,
+        annotations,
+        labels,
+        colors,
     };
 }
 

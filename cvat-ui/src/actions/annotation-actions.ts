@@ -29,14 +29,11 @@ export enum AnnotationActionTypes {
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
     DRAG_CANVAS = 'DRAG_CANVAS',
     ZOOM_CANVAS = 'ZOOM_CANVAS',
+    MERGE_OBJECTS = 'MERGE_OBJECTS',
+    GROUP_OBJECTS = 'GROUP_OBJECTS',
+    SPLIT_TRACK = 'SPLIT_TRACK',
     DRAW_SHAPE = 'DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
-    MERGE_OBJECTS = 'MERGE_OBJECTS',
-    OBJECTS_MERGED = 'OBJECTS_MERGED',
-    GROUP_OBJECTS = 'GROUP_OBJECTS',
-    OBJECTS_GROUPPED = 'OBJECTS_GROUPPED',
-    SPLIT_TRACK = 'SPLIT_TRACK',
-    TRACK_SPLITTED = 'TRACK_SPLITTED',
     RESET_CANVAS = 'RESET_CANVAS',
     ANNOTATIONS_UPDATED = 'ANNOTATIONS_UPDATED',
     CHANGE_LABEL_COLOR_SUCCESS = 'CHANGE_LABEL_COLOR_SUCCESS',
@@ -57,42 +54,54 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const store = getCVATStore();
         const state: CombinedState = store.getState();
-        const { jobInstance } = state.annotation;
-        const currentFrame = state.annotation.frame;
+        const { instance: job } = state.annotation.job;
+        const { number: frame } = state.annotation.player.frame;
 
-        const frame = Math.max(
-            Math.min(toFrame, jobInstance.stopFrame),
-            jobInstance.startFrame,
-        );
+        try {
+            if (toFrame < job.startFrame || toFrame > job.stopFrame) {
+                throw Error(`Required frame ${toFrame} is out of the current job`);
+            }
 
-        // !playing || state.annotation.playing prevents changing frame on the latest setTimeout
-        // after playing had become false
-        if (frame !== currentFrame && (!playing || state.annotation.playing)) {
+            // playing && !state.annotation.player.playing is responsible
+            // for stopping playing when player doesn't play, but setTimeout
+            // doesn't have enough context in closure to know about it
+            if (toFrame === frame || (playing && !state.annotation.player.playing)) {
+                dispatch({
+                    type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
+                    payload: {
+                        number: state.annotation.player.frame.number,
+                        data: state.annotation.player.frame.data,
+                        states: state.annotation.annotations.states,
+                    },
+                });
+
+                return;
+            }
+
+            // Start async requests
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME,
                 payload: {},
             });
 
-            try {
-                const frameData = await jobInstance.frames.get(frame);
-                const annotations = await jobInstance.annotations.get(frame);
-                dispatch({
-                    type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
-                    payload: {
-                        frame,
-                        frameData,
-                        annotations,
-                    },
-                });
-            } catch (error) {
-                dispatch({
-                    type: AnnotationActionTypes.CHANGE_FRAME_FAILED,
-                    payload: {
-                        frame,
-                        error,
-                    },
-                });
-            }
+            const data = await job.frames.get(frame);
+            const states = await job.annotations.get(frame);
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
+                payload: {
+                    number: toFrame,
+                    data,
+                    states,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_FRAME_FAILED,
+                payload: {
+                    frame,
+                    error,
+                },
+            });
         }
     };
 }
@@ -140,31 +149,36 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             const store = getCVATStore();
             const state: CombinedState = store.getState();
+
+            // First check state if the task is already there
             let task = state.tasks.current
                 .filter((_task: Task) => _task.instance.id === tid)
                 .map((_task: Task) => _task.instance)[0];
+
+            // If there aren't the task, get it from the server
             if (!task) {
                 [task] = await cvat.tasks.get({ id: tid });
             }
 
+            // Finally get the job from the task
             const job = task.jobs
                 .filter((_job: any) => _job.id === jid)[0];
             if (!job) {
-                throw new Error('Job with specified id does not exist');
+                throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
             }
 
-            const frame = Math.min(0, job.startFrame);
-            const frameData = await job.frames.get(frame);
-            const annotations = await job.annotations.get(frame);
+            const frameNumber = Math.max(0, job.startFrame);
+            const frameData = await job.frames.get(frameNumber);
+            const states = await job.annotations.get(frameNumber);
             const colors = [...cvat.enums.colors];
 
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_SUCCESS,
                 payload: {
-                    jobInstance: job,
+                    job,
+                    states,
+                    frameNumber,
                     frameData,
-                    annotations,
-                    frame,
                     colors,
                 },
             });
@@ -246,53 +260,38 @@ export function shapeDrawn(): AnyAction {
     };
 }
 
-export function mergeObjects(): AnyAction {
+export function mergeObjects(enabled: boolean): AnyAction {
     return {
         type: AnnotationActionTypes.MERGE_OBJECTS,
-        payload: {},
+        payload: {
+            enabled,
+        },
     };
 }
 
-export function objectsMerged(): AnyAction {
-    return {
-        type: AnnotationActionTypes.OBJECTS_MERGED,
-        payload: {},
-    };
-}
-
-export function groupObjects(): AnyAction {
+export function groupObjects(enabled: boolean): AnyAction {
     return {
         type: AnnotationActionTypes.GROUP_OBJECTS,
-        payload: {},
+        payload: {
+            enabled,
+        },
     };
 }
 
-export function objectsGroupped(): AnyAction {
-    return {
-        type: AnnotationActionTypes.OBJECTS_GROUPPED,
-        payload: {},
-    };
-}
-
-export function splitTrack(): AnyAction {
+export function splitTrack(enabled: boolean): AnyAction {
     return {
         type: AnnotationActionTypes.SPLIT_TRACK,
-        payload: {},
+        payload: {
+            enabled,
+        },
     };
 }
 
-export function trackSplitted(): AnyAction {
-    return {
-        type: AnnotationActionTypes.TRACK_SPLITTED,
-        payload: {},
-    };
-}
-
-export function annotationsUpdated(annotations: any[]): AnyAction {
+export function annotationsUpdated(states: any[]): AnyAction {
     return {
         type: AnnotationActionTypes.ANNOTATIONS_UPDATED,
         payload: {
-            annotations,
+            states,
         },
     };
 }

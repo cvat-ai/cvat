@@ -12,10 +12,15 @@ interface StateToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { annotation } = state;
-    return {
-        canvasInstance: annotation.canvasInstance,
-    };
+    const {
+        annotation: {
+            canvas: {
+                instance: canvasInstance,
+            },
+        },
+    } = state;
+
+    return { canvasInstance };
 }
 
 function StandardWorkspaceContainer(props: StateToProps): JSX.Element {

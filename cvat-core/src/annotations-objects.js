@@ -166,7 +166,7 @@
             const anyChanges = updated.label || updated.attributes || updated.points
                 || updated.outside || updated.occluded || updated.keyframe
                 || updated.group || updated.zOrder || updated.lock
-                || updated.color || updated.visible;
+                || updated.color || updated.hidden;
 
             if (anyChanges) {
                 this.updated = Date.now();
@@ -188,7 +188,7 @@
 
             this.frameMeta = injection.frameMeta;
             this.collectionZ = injection.collectionZ;
-            this.visible = true;
+            this.hidden = false;
 
             this.color = color;
             this.shapeType = null;
@@ -292,7 +292,7 @@
                 label: this.label,
                 group: this.group,
                 color: this.color,
-                visible: this.visible,
+                hidden: this.hidden,
                 updated: this.updated,
                 frame,
             };
@@ -401,9 +401,9 @@
                 copy.color = data.color;
             }
 
-            if (updated.visible) {
-                checkObjectType('visible', data.visible, 'boolean', null);
-                copy.visible = data.visible;
+            if (updated.hidden) {
+                checkObjectType('hidden', data.hidden, 'boolean', null);
+                copy.hidden = data.hidden;
             }
 
             // Commit state
@@ -507,7 +507,7 @@
                 serverID: this.serverID,
                 lock: this.lock,
                 color: this.color,
-                visible: this.visible,
+                hidden: this.hidden,
                 updated: this.updated,
                 label: this.label,
                 frame,
@@ -676,9 +676,9 @@
                 copy.color = data.color;
             }
 
-            if (updated.visible) {
-                checkObjectType('visible', data.visible, 'boolean', null);
-                copy.visible = data.visible;
+            if (updated.hidden) {
+                checkObjectType('hidden', data.hidden, 'boolean', null);
+                copy.hidden = data.hidden;
             }
 
             if (updated.keyframe) {

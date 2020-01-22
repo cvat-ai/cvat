@@ -16,14 +16,14 @@ interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
 
-    onGroupStart(): void;
+    groupObjects(enabled: boolean): void;
 }
 
 export default function GroupControl(props: Props): JSX.Element {
     const {
         activeControl,
         canvasInstance,
-        onGroupStart,
+        groupObjects,
     } = props;
 
     const dynamicIconProps = activeControl === ActiveControl.GROUP
@@ -31,12 +31,13 @@ export default function GroupControl(props: Props): JSX.Element {
             className: 'cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.group({ enabled: false });
+                groupObjects(false);
             },
         } : {
             onClick: (): void => {
                 canvasInstance.cancel();
                 canvasInstance.group({ enabled: true });
-                onGroupStart();
+                groupObjects(true);
             },
         };
 

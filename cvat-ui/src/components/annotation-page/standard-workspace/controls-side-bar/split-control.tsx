@@ -16,14 +16,14 @@ interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
 
-    onSplitStart(): void;
+    splitTrack(enabled: boolean): void;
 }
 
 export default function SplitControl(props: Props): JSX.Element {
     const {
         activeControl,
         canvasInstance,
-        onSplitStart,
+        splitTrack,
     } = props;
 
     const dynamicIconProps = activeControl === ActiveControl.SPLIT
@@ -31,12 +31,13 @@ export default function SplitControl(props: Props): JSX.Element {
             className: 'cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.split({ enabled: false });
+                splitTrack(false);
             },
         } : {
             onClick: (): void => {
                 canvasInstance.cancel();
                 canvasInstance.split({ enabled: true });
-                onSplitStart();
+                splitTrack(true);
             },
         };
 

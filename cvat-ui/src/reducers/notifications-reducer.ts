@@ -53,6 +53,7 @@ const defaultState: NotificationsState = {
             saving: null,
             jobFetching: null,
             frameFetching: null,
+            changingLabelColor: null,
         },
     },
     messages: {
@@ -469,6 +470,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         saving: {
                             message: 'Could not save annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        changingLabelColor: {
+                            message: 'Could not change label color',
                             reason: action.payload.error.toString(),
                         },
                     },

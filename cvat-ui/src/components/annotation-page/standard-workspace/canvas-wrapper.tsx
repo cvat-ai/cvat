@@ -34,10 +34,10 @@ interface Props {
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
+    onMergeObjects: (enabled: boolean) => void;
+    onGroupObjects: (enabled: boolean) => void;
+    onSplitTrack: (enabled: boolean) => void;
     onShapeDrawn: () => void;
-    onObjectsMerged: () => void;
-    onObjectsGroupped: () => void;
-    onTrackSplitted: () => void;
     onResetCanvas: () => void;
     onAnnotationsUpdated: (annotations: any[]) => void;
 }
@@ -153,10 +153,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             jobInstance,
             frame,
             onAnnotationsUpdated,
-            onObjectsMerged,
+            onMergeObjects,
         } = this.props;
 
-        onObjectsMerged();
+        //onMergeObjects(false);
 
         const { states } = event.detail;
         await jobInstance.annotations.merge(states);
@@ -169,10 +169,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             jobInstance,
             frame,
             onAnnotationsUpdated,
-            onObjectsGroupped,
+            onGroupObjects,
         } = this.props;
 
-        onObjectsGroupped();
+        //onGroupObjects(false);
 
         const { states } = event.detail;
         await jobInstance.annotations.group(states);
@@ -185,10 +185,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             jobInstance,
             frame,
             onAnnotationsUpdated,
-            onTrackSplitted,
+            onSplitTrack,
         } = this.props;
 
-        onTrackSplitted();
+        //onSplitTrack(false);
 
         const { state } = event.detail;
         await jobInstance.annotations.split(state, frame);
@@ -250,21 +250,21 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onResetCanvas();
         });
 
-        canvasInstance.html().addEventListener('canvas.dragstart', () => {
-            onDragCanvas(true);
-        });
+        // canvasInstance.html().addEventListener('canvas.dragstart', () => {
+        //     onDragCanvas(true);
+        // });
 
-        canvasInstance.html().addEventListener('canvas.dragstop', () => {
-            onDragCanvas(false);
-        });
+        // canvasInstance.html().addEventListener('canvas.dragstop', () => {
+        //     onDragCanvas(false);
+        // });
 
-        canvasInstance.html().addEventListener('canvas.zoomstart', () => {
-            onZoomCanvas(true);
-        });
+        // canvasInstance.html().addEventListener('canvas.zoomstart', () => {
+        //     onZoomCanvas(true);
+        // });
 
-        canvasInstance.html().addEventListener('canvas.zoomstop', () => {
-            onZoomCanvas(false);
-        });
+        // canvasInstance.html().addEventListener('canvas.zoomstop', () => {
+        //     onZoomCanvas(false);
+        // });
 
         canvasInstance.html().addEventListener('canvas.moved', async (event: any): Promise<void> => {
             const result = await jobInstance.annotations.select(

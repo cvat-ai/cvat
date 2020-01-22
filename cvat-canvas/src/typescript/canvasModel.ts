@@ -305,6 +305,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             if (this.data.imageID !== frameData.number && !this.data.rememberAngle) {
                 this.data.angle = 0;
             }
+            this.data.imageID = frameData.number;
 
             this.data.image = data;
             this.notify(UpdateReasons.IMAGE_CHANGED);

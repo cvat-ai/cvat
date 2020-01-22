@@ -48,14 +48,17 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
-        annotation,
+        annotation: {
+            canvas: {
+                instance: canvasInstance,
+            },
+            job: {
+                instance: jobInstance,
+            },
+        },
     } = state;
 
-    const {
-        canvasInstance,
-    } = annotation;
-
-    const labels = annotation.jobInstance.task.labels
+    const labels = jobInstance.task.labels
         .reduce((acc: StringObject, label: any): StringObject => {
             acc[label.id as number] = label.name;
             return acc;

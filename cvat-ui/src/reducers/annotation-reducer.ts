@@ -11,23 +11,35 @@ import {
 } from './interfaces';
 
 const defaultState: AnnotationState = {
-    canvasInstance: new Canvas(),
-    canvasIsReady: false,
-    activeControl: ActiveControl.CURSOR,
-    jobInstance: null,
-    frame: 0,
-    colors: [],
-    playing: false,
-    annotations: [],
-    frameData: null,
-    saving: false,
-    savingStatuses: [],
-    dataFetching: false,
-    jobFetching: false,
+    canvas: {
+        instance: new Canvas(),
+        ready: false,
+        activeControl: ActiveControl.CURSOR,
+    },
+    job: {
+        instance: null,
+        fetching: false,
+    },
+    player: {
+        frame: {
+            number: 0,
+            data: null,
+            fetching: false,
+        },
+        playing: false,
+    },
     drawing: {
         activeShapeType: ShapeType.RECTANGLE,
         activeLabelID: 0,
         activeObjectType: ObjectType.SHAPE,
+    },
+    annotations: {
+        saving: {
+            uploading: false,
+            statuses: [],
+        },
+        states: [],
+        colors: [],
     },
 };
 
@@ -36,113 +48,209 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.GET_JOB: {
             return {
                 ...defaultState,
-                jobFetching: true,
+                job: {
+                    ...defaultState.job,
+                    fetching: true,
+                },
             };
         }
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
-                jobInstance,
-                frame,
-                frameData,
-                annotations,
+                job,
+                states,
+                frameNumber: number,
                 colors,
+                frameData: data,
             } = action.payload;
 
             return {
-                ...defaultState,
-                jobFetching: false,
-                jobInstance,
-                frame,
-                frameData,
-                annotations,
-                colors,
+                ...state,
+                job: {
+                    ...state,
+                    fetching: false,
+                    instance: job,
+                },
+                annotations: {
+                    ...state.annotations,
+                    states,
+                    colors,
+                },
+                player: {
+                    ...state.player,
+                    frame: {
+                        ...state.player.frame,
+                        number,
+                        data,
+                    },
+                },
                 drawing: {
                     ...defaultState.drawing,
-                    activeLabelID: jobInstance.task.labels[0].id,
-                    activeObjectType: jobInstance.task.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
+                    activeLabelID: job.task.labels[0].id,
+                    activeObjectType: job.task.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
                 },
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
             return {
                 ...state,
-                jobInstance: undefined,
-                jobFetching: false,
+                job: {
+                    ...state.job,
+                    instance: undefined,
+                    fetching: false,
+                },
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME: {
             return {
                 ...state,
-                frameData: null,
-                annotations: [],
-                dataFetching: true,
-                canvasIsReady: false,
+                annotations: {
+                    ...state.annotations,
+                    states: [],
+                },
+                player: {
+                    ...state.player,
+                    frame: {
+                        ...state.player.frame,
+                        data: null,
+                        fetching: true,
+                    },
+                },
+                canvas: {
+                    ...state.canvas,
+                    ready: false,
+                },
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
+            const {
+                number,
+                data,
+                states,
+            } = action.payload;
+
             return {
                 ...state,
-                frame: action.payload.frame,
-                annotations: action.payload.annotations,
-                frameData: action.payload.frameData,
-                dataFetching: false,
+                player: {
+                    ...state.player,
+                    frame: {
+                        data,
+                        number,
+                        fetching: false,
+                    },
+                },
+                annotations: {
+                    ...state.annotations,
+                    states,
+                },
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_FAILED: {
             return {
                 ...state,
-                dataFetching: false,
-            }; // add notification if failed
+                player: {
+                    ...state.player,
+                    frame: {
+                        ...state.player.frame,
+                        fetching: false,
+                    },
+                },
+            };
         }
         case AnnotationActionTypes.SAVE_ANNOTATIONS: {
             return {
                 ...state,
-                saving: true,
-                savingStatuses: [],
+                annotations: {
+                    ...state.annotations,
+                    saving: {
+                        ...state.annotations.saving,
+                        uploading: true,
+                        statuses: [],
+                    },
+                },
             };
         }
         case AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS: {
             return {
                 ...state,
-                saving: false,
+                annotations: {
+                    ...state.annotations,
+                    saving: {
+                        ...state.annotations.saving,
+                        uploading: false,
+                    },
+                },
             };
         }
         case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED: {
             return {
                 ...state,
-                saving: false,
-            }; // add notification if failed
+                annotations: {
+                    ...state.annotations,
+                    saving: {
+                        ...state.annotations.saving,
+                        uploading: false,
+                    },
+                },
+            };
         }
         case AnnotationActionTypes.SAVE_ANNOTATIONS_UPDATED_STATUS: {
+            const { status } = action.payload;
+
             return {
                 ...state,
-                savingStatuses: [...state.savingStatuses, action.payload.status],
+                annotations: {
+                    ...state.annotations,
+                    saving: {
+                        ...state.annotations.saving,
+                        statuses: [...state.annotations.saving.statuses, status],
+                    },
+                },
             };
         }
         case AnnotationActionTypes.SWITCH_PLAY: {
+            const { playing } = action.payload;
+
             return {
                 ...state,
-                playing: action.payload.playing,
+                player: {
+                    ...state.player,
+                    playing,
+                },
             };
         }
         case AnnotationActionTypes.CONFIRM_CANVAS_READY: {
             return {
                 ...state,
-                canvasIsReady: true,
+                canvas: {
+                    ...state.canvas,
+                    ready: true,
+                },
             };
         }
         case AnnotationActionTypes.DRAG_CANVAS: {
             const { enabled } = action.payload;
+            const activeControl = enabled
+                ? ActiveControl.DRAG_CANVAS : ActiveControl.CURSOR;
+
             return {
                 ...state,
-                activeControl: enabled ? ActiveControl.DRAG_CANVAS : ActiveControl.CURSOR,
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
             };
         }
         case AnnotationActionTypes.ZOOM_CANVAS: {
             const { enabled } = action.payload;
+            const activeControl = enabled
+                ? ActiveControl.ZOOM_CANVAS : ActiveControl.CURSOR;
+
             return {
                 ...state,
-                activeControl: enabled ? ActiveControl.ZOOM_CANVAS : ActiveControl.CURSOR,
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
             };
         }
         case AnnotationActionTypes.DRAW_SHAPE: {
@@ -156,7 +264,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
-                activeControl,
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
                 drawing: {
                     activeLabelID: labelID,
                     activeNumOfPoints: points,
@@ -166,48 +277,72 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.MERGE_OBJECTS: {
+            const { enabled } = action.payload;
+            const activeControl = enabled
+                ? ActiveControl.MERGE : ActiveControl.CURSOR;
+
             return {
                 ...state,
-                activeControl: ActiveControl.MERGE,
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
             };
         }
         case AnnotationActionTypes.GROUP_OBJECTS: {
+            const { enabled } = action.payload;
+            const activeControl = enabled
+                ? ActiveControl.GROUP : ActiveControl.CURSOR;
+
             return {
                 ...state,
-                activeControl: ActiveControl.GROUP,
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
             };
         }
         case AnnotationActionTypes.SPLIT_TRACK: {
+            const { enabled } = action.payload;
+            const activeControl = enabled
+                ? ActiveControl.SPLIT : ActiveControl.CURSOR;
+
             return {
                 ...state,
-                activeControl: ActiveControl.SPLIT,
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
             };
         }
-        case AnnotationActionTypes.OBJECTS_MERGED:
-        case AnnotationActionTypes.OBJECTS_GROUPPED:
-        case AnnotationActionTypes.TRACK_SPLITTED:
         case AnnotationActionTypes.SHAPE_DRAWN: {
             return {
                 ...state,
-                activeControl: ActiveControl.CURSOR,
+                canvas: {
+                    ...state.canvas,
+                    activeControl: ActiveControl.CURSOR,
+                },
             };
         }
         case AnnotationActionTypes.ANNOTATIONS_UPDATED: {
+            const { states } = action.payload;
+
             return {
                 ...state,
-                annotations: action.payload.annotations,
+                annotations: {
+                    ...state.annotations,
+                    states,
+                },
             };
         }
         case AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS: {
             const {
                 label,
             } = action.payload;
-            const { jobInstance } = state;
-
-            const updatedLabels = [...state.jobInstance.task.labels];
-            const index = updatedLabels.indexOf(label);
-            updatedLabels[index] = label;
-            jobInstance.task.labels = updatedLabels;
+            const { instance: job } = state.job;
+            const labels = [...job.task.labels];
+            const index = labels.indexOf(label);
+            labels[index] = label;
 
             return {
                 ...state,
@@ -216,7 +351,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.RESET_CANVAS: {
             return {
                 ...state,
-                activeControl: ActiveControl.CURSOR,
+                canvas: {
+                    ...state.canvas,
+                    activeControl: ActiveControl.CURSOR,
+                },
             };
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {

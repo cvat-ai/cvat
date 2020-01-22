@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 
 import {
     changeFrameAsync,
-    switchPlay as switchPlayAction,
+    switchPlay,
     saveAnnotationsAsync,
 } from 'actions/annotation-actions';
 
@@ -28,21 +28,35 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        annotation,
-        settings,
+        annotation: {
+            player: {
+                playing,
+                frame: {
+                    number: frame,
+                },
+            },
+            annotations: {
+                saving: {
+                    uploading: saving,
+                    statuses: savingStatuses,
+                },
+            },
+            canvas: {
+                ready: canvasIsReady,
+            },
+            job: {
+                instance: jobInstance,
+            },
+        },
+        settings: {
+            player: {
+                frameStep,
+            },
+        },
     } = state;
 
-    const {
-        playing,
-        saving,
-        savingStatuses,
-        canvasIsReady,
-        frame,
-        jobInstance,
-    } = annotation;
-
     return {
-        frameStep: settings.player.frameStep,
+        frameStep,
         playing,
         saving,
         savingStatuses,
@@ -58,7 +72,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(changeFrameAsync(frame, playing));
         },
         onSwitchPlay(playing: boolean): void {
-            dispatch(switchPlayAction(playing));
+            dispatch(switchPlay(playing));
         },
         onSaveAnnotation(sessionInstance: any): void {
             dispatch(saveAnnotationsAsync(sessionInstance));

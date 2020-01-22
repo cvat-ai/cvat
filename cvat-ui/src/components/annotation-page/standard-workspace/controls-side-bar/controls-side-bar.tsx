@@ -36,9 +36,9 @@ interface Props {
     rotateAll: boolean;
     activeControl: ActiveControl;
 
-    onMergeStart(): void;
-    onGroupStart(): void;
-    onSplitStart(): void;
+    mergeObjects(enabled: boolean): void;
+    groupObjects(enabled: boolean): void;
+    splitTrack(enabled: boolean): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
@@ -47,9 +47,9 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         activeControl,
         rotateAll,
 
-        onMergeStart,
-        onGroupStart,
-        onSplitStart,
+        mergeObjects,
+        groupObjects,
+        splitTrack,
     } = props;
 
     return (
@@ -83,17 +83,17 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <MergeControl
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
-                onMergeStart={onMergeStart}
+                mergeObjects={mergeObjects}
             />
             <GroupControl
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
-                onGroupStart={onGroupStart}
+                groupObjects={groupObjects}
             />
             <SplitControl
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
-                onSplitStart={onSplitStart}
+                splitTrack={splitTrack}
             />
         </Layout.Sider>
     );

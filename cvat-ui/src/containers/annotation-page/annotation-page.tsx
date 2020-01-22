@@ -28,8 +28,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { annotation } = state;
 
     return {
-        jobInstance: annotation.jobInstance,
-        fetching: annotation.jobFetching,
+        jobInstance: annotation.job.instance,
+        fetching: annotation.job.fetching,
     };
 }
 

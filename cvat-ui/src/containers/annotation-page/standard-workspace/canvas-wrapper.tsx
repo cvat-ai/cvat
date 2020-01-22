@@ -9,10 +9,10 @@ import {
     zoomCanvas,
     resetCanvas,
     shapeDrawn,
-    objectsMerged,
-    objectsGroupped,
-    trackSplitted,
     annotationsUpdated,
+    mergeObjects,
+    groupObjects,
+    splitTrack,
 } from 'actions/annotation-actions';
 import {
     GridColor,
@@ -42,33 +42,44 @@ interface DispatchToProps {
     onZoomCanvas: (enabled: boolean) => void;
     onResetCanvas: () => void;
     onShapeDrawn: () => void;
-    onObjectsMerged: () => void;
-    onObjectsGroupped: () => void;
-    onTrackSplitted: () => void;
+    onMergeObjects: (enabled: boolean) => void;
+    onGroupObjects: (enabled: boolean) => void;
+    onSplitTrack: (enabled: boolean) => void;
     onAnnotationsUpdated: (annotations: any[]) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        canvasInstance,
-        jobInstance,
-        frameData,
-        frame,
-        annotations,
-        drawing,
-    } = state.annotation;
-
-    const {
-        activeLabelID,
-        activeObjectType,
-    } = drawing;
-
-    const {
-        grid,
-        gridSize,
-        gridColor,
-        gridOpacity,
-    } = state.settings.player;
+        annotation: {
+            canvas: {
+                instance: canvasInstance,
+            },
+            drawing: {
+                activeLabelID,
+                activeObjectType,
+            },
+            job: {
+                instance: jobInstance,
+            },
+            player: {
+                frame: {
+                    data: frameData,
+                    number: frame,
+                },
+            },
+            annotations: {
+                states: annotations,
+            },
+        },
+        settings: {
+            player: {
+                grid,
+                gridSize,
+                gridColor,
+                gridOpacity,
+            },
+        },
+    } = state;
 
     return {
         canvasInstance,
@@ -102,14 +113,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onShapeDrawn(): void {
             dispatch(shapeDrawn());
         },
-        onObjectsMerged(): void {
-            dispatch(objectsMerged());
+        onMergeObjects(enabled: boolean): void {
+            dispatch(mergeObjects(enabled));
         },
-        onObjectsGroupped(): void {
-            dispatch(objectsGroupped());
+        onGroupObjects(enabled: boolean): void {
+            dispatch(groupObjects(enabled));
         },
-        onTrackSplitted(): void {
-            dispatch(trackSplitted());
+        onSplitTrack(enabled: boolean): void {
+            dispatch(splitTrack(enabled));
         },
         onAnnotationsUpdated(annotations: any[]): void {
             dispatch(annotationsUpdated(annotations));
