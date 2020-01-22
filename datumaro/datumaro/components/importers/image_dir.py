@@ -6,8 +6,8 @@
 import os.path as osp
 
 
-class ImagesDirImporter:
-    EXTRACTOR_NAME = 'images_dir'
+class ImageDirImporter:
+    EXTRACTOR_NAME = 'image_dir'
 
     def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import

@@ -11,7 +11,7 @@ from datumaro.components.extractor import DatasetItem, Extractor
 from datumaro.util.image import lazy_image
 
 
-class ImagesDirExtractor(Extractor):
+class ImageDirExtractor(Extractor):
     _SUPPORTED_FORMATS = ['.png', '.jpg']
 
     def __init__(self, url):

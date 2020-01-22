@@ -14,9 +14,9 @@ import pycocotools.mask as mask_utils
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME, AnnotationType, PointsObject, BboxObject, MaskObject
+    DEFAULT_SUBSET_NAME, AnnotationType, PointsObject, MaskObject
 )
-from datumaro.components.formats.ms_coco import CocoTask, CocoPath
+from datumaro.components.formats.coco import CocoTask, CocoPath
 from datumaro.util import find
 from datumaro.util.image import save_image
 import datumaro.util.mask_tools as mask_tools

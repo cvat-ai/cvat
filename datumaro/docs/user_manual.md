@@ -227,7 +227,7 @@ datum source add path <path/to/coco/instances_default.json> -f coco_instances
 datum source add path <path/to/cvat/default.xml> -f cvat
 datum source add path <path/to/voc> -f voc_detection
 datum source add path <path/to/datumaro/default.json> -f datumaro
-datum source add path <path/to/images/dir> -f images_dir
+datum source add path <path/to/images/dir> -f image_dir
 datum project export -f tf_detection_api
 ```
 

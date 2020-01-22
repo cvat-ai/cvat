@@ -12,7 +12,7 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     BboxObject, CaptionObject,
     LabelCategories, PointsCategories
 )
-from datumaro.components.converters.ms_coco import (
+from datumaro.components.converters.coco import (
     CocoConverter,
     CocoImageInfoConverter,
     CocoCaptionsConverter,
@@ -112,7 +112,7 @@ class CocoImporterTest(TestCase):
     def test_can_import(self):
         with TestDir() as temp_dir:
             self.COCO_dataset_generate(temp_dir.path)
-            project = Project.import_from(temp_dir.path, 'ms_coco')
+            project = Project.import_from(temp_dir.path, 'coco')
             dataset = project.make_dataset()
 
             self.assertListEqual(['val'], sorted(dataset.subsets()))
@@ -142,7 +142,7 @@ class CocoConverterTest(TestCase):
 
         if not importer_params:
             importer_params = {}
-        project = Project.import_from(test_dir.path, 'ms_coco',
+        project = Project.import_from(test_dir.path, 'coco',
             **importer_params)
         parsed_dataset = project.make_dataset()
 

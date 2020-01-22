@@ -9,7 +9,7 @@ from datumaro.util.test_utils import TestDir
 from datumaro.util.image import save_image
 
 
-class ImagesDirTest(TestCase):
+class ImageDirFormatTest(TestCase):
     class TestExtractor(Extractor):
         def __iter__(self):
             return iter([
@@ -25,7 +25,7 @@ class ImagesDirTest(TestCase):
                 save_image(osp.join(test_dir.path, '%s.jpg' % item.id),
                     item.image)
 
-            project = Project.import_from(test_dir.path, 'images_dir')
+            project = Project.import_from(test_dir.path, 'image_dir')
             parsed_dataset = project.make_dataset()
 
             self.assertListEqual(
