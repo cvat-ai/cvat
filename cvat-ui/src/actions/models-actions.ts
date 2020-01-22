@@ -1,8 +1,8 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 
-import getCore from '../core';
-import { getCVATStore } from '../store';
+import getCore from 'cvat-core';
+import { getCVATStore } from 'cvat-store';
 import {
     Model,
     ModelFiles,

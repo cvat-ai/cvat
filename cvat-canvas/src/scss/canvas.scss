@@ -3,7 +3,7 @@
 }
 
 .cvat_canvas_shape {
-    fill-opacity: 0.05;
+    fill-opacity: 0.03;
     stroke-opacity: 1;
 }
 
@@ -68,6 +68,12 @@ polyline.cvat_canvas_shape_merging {
     stroke: black;
 }
 
+.cvat_canvas_zoom_selection {
+    stroke: #096dd9;
+    fill-opacity: 0;
+    stroke-dasharray: 4;
+}
+
 .cvat_canvas_shape_occluded {
     stroke-dasharray: 5;
 }
@@ -78,9 +84,9 @@ polyline.cvat_canvas_shape_merging {
 }
 
 #cvat_canvas_wrapper {
-    width: 98%;
-    height: 98%;
-    margin: 10px;
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+    margin: 5px;
     border-radius: 5px;
     background-color: white;
     overflow: hidden;
@@ -103,6 +109,7 @@ polyline.cvat_canvas_shape_merging {
 }
 
 #cvat_canvas_text_content {
+    text-rendering: optimizeSpeed;
     position: absolute;
     z-index: 3;
     pointer-events: none;
@@ -135,6 +142,7 @@ polyline.cvat_canvas_shape_merging {
 }
 
 #cvat_canvas_content {
+    filter: contrast(120%) saturate(150%);
     position: absolute;
     z-index: 2;
     outline: 10px solid black;

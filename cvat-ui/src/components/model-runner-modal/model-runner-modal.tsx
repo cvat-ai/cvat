@@ -14,11 +14,10 @@ import {
     notification,
 } from 'antd';
 
-import { Model } from '../../reducers/interfaces';
-
-interface StringObject {
-    [index: string]: string;
-}
+import {
+    Model,
+    StringObject,
+} from 'reducers/interfaces';
 
 interface Props {
     modelsFetching: boolean;

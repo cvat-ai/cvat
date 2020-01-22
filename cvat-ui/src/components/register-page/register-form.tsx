@@ -7,7 +7,7 @@ import {
     Form,
 } from 'antd';
 
-import patterns from '../../utils/validation-patterns';
+import patterns from 'utils/validation-patterns';
 
 export interface RegisterData {
     username: string;

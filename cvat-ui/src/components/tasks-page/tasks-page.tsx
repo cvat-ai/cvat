@@ -13,12 +13,13 @@ import Text from 'antd/lib/typography/Text';
 
 import {
     TasksQuery,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
+import FeedbackComponent from 'components/feedback/feedback';
+import TaskListContainer from 'containers/tasks-page/tasks-list';
 import TopBar from './top-bar';
-import FeedbackComponent from '../feedback/feedback';
 import EmptyListComponent from './empty-list';
-import TaskListContainer from '../../containers/tasks-page/tasks-list';
+
 
 interface TasksPageProps {
     tasksFetching: boolean;

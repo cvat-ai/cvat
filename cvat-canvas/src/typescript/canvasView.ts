@@ -16,6 +16,7 @@ import { EditHandler, EditHandlerImpl } from './editHandler';
 import { MergeHandler, MergeHandlerImpl } from './mergeHandler';
 import { SplitHandler, SplitHandlerImpl } from './splitHandler';
 import { GroupHandler, GroupHandlerImpl } from './groupHandler';
+import { ZoomHandler, ZoomHandlerImpl } from './zoomHandler';
 import consts from './consts';
 import {
     translateToSVG,
@@ -29,7 +30,6 @@ import {
     CanvasModel,
     Geometry,
     UpdateReasons,
-    FocusData,
     FrameZoom,
     ActiveElement,
     DrawData,
@@ -86,10 +86,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private mergeHandler: MergeHandler;
     private splitHandler: SplitHandler;
     private groupHandler: GroupHandler;
+    private zoomHandler: ZoomHandler;
     private activeElement: {
         state: any;
         attributeID: number;
-    };
+    } | null;
 
     private set mode(value: Mode) {
         this.controller.mode = value;
@@ -206,7 +207,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onGroupDone(objects: any[]): void {
+    private onGroupDone(objects?: any[]): void {
         if (objects) {
             const event: CustomEvent = new CustomEvent('canvas.groupped', {
                 bubbles: false,
@@ -252,12 +253,141 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
+    private onFocusRegion(x: number, y: number, width: number, height: number): void {
+        // First of all, compute and apply scale
+        let scale = null;
+
+        if ((this.geometry.angle / 90) % 2) {
+            // 90, 270, ..
+            scale = Math.min(Math.max(Math.min(
+                this.geometry.canvas.width / height,
+                this.geometry.canvas.height / width,
+            ), FrameZoom.MIN), FrameZoom.MAX);
+        } else {
+            scale = Math.min(Math.max(Math.min(
+                this.geometry.canvas.width / width,
+                this.geometry.canvas.height / height,
+            ), FrameZoom.MIN), FrameZoom.MAX);
+        }
+
+        this.geometry = { ...this.geometry, scale };
+        this.transformCanvas();
+
+        const [canvasX, canvasY] = translateFromSVG(this.content, [
+            x + width / 2,
+            y + height / 2,
+        ]);
+
+        const [cx, cy] = [
+            this.canvas.clientWidth / 2 + this.canvas.offsetLeft,
+            this.canvas.clientHeight / 2 + this.canvas.offsetTop,
+        ];
+
+        const dragged = {
+            ...this.geometry,
+            top: this.geometry.top + cy - canvasY,
+            left: this.geometry.left + cx - canvasX,
+            scale,
+        };
+
+        this.controller.geometry = dragged;
+        this.geometry = dragged;
+        this.moveCanvas();
+    }
+
+    private moveCanvas(): void {
+        for (const obj of [this.background, this.grid, this.loadingAnimation]) {
+            obj.style.top = `${this.geometry.top}px`;
+            obj.style.left = `${this.geometry.left}px`;
+        }
+
+        for (const obj of [this.content, this.text]) {
+            obj.style.top = `${this.geometry.top - this.geometry.offset}px`;
+            obj.style.left = `${this.geometry.left - this.geometry.offset}px`;
+        }
+
+        // Transform handlers
+        this.drawHandler.transform(this.geometry);
+        this.editHandler.transform(this.geometry);
+        this.zoomHandler.transform(this.geometry);
+    }
+
+    private transformCanvas(): void {
+        // Transform canvas
+        for (const obj of [this.background, this.grid, this.loadingAnimation, this.content]) {
+            obj.style.transform = `scale(${this.geometry.scale}) rotate(${this.geometry.angle}deg)`;
+        }
+
+        // Transform grid
+        this.gridPath.setAttribute('stroke-width', `${consts.BASE_GRID_WIDTH / (this.geometry.scale)}px`);
+
+        // Transform all shape points
+        for (const element of window.document.getElementsByClassName('svg_select_points')) {
+            element.setAttribute(
+                'stroke-width',
+                `${consts.POINTS_STROKE_WIDTH / this.geometry.scale}`,
+            );
+            element.setAttribute(
+                'r',
+                `${consts.BASE_POINT_SIZE / this.geometry.scale}`,
+            );
+        }
+
+        for (const element of
+            window.document.getElementsByClassName('cvat_canvas_selected_point')) {
+            const previousWidth = element.getAttribute('stroke-width') as string;
+            element.setAttribute(
+                'stroke-width',
+                `${+previousWidth * 2}`,
+            );
+        }
+
+        // Transform all drawn shapes
+        for (const key in this.svgShapes) {
+            if (Object.prototype.hasOwnProperty.call(this.svgShapes, key)) {
+                const object = this.svgShapes[key];
+                if (object.attr('stroke-width')) {
+                    object.attr({
+                        'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                    });
+                }
+            }
+        }
+
+        // Transform all text
+        for (const key in this.svgShapes) {
+            if (Object.prototype.hasOwnProperty.call(this.svgShapes, key)
+                && Object.prototype.hasOwnProperty.call(this.svgTexts, key)) {
+                this.updateTextPosition(
+                    this.svgTexts[key],
+                    this.svgShapes[key],
+                );
+            }
+        }
+
+        // Transform handlers
+        this.drawHandler.transform(this.geometry);
+        this.editHandler.transform(this.geometry);
+    }
+
+    private resizeCanvas(): void {
+        for (const obj of [this.background, this.grid, this.loadingAnimation]) {
+            obj.style.width = `${this.geometry.image.width}px`;
+            obj.style.height = `${this.geometry.image.height}px`;
+        }
+
+        for (const obj of [this.content, this.text]) {
+            obj.style.width = `${this.geometry.image.width + this.geometry.offset * 2}px`;
+            obj.style.height = `${this.geometry.image.height + this.geometry.offset * 2}px`;
+        }
+    }
+
     private selectize(value: boolean, shape: SVG.Element): void {
         const self = this;
 
         function dblClickHandler(e: MouseEvent): void {
             const pointID = Array.prototype.indexOf
-                .call((e.target as HTMLElement).parentElement.children, e.target);
+                .call(((e.target as HTMLElement).parentElement as HTMLElement).children, e.target);
 
             if (self.activeElement) {
                 if (e.ctrlKey) {
@@ -324,6 +454,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     public constructor(model: CanvasModel & Master, controller: CanvasController) {
         this.controller = controller;
+        this.geometry = controller.geometry;
         this.svgShapes = {};
         this.svgTexts = {};
         this.activeElement = null;
@@ -426,7 +557,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onFindObject.bind(this),
             this.adoptedContent,
         );
-
+        this.zoomHandler = new ZoomHandlerImpl(
+            this.onFocusRegion.bind(this),
+            this.adoptedContent,
+            this.geometry,
+        );
 
         // Setup event handlers
         this.content.addEventListener('dblclick', (e: MouseEvent): void => {
@@ -436,10 +571,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.content.addEventListener('mousedown', (event): void => {
-            if ((event.which === 1 && this.mode === Mode.IDLE) || (event.which === 2)) {
-                self.controller.enableDrag(event.clientX, event.clientY);
-
-                event.preventDefault();
+            if ([1, 2].includes(event.which)) {
+                if ([Mode.DRAG_CANVAS, Mode.IDLE].includes(this.mode)) {
+                    self.controller.enableDrag(event.clientX, event.clientY);
+                } else if (this.mode === Mode.ZOOM_CANVAS && event.which === 2) {
+                    self.controller.enableDrag(event.clientX, event.clientY);
+                }
             }
         });
 
@@ -452,6 +589,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.content.addEventListener('wheel', (event): void => {
             const point = translateToSVG(self.background, [event.clientX, event.clientY]);
             self.controller.zoom(point[0], point[1], event.deltaY > 0 ? -1 : 1);
+            this.canvas.dispatchEvent(new CustomEvent('canvas.zoom', {
+                bubbles: false,
+                cancelable: true,
+            }));
             event.preventDefault();
         });
 
@@ -480,140 +621,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
-        function transform(): void {
-            // Transform canvas
-            for (const obj of [this.background, this.grid, this.loadingAnimation, this.content]) {
-                obj.style.transform = `scale(${this.geometry.scale}) rotate(${this.geometry.angle}deg)`;
-            }
-
-            // Transform grid
-            this.gridPath.setAttribute('stroke-width', `${consts.BASE_GRID_WIDTH / (this.geometry.scale)}px`);
-
-            // Transform all shape points
-            for (const element of window.document.getElementsByClassName('svg_select_points')) {
-                element.setAttribute(
-                    'stroke-width',
-                    `${consts.POINTS_STROKE_WIDTH / this.geometry.scale}`,
-                );
-                element.setAttribute(
-                    'r',
-                    `${consts.BASE_POINT_SIZE / this.geometry.scale}`,
-                );
-            }
-
-            for (const element of
-                window.document.getElementsByClassName('cvat_canvas_selected_point')) {
-                element.setAttribute(
-                    'stroke-width',
-                    `${+element.getAttribute('stroke-width') * 2}`,
-                );
-            }
-
-            // Transform all drawn shapes
-            for (const key in this.svgShapes) {
-                if (Object.prototype.hasOwnProperty.call(this.svgShapes, key)) {
-                    const object = this.svgShapes[key];
-                    if (object.attr('stroke-width')) {
-                        object.attr({
-                            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                        });
-                    }
-                }
-            }
-
-            // Transform all text
-            for (const key in this.svgShapes) {
-                if (Object.prototype.hasOwnProperty.call(this.svgShapes, key)
-                    && Object.prototype.hasOwnProperty.call(this.svgTexts, key)) {
-                    this.updateTextPosition(
-                        this.svgTexts[key],
-                        this.svgShapes[key],
-                    );
-                }
-            }
-
-            // Transform handlers
-            this.drawHandler.transform(this.geometry);
-            this.editHandler.transform(this.geometry);
-        }
-
-        function resize(): void {
-            for (const obj of [this.background, this.grid, this.loadingAnimation]) {
-                obj.style.width = `${this.geometry.image.width}px`;
-                obj.style.height = `${this.geometry.image.height}px`;
-            }
-
-            for (const obj of [this.content, this.text]) {
-                obj.style.width = `${this.geometry.image.width + this.geometry.offset * 2}px`;
-                obj.style.height = `${this.geometry.image.height + this.geometry.offset * 2}px`;
-            }
-        }
-
-        function move(): void {
-            for (const obj of [this.background, this.grid, this.loadingAnimation]) {
-                obj.style.top = `${this.geometry.top}px`;
-                obj.style.left = `${this.geometry.left}px`;
-            }
-
-            for (const obj of [this.content, this.text]) {
-                obj.style.top = `${this.geometry.top - this.geometry.offset}px`;
-                obj.style.left = `${this.geometry.left - this.geometry.offset}px`;
-            }
-
-            // Transform handlers
-            this.drawHandler.transform(this.geometry);
-            this.editHandler.transform(this.geometry);
-        }
-
-        function computeFocus(focusData: FocusData): void {
-            // This computation cann't be done in the model because of lack of data
-            const object = this.svgShapes[focusData.clientID];
-            if (!object) {
-                return;
-            }
-
-            // First of all, compute and apply scale
-
-            let scale = null;
-            const bbox: SVG.BBox = object.bbox();
-            if ((this.geometry.angle / 90) % 2) {
-                // 90, 270, ..
-                scale = Math.min(Math.max(Math.min(
-                    this.geometry.canvas.width / bbox.height,
-                    this.geometry.canvas.height / bbox.width,
-                ), FrameZoom.MIN), FrameZoom.MAX);
-            } else {
-                scale = Math.min(Math.max(Math.min(
-                    this.geometry.canvas.width / bbox.width,
-                    this.geometry.canvas.height / bbox.height,
-                ), FrameZoom.MIN), FrameZoom.MAX);
-            }
-
-            this.geometry = { ...this.geometry, scale };
-            transform.call(this);
-
-            const [x, y] = translateFromSVG(this.content, [
-                bbox.x + bbox.width / 2,
-                bbox.y + bbox.height / 2,
-            ]);
-
-            const [cx, cy] = [
-                this.canvas.clientWidth / 2 + this.canvas.offsetLeft,
-                this.canvas.clientHeight / 2 + this.canvas.offsetTop,
-            ];
-
-            const dragged = {
-                ...this.geometry,
-                top: this.geometry.top + cy - y,
-                left: this.geometry.left + cx - x,
-                scale,
-            };
-
-            this.controller.geometry = dragged;
-            this.geometry = dragged;
-            move.call(this);
-        }
-
         function setupObjects(objects: any[]): void {
             const ctm = this.content.getScreenCTM()
                 .inverse().multiply(this.background.getScreenCTM());
@@ -640,36 +647,83 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         this.geometry = this.controller.geometry;
-        if (reason === UpdateReasons.IMAGE) {
+        if (reason === UpdateReasons.IMAGE_CHANGED) {
             if (!model.image.length) {
                 this.loadingAnimation.classList.remove('cvat_canvas_hidden');
             } else {
                 this.loadingAnimation.classList.add('cvat_canvas_hidden');
                 this.background.style.backgroundImage = `url("${model.image}")`;
-                move.call(this);
-                resize.call(this);
-                transform.call(this);
+                this.moveCanvas();
+                this.resizeCanvas();
+                this.transformCanvas();
             }
-        } else if (reason === UpdateReasons.FIT_CANVAS) {
-            move.call(this);
-            resize.call(this);
-        } else if (reason === UpdateReasons.ZOOM || reason === UpdateReasons.FIT) {
-            move.call(this);
-            transform.call(this);
-        } else if (reason === UpdateReasons.MOVE) {
-            move.call(this);
-        } else if (reason === UpdateReasons.OBJECTS) {
+        } else if (reason === UpdateReasons.FITTED_CANVAS) {
+            this.moveCanvas();
+            this.resizeCanvas();
+        } else if (reason === UpdateReasons.IMAGE_ZOOMED || reason === UpdateReasons.IMAGE_FITTED) {
+            this.moveCanvas();
+            this.transformCanvas();
+        } else if (reason === UpdateReasons.IMAGE_MOVED) {
+            this.moveCanvas();
+        } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
+            if (this.mode === Mode.GROUP) {
+                this.groupHandler.resetSelectedObjects();
+            }
             setupObjects.call(this, this.controller.objects);
+            if (this.mode === Mode.MERGE) {
+                this.mergeHandler.repeatSelection();
+            }
             const event: CustomEvent = new CustomEvent('canvas.setup');
             this.canvas.dispatchEvent(event);
-        } else if (reason === UpdateReasons.GRID) {
+        } else if (reason === UpdateReasons.GRID_UPDATED) {
             const size: Size = this.geometry.grid;
             this.gridPattern.setAttribute('width', `${size.width}`);
             this.gridPattern.setAttribute('height', `${size.height}`);
-        } else if (reason === UpdateReasons.FOCUS) {
-            computeFocus.call(this, this.controller.focusData);
-        } else if (reason === UpdateReasons.ACTIVATE) {
+        } else if (reason === UpdateReasons.SHAPE_FOCUSED) {
+            const {
+                padding,
+                clientID,
+            } = this.controller.focusData;
+            const object = this.svgShapes[clientID];
+            if (object) {
+                const bbox: SVG.BBox = object.bbox();
+                this.onFocusRegion(bbox.x - padding, bbox.y - padding,
+                    bbox.width + padding, bbox.height + padding);
+            }
+        } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.activate(this.controller.activeElement);
+        } else if (reason === UpdateReasons.DRAG_CANVAS) {
+            this.deactivate();
+            if (this.mode === Mode.DRAG_CANVAS) {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.dragstart', {
+                    bubbles: false,
+                    cancelable: true,
+                }));
+                this.canvas.style.cursor = 'move';
+            } else {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.dragstop', {
+                    bubbles: false,
+                    cancelable: true,
+                }));
+                this.canvas.style.cursor = '';
+            }
+        } else if (reason === UpdateReasons.ZOOM_CANVAS) {
+            this.deactivate();
+            if (this.mode === Mode.ZOOM_CANVAS) {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.zoomstart', {
+                    bubbles: false,
+                    cancelable: true,
+                }));
+                this.canvas.style.cursor = 'zoom-in';
+                this.zoomHandler.zoom();
+            } else {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.zoomstop', {
+                    bubbles: false,
+                    cancelable: true,
+                }));
+                this.canvas.style.cursor = '';
+                this.zoomHandler.cancel();
+            }
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
             if (data.enabled) {
@@ -717,7 +771,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.groupHandler.cancel();
             } else if (this.mode === Mode.EDIT) {
                 this.editHandler.cancel();
+            } else if (this.mode === Mode.DRAG_CANVAS) {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.dragstop', {
+                    bubbles: false,
+                    cancelable: true,
+                }));
+            } else if (this.mode === Mode.ZOOM_CANVAS) {
+                this.zoomHandler.cancel();
+                this.canvas.dispatchEvent(new CustomEvent('canvas.zoomstop', {
+                    bubbles: false,
+                    cancelable: true,
+                }));
             }
+            this.mode = Mode.IDLE;
+            this.canvas.style.cursor = '';
         }
     }
 
@@ -871,7 +938,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.selectize(true, shape);
         }
 
-        let shapeSizeElement: ShapeSizeElement = null;
+        let shapeSizeElement: ShapeSizeElement | null = null;
         let resized = false;
         (shape as any).resize().on('resizestart', (): void => {
             this.mode = Mode.RESIZE;
@@ -980,7 +1047,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
-            stroke: darker(state.color, 50),
+            stroke: darker(state.color, 20),
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             zOrder: state.zOrder,
         }).move(xtl, ytl)
@@ -1000,7 +1067,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
-            stroke: darker(state.color, 50),
+            stroke: darker(state.color, 20),
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');
@@ -1019,7 +1086,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
-            stroke: darker(state.color, 50),
+            stroke: darker(state.color, 20),
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');

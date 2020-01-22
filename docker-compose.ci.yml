@@ -1,12 +1,14 @@
 version: "2.3"
 
 services:
-  cvat:
+  cvat_ci:
+    image: cvat_ci
     build:
-      args:
-        DJANGO_CONFIGURATION: "testing"
-        WITH_TESTS: "yes"
       network: host
+      context: .
+      dockerfile: Dockerfile.ci
+    depends_on:
+      - cvat
     environment:
       COVERALLS_REPO_TOKEN:
       TRAVIS:

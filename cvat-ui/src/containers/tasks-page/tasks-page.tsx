@@ -5,14 +5,14 @@ import {
     Task,
     TasksQuery,
     CombinedState,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
-import TasksPageComponent from '../../components/tasks-page/tasks-page';
+import TasksPageComponent from 'components/tasks-page/tasks-page';
 
 import {
     getTasksAsync,
     hideEmptyTasks,
-} from '../../actions/tasks-actions';
+} from 'actions/tasks-actions';
 
 interface StateToProps {
     tasksFetching: boolean;

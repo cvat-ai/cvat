@@ -1,15 +1,15 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import ModelsPageComponent from '../../components/models-page/models-page';
+import ModelsPageComponent from 'components/models-page/models-page';
 import {
     Model,
     CombinedState,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 import {
     getModelsAsync,
     deleteModelAsync,
-} from '../../actions/models-actions';
+} from 'actions/models-actions';
 
 interface StateToProps {
     installedAutoAnnotation: boolean;

@@ -3,9 +3,9 @@ import { connect } from 'react-redux';
 
 import {
     CombinedState,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
-import WorkspaceSettingsComponent from '../../components/settings-page/workspace-settings';
+import WorkspaceSettingsComponent from 'components/settings-page/workspace-settings';
 
 interface StateToProps {
     autoSave: boolean;

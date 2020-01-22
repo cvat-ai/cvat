@@ -1,18 +1,18 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import ActionsMenuComponent from '../../components/actions-menu/actions-menu';
+import ActionsMenuComponent from 'components/actions-menu/actions-menu';
 import {
     CombinedState,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
-import { showRunModelDialog } from '../../actions/models-actions';
+import { showRunModelDialog } from 'actions/models-actions';
 import {
     dumpAnnotationsAsync,
     loadAnnotationsAsync,
     exportDatasetAsync,
     deleteTaskAsync,
-} from '../../actions/tasks-actions';
+} from 'actions/tasks-actions';
 
 interface OwnProps {
     taskInstance: any;
