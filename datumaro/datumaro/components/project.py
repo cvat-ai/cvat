@@ -318,7 +318,9 @@ class Dataset(Extractor):
             categories.update(source.categories())
         for source in sources:
             for cat_type, source_cat in source.categories().items():
-                assert categories[cat_type] == source_cat
+                if not categories[cat_type] == source_cat:
+                    raise NotImplementedError(
+                        "Merging different categories is not implemented yet")
         dataset = Dataset(categories=categories)
 
         # merge items
@@ -470,7 +472,9 @@ class ProjectDataset(Dataset):
             categories.update(source.categories())
         for source in self._sources.values():
             for cat_type, source_cat in source.categories().items():
-                assert categories[cat_type] == source_cat
+                if not categories[cat_type] == source_cat:
+                    raise NotImplementedError(
+                        "Merging different categories is not implemented yet")
         if own_source is not None and len(own_source) != 0:
             categories.update(own_source.categories())
         self._categories = categories
