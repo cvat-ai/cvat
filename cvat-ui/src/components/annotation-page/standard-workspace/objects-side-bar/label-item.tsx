@@ -62,7 +62,8 @@ interface Props {
     statesVisible: boolean;
     statesLocked: boolean;
     colors: string[];
-
+    onStatesLock(lock: boolean): void;
+    onStatesHide(hide: boolean): void;
     onChangeLabelColor(label: any, color: string): void;
 }
 
@@ -73,6 +74,8 @@ export default function LabelItem(props: Props): JSX.Element {
         statesLocked,
         colors,
         onChangeLabelColor,
+        onStatesHide,
+        onStatesLock,
     } = props;
 
     return (
@@ -103,14 +106,14 @@ export default function LabelItem(props: Props): JSX.Element {
             </Col>
             <Col span={3}>
                 { statesLocked
-                    ? <Icon type='lock' />
-                    : <Icon type='unlock' />
+                    ? <Icon type='lock' onClick={(): void => onStatesLock(false)} />
+                    : <Icon type='unlock' onClick={(): void => onStatesLock(true)} />
                 }
             </Col>
             <Col span={3}>
                 { statesVisible
-                    ? <Icon type='eye' />
-                    : <Icon type='eye-invisible' />
+                    ? <Icon type='eye' onClick={(): void => onStatesHide(true)} />
+                    : <Icon type='eye-invisible' onClick={(): void => onStatesHide(false)} />
                 }
             </Col>
         </Row>

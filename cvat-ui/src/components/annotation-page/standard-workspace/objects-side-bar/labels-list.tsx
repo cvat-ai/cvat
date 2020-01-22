@@ -18,6 +18,7 @@ export default function LabelsList(props: Props): JSX.Element {
         listHeight,
         annotations,
         onChangeLabelColor,
+        onAnnotationsUpdated,
     } = props;
 
     return (
@@ -25,7 +26,7 @@ export default function LabelsList(props: Props): JSX.Element {
             { labels.map((label: any): JSX.Element => {
                 const statesVisible = annotations
                     .filter((state: any) => state.label.id === label.id)
-                    .reduce((acc: boolean, state: any) => acc && !state.visible, true);
+                    .reduce((acc: boolean, state: any) => acc && state.visible, true);
                 const statesLocked = annotations
                     .filter((state: any) => state.label.id === label.id)
                     .reduce((acc: boolean, state: any) => acc && state.lock, true);
@@ -38,6 +39,58 @@ export default function LabelsList(props: Props): JSX.Element {
                         key={label.id}
                         label={label}
                         onChangeLabelColor={onChangeLabelColor}
+                        onStatesLock={(lock: boolean): void => {
+                            const filteredAnnotations = annotations
+                                .filter((objectState: any):
+                                boolean => objectState.label.id === label.id);
+                            const objectStates: any[] = [];
+                            const promises: Promise<any>[] = [];
+                            for (const objectState of filteredAnnotations) {
+                                objectState.lock = lock;
+                                objectStates.push(objectState);
+                                promises.push(objectState.save());
+                            }
+
+                            Promise.all(promises)
+                                .then((updatedObjectStates): void => {
+                                    for (let i = 0; i < updatedObjectStates.length; i++) {
+                                        const objectState = objectStates[i];
+                                        const updatedObjectState = updatedObjectStates[i];
+                                        const index = annotations.indexOf(objectState);
+                                        if (index !== -1) {
+                                            annotations[index] = updatedObjectState;
+                                        }
+                                    }
+
+                                    onAnnotationsUpdated(annotations);
+                                });
+                        }}
+                        onStatesHide={(hide: boolean): void => {
+                            const filteredAnnotations = annotations
+                                .filter((objectState: any):
+                                boolean => objectState.label.id === label.id);
+                            const objectStates: any[] = [];
+                            const promises: Promise<any>[] = [];
+                            for (const objectState of filteredAnnotations) {
+                                objectState.visible = !hide;
+                                objectStates.push(objectState);
+                                promises.push(objectState.save());
+                            }
+
+                            Promise.all(promises)
+                                .then((updatedObjectStates): void => {
+                                    for (let i = 0; i < updatedObjectStates.length; i++) {
+                                        const objectState = objectStates[i];
+                                        const updatedObjectState = updatedObjectStates[i];
+                                        const index = annotations.indexOf(objectState);
+                                        if (index !== -1) {
+                                            annotations[index] = updatedObjectState;
+                                        }
+                                    }
+
+                                    onAnnotationsUpdated(annotations);
+                                });
+                        }}
                     />
                 );
             })}
