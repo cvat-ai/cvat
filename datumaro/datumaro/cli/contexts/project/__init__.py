@@ -186,6 +186,8 @@ class FilterModes(Enum):
     i = 1
     a = 2
     i_a = 3
+    a_i = 3
+    annotations_items = 3
 
     @staticmethod
     def parse(s):
@@ -220,8 +222,8 @@ def build_export_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Export project",
         description="""
             Exports the project dataset in some format. Optionally, a filter
-            can be passed, check 'extract' command description for
-            explanations on this. Each dataset format has its own options, they
+            can be passed, check 'extract' command description for more info.
+            Each dataset format has its own options, which
             are passed after '--' separator (see examples), pass '-- -h'
             for more info. If not stated otherwise, by default
             only annotations are exported, to include images pass
@@ -309,7 +311,11 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
             representation of a dataset item. Check '--dry-run' parameter
             to see XML representations of the dataset items.|n
             |n
-            To filter annotations use '-m' parameter.
+            To filter annotations use mode ('-m') parameter.|n
+            Supported modes:|n
+            - 'i', 'items'|n
+            - 'a', 'annotations'|n
+            - 'i+a', 'a+i', 'items+annotations', 'annotations+items'|n
             When filtering annotations, use 'items+annotations'
             mode to point that annotation-less dataset items should be
             removed. To select an annotation, write an XPath that
@@ -325,6 +331,10 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
             |n
             - Filter out all irrelevant annotations from items:|n
             |s|sextract -m a -e '/item/annotation[label = \"person\"]'|n
+            |n
+            - Filter out all irrelevant annotations from items:|n
+            |s|sextract -m a -e '/item/annotation[label=\"cat\" and
+            area > 99.5]'|n
             |n
             - Filter occluded annotations and items, if no annotations left:|n
             |s|sextract -m i+a -e '/item/annotation[occluded="True"]'
@@ -357,11 +367,10 @@ def extract_command(args):
 
     dataset = project.make_dataset()
 
-    filter_args = FilterModes.make_filter_args(args.filter_mode)
+    filter_args = FilterModes.make_filter_args(args.mode)
 
     if args.dry_run:
-        dataset = dataset.extract(filter_expr=args.filter,
-            filter_annotations=args.filter_annotations, **kwargs)
+        dataset = dataset.extract(filter_expr=args.filter, **filter_args)
         for item in dataset:
             encoded_item = DatasetItemEncoder.encode(item, dataset.categories())
             xml_item = DatasetItemEncoder.to_string(encoded_item)
