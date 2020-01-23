@@ -141,9 +141,9 @@ def generate_dummy_voc(path):
         obj2head_elem = ET.SubElement(obj2_elem, 'part')
         ET.SubElement(obj2head_elem, 'name').text = VOC.VocBodyPart(1).name
         obj2headbb_elem = ET.SubElement(obj2head_elem, 'bndbox')
-        ET.SubElement(obj2headbb_elem, 'xmin').text = '5'
+        ET.SubElement(obj2headbb_elem, 'xmin').text = '5.5'
         ET.SubElement(obj2headbb_elem, 'ymin').text = '6'
-        ET.SubElement(obj2headbb_elem, 'xmax').text = '7'
+        ET.SubElement(obj2headbb_elem, 'xmax').text = '7.5'
         ET.SubElement(obj2headbb_elem, 'ymax').text = '8'
         obj2act_elem = ET.SubElement(obj2_elem, 'actions')
         for act in VOC.VocAction:
@@ -328,7 +328,7 @@ class VocExtractorTest(TestCase):
                     lambda x: x.type == AnnotationType.bbox and \
                         get_label(extractor, x.label) == VOC.VocBodyPart(1).name)
                 self.assertTrue(obj2.id == obj2head.group)
-                self.assertListEqual([5, 6, 2, 2], obj2head.get_bbox())
+                self.assertListEqual([5.5, 6, 2, 2], obj2head.get_bbox())
 
                 self.assertEqual(2, len(item.annotations))
 
