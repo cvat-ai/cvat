@@ -19,7 +19,7 @@ interface Props {
     splitTrack(enabled: boolean): void;
 }
 
-export default function SplitControl(props: Props): JSX.Element {
+const SplitControl = React.memo((props: Props): JSX.Element => {
     const {
         activeControl,
         canvasInstance,
@@ -46,4 +46,6 @@ export default function SplitControl(props: Props): JSX.Element {
             <Icon {...dynamicIconProps} component={SplitIcon} />
         </Tooltip>
     );
-}
+});
+
+export default SplitControl;

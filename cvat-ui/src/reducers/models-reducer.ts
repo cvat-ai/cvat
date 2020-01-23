@@ -113,9 +113,7 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
             };
         }
         default: {
-            return {
-                ...state,
-            };
+            return state;
         }
     }
 }

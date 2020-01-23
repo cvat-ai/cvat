@@ -454,7 +454,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     annotation: {
                         ...state.errors.annotation,
                         frameFetching: {
-                            message: `Could not receive frame ${action.payload.frame}`,
+                            message: `Could not receive frame ${action.payload.number}`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -513,9 +513,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         default: {
-            return {
-                ...state,
-            };
+            return state;
         }
     }
 }

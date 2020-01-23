@@ -11,19 +11,19 @@ import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-ba
 import StandardWorkspaceContainer from 'containers/annotation-page/standard-workspace/standard-workspace';
 
 interface Props {
-    jobInstance: any | null | undefined;
+    job: any | null | undefined;
     fetching: boolean;
     getJob(): void;
 }
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
-        jobInstance,
+        job,
         fetching,
         getJob,
     } = props;
 
-    if (jobInstance === null) {
+    if (job === null) {
         if (!fetching) {
             getJob();
         }
@@ -31,7 +31,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
-    if (typeof (jobInstance) === 'undefined') {
+    if (typeof (job) === 'undefined') {
         return (
             <Result
                 className='cvat-not-found'

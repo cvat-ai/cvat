@@ -48,6 +48,6 @@ export default function (state = defaultState, action: AnyAction): PluginsState 
             };
         }
         default:
-            return { ...state };
+            return state;
     }
 }

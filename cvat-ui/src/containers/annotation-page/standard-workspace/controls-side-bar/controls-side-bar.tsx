@@ -74,7 +74,7 @@ function dispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function StandardWorkspaceContainer(props: StateToProps & DispatchToProps): JSX.Element {
+function ControlsSideBarContainer(props: StateToProps & DispatchToProps): JSX.Element {
     return (
         <ControlsSideBarComponent {...props} />
     );
@@ -83,4 +83,4 @@ function StandardWorkspaceContainer(props: StateToProps & DispatchToProps): JSX.
 export default connect(
     mapStateToProps,
     dispatchToProps,
-)(StandardWorkspaceContainer);
+)(ControlsSideBarContainer);

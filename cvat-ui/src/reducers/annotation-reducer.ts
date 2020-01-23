@@ -363,9 +363,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         default: {
-            return {
-                ...state,
-            };
+            return state;
         }
     }
 };

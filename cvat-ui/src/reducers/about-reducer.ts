@@ -38,8 +38,6 @@ export default function (state: AboutState = defaultState, action: AnyAction): A
             };
         }
         default:
-            return {
-                ...state,
-            };
+            return state;
     }
 }

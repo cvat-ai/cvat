@@ -49,7 +49,7 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
-export function changeFrameAsync(toFrame: number, playing: boolean):
+export function changeFrameAsync(toFrame: number):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const store = getCVATStore();
@@ -62,10 +62,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 throw Error(`Required frame ${toFrame} is out of the current job`);
             }
 
-            // playing && !state.annotation.player.playing is responsible
-            // for stopping playing when player doesn't play, but setTimeout
-            // doesn't have enough context in closure to know about it
-            if (toFrame === frame || (playing && !state.annotation.player.playing)) {
+            if (toFrame === frame) {
                 dispatch({
                     type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                     payload: {
@@ -84,8 +81,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 payload: {},
             });
 
-            const data = await job.frames.get(frame);
-            const states = await job.annotations.get(frame);
+            const data = await job.frames.get(toFrame);
+            const states = await job.annotations.get(toFrame);
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                 payload: {
@@ -98,7 +95,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME_FAILED,
                 payload: {
-                    frame,
+                    number: toFrame,
                     error,
                 },
             });

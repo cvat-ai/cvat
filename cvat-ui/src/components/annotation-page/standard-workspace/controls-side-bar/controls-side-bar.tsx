@@ -69,10 +69,22 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
             <hr />
 
-            <DrawRectangleControl canvasInstance={canvasInstance} activeControl={activeControl} />
-            <DrawPolygonControl canvasInstance={canvasInstance} activeControl={activeControl} />
-            <DrawPolylineControl canvasInstance={canvasInstance} activeControl={activeControl} />
-            <DrawPointsControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <DrawRectangleControl
+                canvasInstance={canvasInstance}
+                isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}
+            />
+            <DrawPolygonControl
+                canvasInstance={canvasInstance}
+                isDrawing={activeControl === ActiveControl.DRAW_POLYGON}
+            />
+            <DrawPolylineControl
+                canvasInstance={canvasInstance}
+                isDrawing={activeControl === ActiveControl.DRAW_POLYLINE}
+            />
+            <DrawPointsControl
+                canvasInstance={canvasInstance}
+                isDrawing={activeControl === ActiveControl.DRAW_POINTS}
+            />
 
             <Tooltip overlay='Setup a tag' placement='right'>
                 <Icon component={TagIcon} />

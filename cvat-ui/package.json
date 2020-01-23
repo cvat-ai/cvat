@@ -48,6 +48,7 @@
     "@types/react-router": "^5.0.5",
     "@types/react-router-dom": "^5.1.0",
     "@types/react-share": "^3.0.1",
+    "@types/redux-logger": "^3.0.7",
     "antd": "^3.25.2",
     "copy-to-clipboard": "^3.2.0",
     "dotenv-webpack": "^1.7.0",
@@ -60,6 +61,7 @@
     "react-router-dom": "^5.1.0",
     "react-share": "^3.0.1",
     "redux": "^4.0.4",
+    "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0"
   }
 }

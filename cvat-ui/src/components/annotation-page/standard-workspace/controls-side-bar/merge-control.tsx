@@ -19,7 +19,7 @@ interface Props {
     mergeObjects(enabled: boolean): void;
 }
 
-export default function MergeControl(props: Props): JSX.Element {
+const MergeControl = React.memo((props: Props): JSX.Element => {
     const {
         activeControl,
         canvasInstance,
@@ -46,4 +46,6 @@ export default function MergeControl(props: Props): JSX.Element {
             <Icon {...dynamicIconProps} component={MergeIcon} />
         </Tooltip>
     );
-}
+});
+
+export default MergeControl;

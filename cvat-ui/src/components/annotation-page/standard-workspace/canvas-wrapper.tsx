@@ -156,7 +156,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onMergeObjects,
         } = this.props;
 
-        //onMergeObjects(false);
+        onMergeObjects(false);
 
         const { states } = event.detail;
         await jobInstance.annotations.merge(states);
@@ -172,7 +172,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onGroupObjects,
         } = this.props;
 
-        //onGroupObjects(false);
+        onGroupObjects(false);
 
         const { states } = event.detail;
         await jobInstance.annotations.group(states);
@@ -188,7 +188,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onSplitTrack,
         } = this.props;
 
-        //onSplitTrack(false);
+        onSplitTrack(false);
 
         const { state } = event.detail;
         await jobInstance.annotations.split(state, frame);
@@ -250,21 +250,21 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onResetCanvas();
         });
 
-        // canvasInstance.html().addEventListener('canvas.dragstart', () => {
-        //     onDragCanvas(true);
-        // });
+        canvasInstance.html().addEventListener('canvas.dragstart', () => {
+            onDragCanvas(true);
+        });
 
-        // canvasInstance.html().addEventListener('canvas.dragstop', () => {
-        //     onDragCanvas(false);
-        // });
+        canvasInstance.html().addEventListener('canvas.dragstop', () => {
+            onDragCanvas(false);
+        });
 
-        // canvasInstance.html().addEventListener('canvas.zoomstart', () => {
-        //     onZoomCanvas(true);
-        // });
+        canvasInstance.html().addEventListener('canvas.zoomstart', () => {
+            onZoomCanvas(true);
+        });
 
-        // canvasInstance.html().addEventListener('canvas.zoomstop', () => {
-        //     onZoomCanvas(false);
-        // });
+        canvasInstance.html().addEventListener('canvas.zoomstop', () => {
+            onZoomCanvas(false);
+        });
 
         canvasInstance.html().addEventListener('canvas.moved', async (event: any): Promise<void> => {
             const result = await jobInstance.annotations.select(
