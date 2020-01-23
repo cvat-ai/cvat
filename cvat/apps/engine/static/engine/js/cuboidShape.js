@@ -500,9 +500,11 @@ class CuboidController extends PolyShapeController {
         view.dlCenter.draggable(function (x) {
             let xStatus;
             if (this.cx() < viewModel.fl.canvasPoints[0].x) {
-                xStatus = x < viewModel.fl.canvasPoints[0].x - MIN_EDGE_LENGTH;
+                xStatus = x < viewModel.fl.canvasPoints[0].x - MIN_EDGE_LENGTH
+                    && x > viewModel.vprCanvas.x + MIN_EDGE_LENGTH;
             } else {
-                xStatus = x > viewModel.fl.canvasPoints[0].x + MIN_EDGE_LENGTH;
+                xStatus = x > viewModel.fl.canvasPoints[0].x + MIN_EDGE_LENGTH
+                    && x < viewModel.vprCanvas.x + MIN_EDGE_LENGTH;
             }
             return { x: xStatus, y: this.attr("y1") };
         }).on("dragmove", function () {
