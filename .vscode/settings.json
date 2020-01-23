@@ -25,5 +25,10 @@
         }
     ],
     "python.linting.pylintEnabled": true,
-    "python.envFile": "${workspaceFolder}/.vscode/python.env"
+    "python.testing.unittestEnabled": true,
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./datumaro",
+    ],
 }
