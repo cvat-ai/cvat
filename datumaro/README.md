@@ -115,6 +115,7 @@ project = Project.load('directory')
 
 ## Examples
 
+<!--lint disable list-item-indent-->
 <!--lint disable list-item-bullet-indent-->
 
 - Convert PASCAL VOC to COCO, keep only images with `cat` class presented:
@@ -162,6 +163,7 @@ project = Project.load('directory')
   ```
 
 <!--lint enable list-item-bullet-indent-->
+<!--lint enable list-item-indent-->
 
 ## Contributing
 
