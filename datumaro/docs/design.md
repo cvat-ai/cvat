@@ -5,7 +5,6 @@
 ## Table of contents
 
 - [Concept](#concept)
-- [Design](#design)
 - [RC 1 vision](#rc-1-vision)
 
 ## Concept

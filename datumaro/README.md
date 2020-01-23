@@ -60,43 +60,47 @@ VOC-like dataset  --                              ---> Publication etc.
 
 ## Examples
 
-  - Convert PASCAL VOC to COCO, keep only images with 'cat' class presented:
-    ```bash
-    datum project import --format voc --input-path <path/to/voc>
-    datum project export --format coco --filter '/item[annotation/label="cat"]'
-    ```
+<!--lint disable list-item-bullet-indent-->
 
-  - Convert only non-occluded annotations from a CVAT-annotated project to TFrecord:
-    ```bash
-    # export Datumaro dataset in CVAT UI, extract somewhere, go to the project dir
-    datum project extract --filter '/item/annotation[occluded="False"]' \
-      --mode items+anno --output-dir not_occluded
-    datum project export --project not_occluded \
-      --format tf_detection_api -- --save-images
-    ```
+- Convert PASCAL VOC to COCO, keep only images with 'cat' class presented:
+  ```bash
+  datum project import --format voc --input-path <path/to/voc>
+  datum project export --format coco --filter '/item[annotation/label="cat"]'
+  ```
 
-  - Annotate COCO, extract image subset, re-annotate it in CVAT, update old dataset:
-    ```bash
-    datum project import --format coco --input-path <path/to/coco>
-    datum project export --filter '/image[images_I_dont_like]' --format cvat \
-      --output-dir reannotation
-    # import dataset and images to CVAT, re-annotate
-    # export Datumaro project, extract to 'reannotation-upd'
-    datum project project merge reannotation-upd
-    datum project export --format coco
-    ```
+- Convert only non-occluded annotations from a CVAT-annotated project to TFrecord:
+  ```bash
+  # export Datumaro dataset in CVAT UI, extract somewhere, go to the project dir
+  datum project extract --filter '/item/annotation[occluded="False"]' \
+    --mode items+anno --output-dir not_occluded
+  datum project export --project not_occluded \
+    --format tf_detection_api -- --save-images
+  ```
 
-  - Apply an OpenVINO detection model to some COCO-like dataset,
-    then compare annotations with ground truth and visualize in TensorBoard:
-    ```bash
-    datum project import --format coco --input-path <path/to/coco>
-    # create model results interpretation script
-    datum model add mymodel openvino \
-      --weights model.bin --description model.xml \
-      --interpretation-script parse_results.py
-    datum model run --model mymodel --output-dir mymodel_inference/
-    datum project diff mymodel_inference/ --format tensorboard --output-dir diff
-    ```
+- Annotate COCO, extract image subset, re-annotate it in CVAT, update old dataset:
+  ```bash
+  datum project import --format coco --input-path <path/to/coco>
+  datum project export --filter '/image[images_I_dont_like]' --format cvat \
+    --output-dir reannotation
+  # import dataset and images to CVAT, re-annotate
+  # export Datumaro project, extract to 'reannotation-upd'
+  datum project project merge reannotation-upd
+  datum project export --format coco
+  ```
+
+- Apply an OpenVINO detection model to some COCO-like dataset,
+  then compare annotations with ground truth and visualize in TensorBoard:
+  ```bash
+  datum project import --format coco --input-path <path/to/coco>
+  # create model results interpretation script
+  datum model add mymodel openvino \
+    --weights model.bin --description model.xml \
+    --interpretation-script parse_results.py
+  datum model run --model mymodel --output-dir mymodel_inference/
+  datum project diff mymodel_inference/ --format tensorboard --output-dir diff
+  ```
+
+<!--lint enable list-item-bullet-indent-->
 
 ## Installation
 

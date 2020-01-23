@@ -14,6 +14,7 @@
   - [Export a project](#export-project)
   - [Compare projects](#compare-projects)
   - [Transform a project](#transform-project)
+  - [Get project info](#get-project-info)
   - [Register a model](#register-model)
   - [Run inference](#run-inference)
   - [Run inference explanation](#explain-inference)
@@ -371,6 +372,46 @@ Example: apply custom transformation to project
 ``` bash
 datum project import <...>
 datum project transform -t mytransform.py -o inference
+```
+
+### Get project info
+
+This command outputs project status information.
+
+Usage:
+
+``` bash
+datum project info --help
+
+datum project info \
+     -p <project dir>
+```
+
+Example:
+
+``` bash
+datum project info -p /test_project
+
+Project:
+  name: test_project2
+  location: /test_project
+Sources:
+  source 'instances_minival2014':
+    format: coco_instances
+    url: /coco_like/annotations/instances_minival2014.json
+Dataset:
+  length: 5000
+  categories: label
+    label:
+      count: 80
+      labels: person, bicycle, car, motorcycle (and 76 more)
+  subsets: minival2014
+    subset 'minival2014':
+      length: 5000
+      categories: label
+        label:
+          count: 80
+          labels: person, bicycle, car, motorcycle (and 76 more)
 ```
 
 ### Register model
