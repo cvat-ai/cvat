@@ -1,13 +1,13 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { logoutAsync } from '../../actions/auth-actions';
+import { logoutAsync } from 'actions/auth-actions';
 import {
     SupportedPlugins,
     CombinedState,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
-import HeaderComponent from '../../components/header/header';
+import HeaderComponent from 'components/header/header';
 
 interface StateToProps {
     logoutFetching: boolean;
@@ -16,6 +16,7 @@ interface StateToProps {
     installedTFSegmentation: boolean;
     installedTFAnnotation: boolean;
     username: string;
+    about: any;
 }
 
 interface DispatchToProps {
@@ -32,6 +33,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         installedTFSegmentation: plugins[SupportedPlugins.TF_SEGMENTATION],
         installedTFAnnotation: plugins[SupportedPlugins.TF_ANNOTATION],
         username: auth.user.username,
+        about: state.about.about,
     };
 }
 

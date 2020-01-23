@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import PlayerSettingsComponent from '../../components/settings-page/player-settings';
+import PlayerSettingsComponent from 'components/settings-page/player-settings';
 
 import {
     switchRotateAll,
@@ -9,13 +9,13 @@ import {
     changeGridSize,
     changeGridColor,
     changeGridOpacity,
-} from '../../actions/settings-actions';
+} from 'actions/settings-actions';
 
 import {
     CombinedState,
     FrameSpeed,
     GridColor,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
 interface StateToProps {
     frameStep: number;

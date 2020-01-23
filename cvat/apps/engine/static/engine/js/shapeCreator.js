@@ -379,6 +379,9 @@ class ShapeCreatorView {
         };
 
         let numberOfPoints = 0;
+        this._drawInstance.attr({
+            z_order: Number.MAX_SAFE_INTEGER,
+        });
 
         if (this._polyShapeSize) {
             let size = this._polyShapeSize;
@@ -501,7 +504,6 @@ class ShapeCreatorView {
                 } else if (this._type === "cuboid") {
                     let points = null;
 
-                    // const height = Math.abs(actualPoints[1].y - actualPoints[0].y);
                     const height = Math.abs(actualPoints[0].x - actualPoints[1].x)
                         < Math.abs(actualPoints[1].x - actualPoints[2].x)
                         ? Math.abs(actualPoints[1].y - actualPoints[0].y)
@@ -584,19 +586,17 @@ class ShapeCreatorView {
 
     _create() {
         let sizeUI = null;
-        switch (this._type) {
-        case "box":
-            this._drawInstance = this._frameContent.rect().draw({ snapToGrid: 0.1 }).addClass("shapeCreation").attr({
-                "stroke-width": STROKE_WIDTH / this._scale,
-            })
-                .on("drawstop", (e) => {
-                    if (this._cancel){
-                        return;
-                    }
-                    if (sizeUI) {
-                        sizeUI.rm();
-                        sizeUI = null;
-                    }
+        switch(this._type) {
+        case 'box':
+            this._drawInstance = this._frameContent.rect().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
+                'stroke-width': STROKE_WIDTH / this._scale,
+                z_order: Number.MAX_SAFE_INTEGER,
+            }).on('drawstop', function(e) {
+                if (this._cancel) return;
+                if (sizeUI) {
+                    sizeUI.rm();
+                    sizeUI = null;
+                }
 
                     const { frameWidth } = window.cvat.player.geometry;
                     const { frameHeight } = window.cvat.player.geometry;
@@ -678,11 +678,6 @@ class ShapeCreatorView {
         default:
             throw Error(`Bad type found ${this._type}`);
         }
-
-        this._drawInstance.attr({
-            // eslint-disable-next-line
-            z_order: Number.MAX_SAFE_INTEGER,
-        });
     }
 
     _rescaleDrawPoints() {

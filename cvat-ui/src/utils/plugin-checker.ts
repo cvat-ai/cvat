@@ -1,5 +1,5 @@
-import getCore from '../core';
-import { SupportedPlugins } from '../reducers/interfaces';
+import getCore from 'cvat-core';
+import { SupportedPlugins } from 'reducers/interfaces';
 
 const core = getCore();
 

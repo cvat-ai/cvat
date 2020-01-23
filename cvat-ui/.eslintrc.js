@@ -39,9 +39,9 @@ module.exports = {
     },
     'settings': {
         'import/resolver': {
-            'node': {
-                'extensions': ['.tsx', '.ts', '.jsx', '.js', '.json'],
-            },
+            'typescript': {
+                'directory': './tsconfig.json'
+            }
         },
     },
 };

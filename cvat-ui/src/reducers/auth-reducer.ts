@@ -1,5 +1,5 @@
 import { AnyAction } from 'redux';
-import { AuthActionTypes } from '../actions/auth-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
 
 import { AuthState } from './interfaces';
 

@@ -1,5 +1,5 @@
 import { AnyAction } from 'redux';
-import { SettingsActionTypes } from '../actions/settings-actions';
+import { SettingsActionTypes } from 'actions/settings-actions';
 
 import {
     SettingsState,

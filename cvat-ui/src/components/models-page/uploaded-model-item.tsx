@@ -13,8 +13,8 @@ import {
 import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 
-import { MenuIcon } from '../../icons';
-import { Model } from '../../reducers/interfaces';
+import { MenuIcon } from 'icons';
+import { Model } from 'reducers/interfaces';
 
 interface Props {
     model: Model;

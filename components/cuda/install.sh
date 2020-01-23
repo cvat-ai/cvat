@@ -30,8 +30,8 @@ apt-get update && apt-get install -y --no-install-recommends --allow-unauthentic
     libnccl2=$NCCL_VERSION-1+cuda9.0 \
     libcudnn7=$CUDNN_VERSION-1+cuda9.0 && \
     ln -s cuda-9.0 /usr/local/cuda && \
-rm -rf /var/lib/apt/lists/* \
+    rm -rf /var/lib/apt/lists/* \
     /etc/apt/sources.list.d/nvidia-ml.list /etc/apt/sources.list.d/cuda.list
 
 python3 -m pip uninstall -y tensorflow
-python3 -m pip install --no-cache-dir tensorflow-gpu==1.15.0
+python3 -m pip install --no-cache-dir tensorflow-gpu==1.13.1

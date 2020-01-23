@@ -53,6 +53,12 @@
     }
 }
 
+.cvat-annotation-disabled-header-button {
+    @extend .cvat-annotation-header-button;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 .cvat-annotation-header-player-group > div {
     height: 54px;
     line-height: 0px;
