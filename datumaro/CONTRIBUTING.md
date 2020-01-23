@@ -39,7 +39,7 @@ while read -r p; do pip install $p; done < datumaro/requirements.txt
 ## Usage
 
 > The directory containing Datumaro should be in the `PYTHONPATH`
-environment variable or `cvat/datumaro/` should be the current directory.
+> environment variable or `cvat/datumaro/` should be the current directory.
 
 ``` bash
 datum --help

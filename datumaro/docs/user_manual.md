@@ -54,7 +54,7 @@ datum --help
 
 As a python module:
 > The directory containing Datumaro should be in the `PYTHONPATH`
-environment variable or `cvat/datumaro/` should be the current directory.
+> environment variable or `cvat/datumaro/` should be the current directory.
 
 ``` bash
 python -m datumaro --help
