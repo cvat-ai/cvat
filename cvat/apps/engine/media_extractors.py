@@ -101,7 +101,7 @@ class PDFExtractor(MediaExtractor):
         self._length = len(os.listdir(self._temp_directory))
 
     def _get_imagepath(self, k):
-        img_path = os.path.join(self._temp_directory, self._basename + str(k) + '.jpg')
+        img_path = os.path.join(self._temp_directory, str(k) + '.jpg')
         return img_path
 
     def __iter__(self):
@@ -275,6 +275,6 @@ MEDIA_TYPES = {
         'has_mime_type': _is_pdf,
         'extractor': PDFExtractor,
         'mode': 'annotation',
-        'unique': True,
+        'unique': False,
     },
 }
