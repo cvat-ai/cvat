@@ -18,6 +18,7 @@ interface StateToProps {
     frameStep: number;
     playing: boolean;
     saving: boolean;
+    canvasIsReady: boolean;
     savingStatuses: string[];
 }
 
@@ -45,6 +46,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
             job: {
                 instance: jobInstance,
             },
+            canvas: {
+                ready: canvasIsReady,
+            },
         },
         settings: {
             player: {
@@ -56,6 +60,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         frameStep,
         playing,
+        canvasIsReady,
         saving,
         savingStatuses,
         frameNumber,
@@ -79,28 +84,24 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
-    private timeout: number | null = null;
     public componentDidUpdate(): void {
         const {
             jobInstance,
             frameNumber,
             playing,
+            canvasIsReady,
             onChangeFrame,
             onSwitchPlay,
         } = this.props;
 
-        if (!playing && this.timeout !== null) {
-            clearTimeout(this.timeout);
-            this.timeout = null;
-        } else if (playing && this.timeout === null) {
+        if (playing && canvasIsReady) {
             if (frameNumber < jobInstance.stopFrame) {
-                this.timeout = window.setTimeout(() => {
+                setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
                         onChangeFrame(frameNumber + 1);
                     }
-                    this.timeout = null;
-                }, 30);
+                });
             } else {
                 onSwitchPlay(false);
             }

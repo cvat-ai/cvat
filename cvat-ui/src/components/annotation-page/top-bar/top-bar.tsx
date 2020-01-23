@@ -32,7 +32,16 @@ interface Props {
     onInputChange(value: number | undefined): void;
 }
 
-export default function AnnotationTopBarComponent(props: Props): JSX.Element {
+function propsAreEqual(curProps: Props, prevProps: Props): boolean {
+    return curProps.playing === prevProps.playing
+        && curProps.saving === prevProps.saving
+        && curProps.frameNumber === prevProps.frameNumber
+        && curProps.startFrame === prevProps.startFrame
+        && curProps.stopFrame === prevProps.stopFrame
+        && curProps.savingStatuses.length === prevProps.savingStatuses.length;
+}
+
+const AnnotationTopBarComponent = React.memo((props: Props): JSX.Element => {
     const {
         saving,
         savingStatuses,
@@ -85,4 +94,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             </Row>
         </Layout.Header>
     );
-}
+}, propsAreEqual);
+
+export default AnnotationTopBarComponent;

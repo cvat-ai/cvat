@@ -72,7 +72,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         installedAutoAnnotation: plugins.list.AUTO_ANNOTATION,
         installedTFSegmentation: plugins.list.TF_SEGMENTATION,
         installedTFAnnotation: plugins.list.TF_ANNOTATION,
-        notifications: { ...state.notifications },
+        notifications: state.notifications,
         user: auth.user,
     };
 }
