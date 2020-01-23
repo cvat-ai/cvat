@@ -493,54 +493,52 @@ class ShapeCreatorView {
                     showMessage("Min 2 points must be for polyline drawing.");
                 } else if (this._type === "polygon" && actualPoints.length < 3) {
                     showMessage("Min 3 points must be for polygon drawing.");
-                } else if (this._type === "cuboid" && (actualPoints.length !== 4
-                    || !this._checKValidCuboidTrace(actualPoints))) {
+                } else if (this._type === "cuboid" && (actualPoints.length !== 4)) {
                     showMessage("Exactly 4 points must be used for cuboid drawing."
                         + " Second point must be below the first point."
                         + "(HINT) The first 3 points define the front face"
                         + " and the last point should define the depth and orientation of the cuboid ");
                 } else if (this._type === "cuboid") {
-                    // actualPoints =  PolyShapeModel.convertNumberArrayToString(actualPoints);
-                    let p1; let p2; let p3; let p4; let p5; let p6 = null;
                     let points = null;
 
+                    // const height = Math.abs(actualPoints[1].y - actualPoints[0].y);
+                    const height = Math.abs(actualPoints[0].x - actualPoints[1].x)
+                        < Math.abs(actualPoints[1].x - actualPoints[2].x)
+                        ? Math.abs(actualPoints[1].y - actualPoints[0].y)
+                        : Math.abs(actualPoints[1].y - actualPoints[2].y);
 
-                    const height = actualPoints[1].y - actualPoints[0].y;
-                    // the average x-position between the first and second point drawn
-                    const avg = (actualPoints[0].x + actualPoints[1].x) / 2;
+                    // seperate into left and right point
+                    // we pick the first and third point because we know assume they will be on
+                    // opposite corners
+                    const left = actualPoints[0].x < actualPoints[2].x ? actualPoints[0]
+                        : actualPoints[2];
+                    const right = actualPoints[0].x > actualPoints[2].x ? actualPoints[0]
+                        : actualPoints[2];
 
-                    let viewModel = null;
-                    // starting from the left side
-                    if (actualPoints[0].x < actualPoints[3].x) {
-                        p1 = { x: avg, y: actualPoints[0].y };
-                        p2 = { x: avg, y: actualPoints[1].y };
-                        p3 = { x: actualPoints[2].x, y: actualPoints[2].y - height };
-                        p4 = { x: actualPoints[2].x, y: actualPoints[2].y };
+                    // get other 2 points using the given height
+                    const left2 = left.y < right.y ? { x: left.x, y: left.y + height }
+                        : { x: left.x, y: left.y - height };
+                    const right2 = left.y < right.y ? { x: right.x, y: right.y - height }
+                        : { x: right.x, y: right.y + height };
 
-                        p5 = { x: actualPoints[3].x, y: actualPoints[3].y - height + 1 };
-                        p6 = { x: actualPoints[3].x, y: actualPoints[3].y };
+                    // get the vector for the last point relative to the previous point
+                    const vec = {
+                        x: actualPoints[3].x - actualPoints[2].x,
+                        y: actualPoints[3].y - actualPoints[2].y,
+                    };
 
-                        points = [p1, p2, p3, p4, p5, p6];
-                        viewModel = new Cuboid2PointViewModel(points);
-                    } else {
-                        p1 = { x: actualPoints[2].x, y: actualPoints[2].y - height };
-                        p2 = { x: actualPoints[2].x, y: actualPoints[2].y };
-                        p3 = { x: avg, y: actualPoints[0].y };
-                        p4 = { x: avg, y: actualPoints[1].y };
+                    const p1 = left.y < left2.y ? left : left2;
+                    const p2 = left.y < left2.y ? left2 : left;
+                    const p3 = right.y < right2.y ? right : right2;
+                    const p4 = right.y < right2.y ? right2 : right;
 
-                        const vector = {
-                            x: actualPoints[3].x - actualPoints[2].x,
-                            y: actualPoints[3].y - actualPoints[2].y,
-                        };
-                        p5 = {
-                            x: actualPoints[0].x + vector.x,
-                            y: actualPoints[0].y + vector.y + 1,
-                        };
-                        p6 = { x: actualPoints[0].x + vector.x, y: actualPoints[1].y + vector.y };
+                    const p5 = { x: p3.x + vec.x, y: p3.y + vec.y + 0.1 };
+                    const p6 = { x: p4.x + vec.x, y: p4.y + vec.y - 0.1 };
 
-                        points = [p1, p2, p3, p4, p5, p6];
-                        viewModel = new Cuboid2PointViewModel(points);
-                    }
+                    p1.y += 0.1;
+
+                    points = [p1, p2, p3, p4, p5, p6];
+                    const viewModel = new Cuboid2PointViewModel(points);
                     if (!CuboidModel.isWithinFrame(points)) {
                         this._controller.switchCreateMode(true);
                         return;
