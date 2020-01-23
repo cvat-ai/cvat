@@ -139,6 +139,11 @@ There are several options available:
 ```
 <!--lint enable fenced-code-flag-->
 
+``` bash
+datum --help
+python -m datumaro --help
+```
+
 ### Python module
 
 Datumaro can be used in custom scripts as a library in the following way:
