@@ -502,62 +502,7 @@ class ShapeCreatorView {
                         + "(HINT) The first 3 points define the front face"
                         + " and the last point should define the depth and orientation of the cuboid ");
                 } else if (this._type === "cuboid") {
-                    let left,right,left2,right2;
-                    let p1,p2,p3,p4,p5,p6;
-
-                    const height = Math.abs(actualPoints[0].x - actualPoints[1].x)
-                        < Math.abs(actualPoints[1].x - actualPoints[2].x)
-                        ? Math.abs(actualPoints[1].y - actualPoints[0].y)
-                        : Math.abs(actualPoints[1].y - actualPoints[2].y);
-
-                    // seperate into left and right point
-                    // we pick the first and third point because we know assume they will be on
-                    // opposite corners
-                    if(actualPoints[0].x < actualPoints[2].x){
-                        left = actualPoints[0];
-                        right = actualPoints[2];
-                    }else{
-                        left = actualPoints[2];
-                        right = actualPoints[0];
-                    }
-
-                    // get other 2 points using the given height
-                    if(left.y < right.y){
-                        left2 = { x: left.x, y: left.y + height };
-                        right2 = { x: right.x, y: right.y - height };
-                    }else{
-                        left2 = { x: left.x, y: left.y - height };
-                        right2 = { x: right.x, y: right.y + height };
-                    }
-
-                    // get the vector for the last point relative to the previous point
-                    const vec = {
-                        x: actualPoints[3].x - actualPoints[2].x,
-                        y: actualPoints[3].y - actualPoints[2].y,
-                    };
-
-                    if(left.y < left2.y){
-                        p1 = left;
-                        p2 = left2;
-                    }else{
-                        p1 = left2;
-                        p2 = left;
-                    }
-
-                    if(right.y < right2.y){
-                        p3 = right;
-                        p4 = right2;
-                    }else{
-                        p3 = right2;
-                        p4 = right;
-                    }
-
-                     p5 = { x: p3.x + vec.x, y: p3.y + vec.y + 0.1 };
-                     p6 = { x: p4.x + vec.x, y: p4.y + vec.y - 0.1 };
-
-                    p1.y += 0.1;
-
-                    let points = [p1, p2, p3, p4, p5, p6];
+                    let points = this._setupCuboidPoints(actualPoints);
                     const viewModel = new Cuboid2PointViewModel(points);
                     if (!CuboidModel.isWithinFrame(points)) {
                         this._controller.switchCreateMode(true);
@@ -598,8 +543,62 @@ class ShapeCreatorView {
         });
     }
 
-    _checKValidCuboidTrace(actualPoints) {
-        return (actualPoints[0].y < actualPoints[1].y);
+    _setupCuboidPoints(actualPoints) {
+        let left,right,left2,right2;
+        let p1,p2,p3,p4,p5,p6;
+
+        const height = Math.abs(actualPoints[0].x - actualPoints[1].x)
+            < Math.abs(actualPoints[1].x - actualPoints[2].x)
+            ? Math.abs(actualPoints[1].y - actualPoints[0].y)
+            : Math.abs(actualPoints[1].y - actualPoints[2].y);
+
+        // seperate into left and right point
+        // we pick the first and third point because we know assume they will be on
+        // opposite corners
+        if(actualPoints[0].x < actualPoints[2].x){
+            left = actualPoints[0];
+            right = actualPoints[2];
+        }else{
+            left = actualPoints[2];
+            right = actualPoints[0];
+        }
+
+        // get other 2 points using the given height
+        if(left.y < right.y){
+            left2 = { x: left.x, y: left.y + height };
+            right2 = { x: right.x, y: right.y - height };
+        }else{
+            left2 = { x: left.x, y: left.y - height };
+            right2 = { x: right.x, y: right.y + height };
+        }
+
+        // get the vector for the last point relative to the previous point
+        const vec = {
+            x: actualPoints[3].x - actualPoints[2].x,
+            y: actualPoints[3].y - actualPoints[2].y,
+        };
+
+        if(left.y < left2.y){
+            p1 = left;
+            p2 = left2;
+        }else{
+            p1 = left2;
+            p2 = left;
+        }
+
+        if(right.y < right2.y){
+            p3 = right;
+            p4 = right2;
+        }else{
+            p3 = right2;
+            p4 = right;
+        }
+
+         p5 = { x: p3.x + vec.x, y: p3.y + vec.y + 0.1 };
+         p6 = { x: p4.x + vec.x, y: p4.y + vec.y - 0.1 };
+
+        p1.y += 0.1;
+        return  [p1, p2, p3, p4, p5, p6];
     }
 
     _create() {
