@@ -13,6 +13,7 @@ import shutil
 from datumaro.components.project import Project
 from datumaro.components.comparator import Comparator
 from datumaro.components.dataset_filter import DatasetItemEncoder
+from datumaro.components.extractor import AnnotationType
 from .diff import DiffVisualizer
 from ...util import add_subparser, CliException, MultilineFormatter
 from ...util.project import make_project_path, load_project, \
@@ -513,7 +514,81 @@ def transform_command(args):
         save_dir=dst_dir
     )
 
-    log.info("Transform results saved to '%s'" % (dst_dir))
+    log.info("Transform results saved to '%s'" % dst_dir)
+
+    return 0
+
+def build_info_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor(help="Get project info",
+        description="""
+            Outputs project info.
+        """,
+        formatter_class=MultilineFormatter)
+
+    parser.add_argument('--all', action='store_true',
+        help="Print all information")
+    parser.add_argument('-p', '--project', dest='project_dir', default='.',
+        help="Directory of the project to operate on (default: current dir)")
+    parser.set_defaults(command=info_command)
+
+    return parser
+
+def info_command(args):
+    project = load_project(args.project_dir)
+    config = project.config
+    env = project.env
+    dataset = project.make_dataset()
+
+    print("Project:")
+    print("  name:", config.project_name)
+    print("  location:", config.project_dir)
+    print("Plugins:")
+    print("  importers:", ', '.join(env.importers.items))
+    print("  extractors:", ', '.join(env.extractors.items))
+    print("  converters:", ', '.join(env.converters.items))
+    print("  launchers:", ', '.join(env.launchers.items))
+
+    print("Sources:")
+    for source_name, source in config.sources.items():
+        print("  source '%s':" % source_name)
+        print("    format:", source.format)
+        print("    url:", source.url)
+        print("    location:", project.local_source_dir(source_name))
+
+    def print_extractor_info(extractor, indent=''):
+        print("%slength:" % indent, len(extractor))
+
+        categories = extractor.categories()
+        print("%scategories:" % indent, ', '.join(c.name for c in categories))
+
+        for cat_type, cat in categories.items():
+            print("%s  %s:" % (indent, cat_type.name))
+            if cat_type == AnnotationType.label:
+                print("%s    count:" % indent, len(cat.items))
+
+                count_threshold = 10
+                if args.all:
+                    count_threshold = len(cat.items)
+                labels = ', '.join(c.name for c in cat.items[:count_threshold])
+                if count_threshold < len(cat.items):
+                    labels += " (and %s more)" % (
+                        len(cat.items) - count_threshold)
+                print("%s    labels:" % indent, labels)
+
+    print("Dataset:")
+    print_extractor_info(dataset, indent="  ")
+
+    subsets = dataset.subsets()
+    print("  subsets:", ', '.join(subsets))
+    for subset_name in subsets:
+        subset = dataset.get_subset(subset_name)
+        print("    subset '%s':" % subset_name)
+        print_extractor_info(subset, indent="      ")
+
+    print("Models:")
+    for model_name, model in env.config.models.items():
+        print("  model '%s':" % model_name)
+        print("    type:", model.launcher)
 
     return 0
 
@@ -537,5 +612,6 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
     add_subparser(subparsers, 'merge', build_merge_parser)
     add_subparser(subparsers, 'diff', build_diff_parser)
     add_subparser(subparsers, 'transform', build_transform_parser)
+    add_subparser(subparsers, 'info', build_info_parser)
 
     return parser
