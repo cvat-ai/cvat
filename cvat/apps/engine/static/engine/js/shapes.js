@@ -683,7 +683,7 @@ class BoxModel extends ShapeModel {
             ybr: Math.clamp(position.ybr, 0, window.cvat.player.geometry.frameHeight),
             byMachine: position.byMachine ? true : false,
             occluded: position.occluded ? true : false,
-            z_order: position.z_order ? true : false,
+            z_order: position.z_order,
         };
 
         if (this._verifyArea(pos)) {
