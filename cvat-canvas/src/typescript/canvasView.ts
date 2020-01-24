@@ -376,13 +376,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private setupObjects(states: any[]): void {
-        const contentCTM = this.content.getScreenCTM();
-        const backgroundCTM = this.background.getScreenCTM();
-        if (contentCTM === null || backgroundCTM === null) {
-            return;
-        }
-
-        const ctm = contentCTM.inverse().multiply(backgroundCTM);
         this.deactivate();
 
         const created = [];
@@ -391,8 +384,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (!(state.clientID in this.drawnStates)) {
                 created.push(state);
             } else {
-                const drawState = this.drawnStates[state.clientID];
-                if (drawState.updated !== state.updated || drawState.frame !== state.frame) {
+                const drawnState = this.drawnStates[state.clientID];
+                if (drawnState.updated !== state.updated || drawnState.frame !== state.frame) {
                     updated.push(state);
                 }
             }
@@ -401,9 +394,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const deleted = Object.keys(this.drawnStates).map((clientID: string): number => +clientID)
             .filter((id: number): boolean => !newIDs.includes(id))
             .map((id: number): any => this.drawnStates[id]);
-
-        // TODO: Smart update
-        for (const state of deleted.concat(updated)) {
+        for (const state of deleted) {
             if (state.clientID in this.svgTexts) {
                 this.svgTexts[state.clientID].remove();
             }
@@ -412,10 +403,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             delete this.drawnStates[state.clientID];
         }
 
-        for (const state of created.concat(updated)) {
-            this.drawnStates[state.clientID] = state;
-        }
-        this.addObjects(ctm, created.concat(updated));
+        this.addObjects(created);
+        this.updateObjects(updated);
     }
 
     private selectize(value: boolean, shape: SVG.Element): void {
@@ -806,20 +795,94 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.canvas;
     }
 
-    private addObjects(ctm: SVGMatrix, states: any[]): void {
+    private saveState(state: any): void {
+        this.drawnStates[state.clientID] = {
+            clientID: state.clientID,
+            outside: state.outside,
+            occluded: state.occluded,
+            hidden: state.hidden,
+            lock: state.lock,
+            points: [...state.points],
+            attributes: { ...state.attributes },
+        };
+    }
+
+    private updateObjects(states: any[]): void {
+        for (const state of states) {
+            const { clientID } = state;
+            const drawnState = this.drawnStates[clientID];
+
+            if (drawnState.hidden !== state.hidden || drawnState.outside !== state.outside) {
+                const none = state.hidden || state.outside;
+                this.svgShapes[clientID].style('display', none ? 'none' : '');
+            }
+
+            if (drawnState.occluded !== state.occluded) {
+                if (state.occluded) {
+                    this.svgShapes[clientID].addClass('cvat_canvas_shape_occluded');
+                } else {
+                    this.svgShapes[clientID].removeClass('cvat_canvas_shape_occluded');
+                }
+            }
+
+            if (drawnState.points
+                .some((p: number, id: number): boolean => p !== state.points[id])
+            ) {
+                const translatedPoints: number[] = translateBetweenSVG(
+                    this.background, this.content, state.points,
+                );
+
+                if (state.shapeType === 'rectangle') {
+                    const [xtl, ytl, xbr, ybr] = translatedPoints;
+
+                    this.svgShapes[clientID].attr({
+                        x: xtl,
+                        y: ytl,
+                        width: xbr - xtl,
+                        height: ybr - ytl,
+                    });
+                } else {
+                    const stringified = translatedPoints.reduce(
+                        (acc: string, val: number, idx: number): string => {
+                            if (idx % 2) {
+                                return `${acc}${val} `;
+                            }
+
+                            return `${acc}${val},`;
+                        }, '',
+                    );
+
+                    this.svgShapes[clientID].attr('points', stringified);
+                }
+            }
+
+            for (const attrID of Object.keys(state.attributes)) {
+                if (state.attributes[attrID] !== drawnState.attributes[attrID]) {
+                    const text = this.svgTexts[state.clientID];
+                    if (text) {
+                        const [span] = this.svgTexts[state.clientID].node
+                            .querySelectorAll(`[attrID="${attrID}"]`) as any as SVGTSpanElement[];
+                        if (span && span.textContent) {
+                            const prefix = span.textContent.split(':').slice(0, -1).join(':');
+                            span.textContent = `${prefix}: ${state.attributes[attrID]}`;
+                        }
+                    }
+                }
+            }
+
+            this.saveState(state);
+        }
+    }
+
+    private addObjects(states: any[]): void {
         for (const state of states) {
             if (state.objectType === 'tag') {
                 this.addTag(state);
             } else {
                 const points: number[] = (state.points as number[]);
-                const translatedPoints: number[] = [];
-                for (let i = 0; i <= points.length - 1; i += 2) {
-                    let point: SVGPoint = this.background.createSVGPoint();
-                    point.x = points[i];
-                    point.y = points[i + 1];
-                    point = point.matrixTransform(ctm);
-                    translatedPoints.push(point.x, point.y);
-                }
+                const translatedPoints: number[] = translateBetweenSVG(
+                    this.background, this.content, points,
+                );
 
                 // TODO: Use enums after typification cvat-core
                 if (state.shapeType === 'rectangle') {
@@ -848,6 +911,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 }
             }
+
+            this.saveState(state);
         }
     }
 
@@ -1067,6 +1132,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_shape_occluded');
         }
 
+        if (state.hidden || state.outside) {
+            rect.style('display', 'none');
+        }
+
         return rect;
     }
 
@@ -1086,6 +1155,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             polygon.addClass('cvat_canvas_shape_occluded');
         }
 
+        if (state.hidden || state.outside) {
+            polygon.style('display', 'none');
+        }
+
         return polygon;
     }
 
@@ -1103,6 +1176,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.occluded) {
             polyline.addClass('cvat_canvas_shape_occluded');
+        }
+
+        if (state.hidden || state.outside) {
+            polyline.style('display', 'none');
         }
 
         return polyline;
@@ -1130,6 +1207,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }).style({
                 'fill-opacity': 1,
             });
+
+        if (state.hidden || state.outside) {
+            group.style('display', 'none');
+        }
+
         group.bbox = shape.bbox.bind(shape);
         group.clone = shape.clone.bind(shape);
 
