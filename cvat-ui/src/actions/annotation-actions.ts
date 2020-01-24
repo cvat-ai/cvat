@@ -24,7 +24,7 @@ export enum AnnotationActionTypes {
     SAVE_ANNOTATIONS = 'SAVE_ANNOTATIONS',
     SAVE_ANNOTATIONS_SUCCESS = 'SAVE_ANNOTATIONS_SUCCESS',
     SAVE_ANNOTATIONS_FAILED = 'SAVE_ANNOTATIONS_FAILED',
-    SAVE_ANNOTATIONS_UPDATED_STATUS = 'SAVE_ANNOTATIONS_UPDATED_STATUS',
+    SAVE_UPDATE_ANNOTATIONS_STATUS = 'SAVE_UPDATE_ANNOTATIONS_STATUS',
     SWITCH_PLAY = 'SWITCH_PLAY',
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
     DRAG_CANVAS = 'DRAG_CANVAS',
@@ -35,9 +35,60 @@ export enum AnnotationActionTypes {
     DRAW_SHAPE = 'DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
     RESET_CANVAS = 'RESET_CANVAS',
-    ANNOTATIONS_UPDATED = 'ANNOTATIONS_UPDATED',
+    UPDATE_ANNOTATIONS = 'UPDATE_ANNOTATIONS',
+    UPDATE_ANNOTATIONS_SUCCESS = 'UPDATE_ANNOTATIONS_SUCCESS',
+    UPDATE_ANNOTATIONS_FAILED = 'UPDATE_ANNOTATIONS_FAILED',
+    CREATE_ANNOTATIONS = 'CREATE_ANNOTATIONS',
+    CREATE_ANNOTATIONS_SUCCESS = 'CREATE_ANNOTATIONS_SUCCESS',
+    CREATE_ANNOTATIONS_FAILED = 'CREATE_ANNOTATIONS_FAILED',
+    MERGE_ANNOTATIONS = 'MERGE_ANNOTATIONS',
+    MERGE_ANNOTATIONS_SUCCESS = 'MERGE_ANNOTATIONS_SUCCESS',
+    MERGE_ANNOTATIONS_FAILED = 'MERGE_ANNOTATIONS_FAILED',
+    GROUP_ANNOTATIONS = 'GROUP_ANNOTATIONS',
+    GROUP_ANNOTATIONS_SUCCESS = 'GROUP_ANNOTATIONS_SUCCESS',
+    GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
+    SPLIT_ANNOTATIONS = 'SPLIT_ANNOTATIONS',
+    SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
+    SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
     CHANGE_LABEL_COLOR_SUCCESS = 'CHANGE_LABEL_COLOR_SUCCESS',
     CHANGE_LABEL_COLOR_FAILED = 'CHANGE_LABEL_COLOR_FAILED',
+    UPDATE_TAB_CONTENT_HEIGHT = 'UPDATE_TAB_CONTENT_HEIGHT',
+    COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
+    COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
+    COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS'
+}
+
+export function updateTabContentHeight(tabContentHeight: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_TAB_CONTENT_HEIGHT,
+        payload: {
+            tabContentHeight,
+        },
+    };
+}
+
+export function collapseSidebar(): AnyAction {
+    return {
+        type: AnnotationActionTypes.COLLAPSE_SIDEBAR,
+        payload: {},
+    };
+}
+
+export function collapseAppearance(): AnyAction {
+    return {
+        type: AnnotationActionTypes.COLLAPSE_APPEARANCE,
+        payload: {},
+    };
+}
+
+export function collapseObjectItems(states: any[], collapsed: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.COLLAPSE_OBJECT_ITEMS,
+        payload: {
+            states,
+            collapsed,
+        },
+    };
 }
 
 export function switchPlay(playing: boolean): AnyAction {
@@ -201,7 +252,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             await sessionInstance.annotations.save((status: string) => {
                 dispatch({
-                    type: AnnotationActionTypes.SAVE_ANNOTATIONS_UPDATED_STATUS,
+                    type: AnnotationActionTypes.SAVE_UPDATE_ANNOTATIONS_STATUS,
                     payload: {
                         status,
                     },
@@ -284,12 +335,150 @@ export function splitTrack(enabled: boolean): AnyAction {
     };
 }
 
-export function annotationsUpdated(states: any[]): AnyAction {
-    return {
-        type: AnnotationActionTypes.ANNOTATIONS_UPDATED,
-        payload: {
-            states,
-        },
+export function updateAnnotationsAsync(sessionInstance: any, frame: number, statesToUpdate: any[]):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch({
+            type: AnnotationActionTypes.UPDATE_ANNOTATIONS,
+            payload: {},
+        });
+
+        try {
+            const promises = statesToUpdate.map((state: any): Promise<any> => state.save());
+            const states = await Promise.all(promises);
+
+            dispatch({
+                type: AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS,
+                payload: {
+                    states,
+                },
+            });
+        } catch (error) {
+            const states = await sessionInstance.annotations.get(frame);
+            dispatch({
+                type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                    states,
+                },
+            });
+        }
+    };
+}
+
+export function createAnnotationsAsync(sessionInstance: any, frame: number, statesToCreate: any[]):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch({
+            type: AnnotationActionTypes.CREATE_ANNOTATIONS,
+            payload: {},
+        });
+
+        try {
+            await sessionInstance.annotations.put(statesToCreate);
+            const states = await sessionInstance.annotations.get(frame);
+
+            dispatch({
+                type: AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS,
+                payload: {
+                    states,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function mergeAnnotationsAsync(sessionInstance: any, frame: number, statesToMerge: any[]):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch({
+            type: AnnotationActionTypes.MERGE_ANNOTATIONS,
+            payload: {},
+        });
+
+        try {
+            await sessionInstance.annotations.merge(statesToMerge);
+            const states = await sessionInstance.annotations.get(frame);
+
+            dispatch({
+                type: AnnotationActionTypes.MERGE_ANNOTATIONS_SUCCESS,
+                payload: {
+                    states,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.MERGE_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function groupAnnotationsAsync(sessionInstance: any, frame: number, statesToGroup: any[]):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch({
+            type: AnnotationActionTypes.GROUP_ANNOTATIONS,
+            payload: {},
+        });
+
+        try {
+            await sessionInstance.annotations.group(statesToGroup);
+            const states = await sessionInstance.annotations.get(frame);
+
+            dispatch({
+                type: AnnotationActionTypes.GROUP_ANNOTATIONS_SUCCESS,
+                payload: {
+                    states,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.GROUP_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function splitAnnotationsAsync(sessionInstance: any, frame: number, stateToSplit: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch({
+            type: AnnotationActionTypes.SPLIT_ANNOTATIONS,
+            payload: {},
+        });
+
+        try {
+            await sessionInstance.annotations.split(stateToSplit, frame);
+            const states = await sessionInstance.annotations.get(frame);
+
+            dispatch({
+                type: AnnotationActionTypes.SPLIT_ANNOTATIONS_SUCCESS,
+                payload: {
+                    states,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.SPLIT_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
     };
 }
 

@@ -165,8 +165,7 @@
         updateTimestamp(updated) {
             const anyChanges = updated.label || updated.attributes || updated.points
                 || updated.outside || updated.occluded || updated.keyframe
-                || updated.group || updated.zOrder || updated.lock
-                || updated.color || updated.hidden;
+                || updated.group || updated.zOrder;
 
             if (anyChanges) {
                 this.updated = Date.now();
@@ -697,8 +696,8 @@
                 // Mutable attributes will be updated below
                 for (const attrID of Object.keys(copy.attributes)) {
                     if (!labelAttributes[attrID].mutable) {
-                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
-                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                        this.attributes[attrID] = data.attributes[attrID];
+                        this.attributes[attrID] = data.attributes[attrID];
                     }
                 }
             }
@@ -711,15 +710,21 @@
 
             // Remove keyframe
             if (updated.keyframe && !data.keyframe) {
-                delete this.shapes[frame];
-                this.updateTimestamp(updated);
-                updated.reset();
+                if (frame in this.shapes) {
+                    if (Object.keys(this.shapes).length === 1) {
+                        throw new DataError('You cannot remove the latest keyframe of a track');
+                    }
+
+                    delete this.shapes[frame];
+                    this.updateTimestamp(updated);
+                    updated.reset();
+                }
 
                 return objectStateFactory.call(this, frame, this.get(frame));
             }
 
             // Add/update keyframe
-            if (positionUpdated || (updated.keyframe && data.keyframe)) {
+            if (positionUpdated || updated.attributes || (updated.keyframe && data.keyframe)) {
                 data.keyframe = true;
 
                 this.shapes[frame] = {

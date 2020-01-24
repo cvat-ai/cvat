@@ -12,14 +12,12 @@ import ControlsSideBarComponent from 'components/annotation-page/standard-worksp
 import {
     ActiveControl,
     CombinedState,
-    StringObject,
 } from 'reducers/interfaces';
 
 interface StateToProps {
     canvasInstance: Canvas;
     rotateAll: boolean;
     activeControl: ActiveControl;
-    labels: StringObject;
 }
 
 interface DispatchToProps {
@@ -35,9 +33,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 instance: canvasInstance,
                 activeControl,
             },
-            job: {
-                instance: jobInstance,
-            },
         },
         settings: {
             player: {
@@ -46,17 +41,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
     } = state;
 
-    const labels = jobInstance.task.labels
-        .reduce((acc: StringObject, label: any): StringObject => {
-            acc[label.id as number] = label.name;
-            return acc;
-        }, {});
-
     return {
         rotateAll,
         canvasInstance,
         activeControl,
-        labels,
     };
 }
 

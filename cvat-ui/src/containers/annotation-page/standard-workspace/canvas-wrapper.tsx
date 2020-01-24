@@ -9,10 +9,14 @@ import {
     zoomCanvas,
     resetCanvas,
     shapeDrawn,
-    annotationsUpdated,
     mergeObjects,
     groupObjects,
     splitTrack,
+    updateAnnotationsAsync,
+    createAnnotationsAsync,
+    mergeAnnotationsAsync,
+    groupAnnotationsAsync,
+    splitAnnotationsAsync,
 } from 'actions/annotation-actions';
 import {
     GridColor,
@@ -23,6 +27,7 @@ import {
 import { Canvas } from 'cvat-canvas';
 
 interface StateToProps {
+    sidebarCollapsed: boolean;
     canvasInstance: Canvas;
     jobInstance: any;
     annotations: any[];
@@ -45,7 +50,11 @@ interface DispatchToProps {
     onMergeObjects: (enabled: boolean) => void;
     onGroupObjects: (enabled: boolean) => void;
     onSplitTrack: (enabled: boolean) => void;
-    onAnnotationsUpdated: (annotations: any[]) => void;
+    onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -70,6 +79,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 states: annotations,
             },
+            sidebarCollapsed,
         },
         settings: {
             player: {
@@ -82,6 +92,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     } = state;
 
     return {
+        sidebarCollapsed,
         canvasInstance,
         jobInstance,
         frameData,
@@ -122,8 +133,20 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSplitTrack(enabled: boolean): void {
             dispatch(splitTrack(enabled));
         },
-        onAnnotationsUpdated(annotations: any[]): void {
-            dispatch(annotationsUpdated(annotations));
+        onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+            dispatch(updateAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+            dispatch(mergeAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+            dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onSplitAnnotations(sessionInstance: any, frame: number, state: any): void {
+            dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
         },
     };
 }

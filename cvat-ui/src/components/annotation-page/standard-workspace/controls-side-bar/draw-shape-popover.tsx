@@ -12,12 +12,11 @@ import Text from 'antd/lib/typography/Text';
 
 import {
     ShapeType,
-    StringObject,
 } from 'reducers/interfaces';
 
 interface Props {
     shapeType: ShapeType;
-    labels: StringObject;
+    labels: any[];
     minimumPoints: number;
     numberOfPoints?: number;
     selectedLabeID: number;
@@ -59,12 +58,12 @@ const DrawShapePopoverComponent = React.memo((props: Props): JSX.Element => {
                         onChange={onChangeLabel}
                     >
                         {
-                            Object.keys(labels).map((key: string) => (
+                            labels.map((label: any) => (
                                 <Select.Option
-                                    key={key}
-                                    value={key}
+                                    key={label.id}
+                                    value={`${label.id}`}
                                 >
-                                    {labels[+key]}
+                                    {label.name}
                                 </Select.Option>
                             ))
                         }

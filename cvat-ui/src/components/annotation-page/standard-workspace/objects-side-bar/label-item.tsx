@@ -12,13 +12,13 @@ import Text from 'antd/lib/typography/Text';
 
 interface PopoverContentProps {
     colors: string[];
-    onClick(color: string): void;
+    changeColor(color: string): void;
 }
 
 function PopoverContent(props: PopoverContentProps): JSX.Element {
     const {
         colors,
-        onClick,
+        changeColor,
     } = props;
 
     const cols = 6;
@@ -36,7 +36,7 @@ function PopoverContent(props: PopoverContentProps): JSX.Element {
             antdCols.push(
                 <Col key={col} span={4}>
                     <Button
-                        onClick={(): void => onClick(color)}
+                        onClick={(): void => changeColor(color)}
                         style={{ background: color }}
                         className='cvat-label-item-color-button'
                     />
@@ -58,24 +58,32 @@ function PopoverContent(props: PopoverContentProps): JSX.Element {
 }
 
 interface Props {
-    label: any;
-    statesVisible: boolean;
+    labelName: string;
+    labelColor: string;
+    labelColors: string[];
+    visible: boolean;
+    statesHidden: boolean;
     statesLocked: boolean;
-    colors: string[];
-    onStatesLock(lock: boolean): void;
-    onStatesHide(hide: boolean): void;
-    onChangeLabelColor(label: any, color: string): void;
+    hideStates(): void;
+    showStates(): void;
+    lockStates(): void;
+    unlockStates(): void;
+    changeColor(color: string): void;
 }
 
-export default function LabelItem(props: Props): JSX.Element {
+const LabelItemComponent = React.memo((props: Props): JSX.Element => {
     const {
-        label,
-        statesVisible,
+        labelName,
+        labelColor,
+        labelColors,
+        visible,
+        statesHidden,
         statesLocked,
-        colors,
-        onChangeLabelColor,
-        onStatesHide,
-        onStatesLock,
+        hideStates,
+        showStates,
+        lockStates,
+        unlockStates,
+        changeColor,
     } = props;
 
     return (
@@ -84,6 +92,7 @@ export default function LabelItem(props: Props): JSX.Element {
             align='middle'
             justify='space-around'
             className='cvat-objects-sidebar-label-item'
+            style={{ display: visible ? 'flex' : 'none' }}
         >
             <Col span={4}>
                 <Popover
@@ -91,31 +100,31 @@ export default function LabelItem(props: Props): JSX.Element {
                     trigger='click'
                     content={(
                         <PopoverContent
-                            onClick={(color: string): void => {
-                                onChangeLabelColor(label, color);
-                            }}
-                            colors={colors}
+                            changeColor={changeColor}
+                            colors={labelColors}
                         />
                     )}
                 >
-                    <Button style={{ background: label.color }} className='cvat-label-item-color-button' />
+                    <Button style={{ background: labelColor }} className='cvat-label-item-color-button' />
                 </Popover>
             </Col>
             <Col span={14}>
-                <Text strong className='cvat-text'>{label.name}</Text>
+                <Text strong className='cvat-text'>{labelName}</Text>
             </Col>
             <Col span={3}>
                 { statesLocked
-                    ? <Icon type='lock' onClick={(): void => onStatesLock(false)} />
-                    : <Icon type='unlock' onClick={(): void => onStatesLock(true)} />
+                    ? <Icon type='lock' onClick={unlockStates} />
+                    : <Icon type='unlock' onClick={lockStates} />
                 }
             </Col>
             <Col span={3}>
-                { statesVisible
-                    ? <Icon type='eye' onClick={(): void => onStatesHide(true)} />
-                    : <Icon type='eye-invisible' onClick={(): void => onStatesHide(false)} />
+                { statesHidden
+                    ? <Icon type='eye-invisible' onClick={showStates} />
+                    : <Icon type='eye' onClick={hideStates} />
                 }
             </Col>
         </Row>
     );
-}
+});
+
+export default LabelItemComponent;

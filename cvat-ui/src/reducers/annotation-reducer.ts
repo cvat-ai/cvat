@@ -18,6 +18,8 @@ const defaultState: AnnotationState = {
     },
     job: {
         instance: null,
+        labels: [],
+        attributes: {},
         fetching: false,
     },
     player: {
@@ -38,9 +40,13 @@ const defaultState: AnnotationState = {
             uploading: false,
             statuses: [],
         },
+        collapsed: {},
         states: [],
-        colors: [],
     },
+    colors: [],
+    sidebarCollapsed: false,
+    appearanceCollapsed: false,
+    tabContentHeight: 0,
 };
 
 export default (state = defaultState, action: AnyAction): AnnotationState => {
@@ -66,14 +72,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 job: {
-                    ...state,
+                    ...state.job,
                     fetching: false,
                     instance: job,
+                    labels: job.task.labels,
+                    attributes: job.task.labels
+                        .reduce((acc: Record<number, any[]>, label: any): Record<number, any[]> => {
+                            acc[label.id] = label.attributes;
+                            return acc;
+                        }, {}),
                 },
                 annotations: {
                     ...state.annotations,
                     states,
-                    colors,
                 },
                 player: {
                     ...state.player,
@@ -84,10 +95,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     },
                 },
                 drawing: {
-                    ...defaultState.drawing,
+                    ...state.drawing,
                     activeLabelID: job.task.labels[0].id,
                     activeObjectType: job.task.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
                 },
+                colors,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
@@ -103,15 +115,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.CHANGE_FRAME: {
             return {
                 ...state,
-                annotations: {
-                    ...state.annotations,
-                    states: [],
-                },
                 player: {
                     ...state.player,
                     frame: {
                         ...state.player.frame,
-                        data: null,
                         fetching: true,
                     },
                 },
@@ -193,7 +200,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.SAVE_ANNOTATIONS_UPDATED_STATUS: {
+        case AnnotationActionTypes.SAVE_UPDATE_ANNOTATIONS_STATUS: {
             const { status } = action.payload;
 
             return {
@@ -215,6 +222,44 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 player: {
                     ...state.player,
                     playing,
+                },
+            };
+        }
+        case AnnotationActionTypes.COLLAPSE_SIDEBAR: {
+            return {
+                ...state,
+                sidebarCollapsed: !state.sidebarCollapsed,
+            };
+        }
+        case AnnotationActionTypes.COLLAPSE_APPEARANCE: {
+            return {
+                ...state,
+                appearanceCollapsed: !state.appearanceCollapsed,
+            };
+        }
+        case AnnotationActionTypes.UPDATE_TAB_CONTENT_HEIGHT: {
+            const { tabContentHeight } = action.payload;
+            return {
+                ...state,
+                tabContentHeight,
+            };
+        }
+        case AnnotationActionTypes.COLLAPSE_OBJECT_ITEMS: {
+            const {
+                states,
+                collapsed,
+            } = action.payload;
+
+            const updatedCollapsedStates = { ...state.annotations.collapsed };
+            for (const objectState of states) {
+                updatedCollapsedStates[objectState.clientID] = collapsed;
+            }
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    collapsed: updatedCollapsedStates,
                 },
             };
         }
@@ -324,7 +369,71 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.ANNOTATIONS_UPDATED: {
+        case AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS: {
+            const { states: updatedStates } = action.payload;
+            const { states: prevStates } = state.annotations;
+            const nextStates = [...prevStates];
+
+            const clientIDs = prevStates.map((prevState: any): number => prevState.clientID);
+            for (const updatedState of updatedStates) {
+                const index = clientIDs.indexOf(updatedState.clientID);
+                if (index !== -1) {
+                    nextStates[index] = updatedState;
+                }
+            }
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    states: nextStates,
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED: {
+            const { states } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    states,
+                },
+            };
+        }
+        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS: {
+            const { states } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    states,
+                },
+            };
+        }
+        case AnnotationActionTypes.MERGE_ANNOTATIONS_SUCCESS: {
+            const { states } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    states,
+                },
+            };
+        }
+        case AnnotationActionTypes.GROUP_ANNOTATIONS_SUCCESS: {
+            const { states } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    states,
+                },
+            };
+        }
+        case AnnotationActionTypes.SPLIT_ANNOTATIONS_SUCCESS: {
             const { states } = action.payload;
 
             return {

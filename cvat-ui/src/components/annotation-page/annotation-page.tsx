@@ -8,7 +8,7 @@ import {
 } from 'antd';
 
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
-import StandardWorkspaceContainer from 'containers/annotation-page/standard-workspace/standard-workspace';
+import StandardWorkspaceComponent from './standard-workspace/standard-workspace';
 
 interface Props {
     job: any | null | undefined;
@@ -45,7 +45,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     return (
         <Layout className='cvat-annotation-page'>
             <AnnotationTopBarContainer />
-            <StandardWorkspaceContainer />
+            <StandardWorkspaceComponent />
         </Layout>
     );
 }

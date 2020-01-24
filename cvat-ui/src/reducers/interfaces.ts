@@ -206,6 +206,11 @@ export interface NotificationsState {
             jobFetching: null | ErrorState;
             frameFetching: null | ErrorState;
             changingLabelColor: null | ErrorState;
+            updating: null | ErrorState;
+            creating: null | ErrorState;
+            merging: null | ErrorState;
+            grouping: null | ErrorState;
+            splitting: null | ErrorState;
         };
 
         [index: string]: any;
@@ -248,6 +253,12 @@ export enum ObjectType {
     TAG = 'tag',
 }
 
+export enum StatesOrdering {
+    ID_DESCENT = 'ID - descent',
+    ID_ASCENT = 'ID - ascent',
+    UPDATED = 'Updated time',
+}
+
 export interface AnnotationState {
     canvas: {
         instance: Canvas;
@@ -256,6 +267,8 @@ export interface AnnotationState {
     };
     job: {
         instance: any | null | undefined;
+        labels: any[];
+        attributes: Record<number, any[]>;
         fetching: boolean;
     };
     player: {
@@ -273,13 +286,17 @@ export interface AnnotationState {
         activeObjectType: ObjectType;
     };
     annotations: {
+        collapsed: Record<number, boolean>;
         states: any[];
-        colors: any[];
         saving: {
             uploading: boolean;
             statuses: string[];
         };
     };
+    colors: any[];
+    sidebarCollapsed: boolean;
+    appearanceCollapsed: boolean;
+    tabContentHeight: number;
 }
 
 export enum GridColor {

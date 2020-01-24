@@ -5,7 +5,6 @@ import {
     CombinedState,
     ShapeType,
     ObjectType,
-    StringObject,
 } from 'reducers/interfaces';
 
 import {
@@ -30,7 +29,7 @@ interface DispatchToProps {
 interface StateToProps {
     canvasInstance: Canvas;
     shapeType: ShapeType;
-    labels: StringObject;
+    labels: any[];
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -53,16 +52,10 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 instance: canvasInstance,
             },
             job: {
-                instance: jobInstance,
+                labels,
             },
         },
     } = state;
-
-    const labels = jobInstance.task.labels
-        .reduce((acc: StringObject, label: any): StringObject => {
-            acc[label.id as number] = label.name;
-            return acc;
-        }, {});
 
     return {
         ...own,
@@ -78,12 +71,12 @@ interface State {
     selectedLabelID: number;
 }
 
-class DrawShapePopoverContainer extends React.Component<Props, State> {
+class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     private minimumPoints = 3;
     constructor(props: Props) {
         super(props);
 
-        const defaultLabelID = +Object.keys(props.labels)[0];
+        const defaultLabelID = props.labels[0].id;
         this.state = {
             selectedLabelID: defaultLabelID,
         };
@@ -98,30 +91,6 @@ class DrawShapePopoverContainer extends React.Component<Props, State> {
         if (shapeType === ShapeType.POINTS) {
             this.minimumPoints = 1;
         }
-    }
-
-    public shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
-        const {
-            labels,
-            canvasInstance,
-            shapeType,
-        } = this.props;
-
-        const {
-            numberOfPoints,
-            selectedLabelID,
-        } = this.state;
-
-        for (const labelID of Object.keys(labels)) {
-            if (!(labelID in nextProps.labels) || nextProps.labels[labelID] !== labels[labelID]) {
-                return true;
-            }
-        }
-
-        return canvasInstance !== nextProps.canvasInstance
-            || shapeType !== nextProps.shapeType
-            || numberOfPoints !== nextState.numberOfPoints
-            || selectedLabelID !== nextState.selectedLabelID;
     }
 
     private onDraw(objectType: ObjectType): void {

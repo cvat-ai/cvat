@@ -54,6 +54,11 @@ const defaultState: NotificationsState = {
             jobFetching: null,
             frameFetching: null,
             changingLabelColor: null,
+            updating: null,
+            creating: null,
+            merging: null,
+            grouping: null,
+            splitting: null,
         },
     },
     messages: {
@@ -485,6 +490,81 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         changingLabelColor: {
                             message: 'Could not change label color',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        updating: {
+                            message: 'Could not update annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        creating: {
+                            message: 'Could not create annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.MERGE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        merging: {
+                            message: 'Could not merge annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GROUP_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        grouping: {
+                            message: 'Could not group annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SPLIT_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        splitting: {
+                            message: 'Could not split a track',
                             reason: action.payload.error.toString(),
                         },
                     },

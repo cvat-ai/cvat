@@ -25,26 +25,24 @@ import {
 } from 'icons';
 
 import {
-    ObjectType,
+    ObjectType, ShapeType,
 } from 'reducers/interfaces';
 
 interface ItemTopProps {
     clientID: number;
-    label: any;
+    labelID: number;
     labels: any[];
     type: string;
-    state: any;
-    onUpdate(state: any): void;
+    changeLabel(labelID: string): void;
 }
 
-const ItemTop = (props: ItemTopProps): JSX.Element => {
+const ItemTop = React.memo((props: ItemTopProps): JSX.Element => {
     const {
         clientID,
-        label,
+        labelID,
         labels,
         type,
-        state,
-        onUpdate,
+        changeLabel,
     } = props;
 
     return (
@@ -55,17 +53,10 @@ const ItemTop = (props: ItemTopProps): JSX.Element => {
                 <Text style={{ fontSize: 10 }}>{type}</Text>
             </Col>
             <Col span={12}>
-                <Select
-                    value={label.id}
-                    onChange={async (value: string): Promise<void> => {
-                        const id = +value;
-                        [state.label] = labels.filter((_label: any) => _label.id === id);
-                        onUpdate(state);
-                    }}
-                >
-                    { labels.map((_label: any): JSX.Element => (
-                        <Select.Option key={_label.id} value={_label.id}>
-                            {_label.name}
+                <Select value={`${labelID}`} onChange={changeLabel}>
+                    { labels.map((label: any): JSX.Element => (
+                        <Select.Option key={label.id} value={`${label.id}`}>
+                            {label.name}
                         </Select.Option>
                     ))}
                 </Select>
@@ -75,27 +66,47 @@ const ItemTop = (props: ItemTopProps): JSX.Element => {
             </Col>
         </Row>
     );
-};
+});
 
 interface ItemButtonsProps {
-    objectState: any;
-    onUpdate(state: any): void;
+    objectType: ObjectType;
+    occluded: boolean;
+    outside: boolean | undefined;
+    locked: boolean;
+    hidden: boolean;
+    keyframe: boolean | undefined;
+
+    setOccluded(): void;
+    unsetOccluded(): void;
+    setOutside(): void;
+    unsetOutside(): void;
+    setKeyframe(): void;
+    unsetKeyframe(): void;
+    lock(): void;
+    unlock(): void;
+    hide(): void;
+    show(): void;
 }
 
-const ItemButtons = (props: ItemButtonsProps): JSX.Element => {
-    const {
-        objectState,
-        onUpdate,
-    } = props;
-
+const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
     const {
         objectType,
         occluded,
         outside,
-        lock: locked,
-        visible,
+        locked,
+        hidden,
         keyframe,
-    } = objectState;
+        setOccluded,
+        unsetOccluded,
+        setOutside,
+        unsetOutside,
+        setKeyframe,
+        unsetKeyframe,
+        lock,
+        unlock,
+        hide,
+        show,
+    } = props;
 
     if (objectType === ObjectType.TRACK) {
         return (
@@ -118,113 +129,32 @@ const ItemButtons = (props: ItemButtonsProps): JSX.Element => {
                     <Row type='flex' justify='space-around'>
                         <Col span={4}>
                             { outside
-                                ? (
-                                    <Icon
-                                        component={ObjectOutsideIcon}
-                                        onClick={(): void => {
-                                            objectState.outside = false;
-                                            onUpdate(objectState);
-                                        }}
-                                    />
-                                )
-                                : (
-                                    <Icon
-                                        type='select'
-                                        onClick={(): void => {
-                                            objectState.outside = true;
-                                            onUpdate(objectState);
-                                        }}
-                                    />
-                                )
+                                ? <Icon component={ObjectOutsideIcon} onClick={unsetOutside} />
+                                : <Icon type='select' onClick={setOutside} />
                             }
                         </Col>
                         <Col span={4}>
                             { locked
-                                ? (
-                                    <Icon
-                                        type='lock'
-                                        onClick={(): void => {
-                                            objectState.lock = false;
-                                            onUpdate(objectState);
-                                        }}
-                                    />
-                                )
-                                : (
-                                    <Icon
-                                        type='unlock'
-                                        onClick={(): void => {
-                                            objectState.lock = true;
-                                            onUpdate(objectState);
-                                        }}
-                                    />
-                                )
+                                ? <Icon type='lock' onClick={unlock} />
+                                : <Icon type='unlock' onClick={lock} />
                             }
                         </Col>
                         <Col span={4}>
                             { occluded
-                                ? (
-                                    <Icon
-                                        type='team'
-                                        onClick={(): void => {
-                                            objectState.occluded = false;
-                                            onUpdate(objectState);
-                                        }}
-                                    />
-                                )
-                                : (
-                                    <Icon
-                                        type='user'
-                                        onClick={(): void => {
-                                            objectState.occluded = true;
-                                            onUpdate(objectState);
-                                        }}
-                                    />
-                                )
+                                ? <Icon type='team' onClick={unsetOccluded} />
+                                : <Icon type='user' onClick={setOccluded} />
                             }
                         </Col>
                         <Col span={4}>
-                            { visible
-                                ? (
-                                    <Icon
-                                        type='eye'
-                                        onClick={(): void => {
-                                            objectState.visible = false;
-                                            onUpdate(objectState);
-                                        }}
-                                    />
-                                )
-                                : (
-                                    <Icon
-                                        type='eye-invisible'
-                                        onClick={(): void => {
-                                            objectState.visible = true;
-                                            onUpdate(objectState);
-                                        }}
-                                    />
-                                )
+                            { hidden
+                                ? <Icon type='eye-invisible' onClick={show} />
+                                : <Icon type='eye' onClick={hide} />
                             }
                         </Col>
                         <Col span={4}>
                             { keyframe
-                                ? (
-                                    <Icon
-                                        type='star'
-                                        theme='filled'
-                                        onClick={(): void => {
-                                            objectState.keyframe = false;
-                                            onUpdate(objectState);
-                                        }}
-                                    />
-                                )
-                                : (
-                                    <Icon
-                                        type='star'
-                                        onClick={(): void => {
-                                            objectState.keyframe = true;
-                                            onUpdate(objectState);
-                                        }}
-                                    />
-                                )
+                                ? <Icon type='star' theme='filled' onClick={unsetKeyframe} />
+                                : <Icon type='star' onClick={setKeyframe} />
                             }
                         </Col>
                     </Row>
@@ -239,130 +169,90 @@ const ItemButtons = (props: ItemButtonsProps): JSX.Element => {
                 <Row type='flex' justify='space-around'>
                     <Col span={8}>
                         { locked
-                            ? (
-                                <Icon
-                                    type='lock'
-                                    onClick={(): void => {
-                                        objectState.lock = false;
-                                        onUpdate(objectState);
-                                    }}
-                                />
-                            )
-                            : (
-                                <Icon
-                                    type='unlock'
-                                    onClick={(): void => {
-                                        objectState.lock = true;
-                                        onUpdate(objectState);
-                                    }}
-                                />
-                            )
+                            ? <Icon type='lock' onClick={unlock} />
+                            : <Icon type='unlock' onClick={lock} />
                         }
                     </Col>
                     <Col span={8}>
                         { occluded
-                            ? (
-                                <Icon
-                                    type='team'
-                                    onClick={(): void => {
-                                        objectState.occluded = false;
-                                        onUpdate(objectState);
-                                    }}
-                                />
-                            )
-                            : (
-                                <Icon
-                                    type='user'
-                                    onClick={(): void => {
-                                        objectState.occluded = true;
-                                        onUpdate(objectState);
-                                    }}
-                                />
-                            )
+                            ? <Icon type='team' onClick={unsetOccluded} />
+                            : <Icon type='user' onClick={setOccluded} />
                         }
                     </Col>
                     <Col span={8}>
-                        { visible
-                            ? (
-                                <Icon
-                                    type='eye'
-                                    onClick={(): void => {
-                                        objectState.visible = false;
-                                        onUpdate(objectState);
-                                    }}
-                                />
-                            )
-                            : (
-                                <Icon
-                                    type='eye-invisible'
-                                    onClick={(): void => {
-                                        objectState.visible = true;
-                                        onUpdate(objectState);
-                                    }}
-                                />
-                            )
+                        { hidden
+                            ? <Icon type='eye-invisible' onClick={show} />
+                            : <Icon type='eye' onClick={hide} />
                         }
                     </Col>
                 </Row>
             </Col>
         </Row>
     );
-};
-
+});
 
 interface ItemAttributeProps {
-    attribute: any;
+    attrInputType: string;
+    attrValues: string[];
     attrValue: string;
-    objectState: any;
-    onUpdate(objectState: any): void;
+    attrName: string;
+    attrID: number;
+    changeAttribute(attrID: number, value: string): void;
 }
 
-const ItemAttribute = (props: ItemAttributeProps): JSX.Element => {
+function attrIsTheSame(prevProps: ItemAttributeProps, nextProps: ItemAttributeProps): boolean {
+    return nextProps.attrID === prevProps.attrID
+        && nextProps.attrValue === prevProps.attrValue
+        && nextProps.attrName === prevProps.attrName
+        && nextProps.attrInputType === prevProps.attrInputType
+        && nextProps.attrValues
+            .map((value: string, id: number): boolean => prevProps.attrValues[id] === value)
+            .every((value: boolean): boolean => value);
+}
+
+const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
     const {
-        attribute,
+        attrInputType,
+        attrValues,
         attrValue,
-        objectState,
-        onUpdate,
+        attrName,
+        attrID,
+        changeAttribute,
     } = props;
 
-    if (attribute.inputType === 'checkbox') {
+    if (attrInputType === 'checkbox') {
         return (
             <Col span={24}>
                 <Checkbox
                     className='cvat-object-item-checkbox-attribute'
                     checked={attrValue === 'true'}
                     onChange={(event: CheckboxChangeEvent): void => {
-                        const attr: Record<number, string> = {};
-                        attr[attribute.id] = event.target.checked ? 'true' : 'false';
-                        objectState.attributes = attr;
-                        onUpdate(objectState);
+                        const value = event.target.checked ? 'true' : 'false';
+                        changeAttribute(attrID, value);
                     }}
                 >
                     <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
-                        {attribute.name}
+                        {attrName}
                     </Text>
                 </Checkbox>
             </Col>
         );
     }
 
-    if (attribute.inputType === 'radio') {
+    if (attrInputType === 'radio') {
         return (
             <Col span={24}>
                 <fieldset className='cvat-object-item-radio-attribute'>
                     <legend>
-                        <Text strong className='cvat-text'>{attribute.name}</Text>
+                        <Text strong className='cvat-text'>{attrName}</Text>
                     </legend>
                     <Radio.Group
                         value={attrValue}
                         onChange={(event: RadioChangeEvent): void => {
-                            const attr: Record<number, string> = {};
-                            attr[attribute.id] = event.target.value;
-                            objectState.attributes = attr;
-                            onUpdate(objectState);
+                            changeAttribute(attrID, event.target.value);
                         }}
                     >
-                        { attribute.values.map((value: string): JSX.Element => (
+                        { attrValues.map((value: string): JSX.Element => (
                             <Radio key={value} value={value}>{value}</Radio>
                         )) }
                     </Radio.Group>
@@ -371,26 +261,23 @@ const ItemAttribute = (props: ItemAttributeProps): JSX.Element => {
         );
     }
 
-    if (attribute.inputType === 'select') {
+    if (attrInputType === 'select') {
         return (
             <>
                 <Col span={24}>
                     <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
-                        {attribute.name}
+                        {attrName}
                     </Text>
                 </Col>
                 <Col span={24}>
                     <Select
                         onChange={(value: string): void => {
-                            const attr: Record<number, string> = {};
-                            attr[attribute.id] = value;
-                            objectState.attributes = attr;
-                            onUpdate(objectState);
+                            changeAttribute(attrID, value);
                         }}
                         value={attrValue}
                         className='cvat-object-item-select-attribute'
                     >
-                        { attribute.values.map((value: string): JSX.Element => (
+                        { attrValues.map((value: string): JSX.Element => (
                             <Select.Option key={value} value={value}>{value}</Select.Option>
                         )) }
                     </Select>
@@ -399,24 +286,21 @@ const ItemAttribute = (props: ItemAttributeProps): JSX.Element => {
         );
     }
 
-    if (attribute.inputType === 'number') {
-        const [min, max, step] = attribute.values;
+    if (attrInputType === 'number') {
+        const [min, max, step] = attrValues;
 
         return (
             <>
                 <Col span={24}>
                     <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
-                        {attribute.name}
+                        {attrName}
                     </Text>
                 </Col>
                 <Col span={24}>
                     <InputNumber
                         onChange={(value: number | undefined): void => {
                             if (typeof (value) !== 'undefined') {
-                                const attr: Record<number, string> = {};
-                                attr[attribute.id] = `${value}`;
-                                objectState.attributes = attr;
-                                onUpdate(objectState);
+                                changeAttribute(attrID, `${value}`);
                             }
                         }}
                         value={+attrValue}
@@ -434,16 +318,13 @@ const ItemAttribute = (props: ItemAttributeProps): JSX.Element => {
         <>
             <Col span={24}>
                 <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
-                    {attribute.name}
+                    {attrName}
                 </Text>
             </Col>
             <Col span={24}>
                 <Input
                     onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
-                        const attr: Record<number, string> = {};
-                        attr[attribute.id] = event.target.value;
-                        objectState.attributes = attr;
-                        onUpdate(objectState);
+                        changeAttribute(attrID, event.target.value);
                     }}
                     value={attrValue}
                     className='cvat-object-item-text-attribute'
@@ -451,31 +332,42 @@ const ItemAttribute = (props: ItemAttributeProps): JSX.Element => {
             </Col>
         </>
     );
-};
+}, attrIsTheSame);
 
 
 interface ItemAttributesProps {
-    attributes: Record<number, string>;
-    labelAttributes: any[];
     collapsed: boolean;
-    clientID: number;
-    onCollapse(clientID: number, key: string | string[]): void;
-    objectState: any;
-    onUpdate(state: any): void;
+    attributes: any[];
+    values: Record<number, string>;
+    changeAttribute(attrID: number, value: string): void;
+    collapse(): void;
 }
 
-const ItemAttributes = (props: ItemAttributesProps): JSX.Element => {
+function attrValuesAreEqual(next: Record<number, string>, prev: Record<number, string>): boolean {
+    const prevKeys = Object.keys(prev);
+    const nextKeys = Object.keys(next);
+
+    return nextKeys.length === prevKeys.length
+        && nextKeys.map((key: string): boolean => prev[+key] === next[+key])
+            .every((value: boolean) => value);
+}
+
+function attrAreTheSame(prevProps: ItemAttributesProps, nextProps: ItemAttributesProps): boolean {
+    return nextProps.collapsed === prevProps.collapsed
+        && nextProps.attributes === prevProps.attributes
+        && attrValuesAreEqual(nextProps.values, prevProps.values);
+}
+
+const ItemAttributes = React.memo((props: ItemAttributesProps): JSX.Element => {
     const {
-        labelAttributes,
-        attributes,
         collapsed,
-        clientID,
-        onCollapse,
-        objectState,
-        onUpdate,
+        attributes,
+        values,
+        changeAttribute,
+        collapse,
     } = props;
 
-    const sorted = [...labelAttributes]
+    const sorted = [...attributes]
         .sort((a: any, b: any): number => a.inputType.localeCompare(b.inputType));
 
     return (
@@ -483,7 +375,7 @@ const ItemAttributes = (props: ItemAttributesProps): JSX.Element => {
             <Collapse
                 className='cvat-objects-sidebar-state-item-collapse'
                 activeKey={collapsed ? [] : ['details']}
-                onChange={(key: string | string[]): void => onCollapse(clientID, key)}
+                onChange={collapse}
             >
                 <Collapse.Panel
                     header='Details'
@@ -498,10 +390,12 @@ const ItemAttributes = (props: ItemAttributesProps): JSX.Element => {
                             className='cvat-object-item-attribute-wrapper'
                         >
                             <ItemAttribute
-                                attribute={attribute}
-                                attrValue={attributes[attribute.id]}
-                                objectState={objectState}
-                                onUpdate={onUpdate}
+                                attrValue={values[attribute.id]}
+                                attrInputType={attribute.inputType}
+                                attrName={attribute.name}
+                                attrID={attribute.id}
+                                attrValues={attribute.values}
+                                changeAttribute={changeAttribute}
                             />
                         </Row>
                     ))}
@@ -509,32 +403,89 @@ const ItemAttributes = (props: ItemAttributesProps): JSX.Element => {
             </Collapse>
         </Row>
     );
-};
+}, attrAreTheSame);
 
 interface Props {
-    objectState: any;
-    collapsed: boolean;
+    objectType: ObjectType;
+    shapeType: ShapeType;
+    clientID: number;
+    labelID: number;
+    occluded: boolean;
+    outside: boolean | undefined;
+    locked: boolean;
+    hidden: boolean;
+    keyframe: boolean | undefined;
+    attrValues: Record<number, string>;
+    color: string;
+
     labels: any[];
-    onUpdate(state: any): void;
-    onCollapse(clientID: number, key: string | string[]): void;
+    attributes: any[];
+    collapsed: boolean;
+
+    setOccluded(): void;
+    unsetOccluded(): void;
+    setOutside(): void;
+    unsetOutside(): void;
+    setKeyframe(): void;
+    unsetKeyframe(): void;
+    lock(): void;
+    unlock(): void;
+    hide(): void;
+    show(): void;
+    changeLabel(labelID: string): void;
+    changeAttribute(attrID: number, value: string): void;
+    collapse(): void;
 }
 
-export default function ObjectItem(props: Props): JSX.Element {
-    const {
-        objectState,
-        labels,
-        collapsed,
-        onCollapse,
-        onUpdate,
-    } = props;
+function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
+    return nextProps.locked === prevProps.locked
+        && nextProps.occluded === prevProps.occluded
+        && nextProps.outside === prevProps.outside
+        && nextProps.hidden === prevProps.hidden
+        && nextProps.keyframe === prevProps.keyframe
+        && nextProps.label === prevProps.label
+        && nextProps.color === prevProps.color
+        && nextProps.clientID === prevProps.clientID
+        && nextProps.objectType === prevProps.objectType
+        && nextProps.shapeType === prevProps.shapeType
+        && nextProps.collapsed === prevProps.collapsed
+        && nextProps.labels === prevProps.labels
+        && nextProps.attributes === prevProps.attributes
+        && attrValuesAreEqual(nextProps.attrValues, prevProps.attrValues);
+}
 
+const ObjectItem = React.memo((props: Props): JSX.Element => {
     const {
-        clientID,
-        label,
         objectType,
         shapeType,
+        clientID,
+        occluded,
+        outside,
+        locked,
+        hidden,
+        keyframe,
+        attrValues,
+        labelID,
+        color,
+
         attributes,
-    } = objectState;
+        labels,
+        collapsed,
+
+        setOccluded,
+        unsetOccluded,
+        setOutside,
+        unsetOutside,
+        setKeyframe,
+        unsetKeyframe,
+        lock,
+        unlock,
+        hide,
+        show,
+        changeLabel,
+        changeAttribute,
+        collapse,
+    } = props;
 
     const type = objectType === ObjectType.TAG ? ObjectType.TAG.toUpperCase()
         : `${shapeType.toUpperCase()} ${objectType.toUpperCase()}`;
@@ -542,33 +493,46 @@ export default function ObjectItem(props: Props): JSX.Element {
     return (
         <div
             className='cvat-objects-sidebar-state-item'
-            style={{ borderLeftStyle: 'solid', borderColor: ` ${objectState.color}` }}
+            style={{ borderLeftStyle: 'solid', borderColor: ` ${color}` }}
         >
             <ItemTop
-                type={type}
-                labels={labels}
                 clientID={clientID}
-                label={label}
-                state={objectState}
-                onUpdate={onUpdate}
+                labelID={labelID}
+                labels={labels}
+                type={type}
+                changeLabel={changeLabel}
             />
             <ItemButtons
-                objectState={objectState}
-                onUpdate={onUpdate}
+                objectType={objectType}
+                occluded={occluded}
+                outside={outside}
+                locked={locked}
+                hidden={hidden}
+                keyframe={keyframe}
+                setOccluded={setOccluded}
+                unsetOccluded={unsetOccluded}
+                setOutside={setOutside}
+                unsetOutside={unsetOutside}
+                setKeyframe={setKeyframe}
+                unsetKeyframe={unsetKeyframe}
+                lock={lock}
+                unlock={unlock}
+                hide={hide}
+                show={show}
             />
-            { !!label.attributes.length
+            { !!attributes.length
                 && (
                     <ItemAttributes
                         collapsed={collapsed}
-                        clientID={clientID}
                         attributes={attributes}
-                        labelAttributes={label.attributes}
-                        onCollapse={onCollapse}
-                        objectState={objectState}
-                        onUpdate={onUpdate}
+                        values={attrValues}
+                        collapse={collapse}
+                        changeAttribute={changeAttribute}
                     />
                 )
             }
         </div>
     );
-}
+}, objectItemsAreEqual);
+
+export default ObjectItem;
