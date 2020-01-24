@@ -196,7 +196,7 @@
                         if (colors.includes(color)) {
                             data.color = color;
                         } else {
-                            throw ArgumentError('Trying to set unknown color');
+                            throw new ArgumentError('Trying to set unknown color');
                         }
                     },
                 },
