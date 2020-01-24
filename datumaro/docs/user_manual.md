@@ -268,13 +268,13 @@ datum project extract \
      -e '/item[image/width < image/height]'
 ```
 
-Example: extract a dataset with only large annotations of class `cat`
+Example: extract a dataset with only large annotations of class `cat` and any non-`persons`
 
 ``` bash
 datum project extract \
      -p test_project \
      -o test_project-extract \
-     --mode annotations -e '/item/annotation[label="cat" and area > 999.5]'
+     --mode annotations -e '/item/annotation[(label="cat" and area > 999.5) or label!="person"]'
 ```
 
 Example: extract a dataset with only occluded annotations, remove empty images
