@@ -399,11 +399,12 @@ class Dataset(Extractor):
 
         return item
 
-    def extract(self, filter_expr, filter_annotations=False, **kwargs):
+    def extract(self, filter_expr, filter_annotations=False, remove_empty=False):
         if filter_annotations:
-            return self.transform(XPathAnnotationsFilter, filter_expr, **kwargs)
+            return self.transform(XPathAnnotationsFilter, filter_expr,
+                remove_empty)
         else:
-            return self.transform(XPathDatasetFilter, filter_expr, **kwargs)
+            return self.transform(XPathDatasetFilter, filter_expr)
 
     def update(self, items):
         for item in items:

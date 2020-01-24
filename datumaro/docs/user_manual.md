@@ -13,7 +13,6 @@
   - [Merge projects](#merge-project)
   - [Export a project](#export-project)
   - [Compare projects](#compare-projects)
-  - [Transform a project](#transform-project)
   - [Get project info](#get-project-info)
   - [Register a model](#register-model)
   - [Run inference](#run-inference)
@@ -235,8 +234,19 @@ datum project export -f tf_detection_api
 ### Extract subproject
 
 This command allows to create a sub-Project from a Project. The new project
-includes only items satisfying some condition. XPath is used as a query
-format.
+includes only items satisfying some condition. [XPath](https://devhints.io/xpath)
+is used as query format.
+
+There are several filtering modes available ('-m/--mode' parameter).
+Supported modes:
+- 'i', 'items'
+- 'a', 'annotations'
+- 'i+a', 'a+i', 'items+annotations', 'annotations+items'
+
+When filtering annotations, use the 'items+annotations'
+mode to point that annotation-less dataset items should be
+removed. To select an annotation, write an XPath that
+returns 'annotation' elements (see examples).
 
 Usage:
 
@@ -246,16 +256,34 @@ datum project extract --help
 datum project extract \
      -p <project dir> \
      -o <output dir> \
-     -e '<filter expression>'
+     -e '<xpath filter expression>'
 ```
 
-Example: extract a sub-dataset, where only images which width < height
+Example: extract a dataset with only images which width < height
 
 ``` bash
 datum project extract \
      -p test_project \
      -o test_project-extract \
      -e '/item[image/width < image/height]'
+```
+
+Example: extract a dataset with only large annotations of class `cat`
+
+``` bash
+datum project extract \
+     -p test_project \
+     -o test_project-extract \
+     --mode annotations -e '/item/annotation[label="cat" and area > 999.5]'
+```
+
+Example: extract a dataset with only occluded annotations, remove empty images
+
+``` bash
+datum project extract \
+     -p test_project \
+     -o test_project-extract \
+     -m i+a -e '/item/annotation[occluded="True"]'
 ```
 
 Item representations are available with `--dry-run` parameter:
@@ -351,28 +379,6 @@ datum project export \
      -- --save-images
 ```
 
-### Transform project
-
-This command applies some operation to dataset items in the project
-and produces a new project.
-
-Usage:
-
-``` bash
-datum project transform --help
-
-datum project transform \
-     -p <project dir> \
-     -t <transform name> \
-     -o <output dir>
-```
-
-Example: apply custom transformation to project
-
-``` bash
-datum project import <...>
-datum project transform -t mytransform.py -o inference
-```
 
 ### Get project info
 

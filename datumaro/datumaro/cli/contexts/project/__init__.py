@@ -312,12 +312,12 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
             representation of a dataset item. Check '--dry-run' parameter
             to see XML representations of the dataset items.|n
             |n
-            To filter annotations use mode ('-m') parameter.|n
+            To filter annotations use the mode ('-m') parameter.|n
             Supported modes:|n
             - 'i', 'items'|n
             - 'a', 'annotations'|n
             - 'i+a', 'a+i', 'items+annotations', 'annotations+items'|n
-            When filtering annotations, use 'items+annotations'
+            When filtering annotations, use the 'items+annotations'
             mode to point that annotation-less dataset items should be
             removed. To select an annotation, write an XPath that
             returns 'annotation' elements (see examples).|n
@@ -327,14 +327,14 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
             |s|sextract -e '/item[image/width < image/height]'|n
             |n
             - Filter images with large-area bboxes:|n
-            |s|sextract -e '/item[annotation/type=\"bbox\" and
+            |s|sextract -e '/item[annotation/type="bbox" and
                 annotation/area>2000]'|n
             |n
             - Filter out all irrelevant annotations from items:|n
-            |s|sextract -m a -e '/item/annotation[label = \"person\"]'|n
+            |s|sextract -m a -e '/item/annotation[label = "person"]'|n
             |n
             - Filter out all irrelevant annotations from items:|n
-            |s|sextract -m a -e '/item/annotation[label=\"cat\" and
+            |s|sextract -m a -e '/item/annotation[label="cat" and
             area > 99.5]'|n
             |n
             - Filter occluded annotations and items, if no annotations left:|n
@@ -361,7 +361,8 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
 def extract_command(args):
     project = load_project(args.project_dir)
 
-    if not args.dst_dir:
+    dst_dir = args.dst_dir
+    if not dst_dir:
         dst_dir = generate_next_dir_name('%s-filter' % \
             project.config.project_name)
     dst_dir = osp.abspath(dst_dir)
@@ -489,6 +490,8 @@ def build_transform_parser(parser_ctor=argparse.ArgumentParser):
         description="""
             Applies some operation to dataset items in the project
             and produces a new project.
+
+            [NOT IMPLEMENTED YET]
         """,
         formatter_class=MultilineFormatter)
 
@@ -503,20 +506,22 @@ def build_transform_parser(parser_ctor=argparse.ArgumentParser):
     return parser
 
 def transform_command(args):
-    project = load_project(args.project_dir)
+    raise NotImplementedError("Not implemented yet.")
 
-    dst_dir = osp.abspath(args.dst_dir)
-    if dst_dir is not None:
-        os.makedirs(dst_dir, exist_ok=False)
+    # project = load_project(args.project_dir)
 
-    project.make_dataset().transform_project(
-        method=args.transform,
-        save_dir=dst_dir
-    )
+    # dst_dir = osp.abspath(args.dst_dir)
+    # if dst_dir is not None:
+    #     os.makedirs(dst_dir, exist_ok=False)
 
-    log.info("Transform results saved to '%s'" % dst_dir)
+    # project.make_dataset().transform_project(
+    #     method=args.transform,
+    #     save_dir=dst_dir
+    # )
 
-    return 0
+    # log.info("Transform results saved to '%s'" % dst_dir)
+
+    # return 0
 
 def build_info_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Get project info",
