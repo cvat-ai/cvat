@@ -108,7 +108,7 @@ class CvatExtractorTest(TestCase):
                             BboxObject(0, 2, 4, 2, label=0,
                                 attributes={
                                     'occluded': True, 'z_order': 1,
-                                    'a1': 'true', 'a2': 'v3'
+                                    'a1': True, 'a2': 'v3'
                                 }),
                             PolyLineObject([1, 2, 3, 4, 5, 6, 7, 8],
                                 attributes={'occluded': False, 'z_order': 0}),
@@ -236,7 +236,7 @@ class CvatConverterTest(TestCase):
                             PointsObject([1, 1, 3, 2, 2, 3],
                                 label=2,
                                 attributes={ 'z_order': 0, 'occluded': False,
-                                    'a1': 'x', 'a2': '42' }),
+                                    'a1': 'x', 'a2': 42 }),
                         ]
                     ),
                     DatasetItem(id=1, subset='s1',
