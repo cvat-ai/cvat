@@ -90,7 +90,7 @@ def build_add_parser(parser_ctor=argparse.ArgumentParser):
     # the other way could be to use parse_known_args()
     display_parser = argparse.ArgumentParser(
         parents=[base_parser, parser],
-        prog=parser.prog,
+        prog=parser.prog, usage="%(prog)s [-h] SOURCE_TYPE ...",
         description=parser.description, formatter_class=MultilineFormatter)
     class HelpAction(argparse._HelpAction):
         def __call__(self, parser, namespace, values, option_string=None):
