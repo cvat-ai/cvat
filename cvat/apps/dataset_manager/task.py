@@ -252,7 +252,7 @@ class TaskProject:
         if db_video is not None:
             for i in range(self._db_task.size):
                 frame_info = {
-                    'id': str(i),
+                    'id': i,
                     'width': db_video.width,
                     'height': db_video.height,
                 }
