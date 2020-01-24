@@ -379,7 +379,6 @@ datum project export \
      -- --save-images
 ```
 
-
 ### Get project info
 
 This command outputs project status information.
