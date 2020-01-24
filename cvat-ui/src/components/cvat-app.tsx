@@ -119,15 +119,15 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             resetMessages,
         } = this.props;
 
-        const { tasks } = notifications.messages;
-        const { models } = notifications.messages;
-        const shown = !!tasks.loadingDone || !!models.inferenceDone;
-
-        if (tasks.loadingDone) {
-            showMessage(tasks.loadingDone);
-        }
-        if (models.inferenceDone) {
-            showMessage(models.inferenceDone);
+        let shown = false;
+        for (const where of Object.keys(notifications.messages)) {
+            for (const what of Object.keys(notifications.messages[where])) {
+                const message = notifications.messages[where][what];
+                shown = shown || !!message;
+                if (message) {
+                    showMessage(message);
+                }
+            }
         }
 
         if (shown) {
@@ -159,97 +159,15 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             resetErrors,
         } = this.props;
 
-        const { auth } = notifications.errors;
-        const { tasks } = notifications.errors;
-        const { formats } = notifications.errors;
-        const { users } = notifications.errors;
-        const { about } = notifications.errors;
-        const { share } = notifications.errors;
-        const { models } = notifications.errors;
-        const { annotation } = notifications.errors;
-
-        const shown = !!auth.authorized || !!auth.login || !!auth.logout || !!auth.register
-            || !!tasks.fetching || !!tasks.updating || !!tasks.dumping || !!tasks.loading
-            || !!tasks.exporting || !!tasks.deleting || !!tasks.creating || !!formats.fetching
-            || !!users.fetching || !!about.fetching || !!share.fetching || !!models.creating || !!models.starting
-            || !!models.fetching || !!models.deleting || !!models.inferenceStatusFetching
-            || !!models.metaFetching || !!annotation.frameFetching || !!annotation.saving
-            || !!annotation.jobFetching;
-
-        if (auth.authorized) {
-            showError(auth.authorized.message, auth.authorized.reason);
-        }
-        if (auth.login) {
-            showError(auth.login.message, auth.login.reason);
-        }
-        if (auth.register) {
-            showError(auth.register.message, auth.register.reason);
-        }
-        if (auth.logout) {
-            showError(auth.logout.message, auth.logout.reason);
-        }
-        if (tasks.fetching) {
-            showError(tasks.fetching.message, tasks.fetching.reason);
-        }
-        if (tasks.updating) {
-            showError(tasks.updating.message, tasks.updating.reason);
-        }
-        if (tasks.dumping) {
-            showError(tasks.dumping.message, tasks.dumping.reason);
-        }
-        if (tasks.loading) {
-            showError(tasks.loading.message, tasks.loading.reason);
-        }
-        if (tasks.exporting) {
-            showError(tasks.exporting.message, tasks.exporting.reason);
-        }
-        if (tasks.deleting) {
-            showError(tasks.deleting.message, tasks.deleting.reason);
-        }
-        if (tasks.creating) {
-            showError(tasks.creating.message, tasks.creating.reason);
-        }
-        if (formats.fetching) {
-            showError(formats.fetching.message, formats.fetching.reason);
-        }
-        if (users.fetching) {
-            showError(users.fetching.message, users.fetching.reason);
-        }
-        if (about.fetching) {
-            showError(about.fetching.message, about.fetching.reason);
-        }
-        if (share.fetching) {
-            showError(share.fetching.message, share.fetching.reason);
-        }
-        if (models.creating) {
-            showError(models.creating.message, models.creating.reason);
-        }
-        if (models.starting) {
-            showError(models.starting.message, models.starting.reason);
-        }
-        if (models.fetching) {
-            showError(models.fetching.message, models.fetching.reason);
-        }
-        if (models.deleting) {
-            showError(models.deleting.message, models.deleting.reason);
-        }
-        if (models.metaFetching) {
-            showError(models.metaFetching.message, models.metaFetching.reason);
-        }
-        if (models.inferenceStatusFetching) {
-            showError(
-                models.inferenceStatusFetching.message,
-                models.inferenceStatusFetching.reason,
-            );
-        }
-        if (annotation.jobFetching) {
-            showError(annotation.jobFetching.message, annotation.jobFetching.reason);
-        }
-        if (annotation.frameFetching) {
-            showError(annotation.frameFetching.message, annotation.frameFetching.reason);
-        }
-        if (annotation.saving) {
-            showError(annotation.saving.message, annotation.saving.reason);
+        let shown = false;
+        for (const where of Object.keys(notifications.errors)) {
+            for (const what of Object.keys(notifications.errors[where])) {
+                const error = notifications.errors[where][what];
+                shown = shown || !!error;
+                if (error) {
+                    showError(error.message, error.reason);
+                }
+            }
         }
 
         if (shown) {

@@ -6,38 +6,33 @@ import {
 
 import { Canvas } from 'cvat-canvas';
 import { PolygonIcon } from 'icons';
-import {
-    ShapeType,
-    ActiveControl,
-} from 'reducers/interfaces';
+import { ShapeType } from 'reducers/interfaces';
 
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 
 interface Props {
     canvasInstance: Canvas;
-    activeControl: ActiveControl;
+    isDrawing: boolean;
 }
 
-export default function DrawRectangleControl(props: Props): JSX.Element {
+const DrawPolygonControl = React.memo((props: Props): JSX.Element => {
     const {
         canvasInstance,
-        activeControl,
+        isDrawing,
     } = props;
 
-    const dynamcPopoverPros = activeControl === ActiveControl.DRAW_POLYGON
-        ? {
-            overlayStyle: {
-                display: 'none',
-            },
-        } : {};
+    const dynamcPopoverPros = isDrawing ? {
+        overlayStyle: {
+            display: 'none',
+        },
+    } : {};
 
-    const dynamicIconProps = activeControl === ActiveControl.DRAW_POLYGON
-        ? {
-            className: 'cvat-annotation-page-active-control',
-            onClick: (): void => {
-                canvasInstance.draw({ enabled: false });
-            },
-        } : {};
+    const dynamicIconProps = isDrawing ? {
+        className: 'cvat-active-canvas-control',
+        onClick: (): void => {
+            canvasInstance.draw({ enabled: false });
+        },
+    } : {};
 
     return (
         <Popover
@@ -54,4 +49,6 @@ export default function DrawRectangleControl(props: Props): JSX.Element {
             />
         </Popover>
     );
-}
+});
+
+export default DrawPolygonControl;

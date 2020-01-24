@@ -16,27 +16,28 @@ interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
 
-    onMergeStart(): void;
+    mergeObjects(enabled: boolean): void;
 }
 
-export default function MergeControl(props: Props): JSX.Element {
+const MergeControl = React.memo((props: Props): JSX.Element => {
     const {
         activeControl,
         canvasInstance,
-        onMergeStart,
+        mergeObjects,
     } = props;
 
     const dynamicIconProps = activeControl === ActiveControl.MERGE
         ? {
-            className: 'cvat-annotation-page-active-control',
+            className: 'cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.merge({ enabled: false });
+                mergeObjects(false);
             },
         } : {
             onClick: (): void => {
                 canvasInstance.cancel();
                 canvasInstance.merge({ enabled: true });
-                onMergeStart();
+                mergeObjects(true);
             },
         };
 
@@ -45,4 +46,6 @@ export default function MergeControl(props: Props): JSX.Element {
             <Icon {...dynamicIconProps} component={MergeIcon} />
         </Tooltip>
     );
-}
+});
+
+export default MergeControl;

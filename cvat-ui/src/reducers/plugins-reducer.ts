@@ -11,7 +11,7 @@ import {
 const defaultState: PluginsState = {
     fetching: false,
     initialized: false,
-    plugins: {
+    list: {
         GIT_INTEGRATION: false,
         AUTO_ANNOTATION: false,
         TF_ANNOTATION: false,
@@ -29,9 +29,9 @@ export default function (state = defaultState, action: AnyAction): PluginsState 
             };
         }
         case PluginsActionTypes.CHECKED_ALL_PLUGINS: {
-            const { plugins } = action.payload;
+            const { list } = action.payload;
 
-            if (!state.plugins.GIT_INTEGRATION && plugins.GIT_INTEGRATION) {
+            if (!state.list.GIT_INTEGRATION && list.GIT_INTEGRATION) {
                 registerGitPlugin();
             }
 
@@ -39,7 +39,7 @@ export default function (state = defaultState, action: AnyAction): PluginsState 
                 ...state,
                 initialized: true,
                 fetching: false,
-                plugins,
+                list,
             };
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {
@@ -48,6 +48,6 @@ export default function (state = defaultState, action: AnyAction): PluginsState 
             };
         }
         default:
-            return { ...state };
+            return state;
     }
 }

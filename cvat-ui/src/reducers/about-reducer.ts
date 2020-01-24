@@ -5,7 +5,7 @@ import { AuthActionTypes } from '../actions/auth-actions';
 import { AboutActionTypes } from '../actions/about-actions';
 
 const defaultState: AboutState = {
-    about: {},
+    server: {},
     fetching: false,
     initialized: false,
 };
@@ -24,7 +24,7 @@ export default function (state: AboutState = defaultState, action: AnyAction): A
                 ...state,
                 fetching: false,
                 initialized: true,
-                about: action.payload.about,
+                server: action.payload.server,
             };
         case AboutActionTypes.GET_ABOUT_FAILED:
             return {
@@ -38,8 +38,6 @@ export default function (state: AboutState = defaultState, action: AnyAction): A
             };
         }
         default:
-            return {
-                ...state,
-            };
+            return state;
     }
 }

@@ -27,8 +27,8 @@ function build() {
         AttributeType,
         ObjectType,
         ObjectShape,
-        VisibleState,
         LogType,
+        colors,
     } = require('./enums');
 
     const {
@@ -497,8 +497,8 @@ function build() {
             AttributeType,
             ObjectType,
             ObjectShape,
-            VisibleState,
             LogType,
+            colors,
         },
         /**
             * Namespace is used for access to exceptions

@@ -21,11 +21,11 @@ function checkPlugins(): AnyAction {
     return action;
 }
 
-function checkedAllPlugins(plugins: PluginObjects): AnyAction {
+function checkedAllPlugins(list: PluginObjects): AnyAction {
     const action = {
         type: PluginsActionTypes.CHECKED_ALL_PLUGINS,
         payload: {
-            plugins,
+            list,
         },
     };
 

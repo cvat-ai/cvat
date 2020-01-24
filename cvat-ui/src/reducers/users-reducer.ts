@@ -38,8 +38,6 @@ export default function (state: UsersState = defaultState, action: AnyAction): U
             };
         }
         default:
-            return {
-                ...state,
-            };
+            return state;
     }
 }

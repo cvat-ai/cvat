@@ -20,7 +20,7 @@ interface Props {
     rotateAll: boolean;
 }
 
-export default function RotateControl(props: Props): JSX.Element {
+const RotateControl = React.memo((props: Props): JSX.Element => {
     const {
         rotateAll,
         canvasInstance,
@@ -28,13 +28,13 @@ export default function RotateControl(props: Props): JSX.Element {
 
     return (
         <Popover
-            overlayClassName='cvat-annotation-page-controls-rotate'
+            overlayClassName='cvat-rotate-canvas-controls'
             placement='right'
             content={(
                 <>
                     <Tooltip overlay='Rotate the image anticlockwise' placement='topRight'>
                         <Icon
-                            className='cvat-annotation-page-controls-rotate-left'
+                            className='cvat-rotate-canvas-controls-left'
                             onClick={(): void => canvasInstance
                                 .rotate(Rotation.ANTICLOCKWISE90, rotateAll)}
                             component={RotateIcon}
@@ -42,7 +42,7 @@ export default function RotateControl(props: Props): JSX.Element {
                     </Tooltip>
                     <Tooltip overlay='Rotate the image clockwise' placement='topRight'>
                         <Icon
-                            className='cvat-annotation-page-controls-rotate-right'
+                            className='cvat-rotate-canvas-controls-right'
                             onClick={(): void => canvasInstance
                                 .rotate(Rotation.CLOCKWISE90, rotateAll)}
                             component={RotateIcon}
@@ -55,4 +55,6 @@ export default function RotateControl(props: Props): JSX.Element {
             <Icon component={RotateIcon} />
         </Popover>
     );
-}
+});
+
+export default RotateControl;

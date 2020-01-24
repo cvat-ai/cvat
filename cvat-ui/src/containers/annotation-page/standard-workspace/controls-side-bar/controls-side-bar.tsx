@@ -12,62 +12,57 @@ import ControlsSideBarComponent from 'components/annotation-page/standard-worksp
 import {
     ActiveControl,
     CombinedState,
-    StringObject,
 } from 'reducers/interfaces';
 
 interface StateToProps {
     canvasInstance: Canvas;
     rotateAll: boolean;
     activeControl: ActiveControl;
-    labels: StringObject;
 }
 
 interface DispatchToProps {
-    onMergeStart(): void;
-    onGroupStart(): void;
-    onSplitStart(): void;
+    mergeObjects(enabled: boolean): void;
+    groupObjects(enabled: boolean): void;
+    splitTrack(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        annotation,
-        settings,
+        annotation: {
+            canvas: {
+                instance: canvasInstance,
+                activeControl,
+            },
+        },
+        settings: {
+            player: {
+                rotateAll,
+            },
+        },
     } = state;
 
-    const {
-        canvasInstance,
-        activeControl,
-    } = annotation;
-
-    const labels = annotation.jobInstance.task.labels
-        .reduce((acc: StringObject, label: any): StringObject => {
-            acc[label.id as number] = label.name;
-            return acc;
-        }, {});
-
     return {
-        rotateAll: settings.player.rotateAll,
+        rotateAll,
         canvasInstance,
         activeControl,
-        labels,
     };
 }
 
 function dispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onMergeStart(): void {
-            dispatch(mergeObjects());
+        mergeObjects(enabled: boolean): void {
+            dispatch(mergeObjects(enabled));
         },
-        onGroupStart(): void {
-            dispatch(groupObjects());
+        groupObjects(enabled: boolean): void {
+            dispatch(groupObjects(enabled));
         },
-        onSplitStart(): void {
-            dispatch(splitTrack());
+        splitTrack(enabled: boolean): void {
+            dispatch(splitTrack(enabled));
         },
     };
 }
 
-function StandardWorkspaceContainer(props: StateToProps & DispatchToProps): JSX.Element {
+function ControlsSideBarContainer(props: StateToProps & DispatchToProps): JSX.Element {
     return (
         <ControlsSideBarComponent {...props} />
     );
@@ -76,4 +71,4 @@ function StandardWorkspaceContainer(props: StateToProps & DispatchToProps): JSX.
 export default connect(
     mapStateToProps,
     dispatchToProps,
-)(StandardWorkspaceContainer);
+)(ControlsSideBarContainer);

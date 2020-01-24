@@ -5,30 +5,17 @@ import {
     Layout,
 } from 'antd';
 
-import { Canvas } from 'cvat-canvas';
-
 import CanvasWrapperContainer from 'containers/annotation-page/standard-workspace/canvas-wrapper';
 import ControlsSideBarContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
-import ObjectSideBarComponent from './objects-side-bar/objects-side-bar';
+import ObjectSideBarContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-side-bar';
 
-interface Props {
-    canvasInstance: Canvas;
-}
 
-export default function StandardWorkspaceComponent(props: Props): JSX.Element {
-    const {
-        canvasInstance,
-    } = props;
-
+export default function StandardWorkspaceComponent(): JSX.Element {
     return (
         <Layout hasSider>
             <ControlsSideBarContainer />
             <CanvasWrapperContainer />
-            <ObjectSideBarComponent
-                onSidebarFoldUnfold={(): void => {
-                    canvasInstance.fitCanvas();
-                }}
-            />
+            <ObjectSideBarContainer />
         </Layout>
     );
 }

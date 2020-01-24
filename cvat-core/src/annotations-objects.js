@@ -11,13 +11,11 @@
     const ObjectState = require('./object-state');
     const {
         checkObjectType,
-        isEnum,
     } = require('./common');
     const {
         ObjectShape,
         ObjectType,
         AttributeType,
-        VisibleState,
     } = require('./enums');
 
     const {
@@ -32,7 +30,8 @@
     function objectStateFactory(frame, data) {
         const objectState = new ObjectState(data);
 
-        objectState.hidden = {
+        // eslint-disable-next-line no-underscore-dangle
+        objectState.__internal = {
             save: this.save.bind(this, frame, objectState),
             delete: this.delete.bind(this),
             up: this.up.bind(this, frame, objectState),
@@ -127,6 +126,10 @@
             return ['true', 'false'].includes(value.toLowerCase());
         }
 
+        if (type === AttributeType.TEXT) {
+            return true;
+        }
+
         return values.includes(value);
     }
 
@@ -140,6 +143,7 @@
             this.frame = data.frame;
             this.removed = false;
             this.lock = false;
+            this.updated = Date.now();
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
@@ -158,6 +162,16 @@
             }
         }
 
+        updateTimestamp(updated) {
+            const anyChanges = updated.label || updated.attributes || updated.points
+                || updated.outside || updated.occluded || updated.keyframe
+                || updated.group || updated.zOrder;
+
+            if (anyChanges) {
+                this.updated = Date.now();
+            }
+        }
+
         delete(force) {
             if (!this.lock || force) {
                 this.removed = true;
@@ -173,7 +187,7 @@
 
             this.frameMeta = injection.frameMeta;
             this.collectionZ = injection.collectionZ;
-            this.visibility = VisibleState.SHAPE;
+            this.hidden = false;
 
             this.color = color;
             this.shapeType = null;
@@ -277,7 +291,8 @@
                 label: this.label,
                 group: this.group,
                 color: this.color,
-                visibility: this.visibility,
+                hidden: this.hidden,
+                updated: this.updated,
                 frame,
             };
         }
@@ -313,9 +328,14 @@
 
                 for (const attrID of Object.keys(data.attributes)) {
                     const value = data.attributes[attrID];
-                    if (attrID in labelAttributes
-                        && validateAttributeValue(value, labelAttributes[attrID])) {
-                        copy.attributes[attrID] = value;
+                    if (attrID in labelAttributes) {
+                        if (validateAttributeValue(value, labelAttributes[attrID])) {
+                            copy.attributes[attrID] = value;
+                        } else {
+                            throw new ArgumentError(
+                                `Trying to save an attribute attribute with id ${attrID} and invalid value ${value}`,
+                            );
+                        }
                     } else {
                         throw new ArgumentError(
                             `Trying to save unknown attribute with id ${attrID} and value ${value}`,
@@ -380,23 +400,21 @@
                 copy.color = data.color;
             }
 
-            if (updated.visibility) {
-                if (!isEnum.call(VisibleState, data.visibility)) {
-                    throw new ArgumentError(
-                        `Got invalid visibility value: "${data.visibility}"`,
-                    );
-                }
-
-                copy.visibility = data.visibility;
+            if (updated.hidden) {
+                checkObjectType('hidden', data.hidden, 'boolean', null);
+                copy.hidden = data.hidden;
             }
 
-            // Reset flags and commit all changes
-            updated.reset();
+            // Commit state
             for (const prop of Object.keys(copy)) {
                 if (prop in this) {
                     this[prop] = copy[prop];
                 }
             }
+
+            // Reset flags and commit all changes
+            this.updateTimestamp(updated);
+            updated.reset();
 
             return objectStateFactory.call(this, frame, this.get(frame));
         }
@@ -424,8 +442,6 @@
 
                 return shapeAccumulator;
             }, {});
-
-            this.cache = {};
         }
 
         // Method is used to export data to the server
@@ -480,27 +496,21 @@
 
         // Method is used to construct ObjectState objects
         get(frame) {
-            if (!(frame in this.cache)) {
-                const interpolation = {
-                    ...this.getPosition(frame),
-                    attributes: this.getAttributes(frame),
-                    group: this.group,
-                    objectType: ObjectType.TRACK,
-                    shapeType: this.shapeType,
-                    clientID: this.clientID,
-                    serverID: this.serverID,
-                    lock: this.lock,
-                    color: this.color,
-                    visibility: this.visibility,
-                    frame,
-                };
-
-                this.cache[frame] = interpolation;
-            }
-
-            const result = JSON.parse(JSON.stringify(this.cache[frame]));
-            result.label = this.label;
-            return result;
+            return {
+                ...this.getPosition(frame),
+                attributes: this.getAttributes(frame),
+                group: this.group,
+                objectType: ObjectType.TRACK,
+                shapeType: this.shapeType,
+                clientID: this.clientID,
+                serverID: this.serverID,
+                lock: this.lock,
+                color: this.color,
+                hidden: this.hidden,
+                updated: this.updated,
+                label: this.label,
+                frame,
+            };
         }
 
         neighborsFrames(targetFrame) {
@@ -584,9 +594,14 @@
             if (updated.attributes) {
                 for (const attrID of Object.keys(data.attributes)) {
                     const value = data.attributes[attrID];
-                    if (attrID in labelAttributes
-                        && validateAttributeValue(value, labelAttributes[attrID])) {
-                        copy.attributes[attrID] = value;
+                    if (attrID in labelAttributes) {
+                        if (validateAttributeValue(value, labelAttributes[attrID])) {
+                            copy.attributes[attrID] = value;
+                        } else {
+                            throw new ArgumentError(
+                                `Trying to save an attribute attribute with id ${attrID} and invalid value ${value}`,
+                            );
+                        }
                     } else {
                         throw new ArgumentError(
                             `Trying to save unknown attribute with id ${attrID} and value ${value}`,
@@ -660,14 +675,9 @@
                 copy.color = data.color;
             }
 
-            if (updated.visibility) {
-                if (!isEnum.call(VisibleState, data.visibility)) {
-                    throw new ArgumentError(
-                        `Got invalid visibility value: "${data.visibility}"`,
-                    );
-                }
-
-                copy.visibility = data.visibility;
+            if (updated.hidden) {
+                checkObjectType('hidden', data.hidden, 'boolean', null);
+                copy.hidden = data.hidden;
             }
 
             if (updated.keyframe) {
@@ -680,16 +690,14 @@
                 if (prop in this) {
                     this[prop] = copy[prop];
                 }
-
-                this.cache[frame][prop] = copy[prop];
             }
 
             if (updated.attributes) {
                 // Mutable attributes will be updated below
                 for (const attrID of Object.keys(copy.attributes)) {
                     if (!labelAttributes[attrID].mutable) {
-                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
-                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                        this.attributes[attrID] = data.attributes[attrID];
+                        this.attributes[attrID] = data.attributes[attrID];
                     }
                 }
             }
@@ -702,42 +710,21 @@
 
             // Remove keyframe
             if (updated.keyframe && !data.keyframe) {
-                // Remove all cache after this keyframe because it have just become outdated
-                for (const cacheFrame in this.cache) {
-                    if (+cacheFrame > frame) {
-                        delete this.cache[cacheFrame];
+                if (frame in this.shapes) {
+                    if (Object.keys(this.shapes).length === 1) {
+                        throw new DataError('You cannot remove the latest keyframe of a track');
                     }
-                }
 
-                this.cache[frame].keyframe = false;
-                delete this.shapes[frame];
-                updated.reset();
+                    delete this.shapes[frame];
+                    this.updateTimestamp(updated);
+                    updated.reset();
+                }
 
                 return objectStateFactory.call(this, frame, this.get(frame));
             }
 
             // Add/update keyframe
-            if (positionUpdated || (updated.keyframe && data.keyframe)) {
-                // Remove affected cached frames
-                const {
-                    leftFrame,
-                    rightFrame,
-                } = this.neighborsFrames(frame);
-                for (const cacheFrame of Object.keys(this.cache)) {
-                    if (leftFrame === null && +cacheFrame < frame) {
-                        delete this.cache[cacheFrame];
-                    } else if (+cacheFrame < frame && +cacheFrame > leftFrame) {
-                        delete this.cache[cacheFrame];
-                    }
-
-                    if (rightFrame === null && +cacheFrame > frame) {
-                        delete this.cache[cacheFrame];
-                    } else if (+cacheFrame > frame && +cacheFrame < rightFrame) {
-                        delete this.cache[cacheFrame];
-                    }
-                }
-
-                this.cache[frame].keyframe = true;
+            if (positionUpdated || updated.attributes || (updated.keyframe && data.keyframe)) {
                 data.keyframe = true;
 
                 this.shapes[frame] = {
@@ -760,6 +747,7 @@
                 }
             }
 
+            this.updateTimestamp(updated);
             updated.reset();
 
             return objectStateFactory.call(this, frame, this.get(frame));
@@ -823,14 +811,9 @@
         delete(force) {
             if (!this.lock || force) {
                 this.removed = true;
-                this.resetCache();
             }
 
             return true;
-        }
-
-        resetCache() {
-            this.cache = {};
         }
     }
 
@@ -874,6 +857,7 @@
                 attributes: { ...this.attributes },
                 label: this.label,
                 group: this.group,
+                updated: this.updated,
                 frame,
             };
         }
@@ -921,13 +905,16 @@
                 copy.lock = data.lock;
             }
 
-            // Reset flags and commit all changes
-            updated.reset();
+            // Commit state
             for (const prop of Object.keys(copy)) {
                 if (prop in this) {
                     this[prop] = copy[prop];
                 }
             }
+
+            // Reset flags and commit all changes
+            this.updateTimestamp(updated);
+            updated.reset();
 
             return objectStateFactory.call(this, frame, this.get(frame));
         }

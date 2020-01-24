@@ -76,9 +76,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const store = getCVATStore();
         const state: CombinedState = store.getState();
-        const OpenVINO = state.plugins.plugins.AUTO_ANNOTATION;
-        const RCNN = state.plugins.plugins.TF_ANNOTATION;
-        const MaskRCNN = state.plugins.plugins.TF_SEGMENTATION;
+        const OpenVINO = state.plugins.list.AUTO_ANNOTATION;
+        const RCNN = state.plugins.list.TF_ANNOTATION;
+        const MaskRCNN = state.plugins.list.TF_SEGMENTATION;
 
         dispatch(getModels());
         const models: Model[] = [];
@@ -468,9 +468,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
         const store = getCVATStore();
         const state: CombinedState = store.getState();
-        const OpenVINO = state.plugins.plugins.AUTO_ANNOTATION;
-        const RCNN = state.plugins.plugins.TF_ANNOTATION;
-        const MaskRCNN = state.plugins.plugins.TF_SEGMENTATION;
+        const OpenVINO = state.plugins.list.AUTO_ANNOTATION;
+        const RCNN = state.plugins.list.TF_ANNOTATION;
+        const MaskRCNN = state.plugins.list.TF_SEGMENTATION;
 
         try {
             if (OpenVINO) {

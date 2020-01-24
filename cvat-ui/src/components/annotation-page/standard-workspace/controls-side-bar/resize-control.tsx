@@ -22,7 +22,7 @@ interface Props {
     activeControl: ActiveControl;
 }
 
-export default function ResizeControl(props: Props): JSX.Element {
+const ResizeControl = React.memo((props: Props): JSX.Element => {
     const {
         activeControl,
         canvasInstance,
@@ -33,7 +33,7 @@ export default function ResizeControl(props: Props): JSX.Element {
             <Icon
                 component={ZoomIcon}
                 className={activeControl === ActiveControl.ZOOM_CANVAS
-                    ? 'cvat-annotation-page-active-control' : ''
+                    ? 'cvat-active-canvas-control' : ''
                 }
                 onClick={(): void => {
                     if (activeControl === ActiveControl.ZOOM_CANVAS) {
@@ -46,4 +46,6 @@ export default function ResizeControl(props: Props): JSX.Element {
             />
         </Tooltip>
     );
-}
+});
+
+export default ResizeControl;
