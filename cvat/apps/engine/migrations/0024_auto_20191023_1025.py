@@ -6,6 +6,7 @@ import shutil
 import glob
 import logging
 import sys
+import traceback
 
 from django.db import migrations, models
 import django.db.models.deletion
@@ -52,8 +53,8 @@ def create_data_objects(apps, schema_editor):
     Task = apps.get_model('engine', 'Task')
     Data = apps.get_model('engine', 'Data')
 
-    db_tasks = list(Task.objects.prefetch_related("image_set").select_related("video").all())
-    task_count = len(db_tasks)
+    db_tasks = Task.objects.prefetch_related("image_set").select_related("video")
+    task_count = db_tasks.count()
     log.info('\nStart data migration...')
     for task_idx, db_task in enumerate(db_tasks):
         progress = (100 * task_idx) // task_count
@@ -79,8 +80,6 @@ def create_data_objects(apps, schema_editor):
             db_data.save()
 
             db_task.data = db_data
-            db_task.save()
-            disk_tasks.remove(db_task.id)
 
             db_data_dir = os.path.join(settings.MEDIA_DATA_ROOT, str(db_data.id))
             os.makedirs(db_data_dir)
@@ -91,9 +90,6 @@ def create_data_objects(apps, schema_editor):
             os.makedirs(original_cache_dir)
 
             old_db_task_dir = os.path.join(settings.DATA_ROOT, str(db_task.id))
-            if not os.path.exists(old_db_task_dir):
-                log.error('could not find dir {} for the task {}'.format(old_db_task_dir, db_task.id))
-                continue
 
             # prepare media data
             old_task_data_dir = os.path.join(old_db_task_dir, 'data')
@@ -186,8 +182,11 @@ def create_data_objects(apps, schema_editor):
 
             db_task.save()
 
+            if db_task.id in disk_tasks:
+                disk_tasks.remove(db_task.id)
+
             #move old raw data
-            if os.path.exists(old_db_task_dir):
+            if os.path.exists(old_raw_dir):
                 shutil.move(old_raw_dir, new_raw_dir)
 
             shutil.rmtree(old_db_task_dir)
@@ -195,6 +194,7 @@ def create_data_objects(apps, schema_editor):
         except Exception as e:
             log.error('Cannot migrate data for the task: {}'.format(db_task.id))
             log.error(str(e))
+            traceback.print_exc(file=sys.stderr)
 
     if disk_tasks:
         suspicious_tasks_dir = os.path.join(settings.DATA_ROOT, 'suspicious_tasks')
