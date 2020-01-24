@@ -35,19 +35,14 @@ export enum AnnotationActionTypes {
     DRAW_SHAPE = 'DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
     RESET_CANVAS = 'RESET_CANVAS',
-    UPDATE_ANNOTATIONS = 'UPDATE_ANNOTATIONS',
     UPDATE_ANNOTATIONS_SUCCESS = 'UPDATE_ANNOTATIONS_SUCCESS',
     UPDATE_ANNOTATIONS_FAILED = 'UPDATE_ANNOTATIONS_FAILED',
-    CREATE_ANNOTATIONS = 'CREATE_ANNOTATIONS',
     CREATE_ANNOTATIONS_SUCCESS = 'CREATE_ANNOTATIONS_SUCCESS',
     CREATE_ANNOTATIONS_FAILED = 'CREATE_ANNOTATIONS_FAILED',
-    MERGE_ANNOTATIONS = 'MERGE_ANNOTATIONS',
     MERGE_ANNOTATIONS_SUCCESS = 'MERGE_ANNOTATIONS_SUCCESS',
     MERGE_ANNOTATIONS_FAILED = 'MERGE_ANNOTATIONS_FAILED',
-    GROUP_ANNOTATIONS = 'GROUP_ANNOTATIONS',
     GROUP_ANNOTATIONS_SUCCESS = 'GROUP_ANNOTATIONS_SUCCESS',
     GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
-    SPLIT_ANNOTATIONS = 'SPLIT_ANNOTATIONS',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
     SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
     CHANGE_LABEL_COLOR_SUCCESS = 'CHANGE_LABEL_COLOR_SUCCESS',
@@ -338,11 +333,6 @@ export function splitTrack(enabled: boolean): AnyAction {
 export function updateAnnotationsAsync(sessionInstance: any, frame: number, statesToUpdate: any[]):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch({
-            type: AnnotationActionTypes.UPDATE_ANNOTATIONS,
-            payload: {},
-        });
-
         try {
             const promises = statesToUpdate.map((state: any): Promise<any> => state.save());
             const states = await Promise.all(promises);
@@ -369,11 +359,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 export function createAnnotationsAsync(sessionInstance: any, frame: number, statesToCreate: any[]):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch({
-            type: AnnotationActionTypes.CREATE_ANNOTATIONS,
-            payload: {},
-        });
-
         try {
             await sessionInstance.annotations.put(statesToCreate);
             const states = await sessionInstance.annotations.get(frame);
@@ -398,11 +383,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 export function mergeAnnotationsAsync(sessionInstance: any, frame: number, statesToMerge: any[]):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch({
-            type: AnnotationActionTypes.MERGE_ANNOTATIONS,
-            payload: {},
-        });
-
         try {
             await sessionInstance.annotations.merge(statesToMerge);
             const states = await sessionInstance.annotations.get(frame);
@@ -427,11 +407,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 export function groupAnnotationsAsync(sessionInstance: any, frame: number, statesToGroup: any[]):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch({
-            type: AnnotationActionTypes.GROUP_ANNOTATIONS,
-            payload: {},
-        });
-
         try {
             await sessionInstance.annotations.group(statesToGroup);
             const states = await sessionInstance.annotations.get(frame);
@@ -456,11 +431,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 export function splitAnnotationsAsync(sessionInstance: any, frame: number, stateToSplit: any):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch({
-            type: AnnotationActionTypes.SPLIT_ANNOTATIONS,
-            payload: {},
-        });
-
         try {
             await sessionInstance.annotations.split(stateToSplit, frame);
             const states = await sessionInstance.annotations.get(frame);

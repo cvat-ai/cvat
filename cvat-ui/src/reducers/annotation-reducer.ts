@@ -53,9 +53,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
     switch (action.type) {
         case AnnotationActionTypes.GET_JOB: {
             return {
-                ...defaultState,
+                ...state,
                 job: {
-                    ...defaultState.job,
+                    ...state.job,
                     fetching: true,
                 },
             };
