@@ -16,6 +16,8 @@ interface OwnProps {
 
 interface StateToProps {
     label: any;
+    labelName: string;
+    labelColor: string;
     labelColors: string[];
     objectStates: any[];
     jobInstance: any;
@@ -50,6 +52,8 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
     return {
         label,
+        labelColor: label.color,
+        labelName: label.name,
         labelColors,
         objectStates,
         jobInstance,
@@ -131,6 +135,15 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         this.switchLock(false);
     };
 
+    private changeColor = (color: string): void => {
+        const {
+            changeLabelColor,
+            label,
+        } = this.props;
+
+        changeLabelColor(label, color);
+    };
+
     private switchHidden(value: boolean): void {
         const {
             updateAnnotations,
@@ -161,15 +174,6 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         updateAnnotations(jobInstance, frameNumber, ownObjectStates);
     }
 
-    private changeColor(color: string): void {
-        const {
-            changeLabelColor,
-            label,
-        } = this.props;
-
-        changeLabelColor(label, color);
-    }
-
     public render(): JSX.Element {
         const {
             visible,
@@ -178,14 +182,15 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         } = this.state;
 
         const {
-            label,
+            labelName,
+            labelColor,
             labelColors,
         } = this.props;
 
         return (
             <LabelItemComponent
-                labelName={label.name}
-                labelColor={label.color}
+                labelName={labelName}
+                labelColor={labelColor}
                 labelColors={labelColors}
                 visible={visible}
                 statesHidden={statesHidden}

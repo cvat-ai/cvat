@@ -481,7 +481,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS: {
+        case AnnotationActionTypes.CHANGE_LABEL_COLOR_FAILED: {
             return {
                 ...state,
                 errors: {

@@ -448,13 +448,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const {
                 label,
             } = action.payload;
+
             const { instance: job } = state.job;
             const labels = [...job.task.labels];
             const index = labels.indexOf(label);
             labels[index] = label;
 
+
             return {
                 ...state,
+                job: {
+                    ...state.job,
+                    labels,
+                },
             };
         }
         case AnnotationActionTypes.RESET_CANVAS: {

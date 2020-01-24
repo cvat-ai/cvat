@@ -74,7 +74,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         } = this.props;
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
-            canvasInstance.fitCanvas();
+            const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
+            if (sidebar) {
+                sidebar.addEventListener('transitionend', () => {
+                    canvasInstance.fitCanvas();
+                }, { once: true });
+            }
         }
 
         if (prevProps.grid !== grid) {
