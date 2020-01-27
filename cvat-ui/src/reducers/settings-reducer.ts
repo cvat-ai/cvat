@@ -5,9 +5,16 @@ import {
     SettingsState,
     GridColor,
     FrameSpeed,
+    ColorBy,
 } from './interfaces';
 
 const defaultState: SettingsState = {
+    shapes: {
+        colorBy: ColorBy.INSTANCE,
+        opacity: 3,
+        selectedOpacity: 30,
+        blackBorders: false,
+    },
     workspace: {
         autoSave: false,
         autoSaveInterval: 15 * 60 * 1000,
@@ -73,6 +80,42 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     gridOpacity: action.payload.gridOpacity,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SHAPES_COLOR_BY: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    colorBy: action.payload.colorBy,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SHAPES_OPACITY: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    opacity: action.payload.opacity,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SELECTED_SHAPES_OPACITY: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    selectedOpacity: action.payload.selectedOpacity,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SHAPES_BLACK_BORDERS: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    blackBorders: action.payload.blackBorders,
                 },
             };
         }

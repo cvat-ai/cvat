@@ -318,6 +318,12 @@ export enum FrameSpeed {
     Slowest = 1,
 }
 
+export enum ColorBy {
+    INSTANCE = 'Instance',
+    GROUP = 'Group',
+    LABEL = 'Label',
+}
+
 export interface PlayerSettingsState {
     frameStep: number;
     frameSpeed: FrameSpeed;
@@ -339,7 +345,15 @@ export interface WorkspaceSettingsState {
     showAllInterpolationTracks: boolean;
 }
 
+export interface ShapesSettingsState {
+    colorBy: ColorBy;
+    opacity: number;
+    selectedOpacity: number;
+    blackBorders: boolean;
+}
+
 export interface SettingsState {
+    shapes: ShapesSettingsState;
     workspace: WorkspaceSettingsState;
     player: PlayerSettingsState;
 }

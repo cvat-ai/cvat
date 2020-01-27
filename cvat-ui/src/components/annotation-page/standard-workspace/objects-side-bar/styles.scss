@@ -18,7 +18,7 @@
         > .ant-collapse-content {
             background: $background-color-2;
             border-bottom: none;
-            height: 150px;
+            height: 230px;
         }
     }
 }
@@ -241,4 +241,15 @@
     width: 30px;
     height: 20px;
     border-radius: 5px;
+}
+
+.cvat-objects-appearance-content {
+    > div {
+        width: 100%;
+
+        > label {
+            text-align: center;
+            width: 33%;
+        }
+    }
 }

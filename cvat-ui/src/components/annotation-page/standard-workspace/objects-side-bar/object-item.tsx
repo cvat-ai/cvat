@@ -13,8 +13,8 @@ import {
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import { RadioChangeEvent } from 'antd/lib/radio';
+import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 
 import {
     ObjectOutsideIcon,
