@@ -30,65 +30,79 @@ def invert_colormap(colormap):
         tuple(a): index for index, a in colormap.items()
     }
 
+def check_is_mask(mask):
+    assert len(mask.shape) in {2, 3}
+    if len(mask.shape) == 3:
+        assert mask.shape[2] == 1
+
 _default_colormap = generate_colormap()
 _default_unpaint_colormap = invert_colormap(_default_colormap)
 
-def _default_unpaint_colormap_fn(r, g, b):
-    return _default_unpaint_colormap[(r, g, b)]
+def unpaint_mask(painted_mask, inverse_colormap=None):
+    # Covert color mask to index mask
 
-def unpaint_mask(painted_mask, colormap=None):
-    # expect HWC BGR [0; 255] image
-    # expect RGB->index colormap
+    # mask: HWC BGR [0; 255]
+    # colormap: (R, G, B) -> index
     assert len(painted_mask.shape) == 3
-    if colormap is None:
-        colormap = _default_unpaint_colormap_fn
-    if callable(colormap):
-        map_fn = lambda a: colormap(int(a[2]), int(a[1]), int(a[0]))
+    if inverse_colormap is None:
+        inverse_colormap = _default_unpaint_colormap
+
+    if callable(inverse_colormap):
+        map_fn = lambda a: inverse_colormap(
+                (a >> 16) & 255, (a >> 8) & 255, a & 255
+            )
     else:
-        map_fn = lambda a: colormap[(int(a[2]), int(a[1]), int(a[0]))]
+        map_fn = lambda a: inverse_colormap[(
+                (a >> 16) & 255, (a >> 8) & 255, a & 255
+            )]
 
-    unpainted_mask = np.apply_along_axis(map_fn,
-        1, np.reshape(painted_mask, (-1, 3)))
-    unpainted_mask = np.reshape(unpainted_mask, (painted_mask.shape[:2]))
-    return unpainted_mask.astype(int)
+    painted_mask = painted_mask.astype(int)
+    painted_mask = painted_mask[:, :, 0] + \
+                   (painted_mask[:, :, 1] << 8) + \
+                   (painted_mask[:, :, 2] << 16)
+    uvals, unpainted_mask = np.unique(painted_mask, return_inverse=True)
+    palette = np.array([map_fn(v) for v in uvals], dtype=np.float32)
+    unpainted_mask = palette[unpainted_mask].reshape(painted_mask.shape[:2])
 
+    return unpainted_mask
 
-def apply_colormap(mask, colormap=None):
-    # expect HW [0; max_index] mask
-    # expect index->RGB colormap
-    assert len(mask.shape) == 2
+def paint_mask(mask, colormap=None):
+    # Applies colormap to index mask
+
+    # mask: HW(C) [0; max_index] mask
+    # colormap: index -> (R, G, B)
+    check_is_mask(mask)
 
     if colormap is None:
         colormap = _default_colormap
     if callable(colormap):
-        map_fn = lambda p: colormap(int(p[0]))[::-1]
+        map_fn = colormap
     else:
-        map_fn = lambda p: colormap[int(p[0])][::-1]
-    painted_mask = np.apply_along_axis(map_fn, 1, np.reshape(mask, (-1, 1)))
+        map_fn = lambda c: colormap.get(c, (-1, -1, -1))
+    palette = np.array([map_fn(c)[::-1] for c in range(256)], dtype=np.float32)
 
-    painted_mask = np.reshape(painted_mask, (*mask.shape, 3))
-    return painted_mask.astype(np.float32)
+    mask = mask.astype(np.uint8)
+    painted_mask = palette[mask].reshape((*mask.shape[:2], 3))
+    return painted_mask
 
 def remap_mask(mask, map_fn):
     # Changes mask elements from one colormap to another
-    assert len(mask.shape) == 2
 
-    shape = mask.shape
-    mask = np.reshape(mask, (-1, 1))
-    mask = np.apply_along_axis(map_fn, 1, mask)
-    mask = np.reshape(mask, shape)
-    return mask
+    # mask: HW(C) [0; max_index] mask
+    check_is_mask(mask)
+
+    return np.array([map_fn(c) for c in range(256)], dtype=np.uint8)[mask]
 
 
-def load_mask(path, colormap=None):
+def load_mask(path, inverse_colormap=None):
     mask = load_image(path)
-    if colormap is not None:
+    if inverse_colormap is not None:
         if len(mask.shape) == 3 and mask.shape[2] != 1:
-            mask = unpaint_mask(mask, colormap=colormap)
+            mask = unpaint_mask(mask, inverse_colormap)
     return mask
 
-def lazy_mask(path, colormap=None):
-    return lazy_image(path, lambda path: load_mask(path, colormap))
+def lazy_mask(path, inverse_colormap=None):
+    return lazy_image(path, lambda path: load_mask(path, inverse_colormap))
 
 
 def mask_to_rle(binary_mask):
