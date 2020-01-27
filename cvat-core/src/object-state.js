@@ -21,7 +21,7 @@
             * initial information about an ObjectState;
             * Necessary fields: objectType, shapeType, frame, updated
             * Optional fields: points, group, zOrder, outside, occluded, hidden,
-            * attributes, lock, label, mode, color, keyframe, clientID, serverID
+            * attributes, lock, label, mode, color, keyframe, keyframes, clientID, serverID
             * These fields can be set later via setters
         */
         constructor(serialized) {
@@ -39,6 +39,7 @@
                 lock: null,
                 color: null,
                 hidden: null,
+                keyframes: serialized.keyframes,
                 updated: serialized.updated,
 
                 clientID: serialized.clientID,
@@ -238,6 +239,22 @@
                     set: (keyframe) => {
                         data.updateFlags.keyframe = true;
                         data.keyframe = keyframe;
+                    },
+                },
+                keyframes: {
+                    /**
+                        * Object of keyframes { first, prev, next, last }
+                        * @name keyframes
+                        * @type {object}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @readonly
+                        * @instance
+                    */
+                    get: () => {
+                        if (data.keyframes) {
+                            return { ...data.keyframes };
+                        }
+                        return null;
                     },
                 },
                 occluded: {

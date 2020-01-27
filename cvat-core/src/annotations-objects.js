@@ -496,8 +496,15 @@
 
         // Method is used to construct ObjectState objects
         get(frame) {
+            const {
+                prev,
+                next,
+                first,
+                last,
+            } = this.boundedKeyframes(frame);
+
             return {
-                ...this.getPosition(frame),
+                ...this.getPosition(frame, prev, next),
                 attributes: this.getAttributes(frame),
                 group: this.group,
                 objectType: ObjectType.TRACK,
@@ -509,30 +516,48 @@
                 hidden: this.hidden,
                 updated: this.updated,
                 label: this.label,
+                keyframes: {
+                    prev,
+                    next,
+                    first,
+                    last,
+                },
                 frame,
             };
         }
 
-        neighborsFrames(targetFrame) {
+        boundedKeyframes(targetFrame) {
             const frames = Object.keys(this.shapes).map((frame) => +frame);
             let lDiff = Number.MAX_SAFE_INTEGER;
             let rDiff = Number.MAX_SAFE_INTEGER;
+            let first = Number.MAX_SAFE_INTEGER;
+            let last = Number.MIN_SAFE_INTEGER;
 
             for (const frame of frames) {
+                if (frame < first) {
+                    first = frame;
+                }
+                if (frame > last) {
+                    last = frame;
+                }
+
                 const diff = Math.abs(targetFrame - frame);
-                if (frame <= targetFrame && diff < lDiff) {
+
+                if (frame < targetFrame && diff < lDiff) {
                     lDiff = diff;
-                } else if (diff < rDiff) {
+                } else if (frame > targetFrame && diff < rDiff) {
                     rDiff = diff;
                 }
             }
 
-            const leftFrame = lDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame - lDiff;
-            const rightFrame = rDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame + rDiff;
+            const prev = lDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame - lDiff;
+            const next = rDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame + rDiff;
 
             return {
-                leftFrame,
-                rightFrame,
+                prev,
+                next,
+                first,
+                last,
             };
         }
 
@@ -753,43 +778,19 @@
             return objectStateFactory.call(this, frame, this.get(frame));
         }
 
-        getPosition(targetFrame) {
-            const {
-                leftFrame,
-                rightFrame,
-            } = this.neighborsFrames(targetFrame);
-
+        getPosition(targetFrame, leftKeyframe, rightFrame) {
+            const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
             const rightPosition = Number.isInteger(rightFrame) ? this.shapes[rightFrame] : null;
             const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
 
-            if (leftPosition && leftFrame === targetFrame) {
-                return {
-                    points: [...leftPosition.points],
-                    occluded: leftPosition.occluded,
-                    outside: leftPosition.outside,
-                    zOrder: leftPosition.zOrder,
-                    keyframe: true,
-                };
-            }
-
-            if (rightPosition && leftPosition) {
+            if (leftPosition && rightPosition) {
                 return {
                     ...this.interpolatePosition(
                         leftPosition,
                         rightPosition,
                         (targetFrame - leftFrame) / (rightFrame - leftFrame),
                     ),
-                    keyframe: false,
-                };
-            }
-
-            if (rightPosition) {
-                return {
-                    points: [...rightPosition.points],
-                    occluded: rightPosition.occluded,
-                    outside: true,
-                    zOrder: 0,
-                    keyframe: false,
+                    keyframe: targetFrame in this.shapes,
                 };
             }
 
@@ -799,12 +800,23 @@
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: 0,
-                    keyframe: false,
+                    keyframe: targetFrame in this.shapes,
                 };
             }
 
-            throw new ScriptingError(
-                `No one neightbour frame found for the track with client ID: "${this.id}"`,
+            if (rightPosition) {
+                return {
+                    points: [...rightPosition.points],
+                    occluded: rightPosition.occluded,
+                    outside: true,
+                    zOrder: 0,
+                    keyframe: targetFrame in this.shapes,
+                };
+            }
+
+            throw new DataError(
+                'No one left position or right position was found. '
+                + `Interpolation impossible. Client ID: ${this.id}`,
             );
         }
 

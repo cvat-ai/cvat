@@ -76,6 +76,11 @@ interface ItemButtonsProps {
     hidden: boolean;
     keyframe: boolean | undefined;
 
+    navigateFirstKeyframe: null | (() => void);
+    navigatePrevKeyframe: null | (() => void);
+    navigateNextKeyframe: null | (() => void);
+    navigateLastKeyframe: null | (() => void);
+
     setOccluded(): void;
     unsetOccluded(): void;
     setOutside(): void;
@@ -96,6 +101,12 @@ const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
         locked,
         hidden,
         keyframe,
+
+        navigateFirstKeyframe,
+        navigatePrevKeyframe,
+        navigateNextKeyframe,
+        navigateLastKeyframe,
+
         setOccluded,
         unsetOccluded,
         setOutside,
@@ -114,16 +125,28 @@ const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
                 <Col span={20} style={{ textAlign: 'center' }}>
                     <Row type='flex' justify='space-around'>
                         <Col span={6}>
-                            <Icon component={FirstIcon} />
+                            { navigateFirstKeyframe
+                                ? <Icon component={FirstIcon} onClick={navigateFirstKeyframe} />
+                                : <Icon component={FirstIcon} style={{ opacity: 0.5, pointerEvent: 'none' }} />
+                            }
                         </Col>
                         <Col span={6}>
-                            <Icon component={PreviousIcon} />
+                            { navigatePrevKeyframe
+                                ? <Icon component={PreviousIcon} onClick={navigatePrevKeyframe} />
+                                : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvent: 'none' }} />
+                            }
                         </Col>
                         <Col span={6}>
-                            <Icon component={NextIcon} />
+                            { navigateNextKeyframe
+                                ? <Icon component={NextIcon} onClick={navigateNextKeyframe} />
+                                : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvent: 'none' }} />
+                            }
                         </Col>
                         <Col span={6}>
-                            <Icon component={LastIcon} />
+                            { navigateLastKeyframe
+                                ? <Icon component={LastIcon} onClick={navigateLastKeyframe} />
+                                : <Icon component={LastIcon} style={{ opacity: 0.5, pointerEvent: 'none' }} />
+                            }
                         </Col>
                     </Row>
                     <Row type='flex' justify='space-around'>
@@ -422,6 +445,10 @@ interface Props {
     attributes: any[];
     collapsed: boolean;
 
+    navigateFirstKeyframe: null | (() => void);
+    navigatePrevKeyframe: null | (() => void);
+    navigateNextKeyframe: null | (() => void);
+    navigateLastKeyframe: null | (() => void);
     setOccluded(): void;
     unsetOccluded(): void;
     setOutside(): void;
@@ -443,7 +470,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         && nextProps.outside === prevProps.outside
         && nextProps.hidden === prevProps.hidden
         && nextProps.keyframe === prevProps.keyframe
-        && nextProps.label === prevProps.label
+        && nextProps.labelID === prevProps.labelID
         && nextProps.color === prevProps.color
         && nextProps.clientID === prevProps.clientID
         && nextProps.objectType === prevProps.objectType
@@ -451,6 +478,10 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         && nextProps.collapsed === prevProps.collapsed
         && nextProps.labels === prevProps.labels
         && nextProps.attributes === prevProps.attributes
+        && nextProps.navigateFirstKeyframe === prevProps.navigateFirstKeyframe
+        && nextProps.navigatePrevKeyframe === prevProps.navigatePrevKeyframe
+        && nextProps.navigateNextKeyframe === prevProps.navigateNextKeyframe
+        && nextProps.navigateLastKeyframe === prevProps.navigateLastKeyframe
         && attrValuesAreEqual(nextProps.attrValues, prevProps.attrValues);
 }
 
@@ -471,6 +502,10 @@ const ObjectItem = React.memo((props: Props): JSX.Element => {
         attributes,
         labels,
         collapsed,
+        navigateFirstKeyframe,
+        navigatePrevKeyframe,
+        navigateNextKeyframe,
+        navigateLastKeyframe,
 
         setOccluded,
         unsetOccluded,
@@ -509,6 +544,10 @@ const ObjectItem = React.memo((props: Props): JSX.Element => {
                 locked={locked}
                 hidden={hidden}
                 keyframe={keyframe}
+                navigateFirstKeyframe={navigateFirstKeyframe}
+                navigatePrevKeyframe={navigatePrevKeyframe}
+                navigateNextKeyframe={navigateNextKeyframe}
+                navigateLastKeyframe={navigateLastKeyframe}
                 setOccluded={setOccluded}
                 unsetOccluded={unsetOccluded}
                 setOutside={setOutside}

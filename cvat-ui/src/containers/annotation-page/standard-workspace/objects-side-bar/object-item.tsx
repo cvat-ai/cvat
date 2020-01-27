@@ -6,6 +6,7 @@ import {
 import {
     collapseObjectItems,
     updateAnnotationsAsync,
+    changeFrameAsync,
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
@@ -24,6 +25,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
+    changeFrame(frame: number): void;
     updateState(sessionInstance: any, frameNumber: number, objectState: any): void;
     collapseOrExpand(objectStates: any[], collapsed: boolean): void;
 }
@@ -67,6 +69,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
+        changeFrame(frame: number): void {
+            dispatch(changeFrameAsync(frame));
+        },
         updateState(sessionInstance: any, frameNumber: number, state: any): void {
             dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, [state]));
         },
@@ -82,6 +87,58 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const { objectState } = this.props;
         objectState.lock = true;
         this.commit();
+    };
+
+    private navigateFirstKeyframe = (): void => {
+        const {
+            objectState,
+            changeFrame,
+            frameNumber,
+        } = this.props;
+
+        const { first } = objectState.keyframes;
+        if (first !== frameNumber) {
+            changeFrame(first);
+        }
+    };
+
+    private navigatePrevKeyframe = (): void => {
+        const {
+            objectState,
+            changeFrame,
+            frameNumber,
+        } = this.props;
+
+        const { prev } = objectState.keyframes;
+        if (prev !== null && prev !== frameNumber) {
+            changeFrame(prev);
+        }
+    };
+
+    private navigateNextKeyframe = (): void => {
+        const {
+            objectState,
+            changeFrame,
+            frameNumber,
+        } = this.props;
+
+        const { next } = objectState.keyframes;
+        if (next !== null && next !== frameNumber) {
+            changeFrame(next);
+        }
+    };
+
+    private navigateLastKeyframe = (): void => {
+        const {
+            objectState,
+            changeFrame,
+            frameNumber,
+        } = this.props;
+
+        const { last } = objectState.keyframes;
+        if (last !== frameNumber) {
+            changeFrame(last);
+        }
     };
 
     private unlock = (): void => {
@@ -184,7 +241,15 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             collapsed,
             labels,
             attributes,
+            frameNumber,
         } = this.props;
+
+        const {
+            first,
+            prev,
+            next,
+            last,
+        } = objectState.keyframes;
 
         return (
             <ObjectStateItemComponent
@@ -202,6 +267,22 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 attributes={attributes}
                 labels={labels}
                 collapsed={collapsed}
+                navigateFirstKeyframe={
+                    first === frameNumber
+                        ? null : this.navigateFirstKeyframe
+                }
+                navigatePrevKeyframe={
+                    prev === frameNumber || prev === null
+                        ? null : this.navigatePrevKeyframe
+                }
+                navigateNextKeyframe={
+                    next === frameNumber || next === null
+                        ? null : this.navigateNextKeyframe
+                }
+                navigateLastKeyframe={
+                    last <= frameNumber
+                        ? null : this.navigateLastKeyframe
+                }
                 setOccluded={this.setOccluded}
                 unsetOccluded={this.unsetOccluded}
                 setOutside={this.setOutside}
