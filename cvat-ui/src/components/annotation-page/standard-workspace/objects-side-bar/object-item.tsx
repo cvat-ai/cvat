@@ -127,25 +127,25 @@ const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
                         <Col span={6}>
                             { navigateFirstKeyframe
                                 ? <Icon component={FirstIcon} onClick={navigateFirstKeyframe} />
-                                : <Icon component={FirstIcon} style={{ opacity: 0.5, pointerEvent: 'none' }} />
+                                : <Icon component={FirstIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
                             }
                         </Col>
                         <Col span={6}>
                             { navigatePrevKeyframe
                                 ? <Icon component={PreviousIcon} onClick={navigatePrevKeyframe} />
-                                : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvent: 'none' }} />
+                                : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
                             }
                         </Col>
                         <Col span={6}>
                             { navigateNextKeyframe
                                 ? <Icon component={NextIcon} onClick={navigateNextKeyframe} />
-                                : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvent: 'none' }} />
+                                : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
                             }
                         </Col>
                         <Col span={6}>
                             { navigateLastKeyframe
                                 ? <Icon component={LastIcon} onClick={navigateLastKeyframe} />
-                                : <Icon component={LastIcon} style={{ opacity: 0.5, pointerEvent: 'none' }} />
+                                : <Icon component={LastIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
                             }
                         </Col>
                     </Row>
