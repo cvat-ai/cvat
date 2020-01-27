@@ -20,7 +20,7 @@ from datumaro.components.formats.voc import (VocTask, VocPath,
     parse_label_map, make_voc_label_map, make_voc_categories, write_label_map
 )
 from datumaro.util.image import save_image
-from datumaro.util.mask_tools import apply_colormap, remap_mask
+from datumaro.util.mask_tools import paint_mask, remap_mask
 
 
 def _convert_attr(name, attributes, type_conv, default=None, warn=True):
@@ -367,7 +367,7 @@ class _Converter:
             if colormap is None:
                 colormap = self._categories[AnnotationType.mask].colormap
             data = self._remap_mask(data)
-            data = apply_colormap(data, colormap)
+            data = paint_mask(data, colormap)
         save_image(path, data)
 
     def save_label_map(self):
