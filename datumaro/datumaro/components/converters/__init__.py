@@ -5,7 +5,7 @@
 
 from datumaro.components.converters.datumaro import DatumaroConverter
 
-from datumaro.components.converters.ms_coco import (
+from datumaro.components.converters.coco import (
     CocoConverter,
     CocoImageInfoConverter,
     CocoCaptionsConverter,

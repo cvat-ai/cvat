@@ -91,7 +91,15 @@ class CvatExtractor(Extractor):
                         shape.update(image)
             elif ev == 'end':
                 if el.tag == 'attribute' and shape is not None:
-                    shape['attributes'][el.attrib['name']] = el.text
+                    attr_value = el.text
+                    if el.text in ['true', 'false']:
+                        attr_value = attr_value == 'true'
+                    else:
+                        try:
+                            attr_value = float(attr_value)
+                        except Exception:
+                            pass
+                    shape['attributes'][el.attrib['name']] = attr_value
                 elif el.tag in cls._SUPPORTED_SHAPES:
                     if track is not None:
                         shape['frame'] = el.attrib['frame']

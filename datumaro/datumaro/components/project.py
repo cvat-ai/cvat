@@ -105,15 +105,17 @@ class GitWrapper:
     def _git_dir(base_path):
         return osp.join(base_path, '.git')
 
-    def init(self, path):
-        spawn = not osp.isdir(GitWrapper._git_dir(path))
-        self.repo = git.Repo.init(path=path)
+    @classmethod
+    def spawn(cls, path):
+        spawn = not osp.isdir(cls._git_dir(path))
+        repo = git.Repo.init(path=path)
         if spawn:
             author = git.Actor("Nobody", "nobody@example.com")
-            self.repo.index.commit('Initial commit', author=author)
-        return self.repo
+            repo.index.commit('Initial commit', author=author)
+        return repo
 
-    def get_repo(self):
+    def init(self, path):
+        self.repo = self.spawn(path)
         return self.repo
 
     def is_initialized(self):
@@ -316,7 +318,9 @@ class Dataset(Extractor):
             categories.update(source.categories())
         for source in sources:
             for cat_type, source_cat in source.categories().items():
-                assert categories[cat_type] == source_cat
+                if not categories[cat_type] == source_cat:
+                    raise NotImplementedError(
+                        "Merging different categories is not implemented yet")
         dataset = Dataset(categories=categories)
 
         # merge items
@@ -395,11 +399,12 @@ class Dataset(Extractor):
 
         return item
 
-    def extract(self, filter_expr, filter_annotations=False, **kwargs):
+    def extract(self, filter_expr, filter_annotations=False, remove_empty=False):
         if filter_annotations:
-            return self.transform(XPathAnnotationsFilter, filter_expr, **kwargs)
+            return self.transform(XPathAnnotationsFilter, filter_expr,
+                remove_empty)
         else:
-            return self.transform(XPathDatasetFilter, filter_expr, **kwargs)
+            return self.transform(XPathDatasetFilter, filter_expr)
 
     def update(self, items):
         for item in items:
@@ -468,7 +473,9 @@ class ProjectDataset(Dataset):
             categories.update(source.categories())
         for source in self._sources.values():
             for cat_type, source_cat in source.categories().items():
-                assert categories[cat_type] == source_cat
+                if not categories[cat_type] == source_cat:
+                    raise NotImplementedError(
+                        "Merging different categories is not implemented yet")
         if own_source is not None and len(own_source) != 0:
             categories.update(own_source.categories())
         self._categories = categories
@@ -651,17 +658,18 @@ class ProjectDataset(Dataset):
         launcher = self._project.make_executable_model(model_name)
         self.transform_project(InferenceWrapper, launcher, save_dir=save_dir)
 
-    def export_project(self, save_dir, output_format,
-            filter_expr=None, filter_annotations=False, **converter_kwargs):
+    def export_project(self, save_dir, converter,
+            filter_expr=None, filter_annotations=False, remove_empty=False):
         # NOTE: probably this function should be in the ViewModel layer
         save_dir = osp.abspath(save_dir)
         os.makedirs(save_dir, exist_ok=True)
 
         dataset = self
         if filter_expr:
-            dataset = dataset.extract(filter_expr, filter_annotations)
+            dataset = dataset.extract(filter_expr,
+                filter_annotations=filter_annotations,
+                remove_empty=remove_empty)
 
-        converter = self.env.make_converter(output_format, **converter_kwargs)
         converter(dataset, save_dir)
 
     def extract_project(self, filter_expr, filter_annotations=False,

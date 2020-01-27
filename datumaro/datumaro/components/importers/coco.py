@@ -8,7 +8,7 @@ from glob import glob
 import logging as log
 import os.path as osp
 
-from datumaro.components.formats.ms_coco import CocoTask, CocoPath
+from datumaro.components.formats.coco import CocoTask, CocoPath
 
 
 class CocoImporter:

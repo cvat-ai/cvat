@@ -57,6 +57,8 @@ class DatasetItemEncoder:
     @staticmethod
     def _get_label(label_id, categories):
         label = ''
+        if label_id is None:
+            return ''
         if categories is not None:
             label_cat = categories.get(AnnotationType.label)
             if label_cat is not None:

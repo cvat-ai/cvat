@@ -1,3 +1,8 @@
+
+# Copyright (C) 2019-2020 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from datetime import timedelta
 import json
 import os
@@ -217,8 +222,9 @@ class TaskProject:
         if dst_format == EXPORT_FORMAT_DATUMARO_PROJECT:
             self._remote_export(save_dir=save_dir, server_url=server_url)
         else:
-            self._dataset.export_project(output_format=dst_format,
-                save_dir=save_dir, save_images=save_images)
+            converter = self._dataset.env.make_converter(dst_format,
+                save_images=save_images)
+            self._dataset.export_project(converter=converter, save_dir=save_dir)
 
     def _remote_image_converter(self, save_dir, server_url=None):
         os.makedirs(save_dir, exist_ok=True)
@@ -246,7 +252,7 @@ class TaskProject:
         if db_video is not None:
             for i in range(self._db_task.size):
                 frame_info = {
-                    'id': str(i),
+                    'id': i,
                     'width': db_video.width,
                     'height': db_video.height,
                 }

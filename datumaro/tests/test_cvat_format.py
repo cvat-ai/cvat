@@ -14,7 +14,7 @@ from datumaro.components.converters.cvat import CvatConverter
 from datumaro.components.project import Project
 import datumaro.components.formats.cvat as Cvat
 from datumaro.util.image import save_image
-from datumaro.util.test_utils import TestDir
+from datumaro.util.test_utils import TestDir, item_to_str
 
 
 class CvatExtractorTest(TestCase):
@@ -108,7 +108,7 @@ class CvatExtractorTest(TestCase):
                             BboxObject(0, 2, 4, 2, label=0,
                                 attributes={
                                     'occluded': True, 'z_order': 1,
-                                    'a1': 'true', 'a2': 'v3'
+                                    'a1': True, 'a2': 'v3'
                                 }),
                             PolyLineObject([1, 2, 3, 4, 5, 6, 7, 8],
                                 attributes={'occluded': False, 'z_order': 0}),
@@ -175,7 +175,8 @@ class CvatConverterTest(TestCase):
             self.assertEqual(len(source_subset), len(parsed_subset))
             for idx, (item_a, item_b) in enumerate(
                     zip(source_subset, parsed_subset)):
-                self.assertEqual(item_a, item_b, str(idx))
+                self.assertEqual(item_a, item_b, '%s:\n%s\nvs.\n%s\n' % \
+                    (idx, item_to_str(item_a), item_to_str(item_b)))
 
     def test_can_save_and_load(self):
         label_categories = LabelCategories()
@@ -209,12 +210,12 @@ class CvatConverterTest(TestCase):
                         ]
                     ),
 
-                    DatasetItem(id=0, subset='s2', image=np.zeros((5, 10, 3)),
+                    DatasetItem(id=2, subset='s2', image=np.ones((5, 10, 3)),
                         annotations=[
                             PolygonObject([0, 0, 4, 0, 4, 4],
                                 label=3, group=4,
                                 attributes={ 'z_order': 1, 'occluded': False }),
-                            PolyLineObject([5, 0, 9, 0, 5, 5]), # will be skipped
+                            PolyLineObject([5, 0, 9, 0, 5, 5]), # will be skipped as no label
                         ]
                     ),
                 ])
@@ -236,7 +237,7 @@ class CvatConverterTest(TestCase):
                             PointsObject([1, 1, 3, 2, 2, 3],
                                 label=2,
                                 attributes={ 'z_order': 0, 'occluded': False,
-                                    'a1': 'x', 'a2': '42' }),
+                                    'a1': 'x', 'a2': 42 }),
                         ]
                     ),
                     DatasetItem(id=1, subset='s1',
@@ -250,7 +251,7 @@ class CvatConverterTest(TestCase):
                         ]
                     ),
 
-                    DatasetItem(id=0, subset='s2', image=np.zeros((5, 10, 3)),
+                    DatasetItem(id=2, subset='s2', image=np.ones((5, 10, 3)),
                         annotations=[
                             PolygonObject([0, 0, 4, 0, 4, 4],
                                 label=3, group=4,

@@ -5,7 +5,7 @@
 
 from datumaro.components.extractors.datumaro import DatumaroExtractor
 
-from datumaro.components.extractors.ms_coco import (
+from datumaro.components.extractors.coco import (
     CocoImageInfoExtractor,
     CocoCaptionsExtractor,
     CocoInstancesExtractor,
@@ -29,6 +29,7 @@ from datumaro.components.extractors.voc import (
 from datumaro.components.extractors.yolo import YoloExtractor
 from datumaro.components.extractors.tfrecord import DetectionApiExtractor
 from datumaro.components.extractors.cvat import CvatExtractor
+from datumaro.components.extractors.image_dir import ImageDirExtractor
 
 items = [
     ('datumaro', DatumaroExtractor),
@@ -56,4 +57,6 @@ items = [
     ('tf_detection_api', DetectionApiExtractor),
 
     ('cvat', CvatExtractor),
+
+    ('image_dir', ImageDirExtractor),
 ]

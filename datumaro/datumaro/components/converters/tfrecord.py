@@ -10,6 +10,7 @@ import os.path as osp
 import string
 
 from datumaro.components.extractor import AnnotationType, DEFAULT_SUBSET_NAME
+from datumaro.components.converter import Converter
 from datumaro.components.formats.tfrecord import DetectionApiPath
 from datumaro.util.image import encode_image
 from datumaro.util.tf_util import import_tf as _import_tf
@@ -97,7 +98,7 @@ def _make_tf_example(item, get_label_id, get_label, save_images=False):
 
     return tf_example
 
-class DetectionApiConverter:
+class DetectionApiConverter(Converter):
     def __init__(self, save_images=False, cmdline_args=None):
         super().__init__()
 
@@ -113,7 +114,7 @@ class DetectionApiConverter:
     def build_cmdline_parser(cls, parser=None):
         import argparse
         if not parser:
-            parser = argparse.ArgumentParser()
+            parser = argparse.ArgumentParser(prog='tf_detection_api')
 
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")

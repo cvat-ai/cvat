@@ -9,25 +9,35 @@ import os
 import os.path as osp
 
 from datumaro.components.project import Project
-from datumaro.components.algorithms.rise import RISE
 from datumaro.util.command_targets import (TargetKinds, target_selector,
     ProjectTarget, SourceTarget, ImageTarget, is_project_path)
 from datumaro.util.image import load_image, save_image
-from .util.project import load_project
+from ..util import MultilineFormatter
+from ..util.project import load_project
 
 
-def build_parser(parser=argparse.ArgumentParser()):
+def build_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor(help="Run Explainable AI algorithm",
+        description="Runs an explainable AI algorithm for a model.")
+
     parser.add_argument('-m', '--model', required=True,
         help="Model to use for inference")
     parser.add_argument('-t', '--target', default=None,
         help="Inference target - image, source, project "
              "(default: current dir)")
-    parser.add_argument('-d', '--save-dir', default=None,
+    parser.add_argument('-o', '--output-dir', dest='save_dir', default=None,
         help="Directory to save output (default: display only)")
 
     method_sp = parser.add_subparsers(dest='algorithm')
 
-    rise_parser = method_sp.add_parser('rise')
+    rise_parser = method_sp.add_parser('rise',
+        description="""
+        RISE: Randomized Input Sampling for
+        Explanation of Black-box Models algorithm|n
+        |n
+        See explanations at: https://arxiv.org/pdf/1806.07421.pdf
+        """,
+        formatter_class=MultilineFormatter)
     rise_parser.add_argument('-s', '--max-samples', default=None, type=int,
         help="Number of algorithm iterations (default: mask size ^ 2)")
     rise_parser.add_argument('--mw', '--mask-width',
@@ -46,7 +56,7 @@ def build_parser(parser=argparse.ArgumentParser()):
         help="IoU match threshold in Non-maxima suppression (default: no NMS)")
     rise_parser.add_argument('--conf', '--det-conf-thresh',
         dest='det_conf_thresh', default=0.0, type=float,
-        help="Confidence threshold for detections (default: do not filter)")
+        help="Confidence threshold for detections (default: include all)")
     rise_parser.add_argument('-b', '--batch-size', default=1, type=int,
         help="Inference batch size (default: %(default)s)")
     rise_parser.add_argument('--progressive', action='store_true',
@@ -59,6 +69,21 @@ def build_parser(parser=argparse.ArgumentParser()):
     return parser
 
 def explain_command(args):
+    project_path = args.project_dir
+    if is_project_path(project_path):
+        project = Project.load(project_path)
+    else:
+        project = None
+    args.target = target_selector(
+        ProjectTarget(is_default=True, project=project),
+        SourceTarget(project=project),
+        ImageTarget()
+    )(args.target)
+    if args.target[0] == TargetKinds.project:
+        if is_project_path(args.target[1]):
+            args.project_dir = osp.dirname(osp.abspath(args.target[1]))
+
+
     import cv2
     from matplotlib import cm
 
@@ -69,6 +94,7 @@ def explain_command(args):
     if str(args.algorithm).lower() != 'rise':
         raise NotImplementedError()
 
+    from datumaro.components.algorithms.rise import RISE
     rise = RISE(model,
         max_samples=args.max_samples,
         mask_width=args.mask_width,
@@ -162,31 +188,3 @@ def explain_command(args):
         raise NotImplementedError()
 
     return 0
-
-def main(args=None):
-    parser = build_parser()
-    args = parser.parse_args(args)
-    if 'command' not in args:
-        parser.print_help()
-        return 1
-
-    project_path = args.project_dir
-    if is_project_path(project_path):
-        project = Project.load(project_path)
-    else:
-        project = None
-    try:
-        args.target = target_selector(
-            ProjectTarget(is_default=True, project=project),
-            SourceTarget(project=project),
-            ImageTarget()
-        )(args.target)
-        if args.target[0] == TargetKinds.project:
-            if is_project_path(args.target[1]):
-                args.project_dir = osp.dirname(osp.abspath(args.target[1]))
-    except argparse.ArgumentTypeError as e:
-        print(e)
-        parser.print_help()
-        return 1
-
-    return args.command(args)

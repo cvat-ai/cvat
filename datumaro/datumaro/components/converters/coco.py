@@ -14,9 +14,9 @@ import pycocotools.mask as mask_utils
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME, AnnotationType, PointsObject, BboxObject, MaskObject
+    DEFAULT_SUBSET_NAME, AnnotationType, PointsObject, MaskObject
 )
-from datumaro.components.formats.ms_coco import CocoTask, CocoPath
+from datumaro.components.formats.coco import CocoTask, CocoPath
 from datumaro.util import find
 from datumaro.util.image import save_image
 import datumaro.util.mask_tools as mask_tools
@@ -139,7 +139,10 @@ class _CaptionsConverter(_TaskConverter):
                 'caption': ann.caption,
             }
             if 'score' in ann.attributes:
-                elem['score'] = float(ann.attributes['score'])
+                try:
+                    elem['score'] = float(ann.attributes['score'])
+                except Exception as e:
+                    log.warning("Failed to convert attribute 'score': %e" % e)
 
             self.annotations.append(elem)
 
@@ -202,7 +205,7 @@ class _InstancesConverter(_TaskConverter):
         polygons = [p.get_polygon() for p in polygons]
 
         if self._context._segmentation_mode == SegmentationMode.guess:
-            use_masks = leader.attributes.get('is_crowd',
+            use_masks = True == leader.attributes.get('is_crowd',
                 find(masks, lambda x: x.label == leader.label) is not None)
         elif self._context._segmentation_mode == SegmentationMode.polygons:
             use_masks = False
@@ -342,7 +345,10 @@ class _InstancesConverter(_TaskConverter):
             'iscrowd': int(is_crowd),
         }
         if 'score' in ann.attributes:
-            elem['score'] = float(ann.attributes['score'])
+            try:
+                elem['score'] = float(ann.attributes['score'])
+            except Exception as e:
+                log.warning("Failed to convert attribute 'score': %e" % e)
 
         return elem
 
@@ -448,7 +454,10 @@ class _LabelsConverter(_TaskConverter):
                 'category_id': int(ann.label) + 1,
             }
             if 'score' in ann.attributes:
-                elem['score'] = float(ann.attributes['score'])
+                try:
+                    elem['score'] = float(ann.attributes['score'])
+                except Exception as e:
+                    log.warning("Failed to convert attribute 'score': %e" % e)
 
             self.annotations.append(elem)
 
@@ -570,7 +579,7 @@ class CocoConverter(Converter):
     def build_cmdline_parser(cls, parser=None):
         import argparse
         if not parser:
-            parser = argparse.ArgumentParser()
+            parser = argparse.ArgumentParser(prog='coco')
 
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")

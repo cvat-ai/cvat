@@ -1,3 +1,8 @@
+
+# Copyright (C) 2019-2020 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from collections import OrderedDict
 import os
 import os.path as osp
@@ -6,7 +11,7 @@ from django.db import transaction
 
 from cvat.apps.annotation.annotation import Annotation
 from cvat.apps.engine.annotation import TaskAnnotation
-from cvat.apps.engine.models import Task, ShapeType
+from cvat.apps.engine.models import Task, ShapeType, AttributeType
 
 import datumaro.components.extractor as datumaro
 from datumaro.util.image import lazy_image
@@ -128,18 +133,33 @@ class CvatTaskExtractor(datumaro.Extractor):
             attrs = {}
             db_attributes = db_label.attributespec_set.all()
             for db_attr in db_attributes:
-                attrs[db_attr.name] = db_attr.default_value
+                attrs[db_attr.name] = db_attr
             label_attrs[db_label.name] = attrs
         map_label = lambda label_db_name: label_map[label_db_name]
+
+        def convert_attrs(label, cvat_attrs):
+            cvat_attrs = {a.name: a.value for a in cvat_attrs}
+            dm_attr = dict()
+            for attr_name, attr_spec in label_attrs[label].items():
+                attr_value = cvat_attrs.get(attr_name, attr_spec.default_value)
+                try:
+                    if attr_spec.input_type == AttributeType.NUMBER:
+                        attr_value = float(attr_value)
+                    elif attr_spec.input_type == AttributeType.CHECKBOX:
+                        attr_value = attr_value.lower() == 'true'
+                    dm_attr[attr_name] = attr_value
+                except Exception as e:
+                    slogger.task[self._db_task.id].error(
+                        "Failed to convert attribute '%s'='%s': %s" % \
+                            (attr_name, attr_value, e))
+            return dm_attr
 
         for tag_obj in cvat_anno.tags:
             anno_group = tag_obj.group
             if isinstance(anno_group, int):
                 anno_group = anno_group
             anno_label = map_label(tag_obj.label)
-            anno_attr = dict(label_attrs[tag_obj.label])
-            for attr in tag_obj.attributes:
-                anno_attr[attr.name] = attr.value
+            anno_attr = convert_attrs(tag_obj.label, tag_obj.attributes)
 
             anno = datumaro.LabelObject(label=anno_label,
                 attributes=anno_attr, group=anno_group)
@@ -150,9 +170,7 @@ class CvatTaskExtractor(datumaro.Extractor):
             if isinstance(anno_group, int):
                 anno_group = anno_group
             anno_label = map_label(shape_obj.label)
-            anno_attr = dict(label_attrs[shape_obj.label])
-            for attr in shape_obj.attributes:
-                anno_attr[attr.name] = attr.value
+            anno_attr = convert_attrs(shape_obj.label, shape_obj.attributes)
 
             anno_points = shape_obj.points
             if shape_obj.type == ShapeType.POINTS:

@@ -15,7 +15,7 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     BboxObject, CaptionObject,
     LabelCategories, PointsCategories
 )
-from datumaro.components.formats.ms_coco import CocoTask, CocoPath
+from datumaro.components.formats.coco import CocoTask, CocoPath
 from datumaro.util.image import lazy_image
 
 

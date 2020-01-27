@@ -23,6 +23,19 @@ from datumaro.util.image import save_image
 from datumaro.util.mask_tools import apply_colormap, remap_mask
 
 
+def _convert_attr(name, attributes, type_conv, default=None, warn=True):
+    d = object()
+    value = attributes.get(name, d)
+    if value is d:
+        return default
+
+    try:
+        return type_conv(value)
+    except Exception as e:
+        log.warning("Failed to convert attribute '%s'='%s': %s" % \
+            (name, value, e))
+        return default
+
 def _write_xml_bbox(bbox, parent_elem):
     x, y, w, h = bbox
     bbox_elem = ET.SubElement(parent_elem, 'bndbox')
@@ -185,26 +198,17 @@ class _Converter:
                         obj_label =  self.get_label(obj.label)
                         ET.SubElement(obj_elem, 'name').text = obj_label
 
-                        pose = attr.get('pose')
-                        if pose is not None:
-                            pose = VocPose[pose]
-                        else:
-                            pose = VocPose.Unspecified
+                        pose = _convert_attr('pose', attr, lambda v: VocPose[v],
+                            VocPose.Unspecified)
                         ET.SubElement(obj_elem, 'pose').text = pose.name
 
-                        truncated = attr.get('truncated')
-                        if truncated is not None:
-                            truncated = int(truncated)
-                        else:
-                            truncated = 0
-                        ET.SubElement(obj_elem, 'truncated').text = '%d' % truncated
+                        truncated = _convert_attr('truncated', attr, int, 0)
+                        ET.SubElement(obj_elem, 'truncated').text = \
+                            '%d' % truncated
 
-                        difficult = attr.get('difficult')
-                        if difficult is not None:
-                            difficult = int(difficult)
-                        else:
-                            difficult = 0
-                        ET.SubElement(obj_elem, 'difficult').text = '%d' % difficult
+                        difficult = _convert_attr('difficult', attr, int, 0)
+                        ET.SubElement(obj_elem, 'difficult').text = \
+                            '%d' % difficult
 
                         bbox = obj.get_bbox()
                         if bbox is not None:
@@ -219,16 +223,16 @@ class _Converter:
 
                             objects_with_parts.append(new_obj_id)
 
-                        actions = {k: v for k, v in obj.attributes.items()
-                            if self._is_action(obj_label, k)}
+                        label_actions = self._get_actions(obj_label)
                         actions_elem = ET.Element('actions')
-                        for action in self._get_actions(obj_label):
-                            presented = action in actions and actions[action]
+                        for action in label_actions:
+                            presented = _convert_attr(action, attr,
+                                lambda v: int(v == True), 0)
                             ET.SubElement(actions_elem, action).text = \
                                 '%d' % presented
 
                             objects_with_actions[new_obj_id][action] = presented
-                        if len(actions) != 0:
+                        if len(actions_elem) != 0:
                             obj_elem.append(actions_elem)
 
                     if set(self._tasks) & set([None,
@@ -502,7 +506,7 @@ class VocConverter(Converter):
     def build_cmdline_parser(cls, parser=None):
         import argparse
         if not parser:
-            parser = argparse.ArgumentParser()
+            parser = argparse.ArgumentParser(prog='voc')
 
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")

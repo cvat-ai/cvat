@@ -8,7 +8,7 @@
 import numpy as np
 from math import ceil
 
-from datumaro.components.extractor import *
+from datumaro.components.extractor import AnnotationType
 
 
 def flatmatvec(mat):
