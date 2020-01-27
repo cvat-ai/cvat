@@ -210,12 +210,12 @@ class CvatConverterTest(TestCase):
                         ]
                     ),
 
-                    DatasetItem(id=0, subset='s2', image=np.zeros((5, 10, 3)),
+                    DatasetItem(id=2, subset='s2', image=np.ones((5, 10, 3)),
                         annotations=[
                             PolygonObject([0, 0, 4, 0, 4, 4],
                                 label=3, group=4,
                                 attributes={ 'z_order': 1, 'occluded': False }),
-                            PolyLineObject([5, 0, 9, 0, 5, 5]), # will be skipped
+                            PolyLineObject([5, 0, 9, 0, 5, 5]), # will be skipped as no label
                         ]
                     ),
                 ])
@@ -251,7 +251,7 @@ class CvatConverterTest(TestCase):
                         ]
                     ),
 
-                    DatasetItem(id=0, subset='s2', image=np.zeros((5, 10, 3)),
+                    DatasetItem(id=2, subset='s2', image=np.ones((5, 10, 3)),
                         annotations=[
                             PolygonObject([0, 0, 4, 0, 4, 4],
                                 label=3, group=4,

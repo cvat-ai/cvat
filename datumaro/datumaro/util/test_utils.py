@@ -7,6 +7,7 @@ import inspect
 import os
 import os.path as osp
 import shutil
+import tempfile
 
 
 def current_function_name(depth=1):
@@ -32,9 +33,10 @@ class FileRemover:
 class TestDir(FileRemover):
     def __init__(self, path=None, ignore_errors=False):
         if path is None:
-            path = osp.abspath('temp_%s' % current_function_name(2))
-
-        os.makedirs(path, exist_ok=ignore_errors)
+            path = osp.abspath('temp_%s-' % current_function_name(2))
+            path = tempfile.mkdtemp(dir=os.getcwd(), prefix=path)
+        else:
+            os.makedirs(path, exist_ok=ignore_errors)
 
         super().__init__(path, is_dir=True, ignore_errors=ignore_errors)
 
