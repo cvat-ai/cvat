@@ -118,8 +118,10 @@ project = Project.load('directory')
 <!--lint disable list-item-indent-->
 <!--lint disable list-item-bullet-indent-->
 
-- Convert PASCAL VOC to COCO, keep only images with `cat` class presented:
+- Convert [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/index.html#data) to COCO, keep only images with `cat` class presented:
   ```bash
+  # Download VOC dataset:
+  # http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
   datum project import --format voc --input-path <path/to/voc>
   datum project export --format coco --filter '/item[annotation/label="cat"]'
   ```
@@ -135,6 +137,8 @@ project = Project.load('directory')
 
 - Annotate COCO, extract image subset, re-annotate it in CVAT, update old dataset:
   ```bash
+  # Download COCO dataset http://cocodataset.org/#download
+  # Put images to coco/images/ and annotations to coco/annotations/
   datum project import --format coco --input-path <path/to/coco>
   datum project export --filter '/image[images_I_dont_like]' --format cvat \
     --output-dir reannotation
