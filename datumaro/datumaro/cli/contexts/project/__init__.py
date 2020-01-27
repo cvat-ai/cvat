@@ -54,7 +54,7 @@ def create_command(args):
                 "(pass --overwrite to force creation)" % project_dir)
         else:
             shutil.rmtree(project_dir)
-    os.makedirs(project_dir, exist_ok=args.overwrite)
+    os.makedirs(project_dir, exist_ok=True)
 
     if not args.overwrite and osp.isfile(project_path):
         raise CliException("Project file '%s' already exists "
@@ -145,7 +145,7 @@ def import_command(args):
                 "(pass --overwrite to force creation)" % project_dir)
         else:
             shutil.rmtree(project_dir)
-    os.makedirs(project_dir, exist_ok=args.overwrite)
+    os.makedirs(project_dir, exist_ok=True)
 
     if not args.overwrite and osp.isfile(project_path):
         raise CliException("Project file '%s' already exists "
@@ -352,6 +352,8 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
         help="Print XML representations to be filtered and exit")
     parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Output directory (default: update current project)")
+    parser.add_argument('--overwrite', action='store_true',
+        help="Overwrite existing files in the save directory")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
     parser.set_defaults(command=extract_command)
@@ -361,11 +363,16 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
 def extract_command(args):
     project = load_project(args.project_dir)
 
-    dst_dir = args.dst_dir
-    if not dst_dir:
-        dst_dir = generate_next_dir_name('%s-filter' % \
-            project.config.project_name)
-    dst_dir = osp.abspath(dst_dir)
+    if not args.dry_run:
+        dst_dir = args.dst_dir
+        if dst_dir:
+            if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
+                raise CliException("Directory '%s' already exists "
+                    "(pass --overwrite to force creation)" % dst_dir)
+        else:
+            dst_dir = generate_next_dir_name('%s-filter' % \
+                project.config.project_name)
+        dst_dir = osp.abspath(dst_dir)
 
     dataset = project.make_dataset()
 
@@ -406,6 +413,8 @@ def build_merge_parser(parser_ctor=argparse.ArgumentParser):
         help="Directory of the project to get data updates from")
     parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Output directory (default: current project's dir)")
+    parser.add_argument('--overwrite', action='store_true',
+        help="Overwrite existing files in the save directory")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
     parser.set_defaults(command=merge_command)
@@ -416,10 +425,15 @@ def merge_command(args):
     first_project = load_project(args.project_dir)
     second_project = load_project(args.other_project_dir)
 
+    dst_dir = args.dst_dir
+    if dst_dir:
+        if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
+            raise CliException("Directory '%s' already exists "
+                "(pass --overwrite to force creation)" % dst_dir)
+
     first_dataset = first_project.make_dataset()
     first_dataset.update(second_project.make_dataset())
 
-    dst_dir = args.dst_dir
     first_dataset.save(save_dir=dst_dir)
 
     if dst_dir is None:
@@ -453,6 +467,8 @@ def build_diff_parser(parser_ctor=argparse.ArgumentParser):
         help="IoU match threshold for detections (default: %(default)s)")
     parser.add_argument('--conf-thresh', default=0.5, type=float,
         help="Confidence threshold for detections (default: %(default)s)")
+    parser.add_argument('--overwrite', action='store_true',
+        help="Overwrite existing files in the save directory")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the first project to be compared (default: current dir)")
     parser.set_defaults(command=diff_command)
@@ -467,17 +483,21 @@ def diff_command(args):
         iou_threshold=args.iou_thresh,
         conf_threshold=args.conf_thresh)
 
-    save_dir = args.dst_dir
-    if not save_dir:
-        save_dir = generate_next_dir_name('%s-%s-diff' % (
+    dst_dir = args.dst_dir
+    if dst_dir:
+        if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
+            raise CliException("Directory '%s' already exists "
+                "(pass --overwrite to force creation)" % dst_dir)
+    else:
+        dst_dir = generate_next_dir_name('%s-%s-diff' % (
             first_project.config.project_name,
             second_project.config.project_name)
         )
-    save_dir = osp.abspath(save_dir)
-    if save_dir is not None:
-        log.info("Saving diff to '%s'" % save_dir)
+    dst_dir = osp.abspath(dst_dir)
+    if dst_dir:
+        log.info("Saving diff to '%s'" % dst_dir)
 
-    visualizer = DiffVisualizer(save_dir=save_dir, comparator=comparator,
+    visualizer = DiffVisualizer(save_dir=dst_dir, comparator=comparator,
         output_format=args.format)
     visualizer.save_dataset_diff(
         first_project.make_dataset(),
@@ -499,6 +519,8 @@ def build_transform_parser(parser_ctor=argparse.ArgumentParser):
         help="Transform to apply to the project")
     parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Directory to save output (default: current dir)")
+    parser.add_argument('--overwrite', action='store_true',
+        help="Overwrite existing files in the save directory")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
     parser.set_defaults(command=transform_command)
@@ -510,9 +532,12 @@ def transform_command(args):
 
     # project = load_project(args.project_dir)
 
+    # dst_dir = args.dst_dir
+    # if dst_dir:
+    #     if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
+    #         raise CliException("Directory '%s' already exists "
+    #             "(pass --overwrite to force creation)" % dst_dir)
     # dst_dir = osp.abspath(args.dst_dir)
-    # if dst_dir is not None:
-    #     os.makedirs(dst_dir, exist_ok=False)
 
     # project.make_dataset().transform_project(
     #     method=args.transform,
