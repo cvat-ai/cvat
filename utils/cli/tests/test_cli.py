@@ -37,7 +37,7 @@ class TestCLI(APITestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.img_file = os.path.join(settings.SHARE_ROOT, 'test_cli.jpg')
-        data = generate_image_file(cls.img_file)
+        _, data = generate_image_file(cls.img_file)
         with open(cls.img_file, 'wb') as image:
             image.write(data.read())
 
