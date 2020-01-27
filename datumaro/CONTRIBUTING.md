@@ -84,7 +84,7 @@ which are hard to be put into any specific context.
 
 ![cli-design-image](docs/images/cli_design.png)
 
-- [FreeMind tool link](http://freemind.sourceforge.net/wiki/index.php/Main_Page)
+- The diagram above was created with [FreeMind](http://freemind.sourceforge.net/wiki/index.php/Main_Page)
 
 Model-View-ViewModel (MVVM) UI pattern is used.
 
