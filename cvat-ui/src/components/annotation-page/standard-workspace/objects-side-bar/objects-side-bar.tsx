@@ -65,20 +65,24 @@ const ObjectsSideBar = React.memo((props: Props): JSX.Element => {
                 </Tabs.TabPane>
             </Tabs>
 
-            <Collapse
-                onChange={collapseAppearance}
-                activeKey={appearanceCollapsed ? [] : ['appearance']}
-                className='cvat-objects-appearance-collapse'
-            >
-                <Collapse.Panel
-                    header={
-                        <Text strong>Appearance</Text>
-                    }
-                    key='appearance'
-                >
+            { !sidebarCollapsed
+                && (
+                    <Collapse
+                        onChange={collapseAppearance}
+                        activeKey={appearanceCollapsed ? [] : ['appearance']}
+                        className='cvat-objects-appearance-collapse'
+                    >
+                        <Collapse.Panel
+                            header={
+                                <Text strong>Appearance</Text>
+                            }
+                            key='appearance'
+                        >
 
-                </Collapse.Panel>
-            </Collapse>
+                        </Collapse.Panel>
+                    </Collapse>
+                )
+            }
         </Layout.Sider>
     );
 });
