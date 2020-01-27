@@ -17,6 +17,8 @@ import {
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
     splitAnnotationsAsync,
+    activateObject,
+    selectObjects,
 } from 'actions/annotation-actions';
 import {
     GridColor,
@@ -30,6 +32,8 @@ interface StateToProps {
     sidebarCollapsed: boolean;
     canvasInstance: Canvas;
     jobInstance: any;
+    activatedStateID: number | null;
+    selectedStatesID: number[];
     annotations: any[];
     frameData: any;
     frame: number;
@@ -55,6 +59,8 @@ interface DispatchToProps {
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
+    onActivateObject: (activatedStateID: number | null) => void;
+    onSelectObjects: (selectedStatesID: number[]) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -78,6 +84,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             annotations: {
                 states: annotations,
+                activatedStateID,
+                selectedStatesID,
             },
             sidebarCollapsed,
         },
@@ -97,6 +105,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         frameData,
         frame,
+        activatedStateID,
+        selectedStatesID,
         annotations,
         grid,
         gridSize,
@@ -147,6 +157,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSplitAnnotations(sessionInstance: any, frame: number, state: any): void {
             dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
+        },
+        onActivateObject(activatedStateID: number | null): void {
+            dispatch(activateObject(activatedStateID));
+        },
+        onSelectObjects(selectedStatesID: number[]): void {
+            dispatch(selectObjects(selectedStatesID));
         },
     };
 }

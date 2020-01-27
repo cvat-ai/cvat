@@ -111,7 +111,8 @@ Canvas itself handles:
 Standard JS events are used.
 ```js
     - canvas.setup
-    - canvas.activated => ObjectState
+    - canvas.activated => {state: ObjectState}
+    - canvas.clicked => {state: ObjectState}
     - canvas.deactivated
     - canvas.moved => {states: ObjectState[], x: number, y: number}
     - canvas.find => {states: ObjectState[], x: number, y: number}

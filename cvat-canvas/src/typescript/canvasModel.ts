@@ -33,7 +33,7 @@ export interface FocusData {
 }
 
 export interface ActiveElement {
-    clientID: number | null;
+    clientID: number;
     attributeID: number | null;
 }
 

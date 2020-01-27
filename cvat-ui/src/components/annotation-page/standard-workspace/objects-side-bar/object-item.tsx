@@ -429,6 +429,7 @@ const ItemAttributes = React.memo((props: ItemAttributesProps): JSX.Element => {
 }, attrAreTheSame);
 
 interface Props {
+    activated: boolean;
     objectType: ObjectType;
     shapeType: ShapeType;
     clientID: number;
@@ -444,11 +445,12 @@ interface Props {
     labels: any[];
     attributes: any[];
     collapsed: boolean;
-
     navigateFirstKeyframe: null | (() => void);
     navigatePrevKeyframe: null | (() => void);
     navigateNextKeyframe: null | (() => void);
     navigateLastKeyframe: null | (() => void);
+
+    activate(): void;
     setOccluded(): void;
     unsetOccluded(): void;
     setOutside(): void;
@@ -465,7 +467,8 @@ interface Props {
 }
 
 function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
-    return nextProps.locked === prevProps.locked
+    return nextProps.activated === prevProps.activated
+        && nextProps.locked === prevProps.locked
         && nextProps.occluded === prevProps.occluded
         && nextProps.outside === prevProps.outside
         && nextProps.hidden === prevProps.hidden
@@ -487,6 +490,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
 
 const ObjectItem = React.memo((props: Props): JSX.Element => {
     const {
+        activated,
         objectType,
         shapeType,
         clientID,
@@ -507,6 +511,7 @@ const ObjectItem = React.memo((props: Props): JSX.Element => {
         navigateNextKeyframe,
         navigateLastKeyframe,
 
+        activate,
         setOccluded,
         unsetOccluded,
         setOutside,
@@ -525,9 +530,14 @@ const ObjectItem = React.memo((props: Props): JSX.Element => {
     const type = objectType === ObjectType.TAG ? ObjectType.TAG.toUpperCase()
         : `${shapeType.toUpperCase()} ${objectType.toUpperCase()}`;
 
+    const className = !activated ? 'cvat-objects-sidebar-state-item'
+        : 'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
+
     return (
         <div
-            className='cvat-objects-sidebar-state-item'
+            onMouseEnter={activate}
+            id={`cvat-objects-sidebar-state-item-${clientID}`}
+            className={className}
             style={{ borderLeftStyle: 'solid', borderColor: ` ${color}` }}
         >
             <ItemTop

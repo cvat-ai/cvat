@@ -50,7 +50,27 @@ export enum AnnotationActionTypes {
     UPDATE_TAB_CONTENT_HEIGHT = 'UPDATE_TAB_CONTENT_HEIGHT',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
-    COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS'
+    COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
+    ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
+    SELECT_OBJECTS = 'SELECT_OBJECTS',
+}
+
+export function selectObjects(selectedStatesID: number[]): AnyAction {
+    return {
+        type: AnnotationActionTypes.SELECT_OBJECTS,
+        payload: {
+            selectedStatesID,
+        },
+    };
+}
+
+export function activateObject(activatedStateID: number | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.ACTIVATE_OBJECT,
+        payload: {
+            activatedStateID,
+        },
+    };
 }
 
 export function updateTabContentHeight(tabContentHeight: number): AnyAction {

@@ -23,6 +23,8 @@ interface Props {
     sidebarCollapsed: boolean;
     canvasInstance: Canvas;
     jobInstance: any;
+    activatedStateID: number | null;
+    selectedStatesID: number[];
     annotations: any[];
     frameData: any;
     frame: number;
@@ -45,6 +47,8 @@ interface Props {
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
+    onActivateObject: (activatedStateID: number | null) => void;
+    onSelectObjects: (selectedStatesID: number[]) => void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -69,8 +73,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             gridSize,
             gridColor,
             gridOpacity,
+            frameData,
+            annotations,
             canvasInstance,
             sidebarCollapsed,
+            activatedStateID,
         } = this.props;
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -107,7 +114,17 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        this.updateCanvas();
+        if (prevProps.annotations !== annotations || prevProps.frameData !== frameData) {
+            this.updateCanvas();
+        }
+
+        if (prevProps.activatedStateID !== activatedStateID) {
+            if (activatedStateID !== null) {
+                canvasInstance.activate(activatedStateID);
+            } else {
+                canvasInstance.cancel();
+            }
+        }
     }
 
     private async onShapeDrawn(event: any): Promise<void> {
@@ -222,6 +239,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onDragCanvas,
             onZoomCanvas,
             onResetCanvas,
+            onActivateObject,
         } = this.props;
 
         // Size
@@ -268,7 +286,29 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onZoomCanvas(false);
         });
 
+        canvasInstance.html().addEventListener('canvas.clicked', (e: any) => {
+            const { clientID } = e.detail.state;
+            const sidebarItem = window.document
+                .getElementById(`cvat-objects-sidebar-state-item-${clientID}`);
+            if (sidebarItem) {
+                sidebarItem.scrollIntoView();
+            }
+        });
+
+        canvasInstance.html().addEventListener('canvas.deactivated', (e: any): void => {
+            const { activatedStateID } = this.props;
+            const { state } = e.detail;
+
+            // when we activate element, canvas deactivates the previous
+            // and triggers this event
+            // in this case we do not need to update our state
+            if (state.clientID === activatedStateID) {
+                onActivateObject(null);
+            }
+        });
+
         canvasInstance.html().addEventListener('canvas.moved', async (event: any): Promise<void> => {
+            const { activatedStateID } = this.props;
             const result = await jobInstance.annotations.select(
                 event.detail.states,
                 event.detail.x,
@@ -282,7 +322,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                     }
                 }
 
-                canvasInstance.activate(result.state.clientID);
+                if (activatedStateID !== result.state.clientID) {
+                    onActivateObject(result.state.clientID);
+                }
             }
         });
 

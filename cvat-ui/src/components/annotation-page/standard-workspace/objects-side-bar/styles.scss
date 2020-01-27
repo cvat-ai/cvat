@@ -144,10 +144,6 @@
     > div:nth-child(3) {
         margin-top: 10px;
     }
-
-    &:hover {
-        @extend .cvat-objects-sidebar-state-active-item;
-    }
 }
 
 .cvat-objects-sidebar-state-item-collapse {

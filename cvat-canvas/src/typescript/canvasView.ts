@@ -82,7 +82,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private zoomHandler: ZoomHandler;
     private activeElement: {
         state: any;
-        attributeID: number;
+        attributeID: number | null;
     } | null;
 
     private set mode(value: Mode) {
@@ -399,6 +399,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.svgTexts[state.clientID].remove();
             }
 
+            this.svgShapes[state.clientID].off('click.canvas');
             this.svgShapes[state.clientID].remove();
             delete this.drawnStates[state.clientID];
         }
@@ -590,6 +591,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         );
 
         // Setup event handlers
+        this.canvas.addEventListener('mouseleave', (e: MouseEvent): void => {
+            if (!e.ctrlKey) {
+                this.deactivate();
+            }
+        });
+
         this.content.addEventListener('dblclick', (e: MouseEvent): void => {
             if (e.ctrlKey || e.shiftKey) return;
             self.controller.fit();
@@ -598,6 +605,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.content.addEventListener('mousedown', (event): void => {
             if ([1, 2].includes(event.which)) {
+                this.deactivate();
                 if ([Mode.DRAG_CANVAS, Mode.IDLE].includes(this.mode)) {
                     self.controller.enableDrag(event.clientX, event.clientY);
                 } else if (this.mode === Mode.ZOOM_CANVAS && event.which === 2) {
@@ -764,6 +772,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.groupHandler.select(this.controller.selected);
             }
         } else if (reason === UpdateReasons.CANCEL) {
+            this.deactivate();
             if (this.mode === Mode.DRAW) {
                 this.drawHandler.cancel();
             } else if (this.mode === Mode.MERGE) {
@@ -910,6 +919,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             .addPoints(stringified, state);
                     }
                 }
+
+                this.svgShapes[state.clientID].on('click.canvas', (): void => {
+                    this.canvas.dispatchEvent(new CustomEvent('canvas.clicked', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            state,
+                        },
+                    }));
+                });
             }
 
             this.saveState(state);
@@ -934,6 +953,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).off('resizing');
             (shape as any).off('resizedone');
             (shape as any).resize(false);
+
+            this.canvas.dispatchEvent(new CustomEvent('canvas.deactivated', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    state,
+                },
+            }));
+
 
             // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[state.clientID];
@@ -1054,6 +1082,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.onEditDone(state, translateBetweenSVG(this.content, this.background, points));
             }
         });
+
+        this.canvas.dispatchEvent(new CustomEvent('canvas.activated', {
+            bubbles: false,
+            cancelable: true,
+            detail: {
+                state,
+            },
+        }));
     }
 
     // Update text position after corresponding box has been moved, resized, etc.

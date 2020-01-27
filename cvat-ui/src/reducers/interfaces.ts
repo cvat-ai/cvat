@@ -286,6 +286,8 @@ export interface AnnotationState {
         activeObjectType: ObjectType;
     };
     annotations: {
+        selectedStatesID: number[];
+        activatedStateID: number | null;
         collapsed: Record<number, boolean>;
         states: any[];
         saving: {

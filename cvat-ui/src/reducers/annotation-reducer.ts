@@ -36,6 +36,8 @@ const defaultState: AnnotationState = {
         activeObjectType: ObjectType.SHAPE,
     },
     annotations: {
+        selectedStatesID: [],
+        activatedStateID: null,
         saving: {
             uploading: false,
             statuses: [],
@@ -460,6 +462,32 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 job: {
                     ...state.job,
                     labels,
+                },
+            };
+        }
+        case AnnotationActionTypes.ACTIVATE_OBJECT: {
+            const {
+                activatedStateID,
+            } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID,
+                },
+            };
+        }
+        case AnnotationActionTypes.SELECT_OBJECTS: {
+            const {
+                selectedStatesID,
+            } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    selectedStatesID,
                 },
             };
         }

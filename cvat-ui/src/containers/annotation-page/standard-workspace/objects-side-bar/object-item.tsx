@@ -7,6 +7,7 @@ import {
     collapseObjectItems,
     updateAnnotationsAsync,
     changeFrameAsync,
+    activateObject as activateObjectAction,
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
@@ -22,12 +23,14 @@ interface StateToProps {
     attributes: any[];
     jobInstance: any;
     frameNumber: number;
+    activated: boolean;
 }
 
 interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(sessionInstance: any, frameNumber: number, objectState: any): void;
     collapseOrExpand(objectStates: any[], collapsed: boolean): void;
+    activateObject: (activatedStateID: number | null) => void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -36,6 +39,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             annotations: {
                 states,
                 collapsed: statesCollapsed,
+                activatedStateID,
             },
             job: {
                 labels,
@@ -64,6 +68,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         labels,
         jobInstance,
         frameNumber,
+        activated: activatedStateID === own.clientID,
     };
 }
 
@@ -78,17 +83,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         collapseOrExpand(objectStates: any[], collapsed: boolean): void {
             dispatch(collapseObjectItems(objectStates, collapsed));
         },
+        activateObject(activatedStateID: number | null): void {
+            dispatch(activateObjectAction(activatedStateID));
+        },
     };
 }
 
 type Props = StateToProps & DispatchToProps;
 class ObjectItemContainer extends React.PureComponent<Props> {
-    private lock = (): void => {
-        const { objectState } = this.props;
-        objectState.lock = true;
-        this.commit();
-    };
-
     private navigateFirstKeyframe = (): void => {
         const {
             objectState,
@@ -139,6 +141,21 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         if (last !== frameNumber) {
             changeFrame(last);
         }
+    };
+
+    private activate = (): void => {
+        const {
+            activateObject,
+            objectState,
+        } = this.props;
+
+        activateObject(objectState.clientID);
+    };
+
+    private lock = (): void => {
+        const { objectState } = this.props;
+        objectState.lock = true;
+        this.commit();
     };
 
     private unlock = (): void => {
@@ -242,6 +259,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             labels,
             attributes,
             frameNumber,
+            activated,
         } = this.props;
 
         const {
@@ -253,6 +271,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
         return (
             <ObjectStateItemComponent
+                activated={activated}
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}
                 clientID={objectState.clientID}
@@ -283,6 +302,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                     last <= frameNumber
                         ? null : this.navigateLastKeyframe
                 }
+                activate={this.activate}
                 setOccluded={this.setOccluded}
                 unsetOccluded={this.unsetOccluded}
                 setOutside={this.setOutside}
