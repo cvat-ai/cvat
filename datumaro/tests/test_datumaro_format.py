@@ -9,7 +9,7 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.components.converters.datumaro import DatumaroConverter
-from datumaro.util.test_utils import TestDir
+from datumaro.util.test_utils import TestDir, item_to_str
 from datumaro.util.mask_tools import generate_colormap
 
 
@@ -92,7 +92,8 @@ class DatumaroConverterTest(TestCase):
                 self.assertEqual(len(source_subset), len(parsed_subset))
                 for idx, (item_a, item_b) in enumerate(
                         zip(source_subset, parsed_subset)):
-                    self.assertEqual(item_a, item_b, str(idx))
+                    self.assertEqual(item_a, item_b, '%s:\n%s\nvs.\n%s\n' % \
+                        (idx, item_to_str(item_a), item_to_str(item_b)))
 
             self.assertEqual(
                 source_dataset.categories(),

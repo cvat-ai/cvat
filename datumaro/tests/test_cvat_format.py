@@ -14,7 +14,7 @@ from datumaro.components.converters.cvat import CvatConverter
 from datumaro.components.project import Project
 import datumaro.components.formats.cvat as Cvat
 from datumaro.util.image import save_image
-from datumaro.util.test_utils import TestDir
+from datumaro.util.test_utils import TestDir, item_to_str
 
 
 class CvatExtractorTest(TestCase):
@@ -175,7 +175,8 @@ class CvatConverterTest(TestCase):
             self.assertEqual(len(source_subset), len(parsed_subset))
             for idx, (item_a, item_b) in enumerate(
                     zip(source_subset, parsed_subset)):
-                self.assertEqual(item_a, item_b, str(idx))
+                self.assertEqual(item_a, item_b, '%s:\n%s\nvs.\n%s\n' % \
+                    (idx, item_to_str(item_a), item_to_str(item_b)))
 
     def test_can_save_and_load(self):
         label_categories = LabelCategories()

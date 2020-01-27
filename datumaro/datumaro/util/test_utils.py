@@ -37,3 +37,16 @@ class TestDir(FileRemover):
         os.makedirs(path, exist_ok=ignore_errors)
 
         super().__init__(path, is_dir=True, ignore_errors=ignore_errors)
+
+def ann_to_str(ann):
+    return vars(ann)
+
+def item_to_str(item):
+    return '\n'.join(
+        [
+            '%s' % vars(item)
+        ] + [
+            'ann[%s]: %s' % (i, ann_to_str(a))
+            for i, a in enumerate(item.annotations)
+        ]
+    )
