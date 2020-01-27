@@ -50,7 +50,7 @@ RUN apt-get update && \
     else \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
     fi && \
-    python3 -m pip install --no-cache-dir -U pip setuptools && \
+    python3 -m pip install --no-cache-dir -U pip==20.0.1 setuptools && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \
