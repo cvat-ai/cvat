@@ -32,33 +32,33 @@ polyline.cvat_canvas_shape {
 }
 
 .cvat_canvas_shape_grouping {
-    fill: darkmagenta;
-    fill-opacity: 0.5;
+    fill: darkmagenta !important;
+    fill-opacity: 0.5 !important;
 }
 
 polyline.cvat_canvas_shape_grouping {
-    stroke: darkmagenta;
-    stroke-opacity: 1;
+    stroke: darkmagenta !important;
+    stroke-opacity: 1 !important;
 }
 
 .cvat_canvas_shape_merging {
-    fill: blue;
-    fill-opacity: 0.5;
-}
-
-polyline.cvat_canvas_shape_splitting {
-    stroke: dodgerblue;
-    stroke-opacity: 1;
-}
-
-.cvat_canvas_shape_splitting {
-    fill: dodgerblue;
-    fill-opacity: 0.5;
+    fill: blue !important;
+    fill-opacity: 0.5 !important;
 }
 
 polyline.cvat_canvas_shape_merging {
-    stroke: blue;
-    stroke-opacity: 1;
+    stroke: blue !important;
+    stroke-opacity: 1 !important;
+}
+
+polyline.cvat_canvas_shape_splitting {
+    stroke: dodgerblue !important;
+    stroke-opacity: 1 !important;
+}
+
+.cvat_canvas_shape_splitting {
+    fill: dodgerblue !important;
+    fill-opacity: 0.5 !important;
 }
 
 .cvat_canvas_shape_drawing {

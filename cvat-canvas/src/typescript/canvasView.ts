@@ -376,6 +376,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private setupObjects(states: any[]): void {
+        const backgroundMatrix = this.background.getScreenCTM();
+        const contentMatrix = (this.content.getScreenCTM() as DOMMatrix).inverse();
+
+        const translate = (points: number[]): number[] => {
+            if (backgroundMatrix && contentMatrix) {
+                const matrix = (contentMatrix as DOMMatrix).multiply(backgroundMatrix);
+                return points.reduce((result: number[], _: number, idx: number): number[] => {
+                    if (idx % 2) {
+                        let p = (this.background as SVGSVGElement).createSVGPoint();
+                        p.x = points[idx - 1];
+                        p.y = points[idx];
+                        p = p.matrixTransform(matrix);
+                        result.push(p.x, p.y);
+                    }
+                    return result;
+                }, []);
+            }
+
+            return points;
+        };
+
         this.deactivate();
 
         const created = [];
@@ -394,6 +415,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const deleted = Object.keys(this.drawnStates).map((clientID: string): number => +clientID)
             .filter((id: number): boolean => !newIDs.includes(id))
             .map((id: number): any => this.drawnStates[id]);
+
         for (const state of deleted) {
             if (state.clientID in this.svgTexts) {
                 this.svgTexts[state.clientID].remove();
@@ -404,8 +426,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             delete this.drawnStates[state.clientID];
         }
 
-        this.addObjects(created);
-        this.updateObjects(updated);
+        this.addObjects(created, translate);
+        this.updateObjects(updated, translate);
     }
 
     private selectize(value: boolean, shape: SVG.Element): void {
@@ -816,7 +838,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
     }
 
-    private updateObjects(states: any[]): void {
+    private updateObjects(states: any[], translate: (points: number[]) => number[]): void {
         for (const state of states) {
             const { clientID } = state;
             const drawnState = this.drawnStates[clientID];
@@ -837,9 +859,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (drawnState.points
                 .some((p: number, id: number): boolean => p !== state.points[id])
             ) {
-                const translatedPoints: number[] = translateBetweenSVG(
-                    this.background, this.content, state.points,
-                );
+                const translatedPoints: number[] = translate(state.points);
 
                 if (state.shapeType === 'rectangle') {
                     const [xtl, ytl, xbr, ybr] = translatedPoints;
@@ -883,15 +903,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private addObjects(states: any[]): void {
+    private addObjects(states: any[], translate: (points: number[]) => number[]): void {
         for (const state of states) {
             if (state.objectType === 'tag') {
                 this.addTag(state);
             } else {
                 const points: number[] = (state.points as number[]);
-                const translatedPoints: number[] = translateBetweenSVG(
-                    this.background, this.content, points,
-                );
+                const translatedPoints: number[] = translate(points);
 
                 // TODO: Use enums after typification cvat-core
                 if (state.shapeType === 'rectangle') {
