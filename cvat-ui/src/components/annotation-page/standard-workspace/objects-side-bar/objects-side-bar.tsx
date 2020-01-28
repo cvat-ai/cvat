@@ -35,7 +35,7 @@ interface Props {
     changeShapesBlackBorders(event: CheckboxChangeEvent): void;
 }
 
-const ObjectsSideBar = React.memo((props: Props): JSX.Element => {
+function ObjectsSideBar(props: Props): JSX.Element {
     const {
         sidebarCollapsed,
         appearanceCollapsed,
@@ -105,6 +105,6 @@ const ObjectsSideBar = React.memo((props: Props): JSX.Element => {
             { !sidebarCollapsed && <AppearanceBlock {...appearanceProps} /> }
         </Layout.Sider>
     );
-});
+}
 
-export default ObjectsSideBar;
+export default React.memo(ObjectsSideBar);

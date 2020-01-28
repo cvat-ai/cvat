@@ -13,6 +13,7 @@
         checkObjectType,
     } = require('./common');
     const {
+        colors,
         ObjectShape,
         ObjectType,
         AttributeType,
@@ -25,6 +26,8 @@
     } = require('./exceptions');
 
     const { Label } = require('./labels');
+
+    const defaultGroupColor = '#E0E0E0';
 
     // Called with the Annotation context
     function objectStateFactory(frame, data) {
@@ -289,7 +292,10 @@
                 points: [...this.points],
                 attributes: { ...this.attributes },
                 label: this.label,
-                group: this.group,
+                group: {
+                    color: this.group ? colors[this.group % colors.length] : defaultGroupColor,
+                    id: this.group,
+                },
                 color: this.color,
                 hidden: this.hidden,
                 updated: this.updated,
@@ -506,7 +512,10 @@
             return {
                 ...this.getPosition(frame, prev, next),
                 attributes: this.getAttributes(frame),
-                group: this.group,
+                group: {
+                    color: this.group ? colors[this.group % colors.length] : defaultGroupColor,
+                    id: this.group,
+                },
                 objectType: ObjectType.TRACK,
                 shapeType: this.shapeType,
                 clientID: this.clientID,

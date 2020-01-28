@@ -266,8 +266,8 @@ export interface AnnotationState {
         activeControl: ActiveControl;
     };
     job: {
-        instance: any | null | undefined;
         labels: any[];
+        instance: any | null | undefined;
         attributes: Record<number, any[]>;
         fetching: boolean;
     };

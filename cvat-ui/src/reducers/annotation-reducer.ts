@@ -17,8 +17,8 @@ const defaultState: AnnotationState = {
         activeControl: ActiveControl.CURSOR,
     },
     job: {
-        instance: null,
         labels: [],
+        instance: null,
         attributes: {},
         fetching: false,
     },
@@ -449,6 +449,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS: {
             const {
                 label,
+                states,
             } = action.payload;
 
             const { instance: job } = state.job;
@@ -456,12 +457,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const index = labels.indexOf(label);
             labels[index] = label;
 
-
             return {
                 ...state,
                 job: {
                     ...state.job,
                     labels,
+                },
+                annotations: {
+                    ...state.annotations,
+                    states,
                 },
             };
         }

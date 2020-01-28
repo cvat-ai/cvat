@@ -472,23 +472,32 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
-export function changeLabelColor(label: any, color: string): AnyAction {
-    try {
-        const updatedLabel = label;
-        updatedLabel.color = color;
+export function changeLabelColorAsync(
+    sessionInstance: any,
+    frameNumber: number,
+    label: any,
+    color: string,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const updatedLabel = label;
+            updatedLabel.color = color;
+            const states = await sessionInstance.annotations.get(frameNumber);
 
-        return {
-            type: AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS,
-            payload: {
-                label: updatedLabel,
-            },
-        };
-    } catch (error) {
-        return {
-            type: AnnotationActionTypes.CHANGE_LABEL_COLOR_FAILED,
-            payload: {
-                error,
-            },
-        };
-    }
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS,
+                payload: {
+                    label: updatedLabel,
+                    states,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_LABEL_COLOR_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
 }

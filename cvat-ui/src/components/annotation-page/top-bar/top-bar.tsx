@@ -41,7 +41,7 @@ function propsAreEqual(curProps: Props, prevProps: Props): boolean {
         && curProps.savingStatuses.length === prevProps.savingStatuses.length;
 }
 
-const AnnotationTopBarComponent = React.memo((props: Props): JSX.Element => {
+function AnnotationTopBarComponent(props: Props): JSX.Element {
     const {
         saving,
         savingStatuses,
@@ -94,6 +94,6 @@ const AnnotationTopBarComponent = React.memo((props: Props): JSX.Element => {
             </Row>
         </Layout.Header>
     );
-}, propsAreEqual);
+}
 
-export default AnnotationTopBarComponent;
+export default React.memo(AnnotationTopBarComponent, propsAreEqual);

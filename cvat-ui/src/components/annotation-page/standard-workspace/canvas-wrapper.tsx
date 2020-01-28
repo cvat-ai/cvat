@@ -5,6 +5,7 @@ import {
 } from 'antd';
 
 import {
+    ColorBy,
     GridColor,
     ObjectType,
 } from 'reducers/interfaces';
@@ -28,6 +29,10 @@ interface Props {
     annotations: any[];
     frameData: any;
     frame: number;
+    opacity: number;
+    colorBy: ColorBy;
+    selectedOpacity: number;
+    blackBorders: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -69,6 +74,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     public componentDidUpdate(prevProps: Props): void {
         const {
+            opacity,
+            colorBy,
+            selectedOpacity,
+            blackBorders,
             grid,
             gridSize,
             gridColor,
@@ -119,11 +128,27 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.activatedStateID !== activatedStateID) {
+            if (prevProps.activatedStateID !== null) {
+                const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
+                if (el) {
+                    (el as any as SVGElement).style.fillOpacity = `${opacity / 100}`;
+                }
+            }
+
             if (activatedStateID !== null) {
                 canvasInstance.activate(activatedStateID);
+                const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
+                if (el) {
+                    (el as any as SVGElement).style.fillOpacity = `${selectedOpacity / 100}`;
+                }
             } else {
                 canvasInstance.cancel();
             }
+        }
+
+        if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
+            || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
+            this.updateShapesView();
         }
     }
 
@@ -215,6 +240,41 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onSplitAnnotations(jobInstance, frame, state);
     }
 
+    private updateShapesView(): void {
+        const {
+            annotations,
+            opacity,
+            colorBy,
+            blackBorders,
+        } = this.props;
+
+        for (const state of annotations) {
+            let shapeColor = '';
+            if (colorBy === ColorBy.INSTANCE) {
+                shapeColor = state.color;
+            } else if (colorBy === ColorBy.GROUP) {
+                shapeColor = state.group.color;
+            } else if (colorBy === ColorBy.LABEL) {
+                shapeColor = state.label.color;
+            }
+
+            const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
+            if (shapeView) {
+                if (shapeView.tagName === 'rect' || shapeView.tagName === 'polygon') {
+                    (shapeView as any as SVGElement).style.fillOpacity = `${opacity / 100}`;
+                    (shapeView as any as SVGElement).style.stroke = shapeColor;
+                    (shapeView as any as SVGElement).style.fill = shapeColor;
+                } else {
+                    (shapeView as any as SVGElement).style.stroke = shapeColor;
+                }
+
+                if (blackBorders) {
+                    (shapeView as any as SVGElement).style.stroke = 'black';
+                }
+            }
+        }
+    }
+
     private updateCanvas(): void {
         const {
             annotations,
@@ -260,6 +320,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         // Events
         canvasInstance.html().addEventListener('canvas.setup', (): void => {
             onSetupCanvas();
+            this.updateShapesView();
         });
 
         canvasInstance.html().addEventListener('canvas.setup', () => {

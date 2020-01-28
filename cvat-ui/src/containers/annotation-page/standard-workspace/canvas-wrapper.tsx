@@ -21,6 +21,7 @@ import {
     selectObjects,
 } from 'actions/annotation-actions';
 import {
+    ColorBy,
     GridColor,
     ObjectType,
     CombinedState,
@@ -37,6 +38,10 @@ interface StateToProps {
     annotations: any[];
     frameData: any;
     frame: number;
+    opacity: number;
+    colorBy: ColorBy;
+    selectedOpacity: number;
+    blackBorders: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -96,6 +101,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 gridColor,
                 gridOpacity,
             },
+            shapes: {
+                opacity,
+                colorBy,
+                selectedOpacity,
+                blackBorders,
+            },
         },
     } = state;
 
@@ -108,6 +119,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedStateID,
         selectedStatesID,
         annotations,
+        opacity,
+        colorBy,
+        selectedOpacity,
+        blackBorders,
         grid,
         gridSize,
         gridColor,

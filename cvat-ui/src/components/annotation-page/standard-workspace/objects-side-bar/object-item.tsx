@@ -28,7 +28,7 @@ import {
     ObjectType, ShapeType,
 } from 'reducers/interfaces';
 
-interface ItemTopProps {
+interface ItemTopComponentProps {
     clientID: number;
     labelID: number;
     labels: any[];
@@ -36,7 +36,7 @@ interface ItemTopProps {
     changeLabel(labelID: string): void;
 }
 
-const ItemTop = React.memo((props: ItemTopProps): JSX.Element => {
+function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
     const {
         clientID,
         labelID,
@@ -66,9 +66,11 @@ const ItemTop = React.memo((props: ItemTopProps): JSX.Element => {
             </Col>
         </Row>
     );
-});
+}
 
-interface ItemButtonsProps {
+const ItemTop = React.memo(ItemTopComponent);
+
+interface ItemButtonsComponentProps {
     objectType: ObjectType;
     occluded: boolean;
     outside: boolean | undefined;
@@ -93,7 +95,7 @@ interface ItemButtonsProps {
     show(): void;
 }
 
-const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
+function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
     const {
         objectType,
         occluded,
@@ -212,9 +214,11 @@ const ItemButtons = React.memo((props: ItemButtonsProps): JSX.Element => {
             </Col>
         </Row>
     );
-});
+}
 
-interface ItemAttributeProps {
+const ItemButtons = React.memo(ItemButtonsComponent);
+
+interface ItemAttributeComponentProps {
     attrInputType: string;
     attrValues: string[];
     attrValue: string;
@@ -223,7 +227,10 @@ interface ItemAttributeProps {
     changeAttribute(attrID: number, value: string): void;
 }
 
-function attrIsTheSame(prevProps: ItemAttributeProps, nextProps: ItemAttributeProps): boolean {
+function attrIsTheSame(
+    prevProps: ItemAttributeComponentProps,
+    nextProps: ItemAttributeComponentProps,
+): boolean {
     return nextProps.attrID === prevProps.attrID
         && nextProps.attrValue === prevProps.attrValue
         && nextProps.attrName === prevProps.attrName
@@ -233,7 +240,7 @@ function attrIsTheSame(prevProps: ItemAttributeProps, nextProps: ItemAttributePr
             .every((value: boolean): boolean => value);
 }
 
-const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
+function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element {
     const {
         attrInputType,
         attrValues,
@@ -355,10 +362,12 @@ const ItemAttribute = React.memo((props: ItemAttributeProps): JSX.Element => {
             </Col>
         </>
     );
-}, attrIsTheSame);
+}
+
+const ItemAttribute = React.memo(ItemAttributeComponent, attrIsTheSame);
 
 
-interface ItemAttributesProps {
+interface ItemAttributesComponentProps {
     collapsed: boolean;
     attributes: any[];
     values: Record<number, string>;
@@ -375,13 +384,16 @@ function attrValuesAreEqual(next: Record<number, string>, prev: Record<number, s
             .every((value: boolean) => value);
 }
 
-function attrAreTheSame(prevProps: ItemAttributesProps, nextProps: ItemAttributesProps): boolean {
+function attrAreTheSame(
+    prevProps: ItemAttributesComponentProps,
+    nextProps: ItemAttributesComponentProps,
+): boolean {
     return nextProps.collapsed === prevProps.collapsed
         && nextProps.attributes === prevProps.attributes
         && attrValuesAreEqual(nextProps.values, prevProps.values);
 }
 
-const ItemAttributes = React.memo((props: ItemAttributesProps): JSX.Element => {
+function ItemAttributesComponent(props: ItemAttributesComponentProps): JSX.Element {
     const {
         collapsed,
         attributes,
@@ -426,7 +438,9 @@ const ItemAttributes = React.memo((props: ItemAttributesProps): JSX.Element => {
             </Collapse>
         </Row>
     );
-}, attrAreTheSame);
+}
+
+const ItemAttributes = React.memo(ItemAttributesComponent, attrAreTheSame);
 
 interface Props {
     activated: boolean;
@@ -488,7 +502,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         && attrValuesAreEqual(nextProps.attrValues, prevProps.attrValues);
 }
 
-const ObjectItem = React.memo((props: Props): JSX.Element => {
+function ObjectItemComponent(props: Props): JSX.Element {
     const {
         activated,
         objectType,
@@ -582,6 +596,6 @@ const ObjectItem = React.memo((props: Props): JSX.Element => {
             }
         </div>
     );
-}, objectItemsAreEqual);
+}
 
-export default ObjectItem;
+export default React.memo(ObjectItemComponent, objectItemsAreEqual);

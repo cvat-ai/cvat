@@ -1,7 +1,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import {
+    ActiveControl,
     CombinedState,
+    ColorBy,
 } from 'reducers/interfaces';
 import {
     collapseObjectItems,
@@ -24,6 +26,9 @@ interface StateToProps {
     jobInstance: any;
     frameNumber: number;
     activated: boolean;
+    colorBy: ColorBy;
+    ready: boolean;
+    activeControl: ActiveControl;
 }
 
 interface DispatchToProps {
@@ -42,14 +47,23 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 activatedStateID,
             },
             job: {
-                labels,
                 attributes: jobAttributes,
                 instance: jobInstance,
+                labels,
             },
             player: {
                 frame: {
                     number: frameNumber,
                 },
+            },
+            canvas: {
+                ready,
+                activeControl,
+            },
+        },
+        settings: {
+            shapes: {
+                colorBy,
             },
         },
     } = state;
@@ -66,6 +80,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         collapsed: collapsedState,
         attributes: jobAttributes[states[index].label.id],
         labels,
+        ready,
+        activeControl,
+        colorBy,
         jobInstance,
         frameNumber,
         activated: activatedStateID === own.clientID,
@@ -147,9 +164,13 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const {
             activateObject,
             objectState,
+            ready,
+            activeControl,
         } = this.props;
 
-        activateObject(objectState.clientID);
+        if (ready && activeControl === ActiveControl.CURSOR) {
+            activateObject(objectState.clientID);
+        }
     };
 
     private lock = (): void => {
@@ -260,6 +281,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             attributes,
             frameNumber,
             activated,
+            colorBy,
         } = this.props;
 
         const {
@@ -267,7 +289,21 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             prev,
             next,
             last,
-        } = objectState.keyframes;
+        } = objectState.keyframes || {
+            first: null, // shapes don't have keyframes, so we use null
+            prev: null,
+            next: null,
+            last: null,
+        };
+
+        let stateColor = '';
+        if (colorBy === ColorBy.INSTANCE) {
+            stateColor = objectState.color;
+        } else if (colorBy === ColorBy.GROUP) {
+            stateColor = objectState.group.color;
+        } else if (colorBy === ColorBy.LABEL) {
+            stateColor = objectState.label.color;
+        }
 
         return (
             <ObjectStateItemComponent
@@ -282,12 +318,12 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 keyframe={objectState.keyframe}
                 attrValues={{ ...objectState.attributes }}
                 labelID={objectState.label.id}
-                color={objectState.color}
+                color={stateColor}
                 attributes={attributes}
                 labels={labels}
                 collapsed={collapsed}
                 navigateFirstKeyframe={
-                    first === frameNumber
+                    first === frameNumber || first === null
                         ? null : this.navigateFirstKeyframe
                 }
                 navigatePrevKeyframe={
@@ -299,7 +335,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                         ? null : this.navigateNextKeyframe
                 }
                 navigateLastKeyframe={
-                    last <= frameNumber
+                    last <= frameNumber || last === null
                         ? null : this.navigateLastKeyframe
                 }
                 activate={this.activate}

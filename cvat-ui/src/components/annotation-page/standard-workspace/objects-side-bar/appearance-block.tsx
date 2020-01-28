@@ -28,7 +28,7 @@ interface Props {
     changeShapesBlackBorders(event: CheckboxChangeEvent): void;
 }
 
-const AppearanceBlock = React.memo((props: Props): JSX.Element => {
+function AppearanceBlock(props: Props): JSX.Element {
     const {
         appearanceCollapsed,
         colorBy,
@@ -77,7 +77,7 @@ const AppearanceBlock = React.memo((props: Props): JSX.Element => {
                     />
                     <Checkbox
                         onChange={changeShapesBlackBorders}
-                        value={blackBorders}
+                        checked={blackBorders}
                     >
                         Black borders
                     </Checkbox>
@@ -85,6 +85,6 @@ const AppearanceBlock = React.memo((props: Props): JSX.Element => {
             </Collapse.Panel>
         </Collapse>
     );
-});
+}
 
-export default AppearanceBlock;
+export default React.memo(AppearanceBlock);

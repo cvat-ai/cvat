@@ -34,11 +34,11 @@
                 occluded: null,
                 keyframe: null,
 
-                group: null,
                 zOrder: null,
                 lock: null,
                 color: null,
                 hidden: null,
+                group: serialized.group,
                 keyframes: serialized.keyframes,
                 updated: serialized.updated,
 
@@ -62,7 +62,6 @@
                     this.occluded = false;
                     this.keyframe = false;
 
-                    this.group = false;
                     this.zOrder = false;
                     this.lock = false;
                     this.color = false;
@@ -191,16 +190,14 @@
                 },
                 group: {
                     /**
+                        * Object with short group info { color, id }
                         * @name group
-                        * @type {integer}
+                        * @type {object}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @instance
+                        * @readonly
                     */
                     get: () => data.group,
-                    set: (group) => {
-                        data.updateFlags.group = true;
-                        data.group = group;
-                    },
                 },
                 zOrder: {
                     /**
@@ -323,7 +320,6 @@
             }));
 
             this.label = serialized.label;
-            this.group = serialized.group;
             this.zOrder = serialized.zOrder;
             this.outside = serialized.outside;
             this.keyframe = serialized.keyframe;

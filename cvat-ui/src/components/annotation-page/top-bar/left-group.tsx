@@ -20,7 +20,7 @@ interface Props {
     onSaveAnnotation(): void;
 }
 
-const LeftGroup = React.memo((props: Props): JSX.Element => {
+function LeftGroup(props: Props): JSX.Element {
     const {
         saving,
         savingStatuses,
@@ -71,6 +71,6 @@ const LeftGroup = React.memo((props: Props): JSX.Element => {
             </div>
         </Col>
     );
-});
+}
 
-export default LeftGroup;
+export default React.memo(LeftGroup);
