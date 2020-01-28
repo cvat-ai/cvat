@@ -192,7 +192,8 @@ UI_PORT = os.environ.get('UI_PORT', '3000')
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [UI_HOST]
 UI_URL = '{}://{}'.format(UI_SCHEME, UI_HOST)
-if len(UI_URL):
+
+if UI_PORT and UI_PORT != '80':
     UI_URL += ':{}'.format(UI_PORT)
 
 CORS_ORIGIN_WHITELIST = [UI_URL]
