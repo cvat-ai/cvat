@@ -208,15 +208,16 @@
         validateStateBeforeSave(frame, data) {
             let fittedPoints = [];
             const updated = data.updateFlags;
+
+            if (updated.label) {
+                checkObjectType('label', data.label, null, Label);
+            }
+
             const labelAttributes = data.label.attributes
                 .reduce((accumulator, value) => {
                     accumulator[value.id] = value;
                     return accumulator;
                 }, {});
-
-            if (updated.label) {
-                checkObjectType('label', data.label, null, Label);
-            }
 
             if (updated.attributes) {
                 for (const attrID of Object.keys(data.attributes)) {
