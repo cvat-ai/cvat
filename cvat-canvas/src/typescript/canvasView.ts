@@ -330,11 +330,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         for (const key in this.svgShapes) {
             if (Object.prototype.hasOwnProperty.call(this.svgShapes, key)) {
                 const object = this.svgShapes[key];
-                if (object.attr('stroke-width')) {
-                    object.attr({
-                        'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                    });
-                }
+                object.attr({
+                    'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                });
             }
         }
 

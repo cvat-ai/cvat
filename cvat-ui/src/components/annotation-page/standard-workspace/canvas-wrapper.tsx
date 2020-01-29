@@ -129,7 +129,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             canvasInstance.activate(null);
             const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
             if (el) {
-                (el as any as SVGElement).setAttribute('fill-opacity', `${opacity / 100}`);
+                (el as any).instance.fill({ opacity: opacity / 100 });
             }
         }
 
@@ -272,18 +272,17 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 shapeColor = state.label.color;
             }
 
+            // TODO: In this approach CVAT-UI know details of implementations CVAT-CANVAS (svg.js)
             const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
             if (shapeView) {
-                if (shapeView.tagName === 'rect' || shapeView.tagName === 'polygon') {
-                    (shapeView as any as SVGElement).setAttribute('fill-opacity', `${opacity / 100}`);
-                    (shapeView as any as SVGElement).setAttribute('stroke', shapeColor);
-                    (shapeView as any as SVGElement).setAttribute('fill', shapeColor);
+                if (['rect', 'polygon', 'polyline'].includes(shapeView.tagName)) {
+                    (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
+                    (shapeView as any).instance.stroke({ color: blackBorders ? 'black' : shapeColor });
                 } else {
-                    (shapeView as any as SVGElement).setAttribute('stroke', shapeColor);
-                }
-
-                if (blackBorders) {
-                    (shapeView as any as SVGElement).setAttribute('stroke', 'black');
+                    // group of points
+                    for (const child of (shapeView as any).instance.children()) {
+                        child.fill({ color: shapeColor });
+                    }
                 }
             }
         }
