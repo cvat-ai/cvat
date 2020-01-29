@@ -113,10 +113,10 @@ Standard JS events are used.
     - canvas.setup
     - canvas.activated => {state: ObjectState}
     - canvas.clicked => {state: ObjectState}
-    - canvas.deactivated
     - canvas.moved => {states: ObjectState[], x: number, y: number}
     - canvas.find => {states: ObjectState[], x: number, y: number}
     - canvas.drawn => {state: DrawnData}
+    - canvas.editstart
     - canvas.edited => {state: ObjectState, points: number[]}
     - canvas.splitted => {state: ObjectState}
     - canvas.groupped => {states: ObjectState[]}

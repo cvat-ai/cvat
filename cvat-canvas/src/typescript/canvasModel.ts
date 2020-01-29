@@ -291,21 +291,32 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public setup(frameData: any, objectStates: any[]): void {
+        if (frameData.number === this.data.imageID) {
+            this.data.objects = objectStates;
+            this.notify(UpdateReasons.OBJECTS_UPDATED);
+            return;
+        }
+
+        this.data.imageID = frameData.number;
         frameData.data(
             (): void => {
                 this.data.image = '';
                 this.notify(UpdateReasons.IMAGE_CHANGED);
             },
         ).then((data: string): void => {
+            if (frameData.number !== this.data.imageID) {
+                // already another image
+                return;
+            }
+
+            if (!this.data.rememberAngle) {
+                this.data.angle = 0;
+            }
+
             this.data.imageSize = {
                 height: (frameData.height as number),
                 width: (frameData.width as number),
             };
-
-            if (this.data.imageID !== frameData.number && !this.data.rememberAngle) {
-                this.data.angle = 0;
-            }
-            this.data.imageID = frameData.number;
 
             this.data.image = data;
             this.notify(UpdateReasons.IMAGE_CHANGED);
@@ -317,7 +328,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public activate(clientID: number | null, attributeID: number | null): void {
-        if (this.data.mode !== Mode.IDLE) {
+        if (this.data.mode !== Mode.IDLE && clientID !== null) {
             // Exception or just return?
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }

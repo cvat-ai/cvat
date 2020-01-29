@@ -10,6 +10,10 @@ import {
     Collapse,
     Checkbox,
     InputNumber,
+    Dropdown,
+    Menu,
+    Button,
+    Modal,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -28,12 +32,58 @@ import {
     ObjectType, ShapeType,
 } from 'reducers/interfaces';
 
+function ItemMenu(
+    locked: boolean,
+    copy: (() => void),
+    remove: (() => void),
+    propagate: (() => void),
+): JSX.Element {
+    return (
+        <Menu key='unique' className='cvat-object-item-menu'>
+            <Menu.Item>
+                <Button type='link' icon='copy' onClick={copy}>
+                    Make a copy
+                </Button>
+            </Menu.Item>
+            <Menu.Item>
+                <Button type='link' icon='block' onClick={propagate}>
+                    Propagate
+                </Button>
+            </Menu.Item>
+            <Menu.Item>
+                <Button
+                    type='link'
+                    icon='delete'
+                    onClick={(): void => {
+                        if (locked) {
+                            Modal.confirm({
+                                title: 'Object is locked',
+                                content: 'Are you sure you want to remove it?',
+                                onOk() {
+                                    remove();
+                                },
+                            });
+                        } else {
+                            remove();
+                        }
+                    }}
+                >
+                    Remove
+                </Button>
+            </Menu.Item>
+        </Menu>
+    );
+}
+
 interface ItemTopComponentProps {
     clientID: number;
     labelID: number;
     labels: any[];
     type: string;
+    locked: boolean;
     changeLabel(labelID: string): void;
+    copy(): void;
+    remove(): void;
 }
 
 function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
@@ -42,7 +92,10 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         labelID,
         labels,
         type,
+        locked,
         changeLabel,
+        copy,
+        remove,
     } = props;
 
     return (
@@ -62,7 +115,12 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                 </Select>
             </Col>
             <Col span={2}>
-                <Icon type='more' />
+                <Dropdown
+                    placement='bottomLeft'
+                    overlay={ItemMenu(locked, copy, remove)}
+                >
+                    <Icon type='more' />
+                </Dropdown>
             </Col>
         </Row>
     );
@@ -465,6 +523,8 @@ interface Props {
     navigateLastKeyframe: null | (() => void);
 
     activate(): void;
+    copy(): void;
+    remove(): void;
     setOccluded(): void;
     unsetOccluded(): void;
     setOutside(): void;
@@ -526,6 +586,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
         navigateLastKeyframe,
 
         activate,
+        copy,
+        remove,
         setOccluded,
         unsetOccluded,
         setOutside,
@@ -559,7 +621,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 labelID={labelID}
                 labels={labels}
                 type={type}
+                locked={locked}
                 changeLabel={changeLabel}
+                copy={copy}
+                remove={remove}
             />
             <ItemButtons
                 objectType={objectType}

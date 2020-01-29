@@ -44,20 +44,6 @@ export interface CanvasView {
     html(): HTMLDivElement;
 }
 
-function darker(color: string, percentage: number): string {
-    const R = Math.round(parseInt(color.slice(1, 3), 16) * (1 - percentage / 100));
-    const G = Math.round(parseInt(color.slice(3, 5), 16) * (1 - percentage / 100));
-    const B = Math.round(parseInt(color.slice(5, 7), 16) * (1 - percentage / 100));
-
-    const rHex = Math.max(0, R).toString(16);
-    const gHex = Math.max(0, G).toString(16);
-    const bHex = Math.max(0, B).toString(16);
-
-    return `#${rHex.length === 1 ? `0${rHex}` : rHex}`
-        + `${gHex.length === 1 ? `0${gHex}` : gHex}`
-        + `${bHex.length === 1 ? `0${bHex}` : bHex}`;
-}
-
 export class CanvasViewImpl implements CanvasView, Listener {
     private loadingAnimation: SVGSVGElement;
     private text: SVGSVGElement;
@@ -90,7 +76,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.controller.mode;
     }
 
-    private onDrawDone(data: object): void {
+    private onDrawDone(data: object, continueDraw?: boolean): void {
         if (data) {
             const event: CustomEvent = new CustomEvent('canvas.drawn', {
                 bubbles: false,
@@ -98,6 +84,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 detail: {
                     // eslint-disable-next-line new-cap
                     state: data,
+                    continue: continueDraw,
                 },
             });
 
@@ -111,11 +98,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
         }
 
-        this.controller.draw({
-            enabled: false,
-        });
+        if (continueDraw) {
+            this.drawHandler.draw(
+                this.controller.drawData,
+                this.geometry,
+            );
+        } else {
+            this.controller.draw({
+                enabled: false,
+            });
 
-        this.mode = Mode.IDLE;
+            this.mode = Mode.IDLE;
+        }
     }
 
     private onEditDone(state: any, points: number[]): void {
@@ -411,10 +405,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .filter((id: number): boolean => !newIDs.includes(id))
             .map((id: number): any => this.drawnStates[id]);
 
+
         if (this.activeElement.clientID !== null) {
-            const currentActivatedStillExist = !deleted.map((state: any): number => state.clientID)
-                .includes(this.activeElement.clientID);
-            this.deactivate(currentActivatedStillExist);
+            this.deactivate();
         }
 
         for (const state of deleted) {
@@ -430,8 +423,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.addObjects(created, translate);
         this.updateObjects(updated, translate);
 
+
         if (this.controller.activeElement.clientID !== null) {
-            this.activate(this.controller.activeElement);
+            const { clientID } = this.controller.activeElement;
+            if (states.map((state: any): number => state.clientID).includes(clientID)) {
+                this.activate(this.controller.activeElement);
+            }
         }
     }
 
@@ -443,7 +440,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 .call(((e.target as HTMLElement).parentElement as HTMLElement).children, e.target);
 
             if (self.activeElement.clientID !== null) {
-                const state = self.drawnStates[self.activeElement.clientID];
+                const [state] = self.controller.objects
+                    .filter((_state: any): boolean => (
+                        _state.clientID === self.activeElement.clientID
+                    ));
                 if (e.ctrlKey) {
                     const { points } = state;
                     self.onEditDone(
@@ -451,6 +451,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)),
                     );
                 } else if (e.shiftKey) {
+                    self.canvas.dispatchEvent(new CustomEvent('canvas.editstart', {
+                        bubbles: false,
+                        cancelable: true,
+                    }));
+
                     self.mode = Mode.EDIT;
                     self.deactivate();
                     self.editHandler.edit({
@@ -621,12 +626,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         );
 
         // Setup event handlers
-        this.canvas.addEventListener('mouseleave', (e: MouseEvent): void => {
-            if (!e.ctrlKey) {
-                this.deactivate();
-            }
-        });
-
         this.content.addEventListener('dblclick', (e: MouseEvent): void => {
             if (e.ctrlKey || e.shiftKey) return;
             self.controller.fit();
@@ -635,7 +634,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.content.addEventListener('mousedown', (event): void => {
             if ([1, 2].includes(event.which)) {
-                this.deactivate();
                 if ([Mode.DRAG_CANVAS, Mode.IDLE].includes(this.mode)) {
                     self.controller.enableDrag(event.clientX, event.clientY);
                 } else if (this.mode === Mode.ZOOM_CANVAS && event.which === 2) {
@@ -734,7 +732,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.activate(this.controller.activeElement);
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
-            this.deactivate();
             if (this.mode === Mode.DRAG_CANVAS) {
                 this.canvas.dispatchEvent(new CustomEvent('canvas.dragstart', {
                     bubbles: false,
@@ -749,7 +746,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.canvas.style.cursor = '';
             }
         } else if (reason === UpdateReasons.ZOOM_CANVAS) {
-            this.deactivate();
             if (this.mode === Mode.ZOOM_CANVAS) {
                 this.canvas.dispatchEvent(new CustomEvent('canvas.zoomstart', {
                     bubbles: false,
@@ -769,28 +765,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const data: DrawData = this.controller.drawData;
             if (data.enabled) {
                 this.mode = Mode.DRAW;
-                this.deactivate();
             }
             this.drawHandler.draw(data, this.geometry);
         } else if (reason === UpdateReasons.MERGE) {
             const data: MergeData = this.controller.mergeData;
             if (data.enabled) {
                 this.mode = Mode.MERGE;
-                this.deactivate();
             }
             this.mergeHandler.merge(data);
         } else if (reason === UpdateReasons.SPLIT) {
             const data: SplitData = this.controller.splitData;
             if (data.enabled) {
                 this.mode = Mode.SPLIT;
-                this.deactivate();
             }
             this.splitHandler.split(data);
         } else if (reason === UpdateReasons.GROUP) {
             const data: GroupData = this.controller.groupData;
             if (data.enabled) {
                 this.mode = Mode.GROUP;
-                this.deactivate();
             }
             this.groupHandler.group(data);
         } else if (reason === UpdateReasons.SELECT) {
@@ -802,7 +794,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.groupHandler.select(this.controller.selected);
             }
         } else if (reason === UpdateReasons.CANCEL) {
-            this.deactivate();
             if (this.mode === Mode.DRAW) {
                 this.drawHandler.cancel();
             } else if (this.mode === Mode.MERGE) {
@@ -864,8 +855,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            if (drawnState.points
-                .some((p: number, id: number): boolean => p !== state.points[id])
+            if (state.points
+                .some((p: number, id: number): boolean => p !== drawnState.points[id])
             ) {
                 const translatedPoints: number[] = translate(state.points);
 
@@ -888,7 +879,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             return `${acc}${val},`;
                         }, '',
                     );
-
+                    (this.svgShapes[clientID] as any).clear();
                     this.svgShapes[clientID].attr('points', stringified);
                 }
             }
@@ -961,7 +952,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private deactivate(silent: boolean = false): void {
+    private deactivate(): void {
         if (this.activeElement.clientID !== null) {
             const { clientID } = this.activeElement;
             const [state] = this.controller.objects
@@ -993,16 +984,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 clientID: null,
                 attributeID: null,
             };
-
-            if (!silent) {
-                this.canvas.dispatchEvent(new CustomEvent('canvas.deactivated', {
-                    bubbles: false,
-                    cancelable: true,
-                    detail: {
-                        state,
-                    },
-                }));
-            }
         }
     }
 
@@ -1194,7 +1175,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
-            stroke: darker(state.color, 20),
+            stroke: state.color,
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             zOrder: state.zOrder,
         }).move(xtl, ytl)
@@ -1218,7 +1199,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
-            stroke: darker(state.color, 20),
+            stroke: state.color,
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');
@@ -1241,7 +1222,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
-            stroke: darker(state.color, 20),
+            stroke: state.color,
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');

@@ -286,6 +286,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -299,6 +303,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -316,6 +324,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -335,6 +347,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -348,6 +364,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -361,6 +381,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -497,6 +521,68 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     selectedStatesID,
+                },
+            };
+        }
+        case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
+            const {
+                objectState,
+            } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                    states: state.annotations.states
+                        .filter((_objectState: any) => (
+                            _objectState.clientID !== objectState.clientID
+                        )),
+                },
+            };
+        }
+        case AnnotationActionTypes.COPY_SHAPE: {
+            const {
+                objectState,
+            } = action.payload;
+
+            state.canvas.instance.cancel();
+            state.canvas.instance.draw({
+                enabled: true,
+                initialState: objectState,
+            });
+
+            let activeControl = ActiveControl.DRAW_RECTANGLE;
+            if (objectState.shapeType === ShapeType.POINTS) {
+                activeControl = ActiveControl.DRAW_POINTS;
+            } else if (objectState.shapeType === ShapeType.POLYGON) {
+                activeControl = ActiveControl.DRAW_POLYGON;
+            } else if (objectState.shapeType === ShapeType.POLYLINE) {
+                activeControl = ActiveControl.DRAW_POLYLINE;
+            }
+
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
+            };
+        }
+        case AnnotationActionTypes.EDIT_SHAPE: {
+            const { enabled } = action.payload;
+            const activeControl = enabled
+                ? ActiveControl.SPLIT : ActiveControl.CURSOR;
+
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
                 },
             };
         }

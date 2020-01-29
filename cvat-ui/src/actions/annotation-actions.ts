@@ -32,6 +32,8 @@ export enum AnnotationActionTypes {
     MERGE_OBJECTS = 'MERGE_OBJECTS',
     GROUP_OBJECTS = 'GROUP_OBJECTS',
     SPLIT_TRACK = 'SPLIT_TRACK',
+    COPY_SHAPE = 'COPY_SHAPE',
+    EDIT_SHAPE = 'EDIT_SHAPE',
     DRAW_SHAPE = 'DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
     RESET_CANVAS = 'RESET_CANVAS',
@@ -53,6 +55,49 @@ export enum AnnotationActionTypes {
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
     SELECT_OBJECTS = 'SELECT_OBJECTS',
+    REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
+    REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
+}
+
+
+export function removeObjectAsync(objectState: any, force: boolean):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            await objectState.delete(force);
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_OBJECT_SUCCESS,
+                payload: {
+                    objectState,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_OBJECT_FAILED,
+                payload: {
+                    objectState,
+                },
+            });
+        }
+    };
+}
+
+export function editShape(enabled: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.EDIT_SHAPE,
+        payload: {
+            enabled,
+        },
+    };
+}
+
+export function copyShape(objectState: any): AnyAction {
+    return {
+        type: AnnotationActionTypes.COPY_SHAPE,
+        payload: {
+            objectState,
+        },
+    };
 }
 
 export function selectObjects(selectedStatesID: number[]): AnyAction {

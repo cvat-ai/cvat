@@ -32,7 +32,7 @@ export interface DrawHandler {
 
 export class DrawHandlerImpl implements DrawHandler {
     // callback is used to notify about creating new shape
-    private onDrawDone: (data: object) => void;
+    private onDrawDone: (data: object, continueDraw?: boolean) => void;
     private canvas: SVG.Container;
     private text: SVG.Container;
     private background: SVGSVGElement;
@@ -342,21 +342,22 @@ export class DrawHandlerImpl implements DrawHandler {
 
     private pastePolyshape(): void {
         this.canvas.on('click.draw', (e: MouseEvent): void => {
-            const targetPoints = (e.target as SVGElement)
-                .getAttribute('points')
+            const targetPoints = this.drawInstance
+                .attr('points')
                 .split(/[,\s]/g)
-                .map((coord): number => +coord);
+                .map((coord: string): number => +coord);
 
             const { points } = this.getFinalPolyshapeCoordinates(targetPoints);
             this.release();
             this.onDrawDone({
-                shapeType: this.drawData.shapeType,
+                shapeType: this.drawData.initialState.shapeType,
+                objectType: this.drawData.initialState.objectType,
                 points,
                 occluded: this.drawData.initialState.occluded,
                 attributes: { ...this.drawData.initialState.attributes },
                 label: this.drawData.initialState.label,
                 color: this.drawData.initialState.color,
-            });
+            }, e.ctrlKey);
         });
     }
 
@@ -386,17 +387,18 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pasteShape();
 
         this.canvas.on('click.draw', (e: MouseEvent): void => {
-            const bbox = (e.target as SVGRectElement).getBBox();
+            const bbox = this.drawInstance.node.getBBox();
             const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
             this.release();
             this.onDrawDone({
-                shapeType: this.drawData.shapeType,
+                shapeType: this.drawData.initialState.shapeType,
+                objectType: this.drawData.initialState.objectType,
                 points: [xtl, ytl, xbr, ybr],
                 occluded: this.drawData.initialState.occluded,
                 attributes: { ...this.drawData.initialState.attributes },
                 label: this.drawData.initialState.label,
                 color: this.drawData.initialState.color,
-            });
+            }, e.ctrlKey);
         });
     }
 
@@ -475,7 +477,7 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     public constructor(
-        onDrawDone: (data: object) => void,
+        onDrawDone: (data: object, continueDraw?: boolean) => void,
         canvas: SVG.Container,
         text: SVG.Container,
         background: SVGSVGElement,

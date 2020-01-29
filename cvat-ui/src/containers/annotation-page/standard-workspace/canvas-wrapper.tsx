@@ -12,6 +12,7 @@ import {
     mergeObjects,
     groupObjects,
     splitTrack,
+    editShape,
     updateAnnotationsAsync,
     createAnnotationsAsync,
     mergeAnnotationsAsync,
@@ -59,6 +60,7 @@ interface DispatchToProps {
     onMergeObjects: (enabled: boolean) => void;
     onGroupObjects: (enabled: boolean) => void;
     onSplitTrack: (enabled: boolean) => void;
+    onEditShape: (enabled: boolean) => void;
     onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
@@ -157,6 +159,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSplitTrack(enabled: boolean): void {
             dispatch(splitTrack(enabled));
+        },
+        onEditShape(enabled: boolean): void {
+            dispatch(editShape(enabled));
         },
         onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
             dispatch(updateAnnotationsAsync(sessionInstance, frame, states));

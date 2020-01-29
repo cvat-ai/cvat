@@ -45,6 +45,7 @@ interface Props {
     onMergeObjects: (enabled: boolean) => void;
     onGroupObjects: (enabled: boolean) => void;
     onSplitTrack: (enabled: boolean) => void;
+    onEditShape: (enabled: boolean) => void;
     onShapeDrawn: () => void;
     onResetCanvas: () => void;
     onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
@@ -154,7 +155,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onCreateAnnotations,
         } = this.props;
 
-        onShapeDrawn();
+        if (!event.detail.continue) {
+            onShapeDrawn();
+        }
 
         const { state } = event.detail;
         if (!state.objectType) {
@@ -166,7 +169,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 .filter((label: any) => label.id === activeLabelID);
         }
 
-        if (!state.occluded) {
+        if (typeof (state.occluded) === 'undefined') {
             state.occluded = false;
         }
 
@@ -179,8 +182,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             jobInstance,
             frame,
+            onEditShape,
             onUpdateAnnotations,
         } = this.props;
+
+        onEditShape(false);
 
         const {
             state,
@@ -308,6 +314,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onZoomCanvas,
             onResetCanvas,
             onActivateObject,
+            onEditShape,
         } = this.props;
 
         // Size
@@ -326,6 +333,17 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.grid(gridSize, gridSize);
 
         // Events
+        canvasInstance.html().addEventListener('click', (e: MouseEvent): void => {
+            if ((e.target as HTMLElement).tagName === 'svg') {
+                onActivateObject(null);
+            }
+        });
+
+        canvasInstance.html().addEventListener('canvas.editstart', (): void => {
+            onActivateObject(null);
+            onEditShape(true);
+        });
+
         canvasInstance.html().addEventListener('canvas.setup', (): void => {
             onSetupCanvas();
             this.updateShapesView();

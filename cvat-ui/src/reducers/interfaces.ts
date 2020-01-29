@@ -238,6 +238,7 @@ export enum ActiveControl {
     MERGE = 'merge',
     GROUP = 'group',
     SPLIT = 'split',
+    EDIT = 'edit',
 }
 
 export enum ShapeType {
