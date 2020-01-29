@@ -123,36 +123,28 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        if (prevProps.annotations !== annotations || prevProps.frameData !== frameData) {
-            this.updateCanvas();
+        if (prevProps.activatedStateID !== null
+            && prevProps.activatedStateID !== activatedStateID) {
+            canvasInstance.activate(null);
+            const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
+            if (el) {
+                (el as any as SVGElement).setAttribute('fill-opacity', `${opacity / 100}`);
+            }
         }
 
-        if (prevProps.activatedStateID !== activatedStateID) {
-            if (prevProps.activatedStateID !== null) {
-                const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
-                if (el) {
-                    (el as any as SVGElement).style.fillOpacity = `${opacity / 100}`;
-                }
-            }
-
-            if (activatedStateID !== null) {
-                canvasInstance.activate(activatedStateID);
-                const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
-                if (el) {
-                    (el as any as SVGElement).style.fillOpacity = `${selectedOpacity / 100}`;
-                }
-            } else {
-                canvasInstance.cancel();
-            }
+        if (prevProps.annotations !== annotations || prevProps.frameData !== frameData) {
+            this.updateCanvas();
         }
 
         if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
             || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
             this.updateShapesView();
         }
+
+        this.activateOnCanvas();
     }
 
-    private async onShapeDrawn(event: any): Promise<void> {
+    private onShapeDrawn(event: any): void {
         const {
             jobInstance,
             activeLabelID,
@@ -183,7 +175,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onCreateAnnotations(jobInstance, frame, [objectState]);
     }
 
-    private async onShapeEdited(event: any): Promise<void> {
+    private onShapeEdited(event: any): void {
         const {
             jobInstance,
             frame,
@@ -198,7 +190,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onUpdateAnnotations(jobInstance, frame, [state]);
     }
 
-    private async onObjectsMerged(event: any): Promise<void> {
+    private onObjectsMerged(event: any): void {
         const {
             jobInstance,
             frame,
@@ -212,7 +204,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onMergeAnnotations(jobInstance, frame, states);
     }
 
-    private async onObjectsGroupped(event: any): Promise<void> {
+    private onObjectsGroupped(event: any): void {
         const {
             jobInstance,
             frame,
@@ -226,7 +218,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onGroupAnnotations(jobInstance, frame, states);
     }
 
-    private async onTrackSplitted(event: any): Promise<void> {
+    private onTrackSplitted(event: any): void {
         const {
             jobInstance,
             frame,
@@ -238,6 +230,22 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const { state } = event.detail;
         onSplitAnnotations(jobInstance, frame, state);
+    }
+
+    private activateOnCanvas(): void {
+        const {
+            activatedStateID,
+            canvasInstance,
+            selectedOpacity,
+        } = this.props;
+
+        if (activatedStateID !== null) {
+            canvasInstance.activate(activatedStateID);
+            const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
+            if (el) {
+                (el as any as SVGElement).setAttribute('fill-opacity', `${selectedOpacity / 100}`);
+            }
+        }
     }
 
     private updateShapesView(): void {
@@ -261,15 +269,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
             if (shapeView) {
                 if (shapeView.tagName === 'rect' || shapeView.tagName === 'polygon') {
-                    (shapeView as any as SVGElement).style.fillOpacity = `${opacity / 100}`;
-                    (shapeView as any as SVGElement).style.stroke = shapeColor;
-                    (shapeView as any as SVGElement).style.fill = shapeColor;
+                    (shapeView as any as SVGElement).setAttribute('fill-opacity', `${opacity / 100}`);
+                    (shapeView as any as SVGElement).setAttribute('stroke', shapeColor);
+                    (shapeView as any as SVGElement).setAttribute('fill', shapeColor);
                 } else {
-                    (shapeView as any as SVGElement).style.stroke = shapeColor;
+                    (shapeView as any as SVGElement).setAttribute('stroke', shapeColor);
                 }
 
                 if (blackBorders) {
-                    (shapeView as any as SVGElement).style.stroke = 'black';
+                    (shapeView as any as SVGElement).setAttribute('stroke', 'black');
                 }
             }
         }
@@ -321,6 +329,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.setup', (): void => {
             onSetupCanvas();
             this.updateShapesView();
+            this.activateOnCanvas();
         });
 
         canvasInstance.html().addEventListener('canvas.setup', () => {

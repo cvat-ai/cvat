@@ -137,6 +137,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 states,
             } = action.payload;
 
+            const activatedStateID = states
+                .map((_state: any) => _state.clientID).includes(state.annotations.activatedStateID)
+                ? state.annotations.activatedStateID : null;
+
             return {
                 ...state,
                 player: {
@@ -149,6 +153,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 annotations: {
                     ...state.annotations,
+                    activatedStateID,
                     states,
                 },
             };

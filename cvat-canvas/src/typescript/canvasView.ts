@@ -80,10 +80,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private splitHandler: SplitHandler;
     private groupHandler: GroupHandler;
     private zoomHandler: ZoomHandler;
-    private activeElement: {
-        state: any;
-        attributeID: number | null;
-    } | null;
+    private activeElement: ActiveElement;
 
     private set mode(value: Mode) {
         this.controller.mode = value;
@@ -397,8 +394,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return points;
         };
 
-        this.deactivate();
-
         const created = [];
         const updated = [];
         for (const state of states) {
@@ -416,6 +411,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .filter((id: number): boolean => !newIDs.includes(id))
             .map((id: number): any => this.drawnStates[id]);
 
+        if (this.activeElement.clientID !== null) {
+            const currentActivatedStillExist = !deleted.map((state: any): number => state.clientID)
+                .includes(this.activeElement.clientID);
+            this.deactivate(currentActivatedStillExist);
+        }
+
         for (const state of deleted) {
             if (state.clientID in this.svgTexts) {
                 this.svgTexts[state.clientID].remove();
@@ -428,6 +429,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.addObjects(created, translate);
         this.updateObjects(updated, translate);
+
+        if (this.controller.activeElement.clientID !== null) {
+            this.activate(this.controller.activeElement);
+        }
     }
 
     private selectize(value: boolean, shape: SVG.Element): void {
@@ -437,16 +442,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const pointID = Array.prototype.indexOf
                 .call(((e.target as HTMLElement).parentElement as HTMLElement).children, e.target);
 
-            if (self.activeElement) {
+            if (self.activeElement.clientID !== null) {
+                const state = self.drawnStates[self.activeElement.clientID];
                 if (e.ctrlKey) {
-                    const { points } = self.activeElement.state;
+                    const { points } = state;
                     self.onEditDone(
-                        self.activeElement.state,
+                        state,
                         points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)),
                     );
                 } else if (e.shiftKey) {
                     self.mode = Mode.EDIT;
-                    const { state } = self.activeElement;
                     self.deactivate();
                     self.editHandler.edit({
                         enabled: true,
@@ -506,7 +511,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.svgShapes = {};
         this.svgTexts = {};
         this.drawnStates = {};
-        this.activeElement = null;
+        this.activeElement = {
+            clientID: null,
+            attributeID: null,
+        };
         this.mode = Mode.IDLE;
 
         // Create HTML elements
@@ -953,10 +961,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private deactivate(): void {
-        if (this.activeElement) {
-            const { state } = this.activeElement;
-            const shape = this.svgShapes[this.activeElement.state.clientID];
+    private deactivate(silent: boolean = false): void {
+        if (this.activeElement.clientID !== null) {
+            const { clientID } = this.activeElement;
+            const [state] = this.controller.objects
+                .filter((_state: any): boolean => _state.clientID === clientID);
+            const shape = this.svgShapes[state.clientID];
             shape.removeClass('cvat_canvas_shape_activated');
 
             (shape as any).off('dragstart');
@@ -972,30 +982,35 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).off('resizedone');
             (shape as any).resize(false);
 
-            this.canvas.dispatchEvent(new CustomEvent('canvas.deactivated', {
-                bubbles: false,
-                cancelable: true,
-                detail: {
-                    state,
-                },
-            }));
-
-
             // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[state.clientID];
             if (text) {
                 text.remove();
                 delete this.svgTexts[state.clientID];
             }
-            this.activeElement = null;
+
+            this.activeElement = {
+                clientID: null,
+                attributeID: null,
+            };
+
+            if (!silent) {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.deactivated', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        state,
+                    },
+                }));
+            }
         }
     }
 
     private activate(activeElement: ActiveElement): void {
         // Check if other element have been already activated
-        if (this.activeElement) {
+        if (this.activeElement.clientID !== null) {
             // Check if it is the same element
-            if (this.activeElement.state.clientID === activeElement.clientID) {
+            if (this.activeElement.clientID === activeElement.clientID) {
                 return;
             }
 
@@ -1003,16 +1018,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.deactivate();
         }
 
-        const state = this.controller.objects
-            .filter((el): boolean => el.clientID === activeElement.clientID)[0];
-        this.activeElement = {
-            attributeID: activeElement.attributeID,
-            state,
-        };
+        this.activeElement = { ...activeElement };
+        const { clientID } = this.activeElement;
 
-        const shape = this.svgShapes[activeElement.clientID];
+        if (clientID === null) {
+            return;
+        }
+
+        const [state] = this.controller.objects
+            .filter((_state: any): boolean => _state.clientID === clientID);
+
+        const shape = this.svgShapes[clientID];
         shape.addClass('cvat_canvas_shape_activated');
-        let text = this.svgTexts[activeElement.clientID];
+        let text = this.svgTexts[clientID];
         // Draw text if it's hidden by default
         if (!text) {
             text = this.addText(state);

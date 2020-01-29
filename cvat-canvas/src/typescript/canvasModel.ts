@@ -33,7 +33,7 @@ export interface FocusData {
 }
 
 export interface ActiveElement {
-    clientID: number;
+    clientID: number | null;
     attributeID: number | null;
 }
 
@@ -127,7 +127,7 @@ export interface CanvasModel {
     move(topOffset: number, leftOffset: number): void;
 
     setup(frameData: any, objectStates: any[]): void;
-    activate(clientID: number, attributeID: number | null): void;
+    activate(clientID: number | null, attributeID: number | null): void;
     rotate(rotation: Rotation, remember: boolean): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
@@ -316,7 +316,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         });
     }
 
-    public activate(clientID: number, attributeID: number | null): void {
+    public activate(clientID: number | null, attributeID: number | null): void {
         if (this.data.mode !== Mode.IDLE) {
             // Exception or just return?
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
