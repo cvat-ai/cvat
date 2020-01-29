@@ -423,7 +423,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.addObjects(created, translate);
         this.updateObjects(updated, translate);
 
-
         if (this.controller.activeElement.clientID !== null) {
             const { clientID } = this.controller.activeElement;
             if (states.map((state: any): number => state.clientID).includes(clientID)) {
@@ -886,6 +885,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     );
                     (this.svgShapes[clientID] as any).clear();
                     this.svgShapes[clientID].attr('points', stringified);
+
+                    if (state.shapeType === 'points') {
+                        this.selectize(false, this.svgShapes[clientID]);
+                        this.setupPoints(this.svgShapes[clientID] as SVG.PolyLine, state);
+                    }
                 }
             }
 
@@ -1011,11 +1015,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const [state] = this.controller.objects
             .filter((_state: any): boolean => _state.clientID === clientID);
+
+        if (state.shapeType === 'points') {
+            this.svgShapes[clientID].remember('_selectHandler').nested
+                .style('pointer-events', state.lock ? 'none' : '');
+        }
+
         if (state.hidden || state.lock) {
-            if (state.shapeType === 'points') {
-                this.svgShapes[clientID].remember('_selectHandler').nested
-                    .style('pointer-events', state.lock ? 'none' : '');
-            }
             return;
         }
 
@@ -1249,6 +1255,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return polyline;
     }
 
+    private setupPoints(basicPolyline: SVG.PolyLine, state: any): any {
+        this.selectize(true, basicPolyline);
+
+        const group = basicPolyline.remember('_selectHandler').nested
+            .addClass('cvat_canvas_shape').attr({
+                clientID: state.clientID,
+                zOrder: state.zOrder,
+                id: `cvat_canvas_shape_${state.clientID}`,
+                fill: state.color,
+            }).style({
+                'fill-opacity': 1,
+            });
+
+        group.bbox = basicPolyline.bbox.bind(basicPolyline);
+        group.clone = basicPolyline.clone.bind(basicPolyline);
+
+        return group;
+    }
+
     private addPoints(points: string, state: any): SVG.PolyLine {
         const shape = this.adoptedContent.polyline(points).attr({
             'color-rendering': 'optimizeQuality',
@@ -1260,24 +1285,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             opacity: 0,
         });
 
-        this.selectize(true, shape);
-
-        const group = shape.remember('_selectHandler').nested
-            .addClass('cvat_canvas_shape').attr({
-                clientID: state.clientID,
-                zOrder: state.zOrder,
-                id: `cvat_canvas_shape_${state.clientID}`,
-                fill: state.color,
-            }).style({
-                'fill-opacity': 1,
-            });
+        const group = this.setupPoints(shape, state);
 
         if (state.hidden || state.outside) {
             group.style('display', 'none');
         }
-
-        group.bbox = shape.bbox.bind(shape);
-        group.clone = shape.clone.bind(shape);
 
         shape.remove = (): SVG.PolyLine => {
             this.selectize(false, shape);
