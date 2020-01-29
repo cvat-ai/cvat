@@ -46,6 +46,7 @@ export class DrawHandlerImpl implements DrawHandler {
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
     private drawInstance: any;
+    private pointsGroup: SVG.G | null;
     private shapeSizeElement: ShapeSizeElement;
 
     private getFinalRectCoordinates(bbox: BBox): number[] {
@@ -124,6 +125,11 @@ export class DrawHandlerImpl implements DrawHandler {
         this.canvas.off('mousedown.draw');
         this.canvas.off('mousemove.draw');
         this.canvas.off('click.draw');
+
+        if (this.pointsGroup) {
+            this.pointsGroup.remove();
+            this.pointsGroup = null;
+        }
 
         if (this.drawInstance) {
             // Draw plugin isn't activated when draw from initialState
@@ -311,7 +317,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private drawPolygon(): void {
         this.drawInstance = (this.canvas as any).polygon().draw({
             snapToGrid: 0.1,
-        }).addClass('cvat_canvas_shape_drawing').style({
+        }).addClass('cvat_canvas_shape_drawing').attr({
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
         });
 
@@ -321,7 +327,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private drawPolyline(): void {
         this.drawInstance = (this.canvas as any).polyline().draw({
             snapToGrid: 0.1,
-        }).addClass('cvat_canvas_shape_drawing').style({
+        }).addClass('cvat_canvas_shape_drawing').attr({
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             'fill-opacity': 0,
         });
@@ -332,7 +338,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private drawPoints(): void {
         this.drawInstance = (this.canvas as any).polygon().draw({
             snapToGrid: 0.1,
-        }).addClass('cvat_canvas_shape_drawing').style({
+        }).addClass('cvat_canvas_shape_drawing').attr({
             'stroke-width': 0,
             opacity: 0,
         });
@@ -381,7 +387,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private pasteBox(box: BBox): void {
         this.drawInstance = (this.canvas as any).rect(box.width, box.height)
             .move(box.x, box.y)
-            .addClass('cvat_canvas_shape_drawing').style({
+            .addClass('cvat_canvas_shape_drawing').attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             });
         this.pasteShape();
@@ -405,7 +411,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
     private pastePolygon(points: string): void {
         this.drawInstance = (this.canvas as any).polygon(points)
-            .addClass('cvat_canvas_shape_drawing').style({
+            .addClass('cvat_canvas_shape_drawing').attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             });
         this.pasteShape();
@@ -414,7 +420,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
     private pastePolyline(points: string): void {
         this.drawInstance = (this.canvas as any).polyline(points)
-            .addClass('cvat_canvas_shape_drawing').style({
+            .addClass('cvat_canvas_shape_drawing').attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             });
         this.pasteShape();
@@ -426,7 +432,42 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing').style({
                 'stroke-width': 0,
             });
-        this.pasteShape();
+
+        this.pointsGroup = this.canvas.group();
+        for (const point of points.split(' ')) {
+            const radius = consts.BASE_POINT_SIZE / this.geometry.scale;
+            const stroke = consts.POINTS_STROKE_WIDTH / this.geometry.scale;
+            const [x, y] = point.split(',').map((coord: string): number => +coord);
+            this.pointsGroup.circle().move(x - radius / 2, y - radius / 2)
+                .fill('white').stroke('black').attr({
+                    r: radius,
+                    'stroke-width': stroke,
+                });
+        }
+
+        this.pointsGroup.attr({
+            z_order: Number.MAX_SAFE_INTEGER,
+        });
+
+        this.canvas.on('mousemove.draw', (e: MouseEvent): void => {
+            const [x, y] = translateToSVG(
+                this.canvas.node as any as SVGSVGElement,
+                [e.clientX, e.clientY],
+            );
+
+            const bbox = this.drawInstance.bbox();
+            this.drawInstance.move(x - bbox.width / 2, y - bbox.height / 2);
+            const radius = consts.BASE_POINT_SIZE / this.geometry.scale;
+            const newPoints = this.drawInstance.attr('points').split(' ');
+            if (this.pointsGroup) {
+                this.pointsGroup.children()
+                    .forEach((child: SVG.Element, idx: number): void => {
+                        const [px, py] = newPoints[idx].split(',');
+                        child.move(px - radius / 2, py - radius / 2);
+                    });
+            }
+        });
+
         this.pastePolyshape();
     }
 
@@ -490,6 +531,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.geometry = null;
         this.crosshair = null;
         this.drawInstance = null;
+        this.pointsGroup = null;
 
         this.canvas.on('mousemove.crosshair', (e: MouseEvent): void => {
             if (this.crosshair) {
@@ -527,16 +569,25 @@ export class DrawHandlerImpl implements DrawHandler {
             });
         }
 
+        if (this.pointsGroup) {
+            for (const point of this.pointsGroup.children()) {
+                point.attr({
+                    'stroke-width': consts.POINTS_STROKE_WIDTH / geometry.scale,
+                    r: consts.BASE_POINT_SIZE / geometry.scale,
+                });
+            }
+        }
+
         if (this.drawInstance) {
             this.drawInstance.draw('transform');
-            this.drawInstance.style({
+            this.drawInstance.attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             });
 
             const paintHandler = this.drawInstance.remember('_paintHandler');
 
             for (const point of (paintHandler as any).set.members) {
-                point.style(
+                point.attr(
                     'stroke-width',
                     `${consts.POINTS_STROKE_WIDTH / geometry.scale}`,
                 );

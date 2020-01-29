@@ -74,7 +74,7 @@ export function pointsToString(points: number[]): string {
             return `${acc},${val}`;
         }
 
-        return `${acc} ${val}`;
+        return `${acc} ${val}`.trim();
     }, '');
 }
 
