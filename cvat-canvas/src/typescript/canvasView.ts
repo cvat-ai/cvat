@@ -844,7 +844,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             if (drawnState.hidden !== state.hidden || drawnState.outside !== state.outside) {
                 const none = state.hidden || state.outside;
-                this.svgShapes[clientID].style('display', none ? 'none' : '');
+                if (state.shapeType === 'points') {
+                    this.svgShapes[clientID].remember('_selectHandler').nested
+                        .style('display', none ? 'none' : '');
+                } else {
+                    this.svgShapes[clientID].style('display', none ? 'none' : '');
+                }
             }
 
             if (drawnState.occluded !== state.occluded) {
@@ -999,16 +1004,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.deactivate();
         }
 
-        this.activeElement = { ...activeElement };
-        const { clientID } = this.activeElement;
-
+        const { clientID } = activeElement;
         if (clientID === null) {
             return;
         }
 
         const [state] = this.controller.objects
             .filter((_state: any): boolean => _state.clientID === clientID);
+        if (state.hidden || state.lock) {
+            if (state.shapeType === 'points') {
+                this.svgShapes[clientID].remember('_selectHandler').nested
+                    .style('pointer-events', state.lock ? 'none' : '');
+            }
+            return;
+        }
 
+        this.activeElement = { ...activeElement };
         const shape = this.svgShapes[clientID];
         shape.addClass('cvat_canvas_shape_activated');
         let text = this.svgTexts[clientID];
