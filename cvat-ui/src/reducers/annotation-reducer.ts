@@ -576,7 +576,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.EDIT_SHAPE: {
             const { enabled } = action.payload;
             const activeControl = enabled
-                ? ActiveControl.SPLIT : ActiveControl.CURSOR;
+                ? ActiveControl.EDIT : ActiveControl.CURSOR;
 
             return {
                 ...state,
