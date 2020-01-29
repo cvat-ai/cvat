@@ -134,9 +134,18 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps;
 class ObjectsSideBarContainer extends React.PureComponent<Props> {
     public componentDidMount(): void {
+        window.addEventListener('resize', this.alignTabHeight);
+        this.alignTabHeight();
+    }
+
+    public componentWillUnmount(): void {
+        window.removeEventListener('resize', this.alignTabHeight);
+    }
+
+    private alignTabHeight = (): void => {
         const { updateTabContentHeight } = this.props;
         updateTabContentHeight();
-    }
+    };
 
     private changeShapesColorBy = (event: RadioChangeEvent): void => {
         const { changeShapesColorBy } = this.props;
