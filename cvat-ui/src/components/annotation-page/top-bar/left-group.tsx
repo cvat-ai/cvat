@@ -62,11 +62,11 @@ function LeftGroup(props: Props): JSX.Element {
                     </Timeline>
                 </Modal>
             </Button>
-            <Button type='link' className='cvat-annotation-header-button'>
+            <Button disabled type='link' className='cvat-annotation-header-button'>
                 <Icon component={UndoIcon} />
                 Undo
             </Button>
-            <Button type='link' className='cvat-annotation-header-button'>
+            <Button disabled type='link' className='cvat-annotation-header-button'>
                 <Icon component={RedoIcon} />
                 Redo
             </Button>

@@ -15,7 +15,7 @@ import {
 function RightGroup(): JSX.Element {
     return (
         <Col className='cvat-annotation-header-right-group'>
-            <Button type='link' className='cvat-annotation-header-button'>
+            <Button disabled type='link' className='cvat-annotation-header-button'>
                 <Icon component={FullscreenIcon} />
                 Fullscreen
             </Button>
@@ -24,7 +24,7 @@ function RightGroup(): JSX.Element {
                 Info
             </Button>
             <div>
-                <Select className='cvat-workspace-selector' defaultValue='standard'>
+                <Select disabled className='cvat-workspace-selector' defaultValue='standard'>
                     <Select.Option key='standard' value='standard'>Standard</Select.Option>
                     <Select.Option key='aam' value='aam'>Attribute annotation</Select.Option>
                 </Select>
