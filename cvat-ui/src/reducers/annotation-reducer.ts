@@ -45,6 +45,10 @@ const defaultState: AnnotationState = {
         collapsed: {},
         states: [],
     },
+    propagate: {
+        objectState: null,
+        frames: 50,
+    },
     colors: [],
     sidebarCollapsed: false,
     appearanceCollapsed: false,
@@ -583,6 +587,36 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     activeControl,
+                },
+            };
+        }
+        case AnnotationActionTypes.PROPAGATE_OBJECT: {
+            const { objectState } = action.payload;
+            return {
+                ...state,
+                propagate: {
+                    ...state.propagate,
+                    objectState,
+                },
+            };
+        }
+        case AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS: {
+            return {
+                ...state,
+                propagate: {
+                    ...state.propagate,
+                    objectState: null,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_PROPAGATE_FRAMES: {
+            const { frames } = action.payload;
+
+            return {
+                ...state,
+                propagate: {
+                    ...state.propagate,
+                    frames,
                 },
             };
         }

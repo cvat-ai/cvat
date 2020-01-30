@@ -12,6 +12,7 @@ import {
     removeObjectAsync,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
+    propagateObject as propagateObjectAction,
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
@@ -40,6 +41,7 @@ interface DispatchToProps {
     activateObject: (activatedStateID: number | null) => void;
     removeObject: (objectState: any) => void;
     copyShape: (objectState: any) => void;
+    propagateObject: (objectState: any) => void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -113,6 +115,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         copyShape(objectState: any): void {
             dispatch(copyShapeAction(objectState));
         },
+        propagateObject(objectState: any): void {
+            dispatch(propagateObjectAction(objectState));
+        },
     };
 }
 
@@ -177,6 +182,15 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         } = this.props;
 
         copyShape(objectState);
+    };
+
+    private propagate = (): void => {
+        const {
+            objectState,
+            propagateObject,
+        } = this.props;
+
+        propagateObject(objectState);
     };
 
     private remove = (): void => {
@@ -351,7 +365,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 labels={labels}
                 collapsed={collapsed}
                 navigateFirstKeyframe={
-                    first === frameNumber || first === null
+                    first >= frameNumber || first === null
                         ? null : this.navigateFirstKeyframe
                 }
                 navigatePrevKeyframe={
@@ -369,6 +383,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 activate={this.activate}
                 remove={this.remove}
                 copy={this.copy}
+                propagate={this.propagate}
                 setOccluded={this.setOccluded}
                 unsetOccluded={this.unsetOccluded}
                 setOutside={this.setOutside}

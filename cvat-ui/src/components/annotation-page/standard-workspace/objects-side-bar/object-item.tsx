@@ -84,6 +84,7 @@ interface ItemTopComponentProps {
     changeLabel(labelID: string): void;
     copy(): void;
     remove(): void;
+    propagate(): void;
 }
 
 function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
@@ -96,6 +97,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         changeLabel,
         copy,
         remove,
+        propagate,
     } = props;
 
     return (
@@ -117,7 +119,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
             <Col span={2}>
                 <Dropdown
                     placement='bottomLeft'
-                    overlay={ItemMenu(locked, copy, remove)}
+                    overlay={ItemMenu(locked, copy, remove, propagate)}
                 >
                     <Icon type='more' />
                 </Dropdown>
@@ -524,6 +526,7 @@ interface Props {
 
     activate(): void;
     copy(): void;
+    propagate(): void;
     remove(): void;
     setOccluded(): void;
     unsetOccluded(): void;
@@ -587,6 +590,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
 
         activate,
         copy,
+        propagate,
         remove,
         setOccluded,
         unsetOccluded,
@@ -625,6 +629,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 changeLabel={changeLabel}
                 copy={copy}
                 remove={remove}
+                propagate={propagate}
             />
             <ItemButtons
                 objectType={objectType}

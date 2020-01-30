@@ -757,7 +757,7 @@
                 this.removed = true;
             }
 
-            return true;
+            return this.removed;
         }
     }
 

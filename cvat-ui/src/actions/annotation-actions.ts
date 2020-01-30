@@ -56,21 +56,92 @@ export enum AnnotationActionTypes {
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
     SELECT_OBJECTS = 'SELECT_OBJECTS',
     REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
-    REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
+    REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED', // todo: add message
+    PROPAGATE_OBJECT = 'PROPAGATE_OBJECT',
+    PROPAGATE_OBJECT_SUCCESS = 'PROPAGATE_OBJECT_SUCCESS',
+    PROPAGATE_OBJECT_FAILED = 'PROPAGATE_OBJECT_FAILED', // todo: add message
+    CHANGE_PROPAGATE_FRAMES = 'CHANGE_PROPAGATE_FRAMES',
 }
 
+
+export function propagateObjectAsync(
+    sessionInstance: any,
+    objectState: any,
+    from: number,
+    to: number,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const copy = {
+                attributes: objectState.attributes,
+                points: objectState.points,
+                occluded: objectState.occluded,
+                objectType: objectState.objectType !== ObjectType.TRACK
+                    ? objectState.objectType : ObjectType.SHAPE,
+                shapeType: objectState.shapeType,
+                label: objectState.label,
+                frame: from,
+            };
+
+            const states = [];
+            for (let frame = from; frame <= to; frame++) {
+                copy.frame = frame;
+                const newState = new cvat.classes.ObjectState(copy);
+                states.push(newState);
+            }
+
+            await sessionInstance.annotations.put(states);
+
+            dispatch({
+                type: AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS,
+                payload: {
+                    objectState,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.PROPAGATE_OBJECT_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function propagateObject(objectState: any | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.PROPAGATE_OBJECT,
+        payload: {
+            objectState,
+        },
+    };
+}
+
+export function changePropagateFrames(frames: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.CHANGE_PROPAGATE_FRAMES,
+        payload: {
+            frames,
+        },
+    };
+}
 
 export function removeObjectAsync(objectState: any, force: boolean):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            await objectState.delete(force);
-            dispatch({
-                type: AnnotationActionTypes.REMOVE_OBJECT_SUCCESS,
-                payload: {
-                    objectState,
-                },
-            });
+            const removed = await objectState.delete(force);
+            if (removed) {
+                dispatch({
+                    type: AnnotationActionTypes.REMOVE_OBJECT_SUCCESS,
+                    payload: {
+                        objectState,
+                    },
+                });
+            } else {
+                throw new Error('Could not remove the object. Is it locked?');
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.REMOVE_OBJECT_FAILED,

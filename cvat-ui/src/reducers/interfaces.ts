@@ -296,6 +296,10 @@ export interface AnnotationState {
             statuses: string[];
         };
     };
+    propagate: {
+        objectState: any | null;
+        frames: number;
+    };
     colors: any[];
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
