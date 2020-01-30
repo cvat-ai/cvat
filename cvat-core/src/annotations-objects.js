@@ -677,13 +677,14 @@
 
             if (updated.points || updated.keyframe || updated.outside
                 || updated.occluded || updated.zOrder || mutableAttributesUpdated) {
+                const mutableAttributes = frame in this.shapes ? this.shapes[frame].attributes : {};
                 this.shapes[frame] = {
                     frame,
                     zOrder: data.zOrder,
                     points: updated.points && fittedPoints.length ? fittedPoints : current.points,
                     outside: data.outside,
                     occluded: data.occluded,
-                    attributes: {},
+                    attributes: mutableAttributes,
                 };
 
                 for (const attrID of Object.keys(data.attributes)) {
