@@ -502,7 +502,7 @@ class ShapeCreatorView {
                         + "(HINT) The first 3 points define the front face"
                         + " and the last point should define the depth and orientation of the cuboid ");
                 } else if (this._type === "cuboid") {
-                    let points = this._setupCuboidPoints(actualPoints);
+                    let points = this._makeCuboid(actualPoints);
                     const viewModel = new Cuboid2PointViewModel(points);
                     if (!CuboidModel.isWithinFrame(points)) {
                         this._controller.switchCreateMode(true);
@@ -541,6 +541,115 @@ class ShapeCreatorView {
 
             this._controller.switchCreateMode(true);
         });
+    }
+
+    _sortClockwise(points){
+         points.sort((a, b) => a.y - b.y);
+        // Get center y
+        const cy = (points[0].y + points[points.length - 1].y) / 2;
+
+        // Sort from right to left
+        points.sort((a, b) => b.x - a.x);
+
+        // Get center x
+        const cx = (points[0].x + points[points.length - 1].x) / 2;
+
+        // Center point
+        var center = {
+            x : cx,
+            y : cy
+        };
+
+        // Starting angle used to reference other angles
+        var startAng;
+        points.forEach(point => {
+            var ang = Math.atan2(point.y - center.y, point.x - center.x);
+            if (!startAng) {
+                startAng = ang
+            } else {
+                if (ang < startAng) { // ensure that all points are clockwise of the start point
+                    ang += Math.PI * 2;
+                }
+            }
+            point.angle = ang; // add the angle to the point
+        });
+
+        // first sort clockwise
+        points.sort((a, b) => a.angle - b.angle);
+        return points.reverse();
+    }
+
+    _makeCuboid(actualPoints){
+        let unsortedPlanePoints = actualPoints.slice(0,3);
+        function rotate( array , times ){
+            while( times-- ){
+                var temp = array.shift();
+                array.push( temp )
+            }
+        }
+
+        let plane1;
+        let plane2 = {p1:actualPoints[0], p2:actualPoints[0], p3:actualPoints[0], p4:actualPoints[0]};
+
+        // completing the plane
+        const vector = {
+            x: actualPoints[2].x - actualPoints[1].x,
+            y: actualPoints[2].y - actualPoints[1].y,
+        }
+
+        // sorting the first plane
+        unsortedPlanePoints.push({x:actualPoints[0].x + vector.x, y: actualPoints[0].y + vector.y});
+        let sortedPlanePoints = this._sortClockwise(unsortedPlanePoints);
+        let left_index = 0;
+        for(let i = 0; i<4; i++){
+            left_index = sortedPlanePoints[i].x < sortedPlanePoints[left_index].x ? i : left_index;
+        }
+        rotate(sortedPlanePoints,left_index);
+        plane1 = {
+            p1:sortedPlanePoints[0],
+            p2:sortedPlanePoints[1],
+            p3:sortedPlanePoints[2],
+            p4:sortedPlanePoints[3]
+        };
+
+       const vec = {
+            x: actualPoints[3].x - actualPoints[2].x,
+            y: actualPoints[3].y - actualPoints[2].y,
+        };
+        // determine the orientation
+        let angle = Math.atan2(vec.y,vec.x);
+
+        // making the other plane
+        plane2.p1 =  {x:plane1.p1.x + vec.x, y:plane1.p1.y + vec.y};
+        plane2.p2 =  {x:plane1.p2.x + vec.x, y:plane1.p2.y + vec.y};
+        plane2.p3 =  {x:plane1.p3.x + vec.x, y:plane1.p3.y + vec.y};
+        plane2.p4 =  {x:plane1.p4.x + vec.x, y:plane1.p4.y + vec.y};
+
+
+        let points ;
+        // right
+        if(Math.abs(angle) < Math.PI/2-0.1){
+            return this._setupCuboidPoints(actualPoints);
+        }
+
+        // left
+        else if(Math.abs(angle) > Math.PI/2+0.1){
+            return this._setupCuboidPoints(actualPoints)
+        }
+        // down
+        else if(angle>0){
+            points = [plane1.p1,plane2.p1,plane1.p2,plane2.p2,plane1.p3,plane2.p3]
+            points[0].y+=0.1;
+            points[4].y+=0.1;
+            return [plane1.p1,plane2.p1,plane1.p2,plane2.p2,plane1.p3,plane2.p3]
+        }
+        // up
+        else{
+            points = [plane2.p1,plane1.p1,plane2.p2,plane1.p2,plane2.p3,plane1.p3]
+            points[0].y+=0.1;
+            points[4].y+=0.1;
+            return points
+        }
     }
 
     _setupCuboidPoints(actualPoints) {
