@@ -324,6 +324,10 @@ class FrameProvider {
         return this._decodeThreadCount;
     }
 
+    get decodedBlocksCacheSize() {
+        return this._decodedBlocksCacheSize;
+    }
+
     /*
         Method returns a list of cached ranges
         Is an array of strings like "start:end"

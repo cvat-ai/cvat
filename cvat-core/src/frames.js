@@ -24,7 +24,7 @@
         * @hideconstructor
     */
     class FrameData {
-        constructor(width, height, tid, number, startFrame, stopFrame) {
+        constructor(width, height, tid, number, startFrame, stopFrame, decodeForward) {
             Object.defineProperties(this, Object.freeze({
                 /**
                     * @name width
@@ -62,6 +62,10 @@
                 },
                 stopFrame: {
                     value: stopFrame,
+                    writable: false,
+                },
+                decodeForward: {
+                    value: decodeForward,
                     writable: false,
                 },
             }));
@@ -182,8 +186,9 @@
                                 && frameDataCache[this.tid].activeChunkRequest.completed
                                 && frameDataCache[this.tid].activeChunkRequest.chunkNumber
                                     !== chunkNumber)) {
-                                if (frameDataCache[this.tid].activeChunkRequest) {
-                                    frameDataCache[this.tid].activeChunkRequest.rejectRequestAll();
+                                const activeRequest = frameDataCache[this.tid].activeChunkRequest;
+                                if (activeRequest && activeRequest.rejectRequestAll) {
+                                    activeRequest.rejectRequestAll();
                                 }
                                 frameDataCache[this.tid].activeChunkRequest = {
                                     request: undefined,
@@ -239,6 +244,35 @@
                                 onDecodeAll, rejectRequestAll);
                         }
                     } else {
+                        if (this.number % chunkSize > chunkSize / 4
+                            && provider.decodedBlocksCacheSize > 1
+                            && this.decodeForward
+                            && !provider.isNextChunkExists(this.number)) {
+                            const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
+                            if (nextChunkNumber * chunkSize < this.stopFrame) {
+                                provider.setReadyToLoading(nextChunkNumber);
+                                const nextStart = nextChunkNumber * chunkSize;
+                                const nextStop = (nextChunkNumber + 1) * chunkSize - 1;
+                                if (!provider.isChunkCached(nextStart, nextStop)) {
+                                    if (!frameDataCache[this.tid].activeChunkRequest) {
+                                        frameDataCache[this.tid].activeChunkRequest = {
+                                            request: undefined,
+                                            chunkNumber: nextChunkNumber,
+                                            start: nextStart,
+                                            stop: nextStop,
+                                            onDecodeAll: undefined,
+                                            rejectRequestAll: undefined,
+                                            completed: false,
+                                            callbacks: [],
+                                        };
+                                        makeActiveRequest();
+                                    }
+                                } else {
+                                    provider.requestDecodeBlock(null, nextStart, nextStop,
+                                        undefined, undefined);
+                                }
+                            }
+                        }
                         resolveWrapper(frame);
                     }
                 }).catch((exception) => {
@@ -410,7 +444,7 @@
             this._required = frameNumber;
             const size = getFrameSize(taskID, frameNumber);
             let frame = new FrameData(size.width, size.height, taskID, frameNumber,
-                frameDataCache[taskID].startFrame, frameDataCache[taskID].stopFrame);
+                frameDataCache[taskID].startFrame, frameDataCache[taskID].stopFrame, !fillBuffer);
 
             if (frameNumber in this._buffer) {
                 frame = this._buffer[frameNumber];
