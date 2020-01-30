@@ -289,7 +289,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                 </Col>
                 <Col span={1} offset={1}>
                     <Tooltip overlay='Specify a label mapping between model labels and task labels'>
-                        <Icon className='cvat-run-model-dialog-info-icon' type='question-circle' />
+                        <Icon className='cvat-info-circle-icon' type='question-circle' />
                     </Tooltip>
                 </Col>
             </Row>

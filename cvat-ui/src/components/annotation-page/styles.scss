@@ -134,3 +134,47 @@
 .cvat-workspace-selector {
     width: 150px;
 }
+
+.cvat-job-info-modal-window {
+    > div {
+        margin-top: 10px;
+    }
+
+    > div:nth-child(1) {
+        > div {
+            > .ant-select, i {
+                margin-left: 10px;
+            }
+        }
+    }
+
+    > div:nth-child(2) {
+        > div {
+            > span {
+                font-size: 20px;
+            }
+        }
+    }
+
+    > div:nth-child(3) {
+        > div {
+            display: grid;
+        }
+    }
+
+    > .cvat-job-info-bug-tracker {
+        > div {
+            display: grid;
+        }
+    }
+
+    > .cvat-job-info-statistics {
+        > div {
+            width: 100%;
+
+            > span {
+                font-size: 20px;
+            }
+        }
+    }
+}

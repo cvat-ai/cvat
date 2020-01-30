@@ -12,14 +12,20 @@ import {
     FullscreenIcon,
 } from '../../../icons';
 
-function RightGroup(): JSX.Element {
+interface Props {
+    showStatistics(): void;
+}
+
+function RightGroup(props: Props): JSX.Element {
+    const { showStatistics } = props;
+
     return (
         <Col className='cvat-annotation-header-right-group'>
             <Button disabled type='link' className='cvat-annotation-header-button'>
                 <Icon component={FullscreenIcon} />
                 Fullscreen
             </Button>
-            <Button type='link' className='cvat-annotation-header-button'>
+            <Button type='link' className='cvat-annotation-header-button' onClick={showStatistics}>
                 <Icon component={InfoIcon} />
                 Info
             </Button>

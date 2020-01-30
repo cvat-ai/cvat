@@ -59,6 +59,10 @@ const defaultState: NotificationsState = {
             merging: null,
             grouping: null,
             splitting: null,
+            removing: null,
+            propagating: null,
+            collectingStatistics: null,
+            savingJob: null,
         },
     },
     messages: {
@@ -564,7 +568,67 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     annotation: {
                         ...state.errors.annotation,
                         splitting: {
-                            message: 'Could not split a track',
+                            message: 'Could not split the track',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.REMOVE_OBJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        removing: {
+                            message: 'Could not remove the object',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.PROPAGATE_OBJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        propagating: {
+                            message: 'Could not propagate the object',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.COLLECT_STATISTICS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        collectingStatistics: {
+                            message: 'Could not collect annotations statistics',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        savingJob: {
+                            message: 'Could not save the job on the server',
                             reason: action.payload.error.toString(),
                         },
                     },

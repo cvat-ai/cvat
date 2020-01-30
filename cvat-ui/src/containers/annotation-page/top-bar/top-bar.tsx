@@ -7,6 +7,8 @@ import {
     changeFrameAsync,
     switchPlay,
     saveAnnotationsAsync,
+    collectStatisticsAsync,
+    showStatistics as showStatisticsAction,
 } from 'actions/annotation-actions';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
@@ -26,6 +28,7 @@ interface DispatchToProps {
     onChangeFrame(frame: number): void;
     onSwitchPlay(playing: boolean): void;
     onSaveAnnotation(sessionInstance: any): void;
+    showStatistics(sessionInstance: any): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -79,6 +82,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSaveAnnotation(sessionInstance: any): void {
             dispatch(saveAnnotationsAsync(sessionInstance));
         },
+        showStatistics(sessionInstance: any): void {
+            dispatch(collectStatisticsAsync(sessionInstance));
+            dispatch(showStatisticsAction(true));
+        },
     };
 }
 
@@ -107,6 +114,15 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             }
         }
     }
+
+    private showStatistics = (): void => {
+        const {
+            jobInstance,
+            showStatistics,
+        } = this.props;
+
+        showStatistics(jobInstance);
+    };
 
     private onSwitchPlay = (): void => {
         const {
@@ -288,6 +304,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
         return (
             <AnnotationTopBarComponent
+                showStatistics={this.showStatistics}
                 onSwitchPlay={this.onSwitchPlay}
                 onSaveAnnotation={this.onSaveAnnotation}
                 onPrevFrame={this.onPrevFrame}

@@ -56,13 +56,87 @@ export enum AnnotationActionTypes {
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
     SELECT_OBJECTS = 'SELECT_OBJECTS',
     REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
-    REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED', // todo: add message
+    REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
     PROPAGATE_OBJECT = 'PROPAGATE_OBJECT',
     PROPAGATE_OBJECT_SUCCESS = 'PROPAGATE_OBJECT_SUCCESS',
-    PROPAGATE_OBJECT_FAILED = 'PROPAGATE_OBJECT_FAILED', // todo: add message
+    PROPAGATE_OBJECT_FAILED = 'PROPAGATE_OBJECT_FAILED',
     CHANGE_PROPAGATE_FRAMES = 'CHANGE_PROPAGATE_FRAMES',
+    SWITCH_SHOWING_STATISTICS = 'SWITCH_SHOWING_STATISTICS',
+    COLLECT_STATISTICS = 'COLLECT_STATISTICS',
+    COLLECT_STATISTICS_SUCCESS = 'COLLECT_STATISTICS_SUCCESS',
+    COLLECT_STATISTICS_FAILED = 'COLLECT_STATISTICS_FAILED',
+    CHANGE_JOB_STATUS = 'CHANGE_JOB_STATUS',
+    CHANGE_JOB_STATUS_SUCCESS = 'CHANGE_JOB_STATUS_SUCCESS',
+    CHANGE_JOB_STATUS_FAILED = 'CHANGE_JOB_STATUS_FAILED',
 }
 
+export function changeJobStatusAsync(jobInstance: any, status: string):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const oldStatus = jobInstance.status;
+        try {
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_JOB_STATUS,
+                payload: {},
+            });
+
+            // eslint-disable-next-line no-param-reassign
+            jobInstance.status = status;
+            await jobInstance.save();
+
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_JOB_STATUS_SUCCESS,
+                payload: {},
+            });
+        } catch (error) {
+            // eslint-disable-next-line no-param-reassign
+            jobInstance.status = oldStatus;
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function collectStatisticsAsync(sessionInstance: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch({
+                type: AnnotationActionTypes.COLLECT_STATISTICS,
+                payload: {},
+            });
+
+            const data = await sessionInstance.annotations.statistics();
+
+            dispatch({
+                type: AnnotationActionTypes.COLLECT_STATISTICS_SUCCESS,
+                payload: {
+                    data,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.COLLECT_STATISTICS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function showStatistics(visible: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_SHOWING_STATISTICS,
+        payload: {
+            visible,
+        },
+    };
+}
 
 export function propagateObjectAsync(
     sessionInstance: any,

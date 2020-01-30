@@ -211,6 +211,10 @@ export interface NotificationsState {
             merging: null | ErrorState;
             grouping: null | ErrorState;
             splitting: null | ErrorState;
+            removing: null | ErrorState;
+            propagating: null | ErrorState;
+            collectingStatistics: null | ErrorState;
+            savingJob: null | ErrorState;
         };
 
         [index: string]: any;
@@ -271,6 +275,7 @@ export interface AnnotationState {
         instance: any | null | undefined;
         attributes: Record<number, any[]>;
         fetching: boolean;
+        saving: boolean;
     };
     player: {
         frame: {
@@ -299,6 +304,11 @@ export interface AnnotationState {
     propagate: {
         objectState: any | null;
         frames: number;
+    };
+    statistics: {
+        collecting: boolean;
+        visible: boolean;
+        data: any;
     };
     colors: any[];
     sidebarCollapsed: boolean;

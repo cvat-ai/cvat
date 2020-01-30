@@ -21,6 +21,7 @@ const defaultState: AnnotationState = {
         instance: null,
         attributes: {},
         fetching: false,
+        saving: false,
     },
     player: {
         frame: {
@@ -48,6 +49,11 @@ const defaultState: AnnotationState = {
     propagate: {
         objectState: null,
         frames: 50,
+    },
+    statistics: {
+        visible: false,
+        collecting: false,
+        data: null,
     },
     colors: [],
     sidebarCollapsed: false,
@@ -617,6 +623,74 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 propagate: {
                     ...state.propagate,
                     frames,
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_SHOWING_STATISTICS: {
+            const { visible } = action.payload;
+
+            return {
+                ...state,
+                statistics: {
+                    ...state.statistics,
+                    visible,
+                },
+            };
+        }
+        case AnnotationActionTypes.COLLECT_STATISTICS: {
+            return {
+                ...state,
+                statistics: {
+                    ...state.statistics,
+                    collecting: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.COLLECT_STATISTICS_SUCCESS: {
+            const { data } = action.payload;
+            return {
+                ...state,
+                statistics: {
+                    ...state.statistics,
+                    collecting: false,
+                    data,
+                },
+            };
+        }
+        case AnnotationActionTypes.COLLECT_STATISTICS_FAILED: {
+            return {
+                ...state,
+                statistics: {
+                    ...state.statistics,
+                    collecting: false,
+                    data: null,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_JOB_STATUS: {
+            return {
+                ...state,
+                job: {
+                    ...state.job,
+                    saving: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_JOB_STATUS_SUCCESS: {
+            return {
+                ...state,
+                job: {
+                    ...state.job,
+                    saving: false,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED: {
+            return {
+                ...state,
+                job: {
+                    ...state.job,
+                    saving: false,
                 },
             };
         }

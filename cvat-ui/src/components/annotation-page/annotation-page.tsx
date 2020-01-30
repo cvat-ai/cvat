@@ -8,6 +8,7 @@ import {
 } from 'antd';
 
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
+import StatisticsModalContainer from 'containers/annotation-page/top-bar/statistics-modal';
 import StandardWorkspaceComponent from './standard-workspace/standard-workspace';
 
 interface Props {
@@ -46,6 +47,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         <Layout className='cvat-annotation-page'>
             <AnnotationTopBarContainer />
             <StandardWorkspaceComponent />
+            <StatisticsModalContainer />
         </Layout>
     );
 }

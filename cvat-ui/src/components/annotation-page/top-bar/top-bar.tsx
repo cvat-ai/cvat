@@ -20,6 +20,7 @@ interface Props {
     frameNumber: number;
     startFrame: number;
     stopFrame: number;
+    showStatistics(): void;
     onSwitchPlay(): void;
     onSaveAnnotation(): void;
     onPrevFrame(): void;
@@ -49,6 +50,7 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
         frameNumber,
         startFrame,
         stopFrame,
+        showStatistics,
         onSwitchPlay,
         onSaveAnnotation,
         onPrevFrame,
@@ -90,7 +92,7 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
                         />
                     </Row>
                 </Col>
-                <RightGroup />
+                <RightGroup showStatistics={showStatistics} />
             </Row>
         </Layout.Header>
     );
