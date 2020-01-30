@@ -3313,6 +3313,10 @@ function buildShapeModel(data, type, clientID, color) {
     switch (type) {
     case 'interpolation_box':
     case 'annotation_box':
+    case 'interpolation_box_by_4_points':
+    case 'annotation_box_by_4_points':
+        // convert type into 'box' if 'box_by_4_points'
+        type = type.replace('_by_4_points', '');
         return new BoxModel(data, type, clientID, color);
     case 'interpolation_points':
     case 'annotation_points':
