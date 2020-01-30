@@ -562,10 +562,10 @@ class ShapeCreatorView {
 
         // Starting angle used to reference other angles
         var startAng;
-        points.forEach(point => {
+        points.forEach((point) => {
             var ang = Math.atan2(point.y - center.y, point.x - center.x);
             if (!startAng) {
-                startAng = ang
+                startAng = ang;
             } else {
                 if (ang < startAng) { // ensure that all points are clockwise of the start point
                     ang += Math.PI * 2;
@@ -584,7 +584,7 @@ class ShapeCreatorView {
         function rotate( array , times ){
             while( times-- ){
                 var temp = array.shift();
-                array.push( temp )
+                array.push( temp );
             }
         }
 
@@ -600,11 +600,11 @@ class ShapeCreatorView {
         // sorting the first plane
         unsortedPlanePoints.push({x:actualPoints[0].x + vector.x, y: actualPoints[0].y + vector.y});
         let sortedPlanePoints = this._sortClockwise(unsortedPlanePoints);
-        let left_index = 0;
+        let leftIndex = 0;
         for(let i = 0; i<4; i++){
-            left_index = sortedPlanePoints[i].x < sortedPlanePoints[left_index].x ? i : left_index;
+            leftIndex = sortedPlanePoints[`${i}`].x < sortedPlanePoints[`${leftIndex}`].x ? i : leftIndex;
         }
-        rotate(sortedPlanePoints,left_index);
+        rotate(sortedPlanePoints,leftIndex);
         plane1 = {
             p1:sortedPlanePoints[0],
             p2:sortedPlanePoints[1],
@@ -634,21 +634,21 @@ class ShapeCreatorView {
 
         // left
         else if(Math.abs(angle) > Math.PI/2+0.1){
-            return this._setupCuboidPoints(actualPoints)
+            return this._setupCuboidPoints(actualPoints);
         }
         // down
         else if(angle>0){
-            points = [plane1.p1,plane2.p1,plane1.p2,plane2.p2,plane1.p3,plane2.p3]
+            points = [plane1.p1,plane2.p1,plane1.p2,plane2.p2,plane1.p3,plane2.p3];
             points[0].y+=0.1;
             points[4].y+=0.1;
-            return [plane1.p1,plane2.p1,plane1.p2,plane2.p2,plane1.p3,plane2.p3]
+            return [plane1.p1,plane2.p1,plane1.p2,plane2.p2,plane1.p3,plane2.p3];
         }
         // up
         else{
-            points = [plane2.p1,plane1.p1,plane2.p2,plane1.p2,plane2.p3,plane1.p3]
+            points = [plane2.p1,plane1.p1,plane2.p2,plane1.p2,plane2.p3,plane1.p3];
             points[0].y+=0.1;
             points[4].y+=0.1;
-            return points
+            return points;
         }
     }
 
