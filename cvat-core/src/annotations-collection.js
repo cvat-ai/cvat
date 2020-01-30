@@ -529,6 +529,10 @@
             }
 
             for (const object of Object.values(this.objects)) {
+                if (object.removed) {
+                    continue;
+                }
+
                 let objectType = null;
                 if (object instanceof Shape) {
                     objectType = 'shape';
