@@ -143,8 +143,14 @@ class ObjectsSideBarContainer extends React.PureComponent<Props> {
     }
 
     private alignTabHeight = (): void => {
-        const { updateTabContentHeight } = this.props;
-        updateTabContentHeight();
+        const {
+            sidebarCollapsed,
+            updateTabContentHeight,
+        } = this.props;
+
+        if (!sidebarCollapsed) {
+            updateTabContentHeight();
+        }
     };
 
     private changeShapesColorBy = (event: RadioChangeEvent): void => {

@@ -17,7 +17,7 @@ interface Props {
     collecting: boolean;
     data: any;
     visible: boolean;
-    assignee: string | null;
+    assignee: string;
     startFrame: number;
     stopFrame: number;
     zOrder: boolean;
@@ -48,7 +48,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         cancelButtonProps: { style: { display: 'none' } },
         okButtonProps: { style: { width: 100 } },
         onOk: closeStatistics,
-        width: 900,
+        width: 1000,
         visible,
         closable: false,
     };
@@ -158,7 +158,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                 <Row type='flex' justify='start'>
                     <Col span={5}>
                         <Text strong className='cvat-text'>Assignee</Text>
-                        <Text className='cvat-text'>{assignee || 'Nobody'}</Text>
+                        <Text className='cvat-text'>{assignee}</Text>
                     </Col>
                     <Col span={5}>
                         <Text strong className='cvat-text'>Start frame</Text>
@@ -181,14 +181,20 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                     <Row type='flex' justify='start' className='cvat-job-info-bug-tracker'>
                         <Col>
                             <Text strong className='cvat-text'>Bug tracker</Text>
-                            <Text strong className='cvat-text'>{bugTracker}</Text>
+                            <a href={bugTracker}>{bugTracker}</a>
                         </Col>
                     </Row>
                 )}
-                <Row type='flex' justify='start' className='cvat-job-info-statistics'>
-                    <Col>
+                <Row type='flex' justify='space-around' className='cvat-job-info-statistics'>
+                    <Col span={24}>
                         <Text className='cvat-text'>Annotations statistics</Text>
-                        <Table bordered pagination={false} columns={columns} dataSource={rows} />
+                        <Table
+                            scroll={{ y: 400 }}
+                            bordered
+                            pagination={false}
+                            columns={columns}
+                            dataSource={rows}
+                        />
                     </Col>
                 </Row>
             </div>

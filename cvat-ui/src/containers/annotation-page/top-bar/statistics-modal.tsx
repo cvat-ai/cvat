@@ -93,7 +93,7 @@ class StatisticsModalContainer extends React.PureComponent<Props> {
                 zOrder={jobInstance.task.zOrder}
                 startFrame={jobInstance.startFrame}
                 stopFrame={jobInstance.stopFrame}
-                assignee={jobInstance.assignee}
+                assignee={jobInstance.assignee ? jobInstance.assignee.username : 'Nobody'}
                 savingJobStatus={savingJobStatus}
                 closeStatistics={closeStatistics}
                 changeJobStatus={this.changeJobStatus}

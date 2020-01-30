@@ -145,6 +145,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         this.activateOnCanvas();
     }
 
+    public componentWillUnmount(): void {
+        window.removeEventListener('resize', this.fitCanvas);
+    }
+
     private onShapeDrawn(event: any): void {
         const {
             jobInstance,
@@ -238,6 +242,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onSplitAnnotations(jobInstance, frame, state);
     }
 
+    private fitCanvas = (): void => {
+        const { canvasInstance } = this.props;
+        canvasInstance.fitCanvas();
+    };
+
     private activateOnCanvas(): void {
         const {
             activatedStateID,
@@ -317,7 +326,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         } = this.props;
 
         // Size
-        canvasInstance.fitCanvas();
+        window.addEventListener('resize', this.fitCanvas);
+        this.fitCanvas();
 
         // Grid
         const gridElement = window.document.getElementById('cvat_canvas_grid');
