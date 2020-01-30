@@ -197,7 +197,8 @@ class ShapeModel extends Listener {
         }
 
         if (visibleFrame != null) {
-            if (this._type === 'interpolation_box') {
+            if (this._type === 'interpolation_box'
+                || this._type === 'interpolation_points') {
                 counter += window.cvat.player.frames.stop - visibleFrame + 1;
             }
             else {

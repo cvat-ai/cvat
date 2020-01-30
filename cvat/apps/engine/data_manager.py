@@ -357,7 +357,8 @@ class TrackManager(ObjectManager):
             prev_shape = shape
 
         # TODO: Need to modify a client and a database (append "outside" shapes for polytracks)
-        if not prev_shape["outside"] and prev_shape["type"] == models.ShapeType.RECTANGLE:
+        if not prev_shape["outside"] and (prev_shape["type"] == models.ShapeType.RECTANGLE
+               or prev_shape["type"] == models.ShapeType.POINTS):
             shape = copy.copy(prev_shape)
             shape["frame"] = end_frame
             shapes.extend(interpolate(prev_shape, shape))
