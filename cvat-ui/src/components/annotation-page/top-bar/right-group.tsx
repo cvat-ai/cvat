@@ -4,6 +4,7 @@ import {
     Col,
     Icon,
     Select,
+    Button,
 } from 'antd';
 
 import {
@@ -14,14 +15,14 @@ import {
 function RightGroup(): JSX.Element {
     return (
         <Col className='cvat-annotation-header-right-group'>
-            <div className='cvat-annotation-header-button'>
+            <Button type='link' className='cvat-annotation-header-button'>
                 <Icon component={FullscreenIcon} />
-                <span>Fullscreen</span>
-            </div>
-            <div className='cvat-annotation-header-button'>
+                Fullscreen
+            </Button>
+            <Button type='link' className='cvat-annotation-header-button'>
                 <Icon component={InfoIcon} />
-                <span>Info</span>
-            </div>
+                Info
+            </Button>
             <div>
                 <Select className='cvat-workspace-selector' defaultValue='standard'>
                     <Select.Option key='standard' value='standard'>Standard</Select.Option>

@@ -4,6 +4,7 @@ import {
     Col,
     Icon,
     Modal,
+    Button,
     Timeline,
 } from 'antd';
 
@@ -29,20 +30,20 @@ function LeftGroup(props: Props): JSX.Element {
 
     return (
         <Col className='cvat-annotation-header-left-group'>
-            <div className='cvat-annotation-header-button'>
+            <Button type='link' className='cvat-annotation-header-button'>
                 <Icon component={MainMenuIcon} />
-                <span>Menu</span>
-            </div>
-            <div
+                Menu
+            </Button>
+            <Button
+                onClick={saving ? undefined : onSaveAnnotation}
+                type='link'
                 className={saving
                     ? 'cvat-annotation-disabled-header-button'
                     : 'cvat-annotation-header-button'
                 }
             >
-                <Icon component={SaveIcon} onClick={onSaveAnnotation} />
-                <span>
-                    { saving ? 'Saving...' : 'Save' }
-                </span>
+                <Icon component={SaveIcon} />
+                { saving ? 'Saving...' : 'Save' }
                 <Modal
                     title='Saving changes on the server'
                     visible={saving}
@@ -60,15 +61,15 @@ function LeftGroup(props: Props): JSX.Element {
                         }
                     </Timeline>
                 </Modal>
-            </div>
-            <div className='cvat-annotation-header-button'>
+            </Button>
+            <Button type='link' className='cvat-annotation-header-button'>
                 <Icon component={UndoIcon} />
-                <span>Undo</span>
-            </div>
-            <div className='cvat-annotation-header-button'>
+                Undo
+            </Button>
+            <Button type='link' className='cvat-annotation-header-button'>
                 <Icon component={RedoIcon} />
-                <span>Redo</span>
-            </div>
+                Redo
+            </Button>
         </Col>
     );
 }
