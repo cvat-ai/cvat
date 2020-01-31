@@ -408,7 +408,9 @@ class PlayerModel extends Listener {
     }
 
     scale(point, value) {
-        if (!this._image) return;
+        if (!this._image) {
+            return;
+        }
 
         const oldScale = this._geometry.scale;
         const newScale = value > 0

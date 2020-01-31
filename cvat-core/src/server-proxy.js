@@ -316,15 +316,13 @@
                 }
 
                 const taskData = new FormData();
-                for (const key in taskDataSpec) {
-                    if (Object.prototype.hasOwnProperty.call(taskDataSpec, key)) {
-                        if (Array.isArray(taskDataSpec[key])) {
-                            for (let i = 0; i < taskDataSpec[key].length; i++) {
-                                taskData.append(`${key}[${i}]`, taskDataSpec[key][i]);
-                            }
-                        } else {
-                            taskData.set(key, taskDataSpec[key]);
-                        }
+                for (const [key, value] of Object.entries(taskDataSpec)) {
+                    if (Array.isArray(value)) {
+                        value.forEach((element, idx) => {
+                            taskData.append(`${key}[${idx}]`, element);
+                        });
+                    } else {
+                        taskData.set(key, value);
                     }
                 }
 

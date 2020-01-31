@@ -126,7 +126,7 @@
                         }
                     }
                     if (callbackArray.length === 0) {
-                        frameDataCache[this.tid].activeChunkRequest = undefined;
+                        frameDataCache[this.tid].activeChunkRequest = null;
                     }
                 }
             };
@@ -137,7 +137,7 @@
                     for (const r of frameDataCache[this.tid].activeChunkRequest.callbacks) {
                         r.reject(r.frameNumber);
                     }
-                    frameDataCache[this.tid].activeChunkRequest = undefined;
+                    frameDataCache[this.tid].activeChunkRequest = null;
                 }
             };
 
@@ -168,7 +168,7 @@
                             }
                         }
                         taskDataCache.activeChunkRequest = taskDataCache.nextChunkRequest;
-                        taskDataCache.nextChunkRequest = undefined;
+                        taskDataCache.nextChunkRequest = null;
                         makeActiveRequest();
                     }
                 });
@@ -191,7 +191,7 @@
                                     activeRequest.rejectRequestAll();
                                 }
                                 frameDataCache[this.tid].activeChunkRequest = {
-                                    request: undefined,
+                                    request: null,
                                     chunkNumber,
                                     start,
                                     stop,
@@ -220,7 +220,7 @@
                                     }
                                 }
                                 frameDataCache[this.tid].nextChunkRequest = {
-                                    request: undefined,
+                                    request: null,
                                     chunkNumber,
                                     start,
                                     stop,
@@ -256,12 +256,12 @@
                                 if (!provider.isChunkCached(nextStart, nextStop)) {
                                     if (!frameDataCache[this.tid].activeChunkRequest) {
                                         frameDataCache[this.tid].activeChunkRequest = {
-                                            request: undefined,
+                                            request: null,
                                             chunkNumber: nextChunkNumber,
                                             start: nextStart,
                                             stop: nextStop,
-                                            onDecodeAll: undefined,
-                                            rejectRequestAll: undefined,
+                                            onDecodeAll: null,
+                                            rejectRequestAll: null,
                                             completed: false,
                                             callbacks: [],
                                         };
@@ -269,7 +269,7 @@
                                     }
                                 } else {
                                     provider.requestDecodeBlock(null, nextStart, nextStop,
-                                        undefined, undefined);
+                                        null, null);
                                 }
                             }
                         }
@@ -320,11 +320,10 @@
 
         getFreeBufferSize() {
             let requestedFrameCount = 0;
-            for (const chunkIdx in this._requestedChunks) {
-                if (Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)) {
-                    requestedFrameCount += this._requestedChunks[chunkIdx].requestedFrames.size;
-                }
+            for (const chunk of Object.values(this._requestedChunks)) {
+                requestedFrameCount += chunk.requestedFrames.size;
             }
+
             return this._size - Object.keys(this._buffer).length - requestedFrameCount;
         }
 
@@ -546,8 +545,8 @@
                     taskID,
                 ),
                 decodedBlocksCacheSize,
-                activeChunkRequest: undefined,
-                nextChunkRequest: undefined,
+                activeChunkRequest: null,
+                nextChunkRequest: null,
             };
             const size = getFrameSize(taskID, frame);
             // actual only for video chunks

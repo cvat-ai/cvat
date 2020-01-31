@@ -3,9 +3,6 @@
 * SPDX-License-Identifier: MIT
 */
 
-/* global
-    require:true
-*/
 const { Mutex } = require('async-mutex');
 // eslint-disable-next-line max-classes-per-file
 const { MP4Reader, Bytestream } = require('./3rdparty/mp4');
@@ -21,7 +18,7 @@ class FrameProvider {
         this._frames = {};
         this._cachedBlockCount = Math.max(1, cachedBlockCount); // number of stored blocks
         this._decodedBlocksCacheSize = decodedBlocksCacheSize;
-        this._blocks_ranges = [];
+        this._blocksRanges = [];
         this._blocks = {};
         this._blockSize = blockSize;
         this._running = false;
@@ -39,7 +36,7 @@ class FrameProvider {
     }
 
     async _worker() {
-        if (this._requestedBlockDecode != null
+        if (this._requestedBlockDecode !== null
             && this._decodeThreadCount < this._maxWorkerThreadCount) {
             await this.startDecode();
         }
@@ -47,13 +44,13 @@ class FrameProvider {
     }
 
     isChunkCached(start, end) {
-        return (`${start}:${end}` in this._blocks_ranges);
+        return (`${start}:${end}` in this._blocksRanges);
     }
 
     /* This method removes extra data from a cache when memory overflow */
     async _cleanup() {
-        if (this._blocks_ranges.length > this._cachedBlockCount) {
-            const shifted = this._blocks_ranges.shift(); // get the oldest block
+        if (this._blocksRanges.length > this._cachedBlockCount) {
+            const shifted = this._blocksRanges.shift(); // get the oldest block
             const [start, end] = shifted.split(':').map((el) => +el);
             delete this._blocks[start / this._blockSize];
             for (let i = start; i <= end; i++) {
@@ -63,8 +60,8 @@ class FrameProvider {
 
         // delete frames whose are not in areas of current frame
         const distance = Math.floor(this._decodedBlocksCacheSize / 2);
-        for (let i = 0; i < this._blocks_ranges.length; i++) {
-            const [start, end] = this._blocks_ranges[i].split(':').map((el) => +el);
+        for (let i = 0; i < this._blocksRanges.length; i++) {
+            const [start, end] = this._blocksRanges[i].split(':').map((el) => +el);
             if (end < this._currFrame - distance * this._blockSize
                 || start > this._currFrame + distance * this._blockSize) {
                 for (let j = start; j <= end; j++) {
@@ -104,7 +101,7 @@ class FrameProvider {
     }
 
     isRequestExist() {
-        return this._requestedBlockDecode != null;
+        return this._requestedBlockDecode !== null;
     }
 
     setRenderSize(width, height) {
@@ -191,7 +188,7 @@ class FrameProvider {
             const width = this._width;
             const { start, end, block } = this._requestedBlockDecode;
 
-            this._blocks_ranges.push(`${start}:${end}`);
+            this._blocksRanges.push(`${start}:${end}`);
             this._decodingBlocks[`${start}:${end}`] = this._requestedBlockDecode;
             this._requestedBlockDecode = null;
             this._blocks[Math.floor((start + 1) / this._blockSize)] = block;
@@ -333,7 +330,7 @@ class FrameProvider {
         Is an array of strings like "start:end"
     */
     get cachedFrames() {
-        return [...this._blocks_ranges].sort(
+        return [...this._blocksRanges].sort(
             (a, b) => a.split(':')[0] - b.split(':')[0],
         );
     }
