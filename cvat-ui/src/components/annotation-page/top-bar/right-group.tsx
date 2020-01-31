@@ -21,7 +21,19 @@ function RightGroup(props: Props): JSX.Element {
 
     return (
         <Col className='cvat-annotation-header-right-group'>
-            <Button disabled type='link' className='cvat-annotation-header-button'>
+            <Button
+                type='link'
+                className='cvat-annotation-header-button'
+                onClick={(): void => {
+                    if (window.document.fullscreenEnabled) {
+                        if (window.document.fullscreenElement) {
+                            window.document.exitFullscreen();
+                        } else {
+                            window.document.documentElement.requestFullscreen();
+                        }
+                    }
+                }}
+            >
                 <Icon component={FullscreenIcon} />
                 Fullscreen
             </Button>
