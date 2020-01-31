@@ -103,22 +103,6 @@
     });
 
     /**
-        * Object visibility states
-        * @enum {string}
-        * @name ObjectShape
-        * @memberof module:API.cvat.enums
-        * @property {string} ALL 'all'
-        * @property {string} SHAPE 'shape'
-        * @property {string} NONE 'none'
-        * @readonly
-    */
-    const VisibleState = Object.freeze({
-        ALL: 'all',
-        SHAPE: 'shape',
-        NONE: 'none',
-    });
-
-    /**
         * Event types
         * @enum {number}
         * @name LogType
@@ -182,6 +166,21 @@
         rotateImage: 26,
     };
 
+    /**
+        * Array of hex color
+        * @type {module:API.cvat.classes.Loader[]} values
+        * @name colors
+        * @memberof module:API.cvat.enums
+        * @type {string[]}
+        * @readonly
+    */
+    const colors = [
+        '#FF355E', '#E936A7', '#FD5B78', '#FF007C', '#FF00CC', '#66FF66',
+        '#50BFE6', '#CCFF00', '#FFFF66', '#FF9966', '#FF6037', '#FFCC33',
+        '#AAF0D1', '#FF3855', '#FFF700', '#A7F432', '#FF5470', '#FAFA37',
+        '#FF7A00', '#FF9933', '#AFE313', '#00CC99', '#FF5050', '#733380',
+    ];
+
     module.exports = {
         ShareFileType,
         TaskStatus,
@@ -189,7 +188,7 @@
         AttributeType,
         ObjectType,
         ObjectShape,
-        VisibleState,
         LogType,
+        colors,
     };
 })();

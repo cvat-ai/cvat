@@ -16,27 +16,28 @@ interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
 
-    onSplitStart(): void;
+    splitTrack(enabled: boolean): void;
 }
 
-export default function SplitControl(props: Props): JSX.Element {
+const SplitControl = React.memo((props: Props): JSX.Element => {
     const {
         activeControl,
         canvasInstance,
-        onSplitStart,
+        splitTrack,
     } = props;
 
     const dynamicIconProps = activeControl === ActiveControl.SPLIT
         ? {
-            className: 'cvat-annotation-page-active-control',
+            className: 'cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.split({ enabled: false });
+                splitTrack(false);
             },
         } : {
             onClick: (): void => {
                 canvasInstance.cancel();
                 canvasInstance.split({ enabled: true });
-                onSplitStart();
+                splitTrack(true);
             },
         };
 
@@ -45,4 +46,6 @@ export default function SplitControl(props: Props): JSX.Element {
             <Icon {...dynamicIconProps} component={SplitIcon} />
         </Tooltip>
     );
-}
+});
+
+export default SplitControl;

@@ -1,66 +1,86 @@
+import './styles.scss';
 import React from 'react';
 
 import {
     Icon,
+    Tabs,
     Layout,
+    Collapse,
 } from 'antd';
 
+import Text from 'antd/lib/typography/Text';
+
+import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
+import LabelsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/labels-list';
+
 interface Props {
-    onSidebarFoldUnfold(): void;
+    sidebarCollapsed: boolean;
+    appearanceCollapsed: boolean;
+    collapseSidebar(): void;
+    collapseAppearance(): void;
 }
 
-interface State {
-    collapsed: boolean;
-}
+const ObjectsSideBar = React.memo((props: Props): JSX.Element => {
+    const {
+        sidebarCollapsed,
+        appearanceCollapsed,
+        collapseSidebar,
+        collapseAppearance,
+    } = props;
 
-export default class StandardWorkspaceComponent extends React.PureComponent<Props, State> {
-    public constructor(props: any) {
-        super(props);
-        this.state = {
-            collapsed: true,
-        };
-    }
-
-    public render(): JSX.Element {
-        const { collapsed } = this.state;
-        const { onSidebarFoldUnfold } = this.props;
-
-        return (
-            <Layout.Sider
-                className='cvat-annotation-page-objects-sidebar'
-                theme='light'
-                width={300}
-                collapsedWidth={0}
-                reverseArrow
-                collapsible
-                trigger={null}
-                collapsed={collapsed}
+    return (
+        <Layout.Sider
+            className='cvat-objects-sidebar'
+            theme='light'
+            width={300}
+            collapsedWidth={0}
+            reverseArrow
+            collapsible
+            trigger={null}
+            collapsed={sidebarCollapsed}
+        >
+            {/* eslint-disable-next-line */}
+            <span
+                className={`cvat-objects-sidebar-sider
+                    ant-layout-sider-zero-width-trigger
+                    ant-layout-sider-zero-width-trigger-left`}
+                onClick={collapseSidebar}
             >
-                {/* eslint-disable-next-line */}
-                <span
-                    className={`cvat-annotation-page-objects-sidebar
-                        ant-layout-sider-zero-width-trigger
-                        ant-layout-sider-zero-width-trigger-left`}
-                    onClick={(): void => {
-                        this.setState(
-                            (prevState: State): State => ({
-                                collapsed: !prevState.collapsed,
-                            }),
-                        );
+                {sidebarCollapsed ? <Icon type='menu-fold' title='Show' />
+                    : <Icon type='menu-unfold' title='Hide' />}
+            </span>
 
-                        const [sidebar] = window.document
-                            .getElementsByClassName('cvat-annotation-page-objects-sidebar');
-                        sidebar.addEventListener('transitionend', () => {
-                            onSidebarFoldUnfold();
-                        }, { once: true });
-                    }}
+            <Tabs type='card' defaultActiveKey='objects' className='cvat-objects-sidebar-tabs'>
+                <Tabs.TabPane
+                    tab={<Text strong>Objects</Text>}
+                    key='objects'
                 >
-                    {collapsed ? <Icon type='menu-fold' title='Show' />
-                        : <Icon type='menu-unfold' title='Hide' />}
-                </span>
+                    <ObjectsListContainer />
+                </Tabs.TabPane>
+                <Tabs.TabPane
+                    tab={<Text strong>Labels</Text>}
+                    key='labels'
+                >
+                    <LabelsListContainer />
+                </Tabs.TabPane>
+            </Tabs>
 
-                Right sidebar
-            </Layout.Sider>
-        );
-    }
-}
+            <Collapse
+                onChange={collapseAppearance}
+                activeKey={appearanceCollapsed ? [] : ['appearance']}
+                className='cvat-objects-appearance-collapse'
+            >
+                <Collapse.Panel
+                    header={
+                        <Text strong>Appearance</Text>
+                    }
+                    key='appearance'
+                >
+
+                </Collapse.Panel>
+            </Collapse>
+        </Layout.Sider>
+    );
+});
+
+export default ObjectsSideBar;

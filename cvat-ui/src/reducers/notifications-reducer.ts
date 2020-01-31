@@ -6,7 +6,7 @@ import { ModelsActionTypes } from 'actions/models-actions';
 import { ShareActionTypes } from 'actions/share-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { UsersActionTypes } from 'actions/users-actions';
-import { AboutActionTypes } from '../actions/about-actions';
+import { AboutActionTypes } from 'actions/about-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
 
@@ -53,6 +53,12 @@ const defaultState: NotificationsState = {
             saving: null,
             jobFetching: null,
             frameFetching: null,
+            changingLabelColor: null,
+            updating: null,
+            creating: null,
+            merging: null,
+            grouping: null,
+            splitting: null,
         },
     },
     messages: {
@@ -294,7 +300,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     about: {
                         ...state.errors.about,
                         fetching: {
-                            message: 'Could not get data from the server',
+                            message: 'Could not get info about the server',
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -453,7 +459,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     annotation: {
                         ...state.errors.annotation,
                         frameFetching: {
-                            message: `Could not receive frame ${action.payload.frame}`,
+                            message: `Could not receive frame ${action.payload.number}`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -469,6 +475,96 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         saving: {
                             message: 'Could not save annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_LABEL_COLOR_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        changingLabelColor: {
+                            message: 'Could not change label color',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        updating: {
+                            message: 'Could not update annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        creating: {
+                            message: 'Could not create annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.MERGE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        merging: {
+                            message: 'Could not merge annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GROUP_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        grouping: {
+                            message: 'Could not group annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SPLIT_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        splitting: {
+                            message: 'Could not split a track',
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -497,9 +593,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         default: {
-            return {
-                ...state,
-            };
+            return state;
         }
     }
 }

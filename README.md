@@ -16,6 +16,7 @@ CVAT is free, online, interactive video and image annotation tool for computer v
 - [Installation guide](cvat/apps/documentation/installation.md)
 - [User's guide](cvat/apps/documentation/user_guide.md)
 - [Django REST API documentation](#rest-api)
+- [Datumaro dataset framework](datumaro/README.md)
 - [Command line interface](utils/cli/)
 - [XML annotation format](cvat/apps/documentation/xml_format.md)
 - [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
@@ -34,6 +35,8 @@ CVAT is free, online, interactive video and image annotation tool for computer v
 ## Supported annotation formats
 
 Format selection is possible after clicking on the Upload annotation / Dump annotation button.
+[Datumaro](datumaro/README.md) dataset framework allows additional dataset transformations
+via its command line tool.
 
 | Annotation format                                                                  | Dumper | Loader |
 | ---------------------------------------------------------------------------------- | ------ | ------ |

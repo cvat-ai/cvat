@@ -22,7 +22,7 @@ interface Props {
     activeControl: ActiveControl;
 }
 
-export default function CursorControl(props: Props): JSX.Element {
+const CursorControl = React.memo((props: Props): JSX.Element => {
     const {
         canvasInstance,
         activeControl,
@@ -33,14 +33,16 @@ export default function CursorControl(props: Props): JSX.Element {
             <Icon
                 component={CursorIcon}
                 className={activeControl === ActiveControl.CURSOR
-                    ? 'cvat-annotation-page-active-control' : ''
+                    ? 'cvat-active-canvas-control' : ''
                 }
-                onClick={(): void => {
-                    if (activeControl !== ActiveControl.CURSOR) {
-                        canvasInstance.cancel();
-                    }
-                }}
+                onClick={
+                    activeControl !== ActiveControl.CURSOR
+                        ? (): void => canvasInstance.cancel()
+                        : undefined
+                }
             />
         </Tooltip>
     );
-}
+});
+
+export default CursorControl;

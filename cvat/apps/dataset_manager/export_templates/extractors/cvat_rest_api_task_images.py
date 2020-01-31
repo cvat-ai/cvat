@@ -1,3 +1,8 @@
+
+# Copyright (C) 2019-2020 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from collections import OrderedDict
 import getpass
 import json
@@ -27,7 +32,7 @@ class cvat_rest_api_task_images(datumaro.Extractor):
     def _image_local_path(self, item_id):
         task_id = self._config.task_id
         return osp.join(self._cache_dir,
-            'task_{}_frame_{:06d}.jpg'.format(task_id, item_id))
+            'task_{}_frame_{:06d}.jpg'.format(task_id, int(item_id)))
 
     def _make_image_loader(self, item_id):
         return lazy_image(item_id,

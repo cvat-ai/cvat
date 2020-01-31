@@ -353,6 +353,7 @@ class DatasetFilterTest(TestCase):
                 BboxObject(1, 2, 3, 4, label=4, id=4, attributes={ 'a': 1.0 }),
                 BboxObject(5, 6, 7, 8, id=5, group=5),
                 PointsObject([1, 2, 2, 0, 1, 1], label=0, id=5),
+                MaskObject(id=5, image=np.ones((3, 2))),
                 MaskObject(label=3, id=5, image=np.ones((2, 3))),
                 PolyLineObject([1, 2, 3, 4, 5, 6, 7, 8], id=11),
                 PolygonObject([1, 2, 3, 4, 5, 6, 7, 8]),

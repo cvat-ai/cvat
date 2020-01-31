@@ -152,6 +152,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         angle: number;
         canvasSize: Size;
         image: string;
+        imageID: number | null;
         imageOffset: number;
         imageSize: Size;
         focusData: FocusData;
@@ -183,6 +184,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 width: 0,
             },
             image: '',
+            imageID: null,
             imageOffset: 0,
             imageSize: {
                 height: 0,
@@ -300,9 +302,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 width: (frameData.width as number),
             };
 
-            if (!this.data.rememberAngle) {
+            if (this.data.imageID !== frameData.number && !this.data.rememberAngle) {
                 this.data.angle = 0;
             }
+            this.data.imageID = frameData.number;
 
             this.data.image = data;
             this.notify(UpdateReasons.IMAGE_CHANGED);

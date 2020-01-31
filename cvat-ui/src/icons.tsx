@@ -21,45 +21,115 @@ import SVGMainMenuIcon from './assets/main-menu-icon.svg';
 import SVGSaveIcon from './assets/save-icon.svg';
 import SVGUndoIcon from './assets/undo-icon.svg';
 import SVGRedoIcon from './assets/redo-icon.svg';
-import SVGPlaycontrolFirstIcon from './assets/playcontrol-first-icon.svg';
-import SVGPlaycontrolBackJumpIcon from './assets/playcontrol-back-jump-icon.svg';
-import SVGPlaycontrolPreviousIcon from './assets/playcontrol-previous-icon.svg';
-import SVGPlaycontrolPlayIcon from './assets/playcontrol-play-icon.svg';
-import SVGPlaycontrolPauseIcon from './assets/playcontrol-pause-icon.svg';
-import SVGPlaycontrolNextIcon from './assets/playcontrol-next-icon.svg';
-import SVGPlaycontrolForwardJumpIcon from './assets/playcontrol-forward-jump-icon.svg';
-import SVGPlaycontrolLastIcon from './assets/playcontrol-last-icon.svg';
+import SVGFirstIcon from './assets/first-icon.svg';
+import SVGBackJumpIcon from './assets/back-jump-icon.svg';
+import SVGPreviousIcon from './assets/previous-icon.svg';
+import SVGPlayIcon from './assets/play-icon.svg';
+import SVGPauseIcon from './assets/pause-icon.svg';
+import SVGNextIcon from './assets/next-icon.svg';
+import SVGForwardJumpIcon from './assets/forward-jump-icon.svg';
+import SVGLastIcon from './assets/last-icon.svg';
 import SVGInfoIcon from './assets/info-icon.svg';
 import SVGFullscreenIcon from './assets/fullscreen-icon.svg';
+import SVGObjectOutsideIcon from './assets/object-outside-icon.svg';
+import SVGObjectInsideIcon from './assets/object-inside-icon.svg';
 
-export const CVATLogo = (): JSX.Element => <SVGCVATLogo />;
-export const AccountIcon = (): JSX.Element => <SVGAccountIcon />;
-export const EmptyTasksIcon = (): JSX.Element => <SVGEmptyTasksIcon />;
-export const MenuIcon = (): JSX.Element => <SVGMenuIcon />;
-export const CursorIcon = (): JSX.Element => <SVGCursorIcon />;
-export const MoveIcon = (): JSX.Element => <SVGMoveIcon />;
-export const RotateIcon = (): JSX.Element => <SVGRotateIcon />;
-export const FitIcon = (): JSX.Element => <SVGFitIcon />;
-export const ZoomIcon = (): JSX.Element => <SVGZoomIcon />;
-export const RectangleIcon = (): JSX.Element => <SVGRectangleIcon />;
-export const PolygonIcon = (): JSX.Element => <SVGPolygonIcon />;
-export const PointIcon = (): JSX.Element => <SVGPointIcon />;
-export const PolylineIcon = (): JSX.Element => <SVGPolylineIcon />;
-export const TagIcon = (): JSX.Element => <SVGTagIcon />;
-export const MergeIcon = (): JSX.Element => <SVGMergeIcon />;
-export const GroupIcon = (): JSX.Element => <SVGGroupIcon />;
-export const SplitIcon = (): JSX.Element => <SVGSplitIcon />;
-export const MainMenuIcon = (): JSX.Element => <SVGMainMenuIcon />;
-export const SaveIcon = (): JSX.Element => <SVGSaveIcon />;
-export const UndoIcon = (): JSX.Element => <SVGUndoIcon />;
-export const RedoIcon = (): JSX.Element => <SVGRedoIcon />;
-export const PlaycontrolFirstIcon = (): JSX.Element => <SVGPlaycontrolFirstIcon />;
-export const PlaycontrolBackJumpIcon = (): JSX.Element => <SVGPlaycontrolBackJumpIcon />;
-export const PlaycontrolPreviousIcon = (): JSX.Element => <SVGPlaycontrolPreviousIcon />;
-export const PlaycontrolPauseIcon = (): JSX.Element => <SVGPlaycontrolPauseIcon />;
-export const PlaycontrolPlayIcon = (): JSX.Element => <SVGPlaycontrolPlayIcon />;
-export const PlaycontrolNextIcon = (): JSX.Element => <SVGPlaycontrolNextIcon />;
-export const PlaycontrolForwardJumpIcon = (): JSX.Element => <SVGPlaycontrolForwardJumpIcon />;
-export const PlaycontrolLastIcon = (): JSX.Element => <SVGPlaycontrolLastIcon />;
-export const InfoIcon = (): JSX.Element => <SVGInfoIcon />;
-export const FullscreenIcon = (): JSX.Element => <SVGFullscreenIcon />;
+export const CVATLogo = React.memo(
+    (): JSX.Element => <SVGCVATLogo />,
+);
+export const AccountIcon = React.memo(
+    (): JSX.Element => <SVGAccountIcon />,
+);
+export const EmptyTasksIcon = React.memo(
+    (): JSX.Element => <SVGEmptyTasksIcon />,
+);
+export const MenuIcon = React.memo(
+    (): JSX.Element => <SVGMenuIcon />,
+);
+export const CursorIcon = React.memo(
+    (): JSX.Element => <SVGCursorIcon />,
+);
+export const MoveIcon = React.memo(
+    (): JSX.Element => <SVGMoveIcon />,
+);
+export const RotateIcon = React.memo(
+    (): JSX.Element => <SVGRotateIcon />,
+);
+export const FitIcon = React.memo(
+    (): JSX.Element => <SVGFitIcon />,
+);
+export const ZoomIcon = React.memo(
+    (): JSX.Element => <SVGZoomIcon />,
+);
+export const RectangleIcon = React.memo(
+    (): JSX.Element => <SVGRectangleIcon />,
+);
+export const PolygonIcon = React.memo(
+    (): JSX.Element => <SVGPolygonIcon />,
+);
+export const PointIcon = React.memo(
+    (): JSX.Element => <SVGPointIcon />,
+);
+export const PolylineIcon = React.memo(
+    (): JSX.Element => <SVGPolylineIcon />,
+);
+export const TagIcon = React.memo(
+    (): JSX.Element => <SVGTagIcon />,
+);
+export const MergeIcon = React.memo(
+    (): JSX.Element => <SVGMergeIcon />,
+);
+export const GroupIcon = React.memo(
+    (): JSX.Element => <SVGGroupIcon />,
+);
+export const SplitIcon = React.memo(
+    (): JSX.Element => <SVGSplitIcon />,
+);
+export const MainMenuIcon = React.memo(
+    (): JSX.Element => <SVGMainMenuIcon />,
+);
+export const SaveIcon = React.memo(
+    (): JSX.Element => <SVGSaveIcon />,
+);
+export const UndoIcon = React.memo(
+    (): JSX.Element => <SVGUndoIcon />,
+);
+export const RedoIcon = React.memo(
+    (): JSX.Element => <SVGRedoIcon />,
+);
+export const FirstIcon = React.memo(
+    (): JSX.Element => <SVGFirstIcon />,
+);
+export const BackJumpIcon = React.memo(
+    (): JSX.Element => <SVGBackJumpIcon />,
+);
+export const PreviousIcon = React.memo(
+    (): JSX.Element => <SVGPreviousIcon />,
+);
+export const PauseIcon = React.memo(
+    (): JSX.Element => <SVGPauseIcon />,
+);
+export const PlayIcon = React.memo(
+    (): JSX.Element => <SVGPlayIcon />,
+);
+export const NextIcon = React.memo(
+    (): JSX.Element => <SVGNextIcon />,
+);
+export const ForwardJumpIcon = React.memo(
+    (): JSX.Element => <SVGForwardJumpIcon />,
+);
+export const LastIcon = React.memo(
+    (): JSX.Element => <SVGLastIcon />,
+);
+export const InfoIcon = React.memo(
+    (): JSX.Element => <SVGInfoIcon />,
+);
+export const FullscreenIcon = React.memo(
+    (): JSX.Element => <SVGFullscreenIcon />,
+);
+export const ObjectOutsideIcon = React.memo(
+    (): JSX.Element => <SVGObjectOutsideIcon />,
+);
+export const ObjectInsideIcon = React.memo(
+    (): JSX.Element => <SVGObjectInsideIcon />,
+);

@@ -62,7 +62,7 @@ setuptools.setup(
     ],
     entry_points={
         'console_scripts': [
-            'datum=datumaro:main',
+            'datum=datumaro.cli.__main__:main',
         ],
     },
 )

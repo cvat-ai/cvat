@@ -36,33 +36,55 @@ interface Props {
     rotateAll: boolean;
     activeControl: ActiveControl;
 
-    onMergeStart(): void;
-    onGroupStart(): void;
-    onSplitStart(): void;
+    mergeObjects(enabled: boolean): void;
+    groupObjects(enabled: boolean): void;
+    splitTrack(enabled: boolean): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
+    const {
+        canvasInstance,
+        activeControl,
+        rotateAll,
+
+        mergeObjects,
+        groupObjects,
+        splitTrack,
+    } = props;
+
     return (
         <Layout.Sider
-            className='cvat-annotation-page-controls-sidebar'
+            className='cvat-canvas-controls-sidebar'
             theme='light'
             width={44}
         >
-            <CursorControl {...props} />
-            <MoveControl {...props} />
-            <RotateControl {...props} />
+            <CursorControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <RotateControl canvasInstance={canvasInstance} rotateAll={rotateAll} />
 
             <hr />
 
-            <FitControl {...props} />
-            <ResizeControl {...props} />
+            <FitControl canvasInstance={canvasInstance} />
+            <ResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
             <hr />
 
-            <DrawRectangleControl {...props} />
-            <DrawPolygonControl {...props} />
-            <DrawPolylineControl {...props} />
-            <DrawPointsControl {...props} />
+            <DrawRectangleControl
+                canvasInstance={canvasInstance}
+                isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}
+            />
+            <DrawPolygonControl
+                canvasInstance={canvasInstance}
+                isDrawing={activeControl === ActiveControl.DRAW_POLYGON}
+            />
+            <DrawPolylineControl
+                canvasInstance={canvasInstance}
+                isDrawing={activeControl === ActiveControl.DRAW_POLYLINE}
+            />
+            <DrawPointsControl
+                canvasInstance={canvasInstance}
+                isDrawing={activeControl === ActiveControl.DRAW_POINTS}
+            />
 
             <Tooltip overlay='Setup a tag' placement='right'>
                 <Icon component={TagIcon} />
@@ -70,9 +92,21 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
             <hr />
 
-            <MergeControl {...props} />
-            <GroupControl {...props} />
-            <SplitControl {...props} />
+            <MergeControl
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                mergeObjects={mergeObjects}
+            />
+            <GroupControl
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                groupObjects={groupObjects}
+            />
+            <SplitControl
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                splitTrack={splitTrack}
+            />
         </Layout.Sider>
     );
 }

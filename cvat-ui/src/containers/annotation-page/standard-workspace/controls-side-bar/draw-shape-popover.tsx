@@ -5,7 +5,6 @@ import {
     CombinedState,
     ShapeType,
     ObjectType,
-    StringObject,
 } from 'reducers/interfaces';
 
 import {
@@ -30,7 +29,7 @@ interface DispatchToProps {
 interface StateToProps {
     canvasInstance: Canvas;
     shapeType: ShapeType;
-    labels: StringObject;
+    labels: any[];
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -48,18 +47,15 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
-        annotation,
+        annotation: {
+            canvas: {
+                instance: canvasInstance,
+            },
+            job: {
+                labels,
+            },
+        },
     } = state;
-
-    const {
-        canvasInstance,
-    } = annotation;
-
-    const labels = annotation.jobInstance.task.labels
-        .reduce((acc: StringObject, label: any): StringObject => {
-            acc[label.id as number] = label.name;
-            return acc;
-        }, {});
 
     return {
         ...own,
@@ -68,10 +64,110 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     };
 }
 
-function DrawShapePopoverContainer(props: DispatchToProps & StateToProps): JSX.Element {
-    return (
-        <DrawShapePopoverComponent {...props} />
-    );
+type Props = StateToProps & DispatchToProps;
+
+interface State {
+    numberOfPoints?: number;
+    selectedLabelID: number;
+}
+
+class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
+    private minimumPoints = 3;
+    constructor(props: Props) {
+        super(props);
+
+        const defaultLabelID = props.labels[0].id;
+        this.state = {
+            selectedLabelID: defaultLabelID,
+        };
+
+        const { shapeType } = props;
+        if (shapeType === ShapeType.POLYGON) {
+            this.minimumPoints = 3;
+        }
+        if (shapeType === ShapeType.POLYLINE) {
+            this.minimumPoints = 2;
+        }
+        if (shapeType === ShapeType.POINTS) {
+            this.minimumPoints = 1;
+        }
+    }
+
+    private onDraw(objectType: ObjectType): void {
+        const {
+            canvasInstance,
+            shapeType,
+            onDrawStart,
+        } = this.props;
+
+        const {
+            numberOfPoints,
+            selectedLabelID,
+        } = this.state;
+
+        canvasInstance.cancel();
+        canvasInstance.draw({
+            enabled: true,
+            numberOfPoints,
+            shapeType,
+            crosshair: shapeType === ShapeType.RECTANGLE,
+        });
+
+        onDrawStart(shapeType, selectedLabelID,
+            objectType, numberOfPoints);
+    }
+
+    private onDrawShape = (): void => {
+        this.onDraw(ObjectType.SHAPE);
+    };
+
+    private onDrawTrack = (): void => {
+        this.onDraw(ObjectType.TRACK);
+    };
+
+    private onChangePoints = (value: number | undefined): void => {
+        if (typeof (value) === 'undefined') {
+            this.setState({
+                numberOfPoints: value,
+            });
+        } else if (typeof (value) === 'number') {
+            this.setState({
+                numberOfPoints: Math.max(value, this.minimumPoints),
+            });
+        }
+    };
+
+    private onChangeLabel = (value: string): void => {
+        this.setState({
+            selectedLabelID: +value,
+        });
+    };
+
+    public render(): JSX.Element {
+        const {
+            selectedLabelID,
+            numberOfPoints,
+        } = this.state;
+
+        const {
+            labels,
+            shapeType,
+        } = this.props;
+
+        return (
+            <DrawShapePopoverComponent
+                labels={labels}
+                shapeType={shapeType}
+                minimumPoints={this.minimumPoints}
+                selectedLabeID={selectedLabelID}
+                numberOfPoints={numberOfPoints}
+                onChangeLabel={this.onChangeLabel}
+                onChangePoints={this.onChangePoints}
+                onDrawTrack={this.onDrawTrack}
+                onDrawShape={this.onDrawShape}
+            />
+        );
+    }
 }
 
 export default connect(

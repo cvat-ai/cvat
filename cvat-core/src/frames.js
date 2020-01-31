@@ -52,6 +52,13 @@
                     value: tid,
                     writable: false,
                 },
+                /**
+                    * @name number
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.FrameData
+                    * @readonly
+                    * @instance
+                */
                 number: {
                     value: number,
                     writable: false,

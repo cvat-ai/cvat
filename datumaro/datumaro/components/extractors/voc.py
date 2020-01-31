@@ -230,6 +230,8 @@ class VocExtractor(Extractor):
 
                     if self._task is not VocTask.person_layout:
                         break
+                    if bbox is None:
+                        continue
                     item_annotations.append(BboxObject(
                         *bbox, label=part_label_id,
                         group=obj_id))
@@ -247,15 +249,15 @@ class VocExtractor(Extractor):
 
     @staticmethod
     def _parse_bbox(object_elem):
-        try:
-            bbox_elem = object_elem.find('bndbox')
-            xmin = int(bbox_elem.find('xmin').text)
-            xmax = int(bbox_elem.find('xmax').text)
-            ymin = int(bbox_elem.find('ymin').text)
-            ymax = int(bbox_elem.find('ymax').text)
-            return [xmin, ymin, xmax - xmin, ymax - ymin]
-        except Exception:
+        bbox_elem = object_elem.find('bndbox')
+        if bbox_elem is None:
             return None
+
+        xmin = float(bbox_elem.find('xmin').text)
+        xmax = float(bbox_elem.find('xmax').text)
+        ymin = float(bbox_elem.find('ymin').text)
+        ymax = float(bbox_elem.find('ymax').text)
+        return [xmin, ymin, xmax - xmin, ymax - ymin]
 
 class VocClassificationExtractor(VocExtractor):
     def __init__(self, path):

@@ -16,7 +16,7 @@ type OwnProps = RouteComponentProps<{
 }>;
 
 interface StateToProps {
-    jobInstance: any | null | undefined;
+    job: any | null | undefined;
     fetching: boolean;
 }
 
@@ -25,11 +25,18 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { annotation } = state;
+    const {
+        annotation: {
+            job: {
+                instance: job,
+                fetching,
+            },
+        },
+    } = state;
 
     return {
-        jobInstance: annotation.jobInstance,
-        fetching: annotation.jobFetching,
+        job,
+        fetching,
     };
 }
 

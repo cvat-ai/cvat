@@ -4,7 +4,7 @@
     height: 100%
 }
 
-.ant-layout-header.cvat-annotation-page-header {
+.ant-layout-header.cvat-annotation-header {
     background-color: $background-color-2;
     border-bottom: 1px solid $border-color-1;
     height: 54px;
@@ -64,7 +64,7 @@
     line-height: 0px;
 }
 
-.cvat-annotation-header-player-buttons {
+.cvat-player-buttons {
     display: flex;
     align-items: center;
     position: relative;
@@ -72,19 +72,21 @@
     margin-right: 10px;
 
     > i {
-        transform: scale(0.6);
+        font-size: 25px;
+        margin: 0px 7px;
+        color: $player-buttons-color;
 
         &:hover {
-            transform: scale(0.7);
+            transform: scale(1.1);
         }
 
         &:active {
-            transform: scale(0.6);
+            transform: scale(1);
         }
     }
 }
 
-.cvat-annotation-header-player-controls {
+.cvat-player-controls {
     position: relative;
     height: 100%;
     line-height: 27px;
@@ -95,7 +97,7 @@
     }
 }
 
-.cvat-annotation-header-player-slider {
+.cvat-player-slider {
     width: 350px;
 
     > .ant-slider-rail {
@@ -103,14 +105,14 @@
     }
 }
 
-.cvat-annotation-header-filename-wrapper {
+.cvat-player-filename-wrapper {
     max-width: 300px;
     overflow: hidden;
     text-overflow: ellipsis;
     user-select: none;
 }
 
-.cvat-annotation-header-frame-selector {
+.cvat-player-frame-selector {
     width: 5em;
     padding-right: 5px;
     margin-left: 5px;
@@ -149,6 +151,6 @@
     }
 }
 
-.cvat-annotation-header-workspace-selector {
+.cvat-workspace-selector {
     width: 150px;
 }

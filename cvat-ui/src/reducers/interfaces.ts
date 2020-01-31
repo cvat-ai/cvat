@@ -83,7 +83,7 @@ export enum SupportedPlugins {
 export interface PluginsState {
     fetching: boolean;
     initialized: boolean;
-    plugins: {
+    list: {
         [name in SupportedPlugins]: boolean;
     };
 }
@@ -95,7 +95,7 @@ export interface UsersState {
 }
 
 export interface AboutState {
-    about: any;
+    server: any;
     fetching: boolean;
     initialized: boolean;
 }
@@ -205,7 +205,15 @@ export interface NotificationsState {
             saving: null | ErrorState;
             jobFetching: null | ErrorState;
             frameFetching: null | ErrorState;
+            changingLabelColor: null | ErrorState;
+            updating: null | ErrorState;
+            creating: null | ErrorState;
+            merging: null | ErrorState;
+            grouping: null | ErrorState;
+            splitting: null | ErrorState;
         };
+
+        [index: string]: any;
     };
     messages: {
         tasks: {
@@ -214,6 +222,8 @@ export interface NotificationsState {
         models: {
             inferenceDone: string;
         };
+
+        [index: string]: any;
     };
 }
 
@@ -243,25 +253,50 @@ export enum ObjectType {
     TAG = 'tag',
 }
 
+export enum StatesOrdering {
+    ID_DESCENT = 'ID - descent',
+    ID_ASCENT = 'ID - ascent',
+    UPDATED = 'Updated time',
+}
+
 export interface AnnotationState {
-    canvasInstance: Canvas;
-    canvasIsReady: boolean;
-    activeControl: ActiveControl;
-    jobInstance: any | null | undefined;
-    frameData: any | null;
-    frame: number;
-    playing: boolean;
-    annotations: any[];
-    saving: boolean;
-    savingStatuses: string[];
-    jobFetching: boolean;
-    dataFetching: boolean;
+    canvas: {
+        instance: Canvas;
+        ready: boolean;
+        activeControl: ActiveControl;
+    };
+    job: {
+        instance: any | null | undefined;
+        labels: any[];
+        attributes: Record<number, any[]>;
+        fetching: boolean;
+    };
+    player: {
+        frame: {
+            number: number;
+            data: any | null;
+            fetching: boolean;
+        };
+        playing: boolean;
+    };
     drawing: {
         activeShapeType: ShapeType;
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;
     };
+    annotations: {
+        collapsed: Record<number, boolean>;
+        states: any[];
+        saving: {
+            uploading: boolean;
+            statuses: string[];
+        };
+    };
+    colors: any[];
+    sidebarCollapsed: boolean;
+    appearanceCollapsed: boolean;
+    tabContentHeight: number;
 }
 
 export enum GridColor {

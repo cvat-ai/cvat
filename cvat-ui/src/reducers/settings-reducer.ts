@@ -77,9 +77,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
             };
         }
         default: {
-            return {
-                ...state,
-            };
+            return state;
         }
     }
 };

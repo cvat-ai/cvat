@@ -20,6 +20,7 @@ const cvat = getCore();
 const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
 
 interface Props {
+    sidebarCollapsed: boolean;
     canvasInstance: Canvas;
     jobInstance: any;
     annotations: any[];
@@ -34,12 +35,16 @@ interface Props {
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
+    onMergeObjects: (enabled: boolean) => void;
+    onGroupObjects: (enabled: boolean) => void;
+    onSplitTrack: (enabled: boolean) => void;
     onShapeDrawn: () => void;
-    onObjectsMerged: () => void;
-    onObjectsGroupped: () => void;
-    onTrackSplitted: () => void;
     onResetCanvas: () => void;
-    onAnnotationsUpdated: (annotations: any[]) => void;
+    onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -51,7 +56,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         // It's awful approach from the point of view React
         // But we do not have another way because cvat-canvas returns regular DOM element
         const [wrapper] = window.document
-            .getElementsByClassName('cvat-annotation-page-canvas-container');
+            .getElementsByClassName('cvat-canvas-container');
         wrapper.appendChild(canvasInstance.html());
 
         this.initialSetup();
@@ -65,7 +70,17 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             gridColor,
             gridOpacity,
             canvasInstance,
+            sidebarCollapsed,
         } = this.props;
+
+        if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
+            const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
+            if (sidebar) {
+                sidebar.addEventListener('transitionend', () => {
+                    canvasInstance.fitCanvas();
+                }, { once: true });
+            }
+        }
 
         if (prevProps.grid !== grid) {
             const gridElement = window.document.getElementById('cvat_canvas_grid');
@@ -102,7 +117,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             activeObjectType,
             frame,
             onShapeDrawn,
-            onAnnotationsUpdated,
+            onCreateAnnotations,
         } = this.props;
 
         onShapeDrawn();
@@ -123,17 +138,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         state.frame = frame;
         const objectState = new cvat.classes.ObjectState(state);
-        await jobInstance.annotations.put([objectState]);
-
-        const annotations = await jobInstance.annotations.get(frame);
-        onAnnotationsUpdated(annotations);
+        onCreateAnnotations(jobInstance, frame, [objectState]);
     }
 
     private async onShapeEdited(event: any): Promise<void> {
         const {
             jobInstance,
             frame,
-            onAnnotationsUpdated,
+            onUpdateAnnotations,
         } = this.props;
 
         const {
@@ -141,58 +153,49 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             points,
         } = event.detail;
         state.points = points;
-        state.save();
-
-        const annotations = await jobInstance.annotations.get(frame);
-        onAnnotationsUpdated(annotations);
+        onUpdateAnnotations(jobInstance, frame, [state]);
     }
 
     private async onObjectsMerged(event: any): Promise<void> {
         const {
             jobInstance,
             frame,
-            onAnnotationsUpdated,
-            onObjectsMerged,
+            onMergeAnnotations,
+            onMergeObjects,
         } = this.props;
 
-        onObjectsMerged();
+        onMergeObjects(false);
 
         const { states } = event.detail;
-        await jobInstance.annotations.merge(states);
-        const annotations = await jobInstance.annotations.get(frame);
-        onAnnotationsUpdated(annotations);
+        onMergeAnnotations(jobInstance, frame, states);
     }
 
     private async onObjectsGroupped(event: any): Promise<void> {
         const {
             jobInstance,
             frame,
-            onAnnotationsUpdated,
-            onObjectsGroupped,
+            onGroupAnnotations,
+            onGroupObjects,
         } = this.props;
 
-        onObjectsGroupped();
+        onGroupObjects(false);
 
         const { states } = event.detail;
-        await jobInstance.annotations.group(states);
-        const annotations = await jobInstance.annotations.get(frame);
-        onAnnotationsUpdated(annotations);
+        onGroupAnnotations(jobInstance, frame, states);
     }
 
     private async onTrackSplitted(event: any): Promise<void> {
         const {
             jobInstance,
             frame,
-            onAnnotationsUpdated,
-            onTrackSplitted,
+            onSplitAnnotations,
+            onSplitTrack,
         } = this.props;
 
-        onTrackSplitted();
+        onSplitTrack(false);
 
         const { state } = event.detail;
-        await jobInstance.annotations.split(state, frame);
-        const annotations = await jobInstance.annotations.get(frame);
-        onAnnotationsUpdated(annotations);
+        onSplitAnnotations(jobInstance, frame, state);
     }
 
     private updateCanvas(): void {
@@ -239,9 +242,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         // Events
         canvasInstance.html().addEventListener('canvas.setup', (): void => {
             onSetupCanvas();
-            if (jobInstance.task.mode === 'annotation') {
-                canvasInstance.fit();
-            }
         });
 
         canvasInstance.html().addEventListener('canvas.setup', () => {
@@ -314,7 +314,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             // So, React isn't going to rerender it
             // And it's a reason why cvat-canvas appended in mount function works
             <Layout.Content
-                className='cvat-annotation-page-canvas-container'
+                className='cvat-canvas-container'
             />
         );
     }

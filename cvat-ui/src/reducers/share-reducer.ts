@@ -49,8 +49,6 @@ export default function (state = defaultState, action: AnyAction): ShareState {
             };
         }
         default:
-            return {
-                ...state,
-            };
+            return state;
     }
 }

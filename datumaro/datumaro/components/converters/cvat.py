@@ -14,6 +14,14 @@ from datumaro.components.formats.cvat import CvatPath
 from datumaro.util.image import save_image
 
 
+def _cast(value, type_conv, default=None):
+    if value is None:
+        return default
+    try:
+        return type_conv(value)
+    except Exception:
+        return default
+
 def pairwise(iterable):
     a = iter(iterable)
     return zip(a, a)
@@ -261,6 +269,8 @@ class _SubsetWriter:
             raise NotImplementedError("unknown shape type")
 
         for attr_name, attr_value in shape.attributes.items():
+            if isinstance(attr_value, bool):
+                attr_value = 'true' if attr_value else 'false'
             if attr_name in self._get_label(shape.label).attributes:
                 self._writer.add_attribute(OrderedDict([
                     ("name", str(attr_name)),
@@ -325,7 +335,7 @@ class CvatConverter(Converter):
     def build_cmdline_parser(cls, parser=None):
         import argparse
         if not parser:
-            parser = argparse.ArgumentParser()
+            parser = argparse.ArgumentParser(prog='cvat')
 
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")

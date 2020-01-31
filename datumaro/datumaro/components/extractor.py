@@ -213,7 +213,7 @@ class MaskObject(Annotation):
             (self.label == other.label) and \
             (self.z_order == other.z_order) and \
             (self.image is not None and other.image is not None and \
-                np.all(self.image == other.image))
+                np.array_equal(self.image, other.image))
 
 class RleMask(MaskObject):
     # pylint: disable=redefined-builtin
@@ -546,7 +546,7 @@ class DatasetItem:
             (self.annotations == other.annotations) and \
             (self.path == other.path) and \
             (self.has_image == other.has_image) and \
-            (self.has_image and np.all(self.image == other.image) or \
+            (self.has_image and np.array_equal(self.image, other.image) or \
                 not self.has_image)
 
 class IExtractor:

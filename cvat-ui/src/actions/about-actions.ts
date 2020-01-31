@@ -20,10 +20,10 @@ function getAbout(): AnyAction {
     return action;
 }
 
-function getAboutSuccess(about: any): AnyAction {
+function getAboutSuccess(server: any): AnyAction {
     const action = {
         type: AboutActionTypes.GET_ABOUT_SUCCESS,
-        payload: { about },
+        payload: { server },
     };
 
     return action;
