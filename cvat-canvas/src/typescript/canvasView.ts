@@ -21,7 +21,6 @@ import consts from './consts';
 import {
     translateToSVG,
     translateFromSVG,
-    translateBetweenSVG,
     pointsToArray,
     displayShapeSize,
     ShapeSizeElement,
@@ -48,7 +47,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private loadingAnimation: SVGSVGElement;
     private text: SVGSVGElement;
     private adoptedText: SVG.Container;
-    private background: SVGSVGElement;
+    private background: HTMLCanvasElement;
     private grid: SVGSVGElement;
     private content: SVGSVGElement;
     private adoptedContent: SVG.Container;
@@ -220,13 +219,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onFindObject(e: MouseEvent): void {
         if (e.which === 1 || e.which === 0) {
-            const [x, y] = translateToSVG(this.background, [e.clientX, e.clientY]);
+            const { offset } = this.controller.geometry;
+            const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);
             const event: CustomEvent = new CustomEvent('canvas.find', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
-                    x,
-                    y,
+                    x: x - offset,
+                    y: y - offset,
                     states: this.controller.objects,
                 },
             });
@@ -365,26 +365,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private setupObjects(states: any[]): void {
-        const backgroundMatrix = this.background.getScreenCTM();
-        const contentMatrix = (this.content.getScreenCTM() as DOMMatrix).inverse();
-
-        const translate = (points: number[]): number[] => {
-            if (backgroundMatrix && contentMatrix) {
-                const matrix = (contentMatrix as DOMMatrix).multiply(backgroundMatrix);
-                return points.reduce((result: number[], _: number, idx: number): number[] => {
-                    if (idx % 2) {
-                        let p = (this.background as SVGSVGElement).createSVGPoint();
-                        p.x = points[idx - 1];
-                        p.y = points[idx];
-                        p = p.matrixTransform(matrix);
-                        result.push(p.x, p.y);
-                    }
-                    return result;
-                }, []);
-            }
-
-            return points;
-        };
+        const { offset } = this.controller.geometry;
+        const translate = (points: number[]): number[] => points
+            .map((coord: number): number => coord + offset);
 
         const created = [];
         const updated = [];
@@ -524,7 +507,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.text = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedText = (SVG.adopt((this.text as any as HTMLElement)) as SVG.Container);
-        this.background = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        this.background = window.document.createElement('canvas');
+        // window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 
         this.grid = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.gridPath = window.document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -593,12 +577,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onDrawDone.bind(this),
             this.adoptedContent,
             this.adoptedText,
-            this.background,
         );
         this.editHandler = new EditHandlerImpl(
             this.onEditDone.bind(this),
             this.adoptedContent,
-            this.background,
         );
         this.mergeHandler = new MergeHandlerImpl(
             this.onMergeDone.bind(this),
@@ -646,8 +628,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.content.addEventListener('wheel', (event): void => {
-            const point = translateToSVG(self.background, [event.clientX, event.clientY]);
-            self.controller.zoom(point[0], point[1], event.deltaY > 0 ? -1 : 1);
+            const { offset } = this.controller.geometry;
+            const point = translateToSVG(this.content, [event.clientX, event.clientY]);
+            self.controller.zoom(point[0] - offset, point[1] - offset, event.deltaY > 0 ? -1 : 1);
             this.canvas.dispatchEvent(new CustomEvent('canvas.zoom', {
                 bubbles: false,
                 cancelable: true,
@@ -661,13 +644,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (this.mode !== Mode.IDLE) return;
             if (e.ctrlKey || e.shiftKey) return;
 
-            const [x, y] = translateToSVG(this.background, [e.clientX, e.clientY]);
+            const { offset } = this.controller.geometry;
+            const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);
             const event: CustomEvent = new CustomEvent('canvas.moved', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
-                    x,
-                    y,
+                    x: x - offset,
+                    y: y - offset,
                     states: this.controller.objects,
                 },
             });
@@ -682,11 +666,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
     public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
         this.geometry = this.controller.geometry;
         if (reason === UpdateReasons.IMAGE_CHANGED) {
-            if (!model.image.length) {
+            const { image } = model;
+            if (!image) {
                 this.loadingAnimation.classList.remove('cvat_canvas_hidden');
             } else {
                 this.loadingAnimation.classList.add('cvat_canvas_hidden');
-                this.background.style.backgroundImage = `url("${model.image}")`;
+                const ctx = this.background.getContext('2d');
+                this.background.setAttribute('width', `${image.width}px`);
+                this.background.setAttribute('height', `${image.height}px`);
+                if (ctx) {
+                    ctx.drawImage(image, 0, 0);
+                }
                 this.moveCanvas();
                 this.resizeCanvas();
                 this.transformCanvas();
@@ -1058,14 +1048,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const p1 = e.detail.handler.startPoints.point;
             const p2 = e.detail.p;
             const delta = 1;
+            const { offset } = this.controller.geometry;
             if (Math.sqrt(((p1.x - p2.x) ** 2) + ((p1.y - p2.y) ** 2)) >= delta) {
                 const points = pointsToArray(
                     shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} `
                         + `${shape.attr('x') + shape.attr('width')},`
                         + `${shape.attr('y') + shape.attr('height')}`,
-                );
+                ).map((x: number): number => x - offset);
 
-                this.onEditDone(state, translateBetweenSVG(this.content, this.background, points));
+                this.onEditDone(state, points);
             }
         });
 
@@ -1105,13 +1096,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.mode = Mode.IDLE;
 
             if (resized) {
+                const { offset } = this.controller.geometry;
+
                 const points = pointsToArray(
                     shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} `
                         + `${shape.attr('x') + shape.attr('width')},`
                         + `${shape.attr('y') + shape.attr('height')}`,
-                );
+                ).map((x: number): number => x - offset);
 
-                this.onEditDone(state, translateBetweenSVG(this.content, this.background, points));
+                this.onEditDone(state, points);
             }
         });
 

@@ -110,7 +110,7 @@ export enum Mode {
 }
 
 export interface CanvasModel {
-    readonly image: string;
+    readonly image: HTMLImageElement | null;
     readonly objects: any[];
     readonly gridSize: Size;
     readonly focusData: FocusData;
@@ -151,7 +151,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         activeElement: ActiveElement;
         angle: number;
         canvasSize: Size;
-        image: string;
+        image: HTMLImageElement | null;
         imageID: number | null;
         imageOffset: number;
         imageSize: Size;
@@ -183,7 +183,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 height: 0,
                 width: 0,
             },
-            image: '',
+            image: null,
             imageID: null,
             imageOffset: 0,
             imageSize: {
@@ -300,10 +300,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.imageID = frameData.number;
         frameData.data(
             (): void => {
-                this.data.image = '';
+                this.data.image = null;
                 this.notify(UpdateReasons.IMAGE_CHANGED);
             },
-        ).then((data: string): void => {
+        ).then((data: HTMLImageElement): void => {
             if (frameData.number !== this.data.imageID) {
                 // already another image
                 return;
@@ -514,7 +514,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         ));
     }
 
-    public get image(): string {
+    public get image(): HTMLImageElement | null {
         return this.data.image;
     }
 
