@@ -9,7 +9,7 @@ import os.path as osp
 import re
 
 from datumaro.components.extractor import AnnotationType, DEFAULT_SUBSET_NAME, \
-    LabelCategories, BboxObject, DatasetItem, Extractor
+    LabelCategories, Bbox, DatasetItem, Extractor
 from datumaro.components.formats.tfrecord import DetectionApiPath
 from datumaro.util.image import lazy_image, decode_image
 from datumaro.util.tf_util import import_tf as _import_tf
@@ -163,7 +163,7 @@ class DetectionApiExtractor(Extractor):
                 y = clamp(shape[2] * frame_height, 0, frame_height)
                 w = clamp(shape[3] * frame_width, 0, frame_width) - x
                 h = clamp(shape[4] * frame_height, 0, frame_height) - y
-                annotations.append(BboxObject(x, y, w, h,
+                annotations.append(Bbox(x, y, w, h,
                     label=dataset_labels.get(label, None), id=index
                 ))
 

@@ -13,8 +13,8 @@ import os.path as osp
 import pycocotools.mask as mask_utils
 
 from datumaro.components.converter import Converter
-from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME, AnnotationType, PointsObject, MaskObject
+from datumaro.components.extractor import (DEFAULT_SUBSET_NAME,
+    AnnotationType, Points, Mask
 )
 from datumaro.components.formats.coco import CocoTask, CocoPath
 from datumaro.util import find
@@ -202,7 +202,7 @@ class _InstancesConverter(_TaskConverter):
         leader = self.find_group_leader(anns)
         bbox = self.compute_bbox(anns)
         mask = None
-        polygons = [p.get_polygon() for p in polygons]
+        polygons = [p.points for p in polygons]
 
         if self._context._segmentation_mode == SegmentationMode.guess:
             use_masks = True == leader.attributes.get('is_crowd',
@@ -237,7 +237,7 @@ class _InstancesConverter(_TaskConverter):
 
     @staticmethod
     def find_group_leader(group):
-        return max(group, key=lambda x: x.area())
+        return max(group, key=lambda x: x.get_area())
 
     @staticmethod
     def merge_masks(masks):
@@ -245,7 +245,7 @@ class _InstancesConverter(_TaskConverter):
             return None
 
         def get_mask(m):
-            if isinstance(m, MaskObject):
+            if isinstance(m, Mask):
                 return m.image
             else:
                 return m
@@ -404,7 +404,7 @@ class _KeypointsConverter(_InstancesConverter):
     @staticmethod
     def convert_points_object(ann):
         keypoints = []
-        points = ann.get_points()
+        points = ann.points
         visibility = ann.visibility
         for index in range(0, len(points), 2):
             kp = points[index : index + 2]
@@ -412,7 +412,7 @@ class _KeypointsConverter(_InstancesConverter):
             keypoints.extend([*kp, state])
 
         num_annotated = len([v for v in visibility \
-            if v != PointsObject.Visibility.absent])
+            if v != Points.Visibility.absent])
 
         return {
             'keypoints': keypoints,

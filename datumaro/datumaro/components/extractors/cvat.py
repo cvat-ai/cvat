@@ -9,7 +9,7 @@ import xml.etree as ET
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
     DEFAULT_SUBSET_NAME, AnnotationType,
-    PointsObject, PolygonObject, PolyLineObject, BboxObject,
+    Points, Polygon, PolyLine, Bbox,
     LabelCategories
 )
 from datumaro.components.formats.cvat import CvatPath
@@ -251,21 +251,21 @@ class CvatExtractor(Extractor):
         points = ann.get('points', [])
 
         if ann_type == 'polyline':
-            return PolyLineObject(points, label=label_id,
+            return PolyLine(points, label=label_id,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'polygon':
-            return PolygonObject(points, label=label_id,
+            return Polygon(points, label=label_id,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'points':
-            return PointsObject(points, label=label_id,
+            return Points(points, label=label_id,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'box':
             x, y = points[0], points[1]
             w, h = points[2] - x, points[3] - y
-            return BboxObject(x, y, w, h, label=label_id,
+            return Bbox(x, y, w, h, label=label_id,
                 id=ann_id, attributes=attributes, group=group)
 
         else:

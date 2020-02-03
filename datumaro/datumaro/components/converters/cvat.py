@@ -235,13 +235,12 @@ class _SubsetWriter:
             ("occluded", str(int(shape.attributes.get('occluded', False)))),
         ])
 
-        points = shape.get_points()
         if shape.type == AnnotationType.bbox:
             shape_data.update(OrderedDict([
-                ("xtl", "{:.2f}".format(points[0])),
-                ("ytl", "{:.2f}".format(points[1])),
-                ("xbr", "{:.2f}".format(points[2])),
-                ("ybr", "{:.2f}".format(points[3]))
+                ("xtl", "{:.2f}".format(shape.points[0])),
+                ("ytl", "{:.2f}".format(shape.points[1])),
+                ("xbr", "{:.2f}".format(shape.points[2])),
+                ("ybr", "{:.2f}".format(shape.points[3]))
             ]))
         else:
             shape_data.update(OrderedDict([
@@ -249,7 +248,7 @@ class _SubsetWriter:
                     ','.join((
                         "{:.2f}".format(x),
                         "{:.2f}".format(y)
-                    )) for x, y in pairwise(points))
+                    )) for x, y in pairwise(shape.points))
                 )),
             ]))
 

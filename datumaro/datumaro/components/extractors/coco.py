@@ -11,8 +11,7 @@ import pycocotools.mask as mask_utils
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
     DEFAULT_SUBSET_NAME, AnnotationType,
-    LabelObject, RleMask, PointsObject, PolygonObject,
-    BboxObject, CaptionObject,
+    Label, RleMask, Points, Polygon, Bbox, Caption,
     LabelCategories, PointsCategories
 )
 from datumaro.components.formats.coco import CocoTask, CocoPath
@@ -156,7 +155,7 @@ class CocoExtractor(Extractor):
                 points = [p for i, p in enumerate(keypoints) if i % 3 != 2]
                 visibility = keypoints[2::3]
                 parsed_annotations.append(
-                    PointsObject(points, visibility, label=label_id,
+                    Points(points, visibility, label=label_id,
                         id=ann_id, attributes=attributes, group=group)
                 )
 
@@ -167,7 +166,7 @@ class CocoExtractor(Extractor):
                 if isinstance(segmentation, list):
                     # polygon - a single object can consist of multiple parts
                     for polygon_points in segmentation:
-                        parsed_annotations.append(PolygonObject(
+                            parsed_annotations.append(Polygon(
                             points=polygon_points, label=label_id,
                             id=ann_id, attributes=attributes, group=group
                         ))
@@ -192,19 +191,19 @@ class CocoExtractor(Extractor):
                     ))
 
             parsed_annotations.append(
-                BboxObject(x, y, w, h, label=label_id,
+                    Bbox(x, y, w, h, label=label_id,
                     id=ann_id, attributes=attributes, group=group)
             )
         elif self._task is CocoTask.labels:
             label_id = self._get_label_id(ann)
             parsed_annotations.append(
-                LabelObject(label=label_id,
+                Label(label=label_id,
                     id=ann_id, attributes=attributes, group=group)
             )
         elif self._task is CocoTask.captions:
             caption = ann['caption']
             parsed_annotations.append(
-                CaptionObject(caption,
+                Caption(caption,
                     id=ann_id, attributes=attributes, group=group)
             )
         else:

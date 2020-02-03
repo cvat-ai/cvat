@@ -12,8 +12,8 @@ import os.path as osp
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
     DEFAULT_SUBSET_NAME, Annotation,
-    LabelObject, MaskObject, PointsObject, PolygonObject,
-    PolyLineObject, BboxObject, CaptionObject,
+    Label, Mask, Points, Polygon,
+    PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.components.formats.datumaro import DatumaroPath
@@ -60,19 +60,19 @@ class _SubsetWriter:
         self.items.append(item_desc)
 
         for ann in item.annotations:
-            if isinstance(ann, LabelObject):
+            if isinstance(ann, Label):
                 converted_ann = self._convert_label_object(ann)
-            elif isinstance(ann, MaskObject):
+            elif isinstance(ann, Mask):
                 converted_ann = self._convert_mask_object(ann)
-            elif isinstance(ann, PointsObject):
+            elif isinstance(ann, Points):
                 converted_ann = self._convert_points_object(ann)
-            elif isinstance(ann, PolyLineObject):
+            elif isinstance(ann, PolyLine):
                 converted_ann = self._convert_polyline_object(ann)
-            elif isinstance(ann, PolygonObject):
+            elif isinstance(ann, Polygon):
                 converted_ann = self._convert_polygon_object(ann)
-            elif isinstance(ann, BboxObject):
+            elif isinstance(ann, Bbox):
                 converted_ann = self._convert_bbox_object(ann)
-            elif isinstance(ann, CaptionObject):
+            elif isinstance(ann, Caption):
                 converted_ann = self._convert_caption_object(ann)
             else:
                 raise NotImplementedError()
@@ -148,7 +148,7 @@ class _SubsetWriter:
 
         converted.update({
             'label_id': _cast(obj.label, int),
-            'points': [float(p) for p in obj.get_points()],
+            'points': [float(p) for p in obj.points],
         })
         return converted
 
@@ -157,7 +157,7 @@ class _SubsetWriter:
 
         converted.update({
             'label_id': _cast(obj.label, int),
-            'points': [float(p) for p in obj.get_points()],
+            'points': [float(p) for p in obj.points],
         })
         return converted
 

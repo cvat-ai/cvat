@@ -8,8 +8,8 @@ import os
 import os.path as osp
 from xml.etree import ElementTree as ET
 
-from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, LabelObject, MaskObject, BboxObject,
+from datumaro.components.extractor import (DEFAULT_SUBSET_NAME,
+    Extractor, DatasetItem, AnnotationType, Label, Mask, Bbox, CompiledMask
 )
 from datumaro.components.formats.voc import (
     VocTask, VocPath, VocInstColormap, parse_label_map, make_voc_categories
@@ -164,14 +164,14 @@ class VocExtractor(Extractor):
         cls_annotations = self._annotations.get(VocTask.classification)
         if cls_annotations is not None and \
                 self._task is VocTask.classification:
-            item_labels = cls_annotations.get(item)
+            item_labels = cls_annotations.get(item_id)
             if item_labels is not None:
                 for label_id in item_labels:
-                    item_annotations.append(LabelObject(label_id))
+                    item_annotations.append(Label(label_id))
 
         det_annotations = self._annotations.get(VocTask.detection)
         if det_annotations is not None:
-            det_annotations = det_annotations.get(item)
+            det_annotations = det_annotations.get(item_id)
         if det_annotations is not None:
             root_elem = ET.fromstring(det_annotations)
 
@@ -225,24 +225,22 @@ class VocExtractor(Extractor):
                 for part_elem in object_elem.findall('part'):
                     part = part_elem.find('name').text
                     part_label_id = self._get_label_id(part)
-                    bbox = self._parse_bbox(part_elem)
+                    part_bbox = self._parse_bbox(part_elem)
                     group = obj_id
 
                     if self._task is not VocTask.person_layout:
                         break
-                    if bbox is None:
+                    if part_bbox is None:
                         continue
-                    item_annotations.append(BboxObject(
-                        *bbox, label=part_label_id,
-                        group=obj_id))
+                    item_annotations.append(Bbox(*part_bbox, label=part_label_id,
+                        group=group))
 
                 if self._task is VocTask.person_layout and group is None:
                     continue
                 if self._task is VocTask.action_classification and not actions:
                     continue
 
-                item_annotations.append(BboxObject(
-                    *obj_bbox, label=obj_label_id,
+                item_annotations.append(Bbox(*obj_bbox, label=obj_label_id,
                     attributes=attributes, id=obj_id, group=group))
 
         return item_annotations
@@ -482,7 +480,7 @@ class VocComp_1_2_Extractor(VocResultsExtractor):
         if cls_ann is not None:
             for desc in cls_ann:
                 label_id, conf = desc
-                annotations.append(LabelObject(
+                annotations.append(Label(
                     int(label_id),
                     attributes={ 'score': float(conf) }
                 ))
@@ -508,7 +506,7 @@ class VocComp_3_4_Extractor(VocResultsExtractor):
         if det_ann is not None:
             for desc in det_ann:
                 label_id, conf, left, top, right, bottom = desc
-                annotations.append(BboxObject(
+                annotations.append(Bbox(
                     x=float(left), y=float(top),
                     w=float(right) - float(left), h=float(bottom) - float(top),
                     label=int(label_id),
@@ -560,7 +558,7 @@ class VocComp_5_6_Extractor(VocResultsExtractor):
         if cls_image_path and osp.isfile(cls_image_path):
             inverse_cls_colormap = \
                 self._categories[AnnotationType.mask].inverse_colormap
-            annotations.append(MaskObject(
+            annotations.append(Mask(
                 image=lazy_mask(cls_image_path, inverse_cls_colormap),
                 attributes={ 'class': True }
             ))
@@ -568,7 +566,7 @@ class VocComp_5_6_Extractor(VocResultsExtractor):
         inst_ann = self._annotations[subset_name]
         inst_image_path = inst_ann.get(item)
         if inst_image_path and osp.isfile(inst_image_path):
-            annotations.append(MaskObject(
+            annotations.append(Mask(
                 image=lazy_mask(inst_image_path, _inverse_inst_colormap),
                 attributes={ 'instances': True }
             ))
@@ -641,7 +639,7 @@ class VocComp_7_8_Extractor(VocResultsExtractor):
 
                 for part in parts:
                     label_id, bbox = part
-                    annotations.append(BboxObject(
+                    annotations.append(Bbox(
                         *bbox, label=label_id,
                         attributes=attributes))
 
@@ -672,7 +670,7 @@ class VocComp_9_10_Extractor(VocResultsExtractor):
         if action_ann is not None:
             for desc in action_ann:
                 action_id, obj_id, conf = desc
-                annotations.append(LabelObject(
+                annotations.append(Label(
                     action_id,
                     attributes={
                         'score': conf,

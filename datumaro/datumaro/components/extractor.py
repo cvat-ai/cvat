@@ -95,6 +95,8 @@ class LabelCategories(Categories):
                 attributes = set(attributes)
             for attr in attributes:
                 assert isinstance(attr, str)
+        if parent is None:
+            parent = ''
 
         index = len(self.items)
         self.items.append(self.Category(name, parent, attributes))
@@ -112,12 +114,15 @@ class LabelCategories(Categories):
         return \
             (self.items == other.items)
 
-class LabelObject(Annotation):
+class Label(Annotation):
     # pylint: disable=redefined-builtin
     def __init__(self, label=None,
             id=None, attributes=None, group=None):
         super().__init__(id=id, type=AnnotationType.label,
             attributes=attributes, group=group)
+
+        if label is not None:
+            label = int(label)
         self.label = label
     # pylint: enable=redefined-builtin
 
@@ -157,13 +162,17 @@ class MaskCategories(Categories):
                 return False
         return True
 
-class MaskObject(Annotation):
+class Mask(Annotation):
     # pylint: disable=redefined-builtin
     def __init__(self, image=None, label=None, z_order=None,
             id=None, attributes=None, group=None):
-        super().__init__(id=id, type=AnnotationType.mask,
-            attributes=attributes, group=group)
+        super().__init__(type=AnnotationType.mask,
+            id=id, attributes=attributes, group=group)
+
         self._image = image
+
+        if label is not None:
+            label = int(label)
         self._label = label
 
         if z_order is None:
@@ -172,39 +181,39 @@ class MaskObject(Annotation):
     # pylint: enable=redefined-builtin
 
     @property
-    def label(self):
-        return self._label
-
-    @property
     def image(self):
         if callable(self._image):
             return self._image()
         return self._image
 
-    def painted_data(self, colormap):
-        raise NotImplementedError()
-
-    def area(self):
-        if self._label is None:
-            raise NotImplementedError()
-        return np.count_nonzero(self.image)
-
-    def extract(self, class_id):
-        raise NotImplementedError()
-
-    def get_bbox(self):
-        if self._label is None:
-            raise NotImplementedError()
-        image = self.image
-        cols = np.any(image, axis=0)
-        rows = np.any(image, axis=1)
-        x0, x1 = np.where(cols)[0][[0, -1]]
-        y0, y1 = np.where(rows)[0][[0, -1]]
-        return [x0, y0, x1 - x0, y1 - y0]
+    @property
+    def label(self):
+        return self._label
 
     @property
     def z_order(self):
         return self._z_order
+
+    def as_class_mask(self, label_id=None):
+        from datumaro.util.mask_tools import make_index_mask
+        if label_id is None:
+            label_id = self.label
+        return make_index_mask(self.image, label_id)
+
+    def as_instance_mask(self, instance_id):
+        from datumaro.util.mask_tools import make_index_mask
+        return make_index_mask(self.image, instance_id)
+
+    def get_area(self):
+        return np.count_nonzero(self.image)
+
+    def get_bbox(self):
+        from datumaro.util.mask_tools import find_mask_bbox
+        return find_mask_bbox(self.image)
+
+    def paint(self, colormap):
+        from datumaro.util.mask_tools import paint_mask
+        return paint_mask(self.as_class_mask(), colormap)
 
     def __eq__(self, other):
         if not super().__eq__(other):
@@ -215,7 +224,7 @@ class MaskObject(Annotation):
             (self.image is not None and other.image is not None and \
                 np.array_equal(self.image, other.image))
 
-class RleMask(MaskObject):
+class RleMask(Mask):
     # pylint: disable=redefined-builtin
     def __init__(self, rle=None, label=None, z_order=None,
             id=None, attributes=None, group=None):
@@ -231,11 +240,11 @@ class RleMask(MaskObject):
         from pycocotools import mask as mask_utils
         return lambda: mask_utils.decode(rle).astype(np.bool)
 
-    def area(self):
+    def get_area(self):
         from pycocotools import mask as mask_utils
         return mask_utils.area(self._rle)
 
-    def bbox(self):
+    def get_bbox(self):
         from pycocotools import mask as mask_utils
         return mask_utils.toBbox(self._rle)
 
@@ -247,6 +256,73 @@ class RleMask(MaskObject):
         if not isinstance(other, __class__):
             return super().__eq__(other)
         return self._rle == other._rle
+
+class CompiledMask:
+    @staticmethod
+    def from_instance_masks(instance_masks,
+            instance_ids=None, instance_labels=None):
+        from datumaro.util.mask_tools import merge_masks
+
+        if instance_ids is not None:
+            assert len(instance_ids) == len(instance_masks)
+        else:
+            instance_ids = [1 + i for i in range(len(instance_masks))]
+
+        if instance_labels is not None:
+            assert len(instance_labels) == len(instance_masks)
+        else:
+            instance_labels = [None] * len(instance_masks)
+
+        instance_masks = sorted(instance_masks, key=lambda m: m.z_order)
+
+        instance_mask = [m.as_instance_mask(id) for m, id in
+            zip(instance_masks, instance_ids)]
+        instance_mask = merge_masks(instance_mask)
+
+        cls_mask = [m.as_class_mask(c) for m, c in
+            zip(instance_masks, instance_labels)]
+        cls_mask = merge_masks(cls_mask)
+        return __class__(class_mask=cls_mask, instance_mask=instance_mask)
+
+    def __init__(self, class_mask=None, instance_mask=None):
+        self._class_mask = class_mask
+        self._instance_mask = instance_mask
+
+    @staticmethod
+    def _get_image(image):
+        if callable(image):
+            return image()
+        return image
+
+    @property
+    def class_mask(self):
+        return self._get_image(self._class_mask)
+
+    @property
+    def instance_mask(self):
+        return self._get_image(self._instance_mask)
+
+    @property
+    def instance_count(self):
+        return int(self.instance_mask.max())
+
+    def get_instance_labels(self, class_count=None):
+        if class_count is None:
+            class_count = np.max(self.class_mask) + 1
+
+        m = self.class_mask * class_count + self.instance_mask
+        m = m.astype(int)
+        keys = np.unique(m)
+        instance_labels = {k % class_count: k // class_count
+            for k in keys if k % class_count != 0
+        }
+        return instance_labels
+
+    def extract(self, instance_id):
+        return self.instance_mask == instance_id
+
+    def lazy_extract(self, instance_id):
+        return lambda: self.extract(instance_id)
 
 def compute_iou(bbox_a, bbox_b):
     aX, aY, aW, aH = bbox_a
@@ -266,29 +342,41 @@ def compute_iou(bbox_a, bbox_b):
 
     return intersection / max(1.0, union)
 
-class ShapeObject(Annotation):
+class _Shape(Annotation):
     # pylint: disable=redefined-builtin
     def __init__(self, type, points=None, label=None, z_order=None,
             id=None, attributes=None, group=None):
         super().__init__(id=id, type=type,
             attributes=attributes, group=group)
-        self.points = points
-        self.label = label
+        self._points = points
+
+        if label is not None:
+            label = int(label)
+        self._label = label
 
         if z_order is None:
             z_order = 0
         self._z_order = z_order
     # pylint: enable=redefined-builtin
 
-    def area(self):
-        raise NotImplementedError()
+    @property
+    def points(self):
+        return self._points
 
-    def get_polygon(self):
+    @property
+    def label(self):
+        return self._label
+
+    @property
+    def z_order(self):
+        return self._z_order
+
+    def get_area(self):
         raise NotImplementedError()
 
     def get_bbox(self):
-        points = self.get_points()
-        if not self.points:
+        points = self.points
+        if not points:
             return None
 
         xs = [p for p in points[0::2]]
@@ -299,13 +387,6 @@ class ShapeObject(Annotation):
         y1 = max(ys)
         return [x0, y0, x1 - x0, y1 - y0]
 
-    def get_points(self):
-        return self.points
-
-    @property
-    def z_order(self):
-        return self._z_order
-
     def __eq__(self, other):
         if not super().__eq__(other):
             return False
@@ -314,7 +395,7 @@ class ShapeObject(Annotation):
             (self.z_order == other.z_order) and \
             (self.label == other.label)
 
-class PolyLineObject(ShapeObject):
+class PolyLine(_Shape):
     # pylint: disable=redefined-builtin
     def __init__(self, points=None, label=None, z_order=None,
             id=None, attributes=None, group=None):
@@ -323,35 +404,34 @@ class PolyLineObject(ShapeObject):
             id=id, attributes=attributes, group=group)
     # pylint: enable=redefined-builtin
 
-    def get_polygon(self):
-        return self.get_points()
+    def as_polygon(self):
+        return self.points[:]
 
-    def area(self):
+    def get_area(self):
         return 0
 
-class PolygonObject(ShapeObject):
+class Polygon(_Shape):
     # pylint: disable=redefined-builtin
     def __init__(self, points=None, z_order=None,
             label=None, id=None, attributes=None, group=None):
         if points is not None:
+            # keep the message on the single line to produce
+            # informative output
             assert len(points) % 2 == 0 and 3 <= len(points) // 2, "Wrong polygon points: %s" % points
         super().__init__(type=AnnotationType.polygon,
             points=points, label=label, z_order=z_order,
             id=id, attributes=attributes, group=group)
     # pylint: enable=redefined-builtin
 
-    def get_polygon(self):
-        return self.get_points()
-
-    def area(self):
+    def get_area(self):
         import pycocotools.mask as mask_utils
 
         _, _, w, h = self.get_bbox()
-        rle = mask_utils.frPyObjects([self.get_points()], h, w)
+        rle = mask_utils.frPyObjects([self.points], h, w)
         area = mask_utils.area(rle)[0]
         return area
 
-class BboxObject(ShapeObject):
+class Bbox(_Shape):
     # pylint: disable=redefined-builtin
     def __init__(self, x=0, y=0, w=0, h=0, label=None, z_order=None,
             id=None, attributes=None, group=None):
@@ -376,13 +456,13 @@ class BboxObject(ShapeObject):
     def h(self):
         return self.points[3] - self.points[1]
 
-    def area(self):
+    def get_area(self):
         return self.w * self.h
 
     def get_bbox(self):
         return [self.x, self.y, self.w, self.h]
 
-    def get_polygon(self):
+    def as_polygon(self):
         x, y, w, h = self.get_bbox()
         return [
             x, y,
@@ -417,7 +497,7 @@ class PointsCategories(Categories):
         return \
             (self.items == other.items)
 
-class PointsObject(ShapeObject):
+class Points(_Shape):
     Visibility = Enum('Visibility', [
         ('absent', 0),
         ('hidden', 1),
@@ -447,7 +527,7 @@ class PointsObject(ShapeObject):
         self.visibility = visibility
     # pylint: enable=redefined-builtin
 
-    def area(self):
+    def get_area(self):
         return 0
 
     def get_bbox(self):
@@ -467,7 +547,7 @@ class PointsObject(ShapeObject):
         return \
             (self.visibility == other.visibility)
 
-class CaptionObject(Annotation):
+class Caption(Annotation):
     # pylint: disable=redefined-builtin
     def __init__(self, caption=None,
             id=None, attributes=None, group=None):
@@ -476,6 +556,8 @@ class CaptionObject(Annotation):
 
         if caption is None:
             caption = ''
+        else:
+            caption = str(caption)
         self.caption = caption
     # pylint: enable=redefined-builtin
 

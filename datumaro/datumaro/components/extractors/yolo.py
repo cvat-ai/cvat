@@ -8,7 +8,7 @@ import os.path as osp
 import re
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, BboxObject, LabelCategories
+    AnnotationType, Bbox, LabelCategories
 )
 from datumaro.components.formats.yolo import YoloPath
 from datumaro.util.image import lazy_image
@@ -124,9 +124,7 @@ class YoloExtractor(Extractor):
                 h = float(h)
                 x = float(xc) - w * 0.5
                 y = float(yc) - h * 0.5
-                annotations.append(BboxObject(
-                    x * image_width, y * image_height,
-                    w * image_width, h * image_height,
+                annotations.append(Bbox(
                     label=label_id
                 ))
         return annotations
