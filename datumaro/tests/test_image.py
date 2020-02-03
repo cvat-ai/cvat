@@ -23,7 +23,7 @@ class ImageTest(TestCase):
                     src_image = np.random.randint(0, 255 + 1, (2, 4))
                 else:
                     src_image = np.random.randint(0, 255 + 1, (2, 4, c))
-                path = osp.join(test_dir.path, 'img.png') # lossless
+                path = osp.join(test_dir, 'img.png') # lossless
 
                 image_module._IMAGE_BACKEND = save_backend
                 image_module.save_image(path, src_image)
