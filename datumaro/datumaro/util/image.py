@@ -136,7 +136,7 @@ class lazy_image:
 
     def __call__(self):
         image = None
-        image_id = id(self) # path is not necessary hashable or a file path
+        image_id = hash(self) # path is not necessary hashable or a file path
 
         cache = self._get_cache()
         if cache is not None:
@@ -155,3 +155,6 @@ class lazy_image:
         elif cache == False:
             return None
         return cache
+
+    def __hash__(self):
+        return hash((id(self), self.path, self.loader))
