@@ -13,7 +13,7 @@ import os.path as osp
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, AnnotationType,
-    LabelCategories
+    LabelCategories, CompiledMask,
 )
 from datumaro.components.formats.voc import (VocTask, VocPath,
     VocInstColormap, VocPose,
@@ -132,12 +132,10 @@ class _Converter:
 
             for item in subset:
                 item_id = str(item.id)
-                if self._save_images:
-                    data = item.image
-                    if data is not None:
-                        save_image(osp.join(self._images_dir,
-                                str(item_id) + VocPath.IMAGE_EXT),
-                            data)
+                if self._save_images and item.has_image:
+                    save_image(osp.join(self._images_dir,
+                            str(item_id) + VocPath.IMAGE_EXT),
+                        item.image)
 
                 labels = []
                 bboxes = []
@@ -198,17 +196,25 @@ class _Converter:
                         obj_label =  self.get_label(obj.label)
                         ET.SubElement(obj_elem, 'name').text = obj_label
 
-                        pose = _convert_attr('pose', attr, lambda v: VocPose[v],
-                            VocPose.Unspecified)
-                        ET.SubElement(obj_elem, 'pose').text = pose.name
+                        if 'pose' in attr:
+                            pose = _convert_attr('pose', attr,
+                                lambda v: VocPose[v], VocPose.Unspecified)
+                            ET.SubElement(obj_elem, 'pose').text = pose.name
 
-                        truncated = _convert_attr('truncated', attr, int, 0)
-                        ET.SubElement(obj_elem, 'truncated').text = \
-                            '%d' % truncated
+                        if 'truncated' in attr:
+                            truncated = _convert_attr('truncated', attr, int, 0)
+                            ET.SubElement(obj_elem, 'truncated').text = \
+                                '%d' % truncated
 
-                        difficult = _convert_attr('difficult', attr, int, 0)
-                        ET.SubElement(obj_elem, 'difficult').text = \
-                            '%d' % difficult
+                        if 'difficult' in attr:
+                            difficult = _convert_attr('difficult', attr, int, 0)
+                            ET.SubElement(obj_elem, 'difficult').text = \
+                                '%d' % difficult
+
+                        if 'occluded' in attr:
+                            occluded = _convert_attr('occluded', attr, int, 0)
+                            ET.SubElement(obj_elem, 'occluded').text = \
+                                '%d' % occluded
 
                         bbox = obj.get_bbox()
                         if bbox is not None:
@@ -226,12 +232,14 @@ class _Converter:
                         label_actions = self._get_actions(obj_label)
                         actions_elem = ET.Element('actions')
                         for action in label_actions:
-                            presented = _convert_attr(action, attr,
-                                lambda v: int(v == True), 0)
-                            ET.SubElement(actions_elem, action).text = \
-                                '%d' % presented
+                            present = 0
+                            if action in attr:
+                                present = _convert_attr(action, attr,
+                                    lambda v: int(v == True), 0)
+                                ET.SubElement(actions_elem, action).text = \
+                                    '%d' % present
 
-                            objects_with_actions[new_obj_id][action] = presented
+                            objects_with_actions[new_obj_id][action] = present
                         if len(actions_elem) != 0:
                             obj_elem.append(actions_elem)
 
@@ -247,25 +255,28 @@ class _Converter:
                     layout_list[item_id] = objects_with_parts
                     action_list[item_id] = objects_with_actions
 
-                for label_obj in labels:
-                    label = self.get_label(label_obj.label)
+                for label_ann in labels:
+                    label = self.get_label(label_ann.label)
                     if not self._is_label(label):
                         continue
                     class_list = class_lists.get(item_id, set())
-                    class_list.add(label_obj.label)
+                    class_list.add(label_ann.label)
                     class_lists[item_id] = class_list
 
                     clsdet_list[item_id] = True
 
-                for mask_obj in masks:
-                    if mask_obj.attributes.get('class') == True:
-                        self.save_segm(osp.join(self._segm_dir,
-                                item_id + VocPath.SEGM_EXT),
-                            mask_obj)
-                    if mask_obj.attributes.get('instances') == True:
-                        self.save_segm(osp.join(self._inst_dir,
-                                item_id + VocPath.SEGM_EXT),
-                            mask_obj, VocInstColormap)
+                if masks:
+                    compiled_mask = CompiledMask.from_instance_masks(masks,
+                        instance_labels=[self._label_id_mapping(m.label)
+                            for m in masks])
+
+                    self.save_segm(
+                        osp.join(self._segm_dir, item_id + VocPath.SEGM_EXT),
+                        compiled_mask.class_mask)
+                    self.save_segm(
+                        osp.join(self._inst_dir, item_id + VocPath.SEGM_EXT),
+                        compiled_mask.instance_mask,
+                        colormap=VocInstColormap)
 
                     segm_list[item_id] = True
 
@@ -361,14 +372,12 @@ class _Converter:
                 else:
                     f.write('%s\n' % (item))
 
-    def save_segm(self, path, annotation, colormap=None):
-        data = annotation.image
+    def save_segm(self, path, mask, colormap=None):
         if self._apply_colormap:
             if colormap is None:
                 colormap = self._categories[AnnotationType.mask].colormap
-            data = self._remap_mask(data)
-            data = paint_mask(data, colormap)
-        save_image(path, data)
+            mask = paint_mask(mask, colormap)
+        save_image(path, mask)
 
     def save_label_map(self):
         path = osp.join(self._save_dir, VocPath.LABELMAP_FILE)
@@ -468,9 +477,19 @@ class _Converter:
         if void_labels:
             log.warning("The following labels are remapped to background: %s" %
                 ', '.join(void_labels))
+        log.debug("Saving segmentations with the following label mapping: \n%s" %
+            '\n'.join(["#%s '%s' -> #%s '%s'" %
+                (
+                    src_id, src_label, id_mapping[src_id],
+                    self._categories[AnnotationType.label] \
+                        .items[id_mapping[src_id]].name
+                )
+                for src_id, src_label in source_labels.items()
+            ])
+        )
 
         def map_id(src_id):
-            return id_mapping[src_id]
+            return id_mapping.get(src_id, 0)
         return map_id
 
     def _remap_mask(self, mask):

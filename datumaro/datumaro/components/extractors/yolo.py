@@ -125,6 +125,8 @@ class YoloExtractor(Extractor):
                 x = float(xc) - w * 0.5
                 y = float(yc) - h * 0.5
                 annotations.append(Bbox(
+                    round(x * image_width, 1), round(y * image_height, 1),
+                    round(w * image_width, 1), round(h * image_height, 1),
                     label=label_id
                 ))
         return annotations
@@ -135,7 +137,7 @@ class YoloExtractor(Extractor):
 
         with open(names_path, 'r') as f:
             for label in f:
-                label_categories.add(label)
+                label_categories.add(label.strip())
 
         return label_categories
 

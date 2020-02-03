@@ -164,14 +164,14 @@ class CocoExtractor(Extractor):
                 rle = None
 
                 if isinstance(segmentation, list):
-                    # polygon - a single object can consist of multiple parts
-                    for polygon_points in segmentation:
+                    if not self._merge_instance_polygons:
+                        # polygon - a single object can consist of multiple parts
+                        for polygon_points in segmentation:
                             parsed_annotations.append(Polygon(
-                            points=polygon_points, label=label_id,
-                            id=ann_id, attributes=attributes, group=group
-                        ))
-
-                    if self._merge_instance_polygons:
+                                points=polygon_points, label=label_id,
+                                id=ann_id, attributes=attributes, group=group
+                            ))
+                    else:
                         # merge all parts into a single mask RLE
                         img_h = image_info['height']
                         img_w = image_info['width']
@@ -189,11 +189,11 @@ class CocoExtractor(Extractor):
                     parsed_annotations.append(RleMask(rle=rle, label=label_id,
                         id=ann_id, attributes=attributes, group=group
                     ))
-
-            parsed_annotations.append(
+            else:
+                parsed_annotations.append(
                     Bbox(x, y, w, h, label=label_id,
-                    id=ann_id, attributes=attributes, group=group)
-            )
+                        id=ann_id, attributes=attributes, group=group)
+                )
         elif self._task is CocoTask.labels:
             label_id = self._get_label_id(ann)
             parsed_annotations.append(

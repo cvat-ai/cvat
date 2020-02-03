@@ -45,20 +45,25 @@ class VocExtractor(Extractor):
 
         subsets = {}
         for subset_name in subset_names:
+            subset_file_name = subset_name
+            if subset_name == DEFAULT_SUBSET_NAME:
+                subset_name = None
             subset = __class__.Subset(subset_name, self)
 
-            with open(osp.join(subsets_dir, subset_name + '.txt'), 'r') as f:
+            with open(osp.join(subsets_dir, subset_file_name + '.txt'), 'r') as f:
                 subset.items = [line.split()[0] for line in f]
 
             subsets[subset_name] = subset
         return subsets
 
     def _load_cls_annotations(self, subsets_dir, subset_names):
+        subset_file_names = [n if n else DEFAULT_SUBSET_NAME
+            for n in subset_names]
         dir_files = dir_items(subsets_dir, '.txt', truncate_ext=True)
 
         label_annotations = defaultdict(list)
         label_anno_files = [s for s in dir_files \
-            if '_' in s and s[s.rfind('_') + 1:] in subset_names]
+            if '_' in s and s[s.rfind('_') + 1:] in subset_file_names]
         for ann_filename in label_anno_files:
             with open(osp.join(subsets_dir, ann_filename + '.txt'), 'r') as f:
                 label = ann_filename[:ann_filename.rfind('_')]
@@ -139,27 +144,60 @@ class VocExtractor(Extractor):
         assert label_id is not None
         return label_id
 
-    def _get_annotations(self, item):
+    @staticmethod
+    def _lazy_extract_mask(mask, c):
+        return lambda: mask == c
+
+    def _get_annotations(self, item_id):
         item_annotations = []
 
         if self._task is VocTask.segmentation:
+            class_mask = None
             segm_path = osp.join(self._path, VocPath.SEGMENTATION_DIR,
-                item + VocPath.SEGM_EXT)
+                item_id + VocPath.SEGM_EXT)
             if osp.isfile(segm_path):
                 inverse_cls_colormap = \
                     self._categories[AnnotationType.mask].inverse_colormap
-                item_annotations.append(MaskObject(
-                    image=lazy_mask(segm_path, inverse_cls_colormap),
-                    attributes={ 'class': True }
-                ))
+                class_mask = lazy_mask(segm_path, inverse_cls_colormap)
 
+            instances_mask = None
             inst_path = osp.join(self._path, VocPath.INSTANCES_DIR,
-                item + VocPath.SEGM_EXT)
+                item_id + VocPath.SEGM_EXT)
             if osp.isfile(inst_path):
-                item_annotations.append(MaskObject(
-                    image=lazy_mask(inst_path, _inverse_inst_colormap),
-                    attributes={ 'instances': True }
-                ))
+                instances_mask = lazy_mask(inst_path, _inverse_inst_colormap)
+
+            if instances_mask is not None:
+                compiled_mask = CompiledMask(class_mask, instances_mask)
+
+                if class_mask is not None:
+                    label_cat = self._categories[AnnotationType.label]
+                    instance_labels = compiled_mask.get_instance_labels(
+                        class_count=len(label_cat.items))
+                else:
+                    instance_labels = {i: None
+                        for i in range(compiled_mask.instance_count)}
+
+                for instance_id, label_id in instance_labels.items():
+                    image = compiled_mask.lazy_extract(instance_id)
+
+                    attributes = dict()
+                    if label_id is not None:
+                        actions = {a: False
+                            for a in label_cat.items[label_id].attributes
+                        }
+                        attributes.update(actions)
+
+                    item_annotations.append(Mask(
+                        image=image, label=label_id,
+                        attributes=attributes, group=instance_id
+                    ))
+            elif class_mask is not None:
+                log.warn("item '%s': has only class segmentation, "
+                    "instance masks will not be available" % item_id)
+                classes = class_mask.image.unique()
+                for label_id in classes:
+                    image = self._lazy_extract_mask(class_mask, label_id)
+                    item_annotations.append(Mask(image=image, label=label_id))
 
         cls_annotations = self._annotations.get(VocTask.classification)
         if cls_annotations is not None and \
@@ -176,6 +214,7 @@ class VocExtractor(Extractor):
             root_elem = ET.fromstring(det_annotations)
 
             for obj_id, object_elem in enumerate(root_elem.findall('object')):
+                obj_id += 1
                 attributes = {}
                 group = None
 
