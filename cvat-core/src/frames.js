@@ -100,9 +100,14 @@
                     } else if (isBrowser) {
                         const reader = new FileReader();
                         reader.onload = () => {
-                            frameCache[this.tid][this.number] = reader.result;
-                            resolve(frameCache[this.tid][this.number]);
+                            const image = new Image(frame.width, frame.height);
+                            image.onload = () => {
+                                frameCache[this.tid][this.number] = image;
+                                resolve(frameCache[this.tid][this.number]);
+                            };
+                            image.src = reader.result;
                         };
+
                         reader.readAsDataURL(frame);
                     }
                 }
