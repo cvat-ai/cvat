@@ -494,7 +494,6 @@ def diff_command(args):
             second_project.config.project_name)
         )
     dst_dir = osp.abspath(dst_dir)
-    if dst_dir:
         log.info("Saving diff to '%s'" % dst_dir)
 
     visualizer = DiffVisualizer(save_dir=dst_dir, comparator=comparator,

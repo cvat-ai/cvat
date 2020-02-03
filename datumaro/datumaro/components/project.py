@@ -648,15 +648,21 @@ class ProjectDataset(Dataset):
 
         dst_dataset.save(save_dir=save_dir, merge=True)
 
-    def transform_project(self, method, *args, save_dir=None, **kwargs):
+    def transform_project(self, method, save_dir=None, **method_kwargs):
         # NOTE: probably this function should be in the ViewModel layer
-        transformed = self.transform(method, *args, **kwargs)
+        if isinstance(method, str):
+            method = self.env.make_transform(method)
+
+        transformed = self.transform(method, **method_kwargs)
         self._save_branch_project(transformed, save_dir=save_dir)
 
-    def apply_model(self, model_name, save_dir=None):
+    def apply_model(self, model, save_dir=None, batch_size=1):
         # NOTE: probably this function should be in the ViewModel layer
-        launcher = self._project.make_executable_model(model_name)
-        self.transform_project(InferenceWrapper, launcher, save_dir=save_dir)
+        if isinstance(model, str):
+            launcher = self._project.make_executable_model(model)
+
+        self.transform_project(InferenceWrapper, launcher=launcher,
+            save_dir=save_dir, batch_size=batch_size)
 
     def export_project(self, save_dir, converter,
             filter_expr=None, filter_annotations=False, remove_empty=False):
