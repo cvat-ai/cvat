@@ -54,7 +54,8 @@ class ShapeCreatorModel extends Listener {
         }
 
         // FIXME: In the future we have to make some generic solution
-        if (this._defaultMode === 'interpolation' && ['box', 'points'].includes(this._defaultType)) {
+        if (this._defaultMode === 'interpolation' 
+            && ['box', 'points', 'box_by_4_points'].includes(this._defaultType)) {
             data.shapes = [];
             data.shapes.push(Object.assign({}, result, data));
             this._shapeCollection.add(data, `interpolation_${this._defaultType}`);
@@ -125,7 +126,7 @@ class ShapeCreatorModel extends Listener {
     }
 
     set defaultType(type) {
-        if (!['box', 'points', 'polygon', 'polyline'].includes(type)) {
+        if (!['box', 'box_by_4_points', 'points', 'polygon', 'polyline'].includes(type)) {
             throw Error(`Unknown shape type found ${type}`);
         }
         this._defaultType = type;
@@ -234,8 +235,8 @@ class ShapeCreatorView {
             // FIXME: In the future we have to make some generic solution
             const mode = this._modeSelector.prop('value');
             const type = $(e.target).prop('value');
-            if (type !== 'box' && !(type === 'points' && this._polyShapeSize === 1)
-                && mode !== 'annotation') {
+            if (type !== 'box' && type !== 'box_by_4_points' 
+                && !(type === 'points' && this._polyShapeSize === 1) && mode !== 'annotation') {
                 this._modeSelector.prop('value', 'annotation');
                 this._controller.setDefaultShapeMode('annotation');
                 showMessage('Only the annotation mode allowed for the shape');
@@ -252,7 +253,7 @@ class ShapeCreatorView {
             const mode = $(e.target).prop('value');
             const type = this._typeSelector.prop('value');
             if (mode !== 'annotation' && !(type === 'points' && this._polyShapeSize === 1)
-                && type !== 'box') {
+                && type !== 'box' && type !== 'box_by_4_points') {
                 this._typeSelector.prop('value', 'box');
                 this._controller.setDefaultShapeType('box');
                 showMessage('Only boxes and single point allowed in the interpolation mode');
@@ -492,7 +493,7 @@ class ShapeCreatorView {
                         ytl,
                         xbr,
                         ybr,
-                    }
+                    };
 
                     if (this._mode === 'interpolation') {
                         box.outside = false;
@@ -510,6 +511,67 @@ class ShapeCreatorView {
                     sizeUI = null;
                 }
             });
+            break;
+        case 'box_by_4_points':
+            let numberOfPoints = 0;
+            this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 })
+                .addClass('shapeCreation').attr({
+                    'stroke-width': 0,
+                }).on('drawstart', () => {
+                    // init numberOfPoints as one on drawstart
+                    numberOfPoints = 1;
+                }).on('drawpoint', (e) => {
+                    // increase numberOfPoints by one on drawpoint
+                    numberOfPoints += 1;
+
+                    // finish if numberOfPoints are exactly four
+                    if (numberOfPoints === 4) {
+                        let actualPoints = window.cvat.translate.points.canvasToActual(e.target.getAttribute('points'));
+                        actualPoints = PolyShapeModel.convertStringToNumberArray(actualPoints);
+                        const { frameWidth, frameHeight } = window.cvat.player.geometry;
+
+                        // init bounding box
+                        const box = {
+                            'xtl': frameWidth,
+                            'ytl': frameHeight,
+                            'xbr': 0,
+                            'ybr': 0
+                        };
+
+                        for (const point of actualPoints) {
+                            // clamp point
+                            point.x = Math.clamp(point.x, 0, frameWidth);
+                            point.y = Math.clamp(point.y, 0, frameHeight);
+
+                            // update bounding box
+                            box.xtl = Math.min(point.x, box.xtl);
+                            box.ytl = Math.min(point.y, box.ytl);
+                            box.xbr = Math.max(point.x, box.xbr);
+                            box.ybr = Math.max(point.y, box.ybr);
+                        }
+
+                        if ((box.ybr - box.ytl) * (box.xbr - box.xtl) >= AREA_TRESHOLD) {
+                            if (this._mode === 'interpolation') {
+                                box.outside = false;
+                            }
+                            // finish drawing
+                            this._controller.finish(box, this._type);
+                        }
+                        this._controller.switchCreateMode(true);
+                    }
+                }).on('undopoint', () => {
+                    if (numberOfPoints > 0) {
+                        numberOfPoints -= 1;
+                    }
+                }).off('drawdone').on('drawdone', () => {
+                    if (numberOfPoints !== 4) {
+                        showMessage('Click exactly four extreme points for an object');
+                        this._controller.switchCreateMode(true);
+                    } else {
+                        throw Error('numberOfPoints is exactly four, but box drawing did not finish.');
+                    }
+                });
+            this._createPolyEvents();
             break;
         case 'points':
             this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 })
