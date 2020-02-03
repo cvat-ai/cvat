@@ -54,7 +54,8 @@ class ShapeCreatorModel extends Listener {
         }
 
         // FIXME: In the future we have to make some generic solution
-        if (this._defaultMode === 'interpolation' && ['box', 'points'].includes(this._defaultType)) {
+        if (this._defaultMode === 'interpolation' 
+            && ['box', 'points', 'box_by_4_points'].includes(this._defaultType)) {
             data.shapes = [];
             data.shapes.push(Object.assign({}, result, data));
             this._shapeCollection.add(data, `interpolation_${this._defaultType}`);
@@ -234,8 +235,8 @@ class ShapeCreatorView {
             // FIXME: In the future we have to make some generic solution
             const mode = this._modeSelector.prop('value');
             const type = $(e.target).prop('value');
-            if (type !== 'box' && !(type === 'points' && this._polyShapeSize === 1)
-                && mode !== 'annotation') {
+            if (type !== 'box' && type !== 'box_by_4_points' 
+                && !(type === 'points' && this._polyShapeSize === 1) && mode !== 'annotation') {
                 this._modeSelector.prop('value', 'annotation');
                 this._controller.setDefaultShapeMode('annotation');
                 showMessage('Only the annotation mode allowed for the shape');
@@ -252,7 +253,7 @@ class ShapeCreatorView {
             const mode = $(e.target).prop('value');
             const type = this._typeSelector.prop('value');
             if (mode !== 'annotation' && !(type === 'points' && this._polyShapeSize === 1)
-                && type !== 'box') {
+                && type !== 'box' && type !== 'box_by_4_points') {
                 this._typeSelector.prop('value', 'box');
                 this._controller.setDefaultShapeType('box');
                 showMessage('Only boxes and single point allowed in the interpolation mode');
@@ -492,7 +493,7 @@ class ShapeCreatorView {
                         ytl,
                         xbr,
                         ybr,
-                    }
+                    };
 
                     if (this._mode === 'interpolation') {
                         box.outside = false;
@@ -555,8 +556,8 @@ class ShapeCreatorView {
                             }
                             // finish drawing
                             this._controller.finish(box, this._type);
-                            this._controller.switchCreateMode(true);
                         }
+                        this._controller.switchCreateMode(true);
                     }
                 }).on('undopoint', () => {
                     if (numberOfPoints > 0) {

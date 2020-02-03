@@ -936,11 +936,16 @@ By default, objects in the mode are zoomed. Check
 ``Open Menu`` —> ``Settings`` —> ``AAM Zoom Margin`` to adjust that.
 
 ## Annotation with box by 4 points
-It is an efficient method of bounding box annotation, proposed [here](https://arxiv.org/pdf/1708.02750.pdf). Before starting, you need to be sure that ``Box by 4 points`` is selected.
+It is an efficient method of bounding box annotation, proposed 
+[here](https://arxiv.org/pdf/1708.02750.pdf). 
+Before starting, you need to be sure that ``Box by 4 points`` is selected.
 
 ![](static/documentation/images/image134.jpg)
 
-Press ``N`` for entering drawing mode. Click exactly four extreme points: the top, bottom, left- and right-most physical points on the object. Drawing is automatically completed right after clicking the fourth point. Press ``Esc`` to cancel editing.
+Press ``N`` for entering drawing mode. Click exactly four extreme points: 
+the top, bottom, left- and right-most physical points on the object. 
+Drawing is automatically completed right after clicking the fourth point. 
+Press ``Esc`` to cancel editing.
 
 ![](static/documentation/images/gif016.gif)
 
