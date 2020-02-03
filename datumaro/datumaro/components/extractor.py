@@ -724,5 +724,63 @@ class Extractor(_ExtractorBase):
         return DatasetIteratorWrapper(
             _DatasetFilter(self, pred), self.categories(), self.subsets())
 
-
 DEFAULT_SUBSET_NAME = 'default'
+
+
+class Transform(Extractor):
+    class ItemWrapper(DatasetItem):
+        def __init__(self, item, **kwargs):
+            expected_args = {'id', 'annotations', 'subset', 'path', 'image'}
+            unknown_args = set(kwargs) - expected_args
+            if unknown_args:
+                raise TypeError(
+                    "__init__() got unexpected keyword arguments: %s" % \
+                        ', '.join(unknown_args))
+            if 'image' in kwargs:
+                self._image = kwargs.pop('image')
+            self.__dict__.update(kwargs)
+
+            self._item = item
+
+        @DatasetItem.id.getter
+        def id(self):
+            return self._item.id
+
+        @DatasetItem.subset.getter
+        def subset(self):
+            return self._item.subset
+
+        @DatasetItem.path.getter
+        def path(self):
+            return self._item._path
+
+        @DatasetItem.annotations.getter
+        def annotations(self):
+            return self._item._annotations
+
+        @DatasetItem.image.getter
+        def image(self):
+            if hasattr(self, '_image'):
+                return super().image
+            return self._item.image
+
+        @DatasetItem.has_image.getter
+        def has_image(self):
+            if hasattr(self, '_image'):
+                return super().has_image
+            return self._item.has_image
+
+    def __init__(self, extractor):
+        super().__init__()
+
+        self._extractor = extractor
+
+    def __iter__(self):
+        for item in self._extractor:
+            yield self.transform_item(item)
+
+    def categories(self):
+        return self._extractor.categories()
+
+    def transform_item(self, item):
+        raise NotImplementedError()
