@@ -3,7 +3,7 @@ import React from 'react';
 import { StatesOrdering } from 'reducers/interfaces';
 
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
-import Header from './objects-list-header';
+import ObjectListHeader from './objects-list-header';
 
 
 interface Props {
@@ -22,7 +22,7 @@ interface Props {
     showAllStates(): void;
 }
 
-const ObjectListComponent = React.memo((props: Props): JSX.Element => {
+function ObjectListComponent(props: Props): JSX.Element {
     const {
         listHeight,
         statesHidden,
@@ -41,7 +41,7 @@ const ObjectListComponent = React.memo((props: Props): JSX.Element => {
 
     return (
         <div style={{ height: listHeight }}>
-            <Header
+            <ObjectListHeader
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
                 statesCollapsed={statesCollapsed}
@@ -61,6 +61,6 @@ const ObjectListComponent = React.memo((props: Props): JSX.Element => {
             </div>
         </div>
     );
-});
+}
 
-export default ObjectListComponent;
+export default React.memo(ObjectListComponent);

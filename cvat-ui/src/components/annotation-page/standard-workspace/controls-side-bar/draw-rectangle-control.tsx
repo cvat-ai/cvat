@@ -15,7 +15,7 @@ interface Props {
     isDrawing: boolean;
 }
 
-const DrawRectangleControl = React.memo((props: Props): JSX.Element => {
+function DrawRectangleControl(props: Props): JSX.Element {
     const {
         canvasInstance,
         isDrawing,
@@ -49,6 +49,6 @@ const DrawRectangleControl = React.memo((props: Props): JSX.Element => {
             />
         </Popover>
     );
-});
+}
 
-export default DrawRectangleControl;
+export default React.memo(DrawRectangleControl);

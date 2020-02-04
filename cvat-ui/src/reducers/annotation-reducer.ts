@@ -17,10 +17,11 @@ const defaultState: AnnotationState = {
         activeControl: ActiveControl.CURSOR,
     },
     job: {
-        instance: null,
         labels: [],
+        instance: null,
         attributes: {},
         fetching: false,
+        saving: false,
     },
     player: {
         frame: {
@@ -36,12 +37,23 @@ const defaultState: AnnotationState = {
         activeObjectType: ObjectType.SHAPE,
     },
     annotations: {
+        selectedStatesID: [],
+        activatedStateID: null,
         saving: {
             uploading: false,
             statuses: [],
         },
         collapsed: {},
         states: [],
+    },
+    propagate: {
+        objectState: null,
+        frames: 50,
+    },
+    statistics: {
+        visible: false,
+        collecting: false,
+        data: null,
     },
     colors: [],
     sidebarCollapsed: false,
@@ -135,6 +147,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 states,
             } = action.payload;
 
+            const activatedStateID = states
+                .map((_state: any) => _state.clientID).includes(state.annotations.activatedStateID)
+                ? state.annotations.activatedStateID : null;
+
             return {
                 ...state,
                 player: {
@@ -147,6 +163,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 annotations: {
                     ...state.annotations,
+                    activatedStateID,
                     states,
                 },
             };
@@ -279,6 +296,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -292,6 +313,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -309,6 +334,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -328,6 +357,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -341,6 +374,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -354,6 +391,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl,
@@ -447,6 +488,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS: {
             const {
                 label,
+                states,
             } = action.payload;
 
             const { instance: job } = state.job;
@@ -454,12 +496,201 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const index = labels.indexOf(label);
             labels[index] = label;
 
-
             return {
                 ...state,
                 job: {
                     ...state.job,
                     labels,
+                },
+                annotations: {
+                    ...state.annotations,
+                    states,
+                },
+            };
+        }
+        case AnnotationActionTypes.ACTIVATE_OBJECT: {
+            const {
+                activatedStateID,
+            } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID,
+                },
+            };
+        }
+        case AnnotationActionTypes.SELECT_OBJECTS: {
+            const {
+                selectedStatesID,
+            } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    selectedStatesID,
+                },
+            };
+        }
+        case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
+            const {
+                objectState,
+            } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                    states: state.annotations.states
+                        .filter((_objectState: any) => (
+                            _objectState.clientID !== objectState.clientID
+                        )),
+                },
+            };
+        }
+        case AnnotationActionTypes.COPY_SHAPE: {
+            const {
+                objectState,
+            } = action.payload;
+
+            state.canvas.instance.cancel();
+            state.canvas.instance.draw({
+                enabled: true,
+                initialState: objectState,
+            });
+
+            let activeControl = ActiveControl.DRAW_RECTANGLE;
+            if (objectState.shapeType === ShapeType.POINTS) {
+                activeControl = ActiveControl.DRAW_POINTS;
+            } else if (objectState.shapeType === ShapeType.POLYGON) {
+                activeControl = ActiveControl.DRAW_POLYGON;
+            } else if (objectState.shapeType === ShapeType.POLYLINE) {
+                activeControl = ActiveControl.DRAW_POLYLINE;
+            }
+
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
+            };
+        }
+        case AnnotationActionTypes.EDIT_SHAPE: {
+            const { enabled } = action.payload;
+            const activeControl = enabled
+                ? ActiveControl.EDIT : ActiveControl.CURSOR;
+
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
+            };
+        }
+        case AnnotationActionTypes.PROPAGATE_OBJECT: {
+            const { objectState } = action.payload;
+            return {
+                ...state,
+                propagate: {
+                    ...state.propagate,
+                    objectState,
+                },
+            };
+        }
+        case AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS: {
+            return {
+                ...state,
+                propagate: {
+                    ...state.propagate,
+                    objectState: null,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_PROPAGATE_FRAMES: {
+            const { frames } = action.payload;
+
+            return {
+                ...state,
+                propagate: {
+                    ...state.propagate,
+                    frames,
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_SHOWING_STATISTICS: {
+            const { visible } = action.payload;
+
+            return {
+                ...state,
+                statistics: {
+                    ...state.statistics,
+                    visible,
+                },
+            };
+        }
+        case AnnotationActionTypes.COLLECT_STATISTICS: {
+            return {
+                ...state,
+                statistics: {
+                    ...state.statistics,
+                    collecting: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.COLLECT_STATISTICS_SUCCESS: {
+            const { data } = action.payload;
+            return {
+                ...state,
+                statistics: {
+                    ...state.statistics,
+                    collecting: false,
+                    data,
+                },
+            };
+        }
+        case AnnotationActionTypes.COLLECT_STATISTICS_FAILED: {
+            return {
+                ...state,
+                statistics: {
+                    ...state.statistics,
+                    collecting: false,
+                    data: null,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_JOB_STATUS: {
+            return {
+                ...state,
+                job: {
+                    ...state.job,
+                    saving: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_JOB_STATUS_SUCCESS: {
+            return {
+                ...state,
+                job: {
+                    ...state.job,
+                    saving: false,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED: {
+            return {
+                ...state,
+                job: {
+                    ...state.job,
+                    saving: false,
                 },
             };
         }

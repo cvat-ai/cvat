@@ -71,7 +71,7 @@ interface Props {
     changeColor(color: string): void;
 }
 
-const LabelItemComponent = React.memo((props: Props): JSX.Element => {
+function LabelItemComponent(props: Props): JSX.Element {
     const {
         labelName,
         labelColor,
@@ -125,6 +125,6 @@ const LabelItemComponent = React.memo((props: Props): JSX.Element => {
             </Col>
         </Row>
     );
-});
+}
 
-export default LabelItemComponent;
+export default React.memo(LabelItemComponent);

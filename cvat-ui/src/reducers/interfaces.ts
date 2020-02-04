@@ -211,6 +211,10 @@ export interface NotificationsState {
             merging: null | ErrorState;
             grouping: null | ErrorState;
             splitting: null | ErrorState;
+            removing: null | ErrorState;
+            propagating: null | ErrorState;
+            collectingStatistics: null | ErrorState;
+            savingJob: null | ErrorState;
         };
 
         [index: string]: any;
@@ -238,6 +242,7 @@ export enum ActiveControl {
     MERGE = 'merge',
     GROUP = 'group',
     SPLIT = 'split',
+    EDIT = 'edit',
 }
 
 export enum ShapeType {
@@ -266,10 +271,11 @@ export interface AnnotationState {
         activeControl: ActiveControl;
     };
     job: {
-        instance: any | null | undefined;
         labels: any[];
+        instance: any | null | undefined;
         attributes: Record<number, any[]>;
         fetching: boolean;
+        saving: boolean;
     };
     player: {
         frame: {
@@ -286,12 +292,23 @@ export interface AnnotationState {
         activeObjectType: ObjectType;
     };
     annotations: {
+        selectedStatesID: number[];
+        activatedStateID: number | null;
         collapsed: Record<number, boolean>;
         states: any[];
         saving: {
             uploading: boolean;
             statuses: string[];
         };
+    };
+    propagate: {
+        objectState: any | null;
+        frames: number;
+    };
+    statistics: {
+        collecting: boolean;
+        visible: boolean;
+        data: any;
     };
     colors: any[];
     sidebarCollapsed: boolean;
@@ -316,6 +333,12 @@ export enum FrameSpeed {
     Slowest = 1,
 }
 
+export enum ColorBy {
+    INSTANCE = 'Instance',
+    GROUP = 'Group',
+    LABEL = 'Label',
+}
+
 export interface PlayerSettingsState {
     frameStep: number;
     frameSpeed: FrameSpeed;
@@ -337,7 +360,15 @@ export interface WorkspaceSettingsState {
     showAllInterpolationTracks: boolean;
 }
 
+export interface ShapesSettingsState {
+    colorBy: ColorBy;
+    opacity: number;
+    selectedOpacity: number;
+    blackBorders: boolean;
+}
+
 export interface SettingsState {
+    shapes: ShapesSettingsState;
     workspace: WorkspaceSettingsState;
     player: PlayerSettingsState;
 }

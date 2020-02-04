@@ -15,7 +15,7 @@ interface Props {
     isDrawing: boolean;
 }
 
-const DrawPolygonControl = React.memo((props: Props): JSX.Element => {
+function DrawPolygonControl(props: Props): JSX.Element {
     const {
         canvasInstance,
         isDrawing,
@@ -49,6 +49,6 @@ const DrawPolygonControl = React.memo((props: Props): JSX.Element => {
             />
         </Popover>
     );
-});
+}
 
-export default DrawPolygonControl;
+export default React.memo(DrawPolygonControl);

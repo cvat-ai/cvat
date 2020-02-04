@@ -32,6 +32,8 @@ export enum AnnotationActionTypes {
     MERGE_OBJECTS = 'MERGE_OBJECTS',
     GROUP_OBJECTS = 'GROUP_OBJECTS',
     SPLIT_TRACK = 'SPLIT_TRACK',
+    COPY_SHAPE = 'COPY_SHAPE',
+    EDIT_SHAPE = 'EDIT_SHAPE',
     DRAW_SHAPE = 'DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
     RESET_CANVAS = 'RESET_CANVAS',
@@ -50,7 +52,215 @@ export enum AnnotationActionTypes {
     UPDATE_TAB_CONTENT_HEIGHT = 'UPDATE_TAB_CONTENT_HEIGHT',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
-    COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS'
+    COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
+    ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
+    SELECT_OBJECTS = 'SELECT_OBJECTS',
+    REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
+    REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
+    PROPAGATE_OBJECT = 'PROPAGATE_OBJECT',
+    PROPAGATE_OBJECT_SUCCESS = 'PROPAGATE_OBJECT_SUCCESS',
+    PROPAGATE_OBJECT_FAILED = 'PROPAGATE_OBJECT_FAILED',
+    CHANGE_PROPAGATE_FRAMES = 'CHANGE_PROPAGATE_FRAMES',
+    SWITCH_SHOWING_STATISTICS = 'SWITCH_SHOWING_STATISTICS',
+    COLLECT_STATISTICS = 'COLLECT_STATISTICS',
+    COLLECT_STATISTICS_SUCCESS = 'COLLECT_STATISTICS_SUCCESS',
+    COLLECT_STATISTICS_FAILED = 'COLLECT_STATISTICS_FAILED',
+    CHANGE_JOB_STATUS = 'CHANGE_JOB_STATUS',
+    CHANGE_JOB_STATUS_SUCCESS = 'CHANGE_JOB_STATUS_SUCCESS',
+    CHANGE_JOB_STATUS_FAILED = 'CHANGE_JOB_STATUS_FAILED',
+}
+
+export function changeJobStatusAsync(jobInstance: any, status: string):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const oldStatus = jobInstance.status;
+        try {
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_JOB_STATUS,
+                payload: {},
+            });
+
+            // eslint-disable-next-line no-param-reassign
+            jobInstance.status = status;
+            await jobInstance.save();
+
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_JOB_STATUS_SUCCESS,
+                payload: {},
+            });
+        } catch (error) {
+            // eslint-disable-next-line no-param-reassign
+            jobInstance.status = oldStatus;
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function collectStatisticsAsync(sessionInstance: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch({
+                type: AnnotationActionTypes.COLLECT_STATISTICS,
+                payload: {},
+            });
+
+            const data = await sessionInstance.annotations.statistics();
+
+            dispatch({
+                type: AnnotationActionTypes.COLLECT_STATISTICS_SUCCESS,
+                payload: {
+                    data,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.COLLECT_STATISTICS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function showStatistics(visible: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_SHOWING_STATISTICS,
+        payload: {
+            visible,
+        },
+    };
+}
+
+export function propagateObjectAsync(
+    sessionInstance: any,
+    objectState: any,
+    from: number,
+    to: number,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const copy = {
+                attributes: objectState.attributes,
+                points: objectState.points,
+                occluded: objectState.occluded,
+                objectType: objectState.objectType !== ObjectType.TRACK
+                    ? objectState.objectType : ObjectType.SHAPE,
+                shapeType: objectState.shapeType,
+                label: objectState.label,
+                frame: from,
+            };
+
+            const states = [];
+            for (let frame = from; frame <= to; frame++) {
+                copy.frame = frame;
+                const newState = new cvat.classes.ObjectState(copy);
+                states.push(newState);
+            }
+
+            await sessionInstance.annotations.put(states);
+
+            dispatch({
+                type: AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS,
+                payload: {
+                    objectState,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.PROPAGATE_OBJECT_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function propagateObject(objectState: any | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.PROPAGATE_OBJECT,
+        payload: {
+            objectState,
+        },
+    };
+}
+
+export function changePropagateFrames(frames: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.CHANGE_PROPAGATE_FRAMES,
+        payload: {
+            frames,
+        },
+    };
+}
+
+export function removeObjectAsync(objectState: any, force: boolean):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const removed = await objectState.delete(force);
+            if (removed) {
+                dispatch({
+                    type: AnnotationActionTypes.REMOVE_OBJECT_SUCCESS,
+                    payload: {
+                        objectState,
+                    },
+                });
+            } else {
+                throw new Error('Could not remove the object. Is it locked?');
+            }
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_OBJECT_FAILED,
+                payload: {
+                    objectState,
+                },
+            });
+        }
+    };
+}
+
+export function editShape(enabled: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.EDIT_SHAPE,
+        payload: {
+            enabled,
+        },
+    };
+}
+
+export function copyShape(objectState: any): AnyAction {
+    return {
+        type: AnnotationActionTypes.COPY_SHAPE,
+        payload: {
+            objectState,
+        },
+    };
+}
+
+export function selectObjects(selectedStatesID: number[]): AnyAction {
+    return {
+        type: AnnotationActionTypes.SELECT_OBJECTS,
+        payload: {
+            selectedStatesID,
+        },
+    };
+}
+
+export function activateObject(activatedStateID: number | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.ACTIVATE_OBJECT,
+        payload: {
+            activatedStateID,
+        },
+    };
 }
 
 export function updateTabContentHeight(tabContentHeight: number): AnyAction {
@@ -452,23 +662,32 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
-export function changeLabelColor(label: any, color: string): AnyAction {
-    try {
-        const updatedLabel = label;
-        updatedLabel.color = color;
+export function changeLabelColorAsync(
+    sessionInstance: any,
+    frameNumber: number,
+    label: any,
+    color: string,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const updatedLabel = label;
+            updatedLabel.color = color;
+            const states = await sessionInstance.annotations.get(frameNumber);
 
-        return {
-            type: AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS,
-            payload: {
-                label: updatedLabel,
-            },
-        };
-    } catch (error) {
-        return {
-            type: AnnotationActionTypes.CHANGE_LABEL_COLOR_FAILED,
-            payload: {
-                error,
-            },
-        };
-    }
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS,
+                payload: {
+                    label: updatedLabel,
+                    states,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_LABEL_COLOR_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
 }

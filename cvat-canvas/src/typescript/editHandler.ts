@@ -9,7 +9,6 @@ import 'svg.select.js';
 import consts from './consts';
 import {
     translateFromSVG,
-    translateBetweenSVG,
     pointsToArray,
 } from './shared';
 import {
@@ -27,7 +26,6 @@ export class EditHandlerImpl implements EditHandler {
     private onEditDone: (state: any, points: number[]) => void;
     private geometry: Geometry;
     private canvas: SVG.Container;
-    private background: SVGSVGElement;
     private editData: EditData;
     private editedShape: SVG.Shape;
     private editLine: SVG.PolyLine;
@@ -94,21 +92,19 @@ export class EditHandlerImpl implements EditHandler {
         }
     }
 
+    private selectPolygon(shape: SVG.Polygon): void {
+        const { offset } = this.geometry;
+        const points = pointsToArray(shape.attr('points'))
+            .map((coord: number): number => coord - offset);
+
+        const { state } = this.editData;
+        this.edit({
+            enabled: false,
+        });
+        this.onEditDone(state, points);
+    }
+
     private stopEdit(e: MouseEvent): void {
-        function selectPolygon(shape: SVG.Polygon): void {
-            const points = translateBetweenSVG(
-                this.canvas.node as any as SVGSVGElement,
-                this.background,
-                pointsToArray(shape.attr('points')),
-            );
-
-            const { state } = this.editData;
-            this.edit({
-                enabled: false,
-            });
-            this.onEditDone(state, points);
-        }
-
         if (!this.editLine) {
             return;
         }
@@ -154,7 +150,7 @@ export class EditHandlerImpl implements EditHandler {
             }
 
             for (const clone of this.clones) {
-                clone.on('click', selectPolygon.bind(this, clone));
+                clone.on('click', (): void => this.selectPolygon(clone));
                 clone.on('mouseenter', (): void => {
                     clone.addClass('cvat_canvas_shape_splitting');
                 }).on('mouseleave', (): void => {
@@ -170,6 +166,7 @@ export class EditHandlerImpl implements EditHandler {
         }
 
         let points = null;
+        const { offset } = this.geometry;
         if (this.editData.state.shapeType === 'polyline') {
             if (start !== this.editData.pointID) {
                 linePoints.reverse();
@@ -181,11 +178,8 @@ export class EditHandlerImpl implements EditHandler {
             points = oldPoints.concat(linePoints.slice(0, -1));
         }
 
-        points = translateBetweenSVG(
-            this.canvas.node as any as SVGSVGElement,
-            this.background,
-            pointsToArray(points.join(' ')),
-        );
+        points = pointsToArray(points.join(' '))
+            .map((coord: number): number => coord - offset);
 
         const { state } = this.editData;
         this.edit({
@@ -284,11 +278,9 @@ export class EditHandlerImpl implements EditHandler {
     public constructor(
         onEditDone: (state: any, points: number[]) => void,
         canvas: SVG.Container,
-        background: SVGSVGElement,
     ) {
         this.onEditDone = onEditDone;
         this.canvas = canvas;
-        this.background = background;
         this.editData = null;
         this.editedShape = null;
         this.editLine = null;

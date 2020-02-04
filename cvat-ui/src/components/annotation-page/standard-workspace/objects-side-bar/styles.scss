@@ -18,7 +18,7 @@
         > .ant-collapse-content {
             background: $background-color-2;
             border-bottom: none;
-            height: 150px;
+            height: 230px;
         }
     }
 }
@@ -31,10 +31,6 @@
 
     &:hover {
         transform: scale(1.1);
-    }
-
-    &:active {
-        transform: scale(1);
     }
 }
 
@@ -144,10 +140,6 @@
     > div:nth-child(3) {
         margin-top: 10px;
     }
-
-    &:hover {
-        @extend .cvat-objects-sidebar-state-active-item;
-    }
 }
 
 .cvat-objects-sidebar-state-item-collapse {
@@ -245,4 +237,29 @@
     width: 30px;
     height: 20px;
     border-radius: 5px;
+}
+
+.cvat-objects-appearance-content {
+    > div {
+        width: 100%;
+
+        > label {
+            text-align: center;
+            width: 33%;
+        }
+    }
+}
+
+.cvat-object-item-menu {
+    > li {
+        padding: 0px;
+
+        > button {
+            padding: 5px 32px;
+            color: $text-color;
+            width: 100%;
+            height: 100%;
+            text-align: left;
+        }
+    }
 }

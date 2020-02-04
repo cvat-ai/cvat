@@ -17,7 +17,7 @@ interface Props {
     canvasInstance: Canvas;
 }
 
-const FitControl = React.memo((props: Props): JSX.Element => {
+function FitControl(props: Props): JSX.Element {
     const {
         canvasInstance,
     } = props;
@@ -27,6 +27,6 @@ const FitControl = React.memo((props: Props): JSX.Element => {
             <Icon component={FitIcon} onClick={(): void => canvasInstance.fit()} />
         </Tooltip>
     );
-});
+}
 
-export default FitControl;
+export default React.memo(FitControl);

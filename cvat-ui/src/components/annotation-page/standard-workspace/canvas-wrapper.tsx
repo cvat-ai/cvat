@@ -5,6 +5,7 @@ import {
 } from 'antd';
 
 import {
+    ColorBy,
     GridColor,
     ObjectType,
 } from 'reducers/interfaces';
@@ -23,9 +24,15 @@ interface Props {
     sidebarCollapsed: boolean;
     canvasInstance: Canvas;
     jobInstance: any;
+    activatedStateID: number | null;
+    selectedStatesID: number[];
     annotations: any[];
     frameData: any;
     frame: number;
+    opacity: number;
+    colorBy: ColorBy;
+    selectedOpacity: number;
+    blackBorders: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -38,6 +45,7 @@ interface Props {
     onMergeObjects: (enabled: boolean) => void;
     onGroupObjects: (enabled: boolean) => void;
     onSplitTrack: (enabled: boolean) => void;
+    onEditShape: (enabled: boolean) => void;
     onShapeDrawn: () => void;
     onResetCanvas: () => void;
     onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
@@ -45,6 +53,8 @@ interface Props {
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
+    onActivateObject: (activatedStateID: number | null) => void;
+    onSelectObjects: (selectedStatesID: number[]) => void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -65,12 +75,19 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     public componentDidUpdate(prevProps: Props): void {
         const {
+            opacity,
+            colorBy,
+            selectedOpacity,
+            blackBorders,
             grid,
             gridSize,
             gridColor,
             gridOpacity,
+            frameData,
+            annotations,
             canvasInstance,
             sidebarCollapsed,
+            activatedStateID,
         } = this.props;
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -107,10 +124,32 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        this.updateCanvas();
+        if (prevProps.activatedStateID !== null
+            && prevProps.activatedStateID !== activatedStateID) {
+            canvasInstance.activate(null);
+            const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
+            if (el) {
+                (el as any).instance.fill({ opacity: opacity / 100 });
+            }
+        }
+
+        if (prevProps.annotations !== annotations || prevProps.frameData !== frameData) {
+            this.updateCanvas();
+        }
+
+        if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
+            || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
+            this.updateShapesView();
+        }
+
+        this.activateOnCanvas();
     }
 
-    private async onShapeDrawn(event: any): Promise<void> {
+    public componentWillUnmount(): void {
+        window.removeEventListener('resize', this.fitCanvas);
+    }
+
+    private onShapeDrawn(event: any): void {
         const {
             jobInstance,
             activeLabelID,
@@ -120,7 +159,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onCreateAnnotations,
         } = this.props;
 
-        onShapeDrawn();
+        if (!event.detail.continue) {
+            onShapeDrawn();
+        }
 
         const { state } = event.detail;
         if (!state.objectType) {
@@ -132,7 +173,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 .filter((label: any) => label.id === activeLabelID);
         }
 
-        if (!state.occluded) {
+        if (typeof (state.occluded) === 'undefined') {
             state.occluded = false;
         }
 
@@ -141,12 +182,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onCreateAnnotations(jobInstance, frame, [objectState]);
     }
 
-    private async onShapeEdited(event: any): Promise<void> {
+    private onShapeEdited(event: any): void {
         const {
             jobInstance,
             frame,
+            onEditShape,
             onUpdateAnnotations,
         } = this.props;
+
+        onEditShape(false);
 
         const {
             state,
@@ -156,7 +200,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onUpdateAnnotations(jobInstance, frame, [state]);
     }
 
-    private async onObjectsMerged(event: any): Promise<void> {
+    private onObjectsMerged(event: any): void {
         const {
             jobInstance,
             frame,
@@ -170,7 +214,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onMergeAnnotations(jobInstance, frame, states);
     }
 
-    private async onObjectsGroupped(event: any): Promise<void> {
+    private onObjectsGroupped(event: any): void {
         const {
             jobInstance,
             frame,
@@ -184,7 +228,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onGroupAnnotations(jobInstance, frame, states);
     }
 
-    private async onTrackSplitted(event: any): Promise<void> {
+    private onTrackSplitted(event: any): void {
         const {
             jobInstance,
             frame,
@@ -196,6 +240,61 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const { state } = event.detail;
         onSplitAnnotations(jobInstance, frame, state);
+    }
+
+    private fitCanvas = (): void => {
+        const { canvasInstance } = this.props;
+        canvasInstance.fitCanvas();
+    };
+
+    private activateOnCanvas(): void {
+        const {
+            activatedStateID,
+            canvasInstance,
+            selectedOpacity,
+        } = this.props;
+
+        if (activatedStateID !== null) {
+            canvasInstance.activate(activatedStateID);
+            const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
+            if (el) {
+                (el as any as SVGElement).setAttribute('fill-opacity', `${selectedOpacity / 100}`);
+            }
+        }
+    }
+
+    private updateShapesView(): void {
+        const {
+            annotations,
+            opacity,
+            colorBy,
+            blackBorders,
+        } = this.props;
+
+        for (const state of annotations) {
+            let shapeColor = '';
+            if (colorBy === ColorBy.INSTANCE) {
+                shapeColor = state.color;
+            } else if (colorBy === ColorBy.GROUP) {
+                shapeColor = state.group.color;
+            } else if (colorBy === ColorBy.LABEL) {
+                shapeColor = state.label.color;
+            }
+
+            // TODO: In this approach CVAT-UI know details of implementations CVAT-CANVAS (svg.js)
+            const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
+            if (shapeView) {
+                if (['rect', 'polygon', 'polyline'].includes(shapeView.tagName)) {
+                    (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
+                    (shapeView as any).instance.stroke({ color: blackBorders ? 'black' : shapeColor });
+                } else {
+                    // group of points
+                    for (const child of (shapeView as any).instance.children()) {
+                        child.fill({ color: shapeColor });
+                    }
+                }
+            }
+        }
     }
 
     private updateCanvas(): void {
@@ -222,10 +321,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onDragCanvas,
             onZoomCanvas,
             onResetCanvas,
+            onActivateObject,
+            onEditShape,
         } = this.props;
 
         // Size
-        canvasInstance.fitCanvas();
+        window.addEventListener('resize', this.fitCanvas);
+        this.fitCanvas();
 
         // Grid
         const gridElement = window.document.getElementById('cvat_canvas_grid');
@@ -240,8 +342,21 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.grid(gridSize, gridSize);
 
         // Events
+        canvasInstance.html().addEventListener('click', (e: MouseEvent): void => {
+            if ((e.target as HTMLElement).tagName === 'svg') {
+                onActivateObject(null);
+            }
+        });
+
+        canvasInstance.html().addEventListener('canvas.editstart', (): void => {
+            onActivateObject(null);
+            onEditShape(true);
+        });
+
         canvasInstance.html().addEventListener('canvas.setup', (): void => {
             onSetupCanvas();
+            this.updateShapesView();
+            this.activateOnCanvas();
         });
 
         canvasInstance.html().addEventListener('canvas.setup', () => {
@@ -268,7 +383,29 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onZoomCanvas(false);
         });
 
+        canvasInstance.html().addEventListener('canvas.clicked', (e: any) => {
+            const { clientID } = e.detail.state;
+            const sidebarItem = window.document
+                .getElementById(`cvat-objects-sidebar-state-item-${clientID}`);
+            if (sidebarItem) {
+                sidebarItem.scrollIntoView();
+            }
+        });
+
+        canvasInstance.html().addEventListener('canvas.deactivated', (e: any): void => {
+            const { activatedStateID } = this.props;
+            const { state } = e.detail;
+
+            // when we activate element, canvas deactivates the previous
+            // and triggers this event
+            // in this case we do not need to update our state
+            if (state.clientID === activatedStateID) {
+                onActivateObject(null);
+            }
+        });
+
         canvasInstance.html().addEventListener('canvas.moved', async (event: any): Promise<void> => {
+            const { activatedStateID } = this.props;
             const result = await jobInstance.annotations.select(
                 event.detail.states,
                 event.detail.x,
@@ -282,7 +419,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                     }
                 }
 
-                canvasInstance.activate(result.state.clientID);
+                if (activatedStateID !== result.state.clientID) {
+                    onActivateObject(result.state.clientID);
+                }
             }
         });
 

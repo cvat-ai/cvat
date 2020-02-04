@@ -19,7 +19,7 @@ interface Props {
     onInputChange(value: number | undefined): void;
 }
 
-const PlayerNavigation = React.memo((props: Props): JSX.Element => {
+function PlayerNavigation(props: Props): JSX.Element {
     const {
         startFrame,
         stopFrame,
@@ -61,6 +61,6 @@ const PlayerNavigation = React.memo((props: Props): JSX.Element => {
             </Col>
         </>
     );
-});
+}
 
-export default PlayerNavigation;
+export default React.memo(PlayerNavigation);

@@ -1,6 +1,7 @@
 import { AnyAction } from 'redux';
 import {
     GridColor,
+    ColorBy,
 } from 'reducers/interfaces';
 
 export enum SettingsActionTypes {
@@ -9,6 +10,46 @@ export enum SettingsActionTypes {
     CHANGE_GRID_SIZE = 'CHANGE_GRID_SIZE',
     CHANGE_GRID_COLOR = 'CHANGE_GRID_COLOR',
     CHANGE_GRID_OPACITY = 'CHANGE_GRID_OPACITY',
+    CHANGE_SHAPES_OPACITY = 'CHANGE_SHAPES_OPACITY',
+    CHANGE_SELECTED_SHAPES_OPACITY = 'CHANGE_SELECTED_SHAPES_OPACITY',
+    CHANGE_SHAPES_COLOR_BY = 'CHANGE_SHAPES_COLOR_BY',
+    CHANGE_SHAPES_BLACK_BORDERS = 'CHANGE_SHAPES_BLACK_BORDERS',
+}
+
+export function changeShapesOpacity(opacity: number): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_SHAPES_OPACITY,
+        payload: {
+            opacity,
+        },
+    };
+}
+
+export function changeSelectedShapesOpacity(selectedOpacity: number): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_SELECTED_SHAPES_OPACITY,
+        payload: {
+            selectedOpacity,
+        },
+    };
+}
+
+export function changeShapesColorBy(colorBy: ColorBy): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_SHAPES_COLOR_BY,
+        payload: {
+            colorBy,
+        },
+    };
+}
+
+export function changeShapesBlackBorders(blackBorders: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_SHAPES_BLACK_BORDERS,
+        payload: {
+            blackBorders,
+        },
+    };
 }
 
 export function switchRotateAll(rotateAll: boolean): AnyAction {

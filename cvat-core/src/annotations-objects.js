@@ -13,6 +13,7 @@
         checkObjectType,
     } = require('./common');
     const {
+        colors,
         ObjectShape,
         ObjectType,
         AttributeType,
@@ -25,6 +26,8 @@
     } = require('./exceptions');
 
     const { Label } = require('./labels');
+
+    const defaultGroupColor = '#E0E0E0';
 
     // Called with the Annotation context
     function objectStateFactory(frame, data) {
@@ -165,7 +168,7 @@
         updateTimestamp(updated) {
             const anyChanges = updated.label || updated.attributes || updated.points
                 || updated.outside || updated.occluded || updated.keyframe
-                || updated.group || updated.zOrder;
+                || updated.zOrder;
 
             if (anyChanges) {
                 this.updated = Date.now();
@@ -200,6 +203,96 @@
             };
 
             return this.collectionZ[frame];
+        }
+
+        validateStateBeforeSave(frame, data) {
+            let fittedPoints = [];
+            const updated = data.updateFlags;
+
+            if (updated.label) {
+                checkObjectType('label', data.label, null, Label);
+            }
+
+            const labelAttributes = data.label.attributes
+                .reduce((accumulator, value) => {
+                    accumulator[value.id] = value;
+                    return accumulator;
+                }, {});
+
+            if (updated.attributes) {
+                for (const attrID of Object.keys(data.attributes)) {
+                    const value = data.attributes[attrID];
+                    if (attrID in labelAttributes) {
+                        if (!validateAttributeValue(value, labelAttributes[attrID])) {
+                            throw new ArgumentError(
+                                `Trying to save an attribute attribute with id ${attrID} and invalid value ${value}`,
+                            );
+                        }
+                    } else {
+                        throw new ArgumentError(
+                            `The label of the shape doesn't have the attribute with id ${attrID} and value ${value}`,
+                        );
+                    }
+                }
+            }
+
+            if (updated.points) {
+                checkObjectType('points', data.points, null, Array);
+                checkNumberOfPoints(this.shapeType, data.points);
+                // cut points
+                const { width, height } = this.frameMeta[frame];
+                for (let i = 0; i < data.points.length - 1; i += 2) {
+                    const x = data.points[i];
+                    const y = data.points[i + 1];
+
+                    checkObjectType('coordinate', x, 'number', null);
+                    checkObjectType('coordinate', y, 'number', null);
+
+                    fittedPoints.push(
+                        Math.clamp(x, 0, width),
+                        Math.clamp(y, 0, height),
+                    );
+                }
+
+                if (!checkShapeArea(this.shapeType, fittedPoints)) {
+                    fittedPoints = false;
+                }
+            }
+
+            if (updated.occluded) {
+                checkObjectType('occluded', data.occluded, 'boolean', null);
+            }
+
+            if (updated.outside) {
+                checkObjectType('outside', data.outside, 'boolean', null);
+            }
+
+            if (updated.zOrder) {
+                checkObjectType('zOrder', data.zOrder, 'integer', null);
+            }
+
+            if (updated.lock) {
+                checkObjectType('lock', data.lock, 'boolean', null);
+            }
+
+            if (updated.color) {
+                checkObjectType('color', data.color, 'string', null);
+                if (/^#[0-9A-F]{6}$/i.test(data.color)) {
+                    throw new ArgumentError(
+                        `Got invalid color value: "${data.color}"`,
+                    );
+                }
+            }
+
+            if (updated.hidden) {
+                checkObjectType('hidden', data.hidden, 'boolean', null);
+            }
+
+            if (updated.keyframe) {
+                checkObjectType('keyframe', data.keyframe, 'boolean', null);
+            }
+
+            return fittedPoints;
         }
 
         save() {
@@ -289,7 +382,10 @@
                 points: [...this.points],
                 attributes: { ...this.attributes },
                 label: this.label,
-                group: this.group,
+                group: {
+                    color: this.group ? colors[this.group % colors.length] : defaultGroupColor,
+                    id: this.group,
+                },
                 color: this.color,
                 hidden: this.hidden,
                 updated: this.updated,
@@ -308,111 +404,46 @@
                 return objectStateFactory.call(this, frame, this.get(frame));
             }
 
-            // All changes are done in this temporary object
-            const copy = this.get(frame);
+            const fittedPoints = this.validateStateBeforeSave(frame, data);
             const updated = data.updateFlags;
 
+            // Now when all fields are validated, we can apply them
             if (updated.label) {
-                checkObjectType('label', data.label, null, Label);
-                copy.label = data.label;
-                copy.attributes = {};
-                this.appendDefaultAttributes.call(copy, copy.label);
+                this.label = data.label;
+                this.attributes = {};
+                this.appendDefaultAttributes(data.label);
             }
 
             if (updated.attributes) {
-                const labelAttributes = copy.label.attributes
-                    .reduce((accumulator, value) => {
-                        accumulator[value.id] = value;
-                        return accumulator;
-                    }, {});
-
                 for (const attrID of Object.keys(data.attributes)) {
-                    const value = data.attributes[attrID];
-                    if (attrID in labelAttributes) {
-                        if (validateAttributeValue(value, labelAttributes[attrID])) {
-                            copy.attributes[attrID] = value;
-                        } else {
-                            throw new ArgumentError(
-                                `Trying to save an attribute attribute with id ${attrID} and invalid value ${value}`,
-                            );
-                        }
-                    } else {
-                        throw new ArgumentError(
-                            `Trying to save unknown attribute with id ${attrID} and value ${value}`,
-                        );
-                    }
+                    this.attributes[attrID] = data.attributes[attrID];
                 }
             }
 
-            if (updated.points) {
-                checkObjectType('points', data.points, null, Array);
-                checkNumberOfPoints(this.shapeType, data.points);
-
-                // cut points
-                const { width, height } = this.frameMeta[frame];
-                const cutPoints = [];
-                for (let i = 0; i < data.points.length - 1; i += 2) {
-                    const x = data.points[i];
-                    const y = data.points[i + 1];
-
-                    checkObjectType('coordinate', x, 'number', null);
-                    checkObjectType('coordinate', y, 'number', null);
-
-                    cutPoints.push(
-                        Math.clamp(x, 0, width),
-                        Math.clamp(y, 0, height),
-                    );
-                }
-
-                if (checkShapeArea(this.shapeType, cutPoints)) {
-                    copy.points = cutPoints;
-                }
+            if (updated.points && fittedPoints.length) {
+                this.points = [...fittedPoints];
             }
 
             if (updated.occluded) {
-                checkObjectType('occluded', data.occluded, 'boolean', null);
-                copy.occluded = data.occluded;
-            }
-
-            if (updated.group) {
-                checkObjectType('group', data.group, 'integer', null);
-                copy.group = data.group;
+                this.occluded = data.occluded;
             }
 
             if (updated.zOrder) {
-                checkObjectType('zOrder', data.zOrder, 'integer', null);
-                copy.zOrder = data.zOrder;
+                this.zOrder = data.zOrder;
             }
 
             if (updated.lock) {
-                checkObjectType('lock', data.lock, 'boolean', null);
-                copy.lock = data.lock;
+                this.lock = data.lock;
             }
 
             if (updated.color) {
-                checkObjectType('color', data.color, 'string', null);
-                if (/^#[0-9A-F]{6}$/i.test(data.color)) {
-                    throw new ArgumentError(
-                        `Got invalid color value: "${data.color}"`,
-                    );
-                }
-
-                copy.color = data.color;
+                this.color = data.color;
             }
 
             if (updated.hidden) {
-                checkObjectType('hidden', data.hidden, 'boolean', null);
-                copy.hidden = data.hidden;
+                this.hidden = data.hidden;
             }
 
-            // Commit state
-            for (const prop of Object.keys(copy)) {
-                if (prop in this) {
-                    this[prop] = copy[prop];
-                }
-            }
-
-            // Reset flags and commit all changes
             this.updateTimestamp(updated);
             updated.reset();
 
@@ -496,10 +527,20 @@
 
         // Method is used to construct ObjectState objects
         get(frame) {
+            const {
+                prev,
+                next,
+                first,
+                last,
+            } = this.boundedKeyframes(frame);
+
             return {
-                ...this.getPosition(frame),
+                ...this.getPosition(frame, prev, next),
                 attributes: this.getAttributes(frame),
-                group: this.group,
+                group: {
+                    color: this.group ? colors[this.group % colors.length] : defaultGroupColor,
+                    id: this.group,
+                },
                 objectType: ObjectType.TRACK,
                 shapeType: this.shapeType,
                 clientID: this.clientID,
@@ -509,30 +550,48 @@
                 hidden: this.hidden,
                 updated: this.updated,
                 label: this.label,
+                keyframes: {
+                    prev,
+                    next,
+                    first,
+                    last,
+                },
                 frame,
             };
         }
 
-        neighborsFrames(targetFrame) {
+        boundedKeyframes(targetFrame) {
             const frames = Object.keys(this.shapes).map((frame) => +frame);
             let lDiff = Number.MAX_SAFE_INTEGER;
             let rDiff = Number.MAX_SAFE_INTEGER;
+            let first = Number.MAX_SAFE_INTEGER;
+            let last = Number.MIN_SAFE_INTEGER;
 
             for (const frame of frames) {
+                if (frame < first) {
+                    first = frame;
+                }
+                if (frame > last) {
+                    last = frame;
+                }
+
                 const diff = Math.abs(targetFrame - frame);
-                if (frame <= targetFrame && diff < lDiff) {
+
+                if (frame < targetFrame && diff < lDiff) {
                     lDiff = diff;
-                } else if (diff < rDiff) {
+                } else if (frame > targetFrame && diff < rDiff) {
                     rDiff = diff;
                 }
             }
 
-            const leftFrame = lDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame - lDiff;
-            const rightFrame = rDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame + rDiff;
+            const prev = lDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame - lDiff;
+            const next = rDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame + rDiff;
 
             return {
-                leftFrame,
-                rightFrame,
+                prev,
+                next,
+                first,
+                last,
             };
         }
 
@@ -568,181 +627,80 @@
                 return objectStateFactory.call(this, frame, this.get(frame));
             }
 
-            // All changes are done in this temporary object
-            const copy = Object.assign(this.get(frame));
-            copy.attributes = Object.assign(copy.attributes);
-            copy.points = [...copy.points];
-
+            const fittedPoints = this.validateStateBeforeSave(frame, data);
             const updated = data.updateFlags;
-            let positionUpdated = false;
-
-            if (updated.label) {
-                checkObjectType('label', data.label, null, Label);
-                copy.label = data.label;
-                copy.attributes = {};
-
-                // Shape attributes will be removed later after all checks
-                this.appendDefaultAttributes.call(copy, copy.label);
-            }
-
-            const labelAttributes = copy.label.attributes
+            const current = this.get(frame);
+            const labelAttributes = data.label.attributes
                 .reduce((accumulator, value) => {
                     accumulator[value.id] = value;
                     return accumulator;
                 }, {});
 
-            if (updated.attributes) {
-                for (const attrID of Object.keys(data.attributes)) {
-                    const value = data.attributes[attrID];
-                    if (attrID in labelAttributes) {
-                        if (validateAttributeValue(value, labelAttributes[attrID])) {
-                            copy.attributes[attrID] = value;
-                        } else {
-                            throw new ArgumentError(
-                                `Trying to save an attribute attribute with id ${attrID} and invalid value ${value}`,
-                            );
-                        }
-                    } else {
-                        throw new ArgumentError(
-                            `Trying to save unknown attribute with id ${attrID} and value ${value}`,
-                        );
-                    }
-                }
-            }
-
-            if (updated.points) {
-                checkObjectType('points', data.points, null, Array);
-                checkNumberOfPoints(this.shapeType, data.points);
-
-                // cut points
-                const { width, height } = this.frameMeta[frame];
-                const cutPoints = [];
-                for (let i = 0; i < data.points.length - 1; i += 2) {
-                    const x = data.points[i];
-                    const y = data.points[i + 1];
-
-                    checkObjectType('coordinate', x, 'number', null);
-                    checkObjectType('coordinate', y, 'number', null);
-
-                    cutPoints.push(
-                        Math.clamp(x, 0, width),
-                        Math.clamp(y, 0, height),
-                    );
-                }
-
-                if (checkShapeArea(this.shapeType, cutPoints)) {
-                    copy.points = cutPoints;
-                    positionUpdated = true;
-                }
-            }
-
-            if (updated.occluded) {
-                checkObjectType('occluded', data.occluded, 'boolean', null);
-                copy.occluded = data.occluded;
-                positionUpdated = true;
-            }
-
-            if (updated.outside) {
-                checkObjectType('outside', data.outside, 'boolean', null);
-                copy.outside = data.outside;
-                positionUpdated = true;
-            }
-
-            if (updated.group) {
-                checkObjectType('group', data.group, 'integer', null);
-                copy.group = data.group;
-            }
-
-            if (updated.zOrder) {
-                checkObjectType('zOrder', data.zOrder, 'integer', null);
-                copy.zOrder = data.zOrder;
-                positionUpdated = true;
-            }
-
-            if (updated.lock) {
-                checkObjectType('lock', data.lock, 'boolean', null);
-                copy.lock = data.lock;
-            }
-
-            if (updated.color) {
-                checkObjectType('color', data.color, 'string', null);
-                if (/^#[0-9A-F]{6}$/i.test(data.color)) {
-                    throw new ArgumentError(
-                        `Got invalid color value: "${data.color}"`,
-                    );
-                }
-
-                copy.color = data.color;
-            }
-
-            if (updated.hidden) {
-                checkObjectType('hidden', data.hidden, 'boolean', null);
-                copy.hidden = data.hidden;
-            }
-
-            if (updated.keyframe) {
-                // Just check here
-                checkObjectType('keyframe', data.keyframe, 'boolean', null);
-            }
-
-            // Commit all changes
-            for (const prop of Object.keys(copy)) {
-                if (prop in this) {
-                    this[prop] = copy[prop];
-                }
-            }
-
-            if (updated.attributes) {
-                // Mutable attributes will be updated below
-                for (const attrID of Object.keys(copy.attributes)) {
-                    if (!labelAttributes[attrID].mutable) {
-                        this.attributes[attrID] = data.attributes[attrID];
-                        this.attributes[attrID] = data.attributes[attrID];
-                    }
-                }
-            }
-
             if (updated.label) {
+                this.label = data.label;
+                this.attributes = {};
                 for (const shape of Object.values(this.shapes)) {
                     shape.attributes = {};
                 }
+                this.appendDefaultAttributes(data.label);
             }
 
-            // Remove keyframe
-            if (updated.keyframe && !data.keyframe) {
-                if (frame in this.shapes) {
-                    if (Object.keys(this.shapes).length === 1) {
-                        throw new DataError('You cannot remove the latest keyframe of a track');
+            let mutableAttributesUpdated = false;
+            if (updated.attributes) {
+                for (const attrID of Object.keys(data.attributes)) {
+                    if (!labelAttributes[attrID].mutable) {
+                        this.attributes[attrID] = data.attributes[attrID];
+                        this.attributes[attrID] = data.attributes[attrID];
+                    } else if (data.attributes[attrID] !== current.attributes[attrID]) {
+                        mutableAttributesUpdated = mutableAttributesUpdated
+                            // not keyframe yet
+                            || !(frame in this.shapes)
+                            // keyframe, but without this attrID
+                            || !(attrID in this.shapes[frame])
+                            // keyframe with attrID, but with another value
+                            || (this.shapes[frame][attrID] !== data.attributes[attrID]);
                     }
-
-                    delete this.shapes[frame];
-                    this.updateTimestamp(updated);
-                    updated.reset();
                 }
-
-                return objectStateFactory.call(this, frame, this.get(frame));
             }
 
-            // Add/update keyframe
-            if (positionUpdated || updated.attributes || (updated.keyframe && data.keyframe)) {
-                data.keyframe = true;
+            if (updated.lock) {
+                this.lock = data.lock;
+            }
 
+            if (updated.color) {
+                this.color = data.color;
+            }
+
+            if (updated.hidden) {
+                this.hidden = data.hidden;
+            }
+
+            if (updated.points || updated.keyframe || updated.outside
+                || updated.occluded || updated.zOrder || mutableAttributesUpdated) {
+                const mutableAttributes = frame in this.shapes ? this.shapes[frame].attributes : {};
                 this.shapes[frame] = {
                     frame,
-                    zOrder: copy.zOrder,
-                    points: copy.points,
-                    outside: copy.outside,
-                    occluded: copy.occluded,
-                    attributes: {},
+                    zOrder: data.zOrder,
+                    points: updated.points && fittedPoints.length ? fittedPoints : current.points,
+                    outside: data.outside,
+                    occluded: data.occluded,
+                    attributes: mutableAttributes,
                 };
 
-                if (updated.attributes) {
-                    // Unmutable attributes were updated above
-                    for (const attrID of Object.keys(copy.attributes)) {
-                        if (labelAttributes[attrID].mutable) {
-                            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
-                            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
-                        }
+                for (const attrID of Object.keys(data.attributes)) {
+                    if (labelAttributes[attrID].mutable
+                        && data.attributes[attrID] !== current.attributes[attrID]) {
+                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                    }
+                }
+
+                if (updated.keyframe && !data.keyframe) {
+                    if (Object.keys(this.shapes).length === 1) {
+                        throw new DataError('You are not able to remove the latest keyframe for a track. '
+                            + 'Consider removing a track instead');
+                    } else {
+                        delete this.shapes[frame];
                     }
                 }
             }
@@ -753,43 +711,19 @@
             return objectStateFactory.call(this, frame, this.get(frame));
         }
 
-        getPosition(targetFrame) {
-            const {
-                leftFrame,
-                rightFrame,
-            } = this.neighborsFrames(targetFrame);
-
+        getPosition(targetFrame, leftKeyframe, rightFrame) {
+            const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
             const rightPosition = Number.isInteger(rightFrame) ? this.shapes[rightFrame] : null;
             const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
 
-            if (leftPosition && leftFrame === targetFrame) {
-                return {
-                    points: [...leftPosition.points],
-                    occluded: leftPosition.occluded,
-                    outside: leftPosition.outside,
-                    zOrder: leftPosition.zOrder,
-                    keyframe: true,
-                };
-            }
-
-            if (rightPosition && leftPosition) {
+            if (leftPosition && rightPosition) {
                 return {
                     ...this.interpolatePosition(
                         leftPosition,
                         rightPosition,
                         (targetFrame - leftFrame) / (rightFrame - leftFrame),
                     ),
-                    keyframe: false,
-                };
-            }
-
-            if (rightPosition) {
-                return {
-                    points: [...rightPosition.points],
-                    occluded: rightPosition.occluded,
-                    outside: true,
-                    zOrder: 0,
-                    keyframe: false,
+                    keyframe: targetFrame in this.shapes,
                 };
             }
 
@@ -799,12 +733,23 @@
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: 0,
-                    keyframe: false,
+                    keyframe: targetFrame in this.shapes,
                 };
             }
 
-            throw new ScriptingError(
-                `No one neightbour frame found for the track with client ID: "${this.id}"`,
+            if (rightPosition) {
+                return {
+                    points: [...rightPosition.points],
+                    occluded: rightPosition.occluded,
+                    outside: true,
+                    zOrder: 0,
+                    keyframe: targetFrame in this.shapes,
+                };
+            }
+
+            throw new DataError(
+                'No one left position or right position was found. '
+                + `Interpolation impossible. Client ID: ${this.id}`,
             );
         }
 
@@ -813,7 +758,7 @@
                 this.removed = true;
             }
 
-            return true;
+            return this.removed;
         }
     }
 
@@ -873,46 +818,61 @@
                 return objectStateFactory.call(this, frame, this.get(frame));
             }
 
-            // All changes are done in this temporary object
-            const copy = this.get(frame);
+            if (this.lock && data.lock) {
+                return objectStateFactory.call(this, frame, this.get(frame));
+            }
+
             const updated = data.updateFlags;
 
+            // First validate all the fields
             if (updated.label) {
                 checkObjectType('label', data.label, null, Label);
-                copy.label = data.label;
-                copy.attributes = {};
-                this.appendDefaultAttributes.call(copy, copy.label);
             }
 
             if (updated.attributes) {
-                const labelAttributes = copy.label
-                    .attributes.map((attr) => `${attr.id}`);
+                const labelAttributes = data.label.attributes
+                    .reduce((accumulator, value) => {
+                        accumulator[value.id] = value;
+                        return accumulator;
+                    }, {});
 
                 for (const attrID of Object.keys(data.attributes)) {
-                    if (labelAttributes.includes(attrID)) {
-                        copy.attributes[attrID] = data.attributes[attrID];
+                    const value = data.attributes[attrID];
+                    if (attrID in labelAttributes) {
+                        if (!validateAttributeValue(value, labelAttributes[attrID])) {
+                            throw new ArgumentError(
+                                `Trying to save an attribute attribute with id ${attrID} and invalid value ${value}`,
+                            );
+                        }
+                    } else {
+                        throw new ArgumentError(
+                            `Trying to save unknown attribute with id ${attrID} and value ${value}`,
+                        );
                     }
                 }
             }
 
-            if (updated.group) {
-                checkObjectType('group', data.group, 'integer', null);
-                copy.group = data.group;
-            }
-
             if (updated.lock) {
                 checkObjectType('lock', data.lock, 'boolean', null);
-                copy.lock = data.lock;
             }
 
-            // Commit state
-            for (const prop of Object.keys(copy)) {
-                if (prop in this) {
-                    this[prop] = copy[prop];
+            // Now when all fields are validated, we can apply them
+            if (updated.label) {
+                this.label = data.label;
+                this.attributes = {};
+                this.appendDefaultAttributes(data.label);
+            }
+
+            if (updated.attributes) {
+                for (const attrID of Object.keys(data.attributes)) {
+                    this.attributes[attrID] = data.attributes[attrID];
                 }
             }
 
-            // Reset flags and commit all changes
+            if (updated.lock) {
+                this.lock = data.lock;
+            }
+
             this.updateTimestamp(updated);
             updated.reset();
 

@@ -20,6 +20,7 @@ interface Props {
     frameNumber: number;
     startFrame: number;
     stopFrame: number;
+    showStatistics(): void;
     onSwitchPlay(): void;
     onSaveAnnotation(): void;
     onPrevFrame(): void;
@@ -41,7 +42,7 @@ function propsAreEqual(curProps: Props, prevProps: Props): boolean {
         && curProps.savingStatuses.length === prevProps.savingStatuses.length;
 }
 
-const AnnotationTopBarComponent = React.memo((props: Props): JSX.Element => {
+function AnnotationTopBarComponent(props: Props): JSX.Element {
     const {
         saving,
         savingStatuses,
@@ -49,6 +50,7 @@ const AnnotationTopBarComponent = React.memo((props: Props): JSX.Element => {
         frameNumber,
         startFrame,
         stopFrame,
+        showStatistics,
         onSwitchPlay,
         onSaveAnnotation,
         onPrevFrame,
@@ -90,10 +92,10 @@ const AnnotationTopBarComponent = React.memo((props: Props): JSX.Element => {
                         />
                     </Row>
                 </Col>
-                <RightGroup />
+                <RightGroup showStatistics={showStatistics} />
             </Row>
         </Layout.Header>
     );
-}, propsAreEqual);
+}
 
-export default AnnotationTopBarComponent;
+export default React.memo(AnnotationTopBarComponent, propsAreEqual);

@@ -548,7 +548,7 @@ describe('Feature: group annotations', () => {
         expect(typeof (groupID)).toBe('number');
         annotations = await task.annotations.get(0);
         for (const state of annotations) {
-            expect(state.group).toBe(groupID);
+            expect(state.group.id).toBe(groupID);
         }
     });
 
@@ -559,7 +559,7 @@ describe('Feature: group annotations', () => {
         expect(typeof (groupID)).toBe('number');
         annotations = await job.annotations.get(0);
         for (const state of annotations) {
-            expect(state.group).toBe(groupID);
+            expect(state.group.id).toBe(groupID);
         }
     });
 

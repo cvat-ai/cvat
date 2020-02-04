@@ -167,7 +167,7 @@
     };
 
     /**
-        * Array of hex color
+        * Array of hex colors
         * @type {module:API.cvat.classes.Loader[]} values
         * @name colors
         * @memberof module:API.cvat.enums
