@@ -11,6 +11,9 @@ import {
 } from './interfaces';
 
 const defaultState: AnnotationState = {
+    activities: {
+        loads: {},
+    },
     canvas: {
         instance: new Canvas(),
         ready: false,
@@ -691,6 +694,75 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 job: {
                     ...state.job,
                     saving: false,
+                },
+            };
+        }
+        case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS: {
+            const {
+                job,
+                loader,
+            } = action.payload;
+            const { loads } = state.activities;
+            loads[job.id] = job.id in loads ? loads[job.id] : loader.name;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    loads: {
+                        ...loads,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_FAILED: {
+            const { job } = action.payload;
+            const { loads } = state.activities;
+
+            delete loads[job.id];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    loads: {
+                        ...loads,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS: {
+            const { states, job } = action.payload;
+            const { loads } = state.activities;
+
+            delete loads[job.id];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    loads: {
+                        ...loads,
+                    },
+                },
+                annotations: {
+                    ...state.annotations,
+                    states,
+                    selectedStatesID: [],
+                    activatedStateID: null,
+                    collapsed: {},
+                },
+            };
+        }
+        case AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_SUCCESS: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    selectedStatesID: [],
+                    activatedStateID: null,
+                    collapsed: {},
+                    states: [],
                 },
             };
         }
