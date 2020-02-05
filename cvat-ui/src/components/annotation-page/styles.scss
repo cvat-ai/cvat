@@ -195,15 +195,3 @@
         width: 15em;
     }
 }
-
-.cvat-annotation-menu-load-submenu-item,
-.cvat-annotation-menu-dump-submenu-item,
-.cvat-annotation-menu-export-submenu-item {
-    > i {
-        color: $info-icon-color;
-    }
-
-    &:hover {
-        background-color: $hover-menu-color;
-    }
-}
