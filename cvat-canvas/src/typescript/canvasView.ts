@@ -445,6 +445,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     });
                 }
             }
+
+            e.preventDefault();
         }
 
         if (value) {
@@ -618,6 +620,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 } else if (this.mode === Mode.ZOOM_CANVAS && event.which === 2) {
                     self.controller.enableDrag(event.clientX, event.clientY);
                 }
+                event.preventDefault();
             }
         });
 

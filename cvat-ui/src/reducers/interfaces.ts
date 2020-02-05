@@ -258,6 +258,11 @@ export enum StatesOrdering {
     UPDATED = 'Updated time',
 }
 
+export enum ContextMenuType {
+    CANVAS = 'canvas',
+    CANVAS_SHAPE = 'canvas_shape',
+}
+
 export interface AnnotationState {
     activities: {
         loads: {
@@ -266,6 +271,11 @@ export interface AnnotationState {
         };
     };
     canvas: {
+        contextMenu: {
+            visible: boolean;
+            top: number;
+            left: number;
+        };
         instance: Canvas;
         ready: boolean;
         activeControl: ActiveControl;

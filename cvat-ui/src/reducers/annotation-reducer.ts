@@ -15,6 +15,11 @@ const defaultState: AnnotationState = {
         loads: {},
     },
     canvas: {
+        contextMenu: {
+            visible: false,
+            left: 0,
+            top: 0,
+        },
         instance: new Canvas(),
         ready: false,
         activeControl: ActiveControl.CURSOR,
@@ -763,6 +768,26 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: null,
                     collapsed: {},
                     states: [],
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_CANVAS_CONTEXT_MENU: {
+            const {
+                visible,
+                left,
+                top,
+            } = action.payload;
+
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    contextMenu: {
+                        ...state.canvas.contextMenu,
+                        visible,
+                        left,
+                        top,
+                    },
                 },
             };
         }

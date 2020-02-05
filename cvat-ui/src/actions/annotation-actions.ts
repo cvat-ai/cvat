@@ -73,6 +73,18 @@ export enum AnnotationActionTypes {
     UPLOAD_JOB_ANNOTATIONS_FAILED = 'UPLOAD_JOB_ANNOTATIONS_FAILED',
     REMOVE_JOB_ANNOTATIONS_SUCCESS = 'REMOVE_JOB_ANNOTATIONS_SUCCESS',
     REMOVE_JOB_ANNOTATIONS_FAILED = 'REMOVE_JOB_ANNOTATIONS_FAILED',
+    UPDATE_CANVAS_CONTEXT_MENU = 'UPDATE_CANVAS_CONTEXT_MENU',
+}
+
+export function updateCanvasContextMenu(visible: boolean, left: number, top: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_CANVAS_CONTEXT_MENU,
+        payload: {
+            visible,
+            left,
+            top,
+        },
+    };
 }
 
 export function removeAnnotationsAsync(sessionInstance: any):
