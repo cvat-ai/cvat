@@ -15,7 +15,7 @@ class LazyImageTest(TestCase):
             image = np.ones((100, 100, 3), dtype=np.uint8)
             image = Image.fromarray(image).convert('RGB')
 
-            image_path = osp.join(test_dir.path, 'image.jpg')
+            image_path = osp.join(test_dir, 'image.jpg')
             image.save(image_path)
 
             caching_loader = lazy_image(image_path, cache=None)

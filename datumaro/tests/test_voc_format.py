@@ -8,17 +8,17 @@ import shutil
 from unittest import TestCase
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, BboxObject, LabelCategories,
+    AnnotationType, Label, Bbox, Mask, LabelCategories,
 )
-import datumaro.components.formats.voc as VOC
-from datumaro.components.extractors.voc import (
+import datumaro.plugins.voc_format.format as VOC
+from datumaro.plugins.voc_format.extractor import (
     VocClassificationExtractor,
     VocDetectionExtractor,
     VocSegmentationExtractor,
     VocLayoutExtractor,
     VocActionExtractor,
 )
-from datumaro.components.converters.voc import (
+from datumaro.plugins.voc_format.converter import (
     VocConverter,
     VocClassificationConverter,
     VocDetectionConverter,
@@ -26,10 +26,9 @@ from datumaro.components.converters.voc import (
     VocActionConverter,
     VocSegmentationConverter,
 )
-from datumaro.components.importers.voc import VocImporter
+from datumaro.plugins.voc_format.importer import VocImporter
 from datumaro.components.project import Project
-from datumaro.util import find
-from datumaro.util.test_utils import TestDir
+from datumaro.util.test_utils import TestDir, compare_datasets
 
 
 class VocTest(TestCase):
@@ -121,7 +120,7 @@ def generate_dummy_voc(path):
         ET.SubElement(root_elem, 'segmented').text = '1'
 
         obj1_elem = ET.SubElement(root_elem, 'object')
-        ET.SubElement(obj1_elem, 'name').text = VOC.VocLabel(1).name
+        ET.SubElement(obj1_elem, 'name').text = 'cat'
         ET.SubElement(obj1_elem, 'pose').text = VOC.VocPose(1).name
         ET.SubElement(obj1_elem, 'truncated').text = '1'
         ET.SubElement(obj1_elem, 'difficult').text = '0'
@@ -132,7 +131,7 @@ def generate_dummy_voc(path):
         ET.SubElement(obj1bb_elem, 'ymax').text = '4'
 
         obj2_elem = ET.SubElement(root_elem, 'object')
-        ET.SubElement(obj2_elem, 'name').text = VOC.VocLabel.person.name
+        ET.SubElement(obj2_elem, 'name').text = 'person'
         obj2bb_elem = ET.SubElement(obj2_elem, 'bndbox')
         ET.SubElement(obj2bb_elem, 'xmin').text = '4'
         ET.SubElement(obj2bb_elem, 'ymin').text = '5'
@@ -157,9 +156,10 @@ def generate_dummy_voc(path):
     subset = subsets[subset_name]
     for item in subset:
         cv2.imwrite(osp.join(segm_dir, item + '.png'),
-            np.ones([10, 20, 3]) * VOC.VocColormap[2])
+            np.tile(VOC.VocColormap[2][::-1], (5, 10, 1))
+        )
         cv2.imwrite(osp.join(inst_dir, item + '.png'),
-            np.ones([10, 20, 3]) * VOC.VocColormap[2])
+            np.tile(1, (5, 10, 1)))
 
     # Test images
     subset_name = 'test'
@@ -170,338 +170,440 @@ def generate_dummy_voc(path):
 
     return subsets
 
+class TestExtractorBase(Extractor):
+    _categories = VOC.make_voc_categories()
+
+    def _label(self, voc_label):
+        return self.categories()[AnnotationType.label].find(voc_label)[0]
+
+    def categories(self):
+        return self._categories
+
 class VocExtractorTest(TestCase):
     def test_can_load_voc_cls(self):
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='2007_000001', subset='train',
+                        annotations=[
+                            Label(self._label(l.name))
+                            for l in VOC.VocLabel if l.value % 2 == 1
+                        ]
+                    ),
+
+                    DatasetItem(id='2007_000002', subset='test')
+                ])
+
         with TestDir() as test_dir:
-            generated_subsets = generate_dummy_voc(test_dir.path)
-
-            extractor = VocClassificationExtractor(test_dir.path)
-
-            self.assertEqual(len(generated_subsets), len(extractor.subsets()))
-
-            subset_name = 'train'
-            generated_subset = generated_subsets[subset_name]
-            for id_ in generated_subset:
-                parsed_subset = extractor.get_subset(subset_name)
-                self.assertEqual(len(generated_subset), len(parsed_subset))
-
-                item = find(parsed_subset, lambda x: x.id == id_)
-                self.assertFalse(item is None)
-
-                count = 0
-                for label in VOC.VocLabel:
-                    if label.value % 2 == 1:
-                        count += 1
-                        ann = find(item.annotations,
-                            lambda x: x.type == AnnotationType.label and \
-                                get_label(extractor, x.label) == label.name)
-                        self.assertFalse(ann is None)
-                self.assertEqual(count, len(item.annotations))
-
-            subset_name = 'test'
-            generated_subset = generated_subsets[subset_name]
-            for id_ in generated_subset:
-                parsed_subset = extractor.get_subset(subset_name)
-                self.assertEqual(len(generated_subset), len(parsed_subset))
-
-                item = find(parsed_subset, lambda x: x.id == id_)
-                self.assertFalse(item is None)
-
-                self.assertEqual(0, len(item.annotations))
+            generate_dummy_voc(test_dir)
+            parsed_dataset = VocClassificationExtractor(test_dir)
+            compare_datasets(self, DstExtractor(), parsed_dataset)
 
     def test_can_load_voc_det(self):
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='2007_000001', subset='train',
+                        annotations=[
+                            Bbox(1, 2, 2, 2, label=self._label('cat'),
+                                attributes={
+                                    'pose': VOC.VocPose(1).name,
+                                    'truncated': True,
+                                    'difficult': False,
+                                    'occluded': False,
+                                },
+                                id=1,
+                            ),
+                            Bbox(4, 5, 2, 2, label=self._label('person'),
+                                attributes={
+                                    'truncated': False,
+                                    'difficult': False,
+                                    'occluded': False,
+                                    **{
+                                        a.name: a.value % 2 == 1
+                                        for a in VOC.VocAction
+                                    }
+                                },
+                                id=2, group=2,
+                                # TODO: Actions and group should be excluded
+                                # as soon as correct merge is implemented
+                            ),
+                        ]
+                    ),
+
+                    DatasetItem(id='2007_000002', subset='test')
+                ])
+
         with TestDir() as test_dir:
-            generated_subsets = generate_dummy_voc(test_dir.path)
-
-            extractor = VocDetectionExtractor(test_dir.path)
-
-            self.assertEqual(len(generated_subsets), len(extractor.subsets()))
-
-            subset_name = 'train'
-            generated_subset = generated_subsets[subset_name]
-            for id_ in generated_subset:
-                parsed_subset = extractor.get_subset(subset_name)
-                self.assertEqual(len(generated_subset), len(parsed_subset))
-
-                item = find(parsed_subset, lambda x: x.id == id_)
-                self.assertFalse(item is None)
-
-                obj1 = find(item.annotations,
-                    lambda x: x.type == AnnotationType.bbox and \
-                        get_label(extractor, x.label) == VOC.VocLabel(1).name)
-                self.assertFalse(obj1 is None)
-                self.assertListEqual([1, 2, 2, 2], obj1.get_bbox())
-                self.assertDictEqual(
-                    {
-                        'pose': VOC.VocPose(1).name,
-                        'truncated': True,
-                        'occluded': False,
-                        'difficult': False,
-                    },
-                    obj1.attributes)
-
-                obj2 = find(item.annotations,
-                    lambda x: x.type == AnnotationType.bbox and \
-                        get_label(extractor, x.label) == VOC.VocLabel.person.name)
-                self.assertFalse(obj2 is None)
-                self.assertListEqual([4, 5, 2, 2], obj2.get_bbox())
-
-                self.assertEqual(2, len(item.annotations))
-
-            subset_name = 'test'
-            generated_subset = generated_subsets[subset_name]
-            for id_ in generated_subset:
-                parsed_subset = extractor.get_subset(subset_name)
-                self.assertEqual(len(generated_subset), len(parsed_subset))
-
-                item = find(parsed_subset, lambda x: x.id == id_)
-                self.assertFalse(item is None)
-
-                self.assertEqual(0, len(item.annotations))
+            generate_dummy_voc(test_dir)
+            parsed_dataset = VocDetectionExtractor(test_dir)
+            compare_datasets(self, DstExtractor(), parsed_dataset)
 
     def test_can_load_voc_segm(self):
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='2007_000001', subset='train',
+                        annotations=[
+                            Mask(image=np.ones([5, 10]),
+                                label=self._label(VOC.VocLabel(2).name),
+                                group=1,
+                            ),
+                        ]
+                    ),
+
+                    DatasetItem(id='2007_000002', subset='test')
+                ])
+
         with TestDir() as test_dir:
-            generated_subsets = generate_dummy_voc(test_dir.path)
-
-            extractor = VocSegmentationExtractor(test_dir.path)
-
-            self.assertEqual(len(generated_subsets), len(extractor.subsets()))
-
-            subset_name = 'train'
-            generated_subset = generated_subsets[subset_name]
-            for id_ in generated_subset:
-                parsed_subset = extractor.get_subset(subset_name)
-                self.assertEqual(len(generated_subset), len(parsed_subset))
-
-                item = find(parsed_subset, lambda x: x.id == id_)
-                self.assertFalse(item is None)
-
-                cls_mask = find(item.annotations,
-                    lambda x: x.type == AnnotationType.mask and \
-                        x.attributes.get('class') == True)
-                self.assertFalse(cls_mask is None)
-                self.assertFalse(cls_mask.image is None)
-
-                inst_mask = find(item.annotations,
-                    lambda x: x.type == AnnotationType.mask and \
-                        x.attributes.get('instances') == True)
-                self.assertFalse(inst_mask is None)
-                self.assertFalse(inst_mask.image is None)
-
-                self.assertEqual(2, len(item.annotations))
-
-            subset_name = 'test'
-            generated_subset = generated_subsets[subset_name]
-            for id_ in generated_subset:
-                parsed_subset = extractor.get_subset(subset_name)
-                self.assertEqual(len(generated_subset), len(parsed_subset))
-
-                item = find(parsed_subset, lambda x: x.id == id_)
-                self.assertFalse(item is None)
-
-                self.assertEqual(0, len(item.annotations))
+            generate_dummy_voc(test_dir)
+            parsed_dataset = VocSegmentationExtractor(test_dir)
+            compare_datasets(self, DstExtractor(), parsed_dataset)
 
     def test_can_load_voc_layout(self):
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='2007_000001', subset='train',
+                        annotations=[
+                            Bbox(4, 5, 2, 2, label=self._label('person'),
+                                attributes={
+                                    'truncated': False,
+                                    'difficult': False,
+                                    'occluded': False,
+                                    **{
+                                        a.name: a.value % 2 == 1
+                                        for a in VOC.VocAction
+                                    }
+                                },
+                                id=2, group=2,
+                                # TODO: Actions should be excluded
+                                # as soon as correct merge is implemented
+                            ),
+                            Bbox(5.5, 6, 2, 2, label=self._label(
+                                    VOC.VocBodyPart(1).name),
+                                group=2
+                            )
+                        ]
+                    ),
+
+                    DatasetItem(id='2007_000002', subset='test')
+                ])
+
         with TestDir() as test_dir:
-            generated_subsets = generate_dummy_voc(test_dir.path)
-
-            extractor = VocLayoutExtractor(test_dir.path)
-
-            self.assertEqual(len(generated_subsets), len(extractor.subsets()))
-
-            subset_name = 'train'
-            generated_subset = generated_subsets[subset_name]
-            for id_ in generated_subset:
-                parsed_subset = extractor.get_subset(subset_name)
-                self.assertEqual(len(generated_subset), len(parsed_subset))
-
-                item = find(parsed_subset, lambda x: x.id == id_)
-                self.assertFalse(item is None)
-
-                obj2 = find(item.annotations,
-                    lambda x: x.type == AnnotationType.bbox and \
-                        get_label(extractor, x.label) == VOC.VocLabel.person.name)
-                self.assertFalse(obj2 is None)
-                self.assertListEqual([4, 5, 2, 2], obj2.get_bbox())
-
-                obj2head = find(item.annotations,
-                    lambda x: x.type == AnnotationType.bbox and \
-                        get_label(extractor, x.label) == VOC.VocBodyPart(1).name)
-                self.assertTrue(obj2.id == obj2head.group)
-                self.assertListEqual([5.5, 6, 2, 2], obj2head.get_bbox())
-
-                self.assertEqual(2, len(item.annotations))
-
-            subset_name = 'test'
-            generated_subset = generated_subsets[subset_name]
-            for id_ in generated_subset:
-                parsed_subset = extractor.get_subset(subset_name)
-                self.assertEqual(len(generated_subset), len(parsed_subset))
-
-                item = find(parsed_subset, lambda x: x.id == id_)
-                self.assertFalse(item is None)
-
-                self.assertEqual(0, len(item.annotations))
+            generate_dummy_voc(test_dir)
+            parsed_dataset = VocLayoutExtractor(test_dir)
+            compare_datasets(self, DstExtractor(), parsed_dataset)
 
     def test_can_load_voc_action(self):
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='2007_000001', subset='train',
+                        annotations=[
+                            Bbox(4, 5, 2, 2, label=self._label('person'),
+                                attributes={
+                                    'truncated': False,
+                                    'difficult': False,
+                                    'occluded': False,
+                                    **{
+                                        a.name: a.value % 2 == 1
+                                        for a in VOC.VocAction
+                                    }
+                                    # TODO: group should be excluded
+                                    # as soon as correct merge is implemented
+                                },
+                                id=2, group=2,
+                            ),
+                        ]
+                    ),
+
+                    DatasetItem(id='2007_000002', subset='test')
+                ])
+
         with TestDir() as test_dir:
-            generated_subsets = generate_dummy_voc(test_dir.path)
-
-            extractor = VocActionExtractor(test_dir.path)
-
-            self.assertEqual(len(generated_subsets), len(extractor.subsets()))
-
-            subset_name = 'train'
-            generated_subset = generated_subsets[subset_name]
-            for id_ in generated_subset:
-                parsed_subset = extractor.get_subset(subset_name)
-                self.assertEqual(len(generated_subset), len(parsed_subset))
-
-                item = find(parsed_subset, lambda x: x.id == id_)
-                self.assertFalse(item is None)
-
-                obj2 = find(item.annotations,
-                    lambda x: x.type == AnnotationType.bbox and \
-                        get_label(extractor, x.label) == VOC.VocLabel.person.name)
-                self.assertFalse(obj2 is None)
-                self.assertListEqual([4, 5, 2, 2], obj2.get_bbox())
-
-                for action in VOC.VocAction:
-                    attr = obj2.attributes[action.name]
-                    self.assertEqual(attr, action.value % 2)
-
-            subset_name = 'test'
-            generated_subset = generated_subsets[subset_name]
-            for id_ in generated_subset:
-                parsed_subset = extractor.get_subset(subset_name)
-                self.assertEqual(len(generated_subset), len(parsed_subset))
-
-                item = find(parsed_subset, lambda x: x.id == id_)
-                self.assertFalse(item is None)
-
-                self.assertEqual(0, len(item.annotations))
+            generate_dummy_voc(test_dir)
+            parsed_dataset = VocActionExtractor(test_dir)
+            compare_datasets(self, DstExtractor(), parsed_dataset)
 
 class VocConverterTest(TestCase):
-    def _test_can_save_voc(self, src_extractor, converter, test_dir,
-            target_extractor=None):
-        converter(src_extractor, test_dir)
+    def _test_save_and_load(self, source_dataset, converter, test_dir,
+            target_dataset=None, importer_args=None):
+        converter(source_dataset, test_dir)
 
-        result_extractor = VocImporter()(test_dir).make_dataset()
-        if target_extractor is None:
-            target_extractor = src_extractor
+        if importer_args is None:
+            importer_args = {}
+        parsed_dataset = VocImporter()(test_dir, **importer_args).make_dataset()
 
-        if AnnotationType.label in target_extractor.categories():
-            self.assertEqual(
-                target_extractor.categories()[AnnotationType.label].items,
-                result_extractor.categories()[AnnotationType.label].items)
-        if AnnotationType.mask in target_extractor.categories():
-            self.assertEqual(
-                target_extractor.categories()[AnnotationType.mask].colormap,
-                result_extractor.categories()[AnnotationType.mask].colormap)
+        if target_dataset is None:
+            target_dataset = source_dataset
 
-        self.assertEqual(len(target_extractor), len(result_extractor))
-        for item_a, item_b in zip(target_extractor, result_extractor):
-            self.assertEqual(item_a.id, item_b.id)
-            self.assertEqual(len(item_a.annotations), len(item_b.annotations))
-            for ann_a, ann_b in zip(item_a.annotations, item_b.annotations):
-                self.assertEqual(ann_a.type, ann_b.type)
-
-    def _test_can_save_voc_dummy(self, extractor_type, converter, test_dir):
-        dummy_dir = osp.join(test_dir, 'dummy')
-        generate_dummy_voc(dummy_dir)
-        gen_extractor = extractor_type(dummy_dir)
-
-        self._test_can_save_voc(gen_extractor, converter,
-            osp.join(test_dir, 'converted'))
+        compare_datasets(self, expected=target_dataset, actual=parsed_dataset)
 
     def test_can_save_voc_cls(self):
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=0, subset='a', annotations=[
+                        Label(1),
+                        Label(2),
+                        Label(3),
+                    ]),
+
+                    DatasetItem(id=1, subset='b', annotations=[
+                        Label(4),
+                    ]),
+                ])
+
         with TestDir() as test_dir:
-            self._test_can_save_voc_dummy(
-                VocClassificationExtractor, VocClassificationConverter(label_map='voc'),
-                test_dir.path)
+            self._test_save_and_load(TestExtractor(),
+                VocClassificationConverter(label_map='voc'), test_dir)
 
     def test_can_save_voc_det(self):
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Bbox(2, 3, 4, 5, label=2,
+                            attributes={ 'occluded': True }
+                        ),
+                        Bbox(2, 3, 4, 5, label=3,
+                            attributes={ 'truncated': True },
+                        ),
+                    ]),
+
+                    DatasetItem(id=2, subset='b', annotations=[
+                        Bbox(5, 4, 6, 5, label=3,
+                            attributes={ 'difficult': True },
+                        ),
+                    ]),
+                ])
+
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Bbox(2, 3, 4, 5, label=2, id=1,
+                            attributes={
+                                'truncated': False,
+                                'difficult': False,
+                                'occluded': True,
+                            }
+                        ),
+                        Bbox(2, 3, 4, 5, label=3, id=2,
+                            attributes={
+                                'truncated': True,
+                                'difficult': False,
+                                'occluded': False,
+                            },
+                        ),
+                    ]),
+
+                    DatasetItem(id=2, subset='b', annotations=[
+                        Bbox(5, 4, 6, 5, label=3, id=1,
+                            attributes={
+                                'truncated': False,
+                                'difficult': True,
+                                'occluded': False,
+                            },
+                        ),
+                    ]),
+                ])
+
         with TestDir() as test_dir:
-            self._test_can_save_voc_dummy(
-                VocDetectionExtractor, VocDetectionConverter(label_map='voc'),
-                test_dir.path)
+            self._test_save_and_load(TestExtractor(),
+                VocDetectionConverter(label_map='voc'), test_dir,
+                target_dataset=DstExtractor())
 
     def test_can_save_voc_segm(self):
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        # overlapping masks, the first should be truncated
+                        # the second and third are different instances
+                        Mask(image=np.array([[0, 1, 1, 1, 0]]), label=4,
+                            z_order=1),
+                        Mask(image=np.array([[1, 1, 0, 0, 0]]), label=3,
+                            z_order=2),
+                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
+                            z_order=2),
+                    ]),
+                ])
+
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Mask(image=np.array([[0, 0, 1, 0, 0]]), label=4,
+                            group=1),
+                        Mask(image=np.array([[1, 1, 0, 0, 0]]), label=3,
+                            group=2),
+                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
+                            group=3),
+                    ]),
+                ])
+
         with TestDir() as test_dir:
-            self._test_can_save_voc_dummy(
-                VocSegmentationExtractor, VocSegmentationConverter(label_map='voc'),
-                test_dir.path)
+            self._test_save_and_load(TestExtractor(),
+                VocSegmentationConverter(label_map='voc'), test_dir,
+                target_dataset=DstExtractor())
 
     def test_can_save_voc_layout(self):
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Bbox(2, 3, 4, 5, label=2, id=1, group=1,
+                            attributes={
+                                'pose': VOC.VocPose(1).name,
+                                'truncated': True,
+                                'difficult': False,
+                                'occluded': False,
+                            }
+                        ),
+                        Bbox(2, 3, 1, 1, label=self._label(
+                            VOC.VocBodyPart(1).name), group=1),
+                        Bbox(5, 4, 3, 2, label=self._label(
+                            VOC.VocBodyPart(2).name), group=1),
+                    ]),
+                ])
+
         with TestDir() as test_dir:
-            self._test_can_save_voc_dummy(
-                VocLayoutExtractor, VocLayoutConverter(label_map='voc'),
-                test_dir.path)
+            self._test_save_and_load(TestExtractor(),
+                VocLayoutConverter(label_map='voc'), test_dir)
 
     def test_can_save_voc_action(self):
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Bbox(2, 3, 4, 5, label=2,
+                            attributes={
+                                'truncated': True,
+                                VOC.VocAction(1).name: True,
+                                VOC.VocAction(2).name: True,
+                            }
+                        ),
+                        Bbox(5, 4, 3, 2, label=self._label('person'),
+                            attributes={
+                                'truncated': True,
+                                VOC.VocAction(1).name: True,
+                                VOC.VocAction(2).name: True,
+                            }
+                        ),
+                    ]),
+                ])
+
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Bbox(2, 3, 4, 5, label=2, id=1,
+                            attributes={
+                                'truncated': True,
+                                'difficult': False,
+                                'occluded': False,
+                                # no attributes here in the label categories
+                            }
+                        ),
+                        Bbox(5, 4, 3, 2, label=self._label('person'), id=2,
+                            attributes={
+                                'truncated': True,
+                                'difficult': False,
+                                'occluded': False,
+                                VOC.VocAction(1).name: True,
+                                VOC.VocAction(2).name: True,
+                                **{
+                                    a.name: False for a in VOC.VocAction
+                                        if a.value not in {1, 2}
+                                }
+                            }
+                        ),
+                    ]),
+                ])
+
         with TestDir() as test_dir:
-            self._test_can_save_voc_dummy(
-                VocActionExtractor, VocActionConverter(label_map='voc'),
-                test_dir.path)
+            self._test_save_and_load(TestExtractor(),
+                VocActionConverter(label_map='voc'), test_dir,
+                target_dataset=DstExtractor())
 
     def test_can_save_dataset_with_no_subsets(self):
-        class TestExtractor(Extractor):
+        class TestExtractor(TestExtractorBase):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=1, annotations=[
-                        BboxObject(2, 3, 4, 5, label=2, id=1),
-                        BboxObject(2, 3, 4, 5, label=3, id=2),
+                        Label(2),
+                        Label(3),
                     ]),
 
                     DatasetItem(id=2, annotations=[
-                        BboxObject(5, 4, 6, 5, label=3, id=1),
+                        Label(3),
                     ]),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                VocConverter(label_map='voc'), test_dir)
+
+    def test_can_save_dataset_with_images(self):
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', image=np.ones([4, 5, 3])),
+                    DatasetItem(id=2, subset='a', image=np.ones([5, 4, 3])),
+
+                    DatasetItem(id=3, subset='b', image=np.ones([2, 6, 3])),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                VocConverter(label_map='voc', save_images=True), test_dir)
+
+    def test_dataset_with_voc_labelmap(self):
+        class SrcExtractor(TestExtractorBase):
+            def __iter__(self):
+                yield DatasetItem(id=1, annotations=[
+                    Bbox(2, 3, 4, 5, label=self._label('cat'), id=1),
+                    Bbox(1, 2, 3, 4, label=self._label('non_voc_label'), id=2),
+                ])
+
+            def categories(self):
+                label_cat = LabelCategories()
+                label_cat.add(VOC.VocLabel.cat.name)
+                label_cat.add('non_voc_label')
+                return {
+                    AnnotationType.label: label_cat,
+                }
+
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                yield DatasetItem(id=1, annotations=[
+                    # drop non voc label
+                    Bbox(2, 3, 4, 5, label=self._label('cat'), id=1,
+                        attributes={
+                            'truncated': False,
+                            'difficult': False,
+                            'occluded': False,
+                        }
+                    ),
                 ])
 
             def categories(self):
                 return VOC.make_voc_categories()
 
         with TestDir() as test_dir:
-            self._test_can_save_voc(TestExtractor(), VocConverter(label_map='voc'),
-                test_dir.path)
-
-    def test_dataset_with_voc_labelmap(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                yield DatasetItem(id=1, annotations=[
-                        BboxObject(2, 3, 4, 5, label=0, id=1),
-                        BboxObject(1, 2, 3, 4, label=1, id=2),
-                    ])
-
-            def categories(self):
-                label_cat = LabelCategories()
-                label_cat.add(VOC.VocLabel(1).name)
-                label_cat.add('non_voc_label')
-                return {
-                    AnnotationType.label: label_cat,
-                }
-
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                yield DatasetItem(id=1, annotations=[
-                        BboxObject(2, 3, 4, 5, label=0, id=1),
-                    ])
-
-            def categories(self):
-                return VOC.make_voc_categories()
-
-        with TestDir() as test_dir:
-            self._test_can_save_voc(
+            self._test_save_and_load(
                 SrcExtractor(), VocConverter(label_map='voc'),
-                test_dir.path, target_extractor=DstExtractor())
+                test_dir, target_dataset=DstExtractor())
 
     def test_dataset_with_guessed_labelmap(self):
-        class SrcExtractor(Extractor):
+        class SrcExtractor(TestExtractorBase):
             def __iter__(self):
                 yield DatasetItem(id=1, annotations=[
-                        BboxObject(2, 3, 4, 5, label=0, id=1),
-                        BboxObject(1, 2, 3, 4, label=1, id=2),
-                    ])
+                    Bbox(2, 3, 4, 5, label=0, id=1),
+                    Bbox(1, 2, 3, 4, label=1, id=2),
+                ])
 
             def categories(self):
                 label_cat = LabelCategories()
@@ -511,14 +613,25 @@ class VocConverterTest(TestCase):
                     AnnotationType.label: label_cat,
                 }
 
-        class DstExtractor(Extractor):
+        class DstExtractor(TestExtractorBase):
             def __iter__(self):
                 yield DatasetItem(id=1, annotations=[
-                        BboxObject(2, 3, 4, 5, label=0, id=1),
-                        BboxObject(1, 2, 3, 4,
-                            label=self.categories()[AnnotationType.label] \
-                                .find('non_voc_label')[0], id=2),
-                    ])
+                    Bbox(2, 3, 4, 5, label=self._label(VOC.VocLabel(1).name), id=1,
+                        attributes={
+                            'truncated': False,
+                            'difficult': False,
+                            'occluded': False,
+                        }
+                    ),
+                    Bbox(1, 2, 3, 4,
+                        label=self._label('non_voc_label'), id=2,
+                        attributes={
+                            'truncated': False,
+                            'difficult': False,
+                            'occluded': False,
+                        }
+                    ),
+                ])
 
             def categories(self):
                 label_map = VOC.make_voc_label_map()
@@ -528,20 +641,20 @@ class VocConverterTest(TestCase):
                 return VOC.make_voc_categories(label_map)
 
         with TestDir() as test_dir:
-            self._test_can_save_voc(
+            self._test_save_and_load(
                 SrcExtractor(), VocConverter(label_map='guess'),
-                test_dir.path, target_extractor=DstExtractor())
+                test_dir, target_dataset=DstExtractor())
 
     def test_dataset_with_fixed_labelmap(self):
-        class SrcExtractor(Extractor):
+        class SrcExtractor(TestExtractorBase):
             def __iter__(self):
                 yield DatasetItem(id=1, annotations=[
-                        BboxObject(2, 3, 4, 5, label=0, id=1),
-                        BboxObject(1, 2, 3, 4, label=1, id=2, group=2,
-                            attributes={'act1': True}),
-                        BboxObject(2, 3, 4, 5, label=2, id=3, group=2),
-                        BboxObject(2, 3, 4, 6, label=3, id=4, group=2),
-                    ])
+                    Bbox(2, 3, 4, 5, label=0, id=1),
+                    Bbox(1, 2, 3, 4, label=1, id=2, group=2,
+                        attributes={'act1': True}),
+                    Bbox(2, 3, 4, 5, label=2, id=3, group=2),
+                    Bbox(2, 3, 4, 6, label=3, id=4, group=2),
+                ])
 
             def categories(self):
                 label_cat = LabelCategories()
@@ -557,30 +670,36 @@ class VocConverterTest(TestCase):
             'label': [None, ['label_part1', 'label_part2'], ['act1', 'act2']]
         }
 
-        class DstExtractor(Extractor):
+        class DstExtractor(TestExtractorBase):
             def __iter__(self):
                 yield DatasetItem(id=1, annotations=[
-                        BboxObject(1, 2, 3, 4, label=0, id=2, group=2,
-                            attributes={'act1': True, 'act2': False}),
-                        BboxObject(2, 3, 4, 5, label=1, id=3, group=2),
-                        BboxObject(2, 3, 4, 6, label=2, id=4, group=2),
-                    ])
+                    Bbox(1, 2, 3, 4, label=0, id=1, group=1,
+                        attributes={
+                            'act1': True,
+                            'act2': False,
+                            'truncated': False,
+                            'difficult': False,
+                            'occluded': False,
+                        }
+                    ),
+                    Bbox(2, 3, 4, 5, label=1, group=1),
+                    Bbox(2, 3, 4, 6, label=2, group=1),
+                ])
 
             def categories(self):
                 return VOC.make_voc_categories(label_map)
 
         with TestDir() as test_dir:
-            self._test_can_save_voc(
+            self._test_save_and_load(
                 SrcExtractor(), VocConverter(label_map=label_map),
-                test_dir.path, target_extractor=DstExtractor())
+                test_dir, target_dataset=DstExtractor())
 
-class VocImporterTest(TestCase):
+class VocImportTest(TestCase):
     def test_can_import(self):
         with TestDir() as test_dir:
-            dummy_dir = osp.join(test_dir.path, 'dummy')
-            subsets = generate_dummy_voc(dummy_dir)
+            subsets = generate_dummy_voc(test_dir)
 
-            dataset = Project.import_from(dummy_dir, 'voc').make_dataset()
+            dataset = Project.import_from(test_dir, 'voc').make_dataset()
 
             self.assertEqual(len(VOC.VocTask), len(dataset.sources))
             self.assertEqual(set(subsets), set(dataset.subsets()))
@@ -594,7 +713,7 @@ class VocFormatTest(TestCase):
         src_label_map['qq'] = [None, ['part1', 'part2'], ['act1', 'act2']]
 
         with TestDir() as test_dir:
-            file_path = osp.join(test_dir.path, 'test.txt')
+            file_path = osp.join(test_dir, 'test.txt')
 
             VOC.write_label_map(file_path, src_label_map)
             dst_label_map = VOC.parse_label_map(file_path)

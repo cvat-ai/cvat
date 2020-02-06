@@ -9,6 +9,9 @@ import os.path as osp
 import shutil
 import tempfile
 
+from datumaro.components.extractor import AnnotationType
+from datumaro.util import find
+
 
 def current_function_name(depth=1):
     return inspect.getouterframes(inspect.currentframe())[depth].function
@@ -20,7 +23,7 @@ class FileRemover:
         self.ignore_errors = ignore_errors
 
     def __enter__(self):
-        return self
+        return self.path
 
     # pylint: disable=redefined-builtin
     def __exit__(self, type=None, value=None, traceback=None):
@@ -52,3 +55,45 @@ def item_to_str(item):
             for i, a in enumerate(item.annotations)
         ]
     )
+
+def compare_categories(test, expected, actual):
+    test.assertEqual(
+        sorted(expected, key=lambda t: t.value),
+        sorted(actual, key=lambda t: t.value)
+    )
+
+    if AnnotationType.label in expected:
+        test.assertEqual(
+            expected[AnnotationType.label].items,
+            actual[AnnotationType.label].items,
+        )
+    if AnnotationType.mask in expected:
+        test.assertEqual(
+            expected[AnnotationType.mask].colormap,
+            actual[AnnotationType.mask].colormap,
+        )
+    if AnnotationType.points in expected:
+        test.assertEqual(
+            expected[AnnotationType.points].items,
+            actual[AnnotationType.points].items,
+        )
+
+def compare_datasets(test, expected, actual):
+    compare_categories(test, expected.categories(), actual.categories())
+
+    test.assertEqual(sorted(expected.subsets()), sorted(actual.subsets()))
+    test.assertEqual(len(expected), len(actual))
+    for item_a in expected:
+        item_b = find(actual, lambda x: x.id == item_a.id)
+        test.assertFalse(item_b is None, item_a.id)
+        test.assertEqual(len(item_a.annotations), len(item_b.annotations))
+        for ann_a in item_a.annotations:
+            # We might find few corresponding items, so check them all
+            ann_b_matches = [x for x in item_b.annotations
+                if x.id == ann_a.id and \
+                    x.type == ann_a.type and x.group == ann_a.group]
+            test.assertFalse(len(ann_b_matches) == 0, 'ann id: %s' % ann_a.id)
+
+            ann_b = find(ann_b_matches, lambda x: x == ann_a)
+            test.assertEqual(ann_a, ann_b, 'ann: %s' % ann_to_str(ann_a))
+            item_b.annotations.remove(ann_b) # avoid repeats

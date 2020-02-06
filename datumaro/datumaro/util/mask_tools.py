@@ -93,9 +93,16 @@ def remap_mask(mask, map_fn):
 
     return np.array([map_fn(c) for c in range(256)], dtype=np.uint8)[mask]
 
+def make_index_mask(binary_mask, index):
+    return np.choose(binary_mask, np.array([0, index], dtype=np.uint8))
+
+def make_binary_mask(mask):
+    return np.nonzero(mask)
+
 
 def load_mask(path, inverse_colormap=None):
     mask = load_image(path)
+    mask = mask.astype(np.uint8)
     if inverse_colormap is not None:
         if len(mask.shape) == 3 and mask.shape[2] != 1:
             mask = unpaint_mask(mask, inverse_colormap)
@@ -250,3 +257,23 @@ def rles_to_mask(rles, width, height):
     rles = mask_utils.merge(rles)
     mask = mask_utils.decode(rles)
     return mask
+
+def find_mask_bbox(mask):
+    cols = np.any(mask, axis=0)
+    rows = np.any(mask, axis=1)
+    x0, x1 = np.where(cols)[0][[0, -1]]
+    y0, y1 = np.where(rows)[0][[0, -1]]
+    return [x0, y0, x1 - x0, y1 - y0]
+
+def merge_masks(masks):
+    """
+        Merges masks into one, mask order is resposible for z order.
+    """
+    if not masks:
+        return None
+
+    merged_mask = masks[0]
+    for m in masks[1:]:
+        merged_mask = np.where(m != 0, m, merged_mask)
+
+    return merged_mask

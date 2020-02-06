@@ -7,16 +7,17 @@ from collections import OrderedDict
 import os.path as osp
 import xml.etree as ET
 
-from datumaro.components.extractor import (Extractor, DatasetItem,
-    DEFAULT_SUBSET_NAME, AnnotationType,
-    PointsObject, PolygonObject, PolyLineObject, BboxObject,
+from datumaro.components.extractor import (SourceExtractor,
+    DEFAULT_SUBSET_NAME, DatasetItem,
+    AnnotationType, Points, Polygon, PolyLine, Bbox,
     LabelCategories
 )
-from datumaro.components.formats.cvat import CvatPath
 from datumaro.util.image import lazy_image
 
+from .format import CvatPath
 
-class CvatExtractor(Extractor):
+
+class CvatExtractor(SourceExtractor):
     _SUPPORTED_SHAPES = ('box', 'polygon', 'polyline', 'points')
 
     def __init__(self, path):
@@ -242,8 +243,6 @@ class CvatExtractor(Extractor):
             attributes['keyframe'] = ann.get('keyframe', False)
 
         group = ann.get('group')
-        if group == 0:
-            group = None
 
         label = ann.get('label')
         label_id = categories[AnnotationType.label].find(label)[0]
@@ -251,21 +250,21 @@ class CvatExtractor(Extractor):
         points = ann.get('points', [])
 
         if ann_type == 'polyline':
-            return PolyLineObject(points, label=label_id,
+            return PolyLine(points, label=label_id,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'polygon':
-            return PolygonObject(points, label=label_id,
+            return Polygon(points, label=label_id,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'points':
-            return PointsObject(points, label=label_id,
+            return Points(points, label=label_id,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'box':
             x, y = points[0], points[1]
             w, h = points[2] - x, points[3] - y
-            return BboxObject(x, y, w, h, label=label_id,
+            return Bbox(x, y, w, h, label=label_id,
                 id=ann_id, attributes=attributes, group=group)
 
         else:

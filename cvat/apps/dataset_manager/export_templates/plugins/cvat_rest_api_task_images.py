@@ -28,7 +28,7 @@ DEFAULT_CONFIG = Config({
     'server_port': 80
 }, schema=CONFIG_SCHEMA, mutable=False)
 
-class cvat_rest_api_task_images(datumaro.Extractor):
+class cvat_rest_api_task_images(datumaro.SourceExtractor):
     def _image_local_path(self, item_id):
         task_id = self._config.task_id
         return osp.join(self._cache_dir,
@@ -53,7 +53,7 @@ class cvat_rest_api_task_images(datumaro.Extractor):
 
         session = None
         try:
-            print("Enter credentials for '%s:%s':" % \
+            print("Enter credentials for '%s:%s' to read task data:" % \
                 (self._config.server_host, self._config.server_port))
             username = input('User: ')
             password = getpass.getpass()

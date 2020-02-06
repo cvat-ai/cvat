@@ -21,7 +21,7 @@ class CommandTargetsTest(TestCase):
 
     def test_image_false_when_false(self):
         with TestDir() as test_dir:
-            path = osp.join(test_dir.path, 'test.jpg')
+            path = osp.join(test_dir, 'test.jpg')
             with open(path, 'w+') as f:
                 f.write('qwerty123')
 
@@ -33,7 +33,7 @@ class CommandTargetsTest(TestCase):
 
     def test_image_true_when_true(self):
         with TestDir() as test_dir:
-            path = osp.join(test_dir.path, 'test.jpg')
+            path = osp.join(test_dir, 'test.jpg')
             image = np.random.random_sample([10, 10, 3])
             cv2.imwrite(path, image)
 
@@ -60,7 +60,7 @@ class CommandTargetsTest(TestCase):
 
     def test_project_true_when_project_file(self):
         with TestDir() as test_dir:
-            path = osp.join(test_dir.path, 'test.jpg')
+            path = osp.join(test_dir, 'test.jpg')
             Project().save(path)
 
             target = ProjectTarget()
@@ -91,9 +91,9 @@ class CommandTargetsTest(TestCase):
 
         self.assertFalse(status)
 
-    def test_project_true_when_not_project_file(self):
+    def test_project_false_when_not_project_file(self):
         with TestDir() as test_dir:
-            path = osp.join(test_dir.path, 'test.jpg')
+            path = osp.join(test_dir, 'test.jpg')
             with open(path, 'w+') as f:
                 f.write('wqererw')
 

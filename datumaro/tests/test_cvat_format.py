@@ -6,22 +6,21 @@ from xml.etree import ElementTree as ET
 from unittest import TestCase
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, PointsObject, PolygonObject, PolyLineObject, BboxObject,
+    AnnotationType, Points, Polygon, PolyLine, Bbox,
     LabelCategories,
 )
-from datumaro.components.importers.cvat import CvatImporter
-from datumaro.components.converters.cvat import CvatConverter
-from datumaro.components.project import Project
-import datumaro.components.formats.cvat as Cvat
+from datumaro.plugins.cvat_format.importer import CvatImporter
+from datumaro.plugins.cvat_format.converter import CvatConverter
+from datumaro.plugins.cvat_format.format import CvatPath
 from datumaro.util.image import save_image
-from datumaro.util.test_utils import TestDir, item_to_str
+from datumaro.util.test_utils import TestDir, compare_datasets
 
 
 class CvatExtractorTest(TestCase):
     @staticmethod
     def generate_dummy_cvat(path):
-        images_dir = osp.join(path, Cvat.CvatPath.IMAGES_DIR)
-        anno_dir = osp.join(path, Cvat.CvatPath.ANNOTATIONS_DIR)
+        images_dir = osp.join(path, CvatPath.IMAGES_DIR)
+        anno_dir = osp.join(path, CvatPath.ANNOTATIONS_DIR)
 
         os.makedirs(images_dir)
         os.makedirs(anno_dir)
@@ -103,80 +102,55 @@ class CvatExtractorTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, subset='train', image=np.ones((8, 8, 3)),
+                    DatasetItem(id=0, subset='train', image=np.ones((8, 8, 3)),
                         annotations=[
-                            BboxObject(0, 2, 4, 2, label=0,
+                            Bbox(0, 2, 4, 2, label=0,
                                 attributes={
                                     'occluded': True, 'z_order': 1,
                                     'a1': True, 'a2': 'v3'
                                 }),
-                            PolyLineObject([1, 2, 3, 4, 5, 6, 7, 8],
+                            PolyLine([1, 2, 3, 4, 5, 6, 7, 8],
                                 attributes={'occluded': False, 'z_order': 0}),
                         ]),
-                    DatasetItem(id=2, subset='train', image=np.ones((10, 10, 3)),
+                    DatasetItem(id=1, subset='train', image=np.ones((10, 10, 3)),
                         annotations=[
-                            PolygonObject([1, 2, 3, 4, 6, 5],
+                            Polygon([1, 2, 3, 4, 6, 5],
                                 attributes={'occluded': False, 'z_order': 1}),
-                            PointsObject([1, 2, 3, 4, 5, 6], label=1,
+                            Points([1, 2, 3, 4, 5, 6], label=1,
                                 attributes={'occluded': False, 'z_order': 2}),
                         ]),
                 ])
 
             def categories(self):
                 label_categories = LabelCategories()
-                for i in range(10):
-                    label_categories.add('label_' + str(i))
+                label_categories.add('label1', attributes={'a1', 'a2'})
+                label_categories.add('label2')
                 return {
                     AnnotationType.label: label_categories,
                 }
 
         with TestDir() as test_dir:
-            self.generate_dummy_cvat(test_dir.path)
+            self.generate_dummy_cvat(test_dir)
             source_dataset = TestExtractor()
 
-            parsed_dataset = CvatImporter()(test_dir.path).make_dataset()
+            parsed_dataset = CvatImporter()(test_dir).make_dataset()
 
-            self.assertListEqual(
-                sorted(source_dataset.subsets()),
-                sorted(parsed_dataset.subsets()),
-            )
-            self.assertEqual(len(source_dataset), len(parsed_dataset))
-            for subset_name in source_dataset.subsets():
-                source_subset = source_dataset.get_subset(subset_name)
-                parsed_subset = parsed_dataset.get_subset(subset_name)
-                for item_a, item_b in zip(source_subset, parsed_subset):
-                    self.assertEqual(len(item_a.annotations), len(item_b.annotations))
-                    for ann_a, ann_b in zip(item_a.annotations, item_b.annotations):
-                        self.assertEqual(ann_a, ann_b)
+            compare_datasets(self, source_dataset, parsed_dataset)
 
 
 class CvatConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
-            importer_params=None, target_dataset=None):
-        converter(source_dataset, test_dir.path)
+            target_dataset=None, importer_args=None):
+        converter(source_dataset, test_dir)
 
-        if not importer_params:
-            importer_params = {}
-        project = Project.import_from(test_dir.path, 'cvat', **importer_params)
-        parsed_dataset = project.make_dataset()
+        if importer_args is None:
+            importer_args = {}
+        parsed_dataset = CvatImporter()(test_dir, **importer_args).make_dataset()
 
-        if target_dataset is not None:
-            source_dataset = target_dataset
-        self.assertListEqual(
-            sorted(source_dataset.subsets()),
-            sorted(parsed_dataset.subsets()),
-        )
+        if target_dataset is None:
+            target_dataset = source_dataset
 
-        self.assertEqual(len(source_dataset), len(parsed_dataset))
-
-        for subset_name in source_dataset.subsets():
-            source_subset = source_dataset.get_subset(subset_name)
-            parsed_subset = parsed_dataset.get_subset(subset_name)
-            self.assertEqual(len(source_subset), len(parsed_subset))
-            for idx, (item_a, item_b) in enumerate(
-                    zip(source_subset, parsed_subset)):
-                self.assertEqual(item_a, item_b, '%s:\n%s\nvs.\n%s\n' % \
-                    (idx, item_to_str(item_a), item_to_str(item_b)))
+        compare_datasets(self, expected=target_dataset, actual=parsed_dataset)
 
     def test_can_save_and_load(self):
         label_categories = LabelCategories()
@@ -190,32 +164,32 @@ class CvatConverterTest(TestCase):
                 return iter([
                     DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
                         annotations=[
-                            PolygonObject([0, 0, 4, 0, 4, 4],
+                            Polygon([0, 0, 4, 0, 4, 4],
                                 label=1, group=4,
                                 attributes={ 'occluded': True }),
-                            PolygonObject([5, 0, 9, 0, 5, 5],
+                            Polygon([5, 0, 9, 0, 5, 5],
                                 label=2, group=4,
                                 attributes={ 'unknown': 'bar' }),
-                            PointsObject([1, 1, 3, 2, 2, 3],
+                            Points([1, 1, 3, 2, 2, 3],
                                 label=2,
                                 attributes={ 'a1': 'x', 'a2': 42 }),
                         ]
                     ),
                     DatasetItem(id=1, subset='s1',
                         annotations=[
-                            PolyLineObject([0, 0, 4, 0, 4, 4],
+                            PolyLine([0, 0, 4, 0, 4, 4],
                                 label=3, id=4, group=4),
-                            BboxObject(5, 0, 1, 9,
+                            Bbox(5, 0, 1, 9,
                                 label=3, id=4, group=4),
                         ]
                     ),
 
                     DatasetItem(id=2, subset='s2', image=np.ones((5, 10, 3)),
                         annotations=[
-                            PolygonObject([0, 0, 4, 0, 4, 4],
+                            Polygon([0, 0, 4, 0, 4, 4],
                                 label=3, group=4,
                                 attributes={ 'z_order': 1, 'occluded': False }),
-                            PolyLineObject([5, 0, 9, 0, 5, 5]), # will be skipped as no label
+                            PolyLine([5, 0, 9, 0, 5, 5]), # will be skipped as no label
                         ]
                     ),
                 ])
@@ -228,13 +202,13 @@ class CvatConverterTest(TestCase):
                 return iter([
                     DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
                         annotations=[
-                            PolygonObject([0, 0, 4, 0, 4, 4],
+                            Polygon([0, 0, 4, 0, 4, 4],
                                 label=1, group=4,
                                 attributes={ 'z_order': 0, 'occluded': True }),
-                            PolygonObject([5, 0, 9, 0, 5, 5],
+                            Polygon([5, 0, 9, 0, 5, 5],
                                 label=2, group=4,
                                 attributes={ 'z_order': 0, 'occluded': False }),
-                            PointsObject([1, 1, 3, 2, 2, 3],
+                            Points([1, 1, 3, 2, 2, 3],
                                 label=2,
                                 attributes={ 'z_order': 0, 'occluded': False,
                                     'a1': 'x', 'a2': 42 }),
@@ -242,10 +216,10 @@ class CvatConverterTest(TestCase):
                     ),
                     DatasetItem(id=1, subset='s1',
                         annotations=[
-                            PolyLineObject([0, 0, 4, 0, 4, 4],
+                            PolyLine([0, 0, 4, 0, 4, 4],
                                 label=3, group=4,
                                 attributes={ 'z_order': 0, 'occluded': False }),
-                            BboxObject(5, 0, 1, 9,
+                            Bbox(5, 0, 1, 9,
                                 label=3, group=4,
                                 attributes={ 'z_order': 0, 'occluded': False }),
                         ]
@@ -253,7 +227,7 @@ class CvatConverterTest(TestCase):
 
                     DatasetItem(id=2, subset='s2', image=np.ones((5, 10, 3)),
                         annotations=[
-                            PolygonObject([0, 0, 4, 0, 4, 4],
+                            Polygon([0, 0, 4, 0, 4, 4],
                                 label=3, group=4,
                                 attributes={ 'z_order': 1, 'occluded': False }),
                         ]

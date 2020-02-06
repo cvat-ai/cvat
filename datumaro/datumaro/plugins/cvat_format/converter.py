@@ -4,14 +4,17 @@
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict
+import logging as log
 import os
 import os.path as osp
 from xml.sax.saxutils import XMLGenerator
 
+from datumaro.components.cli_plugin import CliPlugin
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import DEFAULT_SUBSET_NAME, AnnotationType
-from datumaro.components.formats.cvat import CvatPath
 from datumaro.util.image import save_image
+
+from .format import CvatPath
 
 
 def _cast(value, type_conv, default=None):
@@ -156,7 +159,10 @@ class _SubsetWriter:
 
         for item in self._extractor:
             if self._context._save_images:
-                self._save_image(item)
+                if item.has_image:
+                    self._save_image(item)
+                else:
+                    log.debug("Item '%s' has no image" % item.id)
             self._write_item(item)
 
         self._writer.close_root()
@@ -235,13 +241,12 @@ class _SubsetWriter:
             ("occluded", str(int(shape.attributes.get('occluded', False)))),
         ])
 
-        points = shape.get_points()
         if shape.type == AnnotationType.bbox:
             shape_data.update(OrderedDict([
-                ("xtl", "{:.2f}".format(points[0])),
-                ("ytl", "{:.2f}".format(points[1])),
-                ("xbr", "{:.2f}".format(points[2])),
-                ("ybr", "{:.2f}".format(points[3]))
+                ("xtl", "{:.2f}".format(shape.points[0])),
+                ("ytl", "{:.2f}".format(shape.points[1])),
+                ("xbr", "{:.2f}".format(shape.points[2])),
+                ("ybr", "{:.2f}".format(shape.points[3]))
             ]))
         else:
             shape_data.update(OrderedDict([
@@ -249,12 +254,12 @@ class _SubsetWriter:
                     ','.join((
                         "{:.2f}".format(x),
                         "{:.2f}".format(y)
-                    )) for x, y in pairwise(points))
+                    )) for x, y in pairwise(shape.points))
                 )),
             ]))
 
         shape_data['z_order'] = str(int(shape.attributes.get('z_order', 0)))
-        if shape.group is not None:
+        if shape.group:
             shape_data['group_id'] = str(shape.group)
 
         if shape.type == AnnotationType.bbox:
@@ -320,27 +325,20 @@ class _Converter:
                 writer = _SubsetWriter(f, subset_name, subset, self)
                 writer.write()
 
-class CvatConverter(Converter):
-    def __init__(self, save_images=False, cmdline_args=None):
+class CvatConverter(Converter, CliPlugin):
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().__init__(**kwargs)
+        parser.add_argument('--save-images', action='store_true',
+            help="Save images (default: %(default)s)")
+        return parser
+
+    def __init__(self, save_images=False):
         super().__init__()
 
         self._options = {
             'save_images': save_images,
         }
-
-        if cmdline_args is not None:
-            self._options.update(self._parse_cmdline(cmdline_args))
-
-    @classmethod
-    def build_cmdline_parser(cls, parser=None):
-        import argparse
-        if not parser:
-            parser = argparse.ArgumentParser(prog='cvat')
-
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-
-        return parser
 
     def __call__(self, extractor, save_dir):
         converter = _Converter(extractor, save_dir, **self._options)

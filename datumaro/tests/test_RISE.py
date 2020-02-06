@@ -4,7 +4,7 @@ import numpy as np
 
 from unittest import TestCase
 
-from datumaro.components.extractor import LabelObject, BboxObject
+from datumaro.components.extractor import Label, Bbox
 from datumaro.components.launcher import Launcher
 from datumaro.components.algorithms.rise import RISE
 
@@ -32,7 +32,7 @@ class RiseTest(TestCase):
                 other_conf = (1.0 - cls_conf) / (self.class_count - 1)
 
                 return [
-                    LabelObject(i, attributes={
+                    Label(i, attributes={
                         'score': cls_conf if cls == i else other_conf }) \
                     for i in range(self.class_count)
                 ]
@@ -94,7 +94,7 @@ class RiseTest(TestCase):
                     if roi.threshold < roi_sum / roi_base_sum:
                         cls = roi.label
                         detections.append(
-                            BboxObject(roi.x, roi.y, roi.w, roi.h,
+                            Bbox(roi.x, roi.y, roi.w, roi.h,
                                 label=cls, attributes={'score': cls_conf})
                         )
 
@@ -108,7 +108,7 @@ class RiseTest(TestCase):
                         box = [roi.x, roi.y, roi.w, roi.h]
                         offset = (np.random.rand(4) - 0.5) * self.pixel_jitter
                         detections.append(
-                            BboxObject(*(box + offset),
+                            Bbox(*(box + offset),
                                 label=cls, attributes={'score': cls_conf})
                         )
 
@@ -189,7 +189,7 @@ class RiseTest(TestCase):
         detections = []
         for i, roi in enumerate(rois):
             detections.append(
-                BboxObject(roi.x, roi.y, roi.w, roi.h,
+                Bbox(roi.x, roi.y, roi.w, roi.h,
                     label=roi.label, attributes={'score': roi.conf})
             )
 
@@ -199,7 +199,7 @@ class RiseTest(TestCase):
                 box = [roi.x, roi.y, roi.w, roi.h]
                 offset = (np.random.rand(4) - 0.5) * pixel_jitter
                 detections.append(
-                    BboxObject(*(box + offset),
+                    Bbox(*(box + offset),
                         label=cls, attributes={'score': cls_conf})
                 )
 

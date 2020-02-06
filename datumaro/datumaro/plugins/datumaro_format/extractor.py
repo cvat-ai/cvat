@@ -7,18 +7,18 @@ import json
 import logging as log
 import os.path as osp
 
-from datumaro.components.extractor import (Extractor, DatasetItem,
-    DEFAULT_SUBSET_NAME, AnnotationType,
-    LabelObject, MaskObject, PointsObject, PolygonObject,
-    PolyLineObject, BboxObject, CaptionObject,
+from datumaro.components.extractor import (SourceExtractor,
+    DEFAULT_SUBSET_NAME, DatasetItem,
+    AnnotationType, Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
-from datumaro.components.formats.datumaro import DatumaroPath
 from datumaro.util.image import lazy_image
 from datumaro.util.mask_tools import lazy_mask
 
+from .format import DatumaroPath
 
-class DatumaroExtractor(Extractor):
+
+class DatumaroExtractor(SourceExtractor):
     def __init__(self, path):
         super().__init__()
 
@@ -120,7 +120,7 @@ class DatumaroExtractor(Extractor):
 
             if ann_type == AnnotationType.label:
                 label_id = ann.get('label_id')
-                loaded.append(LabelObject(label=label_id,
+                loaded.append(Label(label=label_id,
                     id=ann_id, attributes=attributes, group=group))
 
             elif ann_type == AnnotationType.mask:
@@ -137,36 +137,36 @@ class DatumaroExtractor(Extractor):
                     log.warn("Not found mask image file '%s', skipped." % \
                         mask_path)
 
-                loaded.append(MaskObject(label=label_id, image=mask,
+                loaded.append(Mask(label=label_id, image=mask,
                     id=ann_id, attributes=attributes, group=group))
 
             elif ann_type == AnnotationType.polyline:
                 label_id = ann.get('label_id')
                 points = ann.get('points')
-                loaded.append(PolyLineObject(points, label=label_id,
+                loaded.append(PolyLine(points, label=label_id,
                     id=ann_id, attributes=attributes, group=group))
 
             elif ann_type == AnnotationType.polygon:
                 label_id = ann.get('label_id')
                 points = ann.get('points')
-                loaded.append(PolygonObject(points, label=label_id,
+                loaded.append(Polygon(points, label=label_id,
                     id=ann_id, attributes=attributes, group=group))
 
             elif ann_type == AnnotationType.bbox:
                 label_id = ann.get('label_id')
                 x, y, w, h = ann.get('bbox')
-                loaded.append(BboxObject(x, y, w, h, label=label_id,
+                loaded.append(Bbox(x, y, w, h, label=label_id,
                     id=ann_id, attributes=attributes, group=group))
 
             elif ann_type == AnnotationType.points:
                 label_id = ann.get('label_id')
                 points = ann.get('points')
-                loaded.append(PointsObject(points, label=label_id,
+                loaded.append(Points(points, label=label_id,
                     id=ann_id, attributes=attributes, group=group))
 
             elif ann_type == AnnotationType.caption:
                 caption = ann.get('caption')
-                loaded.append(CaptionObject(caption,
+                loaded.append(Caption(caption,
                     id=ann_id, attributes=attributes, group=group))
 
             else:

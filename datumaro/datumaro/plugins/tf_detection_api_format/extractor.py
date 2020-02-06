@@ -8,60 +8,68 @@ import numpy as np
 import os.path as osp
 import re
 
-from datumaro.components.extractor import AnnotationType, DEFAULT_SUBSET_NAME, \
-    LabelCategories, BboxObject, DatasetItem, Extractor
-from datumaro.components.formats.tfrecord import DetectionApiPath
+from datumaro.components.extractor import (SourceExtractor,
+    DEFAULT_SUBSET_NAME, DatasetItem,
+    AnnotationType, Bbox, LabelCategories
+)
 from datumaro.util.image import lazy_image, decode_image
 from datumaro.util.tf_util import import_tf as _import_tf
+
+from .format import DetectionApiPath
 
 
 def clamp(value, _min, _max):
     return max(min(_max, value), _min)
 
-class DetectionApiExtractor(Extractor):
-    class Subset(Extractor):
-        def __init__(self, name, parent):
-            super().__init__()
-            self._name = name
-            self._parent = parent
-            self.items = OrderedDict()
-
-        def __iter__(self):
-            for item in self.items.values():
-                yield item
-
-        def __len__(self):
-            return len(self.items)
-
-        def categories(self):
-            return self._parent.categories()
-
-    def __init__(self, path, images_dir=None):
+class TfDetectionApiExtractor(SourceExtractor):
+    def __init__(self, path):
         super().__init__()
 
+        assert osp.isfile(path)
+        images_dir = ''
         root_dir = osp.dirname(osp.abspath(path))
         if osp.basename(root_dir) == DetectionApiPath.ANNOTATIONS_DIR:
             root_dir = osp.dirname(root_dir)
             images_dir = osp.join(root_dir, DetectionApiPath.IMAGES_DIR)
             if not osp.isdir(images_dir):
-                images_dir = None
-        self._images_dir = images_dir
-
-        self._subsets = {}
+                images_dir = ''
 
         subset_name = osp.splitext(osp.basename(path))[0]
         if subset_name == DEFAULT_SUBSET_NAME:
             subset_name = None
-        subset = DetectionApiExtractor.Subset(subset_name, self)
-        items, labels = self._parse_tfrecord_file(path, subset_name, images_dir)
-        subset.items = items
-        self._subsets[subset_name] = subset
+        self._subset_name = subset_name
 
+        items, labels = self._parse_tfrecord_file(path, subset_name, images_dir)
+        self._items = items
+        self._categories = self._load_categories(labels)
+
+    def categories(self):
+        return self._categories
+
+    def __iter__(self):
+        for item in self._items:
+            yield item
+
+    def __len__(self):
+        return len(self._items)
+
+    def subsets(self):
+        if self._subset_name:
+            return [self._subset_name]
+        return None
+
+    def get_subset(self, name):
+        if name != self._subset_name:
+            return None
+        return self
+
+    @staticmethod
+    def _load_categories(labels):
         label_categories = LabelCategories()
         labels = sorted(labels.items(), key=lambda item: item[1])
         for label, _ in labels:
             label_categories.add(label)
-        self._categories = {
+        return {
             AnnotationType.label: label_categories
         }
 
@@ -114,7 +122,7 @@ class DetectionApiExtractor(Extractor):
                 for label, id in cls._parse_labelmap(labelmap_text).items()
             })
 
-        dataset_items = OrderedDict()
+        dataset_items = []
 
         for record in dataset:
             parsed_record = tf.io.parse_single_example(record, features)
@@ -163,7 +171,7 @@ class DetectionApiExtractor(Extractor):
                 y = clamp(shape[2] * frame_height, 0, frame_height)
                 w = clamp(shape[3] * frame_width, 0, frame_width) - x
                 h = clamp(shape[4] * frame_height, 0, frame_height) - y
-                annotations.append(BboxObject(x, y, w, h,
+                annotations.append(Bbox(x, y, w, h,
                     label=dataset_labels.get(label, None), id=index
                 ))
 
@@ -175,32 +183,7 @@ class DetectionApiExtractor(Extractor):
                 if osp.exists(image_path):
                     image = lazy_image(image_path)
 
-            dataset_items[item_id] = DatasetItem(id=item_id, subset=subset_name,
-                image=image, annotations=annotations)
+            dataset_items.append(DatasetItem(id=item_id, subset=subset_name,
+                image=image, annotations=annotations))
 
         return dataset_items, dataset_labels
-
-    def categories(self):
-        return self._categories
-
-    def __iter__(self):
-        for subset in self._subsets.values():
-            for item in subset:
-                yield item
-
-    def __len__(self):
-        length = 0
-        for subset in self._subsets.values():
-            length += len(subset)
-        return length
-
-    def subsets(self):
-        return list(self._subsets)
-
-    def get_subset(self, name):
-        return self._subsets[name]
-
-    def get(self, item_id, subset=None, path=None):
-        if path is not None:
-            return None
-        return self.get_subset(subset).items.get(item_id, None)

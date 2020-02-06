@@ -9,8 +9,7 @@ from datumaro.components.project import Source, Model
 from datumaro.components.launcher import Launcher, InferenceWrapper
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    LabelObject, MaskObject, PointsObject, PolygonObject,
-    PolyLineObject, BboxObject, CaptionObject,
+    Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
 )
 from datumaro.components.config import Config, DefaultConfig, SchemaBuilder
 from datumaro.components.dataset_filter import \
@@ -26,7 +25,7 @@ class ProjectTest(TestCase):
         })
 
         with TestDir() as test_dir:
-            project_path = test_dir.path
+            project_path = test_dir
             Project.generate(project_path, src_config)
 
             self.assertTrue(osp.isdir(project_path))
@@ -80,9 +79,9 @@ class ProjectTest(TestCase):
         project.add_source(source_name, origin)
 
         with TestDir() as test_dir:
-            project.save(test_dir.path)
+            project.save(test_dir)
 
-            loaded = Project.load(test_dir.path)
+            loaded = Project.load(test_dir)
             loaded = loaded.get_source(source_name)
             self.assertEqual(origin, loaded)
 
@@ -114,19 +113,19 @@ class ProjectTest(TestCase):
         project.add_model(model_name, saved)
 
         with TestDir() as test_dir:
-            project.save(test_dir.path)
+            project.save(test_dir)
 
-            loaded = Project.load(test_dir.path)
+            loaded = Project.load(test_dir)
             loaded = loaded.get_model(model_name)
             self.assertEqual(saved, loaded)
 
     def test_can_have_project_source(self):
         with TestDir() as test_dir:
-            Project.generate(test_dir.path)
+            Project.generate(test_dir)
 
             project2 = Project()
             project2.add_source('project1', {
-                'url': test_dir.path,
+                'url': test_dir,
             })
             dataset = project2.make_dataset()
 
@@ -141,7 +140,7 @@ class ProjectTest(TestCase):
         class TestLauncher(Launcher):
             def launch(self, inputs):
                 for i, inp in enumerate(inputs):
-                    yield [ LabelObject(attributes={'idx': i, 'data': inp}) ]
+                    yield [ Label(attributes={'idx': i, 'data': inp}) ]
 
         model_name = 'model'
         launcher_name = 'custom_launcher'
@@ -167,12 +166,12 @@ class ProjectTest(TestCase):
             def __iter__(self):
                 for i in range(2):
                     yield DatasetItem(id=i, subset='train', image=i,
-                        annotations=[ LabelObject(i) ])
+                        annotations=[ Label(i) ])
 
         class TestLauncher(Launcher):
             def launch(self, inputs):
                 for inp in inputs:
-                    yield [ LabelObject(inp) ]
+                    yield [ Label(inp) ]
 
         class TestConverter(Converter):
             def __call__(self, extractor, save_dir):
@@ -194,7 +193,7 @@ class ProjectTest(TestCase):
                         label = int(f.readline().strip())
                         assert subset == 'train'
                         yield DatasetItem(id=index, subset=subset,
-                            annotations=[ LabelObject(label) ])
+                            annotations=[ Label(label) ])
 
         model_name = 'model'
         launcher_name = 'custom_launcher'
@@ -208,10 +207,10 @@ class ProjectTest(TestCase):
         project.add_source('source', { 'format': extractor_name })
 
         with TestDir() as test_dir:
-            project.make_dataset().apply_model(model_name=model_name,
-                save_dir=test_dir.path)
+            project.make_dataset().apply_model(model=model_name,
+                save_dir=test_dir)
 
-            result = Project.load(test_dir.path)
+            result = Project.load(test_dir)
             result.env.extractors.register(extractor_name, TestExtractorDst)
             it = iter(result.make_dataset())
             item1 = next(it)
@@ -266,9 +265,9 @@ class ProjectTest(TestCase):
             src_dataset = src_project.make_dataset()
             item = DatasetItem(id=1)
             src_dataset.put(item)
-            src_dataset.save(test_dir.path)
+            src_dataset.save(test_dir)
 
-            loaded_project = Project.load(test_dir.path)
+            loaded_project = Project.load(test_dir)
             loaded_dataset = loaded_project.make_dataset()
 
             self.assertEqual(list(src_dataset), list(loaded_dataset))
@@ -285,12 +284,12 @@ class ProjectTest(TestCase):
     def test_project_compound_child_can_be_modified_recursively(self):
         with TestDir() as test_dir:
             child1 = Project({
-                'project_dir': osp.join(test_dir.path, 'child1'),
+                'project_dir': osp.join(test_dir, 'child1'),
             })
             child1.save()
 
             child2 = Project({
-                'project_dir': osp.join(test_dir.path, 'child2'),
+                'project_dir': osp.join(test_dir, 'child2'),
             })
             child2.save()
 
@@ -316,15 +315,15 @@ class ProjectTest(TestCase):
         class TestExtractor1(Extractor):
             def __iter__(self):
                 yield DatasetItem(id=1, subset='train', annotations=[
-                    LabelObject(2, id=3),
-                    LabelObject(3, attributes={ 'x': 1 }),
+                    Label(2, id=3),
+                    Label(3, attributes={ 'x': 1 }),
                 ])
 
         class TestExtractor2(Extractor):
             def __iter__(self):
                 yield DatasetItem(id=1, subset='train', annotations=[
-                    LabelObject(3, attributes={ 'x': 1 }),
-                    LabelObject(4, id=4),
+                    Label(3, attributes={ 'x': 1 }),
+                    Label(4, id=4),
                 ])
 
         project = Project()
@@ -346,17 +345,17 @@ class DatasetFilterTest(TestCase):
         item = DatasetItem(id=1, subset='subset', path=['a', 'b'],
             image=np.ones((5, 4, 3)),
             annotations=[
-                LabelObject(0, attributes={'a1': 1, 'a2': '2'}, id=1, group=2),
-                CaptionObject('hello', id=1),
-                CaptionObject('world', group=5),
-                LabelObject(2, id=3, attributes={ 'x': 1, 'y': '2' }),
-                BboxObject(1, 2, 3, 4, label=4, id=4, attributes={ 'a': 1.0 }),
-                BboxObject(5, 6, 7, 8, id=5, group=5),
-                PointsObject([1, 2, 2, 0, 1, 1], label=0, id=5),
-                MaskObject(id=5, image=np.ones((3, 2))),
-                MaskObject(label=3, id=5, image=np.ones((2, 3))),
-                PolyLineObject([1, 2, 3, 4, 5, 6, 7, 8], id=11),
-                PolygonObject([1, 2, 3, 4, 5, 6, 7, 8]),
+                Label(0, attributes={'a1': 1, 'a2': '2'}, id=1, group=2),
+                Caption('hello', id=1),
+                Caption('world', group=5),
+                Label(2, id=3, attributes={ 'x': 1, 'y': '2' }),
+                Bbox(1, 2, 3, 4, label=4, id=4, attributes={ 'a': 1.0 }),
+                Bbox(5, 6, 7, 8, id=5, group=5),
+                Points([1, 2, 2, 0, 1, 1], label=0, id=5),
+                Mask(id=5, image=np.ones((3, 2))),
+                Mask(label=3, id=5, image=np.ones((2, 3))),
+                PolyLine([1, 2, 3, 4, 5, 6, 7, 8], id=11),
+                Polygon([1, 2, 3, 4, 5, 6, 7, 8]),
             ]
         )
 
@@ -381,12 +380,12 @@ class DatasetFilterTest(TestCase):
                 return iter([
                     DatasetItem(id=0),
                     DatasetItem(id=1, annotations=[
-                        LabelObject(0),
-                        LabelObject(1),
+                        Label(0),
+                        Label(1),
                     ]),
                     DatasetItem(id=2, annotations=[
-                        LabelObject(0),
-                        LabelObject(2),
+                        Label(0),
+                        Label(2),
                     ]),
                 ])
 
@@ -395,10 +394,10 @@ class DatasetFilterTest(TestCase):
                 return iter([
                     DatasetItem(id=0),
                     DatasetItem(id=1, annotations=[
-                        LabelObject(0),
+                        Label(0),
                     ]),
                     DatasetItem(id=2, annotations=[
-                        LabelObject(0),
+                        Label(0),
                     ]),
                 ])
 
@@ -415,12 +414,12 @@ class DatasetFilterTest(TestCase):
                 return iter([
                     DatasetItem(id=0),
                     DatasetItem(id=1, annotations=[
-                        LabelObject(0),
-                        LabelObject(1),
+                        Label(0),
+                        Label(1),
                     ]),
                     DatasetItem(id=2, annotations=[
-                        LabelObject(0),
-                        LabelObject(2),
+                        Label(0),
+                        Label(2),
                     ]),
                 ])
 
@@ -428,7 +427,7 @@ class DatasetFilterTest(TestCase):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=2, annotations=[
-                        LabelObject(2),
+                        Label(2),
                     ]),
                 ])
 

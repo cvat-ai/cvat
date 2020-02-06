@@ -470,7 +470,7 @@ def process_outputs(inputs, outputs):
                y = max(int(det[4] * input_height), 0)
                w = min(int(det[5] * input_width - x), input_width)
                h = min(int(det[6] * input_height - y), input_height)
-               image_results.append(BboxObject(x, y, w, h,
+               image_results.append(Bbox(x, y, w, h,
                     label=label, attributes={'score': conf} ))
 
                results.append(image_results[:max_det])

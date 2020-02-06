@@ -13,13 +13,15 @@ import os.path as osp
 import pycocotools.mask as mask_utils
 
 from datumaro.components.converter import Converter
-from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME, AnnotationType, PointsObject, MaskObject
+from datumaro.components.extractor import (DEFAULT_SUBSET_NAME,
+    AnnotationType, Points, Mask
 )
-from datumaro.components.formats.coco import CocoTask, CocoPath
+from datumaro.components.cli_plugin import CliPlugin
 from datumaro.util import find
 from datumaro.util.image import save_image
 import datumaro.util.mask_tools as mask_tools
+
+from .format import CocoTask, CocoPath
 
 
 def _cast(value, type_conv, default=None):
@@ -202,7 +204,7 @@ class _InstancesConverter(_TaskConverter):
         leader = self.find_group_leader(anns)
         bbox = self.compute_bbox(anns)
         mask = None
-        polygons = [p.get_polygon() for p in polygons]
+        polygons = [p.points for p in polygons]
 
         if self._context._segmentation_mode == SegmentationMode.guess:
             use_masks = True == leader.attributes.get('is_crowd',
@@ -237,7 +239,7 @@ class _InstancesConverter(_TaskConverter):
 
     @staticmethod
     def find_group_leader(group):
-        return max(group, key=lambda x: x.area())
+        return max(group, key=lambda x: x.get_area())
 
     @staticmethod
     def merge_masks(masks):
@@ -245,7 +247,7 @@ class _InstancesConverter(_TaskConverter):
             return None
 
         def get_mask(m):
-            if isinstance(m, MaskObject):
+            if isinstance(m, Mask):
                 return m.image
             else:
                 return m
@@ -278,7 +280,7 @@ class _InstancesConverter(_TaskConverter):
 
         ann_groups = []
         for g_id, group in groupby(instance_anns, lambda a: a.group):
-            if g_id is None:
+            if not g_id:
                 ann_groups.extend(([a] for a in group))
             else:
                 ann_groups.append(list(group))
@@ -395,7 +397,7 @@ class _KeypointsConverter(_InstancesConverter):
         solitary_points = []
 
         for g_id, group in groupby(annotations, lambda a: a.group):
-            if g_id is not None and not cls.find_instance_anns(group):
+            if g_id and not cls.find_instance_anns(group):
                 group = [a for a in group if a.type == AnnotationType.points]
             solitary_points.extend(group)
 
@@ -404,7 +406,7 @@ class _KeypointsConverter(_InstancesConverter):
     @staticmethod
     def convert_points_object(ann):
         keypoints = []
-        points = ann.get_points()
+        points = ann.points
         visibility = ann.visibility
         for index in range(0, len(points), 2):
             kp = points[index : index + 2]
@@ -412,7 +414,7 @@ class _KeypointsConverter(_InstancesConverter):
             keypoints.extend([*kp, state])
 
         num_annotated = len([v for v in visibility \
-            if v != PointsObject.Visibility.absent])
+            if v != Points.Visibility.absent])
 
         return {
             'keypoints': keypoints,
@@ -543,8 +545,11 @@ class _Converter:
                 filename = ''
                 if item.has_image:
                     filename = str(item.id) + CocoPath.IMAGE_EXT
-                    if self._save_images:
+                if self._save_images:
+                    if item.has_image:
                         self.save_image(item, filename)
+                    else:
+                        log.debug("Item '%s' has no image" % item.id)
                 for task_conv in task_converters.values():
                     task_conv.save_image_info(item, filename)
                     task_conv.save_annotations(item)
@@ -554,11 +559,41 @@ class _Converter:
                     task_conv.write(osp.join(self._ann_dir,
                         '%s_%s.json' % (task.name, subset_name)))
 
-class CocoConverter(Converter):
+class CocoConverter(Converter, CliPlugin):
+    @staticmethod
+    def _split_tasks_string(s):
+        return [CocoTask[i.strip()] for i in s.split(',')]
+
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
+        parser.add_argument('--save-images', action='store_true',
+            help="Save images (default: %(default)s)")
+        parser.add_argument('--segmentation-mode',
+            choices=[m.name for m in SegmentationMode],
+            default=SegmentationMode.guess.name,
+            help="""
+                Save mode for instance segmentation:|n
+                - '{sm.guess.name}': guess the mode for each instance,|n
+                |s|suse 'is_crowd' attribute as hint|n
+                - '{sm.polygons.name}': save polygons,|n
+                |s|smerge and convert masks, prefer polygons|n
+                - '{sm.mask.name}': save masks,|n
+                |s|smerge and convert polygons, prefer masks|n
+                Default: %(default)s.
+                """.format(sm=SegmentationMode))
+        parser.add_argument('--crop-covered', action='store_true',
+            help="Crop covered segments so that background objects' "
+                "segmentation was more accurate (default: %(default)s)")
+        parser.add_argument('--tasks', type=cls._split_tasks_string,
+            default=None,
+            help="COCO task filter, comma-separated list of {%s} "
+                "(default: all)" % ', '.join([t.name for t in CocoTask]))
+        return parser
+
     def __init__(self,
             tasks=None, save_images=False, segmentation_mode=None,
-            crop_covered=False,
-            cmdline_args=None):
+            crop_covered=False):
         super().__init__()
 
         self._options = {
@@ -568,57 +603,26 @@ class CocoConverter(Converter):
             'crop_covered': crop_covered,
         }
 
-        if cmdline_args is not None:
-            self._options.update(self._parse_cmdline(cmdline_args))
-
-    @staticmethod
-    def _split_tasks_string(s):
-        return [CocoTask[i.strip()] for i in s.split(',')]
-
-    @classmethod
-    def build_cmdline_parser(cls, parser=None):
-        import argparse
-        if not parser:
-            parser = argparse.ArgumentParser(prog='coco')
-
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-        parser.add_argument('--segmentation-mode',
-            choices=[m.name for m in SegmentationMode],
-            default=SegmentationMode.guess.name,
-            help="Save mode for instance segmentation: "
-                "- '{sm.guess.name}': guess the mode for each instance, "
-                    "use 'is_crowd' attribute as hint; "
-                "- '{sm.polygons.name}': save polygons, "
-                    "merge and convert masks, prefer polygons; "
-                "- '{sm.mask.name}': save masks, "
-                    "merge and convert polygons, prefer masks; "
-                "(default: %(default)s)".format(sm=SegmentationMode))
-        parser.add_argument('--crop-covered', action='store_true',
-            help="Crop covered segments so that background objects' "
-                "segmentation was more accurate (default: %(default)s)")
-        parser.add_argument('--tasks', type=cls._split_tasks_string,
-            default=None,
-            help="COCO task filter, comma-separated list of {%s} "
-                "(default: all)" % ', '.join([t.name for t in CocoTask]))
-
-        return parser
-
     def __call__(self, extractor, save_dir):
         converter = _Converter(extractor, save_dir, **self._options)
         converter.convert()
 
-def CocoInstancesConverter(**kwargs):
-    return CocoConverter(CocoTask.instances, **kwargs)
+class CocoInstancesConverter(CocoConverter):
+    def __init__(self, **kwargs):
+        super().__init__(CocoTask.instances, **kwargs)
 
-def CocoImageInfoConverter(**kwargs):
-    return CocoConverter(CocoTask.image_info, **kwargs)
+class CocoImageInfoConverter(CocoConverter):
+    def __init__(self, **kwargs):
+        super().__init__(CocoTask.image_info, **kwargs)
 
-def CocoPersonKeypointsConverter(**kwargs):
-    return CocoConverter(CocoTask.person_keypoints, **kwargs)
+class CocoPersonKeypointsConverter(CocoConverter):
+    def __init__(self, **kwargs):
+        super().__init__(CocoTask.person_keypoints, **kwargs)
 
-def CocoCaptionsConverter(**kwargs):
-    return CocoConverter(CocoTask.captions, **kwargs)
+class CocoCaptionsConverter(CocoConverter):
+    def __init__(self, **kwargs):
+        super().__init__(CocoTask.captions, **kwargs)
 
-def CocoLabelsConverter(**kwargs):
-    return CocoConverter(CocoTask.labels, **kwargs)
+class CocoLabelsConverter(CocoConverter):
+    def __init__(self, **kwargs):
+        super().__init__(CocoTask.labels, **kwargs)
