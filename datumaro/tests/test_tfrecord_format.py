@@ -5,9 +5,9 @@ from unittest import TestCase
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Bbox, LabelCategories
 )
-from datumaro.components.importers.tfrecord import DetectionApiImporter
-from datumaro.components.extractors.tfrecord import DetectionApiExtractor
-from datumaro.components.converters.tfrecord import DetectionApiConverter
+from datumaro.plugins.tf_detection_api_format.importer import TfDetectionApiImporter
+from datumaro.plugins.tf_detection_api_format.extractor import TfDetectionApiExtractor
+from datumaro.plugins.tf_detection_api_format.converter import TfDetectionApiConverter
 from datumaro.util.test_utils import TestDir, compare_datasets
 
 
@@ -18,7 +18,7 @@ class TfrecordConverterTest(TestCase):
 
         if importer_args is None:
             importer_args = {}
-        parsed_dataset = DetectionApiImporter()(test_dir, **importer_args) \
+        parsed_dataset = TfDetectionApiImporter()(test_dir, **importer_args) \
             .make_dataset()
 
         if target_dataset is None:
@@ -61,7 +61,7 @@ class TfrecordConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(
-                TestExtractor(), DetectionApiConverter(save_images=True),
+                TestExtractor(), TfDetectionApiConverter(save_images=True),
                 test_dir)
 
     def test_can_save_dataset_with_no_subsets(self):
@@ -98,7 +98,7 @@ class TfrecordConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(
-                TestExtractor(), DetectionApiConverter(save_images=True),
+                TestExtractor(), TfDetectionApiConverter(save_images=True),
                 test_dir)
 
     def test_labelmap_parsing(self):
@@ -123,6 +123,6 @@ class TfrecordConverterTest(TestCase):
             'qw3': 6,
             'qw4': 7,
         }
-        parsed = DetectionApiExtractor._parse_labelmap(text)
+        parsed = TfDetectionApiExtractor._parse_labelmap(text)
 
         self.assertEqual(expected, parsed)

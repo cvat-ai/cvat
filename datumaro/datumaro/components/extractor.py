@@ -35,7 +35,9 @@ class Annotation:
             attributes = dict(attributes)
         self.attributes = attributes
 
-        if group is not None:
+        if group is None:
+            group = 0
+        else:
             group = int(group)
         self.group = group
     # pylint: enable=redefined-builtin
@@ -177,6 +179,8 @@ class Mask(Annotation):
 
         if z_order is None:
             z_order = 0
+        else:
+            z_order = int(z_order)
         self._z_order = z_order
     # pylint: enable=redefined-builtin
 
@@ -356,6 +360,8 @@ class _Shape(Annotation):
 
         if z_order is None:
             z_order = 0
+        else:
+            z_order = int(z_order)
         self._z_order = z_order
     # pylint: enable=redefined-builtin
 
@@ -391,7 +397,7 @@ class _Shape(Annotation):
         if not super().__eq__(other):
             return False
         return \
-            (self.points == other.points) and \
+            (np.array_equal(self.points, other.points)) and \
             (self.z_order == other.z_order) and \
             (self.label == other.label)
 

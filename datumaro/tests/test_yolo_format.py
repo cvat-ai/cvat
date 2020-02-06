@@ -5,8 +5,8 @@ from unittest import TestCase
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Bbox, LabelCategories,
 )
-from datumaro.components.importers.yolo import YoloImporter
-from datumaro.components.converters.yolo import YoloConverter
+from datumaro.plugins.yolo_format.importer import YoloImporter
+from datumaro.plugins.yolo_format.converter import YoloConverter
 from datumaro.util.test_utils import TestDir, compare_datasets
 
 

@@ -9,9 +9,9 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Points, Polygon, PolyLine, Bbox,
     LabelCategories,
 )
-from datumaro.components.importers.cvat import CvatImporter
-from datumaro.components.converters.cvat import CvatConverter
-import datumaro.components.formats.cvat as Cvat
+from datumaro.plugins.cvat_format.importer import CvatImporter
+from datumaro.plugins.cvat_format.converter import CvatConverter
+from datumaro.plugins.cvat_format.format import CvatPath
 from datumaro.util.image import save_image
 from datumaro.util.test_utils import TestDir, compare_datasets
 
@@ -19,8 +19,8 @@ from datumaro.util.test_utils import TestDir, compare_datasets
 class CvatExtractorTest(TestCase):
     @staticmethod
     def generate_dummy_cvat(path):
-        images_dir = osp.join(path, Cvat.CvatPath.IMAGES_DIR)
-        anno_dir = osp.join(path, Cvat.CvatPath.ANNOTATIONS_DIR)
+        images_dir = osp.join(path, CvatPath.IMAGES_DIR)
+        anno_dir = osp.join(path, CvatPath.ANNOTATIONS_DIR)
 
         os.makedirs(images_dir)
         os.makedirs(anno_dir)

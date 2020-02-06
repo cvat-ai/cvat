@@ -102,6 +102,7 @@ def make_binary_mask(mask):
 
 def load_mask(path, inverse_colormap=None):
     mask = load_image(path)
+    mask = mask.astype(np.uint8)
     if inverse_colormap is not None:
         if len(mask.shape) == 3 and mask.shape[2] != 1:
             mask = unpaint_mask(mask, inverse_colormap)

@@ -91,7 +91,7 @@ class CommandTargetsTest(TestCase):
 
         self.assertFalse(status)
 
-    def test_project_true_when_not_project_file(self):
+    def test_project_false_when_not_project_file(self):
         with TestDir() as test_dir:
             path = osp.join(test_dir, 'test.jpg')
             with open(path, 'w+') as f:

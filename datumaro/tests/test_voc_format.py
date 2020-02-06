@@ -10,15 +10,15 @@ from unittest import TestCase
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Label, Bbox, Mask, LabelCategories,
 )
-import datumaro.components.formats.voc as VOC
-from datumaro.components.extractors.voc import (
+import datumaro.plugins.voc_format.format as VOC
+from datumaro.plugins.voc_format.extractor import (
     VocClassificationExtractor,
     VocDetectionExtractor,
     VocSegmentationExtractor,
     VocLayoutExtractor,
     VocActionExtractor,
 )
-from datumaro.components.converters.voc import (
+from datumaro.plugins.voc_format.converter import (
     VocConverter,
     VocClassificationConverter,
     VocDetectionConverter,
@@ -26,7 +26,7 @@ from datumaro.components.converters.voc import (
     VocActionConverter,
     VocSegmentationConverter,
 )
-from datumaro.components.importers.voc import VocImporter
+from datumaro.plugins.voc_format.importer import VocImporter
 from datumaro.components.project import Project
 from datumaro.util.test_utils import TestDir, compare_datasets
 

@@ -8,7 +8,7 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
-from datumaro.components.converters.datumaro import DatumaroConverter
+from datumaro.plugins.datumaro_format.converter import DatumaroConverter
 from datumaro.util.test_utils import TestDir, item_to_str
 from datumaro.util.mask_tools import generate_colormap
 

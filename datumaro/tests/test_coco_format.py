@@ -2,7 +2,6 @@ import json
 import numpy as np
 import os
 import os.path as osp
-from PIL import Image
 
 from unittest import TestCase
 
@@ -11,7 +10,7 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Label, Mask, Points, Polygon, Bbox, Caption,
     LabelCategories, PointsCategories
 )
-from datumaro.components.converters.coco import (
+from datumaro.plugins.coco_format.converter import (
     CocoConverter,
     CocoImageInfoConverter,
     CocoCaptionsConverter,
@@ -19,7 +18,8 @@ from datumaro.components.converters.coco import (
     CocoPersonKeypointsConverter,
     CocoLabelsConverter,
 )
-from datumaro.components.importers import CocoImporter
+from datumaro.plugins.coco_format.importer import CocoImporter
+from datumaro.util.image import save_image
 from datumaro.util import find
 from datumaro.util.test_utils import TestDir, compare_datasets
 
@@ -59,8 +59,8 @@ class CocoImporterTest(TestCase):
         })
         annotation['images'].append({
             "id": 1,
-            "width": 10,
-            "height": 5,
+            "width": 5,
+            "height": 10,
             "file_name": '000000000001.jpg',
             "license": 0,
             "flickr_url": '',
@@ -101,8 +101,7 @@ class CocoImporterTest(TestCase):
         os.makedirs(ann_dir)
 
         image = np.ones((10, 5, 3), dtype=np.uint8)
-        image = Image.fromarray(image).convert('RGB')
-        image.save(osp.join(img_dir, '000000000001.jpg'))
+        save_image(osp.join(img_dir, '000000000001.jpg'), image)
 
         annotation = self.generate_annotation()
 
@@ -323,7 +322,7 @@ class CocoConverterTest(TestCase):
 
         class SrcTestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=1, image=np.zeros((5, 5, 3)),
                         annotations=[
                             Mask(np.array([
@@ -338,15 +337,14 @@ class CocoConverterTest(TestCase):
                                 label=1, id=2, z_order=1),
                         ]
                     ),
-                ]
-                return iter(items)
+                ])
 
             def categories(self):
                 return { AnnotationType.label: label_categories }
 
         class DstTestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=1, image=np.zeros((5, 5, 3)),
                         annotations=[
                             Mask(np.array([
@@ -362,11 +360,9 @@ class CocoConverterTest(TestCase):
                             Polygon([1, 1, 4, 1, 4, 4, 1, 4],
                                 label=1, id=2, group=2,
                                 attributes={ 'is_crowd': False }),
-                            # NOTE: Why it's 4 in COCOapi?..
                         ]
                     ),
-                ]
-                return iter(items)
+                ])
 
             def categories(self):
                 return { AnnotationType.label: label_categories }
@@ -433,7 +429,7 @@ class CocoConverterTest(TestCase):
 
         class SrcTestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=1, image=np.zeros((5, 10, 3)),
                         annotations=[
                             Mask(np.array([
@@ -446,8 +442,7 @@ class CocoConverterTest(TestCase):
                                 label=3, id=4, group=4),
                         ]
                     ),
-                ]
-                return iter(items)
+                ])
 
             def categories(self):
                 return { AnnotationType.label: label_categories }
