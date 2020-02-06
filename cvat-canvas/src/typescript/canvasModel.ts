@@ -40,6 +40,7 @@ export interface ActiveElement {
 export interface DrawData {
     enabled: boolean;
     shapeType?: string;
+    boxDrawingType?: string;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;

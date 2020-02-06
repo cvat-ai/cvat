@@ -239,6 +239,11 @@ export enum ActiveControl {
     EDIT = 'edit',
 }
 
+export enum BoxDrawingType {
+    BY_TWO_POINTS = 'by_two_points',
+    BY_FOUR_POINTS = 'by_four_points'
+}
+
 export enum ShapeType {
     RECTANGLE = 'rectangle',
     POLYGON = 'polygon',

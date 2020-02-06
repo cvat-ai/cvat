@@ -200,6 +200,46 @@ export class DrawHandlerImpl implements DrawHandler {
         });
     }
 
+    private drawBoxBy4Points(): void {
+        let numberOfPoints = 0;
+        this.drawInstance = (this.canvas as any).polygon().draw({
+            snapToGrid: 0.1,
+        }).addClass('cvat_canvas_shape_drawing').style({
+            'stroke-width': 0,
+            opacity: 0,
+        }).on('drawstart', () => {
+            // init numberOfPoints as one on drawstart
+            numberOfPoints = 1;
+        }).on('drawpoint', (e: CustomEvent) => {
+            // increase numberOfPoints by one on drawpoint
+            numberOfPoints += 1;
+
+            // finish if numberOfPoints are exactly four
+            if (numberOfPoints === 4) {
+                const bbox = (e.target as SVGPolylineElement).getBBox();
+                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+
+                if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
+                    this.onDrawDone({
+                        shapeType: this.drawData.shapeType,
+                        points: [xtl, ytl, xbr, ybr],
+                    });
+                } else {
+                    this.onDrawDone(null);
+                }
+            }
+        }).on('undopoint', () => {
+            if (numberOfPoints > 0) {
+                numberOfPoints -= 1;
+            }
+        }).off('drawdone').on('drawdone', () => {
+            // close drawing mode without drawing rect
+            this.onDrawDone(null);
+        });
+
+        this.drawPolyshape();
+    }
+
     private drawPolyshape(): void {
         this.drawInstance.attr({
             z_order: Number.MAX_SAFE_INTEGER,
@@ -536,13 +576,18 @@ export class DrawHandlerImpl implements DrawHandler {
                     this.pastePoints(stringifiedPoints);
                 }
             }
-
             this.setupPasteEvents();
         } else {
             if (this.drawData.shapeType === 'rectangle') {
-                this.drawBox();
-                // Draw instance was initialized after drawBox();
-                this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
+                if (this.drawData.boxDrawingType === 'by_two_points') {
+                    // default box drawing
+                    this.drawBox();
+                    // Draw instance was initialized after drawBox();
+                    this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
+                } else if (this.drawData.boxDrawingType === 'by_four_points') {
+                    // draw box by extreme clicking
+                    this.drawBoxBy4Points();
+                }
             } else if (this.drawData.shapeType === 'polygon') {
                 this.drawPolygon();
             } else if (this.drawData.shapeType === 'polyline') {
