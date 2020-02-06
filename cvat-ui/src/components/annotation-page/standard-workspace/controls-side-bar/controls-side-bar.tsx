@@ -87,7 +87,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             />
 
             <Tooltip overlay='Setup a tag' placement='right'>
-                <Icon component={TagIcon} />
+                <Icon component={TagIcon} style={{ pointerEvents: 'none', opacity: 0.5 }} />
             </Tooltip>
 
             <hr />

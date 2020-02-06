@@ -3,13 +3,33 @@
 }
 
 .cvat_canvas_shape {
-    fill-opacity: 0.03;
     stroke-opacity: 1;
 }
 
 polyline.cvat_canvas_shape {
     fill-opacity: 0;
+}
+
+.cvat_shape_action_opacity {
+    fill-opacity: 0.5;
     stroke-opacity: 1;
+}
+
+polyline.cvat_shape_action_opacity {
+    fill-opacity: 0;
+}
+
+.cvat_shape_drawing_opacity {
+    fill-opacity: 0.2;
+    stroke-opacity: 1;
+}
+
+polyline.cvat_shape_drawing_opacity {
+    fill-opacity: 0;
+}
+
+.cvat_shape_action_dasharray {
+    stroke-dasharray: 4 1 2 3;
 }
 
 .cvat_canvas_text {
@@ -27,51 +47,52 @@ polyline.cvat_canvas_shape {
     stroke: red;
 }
 
-.cvat_canvas_shape_activated {
-    fill-opacity: 0.3;
-}
-
 .cvat_canvas_shape_grouping {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
     fill: darkmagenta;
-    fill-opacity: 0.5;
 }
 
 polyline.cvat_canvas_shape_grouping {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
     stroke: darkmagenta;
-    stroke-opacity: 1;
 }
 
 .cvat_canvas_shape_merging {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
     fill: blue;
-    fill-opacity: 0.5;
-}
-
-polyline.cvat_canvas_shape_splitting {
-    stroke: dodgerblue;
-    stroke-opacity: 1;
-}
-
-.cvat_canvas_shape_splitting {
-    fill: dodgerblue;
-    fill-opacity: 0.5;
 }
 
 polyline.cvat_canvas_shape_merging {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
     stroke: blue;
-    stroke-opacity: 1;
+}
+
+polyline.cvat_canvas_shape_splitting {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+    stroke: dodgerblue;
+}
+
+.cvat_canvas_shape_splitting {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+    fill: dodgerblue;
 }
 
 .cvat_canvas_shape_drawing {
-    fill-opacity: 0.1;
-    stroke-opacity: 1;
+    @extend .cvat_shape_drawing_opacity;
     fill: white;
     stroke: black;
 }
 
 .cvat_canvas_zoom_selection {
+    @extend .cvat_shape_action_dasharray;
     stroke: #096dd9;
     fill-opacity: 0;
-    stroke-dasharray: 4;
 }
 
 .cvat_canvas_shape_occluded {

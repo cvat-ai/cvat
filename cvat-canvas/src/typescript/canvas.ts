@@ -32,7 +32,7 @@ import '../scss/canvas.scss';
 interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[]): void;
-    activate(clientID: number, attributeID?: number): void;
+    activate(clientID: number | null, attributeID?: number): void;
     rotate(rotation: Rotation, remember?: boolean): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
@@ -85,7 +85,7 @@ class CanvasImpl implements Canvas {
         this.model.zoomCanvas(enable);
     }
 
-    public activate(clientID: number, attributeID: number | null = null): void {
+    public activate(clientID: number | null, attributeID: number | null = null): void {
         this.model.activate(clientID, attributeID);
     }
 

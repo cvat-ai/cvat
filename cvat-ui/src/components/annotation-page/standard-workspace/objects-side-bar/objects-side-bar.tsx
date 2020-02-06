@@ -5,28 +5,65 @@ import {
     Icon,
     Tabs,
     Layout,
-    Collapse,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
+import { RadioChangeEvent } from 'antd/lib/radio';
+import { SliderValue } from 'antd/lib/slider';
+import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+
+import { ColorBy } from 'reducers/interfaces';
 
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import LabelsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/labels-list';
+import AppearanceBlock from './appearance-block';
 
 interface Props {
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
+    colorBy: ColorBy;
+    opacity: number;
+    selectedOpacity: number;
+    blackBorders: boolean;
+
     collapseSidebar(): void;
     collapseAppearance(): void;
+
+    changeShapesColorBy(event: RadioChangeEvent): void;
+    changeShapesOpacity(event: SliderValue): void;
+    changeSelectedShapesOpacity(event: SliderValue): void;
+    changeShapesBlackBorders(event: CheckboxChangeEvent): void;
 }
 
-const ObjectsSideBar = React.memo((props: Props): JSX.Element => {
+function ObjectsSideBar(props: Props): JSX.Element {
     const {
         sidebarCollapsed,
         appearanceCollapsed,
+        colorBy,
+        opacity,
+        selectedOpacity,
+        blackBorders,
         collapseSidebar,
         collapseAppearance,
+        changeShapesColorBy,
+        changeShapesOpacity,
+        changeSelectedShapesOpacity,
+        changeShapesBlackBorders,
     } = props;
+
+    const appearanceProps = {
+        collapseAppearance,
+        appearanceCollapsed,
+        colorBy,
+        opacity,
+        selectedOpacity,
+        blackBorders,
+
+        changeShapesColorBy,
+        changeShapesOpacity,
+        changeSelectedShapesOpacity,
+        changeShapesBlackBorders,
+    };
 
     return (
         <Layout.Sider
@@ -65,22 +102,9 @@ const ObjectsSideBar = React.memo((props: Props): JSX.Element => {
                 </Tabs.TabPane>
             </Tabs>
 
-            <Collapse
-                onChange={collapseAppearance}
-                activeKey={appearanceCollapsed ? [] : ['appearance']}
-                className='cvat-objects-appearance-collapse'
-            >
-                <Collapse.Panel
-                    header={
-                        <Text strong>Appearance</Text>
-                    }
-                    key='appearance'
-                >
-
-                </Collapse.Panel>
-            </Collapse>
+            { !sidebarCollapsed && <AppearanceBlock {...appearanceProps} /> }
         </Layout.Sider>
     );
-});
+}
 
-export default ObjectsSideBar;
+export default React.memo(ObjectsSideBar);

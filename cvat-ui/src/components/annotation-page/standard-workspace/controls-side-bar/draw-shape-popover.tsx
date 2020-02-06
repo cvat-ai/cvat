@@ -26,7 +26,7 @@ interface Props {
     onDrawShape(): void;
 }
 
-const DrawShapePopoverComponent = React.memo((props: Props): JSX.Element => {
+function DrawShapePopoverComponent(props: Props): JSX.Element {
     const {
         labels,
         shapeType,
@@ -106,6 +106,6 @@ const DrawShapePopoverComponent = React.memo((props: Props): JSX.Element => {
             </Row>
         </div>
     );
-});
+}
 
-export default DrawShapePopoverComponent;
+export default React.memo(DrawShapePopoverComponent);

@@ -15,7 +15,7 @@ interface Props {
     isDrawing: boolean;
 }
 
-const DrawPointsControl = React.memo((props: Props): JSX.Element => {
+function DrawPointsControl(props: Props): JSX.Element {
     const {
         canvasInstance,
         isDrawing,
@@ -49,6 +49,6 @@ const DrawPointsControl = React.memo((props: Props): JSX.Element => {
             />
         </Popover>
     );
-});
+}
 
-export default DrawPointsControl;
+export default React.memo(DrawPointsControl);

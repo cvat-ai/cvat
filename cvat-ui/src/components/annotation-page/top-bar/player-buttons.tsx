@@ -28,7 +28,7 @@ interface Props {
     onLastFrame(): void;
 }
 
-const PlayerButtons = React.memo((props: Props): JSX.Element => {
+function PlayerButtons(props: Props): JSX.Element {
     const {
         playing,
         onSwitchPlay,
@@ -82,6 +82,6 @@ const PlayerButtons = React.memo((props: Props): JSX.Element => {
             </Tooltip>
         </Col>
     );
-});
+}
 
-export default PlayerButtons;
+export default React.memo(PlayerButtons);

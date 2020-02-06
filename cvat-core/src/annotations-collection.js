@@ -529,6 +529,10 @@
             }
 
             for (const object of Object.values(this.objects)) {
+                if (object.removed) {
+                    continue;
+                }
+
                 let objectType = null;
                 if (object instanceof Shape) {
                     objectType = 'shape';
@@ -712,7 +716,7 @@
             let minimumState = null;
             for (const state of objectStates) {
                 checkObjectType('object state', state, null, ObjectState);
-                if (state.outside) continue;
+                if (state.outside || state.hidden) continue;
 
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {

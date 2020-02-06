@@ -13,12 +13,12 @@ import Text from 'antd/lib/typography/Text';
 import { StatesOrdering } from 'reducers/interfaces';
 
 
-interface StatesOrderingSelectorProps {
+interface StatesOrderingSelectorComponentProps {
     statesOrdering: StatesOrdering;
     changeStatesOrdering(value: StatesOrdering): void;
 }
 
-const StatesOrderingSelector = React.memo((props: StatesOrderingSelectorProps): JSX.Element => {
+function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentProps): JSX.Element {
     const {
         statesOrdering,
         changeStatesOrdering,
@@ -49,7 +49,9 @@ const StatesOrderingSelector = React.memo((props: StatesOrderingSelectorProps): 
             </Select>
         </Col>
     );
-});
+}
+
+const StatesOrderingSelector = React.memo(StatesOrderingSelectorComponent);
 
 interface Props {
     statesHidden: boolean;
@@ -65,7 +67,7 @@ interface Props {
     showAllStates(): void;
 }
 
-const Header = React.memo((props: Props): JSX.Element => {
+function ObjectListHeader(props: Props): JSX.Element {
     const {
         statesHidden,
         statesLocked,
@@ -116,6 +118,6 @@ const Header = React.memo((props: Props): JSX.Element => {
             </Row>
         </div>
     );
-});
+}
 
-export default Header;
+export default React.memo(ObjectListHeader);

@@ -25,6 +25,20 @@ hr {
     padding-top: 5px;
 }
 
+.ant-slider {
+    > .ant-slider-track {
+        background-color: $slider-color;
+    }
+
+    > .ant-slider-handle {
+        border-color: $slider-color;
+    }
+}
+
+.cvat-info-circle-icon {
+    color: $info-icon-color;
+}
+
 #root {
     width: 100%;
     height: 100%;

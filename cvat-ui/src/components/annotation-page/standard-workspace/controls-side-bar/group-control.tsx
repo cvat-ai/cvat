@@ -19,7 +19,7 @@ interface Props {
     groupObjects(enabled: boolean): void;
 }
 
-const GroupControl = React.memo((props: Props): JSX.Element => {
+function GroupControl(props: Props): JSX.Element {
     const {
         activeControl,
         canvasInstance,
@@ -46,6 +46,6 @@ const GroupControl = React.memo((props: Props): JSX.Element => {
             <Icon {...dynamicIconProps} component={GroupIcon} />
         </Tooltip>
     );
-});
+}
 
-export default GroupControl;
+export default React.memo(GroupControl);

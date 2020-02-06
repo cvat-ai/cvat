@@ -12,9 +12,7 @@
 }
 
 .cvat-annotation-header-left-group {
-    height: 100%;
-
-    > div:first-child {
+    > button:first-child {
         filter: invert(0.9);
         background: $background-color-1;
         border-radius: 0px;
@@ -22,15 +20,21 @@
     }
 }
 
-.cvat-annotation-header-button {
+.ant-btn.cvat-annotation-header-button {
     padding: 0px;
     width: 54px;
     height: 54px;
     float: left;
     text-align: center;
     user-select: none;
+    color: $text-color;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0px 3px;
 
     > span {
+        margin-left: 0px;
         font-size: 10px;
     }
 
@@ -40,7 +44,7 @@
     }
 
     &:hover > i {
-        transform: scale(0.9);
+        transform: scale(0.85);
     }
 
     &:active > i {
@@ -119,38 +123,62 @@
 }
 
 .cvat-annotation-header-right-group {
-    height: 100%;
-
     > div {
-        height: 54px;
         float: left;
-        text-align: center;
-        margin-right: 20px;
-
-        > span {
-            font-size: 10px;
-        }
-
-        > i {
-            transform: scale(0.8);
-            padding: 3px;
-        }
-
-        &:hover > i {
-            transform: scale(0.9);
-        }
-
-        &:active > i {
-            transform: scale(0.8);
-        }
-    }
-
-    > div:not(:nth-child(3)) > * {
         display: block;
-        line-height: 0px;
+        height: 54px;
+        margin-right: 15px;
     }
 }
 
 .cvat-workspace-selector {
     width: 150px;
+}
+
+.cvat-job-info-modal-window {
+    > div {
+        margin-top: 10px;
+    }
+
+    > div:nth-child(1) {
+        > div {
+            > .ant-select, i {
+                margin-left: 10px;
+            }
+        }
+    }
+
+    > div:nth-child(2) {
+        > div {
+            > span {
+                font-size: 20px;
+            }
+        }
+    }
+
+    > div:nth-child(3) {
+        > div {
+            display: grid;
+        }
+    }
+
+    > .cvat-job-info-bug-tracker {
+        > div {
+            display: grid;
+        }
+    }
+
+    > .cvat-job-info-statistics {
+        > div {
+            > span {
+                font-size: 20px;
+            }
+
+            .ant-table-thead {
+                > tr > th {
+                    padding: 5px 5px;
+                }
+            }
+        }
+    }
 }

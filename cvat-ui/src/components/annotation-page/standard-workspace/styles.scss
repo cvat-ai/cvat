@@ -104,3 +104,10 @@
         }
     }
 }
+
+.cvat-propagate-confirm {
+    > .ant-input-number {
+        width: 70px;
+        margin: 0px 5px;
+    }
+}

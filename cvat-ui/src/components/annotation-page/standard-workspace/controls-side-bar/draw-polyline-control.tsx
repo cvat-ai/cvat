@@ -15,7 +15,7 @@ interface Props {
     isDrawing: boolean;
 }
 
-const DrawPolylineControl = React.memo((props: Props): JSX.Element => {
+function DrawPolylineControl(props: Props): JSX.Element {
     const {
         canvasInstance,
         isDrawing,
@@ -49,6 +49,6 @@ const DrawPolylineControl = React.memo((props: Props): JSX.Element => {
             />
         </Popover>
     );
-});
+}
 
-export default DrawPolylineControl;
+export default React.memo(DrawPolylineControl);
