@@ -7,22 +7,29 @@ from glob import glob
 import logging as log
 import os.path as osp
 
+from datumaro.components.extractor import Importer
 
-class DetectionApiImporter:
-    EXTRACTOR_NAME = 'tf_detection_api'
+from .format import DatumaroPath
+
+
+class DatumaroImporter(Importer):
+    EXTRACTOR_NAME = 'datumaro'
 
     def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
         project = Project()
 
-        if path.endswith('.tfrecord') and osp.isfile(path):
+        if path.endswith('.json') and osp.isfile(path):
             subset_paths = [path]
         else:
-            subset_paths = glob(osp.join(path, '*.tfrecord'))
+            subset_paths = glob(osp.join(path, '*.json'))
+
+            if osp.basename(osp.normpath(path)) != DatumaroPath.ANNOTATIONS_DIR:
+                path = osp.join(path, DatumaroPath.ANNOTATIONS_DIR)
+            subset_paths += glob(osp.join(path, '*.json'))
 
         if len(subset_paths) == 0:
-            raise Exception(
-                "Failed to find 'tf_detection_api' dataset at '%s'" % path)
+            raise Exception("Failed to find 'datumaro' dataset at '%s'" % path)
 
         for subset_path in subset_paths:
             if not osp.isfile(subset_path):
@@ -39,4 +46,3 @@ class DetectionApiImporter:
             })
 
         return project
-

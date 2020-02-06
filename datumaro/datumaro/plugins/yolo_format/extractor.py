@@ -7,14 +7,15 @@ from collections import OrderedDict
 import os.path as osp
 import re
 
-from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, Bbox, LabelCategories
+from datumaro.components.extractor import (SourceExtractor, Extractor,
+    DatasetItem, AnnotationType, Bbox, LabelCategories
 )
-from datumaro.components.formats.yolo import YoloPath
 from datumaro.util.image import lazy_image
 
+from .format import YoloPath
 
-class YoloExtractor(Extractor):
+
+class YoloExtractor(SourceExtractor):
     class Subset(Extractor):
         def __init__(self, name, parent):
             super().__init__()

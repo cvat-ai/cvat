@@ -6,15 +6,17 @@
 import os
 import os.path as osp
 
-from datumaro.components.formats.voc import VocTask, VocPath
+from datumaro.components.extractor import Importer
 from datumaro.util import find
 
+from .format import VocTask, VocPath
 
-class VocImporter:
+
+class VocImporter(Importer):
     _TASKS = [
-        (VocTask.classification, 'voc_cls', 'Main'),
-        (VocTask.detection, 'voc_det', 'Main'),
-        (VocTask.segmentation, 'voc_segm', 'Segmentation'),
+        (VocTask.classification, 'voc_classification', 'Main'),
+        (VocTask.detection, 'voc_detection', 'Main'),
+        (VocTask.segmentation, 'voc_segmentation', 'Segmentation'),
         (VocTask.person_layout, 'voc_layout', 'Layout'),
         (VocTask.action_classification, 'voc_action', 'Action'),
     ]

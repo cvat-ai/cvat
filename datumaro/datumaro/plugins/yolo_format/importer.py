@@ -7,8 +7,10 @@ from glob import glob
 import logging as log
 import os.path as osp
 
+from datumaro.components.extractor import Importer
 
-class YoloImporter:
+
+class YoloImporter(Importer):
     def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
         project = Project()

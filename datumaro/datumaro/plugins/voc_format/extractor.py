@@ -8,20 +8,22 @@ import os
 import os.path as osp
 from xml.etree import ElementTree as ET
 
-from datumaro.components.extractor import (DEFAULT_SUBSET_NAME,
-    Extractor, DatasetItem, AnnotationType, Label, Mask, Bbox, CompiledMask
-)
-from datumaro.components.formats.voc import (
-    VocTask, VocPath, VocInstColormap, parse_label_map, make_voc_categories
+from datumaro.components.extractor import (SourceExtractor, Extractor,
+    DEFAULT_SUBSET_NAME, DatasetItem,
+    AnnotationType, Label, Mask, Bbox, CompiledMask
 )
 from datumaro.util import dir_items
 from datumaro.util.image import lazy_image
 from datumaro.util.mask_tools import lazy_mask, invert_colormap
 
+from .format import (
+    VocTask, VocPath, VocInstColormap, parse_label_map, make_voc_categories
+)
+
 
 _inverse_inst_colormap = invert_colormap(VocInstColormap)
 
-class VocExtractor(Extractor):
+class VocExtractor(SourceExtractor):
     class Subset(Extractor):
         def __init__(self, name, parent):
             super().__init__()
@@ -274,7 +276,7 @@ class VocExtractor(Extractor):
                     item_annotations.append(Bbox(*part_bbox, label=part_label_id,
                         group=group))
 
-                if self._task is VocTask.person_layout and group is None:
+                if self._task is VocTask.person_layout and not group:
                     continue
                 if self._task is VocTask.action_classification and not actions:
                     continue

@@ -1,5 +1,5 @@
 
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,11 +7,31 @@ from collections import OrderedDict
 import os
 import os.path as osp
 
-from datumaro.components.extractor import DatasetItem, Extractor
+from datumaro.components.extractor import DatasetItem, SourceExtractor, Importer
 from datumaro.util.image import lazy_image
 
 
-class ImageDirExtractor(Extractor):
+class ImageDirImporter(Importer):
+    EXTRACTOR_NAME = 'image_dir'
+
+    def __call__(self, path, **extra_params):
+        from datumaro.components.project import Project # cyclic import
+        project = Project()
+
+        if not osp.isdir(path):
+            raise Exception("Can't find a directory at '%s'" % path)
+
+        source_name = osp.basename(osp.normpath(path))
+        project.add_source(source_name, {
+            'url': source_name,
+            'format': self.EXTRACTOR_NAME,
+            'options': dict(extra_params),
+        })
+
+        return project
+
+
+class ImageDirExtractor(SourceExtractor):
     _SUPPORTED_FORMATS = ['.png', '.jpg']
 
     def __init__(self, url):

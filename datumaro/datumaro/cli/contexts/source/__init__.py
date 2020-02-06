@@ -9,13 +9,13 @@ import os
 import os.path as osp
 import shutil
 
+from datumaro.components.project import Environment
 from ...util import add_subparser, CliException, MultilineFormatter
 from ...util.project import load_project
 
 
 def build_add_parser(parser_ctor=argparse.ArgumentParser):
-    import datumaro.components.extractors as extractors_module
-    extractors_list = [name for name, cls in extractors_module.items]
+    builtins = sorted(Environment().extractors.items)
 
     base_parser = argparse.ArgumentParser(add_help=False)
     base_parser.add_argument('-n', '--name', default=None,
@@ -53,7 +53,7 @@ def build_add_parser(parser_ctor=argparse.ArgumentParser):
             To do this, you need to put an Extractor
             definition script to <project_dir>/.datumaro/extractors.|n
             |n
-            List of supported source formats: %s|n
+            List of builtin source formats: %s|n
             |n
             Examples:|n
             - Add a local directory with VOC-like dataset:|n
@@ -61,7 +61,7 @@ def build_add_parser(parser_ctor=argparse.ArgumentParser):
             - Add a local file with CVAT annotations, call it 'mysource'|n
             |s|s|s|sto the project somewhere else:|n
             |s|sadd path path/to/cvat.xml -f cvat -n mysource -p somewhere/else/
-        """ % ('%(prog)s SOURCE_TYPE --help', ', '.join(extractors_list)),
+        """ % ('%(prog)s SOURCE_TYPE --help', ', '.join(builtins)),
         formatter_class=MultilineFormatter,
         add_help=False)
     parser.set_defaults(command=add_command)

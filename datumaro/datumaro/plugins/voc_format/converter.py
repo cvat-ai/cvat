@@ -11,16 +11,18 @@ from lxml import etree as ET
 import os
 import os.path as osp
 
+from datumaro.components.cli_plugin import CliPlugin
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, AnnotationType,
     LabelCategories, CompiledMask,
 )
-from datumaro.components.formats.voc import (VocTask, VocPath,
+from datumaro.util.image import save_image
+from datumaro.util.mask_tools import paint_mask, remap_mask
+
+from .format import (VocTask, VocPath,
     VocInstColormap, VocPose,
     parse_label_map, make_voc_label_map, make_voc_categories, write_label_map
 )
-from datumaro.util.image import save_image
-from datumaro.util.mask_tools import paint_mask, remap_mask
 
 
 def _convert_attr(name, attributes, type_conv, default=None, warn=True):
@@ -131,11 +133,15 @@ class _Converter:
             segm_list = OrderedDict()
 
             for item in subset:
-                item_id = str(item.id)
-                if self._save_images and item.has_image:
-                    save_image(osp.join(self._images_dir,
-                            str(item_id) + VocPath.IMAGE_EXT),
-                        item.image)
+                log.debug("Converting item '%s'", item.id)
+
+                if self._save_images:
+                    if item.has_image:
+                        save_image(osp.join(self._images_dir,
+                                item.id + VocPath.IMAGE_EXT),
+                            item.image)
+                    else:
+                        log.debug("Item '%s' has no image" % item.id)
 
                 labels = []
                 bboxes = []
@@ -150,13 +156,13 @@ class _Converter:
 
                 if len(bboxes) != 0:
                     root_elem = ET.Element('annotation')
-                    if '_' in item_id:
-                        folder = item_id[ : item_id.find('_')]
+                    if '_' in item.id:
+                        folder = item.id[ : item.id.find('_')]
                     else:
                         folder = ''
                     ET.SubElement(root_elem, 'folder').text = folder
                     ET.SubElement(root_elem, 'filename').text = \
-                        item_id + VocPath.IMAGE_EXT
+                        item.id + VocPath.IMAGE_EXT
 
                     source_elem = ET.SubElement(root_elem, 'source')
                     ET.SubElement(source_elem, 'database').text = 'Unknown'
@@ -247,23 +253,23 @@ class _Converter:
                             VocTask.detection,
                             VocTask.person_layout,
                             VocTask.action_classification]):
-                        with open(osp.join(self._ann_dir, item_id + '.xml'), 'w') as f:
+                        with open(osp.join(self._ann_dir, item.id + '.xml'), 'w') as f:
                             f.write(ET.tostring(root_elem,
                                 encoding='unicode', pretty_print=True))
 
-                    clsdet_list[item_id] = True
-                    layout_list[item_id] = objects_with_parts
-                    action_list[item_id] = objects_with_actions
+                    clsdet_list[item.id] = True
+                    layout_list[item.id] = objects_with_parts
+                    action_list[item.id] = objects_with_actions
 
                 for label_ann in labels:
                     label = self.get_label(label_ann.label)
                     if not self._is_label(label):
                         continue
-                    class_list = class_lists.get(item_id, set())
+                    class_list = class_lists.get(item.id, set())
                     class_list.add(label_ann.label)
-                    class_lists[item_id] = class_list
+                    class_lists[item.id] = class_list
 
-                    clsdet_list[item_id] = True
+                    clsdet_list[item.id] = True
 
                 if masks:
                     compiled_mask = CompiledMask.from_instance_masks(masks,
@@ -271,20 +277,20 @@ class _Converter:
                             for m in masks])
 
                     self.save_segm(
-                        osp.join(self._segm_dir, item_id + VocPath.SEGM_EXT),
+                        osp.join(self._segm_dir, item.id + VocPath.SEGM_EXT),
                         compiled_mask.class_mask)
                     self.save_segm(
-                        osp.join(self._inst_dir, item_id + VocPath.SEGM_EXT),
+                        osp.join(self._inst_dir, item.id + VocPath.SEGM_EXT),
                         compiled_mask.instance_mask,
                         colormap=VocInstColormap)
 
-                    segm_list[item_id] = True
+                    segm_list[item.id] = True
 
                 if len(item.annotations) == 0:
-                    clsdet_list[item_id] = None
-                    layout_list[item_id] = None
-                    action_list[item_id] = None
-                    segm_list[item_id] = None
+                    clsdet_list[item.id] = None
+                    layout_list[item.id] = None
+                    action_list[item.id] = None
+                    segm_list[item.id] = None
 
                 if set(self._tasks) & set([None,
                         VocTask.classification,
@@ -495,22 +501,7 @@ class _Converter:
     def _remap_mask(self, mask):
         return remap_mask(mask, self._label_id_mapping)
 
-class VocConverter(Converter):
-    def __init__(self,
-            tasks=None, save_images=False, apply_colormap=False, label_map=None,
-            cmdline_args=None):
-        super().__init__()
-
-        self._options = {
-            'tasks': tasks,
-            'save_images': save_images,
-            'apply_colormap': apply_colormap,
-            'label_map': label_map,
-        }
-
-        if cmdline_args is not None:
-            self._options.update(self._parse_cmdline(cmdline_args))
-
+class VocConverter(Converter, CliPlugin):
     @staticmethod
     def _split_tasks_string(s):
         return [VocTask[i.strip()] for i in s.split(',')]
@@ -522,10 +513,8 @@ class VocConverter(Converter):
         return LabelmapType[s].name
 
     @classmethod
-    def build_cmdline_parser(cls, parser=None):
-        import argparse
-        if not parser:
-            parser = argparse.ArgumentParser(prog='voc')
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
 
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")
@@ -542,21 +531,37 @@ class VocConverter(Converter):
 
         return parser
 
+    def __init__(self, tasks=None, save_images=False,
+            apply_colormap=False, label_map=None):
+        super().__init__()
+
+        self._options = {
+            'tasks': tasks,
+            'save_images': save_images,
+            'apply_colormap': apply_colormap,
+            'label_map': label_map,
+        }
+
     def __call__(self, extractor, save_dir):
         converter = _Converter(extractor, save_dir, **self._options)
         converter.convert()
 
-def VocClassificationConverter(**kwargs):
-    return VocConverter(VocTask.classification, **kwargs)
+class VocClassificationConverter(VocConverter):
+    def __init__(self, **kwargs):
+        super().__init__(VocTask.classification, **kwargs)
 
-def VocDetectionConverter(**kwargs):
-    return VocConverter(VocTask.detection, **kwargs)
+class VocDetectionConverter(VocConverter):
+    def __init__(self, **kwargs):
+        super().__init__(VocTask.detection, **kwargs)
 
-def VocLayoutConverter(**kwargs):
-    return VocConverter(VocTask.person_layout, **kwargs)
+class VocLayoutConverter(VocConverter):
+    def __init__(self, **kwargs):
+        super().__init__(VocTask.person_layout, **kwargs)
 
-def VocActionConverter(**kwargs):
-    return VocConverter(VocTask.action_classification, **kwargs)
+class VocActionConverter(VocConverter):
+    def __init__(self, **kwargs):
+        super().__init__(VocTask.action_classification, **kwargs)
 
-def VocSegmentationConverter(**kwargs):
-    return VocConverter(VocTask.segmentation, **kwargs)
+class VocSegmentationConverter(VocConverter):
+    def __init__(self, **kwargs):
+        super().__init__(VocTask.segmentation, **kwargs)

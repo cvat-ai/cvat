@@ -10,8 +10,10 @@ import os.path as osp
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import AnnotationType
-from datumaro.components.formats.yolo import YoloPath
+from datumaro.components.cli_plugin import CliPlugin
 from datumaro.util.image import save_image
+
+from .format import YoloPath
 
 
 def _make_yolo_bbox(img_size, box):
@@ -24,29 +26,19 @@ def _make_yolo_bbox(img_size, box):
     h = (box[3] - box[1]) / img_size[1]
     return x, y, w, h
 
-class YoloConverter(Converter):
+class YoloConverter(Converter, CliPlugin):
     # https://github.com/AlexeyAB/darknet#how-to-train-to-detect-your-custom-objects
 
-    def __init__(self, save_images=False, cmdline_args=None):
-        super().__init__()
-        self._save_images = save_images
-
-        if cmdline_args is not None:
-            options = self._parse_cmdline(cmdline_args)
-            for k, v in options.items():
-                if hasattr(self, '_' + str(k)):
-                    setattr(self, '_' + str(k), v)
-
     @classmethod
-    def build_cmdline_parser(cls, parser=None):
-        import argparse
-        if not parser:
-            parser = argparse.ArgumentParser(prog='yolo')
-
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")
-
         return parser
+
+    def __init__(self, save_images=False):
+        super().__init__()
+        self._save_images = save_images
 
     def __call__(self, extractor, save_dir):
         os.makedirs(save_dir, exist_ok=True)
@@ -88,9 +80,10 @@ class YoloConverter(Converter):
                     osp.basename(subset_dir), image_name)
 
                 if self._save_images:
-                    image_path = osp.join(subset_dir, image_name)
-                    if not osp.exists(image_path):
-                        save_image(image_path, item.image)
+                    if item.has_image:
+                        save_image(osp.join(subset_dir, image_name), item.image)
+                    else:
+                        log.debug("Item '%s' has no images" % item.id)
 
                 height, width = item.image.shape[:2]
 

@@ -7,17 +7,18 @@ import json
 import logging as log
 import os.path as osp
 
-from datumaro.components.extractor import (Extractor, DatasetItem,
-    DEFAULT_SUBSET_NAME, AnnotationType,
-    Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
+from datumaro.components.extractor import (SourceExtractor,
+    DEFAULT_SUBSET_NAME, DatasetItem,
+    AnnotationType, Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
-from datumaro.components.formats.datumaro import DatumaroPath
 from datumaro.util.image import lazy_image
 from datumaro.util.mask_tools import lazy_mask
 
+from .format import DatumaroPath
 
-class DatumaroExtractor(Extractor):
+
+class DatumaroExtractor(SourceExtractor):
     def __init__(self, path):
         super().__init__()
 

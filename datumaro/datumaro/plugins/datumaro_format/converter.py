@@ -12,12 +12,13 @@ import os.path as osp
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
     DEFAULT_SUBSET_NAME, Annotation,
-    Label, Mask, Points, Polygon,
-    PolyLine, Bbox, Caption,
+    Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
-from datumaro.components.formats.datumaro import DatumaroPath
 from datumaro.util.image import save_image
+from datumaro.components.cli_plugin import CliPlugin
+
+from .format import DatumaroPath
 
 
 def _cast(value, type_conv, default=None):
@@ -101,7 +102,7 @@ class _SubsetWriter:
             'id': _cast(obj.id, int),
             'type': _cast(obj.type.name, str),
             'attributes': obj.attributes,
-            'group': _cast(obj.group, int, None),
+            'group': _cast(obj.group, int, 0),
         }
         return ann_json
 
@@ -272,27 +273,19 @@ class _Converter:
             str(item.id) + DatumaroPath.IMAGE_EXT)
         save_image(image_path, image)
 
-class DatumaroConverter(Converter):
-    def __init__(self, save_images=False, cmdline_args=None):
+class DatumaroConverter(Converter, CliPlugin):
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser.add_argument('--save-images', action='store_true',
+            help="Save images (default: %(default)s)")
+        return parser
+
+    def __init__(self, save_images=False):
         super().__init__()
 
         self._options = {
             'save_images': save_images,
         }
-
-        if cmdline_args is not None:
-            self._options.update(self._parse_cmdline(cmdline_args))
-
-    @classmethod
-    def build_cmdline_parser(cls, parser=None):
-        import argparse
-        if not parser:
-            parser = argparse.ArgumentParser(prog='datumaro')
-
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-
-        return parser
 
     def __call__(self, extractor, save_dir):
         converter = _Converter(extractor, save_dir, **self._options)

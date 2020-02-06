@@ -727,48 +727,24 @@ class Extractor(_ExtractorBase):
 DEFAULT_SUBSET_NAME = 'default'
 
 
+class SourceExtractor(Extractor):
+    pass
+
+class Importer:
+    def __call__(self, path, **extra_params):
+        raise NotImplementedError()
+
 class Transform(Extractor):
-    class ItemWrapper(DatasetItem):
-        def __init__(self, item, **kwargs):
-            expected_args = {'id', 'annotations', 'subset', 'path', 'image'}
-            unknown_args = set(kwargs) - expected_args
-            if unknown_args:
-                raise TypeError(
-                    "__init__() got unexpected keyword arguments: %s" % \
-                        ', '.join(unknown_args))
-            if 'image' in kwargs:
-                self._image = kwargs.pop('image')
-            self.__dict__.update(kwargs)
-
-            self._item = item
-
-        @DatasetItem.id.getter
-        def id(self):
-            return self._item.id
-
-        @DatasetItem.subset.getter
-        def subset(self):
-            return self._item.subset
-
-        @DatasetItem.path.getter
-        def path(self):
-            return self._item._path
-
-        @DatasetItem.annotations.getter
-        def annotations(self):
-            return self._item._annotations
-
-        @DatasetItem.image.getter
-        def image(self):
-            if hasattr(self, '_image'):
-                return super().image
-            return self._item.image
-
-        @DatasetItem.has_image.getter
-        def has_image(self):
-            if hasattr(self, '_image'):
-                return super().has_image
-            return self._item.has_image
+    @classmethod
+    def wrap_item(cls, item, **kwargs):
+        expected_args = {'id', 'annotations', 'subset', 'path', 'image'}
+        for k in expected_args:
+            if k not in kwargs:
+                if k == 'image' and item.has_image:
+                    kwargs[k] = lambda: item.image
+                else:
+                    kwargs[k] = getattr(item, k)
+        return DatasetItem(**kwargs)
 
     def __init__(self, extractor):
         super().__init__()

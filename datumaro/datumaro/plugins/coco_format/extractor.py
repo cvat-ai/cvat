@@ -4,21 +4,23 @@
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict
+import logging as log
 import os.path as osp
 
 from pycocotools.coco import COCO
 import pycocotools.mask as mask_utils
 
-from datumaro.components.extractor import (Extractor, DatasetItem,
-    DEFAULT_SUBSET_NAME, AnnotationType,
-    Label, RleMask, Points, Polygon, Bbox, Caption,
+from datumaro.components.extractor import (SourceExtractor,
+    DEFAULT_SUBSET_NAME, DatasetItem,
+    AnnotationType, Label, RleMask, Points, Polygon, Bbox, Caption,
     LabelCategories, PointsCategories
 )
-from datumaro.components.formats.coco import CocoTask, CocoPath
 from datumaro.util.image import lazy_image
 
+from .format import CocoTask, CocoPath
 
-class CocoExtractor(Extractor):
+
+class _CocoExtractor(SourceExtractor):
     def __init__(self, path, task, merge_instance_polygons=False):
         super().__init__()
 
@@ -179,8 +181,19 @@ class CocoExtractor(Extractor):
                         rle = mask_utils.merge(rles)
                 elif isinstance(segmentation['counts'], list):
                     # uncompressed RLE
-                    img_h, img_w = segmentation['size']
-                    rle = mask_utils.frPyObjects([segmentation], img_h, img_w)[0]
+                    img_h = image_info['height']
+                    img_w = image_info['width']
+                    mask_h, mask_w = segmentation['size']
+                    if img_h == mask_h and img_w == mask_w:
+                        rle = mask_utils.frPyObjects(
+                            [segmentation], mask_h, mask_w)[0]
+                    else:
+                        log.warning("item #%s: mask #%s "
+                            "does not match image size: %s vs. %s. "
+                            "Skipping this annotation.",
+                            image_info['id'], ann_id,
+                            (mask_h, mask_w), (img_h, img_w)
+                        )
                 else:
                     # compressed RLE
                     rle = segmentation
@@ -221,23 +234,22 @@ class CocoExtractor(Extractor):
             if osp.exists(image_path):
                 return lazy_image(image_path)
 
-class CocoImageInfoExtractor(CocoExtractor):
+class CocoImageInfoExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
         super().__init__(path, task=CocoTask.image_info, **kwargs)
 
-class CocoCaptionsExtractor(CocoExtractor):
+class CocoCaptionsExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
         super().__init__(path, task=CocoTask.captions, **kwargs)
 
-class CocoInstancesExtractor(CocoExtractor):
+class CocoInstancesExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
         super().__init__(path, task=CocoTask.instances, **kwargs)
 
-class CocoPersonKeypointsExtractor(CocoExtractor):
+class CocoPersonKeypointsExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
-        super().__init__(path, task=CocoTask.person_keypoints,
-            **kwargs)
+        super().__init__(path, task=CocoTask.person_keypoints, **kwargs)
 
-class CocoLabelsExtractor(CocoExtractor):
+class CocoLabelsExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
         super().__init__(path, task=CocoTask.labels, **kwargs)

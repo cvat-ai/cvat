@@ -7,16 +7,17 @@ from collections import OrderedDict
 import os.path as osp
 import xml.etree as ET
 
-from datumaro.components.extractor import (Extractor, DatasetItem,
-    DEFAULT_SUBSET_NAME, AnnotationType,
-    Points, Polygon, PolyLine, Bbox,
+from datumaro.components.extractor import (SourceExtractor,
+    DEFAULT_SUBSET_NAME, DatasetItem,
+    AnnotationType, Points, Polygon, PolyLine, Bbox,
     LabelCategories
 )
-from datumaro.components.formats.cvat import CvatPath
 from datumaro.util.image import lazy_image
 
+from .format import CvatPath
 
-class CvatExtractor(Extractor):
+
+class CvatExtractor(SourceExtractor):
     _SUPPORTED_SHAPES = ('box', 'polygon', 'polyline', 'points')
 
     def __init__(self, path):
@@ -242,8 +243,6 @@ class CvatExtractor(Extractor):
             attributes['keyframe'] = ann.get('keyframe', False)
 
         group = ann.get('group')
-        if group == 0:
-            group = None
 
         label = ann.get('label')
         label_id = categories[AnnotationType.label].find(label)[0]

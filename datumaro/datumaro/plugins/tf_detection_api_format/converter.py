@@ -5,15 +5,18 @@
 
 import codecs
 from collections import OrderedDict
+import logging as log
 import os
 import os.path as osp
 import string
 
 from datumaro.components.extractor import AnnotationType, DEFAULT_SUBSET_NAME
 from datumaro.components.converter import Converter
-from datumaro.components.formats.tfrecord import DetectionApiPath
+from datumaro.components.cli_plugin import CliPlugin
 from datumaro.util.image import encode_image
 from datumaro.util.tf_util import import_tf as _import_tf
+
+from .format import DetectionApiPath
 
 
 # we need it to filter out non-ASCII characters, otherwise training will crash
@@ -56,14 +59,17 @@ def _make_tf_example(item, get_label_id, get_label, save_images=False):
         'image/width': int64_feature(width),
     })
 
-    if save_images and item.has_image:
-        fmt = DetectionApiPath.IMAGE_FORMAT
-        buffer = encode_image(item.image, DetectionApiPath.IMAGE_EXT)
+    if save_images:
+        if item.has_image:
+            fmt = DetectionApiPath.IMAGE_FORMAT
+            buffer = encode_image(item.image, DetectionApiPath.IMAGE_EXT)
 
-        features.update({
-            'image/encoded': bytes_feature(buffer),
-            'image/format': bytes_feature(fmt.encode('utf-8')),
-        })
+            features.update({
+                'image/encoded': bytes_feature(buffer),
+                'image/format': bytes_feature(fmt.encode('utf-8')),
+            })
+        else:
+            log.debug("Item '%s' has no image" % item.id)
 
     xmins = [] # List of normalized left x coordinates in bounding box (1 per box)
     xmaxs = [] # List of normalized right x coordinates in bounding box (1 per box)
@@ -98,28 +104,18 @@ def _make_tf_example(item, get_label_id, get_label, save_images=False):
 
     return tf_example
 
-class DetectionApiConverter(Converter):
-    def __init__(self, save_images=False, cmdline_args=None):
+class TfDetectionApiConverter(Converter, CliPlugin):
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
+        parser.add_argument('--save-images', action='store_true',
+            help="Save images (default: %(default)s)")
+        return parser
+
+    def __init__(self, save_images=False):
         super().__init__()
 
         self._save_images = save_images
-
-        if cmdline_args is not None:
-            options = self._parse_cmdline(cmdline_args)
-            for k, v in options.items():
-                if hasattr(self, '_' + str(k)):
-                    setattr(self, '_' + str(k), v)
-
-    @classmethod
-    def build_cmdline_parser(cls, parser=None):
-        import argparse
-        if not parser:
-            parser = argparse.ArgumentParser(prog='tf_detection_api')
-
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-
-        return parser
 
     def __call__(self, extractor, save_dir):
         tf = _import_tf()

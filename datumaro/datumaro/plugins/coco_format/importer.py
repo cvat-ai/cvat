@@ -8,16 +8,18 @@ from glob import glob
 import logging as log
 import os.path as osp
 
-from datumaro.components.formats.coco import CocoTask, CocoPath
+from datumaro.components.extractor import Importer
+
+from .format import CocoTask, CocoPath
 
 
-class CocoImporter:
+class CocoImporter(Importer):
     _COCO_EXTRACTORS = {
         CocoTask.instances: 'coco_instances',
-        CocoTask.person_keypoints: 'coco_person_kp',
+        CocoTask.person_keypoints: 'coco_person_keypoints',
         CocoTask.captions: 'coco_captions',
         CocoTask.labels: 'coco_labels',
-        CocoTask.image_info: 'coco_images',
+        CocoTask.image_info: 'coco_image_info',
     }
 
     def __call__(self, path, **extra_params):
