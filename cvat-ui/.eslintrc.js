@@ -17,6 +17,7 @@ module.exports = {
         '@typescript-eslint',
         'import',
     ],
+    'ignorePatterns': ['*.svg', '*.scss'],
     'extends': [
         'plugin:@typescript-eslint/recommended',
         'airbnb-typescript',
