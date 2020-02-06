@@ -754,25 +754,37 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
             if (data.enabled) {
+                this.canvas.style.cursor = 'crosshair';
                 this.mode = Mode.DRAW;
+            } else {
+                this.canvas.style.cursor = '';
             }
             this.drawHandler.draw(data, this.geometry);
         } else if (reason === UpdateReasons.MERGE) {
             const data: MergeData = this.controller.mergeData;
             if (data.enabled) {
+                this.canvas.style.cursor = 'copy';
                 this.mode = Mode.MERGE;
+            } else {
+                this.canvas.style.cursor = '';
             }
             this.mergeHandler.merge(data);
         } else if (reason === UpdateReasons.SPLIT) {
             const data: SplitData = this.controller.splitData;
             if (data.enabled) {
+                this.canvas.style.cursor = 'copy';
                 this.mode = Mode.SPLIT;
+            } else {
+                this.canvas.style.cursor = '';
             }
             this.splitHandler.split(data);
         } else if (reason === UpdateReasons.GROUP) {
             const data: GroupData = this.controller.groupData;
             if (data.enabled) {
+                this.canvas.style.cursor = 'copy';
                 this.mode = Mode.GROUP;
+            } else {
+                this.canvas.style.cursor = '';
             }
             this.groupHandler.group(data);
         } else if (reason === UpdateReasons.SELECT) {
