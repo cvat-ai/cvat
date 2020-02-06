@@ -3,6 +3,10 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* global
+   require:true
+*/
+
 const { Mutex } = require('async-mutex');
 // eslint-disable-next-line max-classes-per-file
 const { MP4Reader, Bytestream } = require('./3rdparty/mp4');

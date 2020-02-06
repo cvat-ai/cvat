@@ -353,7 +353,10 @@ class PlayerModel extends Listener {
     }
 
     fit() {
-        if (!this._image) return;
+        if (!this._image) {
+            return;
+        }
+
         const { rotation } = this.geometry;
 
         if ((rotation / 90) % 2) {
@@ -377,7 +380,10 @@ class PlayerModel extends Listener {
     }
 
     focus(xtl, xbr, ytl, ybr) {
-        if (!this._image) return;
+        if (!this._image) {
+            return;
+        }
+
         const fittedScale = Math.min(this._geometry.width / this._image.renderWidth,
             this._geometry.height / this._image.renderHeight);
 

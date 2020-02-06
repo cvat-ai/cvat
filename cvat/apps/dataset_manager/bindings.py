@@ -9,7 +9,7 @@ from django.db import transaction
 
 from cvat.apps.annotation.annotation import Annotation
 from cvat.apps.engine.annotation import TaskAnnotation
-from cvat.apps.engine.models import Task, ShapeType, AttributeType
+from cvat.apps.engine.models import ShapeType, AttributeType
 
 import datumaro.components.extractor as datumaro
 from datumaro.util.image import lazy_image

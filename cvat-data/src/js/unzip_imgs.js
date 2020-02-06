@@ -3,6 +3,10 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* global
+   require:true
+*/
+
 const JSZip = require('jszip');
 
 onmessage = (e) => {
