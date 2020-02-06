@@ -1,68 +1,45 @@
-import './styles.scss';
 import React from 'react';
 
 import {
-    Menu,
-    Modal,
+    Menu, Modal,
 } from 'antd';
 
 import { ClickParam } from 'antd/lib/menu/index';
 
-import DumpSubmenu from './dump-submenu';
-import LoadSubmenu from './load-submenu';
-import ExportSubmenu from './export-submenu';
+import DumpSubmenu from 'components/actions-menu/dump-submenu';
+import LoadSubmenu from 'components/actions-menu/load-submenu';
+import ExportSubmenu from 'components/actions-menu/export-submenu';
 
 interface Props {
-    taskID: number;
     taskMode: string;
-    bugTracker: string;
-
     loaders: string[];
     dumpers: string[];
     exporters: string[];
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
-
-    installedTFAnnotation: boolean;
-    installedTFSegmentation: boolean;
-    installedAutoAnnotation: boolean;
-    inferenceIsActive: boolean;
-
-    onClickMenu: (params: ClickParam, file?: File) => void;
+    onClickMenu(params: ClickParam, file?: File): void;
 }
 
 export enum Actions {
     DUMP_TASK_ANNO = 'dump_task_anno',
-    LOAD_TASK_ANNO = 'load_task_anno',
+    LOAD_JOB_ANNO = 'load_job_anno',
     EXPORT_TASK_DATASET = 'export_task_dataset',
-    DELETE_TASK = 'delete_task',
-    RUN_AUTO_ANNOTATION = 'run_auto_annotation',
-    OPEN_BUG_TRACKER = 'open_bug_tracker',
+    REMOVE_ANNO = 'remove_anno',
+    OPEN_TASK = 'open_task',
 }
 
-export default function ActionsMenuComponent(props: Props): JSX.Element {
+export default function AnnotationMenuComponent(props: Props): JSX.Element {
     const {
-        taskID,
         taskMode,
-        bugTracker,
-
-        installedAutoAnnotation,
-        installedTFAnnotation,
-        installedTFSegmentation,
-        inferenceIsActive,
-
-        dumpers,
         loaders,
+        dumpers,
         exporters,
         onClickMenu,
+        loadActivity,
         dumpActivities,
         exportActivities,
-        loadActivity,
     } = props;
-
-    const renderModelRunner = installedAutoAnnotation
-        || installedTFAnnotation || installedTFSegmentation;
 
     let latestParams: ClickParam | null = null;
     function onClickMenuWrapper(params: ClickParam | null, file?: File): void {
@@ -70,15 +47,15 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
         if (!copyParams) {
             return;
         }
-        latestParams = copyParams;
+        latestParams = params;
 
         if (copyParams.keyPath.length === 2) {
             const [, action] = copyParams.keyPath;
-            if (action === Actions.LOAD_TASK_ANNO) {
+            if (action === Actions.LOAD_JOB_ANNO) {
                 if (file) {
                     Modal.confirm({
                         title: 'Current annotation will be lost',
-                        content: 'You are going to upload new annotations to this task. Continue?',
+                        content: 'You are going to upload new annotations to this job. Continue?',
                         onOk: () => {
                             onClickMenu(copyParams, file);
                         },
@@ -91,10 +68,11 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
             } else {
                 onClickMenu(copyParams);
             }
-        } else if (copyParams.key === Actions.DELETE_TASK) {
+        } else if (copyParams.key === Actions.REMOVE_ANNO) {
             Modal.confirm({
-                title: `The task ${taskID} will be deleted`,
-                content: 'All related data (images, annotations) will be lost. Continue?',
+                title: 'All annotations will be removed',
+                content: 'You are goung to remove all annotations from the client. '
+                    + 'It will stay on the server till you save a job. Continue?',
                 onOk: () => {
                     onClickMenu(copyParams);
                 },
@@ -109,11 +87,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
     }
 
     return (
-        <Menu
-            selectable={false}
-            className='cvat-actions-menu'
-            onClick={onClickMenuWrapper}
-        >
+        <Menu onClick={onClickMenuWrapper} className='cvat-annotation-menu' selectable={false}>
             {
                 DumpSubmenu({
                     taskMode,
@@ -129,7 +103,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                     onFileUpload: (file: File): void => {
                         onClickMenuWrapper(null, file);
                     },
-                    menuKey: Actions.LOAD_TASK_ANNO,
+                    menuKey: Actions.LOAD_JOB_ANNO,
                 })
             }
             {
@@ -139,20 +113,13 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                     menuKey: Actions.EXPORT_TASK_DATASET,
                 })
             }
-            {!!bugTracker && <Menu.Item key={Actions.OPEN_BUG_TRACKER}>Open bug tracker</Menu.Item>}
-            {
-                renderModelRunner
-                    && (
-                        <Menu.Item
-                            disabled={inferenceIsActive}
-                            key={Actions.RUN_AUTO_ANNOTATION}
-                        >
-                            Automatic annotation
-                        </Menu.Item>
-                    )
-            }
-            <hr />
-            <Menu.Item key={Actions.DELETE_TASK}>Delete</Menu.Item>
+
+            <Menu.Item key={Actions.REMOVE_ANNO}>
+                Remove annotations
+            </Menu.Item>
+            <Menu.Item key={Actions.OPEN_TASK}>
+                Open the task
+            </Menu.Item>
         </Menu>
     );
 }

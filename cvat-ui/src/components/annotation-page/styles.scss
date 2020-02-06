@@ -182,3 +182,16 @@
         }
     }
 }
+
+.ant-menu.cvat-annotation-menu {
+    box-shadow: 0 0 17px rgba(0,0,0,0.2);
+
+    > li:hover {
+        background-color: $hover-menu-color;
+    }
+
+    .ant-menu-submenu-title {
+        margin: 0px;
+        width: 15em;
+    }
+}

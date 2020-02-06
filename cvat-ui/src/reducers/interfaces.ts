@@ -36,27 +36,19 @@ export interface TasksState {
     current: Task[];
     activities: {
         dumps: {
-            byTask: {
-                // dumps in different formats at the same time
-                [tid: number]: string[]; // dumper names
-            };
+            // dumps in different formats at the same time
+            [tid: number]: string[]; // dumper names
         };
         exports: {
-            byTask: {
-                // exports in different formats at the same time
-                [tid: number]: string[]; // dumper names
-            };
+            // exports in different formats at the same time
+            [tid: number]: string[]; // dumper names
         };
         loads: {
-            byTask: {
-                // only one loading simultaneously
-                [tid: number]: string; // loader name
-            };
+            // only one loading simultaneously
+            [tid: number]: string; // loader name
         };
         deletes: {
-            byTask: {
-                [tid: number]: boolean; // deleted (deleting if in dictionary)
-            };
+            [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
         creates: {
             status: string;
@@ -215,6 +207,8 @@ export interface NotificationsState {
             propagating: null | ErrorState;
             collectingStatistics: null | ErrorState;
             savingJob: null | ErrorState;
+            uploadAnnotations: null | ErrorState;
+            removeAnnotations: null | ErrorState;
         };
 
         [index: string]: any;
@@ -264,8 +258,24 @@ export enum StatesOrdering {
     UPDATED = 'Updated time',
 }
 
+export enum ContextMenuType {
+    CANVAS = 'canvas',
+    CANVAS_SHAPE = 'canvas_shape',
+}
+
 export interface AnnotationState {
+    activities: {
+        loads: {
+            // only one loading simultaneously
+            [jid: number]: string; // loader name
+        };
+    };
     canvas: {
+        contextMenu: {
+            visible: boolean;
+            top: number;
+            left: number;
+        };
         instance: Canvas;
         ready: boolean;
         activeControl: ActiveControl;

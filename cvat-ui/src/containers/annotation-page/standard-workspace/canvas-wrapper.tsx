@@ -20,6 +20,7 @@ import {
     splitAnnotationsAsync,
     activateObject,
     selectObjects,
+    updateCanvasContextMenu,
 } from 'actions/annotation-actions';
 import {
     ColorBy,
@@ -68,6 +69,7 @@ interface DispatchToProps {
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject: (activatedStateID: number | null) => void;
     onSelectObjects: (selectedStatesID: number[]) => void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -179,10 +181,17 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
         },
         onActivateObject(activatedStateID: number | null): void {
+            if (activatedStateID === null) {
+                dispatch(updateCanvasContextMenu(false, 0, 0));
+            }
+
             dispatch(activateObject(activatedStateID));
         },
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjects(selectedStatesID));
+        },
+        onUpdateContextMenu(visible: boolean, left: number, top: number): void {
+            dispatch(updateCanvasContextMenu(visible, left, top));
         },
     };
 }
