@@ -16,6 +16,7 @@ from datumaro.util.image import lazy_image, decode_image
 from datumaro.util.tf_util import import_tf as _import_tf
 
 from .format import DetectionApiPath
+tf = _import_tf()
 
 
 def clamp(value, _min, _max):
@@ -92,8 +93,6 @@ class TfDetectionApiExtractor(SourceExtractor):
 
     @classmethod
     def _parse_tfrecord_file(cls, filepath, subset_name, images_dir):
-        tf = _import_tf()
-
         dataset = tf.data.TFRecordDataset(filepath)
         features = {
             'image/filename': tf.io.FixedLenFeature([], tf.string),
