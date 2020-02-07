@@ -24,6 +24,7 @@ module.exports = {
         inline: true,
         port: 3000,
         historyApiFallback: true,
+        host: '0.0.0.0',
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],

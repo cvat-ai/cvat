@@ -1,0 +1,34 @@
+version: "2.3"
+
+services:
+  cvat_ui:
+    image: node:12-alpine
+    working_dir: /usr/cvat-ui
+    container_name: cvat_ui
+    restart: always
+    build:
+      context: ./
+      dockerfile: Dockerfile.dev.ui
+    volumes:
+      - ./cvat-ui:/usr/cvat-ui:rw
+      - ./cvat-canvas:/usr/cvat-canvas
+      - ./cvat-core:/usr/cvat-core
+    networks:
+      default:
+        aliases:
+          - ui
+    depends_on:
+      - cvat
+    ports:
+      - '3000:3000'
+    command: >
+      sh -c '
+        if test -d /usr/cvat-ui/node_modules;
+            then echo usr/cvat-ui/node_modules exist;
+        else
+          cp -a /tmp/cvat-ui/node_modules /usr/cvat-ui;
+          cp -a /tmp/cvat-core/node_modules /usr/cvat-core;
+          cp -a /tmp/cvat-canvas/node_modules /usr/cvat-canvas;
+        fi &&
+        npm run start
+      '

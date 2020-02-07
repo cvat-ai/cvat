@@ -1,0 +1,22 @@
+FROM node:10-alpine
+
+RUN apk update && apk add bash
+
+RUN mkdir -p /tmp/cvat-ui /tmp/cvat-core /tmp/cvat-canvas
+
+# Install dependencies
+COPY cvat-core/package*.json /tmp/cvat-core/
+COPY cvat-canvas/package*.json /tmp/cvat-canvas/
+COPY cvat-ui/package*.json /tmp/cvat-ui/
+
+# Install cvat-core dependencies
+WORKDIR /tmp/cvat-core/
+RUN npm install
+
+# Install cvat-canvas dependencies
+WORKDIR /tmp/cvat-canvas/
+RUN npm install
+
+# Install cvat-ui dependencies
+WORKDIR /tmp/cvat-ui/
+RUN npm install
