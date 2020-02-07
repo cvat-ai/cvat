@@ -507,12 +507,6 @@ export class DrawHandlerImpl implements DrawHandler {
                 }
             }
         });
-
-        this.canvas.on('mousemove.draw', (e: MouseEvent): void => {
-            if (initialized) {
-                this.drawInstance.draw('update', e);
-            }
-        });
     }
 
     private startDraw(): void {

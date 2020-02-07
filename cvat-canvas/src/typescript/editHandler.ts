@@ -58,7 +58,7 @@ export class EditHandlerImpl implements EditHandler {
         };
 
         this.canvas.on('mousemove.edit', (e: MouseEvent): void => {
-            if (e.shiftKey) {
+            if (e.shiftKey && ['polygon', 'polyline'].includes(this.editData.state.shapeType)) {
                 if (lastDrawnPoint.x === null || lastDrawnPoint.y === null) {
                     (this.editLine as any).draw('point', e);
                 } else {
@@ -72,19 +72,17 @@ export class EditHandlerImpl implements EditHandler {
                     }
                 }
             }
-
-            (this.editLine as any).draw('update', e);
         });
 
-        this.editLine = (this.canvas as any).polyline()
-            .addClass('cvat_canvas_shape_drawing').style({
-                'pointer-events': 'none',
-                'fill-opacity': 0,
-            }).on('drawstart drawpoint', (e: CustomEvent): void => {
-                this.transform(this.geometry);
-                lastDrawnPoint.x = e.detail.event.clientX;
-                lastDrawnPoint.y = e.detail.event.clientY;
-            }).draw(dummyEvent, { snapToGrid: 0.1 });
+        this.editLine = (this.canvas as any).polyline();
+        (this.editLine as any).addClass('cvat_canvas_shape_drawing').style({
+            'pointer-events': 'none',
+            'fill-opacity': 0,
+        }).on('drawstart drawpoint', (e: CustomEvent): void => {
+            this.transform(this.geometry);
+            lastDrawnPoint.x = e.detail.event.clientX;
+            lastDrawnPoint.y = e.detail.event.clientY;
+        }).draw(dummyEvent, { snapToGrid: 0.1 });
 
         if (this.editData.state.shapeType === 'points') {
             this.editLine.style('stroke-width', 0);
@@ -183,6 +181,11 @@ export class EditHandlerImpl implements EditHandler {
                     clone.removeClass('cvat_canvas_shape_splitting');
                 });
             }
+
+            // We do not need these events any more
+            this.canvas.off('mousedown.edit');
+            this.canvas.off('mouseup.edit');
+            this.canvas.off('mousemove.edit');
 
             (this.editLine as any).draw('stop');
             this.editLine.remove();
