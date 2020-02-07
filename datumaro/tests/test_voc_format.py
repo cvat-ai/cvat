@@ -1,4 +1,3 @@
-import cv2
 import numpy as np
 import os
 import os.path as osp
@@ -28,6 +27,7 @@ from datumaro.plugins.voc_format.converter import (
 )
 from datumaro.plugins.voc_format.importer import VocImporter
 from datumaro.components.project import Project
+from datumaro.util.image import save_image
 from datumaro.util.test_utils import TestDir, compare_datasets
 
 
@@ -155,17 +155,17 @@ def generate_dummy_voc(path):
     subset_name = 'train'
     subset = subsets[subset_name]
     for item in subset:
-        cv2.imwrite(osp.join(segm_dir, item + '.png'),
+        save_image(osp.join(segm_dir, item + '.png'),
             np.tile(VOC.VocColormap[2][::-1], (5, 10, 1))
         )
-        cv2.imwrite(osp.join(inst_dir, item + '.png'),
+        save_image(osp.join(inst_dir, item + '.png'),
             np.tile(1, (5, 10, 1)))
 
     # Test images
     subset_name = 'test'
     subset = subsets[subset_name]
     for item in subset:
-        cv2.imwrite(osp.join(img_dir, item + '.jpg'),
+        save_image(osp.join(img_dir, item + '.jpg'),
             np.ones([10, 20, 3]))
 
     return subsets
