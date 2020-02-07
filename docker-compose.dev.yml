@@ -1,6 +1,9 @@
 version: "2.3"
 
 services:
+  cvat:
+    environment:
+      UI_PORT: 7081
   cvat_ui:
     image: node:12-alpine
     working_dir: /usr/cvat-ui
@@ -20,6 +23,7 @@ services:
     depends_on:
       - cvat
     ports:
+      - '7081:3000'
       - '3000:3000'
     command: >
       sh -c '
