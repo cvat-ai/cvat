@@ -637,6 +637,16 @@ class DatasetItem:
             (self.has_image and np.array_equal(self.image, other.image) or \
                 not self.has_image)
 
+    def wrap(item, **kwargs):
+        expected_args = {'id', 'annotations', 'subset', 'path', 'image'}
+        for k in expected_args:
+            if k not in kwargs:
+                if k == 'image' and item.has_image:
+                    kwargs[k] = lambda: item.image
+                else:
+                    kwargs[k] = getattr(item, k)
+        return DatasetItem(**kwargs)
+
 class IExtractor:
     def __iter__(self):
         raise NotImplementedError()
@@ -741,16 +751,9 @@ class Importer:
         raise NotImplementedError()
 
 class Transform(Extractor):
-    @classmethod
-    def wrap_item(cls, item, **kwargs):
-        expected_args = {'id', 'annotations', 'subset', 'path', 'image'}
-        for k in expected_args:
-            if k not in kwargs:
-                if k == 'image' and item.has_image:
-                    kwargs[k] = lambda: item.image
-                else:
-                    kwargs[k] = getattr(item, k)
-        return DatasetItem(**kwargs)
+    @staticmethod
+    def wrap_item(item, **kwargs):
+        return item.wrap(**kwargs)
 
     def __init__(self, extractor):
         super().__init__()
