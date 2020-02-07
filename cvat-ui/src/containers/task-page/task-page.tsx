@@ -39,8 +39,8 @@ function mapStateToProps(state: CombinedState, own: Props): StateToProps {
         ? undefined : null);
 
     let deleteActivity = null;
-    if (task && id in deletes.byTask) {
-        deleteActivity = deletes.byTask[id];
+    if (task && id in deletes) {
+        deleteActivity = deletes[id];
     }
 
     return {

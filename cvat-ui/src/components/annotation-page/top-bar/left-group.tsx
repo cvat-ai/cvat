@@ -6,7 +6,10 @@ import {
     Modal,
     Button,
     Timeline,
+    Dropdown,
 } from 'antd';
+
+import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotation-menu';
 
 import {
     MainMenuIcon,
@@ -30,10 +33,12 @@ function LeftGroup(props: Props): JSX.Element {
 
     return (
         <Col className='cvat-annotation-header-left-group'>
-            <Button type='link' className='cvat-annotation-header-button'>
-                <Icon component={MainMenuIcon} />
-                Menu
-            </Button>
+            <Dropdown overlay={<AnnotationMenuContainer />}>
+                <Button type='link' className='cvat-annotation-header-button'>
+                    <Icon component={MainMenuIcon} />
+                    Menu
+                </Button>
+            </Dropdown>
             <Button
                 onClick={saving ? undefined : onSaveAnnotation}
                 type='link'

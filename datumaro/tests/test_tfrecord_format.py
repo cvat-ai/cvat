@@ -2,43 +2,29 @@ import numpy as np
 
 from unittest import TestCase
 
-from datumaro.components.project import Project
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, BboxObject, LabelCategories
+    AnnotationType, Bbox, LabelCategories
 )
-from datumaro.components.extractors.tfrecord import DetectionApiExtractor
-from datumaro.components.converters.tfrecord import DetectionApiConverter
-from datumaro.util import find
-from datumaro.util.test_utils import TestDir
+from datumaro.plugins.tf_detection_api_format.importer import TfDetectionApiImporter
+from datumaro.plugins.tf_detection_api_format.extractor import TfDetectionApiExtractor
+from datumaro.plugins.tf_detection_api_format.converter import TfDetectionApiConverter
+from datumaro.util.test_utils import TestDir, compare_datasets
 
 
 class TfrecordConverterTest(TestCase):
-    def _test_can_save_and_load(self, source_dataset, converter, test_dir,
-            importer_params=None):
-        converter(source_dataset, test_dir.path)
+    def _test_save_and_load(self, source_dataset, converter, test_dir,
+            target_dataset=None, importer_args=None):
+        converter(source_dataset, test_dir)
 
-        if not importer_params:
-            importer_params = {}
-        project = Project.import_from(test_dir.path, 'tf_detection_api',
-            **importer_params)
-        parsed_dataset = project.make_dataset()
+        if importer_args is None:
+            importer_args = {}
+        parsed_dataset = TfDetectionApiImporter()(test_dir, **importer_args) \
+            .make_dataset()
 
-        self.assertListEqual(
-            sorted(source_dataset.subsets()),
-            sorted(parsed_dataset.subsets()),
-        )
+        if target_dataset is None:
+            target_dataset = source_dataset
 
-        self.assertEqual(len(source_dataset), len(parsed_dataset))
-
-        for item_a in source_dataset:
-            item_b = find(parsed_dataset, lambda x: x.id == item_a.id)
-            self.assertFalse(item_b is None)
-            self.assertEqual(len(item_a.annotations), len(item_b.annotations))
-            for ann_a in item_a.annotations:
-                ann_b = find(item_b.annotations, lambda x: \
-                    x.id == ann_a.id and \
-                    x.type == ann_a.type and x.group == ann_a.group)
-                self.assertEqual(ann_a, ann_b, 'id: ' + str(ann_a.id))
+        compare_datasets(self, expected=target_dataset, actual=parsed_dataset)
 
     def test_can_save_bboxes(self):
         class TestExtractor(Extractor):
@@ -47,16 +33,16 @@ class TfrecordConverterTest(TestCase):
                     DatasetItem(id=1, subset='train',
                         image=np.ones((16, 16, 3)),
                         annotations=[
-                            BboxObject(0, 4, 4, 8, label=2, id=0),
-                            BboxObject(0, 4, 4, 4, label=3, id=1),
-                            BboxObject(2, 4, 4, 4, id=2),
+                            Bbox(0, 4, 4, 8, label=2, id=0),
+                            Bbox(0, 4, 4, 4, label=3, id=1),
+                            Bbox(2, 4, 4, 4, id=2),
                         ]
                     ),
 
                     DatasetItem(id=2, subset='val',
                         image=np.ones((8, 8, 3)),
                         annotations=[
-                            BboxObject(1, 2, 4, 2, label=3, id=0),
+                            Bbox(1, 2, 4, 2, label=3, id=0),
                         ]
                     ),
 
@@ -74,8 +60,8 @@ class TfrecordConverterTest(TestCase):
                 }
 
         with TestDir() as test_dir:
-            self._test_can_save_and_load(
-                TestExtractor(), DetectionApiConverter(save_images=True),
+            self._test_save_and_load(
+                TestExtractor(), TfDetectionApiConverter(save_images=True),
                 test_dir)
 
     def test_can_save_dataset_with_no_subsets(self):
@@ -85,15 +71,15 @@ class TfrecordConverterTest(TestCase):
                     DatasetItem(id=1,
                         image=np.ones((16, 16, 3)),
                         annotations=[
-                            BboxObject(2, 1, 4, 4, label=2, id=0),
-                            BboxObject(4, 2, 8, 4, label=3, id=1),
+                            Bbox(2, 1, 4, 4, label=2, id=0),
+                            Bbox(4, 2, 8, 4, label=3, id=1),
                         ]
                     ),
 
                     DatasetItem(id=2,
                         image=np.ones((8, 8, 3)) * 2,
                         annotations=[
-                            BboxObject(4, 4, 4, 4, label=3, id=0),
+                            Bbox(4, 4, 4, 4, label=3, id=0),
                         ]
                     ),
 
@@ -111,8 +97,8 @@ class TfrecordConverterTest(TestCase):
                 }
 
         with TestDir() as test_dir:
-            self._test_can_save_and_load(
-                TestExtractor(), DetectionApiConverter(save_images=True),
+            self._test_save_and_load(
+                TestExtractor(), TfDetectionApiConverter(save_images=True),
                 test_dir)
 
     def test_labelmap_parsing(self):
@@ -137,6 +123,6 @@ class TfrecordConverterTest(TestCase):
             'qw3': 6,
             'qw4': 7,
         }
-        parsed = DetectionApiExtractor._parse_labelmap(text)
+        parsed = TfDetectionApiExtractor._parse_labelmap(text)
 
         self.assertEqual(expected, parsed)

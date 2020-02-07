@@ -68,6 +68,105 @@ export enum AnnotationActionTypes {
     CHANGE_JOB_STATUS = 'CHANGE_JOB_STATUS',
     CHANGE_JOB_STATUS_SUCCESS = 'CHANGE_JOB_STATUS_SUCCESS',
     CHANGE_JOB_STATUS_FAILED = 'CHANGE_JOB_STATUS_FAILED',
+    UPLOAD_JOB_ANNOTATIONS = 'UPLOAD_JOB_ANNOTATIONS',
+    UPLOAD_JOB_ANNOTATIONS_SUCCESS = 'UPLOAD_JOB_ANNOTATIONS_SUCCESS',
+    UPLOAD_JOB_ANNOTATIONS_FAILED = 'UPLOAD_JOB_ANNOTATIONS_FAILED',
+    REMOVE_JOB_ANNOTATIONS_SUCCESS = 'REMOVE_JOB_ANNOTATIONS_SUCCESS',
+    REMOVE_JOB_ANNOTATIONS_FAILED = 'REMOVE_JOB_ANNOTATIONS_FAILED',
+    UPDATE_CANVAS_CONTEXT_MENU = 'UPDATE_CANVAS_CONTEXT_MENU',
+}
+
+export function updateCanvasContextMenu(visible: boolean, left: number, top: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_CANVAS_CONTEXT_MENU,
+        payload: {
+            visible,
+            left,
+            top,
+        },
+    };
+}
+
+export function removeAnnotationsAsync(sessionInstance: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            sessionInstance.annotations.clear();
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_SUCCESS,
+                payload: {
+                    sessionInstance,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+
+export function uploadJobAnnotationsAsync(job: any, loader: any, file: File):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const store = getCVATStore();
+            const state: CombinedState = store.getState();
+            if (state.tasks.activities.loads[job.task.id]) {
+                throw Error('Annotations is being uploaded for the task');
+            }
+            if (state.annotation.activities.loads[job.id]) {
+                throw Error('Only one uploading of annotations for a job allowed at the same time');
+            }
+
+            dispatch({
+                type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS,
+                payload: {
+                    job,
+                    loader,
+                },
+            });
+
+            const frame = state.annotation.player.frame.number;
+            await job.annotations.upload(file, loader);
+
+            // One more update to escape some problems
+            // in canvas when shape with the same
+            // clientID has different type (polygon, rectangle) for example
+            dispatch({
+                type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS,
+                payload: {
+                    job,
+                    states: [],
+                },
+            });
+
+            await job.annotations.clear(true);
+            const states = await job.annotations.get(frame);
+
+            setTimeout(() => {
+                dispatch({
+                    type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS,
+                    payload: {
+                        job,
+                        states,
+                    },
+                });
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_FAILED,
+                payload: {
+                    job,
+                    error,
+                },
+            });
+        }
+    };
 }
 
 export function changeJobStatusAsync(jobInstance: any, status: string):

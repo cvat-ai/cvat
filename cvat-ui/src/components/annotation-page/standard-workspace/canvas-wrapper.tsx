@@ -53,8 +53,9 @@ interface Props {
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
-    onActivateObject: (activatedStateID: number | null) => void;
-    onSelectObjects: (selectedStatesID: number[]) => void;
+    onActivateObject(activatedStateID: number | null): void;
+    onSelectObjects(selectedStatesID: number[]): void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number): void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -322,6 +323,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onZoomCanvas,
             onResetCanvas,
             onActivateObject,
+            onUpdateContextMenu,
             onEditShape,
         } = this.props;
 
@@ -342,10 +344,22 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.grid(gridSize, gridSize);
 
         // Events
-        canvasInstance.html().addEventListener('click', (e: MouseEvent): void => {
-            if ((e.target as HTMLElement).tagName === 'svg') {
+        canvasInstance.html().addEventListener('mousedown', (e: MouseEvent): void => {
+            const {
+                activatedStateID,
+            } = this.props;
+
+            if ((e.target as HTMLElement).tagName === 'svg' && activatedStateID !== null) {
                 onActivateObject(null);
             }
+        });
+
+        canvasInstance.html().addEventListener('contextmenu', (e: MouseEvent): void => {
+            const {
+                activatedStateID,
+            } = this.props;
+
+            onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY);
         });
 
         canvasInstance.html().addEventListener('canvas.editstart', (): void => {

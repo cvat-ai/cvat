@@ -1,6 +1,10 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
-import { TasksQuery } from 'reducers/interfaces';
+import {
+    TasksQuery,
+    CombinedState,
+} from 'reducers/interfaces';
+import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core';
 import { getInferenceStatusAsync } from './models-actions';
 
@@ -213,6 +217,11 @@ export function loadAnnotationsAsync(task: any, loader: any, file: File):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
+            const store = getCVATStore();
+            const state: CombinedState = store.getState();
+            if (state.tasks.activities.loads[task.id]) {
+                throw Error('Only one loading of annotations for a task allowed at the same time');
+            }
             dispatch(loadAnnotations(task, loader));
             await task.annotations.upload(file, loader);
         } catch (error) {
