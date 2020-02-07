@@ -1,7 +1,5 @@
 FROM node:10-alpine
 
-RUN apk update && apk add bash
-
 RUN mkdir -p /tmp/cvat-ui /tmp/cvat-core /tmp/cvat-canvas
 
 # Install dependencies
