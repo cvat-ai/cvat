@@ -17,6 +17,7 @@ from datumaro.util.image import encode_image
 from datumaro.util.tf_util import import_tf as _import_tf
 
 from .format import DetectionApiPath
+tf = _import_tf()
 
 
 # we need it to filter out non-ASCII characters, otherwise training will crash
@@ -25,8 +26,6 @@ def _make_printable(s):
     return ''.join(filter(lambda x: x in _printable, s))
 
 def _make_tf_example(item, get_label_id, get_label, save_images=False):
-    tf = _import_tf()
-
     def int64_feature(value):
         return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
@@ -118,8 +117,6 @@ class TfDetectionApiConverter(Converter, CliPlugin):
         self._save_images = save_images
 
     def __call__(self, extractor, save_dir):
-        tf = _import_tf()
-
         os.makedirs(save_dir, exist_ok=True)
 
         subsets = extractor.subsets()

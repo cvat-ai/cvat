@@ -1,5 +1,4 @@
 from collections import namedtuple
-import cv2
 import numpy as np
 
 from unittest import TestCase
@@ -129,6 +128,7 @@ class RiseTest(TestCase):
         heatmaps_class_count = len(set([roi.label for roi in rois]))
         self.assertEqual(heatmaps_class_count + len(rois), len(heatmaps))
 
+        # import cv2
         # roi_image = image.copy()
         # for i, roi in enumerate(rois):
         #     cv2.rectangle(roi_image, (roi.x, roi.y), (roi.x + roi.w, roi.y + roi.h), (32 * i) * 3)
@@ -203,6 +203,7 @@ class RiseTest(TestCase):
                         label=cls, attributes={'score': cls_conf})
                 )
 
+        import cv2
         image = np.zeros((100, 100, 3))
         for i, det in enumerate(detections):
             roi = ROI(det.attributes['score'], *det.get_bbox(), det.label)

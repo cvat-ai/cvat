@@ -58,8 +58,11 @@ setuptools.setup(
         'pycocotools',
         'scikit-image',
         'tensorboardX',
-        'tensorflow',
     ],
+    extras_require={
+        'tf': ['tensorflow'],
+        'tf-gpu': ['tensorflow-gpu'],
+    },
     entry_points={
         'console_scripts': [
             'datum=datumaro.cli.__main__:main',
