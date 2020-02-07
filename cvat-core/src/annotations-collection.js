@@ -109,6 +109,7 @@
                 return labelAccumulator;
             }, {});
 
+            this.history = data.history;
             this.shapes = {}; // key is a frame
             this.tags = {}; // key is a frame
             this.tracks = [];
@@ -124,6 +125,7 @@
                 collectionZ: this.collectionZ,
                 groups: this.groups,
                 frameMeta: this.frameMeta,
+                history: this.history,
             };
         }
 

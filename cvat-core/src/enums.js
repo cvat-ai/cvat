@@ -167,6 +167,32 @@
     };
 
     /**
+        * Types of actions with annotations
+        * @enum {string}
+        * @name AnnotationsActionsTypes
+        * @memberof module:API.cvat.enums
+        * @property {string} CHANGED_LABEL Changed label
+        * @property {string} CHANGED_ATTRIBUTES Changed attributes
+        * @property {string} CHANGED_POINTS Changed points
+        * @property {string} CHANGED_OCCLUDED Changed occluded
+        * @property {string} CHANGED_ZORDER Changed z-order
+        * @property {string} CHANGED_LOCK Changed lock
+        * @property {string} CHANGED_COLOR Changed color
+        * @property {string} CHANGED_HIDDEN Changed hidden
+        * @readonly
+    */
+    const AnnotationsActionsType = Object.freeze({
+        CHANGED_LABEL: 'Changed label',
+        CHANGED_ATTRIBUTES: 'Changed attributes',
+        CHANGED_POINTS: 'Changed points',
+        CHANGED_OCCLUDED: 'Changed occluded',
+        CHANGED_ZORDER: 'Changed z-order',
+        CHANGED_LOCK: 'Changed lock',
+        CHANGED_COLOR: 'Changed color',
+        CHANGED_HIDDEN: 'Changed hidden',
+    });
+
+    /**
         * Array of hex colors
         * @type {module:API.cvat.classes.Loader[]} values
         * @name colors
@@ -189,6 +215,7 @@
         ObjectType,
         ObjectShape,
         LogType,
+        AnnotationsActionsType,
         colors,
     };
 })();

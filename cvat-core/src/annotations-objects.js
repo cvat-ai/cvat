@@ -17,6 +17,7 @@
         ObjectShape,
         ObjectType,
         AttributeType,
+        AnnotationsActionsType,
     } = require('./enums');
 
     const {
@@ -139,6 +140,7 @@
     class Annotation {
         constructor(data, clientID, injection) {
             this.taskLabels = injection.labels;
+            this.history = injection.history;
             this.clientID = clientID;
             this.serverID = data.id;
             this.group = data.group;
@@ -409,38 +411,111 @@
 
             // Now when all fields are validated, we can apply them
             if (updated.label) {
+                const undoLabel = this.label;
+                const redoLabel = data.label;
+
+                this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
+                    this.label = undoLabel;
+                }, () => {
+                    this.label = redoLabel;
+                }, [this.clientID]);
+
                 this.label = data.label;
                 this.attributes = {};
                 this.appendDefaultAttributes(data.label);
             }
 
             if (updated.attributes) {
+                const undoAttributes = { ...this.attributes };
+
                 for (const attrID of Object.keys(data.attributes)) {
                     this.attributes[attrID] = data.attributes[attrID];
                 }
+
+                const redoAttributes = { ...this.attributes };
+
+                this.history.do(AnnotationsActionsType.CHANGED_ATTRIBUTES, () => {
+                    this.attributes = undoAttributes;
+                }, () => {
+                    this.attributes = redoAttributes;
+                }, [this.clientID]);
             }
 
             if (updated.points && fittedPoints.length) {
-                this.points = [...fittedPoints];
+                const undoPoints = this.points;
+                const redoPoints = fittedPoints;
+
+                this.history.do(AnnotationsActionsType.CHANGED_POINTS, () => {
+                    this.points = undoPoints;
+                }, () => {
+                    this.points = redoPoints;
+                }, [this.clientID]);
+
+                this.points = fittedPoints;
             }
 
             if (updated.occluded) {
+                const undoOccluded = this.occluded;
+                const redoOccluded = data.occluded;
+
+                this.history.do(AnnotationsActionsType.CHANGED_OCCLUDED, () => {
+                    this.occluded = undoOccluded;
+                }, () => {
+                    this.occluded = redoOccluded;
+                }, [this.clientID]);
+
                 this.occluded = data.occluded;
             }
 
             if (updated.zOrder) {
+                const undoZOrder = this.zOrder;
+                const redoZOrder = data.zOrder;
+
+                this.history.do(AnnotationsActionsType.CHANGED_ZORDER, () => {
+                    this.zOrder = undoZOrder;
+                }, () => {
+                    this.zOrder = redoZOrder;
+                }, [this.clientID]);
+
                 this.zOrder = data.zOrder;
             }
 
             if (updated.lock) {
+                const undoLock = this.lock;
+                const redoLock = data.lock;
+
+                this.history.do(AnnotationsActionsType.CHANGED_LOCK, () => {
+                    this.lock = undoLock;
+                }, () => {
+                    this.lock = redoLock;
+                }, [this.clientID]);
+
                 this.lock = data.lock;
             }
 
             if (updated.color) {
+                const undoColor = this.color;
+                const redoColor = data.color;
+
+                this.history.do(AnnotationsActionsType.CHANGED_COLOR, () => {
+                    this.color = undoColor;
+                }, () => {
+                    this.color = redoColor;
+                }, [this.clientID]);
+
                 this.color = data.color;
             }
 
             if (updated.hidden) {
+                const undoHidden = this.hidden;
+                const redoHidden = data.hidden;
+
+                this.history.do(AnnotationsActionsType.CHANGED_HIDDEN, () => {
+                    this.hidden = undoHidden;
+                }, () => {
+                    this.hidden = redoHidden;
+                }, [this.clientID]);
+
                 this.hidden = data.hidden;
             }
 
