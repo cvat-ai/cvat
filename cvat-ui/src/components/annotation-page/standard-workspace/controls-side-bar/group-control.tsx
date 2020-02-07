@@ -42,7 +42,7 @@ function GroupControl(props: Props): JSX.Element {
         };
 
     return (
-        <Tooltip overlay='Group shapes/tracks' placement='right'>
+        <Tooltip title='Group shapes/tracks' placement='right'>
             <Icon {...dynamicIconProps} component={GroupIcon} />
         </Tooltip>
     );

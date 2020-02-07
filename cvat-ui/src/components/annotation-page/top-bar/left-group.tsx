@@ -21,6 +21,8 @@ import {
 interface Props {
     saving: boolean;
     savingStatuses: string[];
+    undoAction?: string;
+    redoAction?: string;
     onSaveAnnotation(): void;
 }
 
@@ -28,6 +30,8 @@ function LeftGroup(props: Props): JSX.Element {
     const {
         saving,
         savingStatuses,
+        undoAction,
+        redoAction,
         onSaveAnnotation,
     } = props;
 
@@ -67,11 +71,21 @@ function LeftGroup(props: Props): JSX.Element {
                     </Timeline>
                 </Modal>
             </Button>
-            <Button disabled type='link' className='cvat-annotation-header-button'>
+            <Button
+                title={undoAction}
+                disabled={!undoAction}
+                type='link'
+                className='cvat-annotation-header-button'
+            >
                 <Icon component={UndoIcon} />
-                Undo
+                <span>Undo</span>
             </Button>
-            <Button disabled type='link' className='cvat-annotation-header-button'>
+            <Button
+                title={redoAction}
+                disabled={!redoAction}
+                type='link'
+                className='cvat-annotation-header-button'
+            >
                 <Icon component={RedoIcon} />
                 Redo
             </Button>

@@ -29,7 +29,7 @@ function CursorControl(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Tooltip overlay='Cursor' placement='right'>
+        <Tooltip title='Cursor' placement='right'>
             <Icon
                 component={CursorIcon}
                 className={activeControl === ActiveControl.CURSOR

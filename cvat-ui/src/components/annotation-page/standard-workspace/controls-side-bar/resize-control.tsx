@@ -29,7 +29,7 @@ function ResizeControl(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Tooltip overlay='Select a region of interest' placement='right'>
+        <Tooltip title='Select a region of interest' placement='right'>
             <Icon
                 component={ZoomIcon}
                 className={activeControl === ActiveControl.ZOOM_CANVAS

@@ -91,11 +91,14 @@ export function removeAnnotationsAsync(sessionInstance: any):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            sessionInstance.annotations.clear();
+            await sessionInstance.annotations.clear();
+            await sessionInstance.actions.clear();
+            const history = await sessionInstance.actions.get();
+
             dispatch({
                 type: AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_SUCCESS,
                 payload: {
-                    sessionInstance,
+                    history,
                 },
             });
         } catch (error) {
@@ -264,11 +267,13 @@ export function propagateObjectAsync(
             }
 
             await sessionInstance.annotations.put(states);
+            const history = await sessionInstance.actions.get();
 
             dispatch({
                 type: AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS,
                 payload: {
                     objectState,
+                    history,
                 },
             });
         } catch (error) {
@@ -300,16 +305,19 @@ export function changePropagateFrames(frames: number): AnyAction {
     };
 }
 
-export function removeObjectAsync(objectState: any, force: boolean):
+export function removeObjectAsync(sessionInstance: any, objectState: any, force: boolean):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const removed = await objectState.delete(force);
+            const history = await sessionInstance.actions.get();
+
             if (removed) {
                 dispatch({
                     type: AnnotationActionTypes.REMOVE_OBJECT_SUCCESS,
                     payload: {
                         objectState,
+                        history,
                     },
                 });
             } else {
@@ -645,11 +653,13 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             const promises = statesToUpdate.map((state: any): Promise<any> => state.save());
             const states = await Promise.all(promises);
+            const history = await sessionInstance.actions.get();
 
             dispatch({
                 type: AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS,
                 payload: {
                     states,
+                    history,
                 },
             });
         } catch (error) {
@@ -671,11 +681,13 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             await sessionInstance.annotations.put(statesToCreate);
             const states = await sessionInstance.annotations.get(frame);
+            const history = await sessionInstance.actions.get();
 
             dispatch({
                 type: AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS,
                 payload: {
                     states,
+                    history,
                 },
             });
         } catch (error) {
@@ -695,11 +707,13 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             await sessionInstance.annotations.merge(statesToMerge);
             const states = await sessionInstance.annotations.get(frame);
+            const history = await sessionInstance.actions.get();
 
             dispatch({
                 type: AnnotationActionTypes.MERGE_ANNOTATIONS_SUCCESS,
                 payload: {
                     states,
+                    history,
                 },
             });
         } catch (error) {
@@ -719,11 +733,13 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             await sessionInstance.annotations.group(statesToGroup);
             const states = await sessionInstance.annotations.get(frame);
+            const history = await sessionInstance.actions.get();
 
             dispatch({
                 type: AnnotationActionTypes.GROUP_ANNOTATIONS_SUCCESS,
                 payload: {
                     states,
+                    history,
                 },
             });
         } catch (error) {
@@ -743,11 +759,13 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             await sessionInstance.annotations.split(stateToSplit, frame);
             const states = await sessionInstance.annotations.get(frame);
+            const history = await sessionInstance.actions.get();
 
             dispatch({
                 type: AnnotationActionTypes.SPLIT_ANNOTATIONS_SUCCESS,
                 payload: {
                     states,
+                    history,
                 },
             });
         } catch (error) {
@@ -772,11 +790,13 @@ export function changeLabelColorAsync(
             const updatedLabel = label;
             updatedLabel.color = color;
             const states = await sessionInstance.annotations.get(frameNumber);
+            const history = await sessionInstance.actions.get();
 
             dispatch({
                 type: AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS,
                 payload: {
                     label: updatedLabel,
+                    history,
                     states,
                 },
             });

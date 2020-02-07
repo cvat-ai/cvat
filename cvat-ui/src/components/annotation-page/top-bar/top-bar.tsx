@@ -20,6 +20,8 @@ interface Props {
     frameNumber: number;
     startFrame: number;
     stopFrame: number;
+    undoAction?: string;
+    redoAction?: string;
     showStatistics(): void;
     onSwitchPlay(): void;
     onSaveAnnotation(): void;
@@ -33,19 +35,12 @@ interface Props {
     onInputChange(value: number | undefined): void;
 }
 
-function propsAreEqual(curProps: Props, prevProps: Props): boolean {
-    return curProps.playing === prevProps.playing
-        && curProps.saving === prevProps.saving
-        && curProps.frameNumber === prevProps.frameNumber
-        && curProps.startFrame === prevProps.startFrame
-        && curProps.stopFrame === prevProps.stopFrame
-        && curProps.savingStatuses.length === prevProps.savingStatuses.length;
-}
-
 function AnnotationTopBarComponent(props: Props): JSX.Element {
     const {
         saving,
         savingStatuses,
+        undoAction,
+        redoAction,
         playing,
         frameNumber,
         startFrame,
@@ -70,6 +65,8 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
                     saving={saving}
                     savingStatuses={savingStatuses}
                     onSaveAnnotation={onSaveAnnotation}
+                    undoAction={undoAction}
+                    redoAction={redoAction}
                 />
                 <Col className='cvat-annotation-header-player-group'>
                     <Row type='flex' align='middle'>
@@ -98,4 +95,4 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(AnnotationTopBarComponent, propsAreEqual);
+export default React.memo(AnnotationTopBarComponent);

@@ -22,6 +22,8 @@ interface StateToProps {
     saving: boolean;
     canvasIsReady: boolean;
     savingStatuses: string[];
+    undoAction?: string;
+    redoAction?: string;
 }
 
 interface DispatchToProps {
@@ -45,6 +47,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                     uploading: saving,
                     statuses: savingStatuses,
                 },
+                history,
             },
             job: {
                 instance: jobInstance,
@@ -68,6 +71,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         savingStatuses,
         frameNumber,
         jobInstance,
+        undoAction: history.undo[history.undo.length - 1],
+        redoAction: history.redo[history.redo.length - 1],
     };
 }
 
@@ -300,6 +305,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 stopFrame,
             },
             frameNumber,
+            undoAction,
+            redoAction,
         } = this.props;
 
         return (
@@ -321,6 +328,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 startFrame={startFrame}
                 stopFrame={stopFrame}
                 frameNumber={frameNumber}
+                undoAction={undoAction}
+                redoAction={redoAction}
             />
         );
     }
