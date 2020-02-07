@@ -14,7 +14,9 @@ SVG.Element.prototype.draw = function constructor(...args: any): any {
     if (!handler) {
         originalDraw.call(this, ...args);
         handler = this.remember('_paintHandler');
-        handler.set = new SVG.Set();
+        if (!handler.set) {
+            handler.set = new SVG.Set();
+        }
     } else {
         originalDraw.call(this, ...args);
     }
@@ -27,7 +29,7 @@ for (const key of Object.keys(originalDraw)) {
 
 // Create undo for polygones and polylines
 function undo(): void {
-    if (this.set.length()) {
+    if (this.set && this.set.length()) {
         this.set.members.splice(-1, 1)[0].remove();
         this.el.array().value.splice(-2, 1);
         this.el.plot(this.el.array());

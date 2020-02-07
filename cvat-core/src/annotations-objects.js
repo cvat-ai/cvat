@@ -1299,6 +1299,15 @@
                 return [processedSource, processedTarget];
             }
 
+            if (offset === 0) {
+                return {
+                    points: [...leftPosition.points],
+                    occluded: leftPosition.occluded,
+                    outside: leftPosition.outside,
+                    zOrder: leftPosition.zOrder,
+                };
+            }
+
             let leftBox = findBox(leftPosition.points);
             let rightBox = findBox(rightPosition.points);
 

@@ -38,6 +38,14 @@ export class EditHandlerImpl implements EditHandler {
             this.editedShape.attr('points').split(' ')[this.editData.pointID].split(','),
         );
 
+        // generate mouse event
+        const dummyEvent = new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+            clientX,
+            clientY,
+        });
+
         // Add ability to edit shapes by sliding
         // We need to remember last drawn point
         // to implementation of slide drawing
@@ -49,10 +57,10 @@ export class EditHandlerImpl implements EditHandler {
             y: null,
         };
 
-        const handleSlide = function handleSlide(e: MouseEvent): void {
-            if (e.shiftKey) {
+        this.canvas.on('mousemove.edit', (e: MouseEvent): void => {
+            if (e.shiftKey && ['polygon', 'polyline'].includes(this.editData.state.shapeType)) {
                 if (lastDrawnPoint.x === null || lastDrawnPoint.y === null) {
-                    this.editLine.draw('point', e);
+                    (this.editLine as any).draw('point', e);
                 } else {
                     const deltaTreshold = 15;
                     const delta = Math.sqrt(
@@ -60,36 +68,52 @@ export class EditHandlerImpl implements EditHandler {
                         + ((e.clientY - lastDrawnPoint.y) ** 2),
                     );
                     if (delta > deltaTreshold) {
-                        this.editLine.draw('point', e);
+                        (this.editLine as any).draw('point', e);
                     }
                 }
             }
-        }.bind(this);
-        this.canvas.on('mousemove.draw', handleSlide);
+        });
 
-        this.editLine = (this.canvas as any).polyline().draw({
-            snapToGrid: 0.1,
-        }).addClass('cvat_canvas_shape_drawing').style({
+        this.editLine = (this.canvas as any).polyline();
+        (this.editLine as any).addClass('cvat_canvas_shape_drawing').style({
             'pointer-events': 'none',
             'fill-opacity': 0,
         }).on('drawstart drawpoint', (e: CustomEvent): void => {
             this.transform(this.geometry);
             lastDrawnPoint.x = e.detail.event.clientX;
             lastDrawnPoint.y = e.detail.event.clientY;
-        });
+        }).draw(dummyEvent, { snapToGrid: 0.1 });
 
         if (this.editData.state.shapeType === 'points') {
             this.editLine.style('stroke-width', 0);
-        } else {
-            // generate mouse event
-            const dummyEvent = new MouseEvent('mousedown', {
-                bubbles: true,
-                cancelable: true,
-                clientX,
-                clientY,
-            });
-            (this.editLine as any).draw('point', dummyEvent);
+            (this.editLine as any).draw('undo');
         }
+
+        this.setupEditEvents();
+    }
+
+    private setupEditEvents(): void {
+        let mouseX: number | null = null;
+        let mouseY: number | null = null;
+
+        this.canvas.on('mousedown.edit', (e: MouseEvent): void => {
+            if (e.which === 1) {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            }
+        });
+
+        this.canvas.on('mouseup.edit', (e: MouseEvent): void => {
+            const threshold = 10; // px
+            if (e.which === 1) {
+                if (Math.sqrt( // l2 distance < threshold
+                    ((mouseX - e.clientX) ** 2)
+                    + ((mouseY - e.clientY) ** 2),
+                ) < threshold) {
+                    (this.editLine as any).draw('point', e);
+                }
+            }
+        });
     }
 
     private selectPolygon(shape: SVG.Polygon): void {
@@ -157,6 +181,11 @@ export class EditHandlerImpl implements EditHandler {
                     clone.removeClass('cvat_canvas_shape_splitting');
                 });
             }
+
+            // We do not need these events any more
+            this.canvas.off('mousedown.edit');
+            this.canvas.off('mouseup.edit');
+            this.canvas.off('mousemove.edit');
 
             (this.editLine as any).draw('stop');
             this.editLine.remove();
@@ -236,7 +265,9 @@ export class EditHandlerImpl implements EditHandler {
     }
 
     private release(): void {
-        this.canvas.off('mousemove.draw');
+        this.canvas.off('mousedown.edit');
+        this.canvas.off('mouseup.edit');
+        this.canvas.off('mousemove.edit');
 
         if (this.editedShape) {
             this.setupPoints(false);
