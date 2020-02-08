@@ -160,7 +160,8 @@ export class DrawHandlerImpl implements DrawHandler {
             if (!this.drawData.initialState) {
                 const { drawInstance } = this;
                 this.drawInstance = null;
-                if (this.drawData.shapeType === 'rectangle') {
+                if (this.drawData.shapeType === 'rectangle'
+                    && this.drawData.rectDrawingMethod !== 'by_four_points') {
                     drawInstance.draw('cancel');
                 } else {
                     drawInstance.draw('done');
@@ -579,14 +580,14 @@ export class DrawHandlerImpl implements DrawHandler {
             this.setupPasteEvents();
         } else {
             if (this.drawData.shapeType === 'rectangle') {
-                if (this.drawData.boxDrawingType === 'by_two_points') {
+                if (this.drawData.rectDrawingMethod === 'by_four_points') {
+                    // draw box by extreme clicking
+                    this.drawBoxBy4Points();
+                } else {
                     // default box drawing
                     this.drawBox();
                     // Draw instance was initialized after drawBox();
                     this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
-                } else if (this.drawData.boxDrawingType === 'by_four_points') {
-                    // draw box by extreme clicking
-                    this.drawBoxBy4Points();
                 }
             } else if (this.drawData.shapeType === 'polygon') {
                 this.drawPolygon();
@@ -595,7 +596,6 @@ export class DrawHandlerImpl implements DrawHandler {
             } else if (this.drawData.shapeType === 'points') {
                 this.drawPoints();
             }
-
             this.setupDrawEvents();
         }
     }

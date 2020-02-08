@@ -6,7 +6,7 @@ import {
     Select,
     Button,
     InputNumber,
-    Radio
+    Radio,
 } from 'antd';
 
 import { RadioChangeEvent } from 'antd/lib/radio';
@@ -14,19 +14,19 @@ import Text from 'antd/lib/typography/Text';
 
 import {
     ShapeType,
-    BoxDrawingType
+    RectDrawingMethod,
 } from 'reducers/interfaces';
 
 interface Props {
     shapeType: ShapeType;
-    boxDrawingType: BoxDrawingType;
+    rectDrawingMethod: RectDrawingMethod;
     labels: any[];
     minimumPoints: number;
     numberOfPoints?: number;
     selectedLabeID: number;
     onChangeLabel(value: string): void;
     onChangePoints(value: number | undefined): void;
-    onChangeBoxDrawingType(value: string): void;
+    onChangeRectDrawingMethod(event: RadioChangeEvent): void;
     onDrawTrack(): void;
     onDrawShape(): void;
 }
@@ -42,7 +42,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         onDrawShape,
         onChangeLabel,
         onChangePoints,
-        onChangeBoxDrawingType,
+        onChangeRectDrawingMethod,
     } = props;
 
     return (
@@ -88,19 +88,17 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                             <Col>
                                 <Radio.Group
                                     style={{ display: 'flex' }}
-                                    defaultValue={BoxDrawingType.BY_TWO_POINTS}
-                                    onChange={(event: RadioChangeEvent): void => {
-                                        onChangeBoxDrawingType(event.target.value);
-                                    }}
-                                    >
+                                    defaultValue={RectDrawingMethod.BY_TWO_POINTS}
+                                    onChange={onChangeRectDrawingMethod}
+                                >
                                     <Radio
-                                        value={BoxDrawingType.BY_TWO_POINTS}
+                                        value={RectDrawingMethod.BY_TWO_POINTS}
                                         style={{ width: 'auto' }}
                                     >
                                         By 2 Points
                                     </Radio>
                                     <Radio
-                                        value={BoxDrawingType.BY_FOUR_POINTS}
+                                        value={RectDrawingMethod.BY_FOUR_POINTS}
                                         style={{ width: 'auto' }}
                                     >
                                         By 4 Points

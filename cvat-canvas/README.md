@@ -40,6 +40,7 @@ Canvas itself handles:
     interface DrawData {
         enabled: boolean;
         shapeType?: string;
+        rectDrawingMethod?: string;
         numberOfPoints?: number;
         initialState?: any;
         crosshair?: boolean;
