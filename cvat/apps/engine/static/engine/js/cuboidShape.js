@@ -604,23 +604,36 @@ class CuboidController extends PolyShapeController {
         view.frontLeftEdge.selectize({
             points: "t,b",
             rotationPoint: false,
-        }).resize().on("resizing", () => {
-            const midPointUp = convertPlainArrayToActual([view.frontLeftEdge.attr("x1"), view.frontLeftEdge.attr("y1")])[0];
-            const midPointDown = convertPlainArrayToActual([view.frontLeftEdge.attr("x2"), view.frontLeftEdge.attr("y2")])[0];
-            viewModel.top.points = this.computeHeightFace(midPointUp, 1);
-            viewModel.bot.points = this.computeHeightFace(midPointDown, 1);
-            controller.updateViewAndVM();
+        }).resize().on("resizing", (e) => {
+            if(!e.detail.event.shiftKey){
+                const midPointUp = convertPlainArrayToActual([view.frontLeftEdge.attr("x1"), view.frontLeftEdge.attr("y1")])[0];
+                const midPointDown = convertPlainArrayToActual([view.frontLeftEdge.attr("x2"), view.frontLeftEdge.attr("y2")])[0];
+                viewModel.top.points = this.computeHeightFace(midPointUp, 1);
+                viewModel.bot.points = this.computeHeightFace(midPointDown, 1);
+                controller.updateViewAndVM();
+            }
+
+        }).on("resizestart", (e) =>{
+            if (e.detail.event.detail.event.shiftKey) {
+                showMessage("Perspective may not be adjusted on pink faces.");
+            }
         });
 
         view.frontRightEdge.selectize({
             points: "t,b",
             rotationPoint: false,
-        }).resize().on("resizing", () => {
-            const midPointUp = convertPlainArrayToActual([view.frontRightEdge.attr("x1"), view.frontRightEdge.attr("y1")])[0];
-            const midPointDown = convertPlainArrayToActual([view.frontRightEdge.attr("x2"), view.frontRightEdge.attr("y2")])[0];
-            viewModel.top.points = this.computeHeightFace(midPointUp, 2);
-            viewModel.bot.points = this.computeHeightFace(midPointDown, 2);
-            controller.updateViewAndVM();
+        }).resize().on("resizing", (e) => {
+            if(!e.detail.event.shiftKey) {
+                const midPointUp = convertPlainArrayToActual([view.frontRightEdge.attr("x1"), view.frontRightEdge.attr("y1")])[0];
+                const midPointDown = convertPlainArrayToActual([view.frontRightEdge.attr("x2"), view.frontRightEdge.attr("y2")])[0];
+                viewModel.top.points = this.computeHeightFace(midPointUp, 2);
+                viewModel.bot.points = this.computeHeightFace(midPointDown, 2);
+                controller.updateViewAndVM();
+            }
+        }).on("resizestart", (e) =>{
+            if (e.detail.event.detail.event.shiftKey) {
+                showMessage("Perspective may not be adjusted on pink faces.");
+            }
         });
     }
 
@@ -668,6 +681,22 @@ class CuboidController extends PolyShapeController {
         botPoint.y = Math.clamp(botPoint.y, constraints.y2Range.min, constraints.y2Range.max);
 
         vmEdge.points = [topPoint, botPoint];
+    }
+
+    resetPerspective(){
+        if(this.orientation === orientationEnum.RIGHT){
+            const edgePoints = this.viewModel.dr.points;
+            const constraints = this.viewModel.computeSideEdgeConstraints(this.viewModel.dr);
+            edgePoints[0].y = constraints.y1Range.min;
+            this.viewModel.dr.points = [edgePoints[0],edgePoints[1]]
+            this.updateViewAndVM()
+        }else{
+            const edgePoints = this.viewModel.dl.points;
+            const constraints = this.viewModel.computeSideEdgeConstraints(this.viewModel.dl);
+            edgePoints[0].y = constraints.y1Range.min;
+            this.viewModel.dl.points = [edgePoints[0],edgePoints[1]]
+            this.updateViewAndVM(true)
+        }
     }
 
     // updates the view model with the actual position of the points on screen
@@ -873,6 +902,10 @@ class CuboidModel extends PolyShapeModel {
         return minDistance;
     }
 
+    resetPerspective(){
+        this.notify("perspectiveReset")
+    }
+
     export() {
         const exported = PolyShapeModel.prototype.export.call(this);
         return exported;
@@ -975,6 +1008,13 @@ class CuboidView extends PolyShapeView {
             this._appearance.projectionLineEnable = settings["projection-lines"];
             this.switchProjectionLine(settings["projection-lines"]);
             this._uis.shape.paintOrientationLines();
+        }
+    }
+
+    onShapeUpdate(model) {
+        ShapeView.prototype.onShapeUpdate.call(this, model);
+        if (model.updateReason === 'perspectiveReset') {
+            this._controller.resetPerspective();
         }
     }
 

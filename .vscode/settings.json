@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": ".env/bin/python",
+    "python.pythonPath": "/home/tritin/.venvs/cvat/bin/python",
     "eslint.enable": true,
     "eslint.validate": [
         "javascript",

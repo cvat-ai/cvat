@@ -1679,6 +1679,13 @@ class ShapeView extends Listener {
                     dragPolyItem.addClass('hidden');
                 }
 
+                let resetPerpectiveItem =  this._shapeContextMenu.find('.cuboidItem[action="reset_perspective"]');
+                if(type[1] === 'cuboid'){
+                    resetPerpectiveItem.removeClass('hidden');
+                }else{
+                    resetPerpectiveItem.addClass('hidden');
+                }
+
                 this._shapeContextMenu.finish().show(100);
                 let x = Math.min(e.pageX, this._rightBorderFrame - this._shapeContextMenu[0].scrollWidth);
                 let y = Math.min(e.pageY, this._bottomBorderFrame - this._shapeContextMenu[0].scrollHeight);

@@ -1096,6 +1096,13 @@ class ShapeCollectionController {
         }
     }
 
+    resetPerspectiveFromActiveShape(){
+        let activeShape = this._model.activeShape;
+        if (activeShape &&  activeShape instanceof CuboidModel) {
+            this.activeShape.resetPerspective();
+        }
+    }
+
     removePointFromActiveShape(idx) {
         this._model.removePointFromActiveShape(idx);
     }
@@ -1311,7 +1318,11 @@ class ShapeCollectionView {
             case "drag_polygon":
                 this._controller.switchDraggableForActive();
                 break;
+            case "reset_perspective":
+                this._controller.resetPerspectiveFromActiveShape();
+                break;
             }
+
         });
 
         let shortkeys = window.cvat.config.shortkeys;
