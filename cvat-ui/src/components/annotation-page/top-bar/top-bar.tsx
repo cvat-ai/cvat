@@ -33,6 +33,8 @@ interface Props {
     onLastFrame(): void;
     onSliderChange(value: SliderValue): void;
     onInputChange(value: number | undefined): void;
+    onUndoClick(): void;
+    onRedoClick(): void;
 }
 
 function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -56,6 +58,8 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
         onLastFrame,
         onSliderChange,
         onInputChange,
+        onUndoClick,
+        onRedoClick,
     } = props;
 
     return (
@@ -67,6 +71,8 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
                     onSaveAnnotation={onSaveAnnotation}
                     undoAction={undoAction}
                     redoAction={redoAction}
+                    onUndoClick={onUndoClick}
+                    onRedoClick={onRedoClick}
                 />
                 <Col className='cvat-annotation-header-player-group'>
                     <Row type='flex' align='middle'>

@@ -141,12 +141,12 @@
             }),
             actions: Object.freeze({
                 value: {
-                    async undo(count) {
+                    async undo(count = 1) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.actions.undo, count);
                         return result;
                     },
-                    async redo(count) {
+                    async redo(count = 1) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.actions.redo, count);
                         return result;

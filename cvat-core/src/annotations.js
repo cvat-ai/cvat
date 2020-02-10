@@ -64,7 +64,8 @@
                 startFrame,
                 stopFrame,
                 frameMeta,
-            }).import(rawAnnotations);
+            });
+            collection.import(rawAnnotations);
 
             const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
 

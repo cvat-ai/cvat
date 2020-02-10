@@ -24,6 +24,8 @@ interface Props {
     undoAction?: string;
     redoAction?: string;
     onSaveAnnotation(): void;
+    onUndoClick(): void;
+    onRedoClick(): void;
 }
 
 function LeftGroup(props: Props): JSX.Element {
@@ -33,6 +35,8 @@ function LeftGroup(props: Props): JSX.Element {
         undoAction,
         redoAction,
         onSaveAnnotation,
+        onUndoClick,
+        onRedoClick,
     } = props;
 
     return (
@@ -74,8 +78,10 @@ function LeftGroup(props: Props): JSX.Element {
             <Button
                 title={undoAction}
                 disabled={!undoAction}
+                style={{ pointerEvents: undoAction ? 'initial' : 'none', opacity: undoAction ? 1 : 0.5 }}
                 type='link'
                 className='cvat-annotation-header-button'
+                onClick={onUndoClick}
             >
                 <Icon component={UndoIcon} />
                 <span>Undo</span>
@@ -83,8 +89,10 @@ function LeftGroup(props: Props): JSX.Element {
             <Button
                 title={redoAction}
                 disabled={!redoAction}
+                style={{ pointerEvents: redoAction ? 'initial' : 'none', opacity: redoAction ? 1 : 0.5 }}
                 type='link'
                 className='cvat-annotation-header-button'
+                onClick={onRedoClick}
             >
                 <Icon component={RedoIcon} />
                 Redo

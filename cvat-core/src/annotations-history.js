@@ -36,7 +36,7 @@ class AnnotationHistory {
             const action = this._undo.pop();
             if (action) {
                 action.undo();
-                this.redo.push(action);
+                this._redo.push(action);
                 affectedObjects.push(...action.clientIDs);
             } else {
                 break;
@@ -49,10 +49,10 @@ class AnnotationHistory {
     redo(count) {
         const affectedObjects = [];
         for (let i = 0; i < count; i++) {
-            const action = this._undo.pop();
+            const action = this._redo.pop();
             if (action) {
                 action.redo();
-                this.undo.push(action);
+                this._undo.push(action);
                 affectedObjects.push(...action.clientIDs);
             } else {
                 break;

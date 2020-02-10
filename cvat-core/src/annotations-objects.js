@@ -180,9 +180,15 @@
         delete(force) {
             if (!this.lock || force) {
                 this.removed = true;
+
+                this.history.do(AnnotationsActionsType.REMOVED_OBJECT, () => {
+                    this.removed = false;
+                }, () => {
+                    this.removed = true;
+                }, [this.clientID]);
             }
 
-            return true;
+            return this.removed;
         }
     }
 
@@ -413,16 +419,19 @@
             if (updated.label) {
                 const undoLabel = this.label;
                 const redoLabel = data.label;
-
-                this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
-                    this.label = undoLabel;
-                }, () => {
-                    this.label = redoLabel;
-                }, [this.clientID]);
-
+                const undoAttributes = { ...this.attributes };
                 this.label = data.label;
                 this.attributes = {};
                 this.appendDefaultAttributes(data.label);
+                const redoAttributes = { ...this.attributes };
+
+                this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
+                    this.label = undoLabel;
+                    this.attributes = undoAttributes;
+                }, () => {
+                    this.label = redoLabel;
+                    this.attributes = redoAttributes;
+                }, [this.clientID]);
             }
 
             if (updated.attributes) {
@@ -712,16 +721,221 @@
                 }, {});
 
             if (updated.label) {
+                const undoLabel = this.label;
+                const redoLabel = data.label;
+                const undoAttributes = {
+                    unmutable: { ...this.attributes },
+                    mutable: Object.keys(this.shapes).map((key) => ({
+                        frame: +key,
+                        attributes: { ...this.shapes[key].attributes },
+                    })),
+                };
+
                 this.label = data.label;
                 this.attributes = {};
                 for (const shape of Object.values(this.shapes)) {
                     shape.attributes = {};
                 }
                 this.appendDefaultAttributes(data.label);
+
+                const redoAttributes = {
+                    unmutable: { ...this.attributes },
+                    mutable: Object.keys(this.shapes).map((key) => ({
+                        frame: +key,
+                        attributes: { ...this.shapes[key].attributes },
+                    })),
+                };
+
+                this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
+                    this.label = undoLabel;
+                    this.attributes = undoAttributes.unmutable;
+                    for (const mutable of undoAttributes.mutable) {
+                        this.shapes[mutable.frame].attributes = mutable.attributes;
+                    }
+                }, () => {
+                    this.label = redoLabel;
+                    this.attributes = redoAttributes.unmutable;
+                    for (const mutable of redoAttributes.mutable) {
+                        this.shapes[mutable.frame].attributes = mutable.attributes;
+                    }
+                }, [this.clientID]);
+            }
+
+            if (updated.lock) {
+                const undoLock = this.lock;
+                const redoLock = data.lock;
+
+                this.history.do(AnnotationsActionsType.CHANGED_LOCK, () => {
+                    this.lock = undoLock;
+                }, () => {
+                    this.lock = redoLock;
+                }, [this.clientID]);
+
+                this.lock = data.lock;
+            }
+
+            if (updated.color) {
+                const undoColor = this.color;
+                const redoColor = data.color;
+
+                this.history.do(AnnotationsActionsType.CHANGED_COLOR, () => {
+                    this.color = undoColor;
+                }, () => {
+                    this.color = redoColor;
+                }, [this.clientID]);
+
+                this.color = data.color;
+            }
+
+            if (updated.hidden) {
+                const undoHidden = this.hidden;
+                const redoHidden = data.hidden;
+
+                this.history.do(AnnotationsActionsType.CHANGED_HIDDEN, () => {
+                    this.hidden = undoHidden;
+                }, () => {
+                    this.hidden = redoHidden;
+                }, [this.clientID]);
+
+                this.hidden = data.hidden;
+            }
+
+            if (updated.points && fittedPoints.length) {
+                const undoKeyframe = frame in this.shapes;
+                const undoPoints = current.points;
+                const redoPoints = fittedPoints;
+                this.shapes[frame] = {
+                    frame,
+                    zOrder: current.zOrder,
+                    points: fittedPoints,
+                    outside: current.outside,
+                    occluded: current.occluded,
+                    attributes: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
+                };
+
+                this.history.do(AnnotationsActionsType.CHANGED_POINTS, () => {
+                    if (undoKeyframe) {
+                        this.shapes[frame].points = undoPoints;
+                    } else {
+                        delete this.shapes[frame];
+                    }
+                }, () => {
+                    this.shapes[frame] = {
+                        frame,
+                        zOrder: current.zOrder,
+                        points: redoPoints,
+                        outside: current.outside,
+                        occluded: current.occluded,
+                        attributes: frame in this.shapes
+                            ? { ...this.shapes[frame].attributes } : {},
+                    };
+                }, [this.clientID]);
+            }
+
+            if (updated.outside) {
+                const undoKeyframe = frame in this.shapes;
+                const undoOutside = current.outside;
+                const redoOutside = data.outside;
+                this.shapes[frame] = {
+                    frame,
+                    zOrder: current.zOrder,
+                    points: current.points,
+                    outside: data.outside,
+                    occluded: current.occluded,
+                    attributes: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
+                };
+
+                this.history.do(AnnotationsActionsType.CHANGED_OUTSIDE, () => {
+                    if (undoKeyframe) {
+                        this.shapes[frame].outside = undoOutside;
+                    } else {
+                        delete this.shapes[frame];
+                    }
+                }, () => {
+                    this.shapes[frame] = {
+                        frame,
+                        zOrder: current.zOrder,
+                        points: current.points,
+                        outside: redoOutside,
+                        occluded: current.occluded,
+                        attributes: frame in this.shapes
+                            ? { ...this.shapes[frame].attributes } : {},
+                    };
+                }, [this.clientID]);
+            }
+
+            if (updated.occluded) {
+                const undoKeyframe = frame in this.shapes;
+                const undoOccluded = current.occluded;
+                const redoOccluded = data.occluded;
+                this.shapes[frame] = {
+                    frame,
+                    zOrder: current.zOrder,
+                    points: current.points,
+                    outside: current.outside,
+                    occluded: data.occluded,
+                    attributes: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
+                };
+
+                this.history.do(AnnotationsActionsType.CHANGED_OCCLUDED, () => {
+                    if (undoKeyframe) {
+                        this.shapes[frame].occluded = undoOccluded;
+                    } else {
+                        delete this.shapes[frame];
+                    }
+                }, () => {
+                    this.shapes[frame] = {
+                        frame,
+                        zOrder: current.zOrder,
+                        points: current.points,
+                        outside: current.outside,
+                        occluded: redoOccluded,
+                        attributes: frame in this.shapes
+                            ? { ...this.shapes[frame].attributes } : {},
+                    };
+                }, [this.clientID]);
+            }
+
+            if (updated.zOrder) {
+                const undoKeyframe = frame in this.shapes;
+                const undoZOrder = current.zOrder;
+                const redoZOrder = data.zOrder;
+                this.shapes[frame] = {
+                    frame,
+                    zOrder: data.zOrder,
+                    points: current.points,
+                    outside: current.outside,
+                    occluded: current.occluded,
+                    attributes: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
+                };
+
+                this.history.do(AnnotationsActionsType.CHANGED_ZORDER, () => {
+                    if (undoKeyframe) {
+                        this.shapes[frame].zOrder = undoZOrder;
+                    } else {
+                        delete this.shapes[frame];
+                    }
+                }, () => {
+                    this.shapes[frame] = {
+                        frame,
+                        zOrder: redoZOrder,
+                        points: current.points,
+                        outside: current.outside,
+                        occluded: current.occluded,
+                        attributes: frame in this.shapes
+                            ? { ...this.shapes[frame].attributes } : {},
+                    };
+                }, [this.clientID]);
             }
 
             let mutableAttributesUpdated = false;
             if (updated.attributes) {
+                const undoKeyframe = frame in this.shapes;
+                const undoAttributes = {
+                    unmutable: { ...this.attributes },
+                    mutable: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
+                };
+
                 for (const attrID of Object.keys(data.attributes)) {
                     if (!labelAttributes[attrID].mutable) {
                         this.attributes[attrID] = data.attributes[attrID];
@@ -736,47 +950,80 @@
                             || (this.shapes[frame][attrID] !== data.attributes[attrID]);
                     }
                 }
-            }
 
-            if (updated.lock) {
-                this.lock = data.lock;
-            }
+                if (mutableAttributesUpdated) {
+                    this.shapes[frame] = {
+                        frame,
+                        zOrder: current.zOrder,
+                        points: current.points,
+                        outside: current.outside,
+                        occluded: current.occluded,
+                        attributes: frame in this.shapes
+                            ? { ...this.shapes[frame].attributes } : {},
+                    };
 
-            if (updated.color) {
-                this.color = data.color;
-            }
-
-            if (updated.hidden) {
-                this.hidden = data.hidden;
-            }
-
-            if (updated.points || updated.keyframe || updated.outside
-                || updated.occluded || updated.zOrder || mutableAttributesUpdated) {
-                const mutableAttributes = frame in this.shapes ? this.shapes[frame].attributes : {};
-                this.shapes[frame] = {
-                    frame,
-                    zOrder: data.zOrder,
-                    points: updated.points && fittedPoints.length ? fittedPoints : current.points,
-                    outside: data.outside,
-                    occluded: data.occluded,
-                    attributes: mutableAttributes,
-                };
-
-                for (const attrID of Object.keys(data.attributes)) {
-                    if (labelAttributes[attrID].mutable
-                        && data.attributes[attrID] !== current.attributes[attrID]) {
-                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
-                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                    for (const attrID of Object.keys(data.attributes)) {
+                        if (labelAttributes[attrID].mutable
+                            && data.attributes[attrID] !== current.attributes[attrID]) {
+                            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                        }
                     }
                 }
 
-                if (updated.keyframe && !data.keyframe) {
-                    if (Object.keys(this.shapes).length === 1) {
-                        throw new DataError('You are not able to remove the latest keyframe for a track. '
-                            + 'Consider removing a track instead');
+                const redoAttributes = {
+                    unmutable: { ...this.attributes },
+                    mutable: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
+                };
+
+                this.history.do(AnnotationsActionsType.CHANGED_ATTRIBUTES, () => {
+                    this.attributes = undoAttributes.unmutable;
+                    if (undoKeyframe) {
+                        this.shapes[frame].attributes = undoAttributes.mutable;
                     } else {
                         delete this.shapes[frame];
                     }
+                }, () => {
+                    this.attributes = redoAttributes.unmutable;
+                    if (Object.keys(redoAttributes.mutable).length) {
+                        this.shapes[frame] = {
+                            frame,
+                            zOrder: current.zOrder,
+                            points: current.points,
+                            outside: current.outside,
+                            occluded: current.occluded,
+                            attributes: redoAttributes.mutable,
+                        };
+                    }
+                }, [this.clientID]);
+            }
+
+            if (updated.keyframe) {
+                if (!data.keyframe && frame in this.shapes) {
+                    const undoShape = this.shapes[frame];
+                    delete this.shapes[frame];
+                    this.history.do(AnnotationsActionsType.CHANGED_KEYFRAME, () => {
+                        this.shapes[frame] = undoShape;
+                    }, () => {
+                        delete this.shapes[frame];
+                    }, [this.clientID]);
+                } else if (data.keyframe && !(frame in this.shapes)) {
+                    delete this.shapes[frame];
+                    this.shapes[frame] = {
+                        frame,
+                        zOrder: current.zOrder,
+                        points: current.points,
+                        outside: current.outside,
+                        occluded: current.occluded,
+                        attributes: {},
+                    };
+
+                    const redoShape = this.shapes[frame];
+                    this.history.do(AnnotationsActionsType.CHANGED_KEYFRAME, () => {
+                        delete this.shapes[frame];
+                    }, () => {
+                        this.shapes[frame] = redoShape;
+                    }, [this.clientID]);
                 }
             }
 
@@ -826,14 +1073,6 @@
                 'No one left position or right position was found. '
                 + `Interpolation impossible. Client ID: ${this.id}`,
             );
-        }
-
-        delete(force) {
-            if (!this.lock || force) {
-                this.removed = true;
-            }
-
-            return this.removed;
         }
     }
 
@@ -933,18 +1172,46 @@
 
             // Now when all fields are validated, we can apply them
             if (updated.label) {
+                const undoLabel = this.label;
+                const redoLabel = data.label;
+
+                this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
+                    this.label = undoLabel;
+                }, () => {
+                    this.label = redoLabel;
+                }, [this.clientID]);
+
                 this.label = data.label;
                 this.attributes = {};
                 this.appendDefaultAttributes(data.label);
             }
 
             if (updated.attributes) {
+                const undoAttributes = { ...this.attributes };
+
                 for (const attrID of Object.keys(data.attributes)) {
                     this.attributes[attrID] = data.attributes[attrID];
                 }
+
+                const redoAttributes = { ...this.attributes };
+
+                this.history.do(AnnotationsActionsType.CHANGED_ATTRIBUTES, () => {
+                    this.attributes = undoAttributes;
+                }, () => {
+                    this.attributes = redoAttributes;
+                }, [this.clientID]);
             }
 
             if (updated.lock) {
+                const undoLock = this.lock;
+                const redoLock = data.lock;
+
+                this.history.do(AnnotationsActionsType.CHANGED_LOCK, () => {
+                    this.lock = undoLock;
+                }, () => {
+                    this.lock = redoLock;
+                }, [this.clientID]);
+
                 this.lock = data.lock;
             }
 

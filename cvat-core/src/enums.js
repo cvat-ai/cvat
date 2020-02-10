@@ -185,11 +185,18 @@
         CHANGED_LABEL: 'Changed label',
         CHANGED_ATTRIBUTES: 'Changed attributes',
         CHANGED_POINTS: 'Changed points',
+        CHANGED_OUTSIDE: 'Changed outside',
         CHANGED_OCCLUDED: 'Changed occluded',
         CHANGED_ZORDER: 'Changed z-order',
+        CHANGED_KEYFRAME: 'Changed keyframe',
         CHANGED_LOCK: 'Changed lock',
         CHANGED_COLOR: 'Changed color',
         CHANGED_HIDDEN: 'Changed hidden',
+        MERGED_OBJECTS: 'Merged objects',
+        SPLITTED_TRACK: 'Splitted track',
+        GROUPED_OBJECTS: 'Grouped objects',
+        CREATED_OBJECTS: 'Created objects',
+        REMOVED_OBJECT: 'Removed object',
     });
 
     /**

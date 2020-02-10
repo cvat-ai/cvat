@@ -826,6 +826,27 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.REDO_ACTION_SUCCESS:
+        case AnnotationActionTypes.UNDO_ACTION_SUCCESS: {
+            const {
+                history,
+                states,
+            } = action.payload;
+
+            const activatedStateID = states
+                .map((_state: any) => _state.clientID).includes(state.annotations.activatedStateID)
+                ? state.annotations.activatedStateID : null;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID,
+                    states,
+                    history,
+                },
+            };
+        }
         case AnnotationActionTypes.RESET_CANVAS: {
             return {
                 ...state,

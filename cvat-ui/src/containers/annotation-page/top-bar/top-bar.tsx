@@ -9,6 +9,8 @@ import {
     saveAnnotationsAsync,
     collectStatisticsAsync,
     showStatistics as showStatisticsAction,
+    undoActionAsync,
+    redoActionAsync,
 } from 'actions/annotation-actions';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
@@ -31,6 +33,8 @@ interface DispatchToProps {
     onSwitchPlay(playing: boolean): void;
     onSaveAnnotation(sessionInstance: any): void;
     showStatistics(sessionInstance: any): void;
+    undo(sessionInstance: any, frameNumber: any): void;
+    redo(sessionInstance: any, frameNumber: any): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -91,6 +95,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(collectStatisticsAsync(sessionInstance));
             dispatch(showStatisticsAction(true));
         },
+        undo(sessionInstance: any, frameNumber: any): void {
+            dispatch(undoActionAsync(sessionInstance, frameNumber));
+        },
+        redo(sessionInstance: any, frameNumber: any): void {
+            dispatch(redoActionAsync(sessionInstance, frameNumber));
+        },
     };
 }
 
@@ -119,6 +129,26 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             }
         }
     }
+
+    private undo = (): void => {
+        const {
+            undo,
+            jobInstance,
+            frameNumber,
+        } = this.props;
+
+        undo(jobInstance, frameNumber);
+    };
+
+    private redo = (): void => {
+        const {
+            redo,
+            jobInstance,
+            frameNumber,
+        } = this.props;
+
+        redo(jobInstance, frameNumber);
+    };
 
     private showStatistics = (): void => {
         const {
@@ -330,6 +360,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 frameNumber={frameNumber}
                 undoAction={undoAction}
                 redoAction={redoAction}
+                onUndoClick={this.undo}
+                onRedoClick={this.redo}
             />
         );
     }

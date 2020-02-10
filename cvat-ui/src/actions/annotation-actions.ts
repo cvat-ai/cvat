@@ -74,6 +74,64 @@ export enum AnnotationActionTypes {
     REMOVE_JOB_ANNOTATIONS_SUCCESS = 'REMOVE_JOB_ANNOTATIONS_SUCCESS',
     REMOVE_JOB_ANNOTATIONS_FAILED = 'REMOVE_JOB_ANNOTATIONS_FAILED',
     UPDATE_CANVAS_CONTEXT_MENU = 'UPDATE_CANVAS_CONTEXT_MENU',
+    UNDO_ACTION_SUCCESS = 'UNDO_ACTION_SUCCESS',
+    UNDO_ACTION_FAILED = 'UNDO_ACTION_FAILED',
+    REDO_ACTION_SUCCESS = 'REDO_ACTION_SUCCESS',
+    REDO_ACTION_FAILED = 'REDO_ACTION_FAILED',
+}
+
+export function undoActionAsync(sessionInstance: any, frame: number):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            // TODO: use affected IDs as an optimization
+            await sessionInstance.actions.undo();
+            const history = await sessionInstance.actions.get();
+            const states = await sessionInstance.annotations.get(frame);
+
+            dispatch({
+                type: AnnotationActionTypes.UNDO_ACTION_SUCCESS,
+                payload: {
+                    history,
+                    states,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.UNDO_ACTION_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function redoActionAsync(sessionInstance: any, frame: number):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            // TODO: use affected IDs as an optimization
+            await sessionInstance.actions.redo();
+            const history = await sessionInstance.actions.get();
+            const states = await sessionInstance.annotations.get(frame);
+
+            dispatch({
+                type: AnnotationActionTypes.REDO_ACTION_SUCCESS,
+                payload: {
+                    history,
+                    states,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.REDO_ACTION_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
 }
 
 export function updateCanvasContextMenu(visible: boolean, left: number, top: number): AnyAction {
@@ -111,7 +169,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
     };
 }
-
 
 export function uploadJobAnnotationsAsync(job: any, loader: any, file: File):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
