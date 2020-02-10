@@ -6,6 +6,7 @@ import {
     Reducer,
 } from 'redux';
 import { createLogger } from 'redux-logger';
+import { composeWithDevTools } from 'redux-devtools-extension';
 
 
 const logger = createLogger({
@@ -21,9 +22,10 @@ const middlewares = [
 let store: Store | null = null;
 
 export default function createCVATStore(createRootReducer: () => Reducer): void {
+    // todo enable devtools only in dev mode
     store = createStore(
         createRootReducer(),
-        applyMiddleware(...middlewares),
+        composeWithDevTools(applyMiddleware(...middlewares)),
     );
 }
 
