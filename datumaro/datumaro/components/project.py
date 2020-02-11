@@ -674,6 +674,7 @@ class ProjectDataset(Dataset):
             dst_project = Project(Config(self.config))
             dst_project.config.remove('project_dir')
             dst_project.config.remove('sources')
+        dst_project.config.project_name = osp.basename(save_dir)
 
         dst_dataset = dst_project.make_dataset()
         dst_dataset.define_categories(extractor.categories())

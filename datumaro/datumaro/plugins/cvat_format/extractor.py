@@ -24,8 +24,14 @@ class CvatExtractor(SourceExtractor):
         super().__init__()
 
         assert osp.isfile(path)
-        rootpath = path.rsplit(CvatPath.ANNOTATIONS_DIR, maxsplit=1)[0]
-        self._path = rootpath
+        rootpath = ''
+        if path.endswith(osp.join(CvatPath.ANNOTATIONS_DIR, osp.basename(path))):
+            rootpath = path.rsplit(CvatPath.ANNOTATIONS_DIR, maxsplit=1)[0]
+        images_dir = ''
+        if rootpath and osp.isdir(osp.join(rootpath, CvatPath.IMAGES_DIR)):
+            images_dir = osp.join(rootpath, CvatPath.IMAGES_DIR)
+        self._images_dir = images_dir
+        self._path = path
 
         subset = osp.splitext(osp.basename(path))[0]
         if subset == DEFAULT_SUBSET_NAME:
@@ -275,7 +281,6 @@ class CvatExtractor(SourceExtractor):
             file_name = item_desc.get('name')
             if not file_name:
                 file_name = item_id
-            file_name += CvatPath.IMAGE_EXT
             image = self._find_image(file_name)
 
             parsed[item_id] = DatasetItem(id=item_id, subset=self._subset,
@@ -283,11 +288,16 @@ class CvatExtractor(SourceExtractor):
         return parsed
 
     def _find_image(self, file_name):
-        images_dir = osp.join(self._path, CvatPath.IMAGES_DIR)
         search_paths = [
-            osp.join(images_dir, file_name),
-            osp.join(images_dir, self._subset or DEFAULT_SUBSET_NAME, file_name),
+            osp.join(osp.dirname(self._path), file_name)
         ]
+        if self._images_dir:
+            search_paths += [
+                osp.join(self._images_dir, file_name),
+                osp.join(self._images_dir, self._subset or DEFAULT_SUBSET_NAME,
+                    file_name),
+            ]
         for image_path in search_paths:
-            if osp.exists(image_path):
+            if osp.isfile(image_path):
                 return lazy_image(image_path)
+        return None
