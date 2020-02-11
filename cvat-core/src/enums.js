@@ -174,11 +174,17 @@
         * @property {string} CHANGED_LABEL Changed label
         * @property {string} CHANGED_ATTRIBUTES Changed attributes
         * @property {string} CHANGED_POINTS Changed points
+        * @property {string} CHANGED_OUTSIDE Changed outside
         * @property {string} CHANGED_OCCLUDED Changed occluded
         * @property {string} CHANGED_ZORDER Changed z-order
         * @property {string} CHANGED_LOCK Changed lock
         * @property {string} CHANGED_COLOR Changed color
         * @property {string} CHANGED_HIDDEN Changed hidden
+        * @property {string} MERGED_OBJECTS Merged objects
+        * @property {string} SPLITTED_TRACK Splitted track
+        * @property {string} GROUPED_OBJECTS Grouped objects
+        * @property {string} CREATED_OBJECTS Created objects
+        * @property {string} REMOVED_OBJECT Removed object
         * @readonly
     */
     const AnnotationsActionsType = Object.freeze({
