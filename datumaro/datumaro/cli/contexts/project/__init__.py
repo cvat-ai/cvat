@@ -158,7 +158,7 @@ def import_command(args):
     extra_args = {}
     try:
         env = Environment()
-        importer = env.importers.get(args.format)
+        importer = env.make_importer(args.format)
         if hasattr(importer, 'from_cmdline'):
             extra_args = importer.from_cmdline(args.extra_args)
     except KeyError:
