@@ -293,8 +293,8 @@ class CvatExtractor(SourceExtractor):
         ]
         if self._images_dir:
             search_paths += [
-                osp.join(images_dir, file_name),
-                osp.join(images_dir, self._subset or DEFAULT_SUBSET_NAME,
+                osp.join(self._images_dir, file_name),
+                osp.join(self._images_dir, self._subset or DEFAULT_SUBSET_NAME,
                     file_name),
             ]
         for image_path in search_paths:
