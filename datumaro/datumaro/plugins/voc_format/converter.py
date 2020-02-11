@@ -548,20 +548,25 @@ class VocConverter(Converter, CliPlugin):
 
 class VocClassificationConverter(VocConverter):
     def __init__(self, **kwargs):
-        super().__init__(VocTask.classification, **kwargs)
+        kwargs['tasks'] = VocTask.classification
+        super().__init__(**kwargs)
 
 class VocDetectionConverter(VocConverter):
     def __init__(self, **kwargs):
-        super().__init__(VocTask.detection, **kwargs)
+        kwargs['tasks'] = VocTask.detection
+        super().__init__(**kwargs)
 
 class VocLayoutConverter(VocConverter):
     def __init__(self, **kwargs):
-        super().__init__(VocTask.person_layout, **kwargs)
+        kwargs['tasks'] = VocTask.person_layout
+        super().__init__(**kwargs)
 
 class VocActionConverter(VocConverter):
     def __init__(self, **kwargs):
-        super().__init__(VocTask.action_classification, **kwargs)
+        kwargs['tasks'] = VocTask.action_classification
+        super().__init__(**kwargs)
 
 class VocSegmentationConverter(VocConverter):
     def __init__(self, **kwargs):
-        super().__init__(VocTask.segmentation, **kwargs)
+        kwargs['tasks'] = VocTask.segmentation
+        super().__init__(**kwargs)

@@ -609,20 +609,25 @@ class CocoConverter(Converter, CliPlugin):
 
 class CocoInstancesConverter(CocoConverter):
     def __init__(self, **kwargs):
-        super().__init__(CocoTask.instances, **kwargs)
+        kwargs['tasks'] = CocoTask.instances
+        super().__init__(**kwargs)
 
 class CocoImageInfoConverter(CocoConverter):
     def __init__(self, **kwargs):
-        super().__init__(CocoTask.image_info, **kwargs)
+        kwargs['tasks'] = CocoTask.image_info
+        super().__init__(**kwargs)
 
 class CocoPersonKeypointsConverter(CocoConverter):
     def __init__(self, **kwargs):
-        super().__init__(CocoTask.person_keypoints, **kwargs)
+        kwargs['tasks'] = CocoTask.person_keypoints
+        super().__init__(**kwargs)
 
 class CocoCaptionsConverter(CocoConverter):
     def __init__(self, **kwargs):
-        super().__init__(CocoTask.captions, **kwargs)
+        kwargs['tasks'] = CocoTask.captions
+        super().__init__(**kwargs)
 
 class CocoLabelsConverter(CocoConverter):
     def __init__(self, **kwargs):
-        super().__init__(CocoTask.labels, **kwargs)
+        kwargs['tasks'] = CocoTask.labels
+        super().__init__(**kwargs)
