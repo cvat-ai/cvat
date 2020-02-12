@@ -239,6 +239,11 @@ export enum ActiveControl {
     EDIT = 'edit',
 }
 
+export enum RectDrawingMethod {
+    BY_TWO_POINTS = 'by_two_points',
+    BY_FOUR_POINTS = 'by_four_points'
+}
+
 export enum ShapeType {
     RECTANGLE = 'rectangle',
     POLYGON = 'polygon',
@@ -297,6 +302,7 @@ export interface AnnotationState {
     };
     drawing: {
         activeShapeType: ShapeType;
+        activeRectDrawingMethod?: RectDrawingMethod;
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;

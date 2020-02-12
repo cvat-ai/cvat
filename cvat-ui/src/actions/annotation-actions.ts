@@ -583,6 +583,7 @@ export function drawShape(
     labelID: number,
     objectType: ObjectType,
     points?: number,
+    rectDrawingMethod?: string,
 ): AnyAction {
     let activeControl = ActiveControl.DRAW_RECTANGLE;
     if (shapeType === ShapeType.POLYGON) {
@@ -601,6 +602,7 @@ export function drawShape(
             objectType,
             points,
             activeControl,
+            rectDrawingMethod,
         },
     };
 }

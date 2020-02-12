@@ -160,7 +160,8 @@ export class DrawHandlerImpl implements DrawHandler {
             if (!this.drawData.initialState) {
                 const { drawInstance } = this;
                 this.drawInstance = null;
-                if (this.drawData.shapeType === 'rectangle') {
+                if (this.drawData.shapeType === 'rectangle'
+                    && this.drawData.rectDrawingMethod !== 'by_four_points') {
                     drawInstance.draw('cancel');
                 } else {
                     drawInstance.draw('done');
@@ -198,6 +199,45 @@ export class DrawHandlerImpl implements DrawHandler {
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             z_order: Number.MAX_SAFE_INTEGER,
         });
+    }
+
+    private drawBoxBy4Points(): void {
+        let numberOfPoints = 0;
+        this.drawInstance = (this.canvas as any).polygon()
+            .addClass('cvat_canvas_shape_drawing').attr({
+                'stroke-width': 0,
+                opacity: 0,
+            }).on('drawstart', () => {
+                // init numberOfPoints as one on drawstart
+                numberOfPoints = 1;
+            }).on('drawpoint', (e: CustomEvent) => {
+                // increase numberOfPoints by one on drawpoint
+                numberOfPoints += 1;
+
+                // finish if numberOfPoints are exactly four
+                if (numberOfPoints === 4) {
+                    const bbox = (e.target as SVGPolylineElement).getBBox();
+                    const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+
+                    if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
+                        this.onDrawDone({
+                            shapeType: this.drawData.shapeType,
+                            points: [xtl, ytl, xbr, ybr],
+                        });
+                    } else {
+                        this.onDrawDone(null);
+                    }
+                }
+            }).on('undopoint', () => {
+                if (numberOfPoints > 0) {
+                    numberOfPoints -= 1;
+                }
+            }).off('drawdone').on('drawdone', () => {
+                // close drawing mode without drawing rect
+                this.onDrawDone(null);
+            });
+
+        this.drawPolyshape();
     }
 
     private drawPolyshape(): void {
@@ -536,13 +576,18 @@ export class DrawHandlerImpl implements DrawHandler {
                     this.pastePoints(stringifiedPoints);
                 }
             }
-
             this.setupPasteEvents();
         } else {
             if (this.drawData.shapeType === 'rectangle') {
-                this.drawBox();
-                // Draw instance was initialized after drawBox();
-                this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
+                if (this.drawData.rectDrawingMethod === 'by_four_points') {
+                    // draw box by extreme clicking
+                    this.drawBoxBy4Points();
+                } else {
+                    // default box drawing
+                    this.drawBox();
+                    // Draw instance was initialized after drawBox();
+                    this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
+                }
             } else if (this.drawData.shapeType === 'polygon') {
                 this.drawPolygon();
             } else if (this.drawData.shapeType === 'polyline') {
@@ -550,7 +595,6 @@ export class DrawHandlerImpl implements DrawHandler {
             } else if (this.drawData.shapeType === 'points') {
                 this.drawPoints();
             }
-
             this.setupDrawEvents();
         }
     }
