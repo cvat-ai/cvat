@@ -22,7 +22,8 @@ class ImageDirFormatTest(TestCase):
             source_dataset = self.TestExtractor()
 
             for item in source_dataset:
-                save_image(osp.join(test_dir, '%s.jpg' % item.id), item.image)
+                save_image(osp.join(test_dir, '%s.jpg' % item.id),
+                    item.image.data)
 
             project = Project.import_from(test_dir, 'image_dir')
             parsed_dataset = project.make_dataset()

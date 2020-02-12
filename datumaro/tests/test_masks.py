@@ -68,6 +68,25 @@ class PolygonConversionsTest(TestCase):
             self.assertTrue(np.array_equal(e_mask, c_mask),
                 '#%s: %s\n%s\n' % (i, e_mask, c_mask))
 
+    def test_mask_to_rle(self):
+        source_mask = np.array([
+            [0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
+            [0, 0, 1, 1, 0, 1, 0, 1, 0, 0],
+            [0, 0, 0, 1, 0, 1, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ])
+
+        rle_uncompressed = mask_tools.mask_to_rle(source_mask)
+
+        from pycocotools import mask as mask_utils
+        resulting_mask = mask_utils.frPyObjects(
+            rle_uncompressed, *rle_uncompressed['size'])
+        resulting_mask = mask_utils.decode(resulting_mask)
+
+        self.assertTrue(np.array_equal(source_mask, resulting_mask),
+            '%s\n%s\n' % (source_mask, resulting_mask))
+
 class ColormapOperationsTest(TestCase):
     def test_can_paint_mask(self):
         mask = np.zeros((1, 3), dtype=np.uint8)
