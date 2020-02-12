@@ -10,7 +10,9 @@ import os
 import os.path as osp
 import string
 
-from datumaro.components.extractor import AnnotationType, DEFAULT_SUBSET_NAME
+from datumaro.components.extractor import (AnnotationType, DEFAULT_SUBSET_NAME,
+    LabelCategories
+)
 from datumaro.components.converter import Converter
 from datumaro.components.cli_plugin import CliPlugin
 from datumaro.util.image import encode_image
@@ -49,26 +51,30 @@ def _make_tf_example(item, get_label_id, get_label, save_images=False):
     }
 
     if not item.has_image:
-        raise Exception(
-            "Failed to export dataset item '%s': item has no image" % item.id)
-    height, width = item.image.shape[:2]
+        raise Exception("Failed to export dataset item '%s': "
+            "item has no image info" % item.id)
+    height, width = item.image.size
 
     features.update({
         'image/height': int64_feature(height),
         'image/width': int64_feature(width),
     })
 
+    features.update({
+        'image/encoded': bytes_feature(b''),
+        'image/format': bytes_feature(b'')
+    })
     if save_images:
-        if item.has_image:
+        if item.has_image and item.image.has_data:
             fmt = DetectionApiPath.IMAGE_FORMAT
-            buffer = encode_image(item.image, DetectionApiPath.IMAGE_EXT)
+            buffer = encode_image(item.image.data, DetectionApiPath.IMAGE_EXT)
 
             features.update({
                 'image/encoded': bytes_feature(buffer),
                 'image/format': bytes_feature(fmt.encode('utf-8')),
             })
         else:
-            log.debug("Item '%s' has no image" % item.id)
+            log.warning("Item '%s' has no image" % item.id)
 
     xmins = [] # List of normalized left x coordinates in bounding box (1 per box)
     xmaxs = [] # List of normalized right x coordinates in bounding box (1 per box)
@@ -130,7 +136,8 @@ class TfDetectionApiConverter(Converter, CliPlugin):
                 subset_name = DEFAULT_SUBSET_NAME
                 subset = extractor
 
-            label_categories = subset.categories()[AnnotationType.label]
+            label_categories = subset.categories().get(AnnotationType.label,
+                LabelCategories())
             get_label = lambda label_id: label_categories.items[label_id].name \
                 if label_id is not None else ''
             label_ids = OrderedDict((label.name, 1 + idx)

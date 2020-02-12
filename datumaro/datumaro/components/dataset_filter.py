@@ -31,11 +31,12 @@ class DatasetItemEncoder:
     def encode_image(cls, image):
         image_elem = ET.Element('image')
 
-        h, w = image.shape[:2]
-        c = 1 if len(image.shape) == 2 else image.shape[2]
+        h, w = image.size
         ET.SubElement(image_elem, 'width').text = str(w)
         ET.SubElement(image_elem, 'height').text = str(h)
-        ET.SubElement(image_elem, 'depth').text = str(c)
+
+        ET.SubElement(image_elem, 'has_data').text = '%d' % int(image.has_data)
+        ET.SubElement(image_elem, 'path').text = image.path
 
         return image_elem
 
@@ -81,10 +82,6 @@ class DatasetItemEncoder:
         ET.SubElement(ann_elem, 'label').text = \
             str(cls._get_label(obj.label, categories))
         ET.SubElement(ann_elem, 'label_id').text = str(obj.label)
-
-        mask = obj.image
-        if mask is not None:
-            ann_elem.append(cls.encode_image(mask))
 
         return ann_elem
 

@@ -28,7 +28,7 @@ class CropCoveredSegments(Transform, CliPlugin):
 
         if not item.has_image:
             raise Exception("Image info is required for this transform")
-        h, w = item.image.shape[:2]
+        h, w = item.image.size
         segments = self.crop_segments(segments, w, h)
 
         annotations += segments
@@ -107,7 +107,7 @@ class MergeInstanceSegments(Transform, CliPlugin):
 
         if not item.has_image:
             raise Exception("Image info is required for this transform")
-        h, w = item.image.shape[:2]
+        h, w = item.image.size
         instances = self.find_instances(segments)
         segments = [self.merge_segments(i, w, h, self._include_polygons)
             for i in instances]
@@ -196,7 +196,7 @@ class PolygonsToMasks(Transform, CliPlugin):
             if ann.type == AnnotationType.polygon:
                 if not item.has_image:
                     raise Exception("Image info is required for this transform")
-                h, w = item.image.shape[:2]
+                h, w = item.image.size
                 annotations.append(self.convert_polygon(ann, h, w))
             else:
                 annotations.append(ann)

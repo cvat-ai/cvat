@@ -8,7 +8,8 @@ import os
 import os.path as osp
 
 from datumaro.components.extractor import DatasetItem, SourceExtractor, Importer
-from datumaro.util.image import lazy_image
+from datumaro.components.converter import Converter
+from datumaro.util.image import lazy_image, save_image
 
 
 class ImageDirImporter(Importer):
@@ -73,3 +74,16 @@ class ImageDirExtractor(SourceExtractor):
             if osp.isfile(path) and path.endswith(ext):
                 return True
         return False
+
+
+class ImageDirConverter(Converter):
+    def __call__(self, extractor, save_dir):
+        os.makedirs(save_dir, exist_ok=True)
+
+        for item in extractor:
+            if item.has_image and item.image.has_data:
+                file_name = item.name
+                if not file_name:
+                    file_name = str(item.id)
+                file_name += '.jpg'
+                save_image(osp.join(save_dir, file_name), item.image.data)
