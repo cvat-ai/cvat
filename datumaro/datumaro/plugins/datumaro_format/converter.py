@@ -58,6 +58,11 @@ class _SubsetWriter:
         }
         if item.path:
             item_desc['path'] = item.path
+        if item.has_image:
+            item_desc['image'] = {
+                'size': item.image.size,
+                'path': item.image.path,
+            }
         self.items.append(item_desc)
 
         for ann in item.annotations:
@@ -226,7 +231,7 @@ class _SubsetWriter:
         return converted
 
 class _Converter:
-    def __init__(self, extractor, save_dir, save_images=False,):
+    def __init__(self, extractor, save_dir, save_images=False):
         self._extractor = extractor
         self._save_dir = save_dir
         self._save_images = save_images
@@ -258,14 +263,15 @@ class _Converter:
             writer = subsets[subset]
 
             if self._save_images:
-                self._save_image(item)
+                if item.has_image:
+                    self._save_image(item)
             writer.write_item(item)
 
         for subset, writer in subsets.items():
             writer.write(annotations_dir)
 
     def _save_image(self, item):
-        image = item.image
+        image = item.image.data
         if image is None:
             return
 

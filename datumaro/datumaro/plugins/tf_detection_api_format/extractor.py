@@ -12,7 +12,7 @@ from datumaro.components.extractor import (SourceExtractor,
     DEFAULT_SUBSET_NAME, DatasetItem,
     AnnotationType, Bbox, LabelCategories
 )
-from datumaro.util.image import lazy_image, decode_image
+from datumaro.util.image import Image, decode_image, lazy_image
 from datumaro.util.tf_util import import_tf as _import_tf
 
 from .format import DetectionApiPath
@@ -174,13 +174,20 @@ class TfDetectionApiExtractor(SourceExtractor):
                     label=dataset_labels.get(label, None), id=index
                 ))
 
-            image = None
-            if image is None and frame_image and frame_format:
-                image = lazy_image(frame_image, loader=decode_image)
-            if image is None and frame_filename and images_dir:
+            image_params = {}
+            if frame_height and frame_width:
+                image_params['size'] = (frame_height, frame_width)
+
+            if frame_image and frame_format:
+                image_params['data'] = lazy_image(frame_image, decode_image)
+            elif frame_filename and images_dir:
                 image_path = osp.join(images_dir, frame_filename)
                 if osp.exists(image_path):
-                    image = lazy_image(image_path)
+                    image_params['path'] = image_path
+
+            image=None
+            if image_params:
+                image = Image(**image_params)
 
             dataset_items.append(DatasetItem(id=item_id, subset=subset_name,
                 image=image, annotations=annotations))

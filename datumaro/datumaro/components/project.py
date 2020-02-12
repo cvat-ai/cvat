@@ -325,14 +325,7 @@ class Dataset(Extractor):
 
                 existing_item = subsets[item.subset].items.get(item.id)
                 if existing_item is not None:
-                    image = None
-                    if existing_item.has_image:
-                        # TODO: think of image comparison
-                        image = cls._lazy_image(existing_item)
-
-                    item = item.wrap(path=path,
-                        image=image, annotations=self._merge_anno(
-                            existing_item.annotations, item.annotations))
+                    item = self._merge_items(existing_item, item, path=path)
                 else:
                     item = item.wrap(path=path, annotations=item.annotations)
 
@@ -412,6 +405,23 @@ class Dataset(Extractor):
         # NOTE: avoid https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
         return lambda: item.image
 
+    @classmethod
+    def _merge_items(cls, existing_item, current_item, path=None):
+        image = None
+        if existing_item.has_image and current_item.has_image:
+            if existing_item.image.has_data:
+                image = existing_item.image
+            elif current_item.image.has_data:
+                image = current_item.image
+        elif existing_item.has_image:
+            image = existing_item
+        elif current_item.has_image:
+            image = current_item.image
+
+        return existing_item.wrap(path=path,
+            image=image, annotations=cls._merge_anno(
+                existing_item.annotations, current_item.annotations))
+
     @staticmethod
     def _merge_anno(a, b):
         from itertools import chain
@@ -479,17 +489,10 @@ class ProjectDataset(Dataset):
             for item in source:
                 existing_item = subsets[item.subset].items.get(item.id)
                 if existing_item is not None:
-                    image = None
-                    if existing_item.has_image:
-                        # TODO: think of image comparison
-                        image = self._lazy_image(existing_item)
-
                     path = existing_item.path
                     if item.path != path:
                         path = None # NOTE: move to our own dataset
-                    item = item.wrap(path=path,
-                        image=image, annotations=self._merge_anno(
-                            existing_item.annotations, item.annotations))
+                    item = self._merge_items(existing_item, item, path=path)
                 else:
                     s_config = config.sources[source_name]
                     if s_config and \

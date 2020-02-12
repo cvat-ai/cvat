@@ -80,12 +80,16 @@ class YoloConverter(Converter, CliPlugin):
                     osp.basename(subset_dir), image_name)
 
                 if self._save_images:
-                    if item.has_image:
-                        save_image(osp.join(subset_dir, image_name), item.image)
+                    if item.has_image and item.image.has_data:
+                        save_image(osp.join(subset_dir, image_name),
+                            item.image.data)
                     else:
-                        log.debug("Item '%s' has no images" % item.id)
+                        log.warning("Item '%s' has no image" % item.id)
 
-                height, width = item.image.shape[:2]
+                if not item.has_image:
+                    raise Exception("Failed to export item '%s': "
+                        "item has no image info" % item.id)
+                height, width = item.image.size
 
                 yolo_annotation = ''
                 for bbox in item.annotations:

@@ -12,7 +12,7 @@ from datumaro.components.extractor import (SourceExtractor,
     AnnotationType, Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
-from datumaro.util.image import lazy_image
+from datumaro.util.image import Image
 from datumaro.util.mask_tools import lazy_mask
 
 from .format import DatumaroPath
@@ -93,11 +93,20 @@ class DatumaroExtractor(SourceExtractor):
         items = []
         for item_desc in parsed['items']:
             item_id = item_desc['id']
+
             image = None
-            image_path = osp.join(self._path, DatumaroPath.IMAGES_DIR,
-                item_id + DatumaroPath.IMAGE_EXT)
-            if osp.exists(image_path):
-                image = lazy_image(image_path)
+            image_info = item_desc.get('image', {})
+            if image_info.get('path'):
+                image_path = osp.join(self._path, DatumaroPath.IMAGES_DIR,
+                    image_info['path'])
+            else:
+                image_path = osp.join(self._path, DatumaroPath.IMAGES_DIR,
+                    item_id + DatumaroPath.IMAGE_EXT)
+            image_size = image_info.get('size')
+            if osp.isfile(image_path):
+                image = Image(path=image_path, size=image_size)
+            elif image_size:
+                image = Image(size=image_size)
 
             annotations = self._load_annotations(item_desc)
 
