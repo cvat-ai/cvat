@@ -414,7 +414,7 @@ class Dataset(Extractor):
             elif current_item.image.has_data:
                 image = current_item.image
         elif existing_item.has_image:
-            image = existing_item
+            image = existing_item.image
         elif current_item.has_image:
             image = current_item.image
 
