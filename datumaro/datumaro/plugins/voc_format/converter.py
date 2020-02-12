@@ -136,10 +136,10 @@ class _Converter:
                 log.debug("Converting item '%s'", item.id)
 
                 if self._save_images:
-                    if item.has_image:
+                    if item.has_image and item.image.has_data:
                         save_image(osp.join(self._images_dir,
                                 item.id + VocPath.IMAGE_EXT),
-                            item.image)
+                            item.image.data)
                     else:
                         log.debug("Item '%s' has no image" % item.id)
 
@@ -467,7 +467,8 @@ class _Converter:
     def _make_label_id_map(self):
         source_labels = {
             id: label.name for id, label in
-            enumerate(self._extractor.categories()[AnnotationType.label].items)
+            enumerate(self._extractor.categories().get(
+                AnnotationType.label, LabelCategories()).items)
         }
         target_labels = {
             label.name: id for id, label in

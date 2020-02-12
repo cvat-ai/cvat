@@ -69,7 +69,7 @@ class _TaskConverter:
 
     def save_image_info(self, item, filename):
         if item.has_image:
-            h, w = item.image.shape[:2]
+            h, w = item.image.size
         else:
             h = 0
             w = 0
@@ -130,7 +130,7 @@ class _CaptionsConverter(_TaskConverter):
         pass
 
     def save_annotations(self, item):
-        for ann in item.annotations:
+        for ann_idx, ann in enumerate(item.annotations):
             if ann.type != AnnotationType.caption:
                 continue
 
@@ -144,7 +144,8 @@ class _CaptionsConverter(_TaskConverter):
                 try:
                     elem['score'] = float(ann.attributes['score'])
                 except Exception as e:
-                    log.warning("Failed to convert attribute 'score': %e" % e)
+                    log.warning("Item '%s', ann #%s: failed to convert "
+                        "attribute 'score': %e" % (item.id, ann_idx, e))
 
             self.annotations.append(elem)
 
@@ -293,10 +294,10 @@ class _InstancesConverter(_TaskConverter):
             return
 
         if not item.has_image:
-            log.warn("Skipping writing instances for "
-                "item '%s' as it has no image info" % item.id)
+            log.warn("Item '%s': skipping writing instances "
+                "since no image info available" % item.id)
             return
-        h, w, _ = item.image.shape
+        h, w = item.image.size
         instances = [self.find_instance_parts(i, w, h) for i in instances]
 
         if self._context._crop_covered:
@@ -319,7 +320,7 @@ class _InstancesConverter(_TaskConverter):
         area = 0
         if segmentation:
             if item.has_image:
-                h, w, _ = item.image.shape
+                h, w = item.image.size
             else:
                 # NOTE: here we can guess the image size as
                 # it is only needed for the area computation
@@ -350,7 +351,8 @@ class _InstancesConverter(_TaskConverter):
             try:
                 elem['score'] = float(ann.attributes['score'])
             except Exception as e:
-                log.warning("Failed to convert attribute 'score': %e" % e)
+                log.warning("Item '%s': failed to convert attribute "
+                    "'score': %e" % (item.id, e))
 
         return elem
 
@@ -459,7 +461,8 @@ class _LabelsConverter(_TaskConverter):
                 try:
                     elem['score'] = float(ann.attributes['score'])
                 except Exception as e:
-                    log.warning("Failed to convert attribute 'score': %e" % e)
+                    log.warning("Item '%s': failed to convert attribute "
+                        "'score': %e" % (item.id, e))
 
             self.annotations.append(elem)
 
@@ -519,8 +522,13 @@ class _Converter:
         }
 
     def save_image(self, item, filename):
+        image = item.image.data
+        if image is None:
+            log.warning("Item '%s' has no image" % item.id)
+            return
+
         path = osp.join(self._images_dir, filename)
-        save_image(path, item.image)
+        save_image(path, image)
 
         return path
 
@@ -549,7 +557,7 @@ class _Converter:
                     if item.has_image:
                         self.save_image(item, filename)
                     else:
-                        log.debug("Item '%s' has no image" % item.id)
+                        log.debug("Item '%s' has no image info" % item.id)
                 for task_conv in task_converters.values():
                     task_conv.save_image_info(item, filename)
                     task_conv.save_annotations(item)

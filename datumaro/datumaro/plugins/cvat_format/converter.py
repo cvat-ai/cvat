@@ -162,30 +162,37 @@ class _SubsetWriter:
                 if item.has_image:
                     self._save_image(item)
                 else:
-                    log.debug("Item '%s' has no image" % item.id)
+                    log.debug("Item '%s' has no image info" % item.id)
             self._write_item(item)
 
         self._writer.close_root()
 
     def _save_image(self, item):
-        image = item.image
+        image = item.image.data
         if image is None:
+            log.warning("Item '%s' has no image" % item.id)
             return
 
-        image_path = osp.join(self._context._images_dir,
-            str(item.id) + CvatPath.IMAGE_EXT)
+        file_name = item.name
+        if not file_name:
+            file_name = str(item.id)
+        file_name += CvatPath.IMAGE_EXT
+        image_path = osp.join(self._context._images_dir, file_name)
         save_image(image_path, image)
 
     def _write_item(self, item):
-        h, w = 0, 0
-        if item.has_image:
-            h, w = item.image.shape[:2]
-        self._writer.open_image(OrderedDict([
+        image_name = item.name
+        if not image_name:
+            image_name = str(item.id)
+        image_info = OrderedDict([
             ("id", str(item.id)),
-            ("name", str(item.id)),
-            ("width", str(w)),
-            ("height", str(h))
-        ]))
+            ("name", image_name),
+        ])
+        if item.has_image:
+            h, w = item.image.size
+            image_info["width"] = str(w)
+            image_info["height"] = str(h)
+        self._writer.open_image(image_info)
 
         for ann in item.annotations:
             if ann.type in {AnnotationType.points, AnnotationType.polyline,
