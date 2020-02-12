@@ -511,7 +511,11 @@ class VocConverter(Converter, CliPlugin):
     def _get_labelmap(s):
         if osp.isfile(s):
             return s
-        return LabelmapType[s].name
+        try:
+            return LabelmapType[s].name
+        except KeyError:
+            import argparse
+            raise argparse.ArgumentTypeError()
 
     @classmethod
     def build_cmdline_parser(cls, **kwargs):

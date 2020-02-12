@@ -155,15 +155,16 @@ def import_command(args):
     if project_name is None:
         project_name = osp.basename(project_dir)
 
-    extra_args = {}
     try:
         env = Environment()
         importer = env.make_importer(args.format)
-        if hasattr(importer, 'from_cmdline'):
-            extra_args = importer.from_cmdline(args.extra_args)
     except KeyError:
         raise CliException("Importer for format '%s' is not found" % \
             args.format)
+
+    extra_args = {}
+    if hasattr(importer, 'from_cmdline'):
+        extra_args = importer.from_cmdline(args.extra_args)
 
     log.info("Importing project from '%s' as '%s'" % \
         (args.source, args.format))
@@ -292,12 +293,13 @@ def export_command(args):
 
     try:
         converter = project.env.converters.get(args.format)
-        if hasattr(converter, 'from_cmdline'):
-            extra_args = converter.from_cmdline(args.extra_args)
-            converter = converter(**extra_args)
     except KeyError:
         raise CliException("Converter for format '%s' is not found" % \
             args.format)
+
+    if hasattr(converter, 'from_cmdline'):
+        extra_args = converter.from_cmdline(args.extra_args)
+        converter = converter(**extra_args)
 
     filter_args = FilterModes.make_filter_args(args.filter_mode)
 
@@ -558,13 +560,14 @@ def transform_command(args):
             project.config.project_name)
     dst_dir = osp.abspath(dst_dir)
 
-    extra_args = {}
     try:
         transform = project.env.transforms.get(args.transform)
-        if hasattr(transform, 'from_cmdline'):
-            extra_args = transform.from_cmdline(args.extra_args)
     except KeyError:
         raise CliException("Transform '%s' is not found" % args.transform)
+
+    extra_args = {}
+    if hasattr(transform, 'from_cmdline'):
+        extra_args = transform.from_cmdline(args.extra_args)
 
     log.info("Loading the project...")
     dataset = project.make_dataset()
