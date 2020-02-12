@@ -39,7 +39,7 @@ django-rest-auth[with_social]==0.9.5
 cython==0.29.13
 matplotlib==3.0.3
 scikit-image==0.15.0
-tensorflow==1.13.1
+tensorflow==1.15.2
 keras==2.2.5
 opencv-python==4.1.0.25
 h5py==2.9.0
