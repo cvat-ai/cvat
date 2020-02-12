@@ -170,9 +170,12 @@ class _Converter:
                     ET.SubElement(source_elem, 'image').text = 'Unknown'
 
                     if item.has_image:
-                        image_shape = item.image.shape
-                        h, w = image_shape[:2]
-                        c = 1 if len(image_shape) == 2 else image_shape[2]
+                        h, w = item.image.size
+                        if item.image.has_data:
+                            image_shape = item.image.data.shape
+                            c = 1 if len(image_shape) == 2 else image_shape[2]
+                        else:
+                            c = 3
                         size_elem = ET.SubElement(root_elem, 'size')
                         ET.SubElement(size_elem, 'width').text = str(w)
                         ET.SubElement(size_elem, 'height').text = str(h)
