@@ -770,7 +770,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS: {
-            const { states, job } = action.payload;
+            const {
+                states,
+                job,
+                history,
+            } = action.payload;
             const { loads } = state.activities;
 
             delete loads[job.id];
@@ -785,6 +789,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 annotations: {
                     ...state.annotations,
+                    history,
                     states,
                     selectedStatesID: [],
                     activatedStateID: null,
@@ -797,8 +802,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 annotations: {
-                    history,
                     ...state.annotations,
+                    history,
                     selectedStatesID: [],
                     activatedStateID: null,
                     collapsed: {},

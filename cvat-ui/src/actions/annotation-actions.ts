@@ -206,12 +206,15 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             });
 
             await job.annotations.clear(true);
+            await job.actions.clear();
+            const history = await job.actions.get();
             const states = await job.annotations.get(frame);
 
             setTimeout(() => {
                 dispatch({
                     type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS,
                     payload: {
+                        history,
                         job,
                         states,
                     },
