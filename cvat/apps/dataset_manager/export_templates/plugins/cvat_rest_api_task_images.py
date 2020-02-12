@@ -13,7 +13,7 @@ from datumaro.components.config import (Config,
     SchemaBuilder as _SchemaBuilder,
 )
 import datumaro.components.extractor as datumaro
-from datumaro.util.image import lazy_image, load_image
+from datumaro.util.image import lazy_image, load_image, Image
 
 from cvat.utils.cli.core import CLI as CVAT_CLI, CVAT_API_V1
 
@@ -103,8 +103,11 @@ class cvat_rest_api_task_images(datumaro.SourceExtractor):
         items = []
         for entry in image_list:
             item_id = entry['id']
-            item = datumaro.DatasetItem(
-                id=item_id, image=self._make_image_loader(item_id))
+            size = None
+            if entry.get('height') and entry.get('width'):
+                size = (entry['height'], entry['width'])
+            image = Image(data=self._make_image_loader(item_id), size=size)
+            item = datumaro.DatasetItem(id=item_id, image=image)
             items.append((item.id, item))
 
         items = sorted(items, key=lambda e: int(e[0]))
