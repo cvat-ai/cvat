@@ -8,6 +8,7 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
 from datumaro.plugins.tf_detection_api_format.importer import TfDetectionApiImporter
 from datumaro.plugins.tf_detection_api_format.extractor import TfDetectionApiExtractor
 from datumaro.plugins.tf_detection_api_format.converter import TfDetectionApiConverter
+from datumaro.util.image import Image
 from datumaro.util.test_utils import TestDir, compare_datasets
 
 
@@ -100,6 +101,20 @@ class TfrecordConverterTest(TestCase):
             self._test_save_and_load(
                 TestExtractor(), TfDetectionApiConverter(save_images=True),
                 test_dir)
+
+    def test_can_save_dataset_with_image_info(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=Image(size=(10, 15))),
+                ])
+
+            def categories(self):
+                return { AnnotationType.label: LabelCategories() }
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                TfDetectionApiConverter(), test_dir)
 
     def test_labelmap_parsing(self):
         text = """
