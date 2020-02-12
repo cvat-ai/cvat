@@ -28,7 +28,7 @@ function build() {
         ObjectType,
         ObjectShape,
         LogType,
-        AnnotationsActionsType,
+        HistoryActions,
         colors,
     } = require('./enums');
 
@@ -499,7 +499,7 @@ function build() {
             ObjectType,
             ObjectShape,
             LogType,
-            AnnotationsActionsType,
+            HistoryActions,
             colors,
         },
         /**

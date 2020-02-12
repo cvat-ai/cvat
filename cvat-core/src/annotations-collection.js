@@ -32,7 +32,7 @@
     } = require('./exceptions');
 
     const {
-        AnnotationsActionsType,
+        HistoryActions,
         ObjectShape,
         ObjectType,
         colors,
@@ -394,7 +394,7 @@
                 object.removed = true;
             }
 
-            this.history.do(AnnotationsActionsType.MERGED_OBJECTS, () => {
+            this.history.do(HistoryActions.MERGED_OBJECTS, () => {
                 trackModel.removed = true;
                 for (const object of objectsForMerge) {
                     object.removed = false;
@@ -491,7 +491,7 @@
             // Remove source object
             object.removed = true;
 
-            this.history.do(AnnotationsActionsType.SPLITTED_TRACK, () => {
+            this.history.do(HistoryActions.SPLITTED_TRACK, () => {
                 object.removed = false;
                 prevTrack.removed = true;
                 nextTrack.removed = true;
@@ -523,7 +523,7 @@
             }
             const redoGroups = objectsForGroup.map((object) => object.group);
 
-            this.history.do(AnnotationsActionsType.GROUPED_OBJECTS, () => {
+            this.history.do(HistoryActions.GROUPED_OBJECTS, () => {
                 objectsForGroup.forEach((object, idx) => {
                     object.group = undoGroups[idx];
                 });
@@ -758,7 +758,7 @@
                 .concat(imported.tracks)
                 .concat(imported.shapes);
 
-            this.history.do(AnnotationsActionsType.CREATED_OBJECTS, () => {
+            this.history.do(HistoryActions.CREATED_OBJECTS, () => {
                 importedArray.forEach((object) => {
                     object.removed = true;
                 });

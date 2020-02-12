@@ -169,7 +169,7 @@
     /**
         * Types of actions with annotations
         * @enum {string}
-        * @name AnnotationsActionsTypes
+        * @name HistoryActions
         * @memberof module:API.cvat.enums
         * @property {string} CHANGED_LABEL Changed label
         * @property {string} CHANGED_ATTRIBUTES Changed attributes
@@ -187,7 +187,7 @@
         * @property {string} REMOVED_OBJECT Removed object
         * @readonly
     */
-    const AnnotationsActionsType = Object.freeze({
+    const HistoryActions = Object.freeze({
         CHANGED_LABEL: 'Changed label',
         CHANGED_ATTRIBUTES: 'Changed attributes',
         CHANGED_POINTS: 'Changed points',
@@ -228,7 +228,7 @@
         ObjectType,
         ObjectShape,
         LogType,
-        AnnotationsActionsType,
+        HistoryActions,
         colors,
     };
 })();

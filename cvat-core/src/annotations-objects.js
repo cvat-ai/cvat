@@ -17,7 +17,7 @@
         ObjectShape,
         ObjectType,
         AttributeType,
-        AnnotationsActionsType,
+        HistoryActions,
     } = require('./enums');
 
     const {
@@ -162,7 +162,7 @@
             const undoLock = this.lock;
             const redoLock = lock;
 
-            this.history.do(AnnotationsActionsType.CHANGED_LOCK, () => {
+            this.history.do(HistoryActions.CHANGED_LOCK, () => {
                 this.lock = undoLock;
             }, () => {
                 this.lock = redoLock;
@@ -175,7 +175,7 @@
             const undoColor = this.color;
             const redoColor = color;
 
-            this.history.do(AnnotationsActionsType.CHANGED_COLOR, () => {
+            this.history.do(HistoryActions.CHANGED_COLOR, () => {
                 this.color = undoColor;
             }, () => {
                 this.color = redoColor;
@@ -188,7 +188,7 @@
             const undoHidden = this.hidden;
             const redoHidden = hidden;
 
-            this.history.do(AnnotationsActionsType.CHANGED_HIDDEN, () => {
+            this.history.do(HistoryActions.CHANGED_HIDDEN, () => {
                 this.hidden = undoHidden;
             }, () => {
                 this.hidden = redoHidden;
@@ -206,7 +206,7 @@
             this.appendDefaultAttributes(label);
             const redoAttributes = { ...this.attributes };
 
-            this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
+            this.history.do(HistoryActions.CHANGED_LABEL, () => {
                 this.label = undoLabel;
                 this.attributes = undoAttributes;
             }, () => {
@@ -224,7 +224,7 @@
 
             const redoAttributes = { ...this.attributes };
 
-            this.history.do(AnnotationsActionsType.CHANGED_ATTRIBUTES, () => {
+            this.history.do(HistoryActions.CHANGED_ATTRIBUTES, () => {
                 this.attributes = undoAttributes;
             }, () => {
                 this.attributes = redoAttributes;
@@ -254,7 +254,7 @@
             if (!this.lock || force) {
                 this.removed = true;
 
-                this.history.do(AnnotationsActionsType.REMOVED_OBJECT, () => {
+                this.history.do(HistoryActions.REMOVED_OBJECT, () => {
                     this.removed = false;
                 }, () => {
                     this.removed = true;
@@ -477,7 +477,7 @@
             const undoPoints = this.points;
             const redoPoints = points;
 
-            this.history.do(AnnotationsActionsType.CHANGED_POINTS, () => {
+            this.history.do(HistoryActions.CHANGED_POINTS, () => {
                 this.points = undoPoints;
             }, () => {
                 this.points = redoPoints;
@@ -490,7 +490,7 @@
             const undoOccluded = this.occluded;
             const redoOccluded = occluded;
 
-            this.history.do(AnnotationsActionsType.CHANGED_OCCLUDED, () => {
+            this.history.do(HistoryActions.CHANGED_OCCLUDED, () => {
                 this.occluded = undoOccluded;
             }, () => {
                 this.occluded = redoOccluded;
@@ -503,7 +503,7 @@
             const undoZOrder = this.zOrder;
             const redoZOrder = zOrder;
 
-            this.history.do(AnnotationsActionsType.CHANGED_ZORDER, () => {
+            this.history.do(HistoryActions.CHANGED_ZORDER, () => {
                 this.zOrder = undoZOrder;
             }, () => {
                 this.zOrder = redoZOrder;
@@ -763,7 +763,7 @@
                 })),
             };
 
-            this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
+            this.history.do(HistoryActions.CHANGED_LABEL, () => {
                 this.label = undoLabel;
                 this.attributes = undoAttributes.unmutable;
                 for (const mutable of undoAttributes.mutable) {
@@ -838,7 +838,7 @@
                 this.shapes[frame] = redoShape;
             }
 
-            this.history.do(AnnotationsActionsType.CHANGED_ATTRIBUTES, () => {
+            this.history.do(HistoryActions.CHANGED_ATTRIBUTES, () => {
                 this.attributes = undoAttributes;
                 if (undoShape) {
                     this.shapes[frame] = undoShape;
@@ -884,7 +884,7 @@
 
             this.shapes[frame] = redoShape;
             this._appendShapeActionToHistory(
-                AnnotationsActionsType.CHANGED_POINTS,
+                HistoryActions.CHANGED_POINTS,
                 frame,
                 undoShape,
                 redoShape,
@@ -906,7 +906,7 @@
 
             this.shapes[frame] = redoShape;
             this._appendShapeActionToHistory(
-                AnnotationsActionsType.CHANGED_OUTSIDE,
+                HistoryActions.CHANGED_OUTSIDE,
                 frame,
                 undoShape,
                 redoShape,
@@ -928,7 +928,7 @@
 
             this.shapes[frame] = redoShape;
             this._appendShapeActionToHistory(
-                AnnotationsActionsType.CHANGED_OCCLUDED,
+                HistoryActions.CHANGED_OCCLUDED,
                 frame,
                 undoShape,
                 redoShape,
@@ -950,7 +950,7 @@
 
             this.shapes[frame] = redoShape;
             this._appendShapeActionToHistory(
-                AnnotationsActionsType.CHANGED_ZORDER,
+                HistoryActions.CHANGED_ZORDER,
                 frame,
                 undoShape,
                 redoShape,
@@ -982,7 +982,7 @@
             }
 
             this._appendShapeActionToHistory(
-                AnnotationsActionsType.CHANGED_KEYFRAME,
+                HistoryActions.CHANGED_KEYFRAME,
                 frame,
                 undoShape,
                 redoShape,
