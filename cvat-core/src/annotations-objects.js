@@ -158,6 +158,79 @@
             injection.groups.max = Math.max(injection.groups.max, this.group);
         }
 
+        _saveLock(lock) {
+            const undoLock = this.lock;
+            const redoLock = lock;
+
+            this.history.do(AnnotationsActionsType.CHANGED_LOCK, () => {
+                this.lock = undoLock;
+            }, () => {
+                this.lock = redoLock;
+            }, [this.clientID]);
+
+            this.lock = lock;
+        }
+
+        _saveColor(color) {
+            const undoColor = this.color;
+            const redoColor = color;
+
+            this.history.do(AnnotationsActionsType.CHANGED_COLOR, () => {
+                this.color = undoColor;
+            }, () => {
+                this.color = redoColor;
+            }, [this.clientID]);
+
+            this.color = color;
+        }
+
+        _saveHidden(hidden) {
+            const undoHidden = this.hidden;
+            const redoHidden = hidden;
+
+            this.history.do(AnnotationsActionsType.CHANGED_HIDDEN, () => {
+                this.hidden = undoHidden;
+            }, () => {
+                this.hidden = redoHidden;
+            }, [this.clientID]);
+
+            this.hidden = hidden;
+        }
+
+        _saveLabel(label) {
+            const undoLabel = this.label;
+            const redoLabel = label;
+            const undoAttributes = { ...this.attributes };
+            this.label = label;
+            this.attributes = {};
+            this.appendDefaultAttributes(label);
+            const redoAttributes = { ...this.attributes };
+
+            this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
+                this.label = undoLabel;
+                this.attributes = undoAttributes;
+            }, () => {
+                this.label = redoLabel;
+                this.attributes = redoAttributes;
+            }, [this.clientID]);
+        }
+
+        _saveAttributes(attributes) {
+            const undoAttributes = { ...this.attributes };
+
+            for (const attrID of Object.keys(attributes)) {
+                this.attributes[attrID] = attributes[attrID];
+            }
+
+            const redoAttributes = { ...this.attributes };
+
+            this.history.do(AnnotationsActionsType.CHANGED_ATTRIBUTES, () => {
+                this.attributes = undoAttributes;
+            }, () => {
+                this.attributes = redoAttributes;
+            }, [this.clientID]);
+        }
+
         appendDefaultAttributes(label) {
             const labelAttributes = label.attributes;
             for (const attribute of labelAttributes) {
@@ -213,9 +286,8 @@
             return this.collectionZ[frame];
         }
 
-        validateStateBeforeSave(frame, data) {
+        _validateStateBeforeSave(frame, data, updated) {
             let fittedPoints = [];
-            const updated = data.updateFlags;
 
             if (updated.label) {
                 checkObjectType('label', data.label, null, Label);
@@ -263,7 +335,7 @@
                 }
 
                 if (!checkShapeArea(this.shapeType, fittedPoints)) {
-                    fittedPoints = false;
+                    fittedPoints = [];
                 }
             }
 
@@ -401,6 +473,45 @@
             };
         }
 
+        _savePoints(points) {
+            const undoPoints = this.points;
+            const redoPoints = points;
+
+            this.history.do(AnnotationsActionsType.CHANGED_POINTS, () => {
+                this.points = undoPoints;
+            }, () => {
+                this.points = redoPoints;
+            }, [this.clientID]);
+
+            this.points = points;
+        }
+
+        _saveOccluded(occluded) {
+            const undoOccluded = this.occluded;
+            const redoOccluded = occluded;
+
+            this.history.do(AnnotationsActionsType.CHANGED_OCCLUDED, () => {
+                this.occluded = undoOccluded;
+            }, () => {
+                this.occluded = redoOccluded;
+            }, [this.clientID]);
+
+            this.occluded = occluded;
+        }
+
+        _saveZOrder(zOrder) {
+            const undoZOrder = this.zOrder;
+            const redoZOrder = zOrder;
+
+            this.history.do(AnnotationsActionsType.CHANGED_ZORDER, () => {
+                this.zOrder = undoZOrder;
+            }, () => {
+                this.zOrder = redoZOrder;
+            }, [this.clientID]);
+
+            this.zOrder = zOrder;
+        }
+
         save(frame, data) {
             if (frame !== this.frame) {
                 throw new ScriptingError(
@@ -412,120 +523,40 @@
                 return objectStateFactory.call(this, frame, this.get(frame));
             }
 
-            const fittedPoints = this.validateStateBeforeSave(frame, data);
             const updated = data.updateFlags;
+            const fittedPoints = this._validateStateBeforeSave(frame, data, updated);
 
             // Now when all fields are validated, we can apply them
             if (updated.label) {
-                const undoLabel = this.label;
-                const redoLabel = data.label;
-                const undoAttributes = { ...this.attributes };
-                this.label = data.label;
-                this.attributes = {};
-                this.appendDefaultAttributes(data.label);
-                const redoAttributes = { ...this.attributes };
-
-                this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
-                    this.label = undoLabel;
-                    this.attributes = undoAttributes;
-                }, () => {
-                    this.label = redoLabel;
-                    this.attributes = redoAttributes;
-                }, [this.clientID]);
+                this._saveLabel(data.label);
             }
 
             if (updated.attributes) {
-                const undoAttributes = { ...this.attributes };
-
-                for (const attrID of Object.keys(data.attributes)) {
-                    this.attributes[attrID] = data.attributes[attrID];
-                }
-
-                const redoAttributes = { ...this.attributes };
-
-                this.history.do(AnnotationsActionsType.CHANGED_ATTRIBUTES, () => {
-                    this.attributes = undoAttributes;
-                }, () => {
-                    this.attributes = redoAttributes;
-                }, [this.clientID]);
+                this._saveAttributes(data.attributes);
             }
 
             if (updated.points && fittedPoints.length) {
-                const undoPoints = this.points;
-                const redoPoints = fittedPoints;
-
-                this.history.do(AnnotationsActionsType.CHANGED_POINTS, () => {
-                    this.points = undoPoints;
-                }, () => {
-                    this.points = redoPoints;
-                }, [this.clientID]);
-
-                this.points = fittedPoints;
+                this._savePoints(fittedPoints);
             }
 
             if (updated.occluded) {
-                const undoOccluded = this.occluded;
-                const redoOccluded = data.occluded;
-
-                this.history.do(AnnotationsActionsType.CHANGED_OCCLUDED, () => {
-                    this.occluded = undoOccluded;
-                }, () => {
-                    this.occluded = redoOccluded;
-                }, [this.clientID]);
-
-                this.occluded = data.occluded;
+                this._saveOccluded(data.occluded);
             }
 
             if (updated.zOrder) {
-                const undoZOrder = this.zOrder;
-                const redoZOrder = data.zOrder;
-
-                this.history.do(AnnotationsActionsType.CHANGED_ZORDER, () => {
-                    this.zOrder = undoZOrder;
-                }, () => {
-                    this.zOrder = redoZOrder;
-                }, [this.clientID]);
-
-                this.zOrder = data.zOrder;
+                this._saveZOrder(data.zOrder);
             }
 
             if (updated.lock) {
-                const undoLock = this.lock;
-                const redoLock = data.lock;
-
-                this.history.do(AnnotationsActionsType.CHANGED_LOCK, () => {
-                    this.lock = undoLock;
-                }, () => {
-                    this.lock = redoLock;
-                }, [this.clientID]);
-
-                this.lock = data.lock;
+                this._saveLock(data.lock);
             }
 
             if (updated.color) {
-                const undoColor = this.color;
-                const redoColor = data.color;
-
-                this.history.do(AnnotationsActionsType.CHANGED_COLOR, () => {
-                    this.color = undoColor;
-                }, () => {
-                    this.color = redoColor;
-                }, [this.clientID]);
-
-                this.color = data.color;
+                this._saveColor(data.color);
             }
 
             if (updated.hidden) {
-                const undoHidden = this.hidden;
-                const redoHidden = data.hidden;
-
-                this.history.do(AnnotationsActionsType.CHANGED_HIDDEN, () => {
-                    this.hidden = undoHidden;
-                }, () => {
-                    this.hidden = redoHidden;
-                }, [this.clientID]);
-
-                this.hidden = data.hidden;
+                this._saveHidden(data.hidden);
             }
 
             this.updateTimestamp(updated);
@@ -706,310 +737,85 @@
             return result;
         }
 
-        save(frame, data) {
-            if (this.lock && data.lock) {
-                return objectStateFactory.call(this, frame, this.get(frame));
-            }
+        _saveLabel(label) {
+            const undoLabel = this.label;
+            const redoLabel = label;
+            const undoAttributes = {
+                unmutable: { ...this.attributes },
+                mutable: Object.keys(this.shapes).map((key) => ({
+                    frame: +key,
+                    attributes: { ...this.shapes[key].attributes },
+                })),
+            };
 
-            const fittedPoints = this.validateStateBeforeSave(frame, data);
-            const updated = data.updateFlags;
+            this.label = label;
+            this.attributes = {};
+            for (const shape of Object.values(this.shapes)) {
+                shape.attributes = {};
+            }
+            this.appendDefaultAttributes(label);
+
+            const redoAttributes = {
+                unmutable: { ...this.attributes },
+                mutable: Object.keys(this.shapes).map((key) => ({
+                    frame: +key,
+                    attributes: { ...this.shapes[key].attributes },
+                })),
+            };
+
+            this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
+                this.label = undoLabel;
+                this.attributes = undoAttributes.unmutable;
+                for (const mutable of undoAttributes.mutable) {
+                    this.shapes[mutable.frame].attributes = mutable.attributes;
+                }
+            }, () => {
+                this.label = redoLabel;
+                this.attributes = redoAttributes.unmutable;
+                for (const mutable of redoAttributes.mutable) {
+                    this.shapes[mutable.frame].attributes = mutable.attributes;
+                }
+            }, [this.clientID]);
+        }
+
+        _saveAttributes(frame, attributes) {
             const current = this.get(frame);
-            const labelAttributes = data.label.attributes
+            const labelAttributes = this.label.attributes
                 .reduce((accumulator, value) => {
                     accumulator[value.id] = value;
                     return accumulator;
                 }, {});
 
-            if (updated.label) {
-                const undoLabel = this.label;
-                const redoLabel = data.label;
-                const undoAttributes = {
-                    unmutable: { ...this.attributes },
-                    mutable: Object.keys(this.shapes).map((key) => ({
-                        frame: +key,
-                        attributes: { ...this.shapes[key].attributes },
-                    })),
-                };
-
-                this.label = data.label;
-                this.attributes = {};
-                for (const shape of Object.values(this.shapes)) {
-                    shape.attributes = {};
-                }
-                this.appendDefaultAttributes(data.label);
-
-                const redoAttributes = {
-                    unmutable: { ...this.attributes },
-                    mutable: Object.keys(this.shapes).map((key) => ({
-                        frame: +key,
-                        attributes: { ...this.shapes[key].attributes },
-                    })),
-                };
-
-                this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
-                    this.label = undoLabel;
-                    this.attributes = undoAttributes.unmutable;
-                    for (const mutable of undoAttributes.mutable) {
-                        this.shapes[mutable.frame].attributes = mutable.attributes;
-                    }
-                }, () => {
-                    this.label = redoLabel;
-                    this.attributes = redoAttributes.unmutable;
-                    for (const mutable of redoAttributes.mutable) {
-                        this.shapes[mutable.frame].attributes = mutable.attributes;
-                    }
-                }, [this.clientID]);
-            }
-
-            if (updated.lock) {
-                const undoLock = this.lock;
-                const redoLock = data.lock;
-
-                this.history.do(AnnotationsActionsType.CHANGED_LOCK, () => {
-                    this.lock = undoLock;
-                }, () => {
-                    this.lock = redoLock;
-                }, [this.clientID]);
-
-                this.lock = data.lock;
-            }
-
-            if (updated.color) {
-                const undoColor = this.color;
-                const redoColor = data.color;
-
-                this.history.do(AnnotationsActionsType.CHANGED_COLOR, () => {
-                    this.color = undoColor;
-                }, () => {
-                    this.color = redoColor;
-                }, [this.clientID]);
-
-                this.color = data.color;
-            }
-
-            if (updated.hidden) {
-                const undoHidden = this.hidden;
-                const redoHidden = data.hidden;
-
-                this.history.do(AnnotationsActionsType.CHANGED_HIDDEN, () => {
-                    this.hidden = undoHidden;
-                }, () => {
-                    this.hidden = redoHidden;
-                }, [this.clientID]);
-
-                this.hidden = data.hidden;
-            }
-
-            if (updated.points && fittedPoints.length) {
-                const undoKeyframe = frame in this.shapes;
-                const undoPoints = current.points;
-                const redoPoints = fittedPoints;
-                this.shapes[frame] = {
-                    frame,
-                    zOrder: current.zOrder,
-                    points: fittedPoints,
-                    outside: current.outside,
-                    occluded: current.occluded,
-                    attributes: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
-                };
-
-                this.history.do(AnnotationsActionsType.CHANGED_POINTS, () => {
-                    if (undoKeyframe) {
-                        this.shapes[frame].points = undoPoints;
-                    } else {
-                        delete this.shapes[frame];
-                    }
-                }, () => {
-                    this.shapes[frame] = {
-                        frame,
-                        zOrder: current.zOrder,
-                        points: redoPoints,
-                        outside: current.outside,
-                        occluded: current.occluded,
-                        attributes: frame in this.shapes
-                            ? { ...this.shapes[frame].attributes } : {},
-                    };
-                }, [this.clientID]);
-            }
-
-            if (updated.outside) {
-                const undoKeyframe = frame in this.shapes;
-                const undoOutside = current.outside;
-                const redoOutside = data.outside;
-                this.shapes[frame] = {
-                    frame,
-                    zOrder: current.zOrder,
-                    points: current.points,
-                    outside: data.outside,
-                    occluded: current.occluded,
-                    attributes: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
-                };
-
-                this.history.do(AnnotationsActionsType.CHANGED_OUTSIDE, () => {
-                    if (undoKeyframe) {
-                        this.shapes[frame].outside = undoOutside;
-                    } else {
-                        delete this.shapes[frame];
-                    }
-                }, () => {
-                    this.shapes[frame] = {
-                        frame,
-                        zOrder: current.zOrder,
-                        points: current.points,
-                        outside: redoOutside,
-                        occluded: current.occluded,
-                        attributes: frame in this.shapes
-                            ? { ...this.shapes[frame].attributes } : {},
-                    };
-                }, [this.clientID]);
-            }
-
-            if (updated.occluded) {
-                const undoKeyframe = frame in this.shapes;
-                const undoOccluded = current.occluded;
-                const redoOccluded = data.occluded;
-                this.shapes[frame] = {
-                    frame,
-                    zOrder: current.zOrder,
-                    points: current.points,
-                    outside: current.outside,
-                    occluded: data.occluded,
-                    attributes: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
-                };
-
-                this.history.do(AnnotationsActionsType.CHANGED_OCCLUDED, () => {
-                    if (undoKeyframe) {
-                        this.shapes[frame].occluded = undoOccluded;
-                    } else {
-                        delete this.shapes[frame];
-                    }
-                }, () => {
-                    this.shapes[frame] = {
-                        frame,
-                        zOrder: current.zOrder,
-                        points: current.points,
-                        outside: current.outside,
-                        occluded: redoOccluded,
-                        attributes: frame in this.shapes
-                            ? { ...this.shapes[frame].attributes } : {},
-                    };
-                }, [this.clientID]);
-            }
-
-            if (updated.zOrder) {
-                const undoKeyframe = frame in this.shapes;
-                const undoZOrder = current.zOrder;
-                const redoZOrder = data.zOrder;
-                this.shapes[frame] = {
-                    frame,
-                    zOrder: data.zOrder,
-                    points: current.points,
-                    outside: current.outside,
-                    occluded: current.occluded,
-                    attributes: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
-                };
-
-                this.history.do(AnnotationsActionsType.CHANGED_ZORDER, () => {
-                    if (undoKeyframe) {
-                        this.shapes[frame].zOrder = undoZOrder;
-                    } else {
-                        delete this.shapes[frame];
-                    }
-                }, () => {
-                    this.shapes[frame] = {
-                        frame,
-                        zOrder: redoZOrder,
-                        points: current.points,
-                        outside: current.outside,
-                        occluded: current.occluded,
-                        attributes: frame in this.shapes
-                            ? { ...this.shapes[frame].attributes } : {},
-                    };
-                }, [this.clientID]);
-            }
+            const wasKeyframe = frame in this.shapes;
+            const undoAttributes = this.attributes;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
 
             let mutableAttributesUpdated = false;
-            if (updated.attributes) {
-                const undoKeyframe = frame in this.shapes;
-                const undoAttributes = {
-                    unmutable: { ...this.attributes },
-                    mutable: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
-                };
-
-                for (const attrID of Object.keys(data.attributes)) {
-                    if (!labelAttributes[attrID].mutable) {
-                        this.attributes[attrID] = data.attributes[attrID];
-                        this.attributes[attrID] = data.attributes[attrID];
-                    } else if (data.attributes[attrID] !== current.attributes[attrID]) {
-                        mutableAttributesUpdated = mutableAttributesUpdated
-                            // not keyframe yet
-                            || !(frame in this.shapes)
-                            // keyframe, but without this attrID
-                            || !(attrID in this.shapes[frame])
-                            // keyframe with attrID, but with another value
-                            || (this.shapes[frame][attrID] !== data.attributes[attrID]);
-                    }
+            const redoAttributes = { ...this.attributes };
+            for (const attrID of Object.keys(attributes)) {
+                if (!labelAttributes[attrID].mutable) {
+                    redoAttributes[attrID] = attributes[attrID];
+                } else if (attributes[attrID] !== current.attributes[attrID]) {
+                    mutableAttributesUpdated = mutableAttributesUpdated
+                        // not keyframe yet
+                        || !(frame in this.shapes)
+                        // keyframe, but without this attrID
+                        || !(attrID in this.shapes[frame].attributes)
+                        // keyframe with attrID, but with another value
+                        || (this.shapes[frame].attributes[attrID] !== attributes[attrID]);
                 }
-
-                if (mutableAttributesUpdated) {
-                    this.shapes[frame] = {
-                        frame,
-                        zOrder: current.zOrder,
-                        points: current.points,
-                        outside: current.outside,
-                        occluded: current.occluded,
-                        attributes: frame in this.shapes
-                            ? { ...this.shapes[frame].attributes } : {},
-                    };
-
-                    for (const attrID of Object.keys(data.attributes)) {
-                        if (labelAttributes[attrID].mutable
-                            && data.attributes[attrID] !== current.attributes[attrID]) {
-                            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
-                            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
-                        }
-                    }
-                }
-
-                const redoAttributes = {
-                    unmutable: { ...this.attributes },
-                    mutable: frame in this.shapes ? { ...this.shapes[frame].attributes } : {},
-                };
-
-                this.history.do(AnnotationsActionsType.CHANGED_ATTRIBUTES, () => {
-                    this.attributes = undoAttributes.unmutable;
-                    if (undoKeyframe) {
-                        this.shapes[frame].attributes = undoAttributes.mutable;
-                    } else {
-                        delete this.shapes[frame];
-                    }
-                }, () => {
-                    this.attributes = redoAttributes.unmutable;
-                    if (Object.keys(redoAttributes.mutable).length) {
-                        this.shapes[frame] = {
-                            frame,
-                            zOrder: current.zOrder,
-                            points: current.points,
-                            outside: current.outside,
-                            occluded: current.occluded,
-                            attributes: redoAttributes.mutable,
-                        };
-                    }
-                }, [this.clientID]);
             }
-
-            if (updated.keyframe) {
-                if (!data.keyframe && frame in this.shapes) {
-                    const undoShape = this.shapes[frame];
-                    delete this.shapes[frame];
-                    this.history.do(AnnotationsActionsType.CHANGED_KEYFRAME, () => {
-                        this.shapes[frame] = undoShape;
-                    }, () => {
-                        delete this.shapes[frame];
-                    }, [this.clientID]);
-                } else if (data.keyframe && !(frame in this.shapes)) {
-                    delete this.shapes[frame];
-                    this.shapes[frame] = {
+            let redoShape;
+            if (mutableAttributesUpdated) {
+                if (wasKeyframe) {
+                    redoShape = {
+                        ...this.shapes[frame],
+                        attributes: {
+                            ...this.shapes[frame].attributes,
+                        },
+                    };
+                } else {
+                    redoShape = {
                         frame,
                         zOrder: current.zOrder,
                         points: current.points,
@@ -1017,14 +823,218 @@
                         occluded: current.occluded,
                         attributes: {},
                     };
-
-                    const redoShape = this.shapes[frame];
-                    this.history.do(AnnotationsActionsType.CHANGED_KEYFRAME, () => {
-                        delete this.shapes[frame];
-                    }, () => {
-                        this.shapes[frame] = redoShape;
-                    }, [this.clientID]);
                 }
+            }
+
+            for (const attrID of Object.keys(attributes)) {
+                if (labelAttributes[attrID].mutable
+                    && attributes[attrID] !== current.attributes[attrID]) {
+                    redoShape.attributes[attrID] = attributes[attrID];
+                }
+            }
+
+            this.attributes = redoAttributes;
+            if (redoShape) {
+                this.shapes[frame] = redoShape;
+            }
+
+            this.history.do(AnnotationsActionsType.CHANGED_ATTRIBUTES, () => {
+                this.attributes = undoAttributes;
+                if (undoShape) {
+                    this.shapes[frame] = undoShape;
+                } else if (redoShape) {
+                    delete this.shapes[frame];
+                }
+            }, () => {
+                this.attributes = redoAttributes;
+                if (redoShape) {
+                    this.shapes[frame] = redoShape;
+                }
+            }, [this.clientID]);
+        }
+
+        _appendShapeActionToHistory(actionType, frame, undoShape, redoShape) {
+            this.history.do(actionType, () => {
+                if (!undoShape) {
+                    delete this.shapes[frame];
+                } else {
+                    this.shapes[frame] = undoShape;
+                }
+            }, () => {
+                if (!redoShape) {
+                    delete this.shapes[frame];
+                } else {
+                    this.shapes[frame] = redoShape;
+                }
+            }, [this.clientID]);
+        }
+
+        _savePoints(frame, points) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = wasKeyframe ? { ...this.shapes[frame], points } : {
+                frame,
+                points,
+                zOrder: current.zOrder,
+                outside: current.outside,
+                occluded: current.occluded,
+                attributes: {},
+            };
+
+            this.shapes[frame] = redoShape;
+            this._appendShapeActionToHistory(
+                AnnotationsActionsType.CHANGED_POINTS,
+                frame,
+                undoShape,
+                redoShape,
+            );
+        }
+
+        _saveOutside(frame, outside) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = wasKeyframe ? { ...this.shapes[frame], outside } : {
+                frame,
+                outside,
+                zOrder: current.zOrder,
+                points: current.points,
+                occluded: current.occluded,
+                attributes: {},
+            };
+
+            this.shapes[frame] = redoShape;
+            this._appendShapeActionToHistory(
+                AnnotationsActionsType.CHANGED_OUTSIDE,
+                frame,
+                undoShape,
+                redoShape,
+            );
+        }
+
+        _saveOccluded(frame, occluded) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = wasKeyframe ? { ...this.shapes[frame], occluded } : {
+                frame,
+                occluded,
+                zOrder: current.zOrder,
+                points: current.points,
+                outside: current.outside,
+                attributes: {},
+            };
+
+            this.shapes[frame] = redoShape;
+            this._appendShapeActionToHistory(
+                AnnotationsActionsType.CHANGED_OCCLUDED,
+                frame,
+                undoShape,
+                redoShape,
+            );
+        }
+
+        _saveZOrder(frame, zOrder) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = wasKeyframe ? { ...this.shapes[frame], zOrder } : {
+                frame,
+                zOrder,
+                occluded: current.occluded,
+                points: current.points,
+                outside: current.outside,
+                attributes: {},
+            };
+
+            this.shapes[frame] = redoShape;
+            this._appendShapeActionToHistory(
+                AnnotationsActionsType.CHANGED_ZORDER,
+                frame,
+                undoShape,
+                redoShape,
+            );
+        }
+
+        _saveKeyframe(frame, keyframe) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+
+            if ((keyframe && wasKeyframe) || (!keyframe && !wasKeyframe)) {
+                return;
+            }
+
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = keyframe ? {
+                frame,
+                zOrder: current.zOrder,
+                points: current.points,
+                outside: current.outside,
+                occluded: current.occluded,
+                attributes: {},
+            } : undefined;
+
+            if (redoShape) {
+                this.shapes[frame] = redoShape;
+            } else {
+                delete this.shapes[frame];
+            }
+
+            this._appendShapeActionToHistory(
+                AnnotationsActionsType.CHANGED_KEYFRAME,
+                frame,
+                undoShape,
+                redoShape,
+            );
+        }
+
+        save(frame, data) {
+            if (this.lock && data.lock) {
+                return objectStateFactory.call(this, frame, this.get(frame));
+            }
+
+            const updated = data.updateFlags;
+            const fittedPoints = this._validateStateBeforeSave(frame, data, updated);
+
+            if (updated.label) {
+                this._saveLabel(data.label);
+            }
+
+            if (updated.lock) {
+                this._saveLock(data.lock);
+            }
+
+            if (updated.color) {
+                this._saveColor(data.color);
+            }
+
+            if (updated.hidden) {
+                this._saveHidden(data.hidden);
+            }
+
+            if (updated.points && fittedPoints.length) {
+                this._savePoints(frame, fittedPoints);
+            }
+
+            if (updated.outside) {
+                this._saveOutside(frame, data.outside);
+            }
+
+            if (updated.occluded) {
+                this._saveOccluded(frame, data.occluded);
+            }
+
+            if (updated.zOrder) {
+                this._saveZOrder(frame, data.zOrder);
+            }
+
+            if (updated.attributes) {
+                this._saveAttributes(frame, data.attributes);
+            }
+
+            if (updated.keyframe) {
+                this._saveKeyframe(frame, data.keyframe);
             }
 
             this.updateTimestamp(updated);
@@ -1124,7 +1134,7 @@
         save(frame, data) {
             if (frame !== this.frame) {
                 throw new ScriptingError(
-                    'Got frame is not equal to the frame of the shape',
+                    'Got frame is not equal to the frame of the tag',
                 );
             }
 
@@ -1132,87 +1142,20 @@
                 return objectStateFactory.call(this, frame, this.get(frame));
             }
 
-            if (this.lock && data.lock) {
-                return objectStateFactory.call(this, frame, this.get(frame));
-            }
-
             const updated = data.updateFlags;
-
-            // First validate all the fields
-            if (updated.label) {
-                checkObjectType('label', data.label, null, Label);
-            }
-
-            if (updated.attributes) {
-                const labelAttributes = data.label.attributes
-                    .reduce((accumulator, value) => {
-                        accumulator[value.id] = value;
-                        return accumulator;
-                    }, {});
-
-                for (const attrID of Object.keys(data.attributes)) {
-                    const value = data.attributes[attrID];
-                    if (attrID in labelAttributes) {
-                        if (!validateAttributeValue(value, labelAttributes[attrID])) {
-                            throw new ArgumentError(
-                                `Trying to save an attribute attribute with id ${attrID} and invalid value ${value}`,
-                            );
-                        }
-                    } else {
-                        throw new ArgumentError(
-                            `Trying to save unknown attribute with id ${attrID} and value ${value}`,
-                        );
-                    }
-                }
-            }
-
-            if (updated.lock) {
-                checkObjectType('lock', data.lock, 'boolean', null);
-            }
+            this._validateStateBeforeSave(frame, data, updated);
 
             // Now when all fields are validated, we can apply them
             if (updated.label) {
-                const undoLabel = this.label;
-                const redoLabel = data.label;
-
-                this.history.do(AnnotationsActionsType.CHANGED_LABEL, () => {
-                    this.label = undoLabel;
-                }, () => {
-                    this.label = redoLabel;
-                }, [this.clientID]);
-
-                this.label = data.label;
-                this.attributes = {};
-                this.appendDefaultAttributes(data.label);
+                this._saveLabel(data.label);
             }
 
             if (updated.attributes) {
-                const undoAttributes = { ...this.attributes };
-
-                for (const attrID of Object.keys(data.attributes)) {
-                    this.attributes[attrID] = data.attributes[attrID];
-                }
-
-                const redoAttributes = { ...this.attributes };
-
-                this.history.do(AnnotationsActionsType.CHANGED_ATTRIBUTES, () => {
-                    this.attributes = undoAttributes;
-                }, () => {
-                    this.attributes = redoAttributes;
-                }, [this.clientID]);
+                this._saveAttributes(data.attributes);
             }
 
             if (updated.lock) {
-                const undoLock = this.lock;
-                const redoLock = data.lock;
-
-                this.history.do(AnnotationsActionsType.CHANGED_LOCK, () => {
-                    this.lock = undoLock;
-                }, () => {
-                    this.lock = redoLock;
-                }, [this.clientID]);
-
-                this.lock = data.lock;
+                this._saveLock(data.lock);
             }
 
             this.updateTimestamp(updated);

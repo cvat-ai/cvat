@@ -266,7 +266,7 @@ describe('Feature: check unsaved changes', () => {
         expect(await task.annotations.hasUnsavedChanges()).toBe(false);
         const annotations = await task.annotations.get(0);
 
-        annotations[0].keyframe = true;
+        annotations[0].keyframe = false;
         await annotations[0].save();
 
         expect(await task.annotations.hasUnsavedChanges()).toBe(true);
