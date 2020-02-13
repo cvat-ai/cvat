@@ -39,6 +39,57 @@
     } = require('./enums');
     const ObjectState = require('./object-state');
 
+    function filterObject(objectState, filter) {
+        let width = 0;
+        let height = 0;
+        const stateAttributes = {};
+
+        if (typeof (filter.width) === 'number' || typeof (filter.height) === 'number') {
+            let xtl = Number.MAX_SAFE_INTEGER;
+            let xbr = Number.MIN_SAFE_INTEGER;
+            let ytl = Number.MAX_SAFE_INTEGER;
+            let ybr = Number.MIN_SAFE_INTEGER;
+
+            objectState.points.forEach((coord, idx) => {
+                if (idx % 2) { // y
+                    ytl = Math.min(ytl, coord);
+                    ybr = Math.max(ybr, coord);
+                } else { // x
+                    xtl = Math.min(xtl, coord);
+                    xbr = Math.max(xbr, coord);
+                }
+            });
+
+            [width, height] = [xbr - xtl, ybr - ytl];
+        }
+
+        if (typeof (filter.attributes) === 'object' && Object.keys(filter.attributes).length) {
+            const labelAttributes = objectState.label.attributes
+                .reduce((acc, attr) => {
+                    acc[attr.id] = attr.name;
+                    return acc;
+                });
+
+            const objectAttributes = objectState.attributes;
+            Object.keys(objectAttributes).reduce((acc, key) => {
+                acc[labelAttributes[key]] = objectAttributes[key];
+                return acc;
+            }, stateAttributes);
+        }
+
+        return (filter.label ? filter.label === objectState.label.name : true)
+            && (filter.type ? filter.type === objectState.objectType : true)
+            && (filter.shape ? filter.shape === objectState.shapeType : true)
+            && (typeof (filter.occluded) === 'boolean' ? filter.occluded === objectState.occluded : true)
+            && (typeof (filter.lock) === 'boolean' ? filter.lock === objectState.lock : true)
+            && (typeof (filter.serverID) === 'number' ? filter.serverID === objectState.serverID : true)
+            && (typeof (filter.clientID) === 'number' ? filter.clientID === objectState.clientID : true)
+            && (typeof (filter.width) === 'number' ? filter.width === objectState.width : true)
+            && (typeof (filter.height) === 'number' ? filter.height === objectState.height : true)
+            && (typeof (filter.attributes) === 'object' ? Object.keys(filter.attributes)
+                .every((key) => stateAttributes[key] === filter.attributes[key]) : true);
+    }
+
     function shapeFactory(shapeData, clientID, injection) {
         const { type } = shapeData;
         const color = colors[clientID % colors.length];
@@ -193,7 +244,7 @@
             return data;
         }
 
-        get(frame) {
+        get(frame, allTracks, filter) {
             const { tracks } = this;
             const shapes = this.shapes[frame] || [];
             const tags = this.tags[frame] || [];
@@ -204,12 +255,18 @@
             const objectStates = [];
             for (const object of objects) {
                 const stateData = object.get(frame);
-                if (stateData.outside && !stateData.keyframe) {
+                if (!allTracks && stateData.outside && !stateData.keyframe) {
                     continue;
                 }
 
                 const objectState = objectStateFactory.call(object, frame, stateData);
-                objectStates.push(objectState);
+                if (typeof (filter) === 'object' && Object.keys(filter).length) {
+                    if (filterObject(objectState, filter)) {
+                        objectStates.push(objectState);
+                    }
+                } else {
+                    objectStates.push(objectState);
+                }
             }
 
             return objectStates;

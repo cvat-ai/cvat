@@ -56,9 +56,10 @@
                         return result;
                     },
 
-                    async get(frame, filter = {}) {
+                    async get(frame, allTracks = false, filter = {}) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.get, frame, filter);
+                            .apiWrapper.call(this, prototype.annotations.get,
+                                frame, allTracks, filter);
                         return result;
                     },
 
@@ -280,6 +281,8 @@
                 * @property {module:API.cvat.enums.ObjectShape} [shape]
                 * @property {boolean} [occluded] a value of occluded property
                 * @property {boolean} [lock] a value of lock property
+                * @property {number} [serverID] a value of lock property
+                * @property {number} [clientID] a value of lock property
                 * @property {number} [width] a width of a shape
                 * @property {number} [height] a height of a shape
                 * @property {Object[]} [attributes] dictionary with "name: value" pairs
@@ -289,6 +292,8 @@
                 * Get annotations for a specific frame
                 * @method get
                 * @param {integer} frame get objects from the frame
+                * @param {boolean} allTracks show all tracks
+                * even if they are outside and not keyframe
                 * @param {ObjectFilter[]} [filter = []]
                 * get only objects are satisfied to specific filter
                 * @returns {module:API.cvat.classes.ObjectState[]}
@@ -1305,14 +1310,14 @@
     };
 
     // TODO: Check filter for annotations
-    Job.prototype.annotations.get.implementation = async function (frame, filter) {
+    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filter) {
         if (frame < this.startFrame || frame > this.stopFrame) {
             throw new ArgumentError(
                 `Frame ${frame} does not exist in the job`,
             );
         }
 
-        const annotationsData = await getAnnotations(this, frame, filter);
+        const annotationsData = await getAnnotations(this, frame, allTracks, filter);
         return annotationsData;
     };
 
@@ -1476,7 +1481,7 @@
     };
 
     // TODO: Check filter for annotations
-    Task.prototype.annotations.get.implementation = async function (frame, filter) {
+    Task.prototype.annotations.get.implementation = async function (frame, allTracks, filter) {
         if (!Number.isInteger(frame) || frame < 0) {
             throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
@@ -1489,7 +1494,7 @@
             );
         }
 
-        const result = await getAnnotations(this, frame, filter);
+        const result = await getAnnotations(this, frame, allTracks, filter);
         return result;
     };
 
