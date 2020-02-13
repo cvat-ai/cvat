@@ -7,7 +7,6 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Bbox, LabelCategories,
 )
 from datumaro.plugins.yolo_format.importer import YoloImporter
-from datumaro.plugins.yolo_format.format import YoloPath
 from datumaro.plugins.yolo_format.converter import YoloConverter
 from datumaro.util.image import Image, save_image
 from datumaro.util.test_utils import TestDir, compare_datasets
