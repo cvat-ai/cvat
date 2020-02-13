@@ -44,7 +44,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                 </Row>
                 <Row type='flex' justify='space-around'>
                     <Col className='cvat-player-filename-wrapper'>
-                        <Tooltip overlay='filename.png'>
+                        <Tooltip title='filename.png'>
                             <Text type='secondary'>filename.png</Text>
                         </Tooltip>
                     </Col>

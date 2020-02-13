@@ -312,6 +312,10 @@ export interface AnnotationState {
         activatedStateID: number | null;
         collapsed: Record<number, boolean>;
         states: any[];
+        history: {
+            undo: string[];
+            redo: string[];
+        };
         saving: {
             uploading: boolean;
             statuses: string[];

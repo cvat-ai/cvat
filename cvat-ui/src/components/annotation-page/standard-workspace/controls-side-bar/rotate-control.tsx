@@ -32,7 +32,7 @@ function RotateControl(props: Props): JSX.Element {
             placement='right'
             content={(
                 <>
-                    <Tooltip overlay='Rotate the image anticlockwise' placement='topRight'>
+                    <Tooltip title='Rotate the image anticlockwise' placement='topRight'>
                         <Icon
                             className='cvat-rotate-canvas-controls-left'
                             onClick={(): void => canvasInstance
@@ -40,7 +40,7 @@ function RotateControl(props: Props): JSX.Element {
                             component={RotateIcon}
                         />
                     </Tooltip>
-                    <Tooltip overlay='Rotate the image clockwise' placement='topRight'>
+                    <Tooltip title='Rotate the image clockwise' placement='topRight'>
                         <Icon
                             className='cvat-rotate-canvas-controls-right'
                             onClick={(): void => canvasInstance

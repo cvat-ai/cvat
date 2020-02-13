@@ -53,6 +53,10 @@ const defaultState: AnnotationState = {
         },
         collapsed: {},
         states: [],
+        history: {
+            undo: [],
+            redo: [],
+        },
     },
     propagate: {
         objectState: null,
@@ -421,7 +425,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS: {
-            const { states: updatedStates } = action.payload;
+            const {
+                history,
+                states: updatedStates,
+            } = action.payload;
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
 
@@ -438,6 +445,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     states: nextStates,
+                    history,
                 },
             };
         }
@@ -452,46 +460,62 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS: {
-            const { states } = action.payload;
+            const {
+                states,
+                history,
+            } = action.payload;
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     states,
+                    history,
                 },
             };
         }
         case AnnotationActionTypes.MERGE_ANNOTATIONS_SUCCESS: {
-            const { states } = action.payload;
+            const {
+                states,
+                history,
+            } = action.payload;
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     states,
+                    history,
                 },
             };
         }
         case AnnotationActionTypes.GROUP_ANNOTATIONS_SUCCESS: {
-            const { states } = action.payload;
+            const {
+                states,
+                history,
+            } = action.payload;
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     states,
+                    history,
                 },
             };
         }
         case AnnotationActionTypes.SPLIT_ANNOTATIONS_SUCCESS: {
-            const { states } = action.payload;
+            const {
+                states,
+                history,
+            } = action.payload;
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     states,
+                    history,
                 },
             };
         }
@@ -499,6 +523,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const {
                 label,
                 states,
+                history,
             } = action.payload;
 
             const { instance: job } = state.job;
@@ -515,6 +540,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     states,
+                    history,
                 },
             };
         }
@@ -547,12 +573,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
             const {
                 objectState,
+                history,
             } = action.payload;
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
+                    history,
                     activatedStateID: null,
                     states: state.annotations.states
                         .filter((_objectState: any) => (
@@ -617,8 +645,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS: {
+            const { history } = action.payload;
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    history,
+                },
                 propagate: {
                     ...state.propagate,
                     objectState: null,
@@ -739,7 +772,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS: {
-            const { states, job } = action.payload;
+            const {
+                states,
+                job,
+                history,
+            } = action.payload;
             const { loads } = state.activities;
 
             delete loads[job.id];
@@ -754,6 +791,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 annotations: {
                     ...state.annotations,
+                    history,
                     states,
                     selectedStatesID: [],
                     activatedStateID: null,
@@ -762,10 +800,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_SUCCESS: {
+            const { history } = action.payload;
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
+                    history,
                     selectedStatesID: [],
                     activatedStateID: null,
                     collapsed: {},
@@ -790,6 +830,27 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         left,
                         top,
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.REDO_ACTION_SUCCESS:
+        case AnnotationActionTypes.UNDO_ACTION_SUCCESS: {
+            const {
+                history,
+                states,
+            } = action.payload;
+
+            const activatedStateID = states
+                .map((_state: any) => _state.clientID).includes(state.annotations.activatedStateID)
+                ? state.annotations.activatedStateID : null;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID,
+                    states,
+                    history,
                 },
             };
         }
