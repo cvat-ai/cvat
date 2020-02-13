@@ -683,6 +683,8 @@ class CuboidController extends PolyShapeController {
         vmEdge.points = [topPoint, botPoint];
     }
 
+    // This functions resest the perspective of the cuboid by
+    // making the top face parallel with the bottom face.
     resetPerspective(){
         if(this.orientation === orientationEnum.RIGHT){
             const edgePoints = this.viewModel.dr.points;
@@ -697,6 +699,40 @@ class CuboidController extends PolyShapeController {
             this.viewModel.dl.points = [edgePoints[0],edgePoints[1]]
             this.updateViewAndVM(true)
         }
+    }
+
+    // This method switches the pink face of the cuboid between
+    // the 2 visible faces
+    switch_orientation(){
+        function rotate( array , times ){
+            if(times>0){
+                while( times-- ){
+                    var temp = array.shift();
+                    array.push( temp );
+                }
+            }else{
+                while(times<0){
+                    array.unshift(array.pop());
+                    times++;
+                }
+            }
+        }
+        this.resetPerspective();
+
+        let top = this.viewModel.top.points;
+        let bot =  this.viewModel.bot.points;
+        if(this.orientation === orientationEnum.RIGHT){
+            rotate(top,1);
+            rotate(bot, 1);
+        }else{
+            rotate(top,-1);
+            rotate(bot, -1);
+        }
+        this.viewModel.top.points = top;
+        this.viewModel.bot.points = bot;
+        this.updateViewAndVM();
+        this.updateGrabPoints();
+
     }
 
     // updates the view model with the actual position of the points on screen
@@ -906,6 +942,10 @@ class CuboidModel extends PolyShapeModel {
         this.notify("perspectiveReset")
     }
 
+    switchOrientation(){
+        this.notify("orientation")
+    }
+
     export() {
         const exported = PolyShapeModel.prototype.export.call(this);
         return exported;
@@ -1015,6 +1055,8 @@ class CuboidView extends PolyShapeView {
         ShapeView.prototype.onShapeUpdate.call(this, model);
         if (model.updateReason === 'perspectiveReset') {
             this._controller.resetPerspective();
+        }else if(model.updateReason === 'orientation'){
+            this._controller.switch_orientation();
         }
     }
 

@@ -1680,10 +1680,13 @@ class ShapeView extends Listener {
                 }
 
                 let resetPerpectiveItem =  this._shapeContextMenu.find('.cuboidItem[action="reset_perspective"]');
+                let switchOrientationItem = this._shapeContextMenu.find('.cuboidItem[action="switch_orientation"]');
                 if(type[1] === 'cuboid'){
                     resetPerpectiveItem.removeClass('hidden');
+                    switchOrientationItem.removeClass('hidden');
                 }else{
                     resetPerpectiveItem.addClass('hidden');
+                    switchOrientationItem.addClass('hidden');
                 }
 
                 this._shapeContextMenu.finish().show(100);

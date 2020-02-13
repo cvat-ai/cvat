@@ -1103,6 +1103,13 @@ class ShapeCollectionController {
         }
     }
 
+    switchOrientationFromActiveShape(){
+        let activeShape = this._model.activeShape;
+        if (activeShape &&  activeShape instanceof CuboidModel) {
+            this.activeShape.switchOrientation();
+        }
+    }
+
     removePointFromActiveShape(idx) {
         this._model.removePointFromActiveShape(idx);
     }
@@ -1320,6 +1327,9 @@ class ShapeCollectionView {
                 break;
             case "reset_perspective":
                 this._controller.resetPerspectiveFromActiveShape();
+                break;
+            case "switch_orientation":
+                this._controller.switchOrientationFromActiveShape();
                 break;
             }
 
