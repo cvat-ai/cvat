@@ -64,4 +64,4 @@ const validationPatterns = {
     },
 };
 
-export default { ...validationPatterns };
+export default validationPatterns;
