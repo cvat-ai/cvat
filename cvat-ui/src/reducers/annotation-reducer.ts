@@ -53,6 +53,7 @@ const defaultState: AnnotationState = {
         },
         collapsed: {},
         states: [],
+        filters: [],
         history: {
             undo: [],
             redo: [],
@@ -851,6 +852,31 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID,
                     states,
                     history,
+                },
+            };
+        }
+        case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS: {
+            const { states } = action.payload;
+            const activatedStateID = states
+                .map((_state: any) => _state.clientID).includes(state.annotations.activatedStateID)
+                ? state.annotations.activatedStateID : null;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID,
+                    states,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS: {
+            const { filters } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    filters,
                 },
             };
         }

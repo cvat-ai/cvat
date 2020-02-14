@@ -4,11 +4,11 @@ import {
     Row,
     Col,
     Icon,
-    Input,
     Select,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
+import { SelectValue } from 'antd/lib/select';
 
 import { StatesOrdering } from 'reducers/interfaces';
 
@@ -58,7 +58,9 @@ interface Props {
     statesLocked: boolean;
     statesCollapsed: boolean;
     statesOrdering: StatesOrdering;
+    annotationsFilters: string[];
     changeStatesOrdering(value: StatesOrdering): void;
+    changeAnnotationsFilters(value: SelectValue): void;
     lockAllStates(): void;
     unlockAllStates(): void;
     collapseAllStates(): void;
@@ -69,6 +71,7 @@ interface Props {
 
 function ObjectListHeader(props: Props): JSX.Element {
     const {
+        annotationsFilters,
         statesHidden,
         statesLocked,
         statesCollapsed,
@@ -80,15 +83,26 @@ function ObjectListHeader(props: Props): JSX.Element {
         expandAllStates,
         hideAllStates,
         showAllStates,
+        changeAnnotationsFilters,
     } = props;
 
     return (
         <div className='cvat-objects-sidebar-states-header'>
             <Row>
                 <Col>
-                    <Input
-                        placeholder='Filter e.g. car[attr/model="mazda"]'
-                        prefix={<Icon type='filter' />}
+                    <Select
+                        allowClear
+                        value={annotationsFilters}
+                        mode='tags'
+                        style={{ width: '100%' }}
+                        placeholder={(
+                            <>
+                                <Icon type='filter' />
+                                <span style={{ marginLeft: 5 }}>Annotations filter</span>
+                            </>
+                        )}
+                        dropdownStyle={{ display: 'none' }}
+                        onChange={changeAnnotationsFilters}
                     />
                 </Col>
             </Row>

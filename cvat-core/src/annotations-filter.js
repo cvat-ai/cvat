@@ -116,10 +116,10 @@ class AnnotationsFilter {
         }
 
         if (startBracket !== null) {
-            throw Error(`Extra opening bracket on the position ${startBracket}`);
+            throw Error('Extra opening bracket found');
         }
         if (endBracket !== null) {
-            throw Error(`Extra closing bracket on the position ${endBracket}`);
+            throw Error('Extra closing bracket found');
         }
     }
 
@@ -132,7 +132,7 @@ class AnnotationsFilter {
         let expression = '';
         for (const group of groups) {
             if (Array.isArray(group)) {
-                expression += `(${this.join(group)})`;
+                expression += `(${this._join(group)})`;
             } else if (typeof (group) === 'string') {
                 // it can be operator or expression
                 if (group === '|' || group === '&') {

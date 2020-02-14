@@ -1,9 +1,13 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
+import { SelectValue } from 'antd/lib/select';
+
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
     updateAnnotationsAsync,
+    fetchAnnotationsAsync,
+    changeAnnotationsFilters as changeAnnotationsFiltersAction,
     collapseObjectItems,
 } from 'actions/annotation-actions';
 
@@ -20,11 +24,13 @@ interface StateToProps {
     statesLocked: boolean;
     statesCollapsed: boolean;
     objectStates: any[];
+    annotationsFilters: string[];
 }
 
 interface DispatchToProps {
-    onUpdateAnnotations(sessionInstance: any, frameNumber: number, states: any[]): void;
-    onCollapseStates(states: any[], value: boolean): void;
+    updateAnnotations(sessionInstance: any, frameNumber: number, states: any[]): void;
+    changeAnnotationsFilters(sessionInstance: any, filters: string[]): void;
+    collapseStates(states: any[], value: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -32,6 +38,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             annotations: {
                 states: objectStates,
+                filters: annotationsFilters,
                 collapsed,
             },
             job: {
@@ -66,16 +73,24 @@ function mapStateToProps(state: CombinedState): StateToProps {
         objectStates,
         frameNumber,
         jobInstance,
+        annotationsFilters,
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onUpdateAnnotations(sessionInstance: any, frameNumber: number, states: any[]): void {
+        updateAnnotations(sessionInstance: any, frameNumber: number, states: any[]): void {
             dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, states));
         },
-        onCollapseStates(states: any[], collapsed: boolean): void {
+        collapseStates(states: any[], collapsed: boolean): void {
             dispatch(collapseObjectItems(states, collapsed));
+        },
+        changeAnnotationsFilters(
+            sessionInstance: any,
+            filters: string[],
+        ): void {
+            dispatch(changeAnnotationsFiltersAction(filters));
+            dispatch(fetchAnnotationsAsync(sessionInstance));
         },
     };
 }
@@ -101,7 +116,7 @@ interface State {
     sortedStatesID: number[];
 }
 
-class ObjectsListContainer extends React.Component<Props, State> {
+class ObjectsListContainer extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
         super(props);
         this.state = {
@@ -123,37 +138,21 @@ class ObjectsListContainer extends React.Component<Props, State> {
         };
     }
 
-    public shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
-        const {
-            objectStates,
-            listHeight,
-            statesHidden,
-            statesLocked,
-            statesCollapsed,
-        } = this.props;
-
-        const { statesOrdering } = this.state;
-
-        return nextProps.objectStates.length !== objectStates.length
-            || nextProps.listHeight !== listHeight
-            || nextProps.statesHidden !== statesHidden
-            || nextProps.statesLocked !== statesLocked
-            || nextProps.statesCollapsed !== statesCollapsed
-            || nextState.statesOrdering !== statesOrdering
-            || (statesOrdering === StatesOrdering.UPDATED
-                ? nextProps.objectStates !== objectStates
-                : nextProps.objectStates.map((nextObjectState: any, id: number): boolean => (
-                    nextObjectState.clientID !== objectStates[id].clientID
-                )).some((value: boolean) => value)
-            );
-    }
-
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
         const { objectStates } = this.props;
         this.setState({
             statesOrdering,
             sortedStatesID: sortAndMap(objectStates, statesOrdering),
         });
+    };
+
+    private onChangeAnnotationsFilters = (value: SelectValue): void => {
+        const {
+            jobInstance,
+            changeAnnotationsFilters,
+        } = this.props;
+        const filters = value as string[];
+        changeAnnotationsFilters(jobInstance, filters);
     };
 
     private onLockAllStates = (): void => {
@@ -183,7 +182,7 @@ class ObjectsListContainer extends React.Component<Props, State> {
     private lockAllStates(locked: boolean): void {
         const {
             objectStates,
-            onUpdateAnnotations,
+            updateAnnotations,
             jobInstance,
             frameNumber,
         } = this.props;
@@ -191,13 +190,13 @@ class ObjectsListContainer extends React.Component<Props, State> {
             objectState.lock = locked;
         }
 
-        onUpdateAnnotations(jobInstance, frameNumber, objectStates);
+        updateAnnotations(jobInstance, frameNumber, objectStates);
     }
 
     private hideAllStates(hidden: boolean): void {
         const {
             objectStates,
-            onUpdateAnnotations,
+            updateAnnotations,
             jobInstance,
             frameNumber,
         } = this.props;
@@ -205,19 +204,20 @@ class ObjectsListContainer extends React.Component<Props, State> {
             objectState.hidden = hidden;
         }
 
-        onUpdateAnnotations(jobInstance, frameNumber, objectStates);
+        updateAnnotations(jobInstance, frameNumber, objectStates);
     }
 
     private collapseAllStates(collapsed: boolean): void {
         const {
             objectStates,
-            onCollapseStates,
+            collapseStates,
         } = this.props;
 
-        onCollapseStates(objectStates, collapsed);
+        collapseStates(objectStates, collapsed);
     }
 
     public render(): JSX.Element {
+        const { annotationsFilters } = this.props;
         const {
             sortedStatesID,
             statesOrdering,
@@ -228,7 +228,9 @@ class ObjectsListContainer extends React.Component<Props, State> {
                 {...this.props}
                 statesOrdering={statesOrdering}
                 sortedStatesID={sortedStatesID}
+                annotationsFilters={annotationsFilters}
                 changeStatesOrdering={this.onChangeStatesOrdering}
+                changeAnnotationsFilters={this.onChangeAnnotationsFilters}
                 lockAllStates={this.onLockAllStates}
                 unlockAllStates={this.onUnlockAllStates}
                 collapseAllStates={this.onCollapseAllStates}

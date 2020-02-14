@@ -1,7 +1,7 @@
 import React from 'react';
 
+import { SelectValue } from 'antd/lib/select';
 import { StatesOrdering } from 'reducers/interfaces';
-
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import ObjectListHeader from './objects-list-header';
 
@@ -13,7 +13,9 @@ interface Props {
     statesCollapsed: boolean;
     statesOrdering: StatesOrdering;
     sortedStatesID: number[];
+    annotationsFilters: string[];
     changeStatesOrdering(value: StatesOrdering): void;
+    changeAnnotationsFilters(value: SelectValue): void;
     lockAllStates(): void;
     unlockAllStates(): void;
     collapseAllStates(): void;
@@ -30,7 +32,9 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesCollapsed,
         statesOrdering,
         sortedStatesID,
+        annotationsFilters,
         changeStatesOrdering,
+        changeAnnotationsFilters,
         lockAllStates,
         unlockAllStates,
         collapseAllStates,
@@ -46,7 +50,9 @@ function ObjectListComponent(props: Props): JSX.Element {
                 statesLocked={statesLocked}
                 statesCollapsed={statesCollapsed}
                 statesOrdering={statesOrdering}
+                annotationsFilters={annotationsFilters}
                 changeStatesOrdering={changeStatesOrdering}
+                changeAnnotationsFilters={changeAnnotationsFilters}
                 lockAllStates={lockAllStates}
                 unlockAllStates={unlockAllStates}
                 collapseAllStates={collapseAllStates}
