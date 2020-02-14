@@ -28,7 +28,7 @@ const authActions = {
     registerFailed: (error: any) => createAction(AuthActionTypes.REGISTER_FAILED, { error }),
     logout: () => createAction(AuthActionTypes.LOGOUT),
     logoutSuccess: () => createAction(AuthActionTypes.LOGOUT_SUCCESS),
-    logoutFailed: (error: any) => createAction(AuthActionTypes.LOGOUT_FAILED, { error })
+    logoutFailed: (error: any) => createAction(AuthActionTypes.LOGOUT_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -39,8 +39,9 @@ export const registerAsync = (
     lastName: string,
     email: string,
     password1: string,
-    password2: string): ThunkAction => async (
-    dispatch
+    password2: string,
+): ThunkAction => async (
+    dispatch,
 ) => {
     dispatch(authActions.register());
 

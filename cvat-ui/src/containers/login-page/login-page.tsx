@@ -1,4 +1,3 @@
-import React from 'react';
 import { connect } from 'react-redux';
 import LoginPageComponent from 'components/login-page/login-page';
 import { CombinedState } from 'reducers/interfaces';
@@ -18,7 +17,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-const mapDispatchToProps: DispatchToProps  = {
+const mapDispatchToProps: DispatchToProps = {
     onLogin: loginAsync,
 };
 

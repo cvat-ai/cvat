@@ -9,7 +9,10 @@ const defaultState: AboutState = {
     initialized: false,
 };
 
-export default function (state: AboutState = defaultState, action: AboutActions | AuthActions): AboutState {
+export default function (
+    state: AboutState = defaultState,
+    action: AboutActions | AuthActions,
+): AboutState {
     switch (action.type) {
         case AboutActionTypes.GET_ABOUT: {
             return {

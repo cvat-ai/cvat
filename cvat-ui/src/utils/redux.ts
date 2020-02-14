@@ -14,7 +14,5 @@ export function createAction<T extends string, P>(type: T, payload?: P) {
 
 export type ActionUnion<A extends ActionCreatorsMapObject> = ReturnType<A[keyof A]>;
 
-interface ThunkParams {
-}
-
-export type ThunkAction<R = void, A extends Action = AnyAction> = _ThunkAction<R, CombinedState, ThunkParams, A>;
+export type ThunkAction<R = void, A extends Action = AnyAction>
+    = _ThunkAction<R, CombinedState, {}, A>;

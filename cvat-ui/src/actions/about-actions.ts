@@ -12,12 +12,12 @@ export enum AboutActionTypes {
 const aboutActions = {
     getAbout: () => createAction(AboutActionTypes.GET_ABOUT),
     getAboutSuccess: (server: any) => createAction(AboutActionTypes.GET_ABOUT_SUCCESS, { server }),
-    getAboutFailed: (error: any) => createAction(AboutActionTypes.GET_ABOUT_FAILED, { error })
+    getAboutFailed: (error: any) => createAction(AboutActionTypes.GET_ABOUT_FAILED, { error }),
 };
 
 export type AboutActions = ActionUnion<typeof aboutActions>;
 
-export const getAboutAsync = (): ThunkAction => async (dispatch)  => {
+export const getAboutAsync = (): ThunkAction => async (dispatch) => {
     dispatch(aboutActions.getAbout());
 
     try {
