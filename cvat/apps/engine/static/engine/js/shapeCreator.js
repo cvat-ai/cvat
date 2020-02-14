@@ -424,7 +424,10 @@ class ShapeCreatorView {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY,
             };
-            numberOfPoints ++;
+            numberOfPoints += 1;
+            if (this._type === "cuboid" && numberOfPoints === 4) {
+                this._drawInstance.draw("done");
+            }
         });
 
         this._commonBordersCheckbox.css('display', '').trigger('change.shapeCreator');
@@ -481,8 +484,8 @@ class ShapeCreatorView {
             }
         });
         // Also we need callback on drawdone event for get points
-        this._drawInstance.on('drawdone', function(e) {
-            let actualPoints = window.cvat.translate.points.canvasToActual(e.target.getAttribute('points'));
+        this._drawInstance.on("drawdone", (e) => {
+            let actualPoints = window.cvat.translate.points.canvasToActual(e.target.getAttribute("points"));
             actualPoints = PolyShapeModel.convertStringToNumberArray(actualPoints);
 
             // Min 2 points for polyline and 3 points for polygon

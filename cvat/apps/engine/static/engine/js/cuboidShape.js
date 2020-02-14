@@ -278,7 +278,7 @@ class CuboidController extends PolyShapeController {
         super(cuboidModel);
         const frame = window.cvat.player.frames.current;
         const points = PolylineModel.convertStringToNumberArray(
-            cuboidModel.interpolatePosition(frame).points,
+            cuboidModel._interpolatePosition(frame).points,
         );
 
         this.viewModel = new Cuboid2PointViewModel(points);
@@ -738,7 +738,7 @@ class CuboidController extends PolyShapeController {
     // updates the view model with the actual position of the points on screen
     // for the case where points are updated when updating the model
     updateViewModel() {
-        let { points } = this._model.interpolatePosition(window.cvat.player.frames.current);
+        let { points } = this._model._interpolatePosition(window.cvat.player.frames.current);
         points = PolylineModel.convertStringToNumberArray(points);
         this.viewModel.setPoints(points);
         this.viewModel.updatePoints();
@@ -763,7 +763,7 @@ class CuboidController extends PolyShapeController {
     // updates the model with the viewModel points
     updateModel() {
         const frame = window.cvat.player.frames.current;
-        const position = this._model.interpolatePosition(frame);
+        const position = this._model._interpolatePosition(frame);
 
         const viewModelpoints = this.viewModel.getPoints();
         position.points = PolylineModel.convertNumberArrayToString(viewModelpoints);
@@ -832,7 +832,7 @@ class CuboidModel extends PolyShapeModel {
             return ((P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y));
         }
 
-        const pos = this.interpolatePosition(frame);
+        const pos = this._interpolatePosition(frame);
         if (pos.outside) return false;
         let points = PolyShapeModel.convertStringToNumberArray(pos.points);
         points = this.makeHull(points);
@@ -914,7 +914,7 @@ class CuboidModel extends PolyShapeModel {
     }
 
     distance(mousePos, frame) {
-        const pos = this.interpolatePosition(frame);
+        const pos = this._interpolatePosition(frame);
         if (pos.outside) return Number.MAX_SAFE_INTEGER;
         const points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let minDistance = Number.MAX_SAFE_INTEGER;
