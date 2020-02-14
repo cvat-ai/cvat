@@ -9,7 +9,7 @@ export interface ActionWithPayload<T, P> extends Action<T> {
 export function createAction<T extends string>(type: T): Action<T>;
 export function createAction<T extends string, P>(type: T, payload: P): ActionWithPayload<T, P>;
 export function createAction<T extends string, P>(type: T, payload?: P) {
-    return typeof payload === undefined ? { type } : { type, payload };
+    return typeof payload === 'undefined' ? { type } : { type, payload };
 }
 
 export type ActionUnion<A extends ActionCreatorsMapObject> = ReturnType<A[keyof A]>;
