@@ -18,6 +18,7 @@ class AnnotationsFilter {
         this.operatorRegex = /(==|!=|<=|>=|>|<|~=)(?=(?:[^"]*(["])[^"]*\2)*[^"]*$)/g;
     }
 
+    // Method splits expression by operators that are outside of any brackets
     _splitWithOperator(container, expression) {
         const operators = ['|', '&'];
         const splitted = [];
@@ -68,6 +69,7 @@ class AnnotationsFilter {
         });
     }
 
+    // Method groups bracket containings to nested arrays of container
     _groupByBrackets(container, expression) {
         if (!(expression.startsWith('(') && expression.endsWith(')'))) {
             container.push(expression);
@@ -229,9 +231,3 @@ class AnnotationsFilter {
 }
 
 module.exports = AnnotationsFilter;
-
-
-/*
- // Write unit tests
- (( label==["car \\"mazda\\""]) & (attr["sunglass ( help ) es"]==true | (width > 150 | height > 150 & (clientID == serverID)))))
-*/
