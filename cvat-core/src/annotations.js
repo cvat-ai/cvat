@@ -77,16 +77,16 @@
         }
     }
 
-    async function getAnnotations(session, frame, allTracks, filter) {
+    async function getAnnotations(session, frame, allTracks, filters) {
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (cache.has(session)) {
-            return cache.get(session).collection.get(frame, allTracks, filter);
+            return cache.get(session).collection.get(frame, allTracks, filters);
         }
 
         await getAnnotationsFromServer(session);
-        return cache.get(session).collection.get(frame, filter);
+        return cache.get(session).collection.get(frame, allTracks, filters);
     }
 
     async function saveAnnotations(session, onUpdate) {
