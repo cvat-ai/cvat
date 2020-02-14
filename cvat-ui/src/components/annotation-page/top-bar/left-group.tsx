@@ -39,8 +39,7 @@ function LeftGroup(props: Props): JSX.Element {
                 type='link'
                 className={saving
                     ? 'cvat-annotation-disabled-header-button'
-                    : 'cvat-annotation-header-button'
-                }
+                    : 'cvat-annotation-header-button'}
             >
                 <Icon component={SaveIcon} />
                 { saving ? 'Saving...' : 'Save' }

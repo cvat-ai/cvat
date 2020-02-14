@@ -189,58 +189,49 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                         <Col span={6}>
                             { navigateFirstKeyframe
                                 ? <Icon component={FirstIcon} onClick={navigateFirstKeyframe} />
-                                : <Icon component={FirstIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
-                            }
+                                : <Icon component={FirstIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                         <Col span={6}>
                             { navigatePrevKeyframe
                                 ? <Icon component={PreviousIcon} onClick={navigatePrevKeyframe} />
-                                : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
-                            }
+                                : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                         <Col span={6}>
                             { navigateNextKeyframe
                                 ? <Icon component={NextIcon} onClick={navigateNextKeyframe} />
-                                : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
-                            }
+                                : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                         <Col span={6}>
                             { navigateLastKeyframe
                                 ? <Icon component={LastIcon} onClick={navigateLastKeyframe} />
-                                : <Icon component={LastIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
-                            }
+                                : <Icon component={LastIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                     </Row>
                     <Row type='flex' justify='space-around'>
                         <Col span={4}>
                             { outside
                                 ? <Icon component={ObjectOutsideIcon} onClick={unsetOutside} />
-                                : <Icon type='select' onClick={setOutside} />
-                            }
+                                : <Icon type='select' onClick={setOutside} />}
                         </Col>
                         <Col span={4}>
                             { locked
                                 ? <Icon type='lock' onClick={unlock} />
-                                : <Icon type='unlock' onClick={lock} />
-                            }
+                                : <Icon type='unlock' onClick={lock} />}
                         </Col>
                         <Col span={4}>
                             { occluded
                                 ? <Icon type='team' onClick={unsetOccluded} />
-                                : <Icon type='user' onClick={setOccluded} />
-                            }
+                                : <Icon type='user' onClick={setOccluded} />}
                         </Col>
                         <Col span={4}>
                             { hidden
                                 ? <Icon type='eye-invisible' onClick={show} />
-                                : <Icon type='eye' onClick={hide} />
-                            }
+                                : <Icon type='eye' onClick={hide} />}
                         </Col>
                         <Col span={4}>
                             { keyframe
                                 ? <Icon type='star' theme='filled' onClick={unsetKeyframe} />
-                                : <Icon type='star' onClick={setKeyframe} />
-                            }
+                                : <Icon type='star' onClick={setKeyframe} />}
                         </Col>
                     </Row>
                 </Col>
@@ -255,20 +246,17 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                     <Col span={8}>
                         { locked
                             ? <Icon type='lock' onClick={unlock} />
-                            : <Icon type='unlock' onClick={lock} />
-                        }
+                            : <Icon type='unlock' onClick={lock} />}
                     </Col>
                     <Col span={8}>
                         { occluded
                             ? <Icon type='team' onClick={unsetOccluded} />
-                            : <Icon type='user' onClick={setOccluded} />
-                        }
+                            : <Icon type='user' onClick={setOccluded} />}
                     </Col>
                     <Col span={8}>
                         { hidden
                             ? <Icon type='eye-invisible' onClick={show} />
-                            : <Icon type='eye' onClick={hide} />
-                        }
+                            : <Icon type='eye' onClick={hide} />}
                     </Col>
                 </Row>
             </Col>
@@ -662,8 +650,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                         collapse={collapse}
                         changeAttribute={changeAttribute}
                     />
-                )
-            }
+                )}
         </div>
     );
 }
