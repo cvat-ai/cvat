@@ -56,10 +56,10 @@
                         return result;
                     },
 
-                    async get(frame, allTracks = false, filter = {}) {
+                    async get(frame, allTracks = false, filters = []) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.annotations.get,
-                                frame, allTracks, filter);
+                                frame, allTracks, filters);
                         return result;
                     },
 
@@ -275,27 +275,32 @@
                 * @async
             */
             /**
-                * @typedef {Object} ObjectFilter
-                * @property {string} [label] a name of a label
-                * @property {module:API.cvat.enums.ObjectType} [type]
-                * @property {module:API.cvat.enums.ObjectShape} [shape]
-                * @property {boolean} [occluded] a value of occluded property
-                * @property {boolean} [lock] a value of lock property
-                * @property {number} [serverID] a value of lock property
-                * @property {number} [clientID] a value of lock property
-                * @property {number} [width] a width of a shape
-                * @property {number} [height] a height of a shape
-                * @property {Object[]} [attributes] dictionary with "name: value" pairs
-                * @global
-            */
-            /**
                 * Get annotations for a specific frame
+                * </br> Filter supports following operators:
+                * ==, !=, >, >=, <, <=, ~= and (), |, & for grouping.
+                * </br> Filter supports properties:
+                * width, height, label, serverID, clientID, type, shape, occluded
+                * </br> All prop values are case-sensitive. CVAT uses json queries for search.
+                * </br> Examples:
+                * <ul>
+                *   <li> label=="car" | label==["road sign"] </li>
+                *   <li> width >= height </li>
+                *   <li> attr["Attribute 1"] == attr["Attribute 2"] </li>
+                *   <li> type=="track" & shape="rectangle" </li>
+                *   <li> clientID == 50 </li>
+                *   <li> (label=="car" & attr["parked"]==true)
+                * | (label=="pedestrian" & width > 150) </li>
+                *   <li> (( label==["car \\"mazda\\""]) &
+                * (attr["sunglass ( help ) es"]==true |
+                * (width > 150 | height > 150 & (clientID == serverID))))) </li>
+                * </ul>
+                * <b> If you have double quotes in your query string, please escape them using back slash: \" </b>
                 * @method get
                 * @param {integer} frame get objects from the frame
                 * @param {boolean} allTracks show all tracks
                 * even if they are outside and not keyframe
-                * @param {ObjectFilter[]} [filter = []]
-                * get only objects are satisfied to specific filter
+                * @param {string[]} [filters = []]
+                * get only objects that satisfied to specific filters
                 * @returns {module:API.cvat.classes.ObjectState[]}
                 * @memberof Session.annotations
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -1310,14 +1315,26 @@
     };
 
     // TODO: Check filter for annotations
-    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filter) {
+    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
+        if (!Array.isArray(filters) || filters.some((filter) => typeof (filter) !== 'string')) {
+            throw new ArgumentError(
+                'The filters argument must be an array of strings',
+            );
+        }
+
+        if (!Number.isInteger(frame)) {
+            throw new ArgumentError(
+                'The frame argument must be an integer',
+            );
+        }
+
         if (frame < this.startFrame || frame > this.stopFrame) {
             throw new ArgumentError(
                 `Frame ${frame} does not exist in the job`,
             );
         }
 
-        const annotationsData = await getAnnotations(this, frame, allTracks, filter);
+        const annotationsData = await getAnnotations(this, frame, allTracks, filters);
         return annotationsData;
     };
 
@@ -1481,7 +1498,13 @@
     };
 
     // TODO: Check filter for annotations
-    Task.prototype.annotations.get.implementation = async function (frame, allTracks, filter) {
+    Task.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
+        if (!Array.isArray(filters) || filters.some((filter) => typeof (filter) !== 'string')) {
+            throw new ArgumentError(
+                'The filters argument must be an array of strings',
+            );
+        }
+
         if (!Number.isInteger(frame) || frame < 0) {
             throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
@@ -1494,7 +1517,7 @@
             );
         }
 
-        const result = await getAnnotations(this, frame, allTracks, filter);
+        const result = await getAnnotations(this, frame, allTracks, filters);
         return result;
     };
 
