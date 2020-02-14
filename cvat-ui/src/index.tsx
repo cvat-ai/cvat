@@ -69,12 +69,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
         aboutFetching: about.fetching,
         formatsInitialized: formats.initialized,
         formatsFetching: formats.fetching,
-        installedAutoAnnotation: plugins.plugins.AUTO_ANNOTATION,
-        installedTFSegmentation: plugins.plugins.TF_SEGMENTATION,
-        installedTFAnnotation: plugins.plugins.TF_ANNOTATION,
-        notifications: { ...state.notifications },
+        installedAutoAnnotation: plugins.list.AUTO_ANNOTATION,
+        installedTFSegmentation: plugins.list.TF_SEGMENTATION,
+        installedTFAnnotation: plugins.list.TF_ANNOTATION,
+        notifications: state.notifications,
         user: auth.user,
-        about: state.about,
     };
 }
 

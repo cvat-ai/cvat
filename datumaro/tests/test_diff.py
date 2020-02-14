@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from datumaro.components.extractor import DatasetItem, LabelObject, BboxObject
+from datumaro.components.extractor import DatasetItem, Label, Bbox
 from datumaro.components.comparator import Comparator
 
 
@@ -8,7 +8,7 @@ class DiffTest(TestCase):
     def test_no_bbox_diff_with_same_item(self):
         detections = 3
         anns = [
-            BboxObject(i * 10, 10, 10, 10, label=i,
+            Bbox(i * 10, 10, 10, 10, label=i,
                     attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections)
         ]
@@ -38,12 +38,12 @@ class DiffTest(TestCase):
         detections = 3
         class_count = 2
         item1 = DatasetItem(id=1, annotations=[
-            BboxObject(i * 10, 10, 10, 10, label=i,
+            Bbox(i * 10, 10, 10, 10, label=i,
                     attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections)
         ])
         item2 = DatasetItem(id=2, annotations=[
-            BboxObject(i * 10, 10, 10, 10, label=(i + 1) % class_count,
+            Bbox(i * 10, 10, 10, 10, label=(i + 1) % class_count,
                     attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections)
         ])
@@ -72,12 +72,12 @@ class DiffTest(TestCase):
         detections = 3
         class_count = 2
         item1 = DatasetItem(id=1, annotations=[
-            BboxObject(i * 10, 10, 10, 10, label=i,
+            Bbox(i * 10, 10, 10, 10, label=i,
                     attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections) if i % 2 == 0
         ])
         item2 = DatasetItem(id=2, annotations=[
-            BboxObject(i * 10, 10, 10, 10, label=(i + 1) % class_count,
+            Bbox(i * 10, 10, 10, 10, label=(i + 1) % class_count,
                     attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections) if i % 2 == 1
         ])
@@ -102,7 +102,7 @@ class DiffTest(TestCase):
     def test_no_label_diff_with_same_item(self):
         detections = 3
         anns = [
-            LabelObject(i, attributes={'score': (1.0 + i) / detections}) \
+            Label(i, attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections)
         ]
         item = DatasetItem(id=1, annotations=anns)
@@ -121,14 +121,14 @@ class DiffTest(TestCase):
 
     def test_can_find_wrong_label(self):
         item1 = DatasetItem(id=1, annotations=[
-            LabelObject(0),
-            LabelObject(1),
-            LabelObject(2),
+            Label(0),
+            Label(1),
+            Label(2),
         ])
         item2 = DatasetItem(id=2, annotations=[
-            LabelObject(2),
-            LabelObject(3),
-            LabelObject(4),
+            Label(2),
+            Label(3),
+            Label(4),
         ])
 
         conf_thresh = 0.5

@@ -33,7 +33,7 @@ interface HeaderContainerProps {
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
     username: string;
-    about: any;
+    serverAbout: any;
 }
 
 type Props = HeaderContainerProps & RouteComponentProps;
@@ -45,7 +45,7 @@ function HeaderContainer(props: Props): JSX.Element {
         installedTFAnnotation,
         installedAnalytics,
         username,
-        about,
+        serverAbout,
         onLogout,
         logoutFetching,
     } = props;
@@ -54,20 +54,25 @@ function HeaderContainer(props: Props): JSX.Element {
         || installedTFAnnotation
         || installedTFSegmentation;
 
-    function aboutModal() {
+    function aboutModal(): void {
+        const CHANGELOG = 'https://github.com/opencv/cvat/blob/develop/CHANGELOG.md';
+        const LICENSE = 'https://github.com/opencv/cvat/blob/develop/LICENSE';
+        const GITTER = 'https://gitter.im/opencv-cvat';
+        const FORUM = 'https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit';
+
         Modal.info({
-            title: `${about.name}`,
+            title: `${serverAbout.name}`,
             content: (
                 <div>
                     <p>
-                        {`${about.description}`}
+                        {`${serverAbout.description}`}
                     </p>
                     <p>
                         <Text strong>
                             Server version:
                         </Text>
                         <Text type='secondary'>
-                            {` ${about.version}`}
+                            {` ${serverAbout.version}`}
                         </Text>
                     </p>
                     <p>
@@ -79,20 +84,20 @@ function HeaderContainer(props: Props): JSX.Element {
                         </Text>
                     </p>
                     <Row type='flex' justify='space-around'>
-                        <Col><a href='https://github.com/opencv/cvat/blob/develop/CHANGELOG.md' target='_blank' rel='noopener noreferrer' >What's new?</a></Col>
-                        <Col><a href='https://github.com/opencv/cvat/blob/develop/LICENSE' target='_blank' rel='noopener noreferrer' >License</a></Col>
-                        <Col><a href='https://gitter.im/opencv-cvat' target='_blank' rel='noopener noreferrer' >Need help?</a></Col>
-                        <Col><a href='https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit' target='_blank' rel='noopener noreferrer' >Forum on Intel Developer Zone</a></Col>
-                    </Row>  
+                        <Col><a href={CHANGELOG} target='_blank' rel='noopener noreferrer'>{'What\'s new?'}</a></Col>
+                        <Col><a href={LICENSE} target='_blank' rel='noopener noreferrer'>License</a></Col>
+                        <Col><a href={GITTER} target='_blank' rel='noopener noreferrer'>Need help?</a></Col>
+                        <Col><a href={FORUM} target='_blank' rel='noopener noreferrer'>Forum on Intel Developer Zone</a></Col>
+                    </Row>
                 </div>
             ),
-            width : 800,
+            width: 800,
             okButtonProps: {
                 style: {
                     width: '100px',
                 },
             },
-        })
+        });
     }
 
     const menu = (

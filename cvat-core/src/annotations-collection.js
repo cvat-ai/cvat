@@ -32,15 +32,12 @@
     } = require('./exceptions');
 
     const {
+        HistoryActions,
         ObjectShape,
         ObjectType,
+        colors,
     } = require('./enums');
     const ObjectState = require('./object-state');
-    const colors = [
-        '#FF355E', '#E936A7', '#FD5B78', '#FF007C', '#FF00CC', '#66FF66',
-        '#50BFE6', '#CCFF00', '#FFFF66', '#FF9966', '#FF6037', '#FFCC33',
-        '#AAF0D1', '#FF3855', '#FFF700', '#A7F432', '#FF5470', '#FAFA37',
-        '#FF7A00', '#FF9933', '#AFE313', '#00CC99', '#FF5050', '#733380'];
 
     function shapeFactory(shapeData, clientID, injection) {
         const { type } = shapeData;
@@ -113,6 +110,7 @@
                 return labelAccumulator;
             }, {});
 
+            this.history = data.history;
             this.shapes = {}; // key is a frame
             this.tags = {}; // key is a frame
             this.tracks = [];
@@ -128,16 +126,25 @@
                 collectionZ: this.collectionZ,
                 groups: this.groups,
                 frameMeta: this.frameMeta,
+                history: this.history,
             };
         }
 
         import(data) {
+            const result = {
+                tags: [],
+                shapes: [],
+                tracks: [],
+            };
+
             for (const tag of data.tags) {
                 const clientID = ++this.count;
                 const tagModel = new Tag(tag, clientID, this.injection);
                 this.tags[tagModel.frame] = this.tags[tagModel.frame] || [];
                 this.tags[tagModel.frame].push(tagModel);
                 this.objects[clientID] = tagModel;
+
+                result.tags.push(tagModel);
             }
 
             for (const shape of data.shapes) {
@@ -146,6 +153,8 @@
                 this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
                 this.shapes[shapeModel.frame].push(shapeModel);
                 this.objects[clientID] = shapeModel;
+
+                result.shapes.push(shapeModel);
             }
 
             for (const track of data.tracks) {
@@ -156,10 +165,12 @@
                 if (trackModel) {
                     this.tracks.push(trackModel);
                     this.objects[clientID] = trackModel;
+
+                    result.tracks.push(trackModel);
                 }
             }
 
-            return this;
+            return result;
         }
 
         export() {
@@ -381,10 +392,19 @@
             // Remove other shapes
             for (const object of objectsForMerge) {
                 object.removed = true;
-                if (typeof (object.resetCache) === 'function') {
-                    object.resetCache();
-                }
             }
+
+            this.history.do(HistoryActions.MERGED_OBJECTS, () => {
+                trackModel.removed = true;
+                for (const object of objectsForMerge) {
+                    object.removed = false;
+                }
+            }, () => {
+                trackModel.removed = false;
+                for (const object of objectsForMerge) {
+                    object.removed = true;
+                }
+            }, [...objectsForMerge.map((object) => object.clientID), trackModel.clientID]);
         }
 
         split(objectState, frame) {
@@ -470,7 +490,16 @@
 
             // Remove source object
             object.removed = true;
-            object.resetCache();
+
+            this.history.do(HistoryActions.SPLITTED_TRACK, () => {
+                object.removed = false;
+                prevTrack.removed = true;
+                nextTrack.removed = true;
+            }, () => {
+                object.removed = true;
+                prevTrack.removed = false;
+                nextTrack.removed = false;
+            }, [object.clientID, prevTrack.clientID, nextTrack.clientID]);
         }
 
         group(objectStates, reset) {
@@ -488,12 +517,21 @@
             });
 
             const groupIdx = reset ? 0 : ++this.groups.max;
+            const undoGroups = objectsForGroup.map((object) => object.group);
             for (const object of objectsForGroup) {
                 object.group = groupIdx;
-                if (typeof (object.resetCache) === 'function') {
-                    object.resetCache();
-                }
             }
+            const redoGroups = objectsForGroup.map((object) => object.group);
+
+            this.history.do(HistoryActions.GROUPED_OBJECTS, () => {
+                objectsForGroup.forEach((object, idx) => {
+                    object.group = undoGroups[idx];
+                });
+            }, () => {
+                objectsForGroup.forEach((object, idx) => {
+                    object.group = redoGroups[idx];
+                });
+            }, objectsForGroup.map((object) => object.clientID));
 
             return groupIdx;
         }
@@ -540,6 +578,10 @@
             }
 
             for (const object of Object.values(this.objects)) {
+                if (object.removed) {
+                    continue;
+                }
+
                 let objectType = null;
                 if (object instanceof Shape) {
                     objectType = 'shape';
@@ -711,7 +753,20 @@
             }
 
             // Add constructed objects to a collection
-            this.import(constructed);
+            const imported = this.import(constructed);
+            const importedArray = imported.tags
+                .concat(imported.tracks)
+                .concat(imported.shapes);
+
+            this.history.do(HistoryActions.CREATED_OBJECTS, () => {
+                importedArray.forEach((object) => {
+                    object.removed = true;
+                });
+            }, () => {
+                importedArray.forEach((object) => {
+                    object.removed = false;
+                });
+            }, importedArray.map((object) => object.clientID));
         }
 
         select(objectStates, x, y) {
@@ -723,7 +778,7 @@
             let minimumState = null;
             for (const state of objectStates) {
                 checkObjectType('object state', state, null, ObjectState);
-                if (state.outside) continue;
+                if (state.outside || state.hidden) continue;
 
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {

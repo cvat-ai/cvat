@@ -16,33 +16,36 @@ interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
 
-    onGroupStart(): void;
+    groupObjects(enabled: boolean): void;
 }
 
-export default function GroupControl(props: Props): JSX.Element {
+function GroupControl(props: Props): JSX.Element {
     const {
         activeControl,
         canvasInstance,
-        onGroupStart,
+        groupObjects,
     } = props;
 
     const dynamicIconProps = activeControl === ActiveControl.GROUP
         ? {
-            className: 'cvat-annotation-page-active-control',
+            className: 'cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.group({ enabled: false });
+                groupObjects(false);
             },
         } : {
             onClick: (): void => {
                 canvasInstance.cancel();
                 canvasInstance.group({ enabled: true });
-                onGroupStart();
+                groupObjects(true);
             },
         };
 
     return (
-        <Tooltip overlay='Group shapes/tracks' placement='right'>
+        <Tooltip title='Group shapes/tracks' placement='right'>
             <Icon {...dynamicIconProps} component={GroupIcon} />
         </Tooltip>
     );
 }
+
+export default React.memo(GroupControl);

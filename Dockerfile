@@ -50,7 +50,7 @@ RUN apt-get update && \
     else \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
     fi && \
-    python3 -m pip install --no-cache-dir -U pip setuptools && \
+    python3 -m pip install --no-cache-dir -U pip==20.0.1 setuptools && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \
@@ -124,7 +124,7 @@ COPY cvat-core/ ${HOME}/cvat-core
 COPY tests ${HOME}/tests
 COPY datumaro/ ${HOME}/datumaro
 
-RUN sed -r "s/^(.*)#.*$/\1/g" ${HOME}/datumaro/requirements.txt | xargs -n 1 -L 1 python3 -m pip install --no-cache-dir
+RUN python3 -m pip install --no-cache-dir -r ${HOME}/datumaro/requirements.txt
 
 # Binary option is necessary to correctly apply the patch on Windows platform.
 # https://unix.stackexchange.com/questions/239364/how-to-fix-hunk-1-failed-at-1-different-line-endings-message

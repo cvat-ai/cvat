@@ -8,4 +8,3 @@ pycocotools>=2.0.0
 PyYAML>=5.1.1
 scikit-image>=0.15.0
 tensorboardX>=1.8
-tensorflow==1.13.1

@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2019 Intel Corporation
+* Copyright (C) 2019-2020 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -27,8 +27,9 @@ function build() {
         AttributeType,
         ObjectType,
         ObjectShape,
-        VisibleState,
         LogType,
+        HistoryActions,
+        colors,
     } = require('./enums');
 
     const {
@@ -497,8 +498,9 @@ function build() {
             AttributeType,
             ObjectType,
             ObjectShape,
-            VisibleState,
             LogType,
+            HistoryActions,
+            colors,
         },
         /**
             * Namespace is used for access to exceptions

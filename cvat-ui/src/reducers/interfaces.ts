@@ -36,27 +36,19 @@ export interface TasksState {
     current: Task[];
     activities: {
         dumps: {
-            byTask: {
-                // dumps in different formats at the same time
-                [tid: number]: string[]; // dumper names
-            };
+            // dumps in different formats at the same time
+            [tid: number]: string[]; // dumper names
         };
         exports: {
-            byTask: {
-                // exports in different formats at the same time
-                [tid: number]: string[]; // dumper names
-            };
+            // exports in different formats at the same time
+            [tid: number]: string[]; // dumper names
         };
         loads: {
-            byTask: {
-                // only one loading simultaneously
-                [tid: number]: string; // loader name
-            };
+            // only one loading simultaneously
+            [tid: number]: string; // loader name
         };
         deletes: {
-            byTask: {
-                [tid: number]: boolean; // deleted (deleting if in dictionary)
-            };
+            [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
         creates: {
             status: string;
@@ -83,7 +75,7 @@ export enum SupportedPlugins {
 export interface PluginsState {
     fetching: boolean;
     initialized: boolean;
-    plugins: {
+    list: {
         [name in SupportedPlugins]: boolean;
     };
 }
@@ -95,7 +87,7 @@ export interface UsersState {
 }
 
 export interface AboutState {
-    about: any;
+    server: any;
     fetching: boolean;
     initialized: boolean;
 }
@@ -205,7 +197,21 @@ export interface NotificationsState {
             saving: null | ErrorState;
             jobFetching: null | ErrorState;
             frameFetching: null | ErrorState;
+            changingLabelColor: null | ErrorState;
+            updating: null | ErrorState;
+            creating: null | ErrorState;
+            merging: null | ErrorState;
+            grouping: null | ErrorState;
+            splitting: null | ErrorState;
+            removing: null | ErrorState;
+            propagating: null | ErrorState;
+            collectingStatistics: null | ErrorState;
+            savingJob: null | ErrorState;
+            uploadAnnotations: null | ErrorState;
+            removeAnnotations: null | ErrorState;
         };
+
+        [index: string]: any;
     };
     messages: {
         tasks: {
@@ -214,6 +220,8 @@ export interface NotificationsState {
         models: {
             inferenceDone: string;
         };
+
+        [index: string]: any;
     };
 }
 
@@ -228,6 +236,12 @@ export enum ActiveControl {
     MERGE = 'merge',
     GROUP = 'group',
     SPLIT = 'split',
+    EDIT = 'edit',
+}
+
+export enum RectDrawingMethod {
+    BY_TWO_POINTS = 'by_two_points',
+    BY_FOUR_POINTS = 'by_four_points'
 }
 
 export enum ShapeType {
@@ -243,25 +257,83 @@ export enum ObjectType {
     TAG = 'tag',
 }
 
+export enum StatesOrdering {
+    ID_DESCENT = 'ID - descent',
+    ID_ASCENT = 'ID - ascent',
+    UPDATED = 'Updated time',
+}
+
+export enum ContextMenuType {
+    CANVAS = 'canvas',
+    CANVAS_SHAPE = 'canvas_shape',
+}
+
 export interface AnnotationState {
-    canvasInstance: Canvas;
-    canvasIsReady: boolean;
-    activeControl: ActiveControl;
-    jobInstance: any | null | undefined;
-    frameData: any | null;
-    frame: number;
-    playing: boolean;
-    annotations: any[];
-    saving: boolean;
-    savingStatuses: string[];
-    jobFetching: boolean;
-    dataFetching: boolean;
+    activities: {
+        loads: {
+            // only one loading simultaneously
+            [jid: number]: string; // loader name
+        };
+    };
+    canvas: {
+        contextMenu: {
+            visible: boolean;
+            top: number;
+            left: number;
+        };
+        instance: Canvas;
+        ready: boolean;
+        activeControl: ActiveControl;
+    };
+    job: {
+        labels: any[];
+        instance: any | null | undefined;
+        attributes: Record<number, any[]>;
+        fetching: boolean;
+        saving: boolean;
+    };
+    player: {
+        frame: {
+            number: number;
+            data: any | null;
+            fetching: boolean;
+        };
+        playing: boolean;
+    };
     drawing: {
         activeShapeType: ShapeType;
+        activeRectDrawingMethod?: RectDrawingMethod;
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;
     };
+    annotations: {
+        selectedStatesID: number[];
+        activatedStateID: number | null;
+        collapsed: Record<number, boolean>;
+        states: any[];
+        history: {
+            undo: string[];
+            redo: string[];
+        };
+        saving: {
+            uploading: boolean;
+            statuses: string[];
+        };
+    };
+    propagate: {
+        objectState: any | null;
+        frames: number;
+    };
+    statistics: {
+        collecting: boolean;
+        visible: boolean;
+        data: any;
+    };
+    colors: any[];
+    sidebarCollapsed: boolean;
+    appearanceCollapsed: boolean;
+    tabContentHeight: number;
 }
 
 export enum GridColor {
@@ -279,6 +351,12 @@ export enum FrameSpeed {
     Slow = 15,
     Slower = 12,
     Slowest = 1,
+}
+
+export enum ColorBy {
+    INSTANCE = 'Instance',
+    GROUP = 'Group',
+    LABEL = 'Label',
 }
 
 export interface PlayerSettingsState {
@@ -302,7 +380,15 @@ export interface WorkspaceSettingsState {
     showAllInterpolationTracks: boolean;
 }
 
+export interface ShapesSettingsState {
+    colorBy: ColorBy;
+    opacity: number;
+    selectedOpacity: number;
+    blackBorders: boolean;
+}
+
 export interface SettingsState {
+    shapes: ShapesSettingsState;
     workspace: WorkspaceSettingsState;
     player: PlayerSettingsState;
 }

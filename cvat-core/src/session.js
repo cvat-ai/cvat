@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2019 Intel Corporation
+* Copyright (C) 2019-2020 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -141,12 +141,12 @@
             }),
             actions: Object.freeze({
                 value: {
-                    async undo(count) {
+                    async undo(count = 1) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.actions.undo, count);
                         return result;
                     },
-                    async redo(count) {
+                    async redo(count = 1) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.actions.redo, count);
                         return result;
@@ -154,6 +154,11 @@
                     async clear() {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.actions.clear);
+                        return result;
+                    },
+                    async get() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.actions.get);
                         return result;
                     },
                 },
@@ -454,28 +459,48 @@
             */
 
             /**
-                * Is a dictionary of pairs "id:action" where "id" is an identifier of an object
-                * which has been affected by undo/redo and "action" is what exactly has been
-                * done with the object. Action can be: "created", "deleted", "updated".
-                * Size of an output array equal the param "count".
-                * @typedef {Object} HistoryAction
+                * @typedef {Object} HistoryActions
+                * @property {string[]} [undo] - array of possible actions to undo
+                * @property {string[]} [redo] - array of possible actions to redo
                 * @global
             */
             /**
-                * Undo actions
+                * Make undo
                 * @method undo
                 * @memberof Session.actions
-                * @returns {HistoryAction}
+                * @param {number} [count=1] number of actions to undo
+                * @returns {number[]} Array of affected objects
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
+            */
+            /**
+                * Make redo
+                * @method redo
+                * @memberof Session.actions
+                * @param {number} [count=1] number of actions to redo
+                * @returns {number[]} Array of affected objects
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
+            */
+            /**
+                * Remove all actions from history
+                * @method clear
+                * @memberof Session.actions
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @instance
                 * @async
             */
             /**
-                * Redo actions
-                * @method redo
+                * Get actions
+                * @method get
                 * @memberof Session.actions
-                * @returns {HistoryAction}
+                * @returns {HistoryActions}
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
                 * @async
             */
@@ -651,6 +676,13 @@
                 statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
                 hasUnsavedChanges: Object.getPrototypeOf(this)
                     .annotations.hasUnsavedChanges.bind(this),
+            };
+
+            this.actions = {
+                undo: Object.getPrototypeOf(this).actions.undo.bind(this),
+                redo: Object.getPrototypeOf(this).actions.redo.bind(this),
+                clear: Object.getPrototypeOf(this).actions.clear.bind(this),
+                get: Object.getPrototypeOf(this).actions.get.bind(this),
             };
 
             this.frames = {
@@ -1155,6 +1187,13 @@
                     .annotations.exportDataset.bind(this),
             };
 
+            this.actions = {
+                undo: Object.getPrototypeOf(this).actions.undo.bind(this),
+                redo: Object.getPrototypeOf(this).actions.redo.bind(this),
+                clear: Object.getPrototypeOf(this).actions.clear.bind(this),
+                get: Object.getPrototypeOf(this).actions.get.bind(this),
+            };
+
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
@@ -1217,6 +1256,10 @@
         uploadAnnotations,
         dumpAnnotations,
         exportDataset,
+        undoActions,
+        redoActions,
+        clearActions,
+        getActions,
     } = require('./annotations');
 
     buildDublicatedAPI(Job.prototype);
@@ -1325,6 +1368,31 @@
 
     Job.prototype.annotations.dump.implementation = async function (name, dumper) {
         const result = await dumpAnnotations(this, name, dumper);
+        return result;
+    };
+
+    Job.prototype.annotations.exportDataset.implementation = async function (format) {
+        const result = await exportDataset(this.task, format);
+        return result;
+    };
+
+    Job.prototype.actions.undo.implementation = function (count) {
+        const result = undoActions(this, count);
+        return result;
+    };
+
+    Job.prototype.actions.redo.implementation = function (count) {
+        const result = redoActions(this, count);
+        return result;
+    };
+
+    Job.prototype.actions.clear.implementation = function () {
+        const result = clearActions(this);
+        return result;
+    };
+
+    Job.prototype.actions.get.implementation = function () {
+        const result = getActions(this);
         return result;
     };
 
@@ -1482,6 +1550,26 @@
 
     Task.prototype.annotations.exportDataset.implementation = async function (format) {
         const result = await exportDataset(this, format);
+        return result;
+    };
+
+    Task.prototype.actions.undo.implementation = function (count) {
+        const result = undoActions(this, count);
+        return result;
+    };
+
+    Task.prototype.actions.redo.implementation = function (count) {
+        const result = redoActions(this, count);
+        return result;
+    };
+
+    Task.prototype.actions.clear.implementation = function () {
+        const result = clearActions(this);
+        return result;
+    };
+
+    Task.prototype.actions.get.implementation = function () {
+        const result = getActions(this);
         return result;
     };
 })();

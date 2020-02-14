@@ -169,7 +169,7 @@ class ShapeModel extends Listener {
     _setupKeyFrames() {
         for (let frame in this._attributes.mutable) {
             if (!(frame in this._positions)) {
-                const position = this.interpolatePosition(+frame);
+                let position = this._interpolatePosition(+frame);
                 this.updatePosition(+frame, position, true);
             }
         }
@@ -198,7 +198,8 @@ class ShapeModel extends Listener {
         }
 
         if (visibleFrame != null) {
-            if (this._type === 'interpolation_box') {
+            if (this._type === 'interpolation_box'
+                || this._type === 'interpolation_points') {
                 counter += window.cvat.player.frames.stop - visibleFrame + 1;
             }
             else {
@@ -299,12 +300,12 @@ class ShapeModel extends Listener {
     interpolate(frame) {
         return {
             attributes: this._interpolateAttributes(frame),
-            position: this.interpolatePosition(frame),
+            position: this._interpolatePosition(frame)
         };
     }
 
     switchOccluded(frame) {
-        let position = this.interpolatePosition(frame);
+        let position = this._interpolatePosition(frame);
         position.occluded = !position.occluded;
 
         // Undo/redo code
@@ -372,7 +373,7 @@ class ShapeModel extends Listener {
         }, frame);
         // End of undo/redo code
 
-        let position = this.interpolatePosition(frame);
+        let position = this._interpolatePosition(frame);
         position.outside = !position.outside;
         this.updatePosition(frame, position, true);
 
@@ -417,7 +418,7 @@ class ShapeModel extends Listener {
             }
             delete (this._positions[frame]);
         } else {
-            let position = this.interpolatePosition(frame);
+            let position = this._interpolatePosition(frame);
             this.updatePosition(frame, position, true);
 
             if (frame < this._frame) {
@@ -486,7 +487,7 @@ class ShapeModel extends Listener {
     set z_order(value) {
         if (!this._locked) {
             let frame = window.cvat.player.frames.current;
-            let position = this.interpolatePosition(frame);
+            let position = this._interpolatePosition(frame);
             position.z_order = value;
             this.updatePosition(frame, position, true);
             this.notify('z_order');
@@ -622,7 +623,7 @@ class BoxModel extends ShapeModel {
         this._setupKeyFrames();
     }
 
-    interpolatePosition(frame) {
+    _interpolatePosition(frame) {
         if (this._type.startsWith('annotation')) {
             return Object.assign({},
                 this._positions[this._frame],
@@ -727,7 +728,7 @@ class BoxModel extends ShapeModel {
     }
 
     contain(mousePos, frame) {
-        let pos = this.interpolatePosition(frame);
+        let pos = this._interpolatePosition(frame);
         if (pos.outside) return false;
         let x = mousePos.x;
         let y = mousePos.y;
@@ -735,7 +736,7 @@ class BoxModel extends ShapeModel {
     }
 
     distance(mousePos, frame) {
-        let pos = this.interpolatePosition(frame);
+        let pos = this._interpolatePosition(frame);
         if (pos.outside) return Number.MAX_SAFE_INTEGER;
         let points = [{x: pos.xtl, y: pos.ytl,}, {x: pos.xbr, y: pos.ytl,}, {x: pos.xbr, y: pos.ybr,}, {x: pos.xtl, y: pos.ybr,}];
         let minDistance = Number.MAX_SAFE_INTEGER;
@@ -886,7 +887,7 @@ class PolyShapeModel extends ShapeModel {
         this._setupKeyFrames();
     }
 
-    interpolatePosition(frame) {
+    _interpolatePosition(frame) {
         if (this._type.startsWith('annotation')) {
             return Object.assign({},
                 this._positions[this._frame],
@@ -1052,7 +1053,7 @@ class PolyShapeModel extends ShapeModel {
 
     removePoint(idx) {
         let frame = window.cvat.player.frames.current;
-        let position = this.interpolatePosition(frame);
+        let position = this._interpolatePosition(frame);
         let points = PolyShapeModel.convertStringToNumberArray(position.points);
         if (points.length > this._minPoints) {
             points.splice(idx, 1);
@@ -1156,7 +1157,7 @@ class PointsModel extends PolyShapeModel {
         this._minPoints = 1;
     }
 
-    interpolatePosition(frame) {
+    _interpolatePosition(frame) {
         if (this._type.startsWith('annotation')) {
             return Object.assign({}, this._positions[this._frame], {
                 outside: this._frame !== frame,
@@ -1211,7 +1212,7 @@ class PointsModel extends PolyShapeModel {
     }
 
     distance(mousePos, frame) {
-        let pos = this.interpolatePosition(frame);
+        let pos = this._interpolatePosition(frame);
         if (pos.outside) return Number.MAX_SAFE_INTEGER;
         let points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let minDistance = Number.MAX_SAFE_INTEGER;
@@ -1241,7 +1242,7 @@ class PolylineModel extends PolyShapeModel {
     }
 
     distance(mousePos, frame) {
-        let pos = this.interpolatePosition(frame);
+        let pos = this._interpolatePosition(frame);
         if (pos.outside) return Number.MAX_SAFE_INTEGER;
         let points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let minDistance = Number.MAX_SAFE_INTEGER;
@@ -1278,7 +1279,7 @@ class PolygonModel extends PolyShapeModel {
     }
 
     contain(mousePos, frame) {
-        let pos = this.interpolatePosition(frame);
+        let pos = this._interpolatePosition(frame);
         if (pos.outside) return false;
         let points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let wn = 0;
@@ -1310,7 +1311,7 @@ class PolygonModel extends PolyShapeModel {
     }
 
     distance(mousePos, frame) {
-        let pos = this.interpolatePosition(frame);
+        let pos = this._interpolatePosition(frame);
         if (pos.outside) return Number.MAX_SAFE_INTEGER;
         let points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let minDistance = Number.MAX_SAFE_INTEGER;
@@ -3327,21 +3328,25 @@ class PointsView extends PolyShapeView {
 
 function buildShapeModel(data, type, clientID, color) {
     switch (type) {
-        case 'interpolation_box':
-        case 'annotation_box':
-            return new BoxModel(data, type, clientID, color);
-        case 'interpolation_points':
-        case 'annotation_points':
-            return new PointsModel(data, type, clientID, color);
-        case 'interpolation_polyline':
-        case 'annotation_polyline':
-            return new PolylineModel(data, type, clientID, color);
-        case 'interpolation_polygon':
-        case 'annotation_polygon':
-            return new PolygonModel(data, type, clientID, color);
-        case 'interpolation_cuboid':
-        case 'annotation_cuboid':
-            return new CuboidModel(data, type, clientID, color);
+    case 'interpolation_box':
+    case 'annotation_box':
+    case 'interpolation_box_by_4_points':
+    case 'annotation_box_by_4_points':
+        // convert type into 'box' if 'box_by_4_points'
+        type = type.replace('_by_4_points', '');
+        return new BoxModel(data, type, clientID, color);
+    case 'interpolation_points':
+    case 'annotation_points':
+        return new PointsModel(data, type, clientID, color);
+    case 'interpolation_polyline':
+    case 'annotation_polyline':
+        return new PolylineModel(data, type, clientID, color);
+    case 'interpolation_polygon':
+    case 'annotation_polygon':
+        return new PolygonModel(data, type, clientID, color);
+    case 'interpolation_cuboid':
+    case 'annotation_cuboid':
+        return new CuboidModel(data, type, clientID, color);
     }
     throw Error('Unreacheable code was reached.');
 }

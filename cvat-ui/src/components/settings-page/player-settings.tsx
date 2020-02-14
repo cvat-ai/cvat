@@ -14,8 +14,8 @@ import Text from 'antd/lib/typography/Text';
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 
 import {
-    PlaycontrolBackJumpIcon,
-    PlaycontrolForwardJumpIcon,
+    BackJumpIcon,
+    ForwardJumpIcon,
 } from 'icons';
 
 import {
@@ -78,9 +78,9 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 <Col offset={1}>
                     <Text type='secondary'>
                         Number of frames skipped when selecting
-                        <Icon component={PlaycontrolBackJumpIcon} />
+                        <Icon component={BackJumpIcon} />
                         or
-                        <Icon component={PlaycontrolForwardJumpIcon} />
+                        <Icon component={ForwardJumpIcon} />
                     </Text>
                 </Col>
             </Row>

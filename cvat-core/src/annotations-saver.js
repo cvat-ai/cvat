@@ -167,10 +167,6 @@
                 for (let i = 0; i < indexes[type].length; i++) {
                     const clientID = indexes[type][i];
                     this.collection.objects[clientID].serverID = saved[type][i].id;
-                    if (type === 'tracks') {
-                        // We have to reset cache because of old value of serverID was saved there
-                        this.collection.objects[clientID].resetCache();
-                    }
                 }
             }
         }

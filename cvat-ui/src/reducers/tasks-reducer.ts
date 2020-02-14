@@ -21,18 +21,10 @@ const defaultState: TasksState = {
         mode: null,
     },
     activities: {
-        dumps: {
-            byTask: {},
-        },
-        exports: {
-            byTask: {},
-        },
-        loads: {
-            byTask: {},
-        },
-        deletes: {
-            byTask: {},
-        },
+        dumps: {},
+        exports: {},
+        loads: {},
+        deletes: {},
         creates: {
             status: '',
         },
@@ -46,9 +38,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 ...state,
                 activities: {
                     ...state.activities,
-                    deletes: {
-                        byTask: {},
-                    },
+                    deletes: {},
                 },
                 initialized: false,
                 fetching: true,
@@ -82,243 +72,156 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
         case TasksActionTypes.DUMP_ANNOTATIONS: {
             const { task } = action.payload;
             const { dumper } = action.payload;
+            const { dumps } = state.activities;
 
-            const tasksDumpingActivities = {
-                ...state.activities.dumps,
-            };
-
-            const theTaskDumpingActivities = [...tasksDumpingActivities.byTask[task.id] || []];
-            if (!theTaskDumpingActivities.includes(dumper.name)) {
-                theTaskDumpingActivities.push(dumper.name);
-            }
-            tasksDumpingActivities.byTask[task.id] = theTaskDumpingActivities;
+            dumps[task.id] = task.id in dumps && !dumps[task.id].includes(dumper.name)
+                ? [...dumps[task.id], dumper.name] : dumps[task.id] || [dumper.name];
 
             return {
                 ...state,
                 activities: {
                     ...state.activities,
-                    dumps: tasksDumpingActivities,
+                    dumps: {
+                        ...dumps,
+                    },
                 },
             };
         }
+        case TasksActionTypes.DUMP_ANNOTATIONS_FAILED:
         case TasksActionTypes.DUMP_ANNOTATIONS_SUCCESS: {
             const { task } = action.payload;
             const { dumper } = action.payload;
+            const { dumps } = state.activities;
 
-            const tasksDumpingActivities = {
-                ...state.activities.dumps,
-            };
-
-            const theTaskDumpingActivities = tasksDumpingActivities.byTask[task.id]
+            dumps[task.id] = dumps[task.id]
                 .filter((dumperName: string): boolean => dumperName !== dumper.name);
-
-            tasksDumpingActivities.byTask[task.id] = theTaskDumpingActivities;
 
             return {
                 ...state,
                 activities: {
                     ...state.activities,
-                    dumps: tasksDumpingActivities,
-                },
-            };
-        }
-        case TasksActionTypes.DUMP_ANNOTATIONS_FAILED: {
-            const { task } = action.payload;
-            const { dumper } = action.payload;
-
-            const tasksDumpingActivities = {
-                ...state.activities.dumps,
-            };
-
-            const theTaskDumpingActivities = tasksDumpingActivities.byTask[task.id]
-                .filter((dumperName: string): boolean => dumperName !== dumper.name);
-
-            tasksDumpingActivities.byTask[task.id] = theTaskDumpingActivities;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    dumps: tasksDumpingActivities,
+                    dumps: {
+                        ...dumps,
+                    },
                 },
             };
         }
         case TasksActionTypes.EXPORT_DATASET: {
             const { task } = action.payload;
             const { exporter } = action.payload;
+            const { exports: activeExports } = state.activities;
 
-            const tasksExportingActivities = {
-                ...state.activities.exports,
-            };
-
-            const theTaskDumpingActivities = [...tasksExportingActivities.byTask[task.id] || []];
-            if (!theTaskDumpingActivities.includes(exporter.name)) {
-                theTaskDumpingActivities.push(exporter.name);
-            }
-            tasksExportingActivities.byTask[task.id] = theTaskDumpingActivities;
+            activeExports[task.id] = task.id in activeExports && !activeExports[task.id]
+                .includes(exporter.name) ? [...activeExports[task.id], exporter.name]
+                : activeExports[task.id] || [exporter.name];
 
             return {
                 ...state,
                 activities: {
                     ...state.activities,
-                    exports: tasksExportingActivities,
+                    exports: {
+                        ...activeExports,
+                    },
                 },
             };
         }
+        case TasksActionTypes.EXPORT_DATASET_FAILED:
         case TasksActionTypes.EXPORT_DATASET_SUCCESS: {
             const { task } = action.payload;
             const { exporter } = action.payload;
+            const { exports: activeExports } = state.activities;
 
-            const tasksExportingActivities = {
-                ...state.activities.exports,
-            };
-
-            const theTaskExportingActivities = tasksExportingActivities.byTask[task.id]
+            activeExports[task.id] = activeExports[task.id]
                 .filter((exporterName: string): boolean => exporterName !== exporter.name);
-
-            tasksExportingActivities.byTask[task.id] = theTaskExportingActivities;
 
             return {
                 ...state,
                 activities: {
                     ...state.activities,
-                    exports: tasksExportingActivities,
-                },
-            };
-        }
-        case TasksActionTypes.EXPORT_DATASET_FAILED: {
-            const { task } = action.payload;
-            const { exporter } = action.payload;
-
-            const tasksExportingActivities = {
-                ...state.activities.exports,
-            };
-
-            const theTaskExportingActivities = tasksExportingActivities.byTask[task.id]
-                .filter((exporterName: string): boolean => exporterName !== exporter.name);
-
-            tasksExportingActivities.byTask[task.id] = theTaskExportingActivities;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    exports: tasksExportingActivities,
+                    exports: {
+                        ...activeExports,
+                    },
                 },
             };
         }
         case TasksActionTypes.LOAD_ANNOTATIONS: {
             const { task } = action.payload;
             const { loader } = action.payload;
+            const { loads } = state.activities;
 
-            const tasksLoadingActivity = {
-                ...state.activities.loads,
-            };
-
-            if (task.id in tasksLoadingActivity.byTask) {
-                throw Error('Load for this task has been already started');
-            }
-
-            tasksLoadingActivity.byTask[task.id] = loader.name;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    loads: tasksLoadingActivity,
-                },
-            };
-        }
-        case TasksActionTypes.LOAD_ANNOTATIONS_SUCCESS: {
-            const { task } = action.payload;
-
-            const tasksLoadingActivity = {
-                ...state.activities.loads,
-            };
-
-            delete tasksLoadingActivity.byTask[task.id];
+            loads[task.id] = task.id in loads ? loads[task.id] : loader.name;
 
             return {
                 ...state,
                 activities: {
                     ...state.activities,
                     loads: {
-                        ...tasksLoadingActivity,
+                        ...loads,
                     },
                 },
             };
         }
-        case TasksActionTypes.LOAD_ANNOTATIONS_FAILED: {
+        case TasksActionTypes.LOAD_ANNOTATIONS_FAILED:
+        case TasksActionTypes.LOAD_ANNOTATIONS_SUCCESS: {
             const { task } = action.payload;
+            const { loads } = state.activities;
 
-            const tasksLoadingActivity = {
-                ...state.activities.loads,
-            };
-
-            delete tasksLoadingActivity.byTask[task.id];
+            delete loads[task.id];
 
             return {
                 ...state,
                 activities: {
                     ...state.activities,
                     loads: {
-                        ...tasksLoadingActivity,
+                        ...loads,
                     },
                 },
             };
         }
         case TasksActionTypes.DELETE_TASK: {
             const { taskID } = action.payload;
+            const { deletes } = state.activities;
 
-            const deletesActivities = state.activities.deletes;
-
-            const activities = { ...state.activities };
-            activities.deletes = { ...activities.deletes };
-
-            activities.deletes.byTask[taskID] = false;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    deletes: deletesActivities,
-                },
-            };
-        }
-        case TasksActionTypes.DELETE_TASK_SUCCESS: {
-            const { taskID } = action.payload;
-
-            const deletesActivities = state.activities.deletes;
-
-            const activities = { ...state.activities };
-            activities.deletes = { ...activities.deletes };
-
-            activities.deletes.byTask[taskID] = true;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    deletes: deletesActivities,
-                },
-            };
-        }
-        case TasksActionTypes.DELETE_TASK_FAILED: {
-            const { taskID } = action.payload;
-
-            const deletesActivities = state.activities.deletes;
-
-            const activities = { ...state.activities };
-            activities.deletes = { ...activities.deletes };
-
-            delete activities.deletes.byTask[taskID];
+            deletes[taskID] = false;
 
             return {
                 ...state,
                 activities: {
                     ...state.activities,
                     deletes: {
-                        ...deletesActivities,
+                        ...deletes,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.DELETE_TASK_SUCCESS: {
+            const { taskID } = action.payload;
+            const { deletes } = state.activities;
+
+            deletes[taskID] = true;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: {
+                        ...deletes,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.DELETE_TASK_FAILED: {
+            const { taskID } = action.payload;
+            const { deletes } = state.activities;
+
+            delete deletes[taskID];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: {
+                        ...deletes,
                     },
                 },
             };

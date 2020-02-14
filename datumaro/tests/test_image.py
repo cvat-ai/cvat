@@ -23,7 +23,7 @@ class ImageTest(TestCase):
                     src_image = np.random.randint(0, 255 + 1, (2, 4))
                 else:
                     src_image = np.random.randint(0, 255 + 1, (2, 4, c))
-                path = osp.join(test_dir.path, 'img.png') # lossless
+                path = osp.join(test_dir, 'img.png') # lossless
 
                 image_module._IMAGE_BACKEND = save_backend
                 image_module.save_image(path, src_image)
@@ -31,7 +31,7 @@ class ImageTest(TestCase):
                 image_module._IMAGE_BACKEND = load_backend
                 dst_image = image_module.load_image(path)
 
-                self.assertTrue(np.all(src_image == dst_image),
+                self.assertTrue(np.array_equal(src_image, dst_image),
                     'save: %s, load: %s' % (save_backend, load_backend))
 
     def test_encode_and_decode_backends(self):
@@ -48,5 +48,5 @@ class ImageTest(TestCase):
             image_module._IMAGE_BACKEND = load_backend
             dst_image = image_module.decode_image(buffer)
 
-            self.assertTrue(np.all(src_image == dst_image),
+            self.assertTrue(np.array_equal(src_image, dst_image),
                 'save: %s, load: %s' % (save_backend, load_backend))

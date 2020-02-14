@@ -22,18 +22,18 @@ interface Props {
     activeControl: ActiveControl;
 }
 
-export default function MoveControl(props: Props): JSX.Element {
+function MoveControl(props: Props): JSX.Element {
     const {
         canvasInstance,
         activeControl,
     } = props;
 
     return (
-        <Tooltip overlay='Move the image' placement='right'>
+        <Tooltip title='Move the image' placement='right'>
             <Icon
                 component={MoveIcon}
                 className={activeControl === ActiveControl.DRAG_CANVAS
-                    ? 'cvat-annotation-page-active-control' : ''
+                    ? 'cvat-active-canvas-control' : ''
                 }
                 onClick={(): void => {
                     if (activeControl === ActiveControl.DRAG_CANVAS) {
@@ -47,3 +47,5 @@ export default function MoveControl(props: Props): JSX.Element {
         </Tooltip>
     );
 }
+
+export default React.memo(MoveControl);

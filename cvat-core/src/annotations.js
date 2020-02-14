@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2019 Intel Corporation
+* Copyright (C) 2019-2020 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -11,6 +11,7 @@
     const serverProxy = require('./server-proxy');
     const Collection = require('./annotations-collection');
     const AnnotationsSaver = require('./annotations-saver');
+    const AnnotationsHistory = require('./annotations-history');
     const { checkObjectType } = require('./common');
     const { Task } = require('./session');
     const {
@@ -56,27 +57,35 @@
                 frameMeta[i] = await session.frames.get(i);
             }
 
+            const history = new AnnotationsHistory();
             const collection = new Collection({
                 labels: session.labels || session.task.labels,
+                history,
                 startFrame,
                 stopFrame,
                 frameMeta,
-            }).import(rawAnnotations);
+            });
+            collection.import(rawAnnotations);
 
             const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
 
             cache.set(session, {
                 collection,
                 saver,
-
+                history,
             });
         }
     }
 
     async function getAnnotations(session, frame, filter) {
-        await getAnnotationsFromServer(session);
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).collection.get(frame, filter);
+        }
+
+        await getAnnotationsFromServer(session);
         return cache.get(session).collection.get(frame, filter);
     }
 
@@ -244,6 +253,58 @@
         return result;
     }
 
+    function undoActions(session, count) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).history.undo(count);
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
+    }
+
+    function redoActions(session, count) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).history.redo(count);
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
+    }
+
+    function clearActions(session) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).history.clear();
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
+    }
+
+    function getActions(session) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).history.get();
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
+    }
+
     module.exports = {
         getAnnotations,
         putAnnotations,
@@ -258,5 +319,9 @@
         uploadAnnotations,
         dumpAnnotations,
         exportDataset,
+        undoActions,
+        redoActions,
+        clearActions,
+        getActions,
     };
 })();
