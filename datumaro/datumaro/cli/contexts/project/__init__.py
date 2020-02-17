@@ -649,7 +649,7 @@ def info_command(args):
         print_extractor_info(subset, indent="      ")
 
     print("Models:")
-    for model_name, model in env.config.models.items():
+    for model_name, model in config.models.items():
         print("  model '%s':" % model_name)
         print("    type:", model.launcher)
 
