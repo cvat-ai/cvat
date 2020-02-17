@@ -186,3 +186,21 @@ class TransformsTest(TestCase):
         actual = transforms.MergeInstanceSegments(SrcExtractor(),
             include_polygons=True)
         compare_datasets(self, DstExtractor(), actual)
+
+    def test_id_from_image(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image='path.jpg'),
+                    DatasetItem(id=2),
+                ])
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='path', image='path.jpg'),
+                    DatasetItem(id=2),
+                ])
+
+        actual = transforms.IdFromImageName(SrcExtractor())
+        compare_datasets(self, DstExtractor(), actual)
