@@ -157,13 +157,8 @@ class _SubsetWriter:
         self._writer.open_root()
         self._write_meta()
 
-        for item in self._extractor:
-            if self._context._save_images:
-                if item.has_image:
-                    self._save_image(item)
-                else:
-                    log.debug("Item '%s' has no image info" % item.id)
-            self._write_item(item)
+        for index, item in enumerate(self._extractor):
+            self._write_item(item, index)
 
         self._writer.close_root()
 
@@ -171,27 +166,35 @@ class _SubsetWriter:
         image = item.image.data
         if image is None:
             log.warning("Item '%s' has no image" % item.id)
-            return
+            return ''
 
-        file_name = item.name
-        if not file_name:
-            file_name = str(item.id)
-        file_name += CvatPath.IMAGE_EXT
-        image_path = osp.join(self._context._images_dir, file_name)
+        filename = item.image.filename
+        if filename:
+            filename = osp.splitext(filename)[0]
+        else:
+            filename = item.id
+        filename += CvatPath.IMAGE_EXT
+        image_path = osp.join(self._context._images_dir, filename)
         save_image(image_path, image)
+        return filename
 
-    def _write_item(self, item):
-        image_name = item.name
-        if not image_name:
-            image_name = str(item.id)
+    def _write_item(self, item, index):
         image_info = OrderedDict([
-            ("id", str(item.id)),
-            ("name", image_name),
+            ("id", str(_cast(item.id, int, index))),
         ])
         if item.has_image:
-            h, w = item.image.size
-            image_info["width"] = str(w)
-            image_info["height"] = str(h)
+            size = item.image.size
+            if size:
+                h, w = size
+                image_info["width"] = str(w)
+                image_info["height"] = str(h)
+
+            filename = item.image.filename
+            if self._context._save_images:
+                filename = self._save_image(item)
+            image_info["name"] = filename
+        else:
+            log.debug("Item '%s' has no image info" % item.id)
         self._writer.open_image(image_info)
 
         for ann in item.annotations:

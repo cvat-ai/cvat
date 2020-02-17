@@ -159,7 +159,7 @@ class CvatConverterTest(TestCase):
         label_categories.items[2].attributes.update(['a1', 'a2'])
         label_categories.attributes.update(['z_order', 'occluded'])
 
-        class SrcTestExtractor(Extractor):
+        class SrcExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
@@ -193,13 +193,14 @@ class CvatConverterTest(TestCase):
                         ]
                     ),
 
-                    DatasetItem(id=3, subset='s3', image=Image(size=(2, 4))),
+                    DatasetItem(id=3, subset='s3', image=Image(
+                        path='3.jpg', size=(2, 4))),
                 ])
 
             def categories(self):
                 return { AnnotationType.label: label_categories }
 
-        class DstTestExtractor(Extractor):
+        class DstExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
@@ -235,13 +236,14 @@ class CvatConverterTest(TestCase):
                         ]
                     ),
 
-                    DatasetItem(id=3, subset='s3', image=Image(size=(2, 4))),
+                    DatasetItem(id=3, subset='s3', image=Image(
+                        path='3.jpg', size=(2, 4))),
                 ])
 
             def categories(self):
                 return { AnnotationType.label: label_categories }
 
         with TestDir() as test_dir:
-            self._test_save_and_load(SrcTestExtractor(),
+            self._test_save_and_load(SrcExtractor(),
                 CvatConverter(save_images=True), test_dir,
-                target_dataset=DstTestExtractor())
+                target_dataset=DstExtractor())
