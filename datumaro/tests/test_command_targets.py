@@ -1,4 +1,3 @@
-import cv2
 import numpy as np
 import os.path as osp
 
@@ -7,21 +6,21 @@ from unittest import TestCase
 from datumaro.components.project import Project
 from datumaro.util.command_targets import ProjectTarget, \
     ImageTarget, SourceTarget
-from datumaro.util.test_utils import current_function_name, TestDir
+from datumaro.util.image import save_image
+from datumaro.util.test_utils import TestDir
 
 
 class CommandTargetsTest(TestCase):
     def test_image_false_when_no_file(self):
-        path = '%s.jpg' % current_function_name()
         target = ImageTarget()
 
-        status = target.test(path)
+        status = target.test('somepath.jpg')
 
         self.assertFalse(status)
 
     def test_image_false_when_false(self):
         with TestDir() as test_dir:
-            path = osp.join(test_dir.path, 'test.jpg')
+            path = osp.join(test_dir, 'test.jpg')
             with open(path, 'w+') as f:
                 f.write('qwerty123')
 
@@ -33,9 +32,8 @@ class CommandTargetsTest(TestCase):
 
     def test_image_true_when_true(self):
         with TestDir() as test_dir:
-            path = osp.join(test_dir.path, 'test.jpg')
-            image = np.random.random_sample([10, 10, 3])
-            cv2.imwrite(path, image)
+            path = osp.join(test_dir, 'test.jpg')
+            save_image(path, np.ones([10, 7, 3]))
 
             target = ImageTarget()
 
@@ -44,10 +42,9 @@ class CommandTargetsTest(TestCase):
             self.assertTrue(status)
 
     def test_project_false_when_no_file(self):
-        path = '%s.jpg' % current_function_name()
         target = ProjectTarget()
 
-        status = target.test(path)
+        status = target.test('somepath.jpg')
 
         self.assertFalse(status)
 
@@ -60,7 +57,7 @@ class CommandTargetsTest(TestCase):
 
     def test_project_true_when_project_file(self):
         with TestDir() as test_dir:
-            path = osp.join(test_dir.path, 'test.jpg')
+            path = osp.join(test_dir, 'test.jpg')
             Project().save(path)
 
             target = ProjectTarget()
@@ -91,9 +88,9 @@ class CommandTargetsTest(TestCase):
 
         self.assertFalse(status)
 
-    def test_project_true_when_not_project_file(self):
+    def test_project_false_when_not_project_file(self):
         with TestDir() as test_dir:
-            path = osp.join(test_dir.path, 'test.jpg')
+            path = osp.join(test_dir, 'test.jpg')
             with open(path, 'w+') as f:
                 f.write('wqererw')
 

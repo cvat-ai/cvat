@@ -36,27 +36,19 @@ export interface TasksState {
     current: Task[];
     activities: {
         dumps: {
-            byTask: {
-                // dumps in different formats at the same time
-                [tid: number]: string[]; // dumper names
-            };
+            // dumps in different formats at the same time
+            [tid: number]: string[]; // dumper names
         };
         exports: {
-            byTask: {
-                // exports in different formats at the same time
-                [tid: number]: string[]; // dumper names
-            };
+            // exports in different formats at the same time
+            [tid: number]: string[]; // dumper names
         };
         loads: {
-            byTask: {
-                // only one loading simultaneously
-                [tid: number]: string; // loader name
-            };
+            // only one loading simultaneously
+            [tid: number]: string; // loader name
         };
         deletes: {
-            byTask: {
-                [tid: number]: boolean; // deleted (deleting if in dictionary)
-            };
+            [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
         creates: {
             status: string;
@@ -215,6 +207,8 @@ export interface NotificationsState {
             propagating: null | ErrorState;
             collectingStatistics: null | ErrorState;
             savingJob: null | ErrorState;
+            uploadAnnotations: null | ErrorState;
+            removeAnnotations: null | ErrorState;
         };
 
         [index: string]: any;
@@ -245,6 +239,11 @@ export enum ActiveControl {
     EDIT = 'edit',
 }
 
+export enum RectDrawingMethod {
+    BY_TWO_POINTS = 'by_two_points',
+    BY_FOUR_POINTS = 'by_four_points'
+}
+
 export enum ShapeType {
     RECTANGLE = 'rectangle',
     POLYGON = 'polygon',
@@ -264,8 +263,24 @@ export enum StatesOrdering {
     UPDATED = 'Updated time',
 }
 
+export enum ContextMenuType {
+    CANVAS = 'canvas',
+    CANVAS_SHAPE = 'canvas_shape',
+}
+
 export interface AnnotationState {
+    activities: {
+        loads: {
+            // only one loading simultaneously
+            [jid: number]: string; // loader name
+        };
+    };
     canvas: {
+        contextMenu: {
+            visible: boolean;
+            top: number;
+            left: number;
+        };
         instance: Canvas;
         ready: boolean;
         activeControl: ActiveControl;
@@ -287,6 +302,7 @@ export interface AnnotationState {
     };
     drawing: {
         activeShapeType: ShapeType;
+        activeRectDrawingMethod?: RectDrawingMethod;
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;
@@ -296,6 +312,10 @@ export interface AnnotationState {
         activatedStateID: number | null;
         collapsed: Record<number, boolean>;
         states: any[];
+        history: {
+            undo: string[];
+            redo: string[];
+        };
         saving: {
             uploading: boolean;
             statuses: string[];

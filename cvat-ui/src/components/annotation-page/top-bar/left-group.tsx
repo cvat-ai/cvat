@@ -6,7 +6,10 @@ import {
     Modal,
     Button,
     Timeline,
+    Dropdown,
 } from 'antd';
+
+import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotation-menu';
 
 import {
     MainMenuIcon,
@@ -18,22 +21,32 @@ import {
 interface Props {
     saving: boolean;
     savingStatuses: string[];
+    undoAction?: string;
+    redoAction?: string;
     onSaveAnnotation(): void;
+    onUndoClick(): void;
+    onRedoClick(): void;
 }
 
 function LeftGroup(props: Props): JSX.Element {
     const {
         saving,
         savingStatuses,
+        undoAction,
+        redoAction,
         onSaveAnnotation,
+        onUndoClick,
+        onRedoClick,
     } = props;
 
     return (
         <Col className='cvat-annotation-header-left-group'>
-            <Button type='link' className='cvat-annotation-header-button'>
-                <Icon component={MainMenuIcon} />
-                Menu
-            </Button>
+            <Dropdown overlay={<AnnotationMenuContainer />}>
+                <Button type='link' className='cvat-annotation-header-button'>
+                    <Icon component={MainMenuIcon} />
+                    Menu
+                </Button>
+            </Dropdown>
             <Button
                 onClick={saving ? undefined : onSaveAnnotation}
                 type='link'
@@ -61,11 +74,25 @@ function LeftGroup(props: Props): JSX.Element {
                     </Timeline>
                 </Modal>
             </Button>
-            <Button disabled type='link' className='cvat-annotation-header-button'>
+            <Button
+                title={undoAction}
+                disabled={!undoAction}
+                style={{ pointerEvents: undoAction ? 'initial' : 'none', opacity: undoAction ? 1 : 0.5 }}
+                type='link'
+                className='cvat-annotation-header-button'
+                onClick={onUndoClick}
+            >
                 <Icon component={UndoIcon} />
-                Undo
+                <span>Undo</span>
             </Button>
-            <Button disabled type='link' className='cvat-annotation-header-button'>
+            <Button
+                title={redoAction}
+                disabled={!redoAction}
+                style={{ pointerEvents: redoAction ? 'initial' : 'none', opacity: redoAction ? 1 : 0.5 }}
+                type='link'
+                className='cvat-annotation-header-button'
+                onClick={onRedoClick}
+            >
                 <Icon component={RedoIcon} />
                 Redo
             </Button>

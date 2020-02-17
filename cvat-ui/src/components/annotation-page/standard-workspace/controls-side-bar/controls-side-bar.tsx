@@ -86,7 +86,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 isDrawing={activeControl === ActiveControl.DRAW_POINTS}
             />
 
-            <Tooltip overlay='Setup a tag' placement='right'>
+            <Tooltip title='Setup a tag' placement='right'>
                 <Icon component={TagIcon} style={{ pointerEvents: 'none', opacity: 0.5 }} />
             </Tooltip>
 

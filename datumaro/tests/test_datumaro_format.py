@@ -4,11 +4,11 @@ from unittest import TestCase
 
 from datumaro.components.project import Project
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, LabelObject, MaskObject, PointsObject, PolygonObject,
-    PolyLineObject, BboxObject, CaptionObject,
+    AnnotationType, Label, Mask, Points, Polygon,
+    PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
-from datumaro.components.converters.datumaro import DatumaroConverter
+from datumaro.plugins.datumaro_format.converter import DatumaroConverter
 from datumaro.util.test_utils import TestDir, item_to_str
 from datumaro.util.mask_tools import generate_colormap
 
@@ -19,30 +19,30 @@ class DatumaroConverterTest(TestCase):
             return iter([
                 DatasetItem(id=100, subset='train', image=np.ones((10, 6, 3)),
                     annotations=[
-                        CaptionObject('hello', id=1),
-                        CaptionObject('world', id=2, group=5),
-                        LabelObject(2, id=3, attributes={
+                        Caption('hello', id=1),
+                        Caption('world', id=2, group=5),
+                        Label(2, id=3, attributes={
                             'x': 1,
                             'y': '2',
                         }),
-                        BboxObject(1, 2, 3, 4, label=4, id=4, attributes={
+                        Bbox(1, 2, 3, 4, label=4, id=4, attributes={
                             'score': 1.0,
                         }),
-                        BboxObject(5, 6, 7, 8, id=5, group=5),
-                        PointsObject([1, 2, 2, 0, 1, 1], label=0, id=5),
-                        MaskObject(label=3, id=5, image=np.ones((2, 3))),
+                        Bbox(5, 6, 7, 8, id=5, group=5),
+                        Points([1, 2, 2, 0, 1, 1], label=0, id=5),
+                        Mask(label=3, id=5, image=np.ones((2, 3))),
                     ]),
                 DatasetItem(id=21, subset='train',
                     annotations=[
-                        CaptionObject('test'),
-                        LabelObject(2),
-                        BboxObject(1, 2, 3, 4, 5, id=42, group=42)
+                        Caption('test'),
+                        Label(2),
+                        Bbox(1, 2, 3, 4, 5, id=42, group=42)
                     ]),
 
                 DatasetItem(id=2, subset='val',
                     annotations=[
-                        PolyLineObject([1, 2, 3, 4, 5, 6, 7, 8], id=11),
-                        PolygonObject([1, 2, 3, 4, 5, 6, 7, 8], id=12),
+                        PolyLine([1, 2, 3, 4, 5, 6, 7, 8], id=11),
+                        Polygon([1, 2, 3, 4, 5, 6, 7, 8], id=12),
                     ]),
 
                 DatasetItem(id=42, subset='test'),
@@ -74,9 +74,9 @@ class DatumaroConverterTest(TestCase):
             source_dataset = self.TestExtractor()
 
             converter = DatumaroConverter(save_images=True)
-            converter(source_dataset, test_dir.path)
+            converter(source_dataset, test_dir)
 
-            project = Project.import_from(test_dir.path, 'datumaro')
+            project = Project.import_from(test_dir, 'datumaro')
             parsed_dataset = project.make_dataset()
 
             self.assertListEqual(

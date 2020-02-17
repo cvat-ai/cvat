@@ -21,6 +21,7 @@
     "@typescript-eslint/eslint-plugin": "^2.19.2",
     "@typescript-eslint/experimental-utils": "^2.19.2",
     "@typescript-eslint/parser": "^2.19.2",
+    "@babel/plugin-proposal-class-properties": "^7.5.5",
     "babel": "^6.23.0",
     "babel-loader": "^8.0.6",
     "babel-plugin-import": "^1.12.2",
@@ -48,7 +49,6 @@
     "webpack-dev-server": "^3.8.0"
   },
   "dependencies": {
-    "@babel/plugin-proposal-class-properties": "^7.5.5",
     "@types/react": "^16.9.2",
     "@types/react-dom": "^16.9.0",
     "@types/react-redux": "^7.1.2",

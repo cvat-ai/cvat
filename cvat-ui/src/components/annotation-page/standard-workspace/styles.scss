@@ -111,3 +111,16 @@
         margin: 0px 5px;
     }
 }
+
+.cvat-canvas-context-menu {
+    opacity: 0.6;
+    position: fixed;
+    width: 300px;
+    z-index: 10;
+    max-height: 50%;
+    overflow-y: auto;
+
+    &:hover {
+        opacity: 1;
+    }
+}

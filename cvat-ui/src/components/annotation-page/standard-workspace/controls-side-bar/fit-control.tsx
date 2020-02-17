@@ -23,7 +23,7 @@ function FitControl(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Tooltip overlay='Fit the image' placement='right'>
+        <Tooltip title='Fit the image' placement='right'>
             <Icon component={FitIcon} onClick={(): void => canvasInstance.fit()} />
         </Tooltip>
     );

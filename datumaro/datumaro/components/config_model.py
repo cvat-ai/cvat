@@ -30,40 +30,22 @@ class Model(Config):
         super().__init__(config, schema=MODEL_SCHEMA)
 
 
-ENV_SCHEMA = _SchemaBuilder() \
-    .add('models_dir', str) \
-    .add('importers_dir', str) \
-    .add('launchers_dir', str) \
-    .add('converters_dir', str) \
-    .add('extractors_dir', str) \
-    \
-    .add('models', lambda: _DefaultConfig(
-        lambda v=None: Model(v))) \
-    .build()
-
-ENV_DEFAULT_CONFIG = Config({
-    'models_dir': 'models',
-    'importers_dir': 'importers',
-    'launchers_dir': 'launchers',
-    'converters_dir': 'converters',
-    'extractors_dir': 'extractors',
-}, mutable=False, schema=ENV_SCHEMA)
-
-
 PROJECT_SCHEMA = _SchemaBuilder() \
     .add('project_name', str) \
     .add('format_version', int) \
     \
-    .add('sources_dir', str) \
-    .add('dataset_dir', str) \
-    .add('build_dir', str) \
     .add('subsets', list) \
     .add('sources', lambda: _DefaultConfig(
         lambda v=None: Source(v))) \
+    .add('models', lambda: _DefaultConfig(
+        lambda v=None: Model(v))) \
     \
+    .add('models_dir', str, internal=True) \
+    .add('plugins_dir', str, internal=True) \
+    .add('sources_dir', str, internal=True) \
+    .add('dataset_dir', str, internal=True) \
     .add('project_filename', str, internal=True) \
     .add('project_dir', str, internal=True) \
-    .add('env_filename', str, internal=True) \
     .add('env_dir', str, internal=True) \
     .build()
 
@@ -73,10 +55,10 @@ PROJECT_DEFAULT_CONFIG = Config({
 
     'sources_dir': 'sources',
     'dataset_dir': 'dataset',
-    'build_dir': 'build',
+    'models_dir': 'models',
+    'plugins_dir': 'plugins',
 
     'project_filename': 'config.yaml',
     'project_dir': '',
-    'env_filename': 'datumaro.yaml',
     'env_dir': '.datumaro',
 }, mutable=False, schema=PROJECT_SCHEMA)

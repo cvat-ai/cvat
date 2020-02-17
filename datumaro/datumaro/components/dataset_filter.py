@@ -6,8 +6,7 @@
 from lxml import etree as ET # NOTE: lxml has proper XPath implementation
 from datumaro.components.extractor import (DatasetItem, Extractor,
     Annotation, AnnotationType,
-    LabelObject, MaskObject, PointsObject, PolygonObject,
-    PolyLineObject, BboxObject, CaptionObject,
+    Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
 )
 
 
@@ -100,7 +99,7 @@ class DatasetItemEncoder:
         ET.SubElement(ann_elem, 'y').text = str(obj.y)
         ET.SubElement(ann_elem, 'w').text = str(obj.w)
         ET.SubElement(ann_elem, 'h').text = str(obj.h)
-        ET.SubElement(ann_elem, 'area').text = str(obj.area())
+        ET.SubElement(ann_elem, 'area').text = str(obj.get_area())
 
         return ann_elem
 
@@ -191,19 +190,19 @@ class DatasetItemEncoder:
 
     @classmethod
     def encode_annotation(cls, o, categories=None):
-        if isinstance(o, LabelObject):
+        if isinstance(o, Label):
             return cls.encode_label_object(o, categories)
-        if isinstance(o, MaskObject):
+        if isinstance(o, Mask):
             return cls.encode_mask_object(o, categories)
-        if isinstance(o, BboxObject):
+        if isinstance(o, Bbox):
             return cls.encode_bbox_object(o, categories)
-        if isinstance(o, PointsObject):
+        if isinstance(o, Points):
             return cls.encode_points_object(o, categories)
-        if isinstance(o, PolyLineObject):
+        if isinstance(o, PolyLine):
             return cls.encode_polyline_object(o, categories)
-        if isinstance(o, PolygonObject):
+        if isinstance(o, Polygon):
             return cls.encode_polygon_object(o, categories)
-        if isinstance(o, CaptionObject):
+        if isinstance(o, Caption):
             return cls.encode_caption_object(o)
         raise NotImplementedError("Unexpected annotation object passed: %s" % o)
 

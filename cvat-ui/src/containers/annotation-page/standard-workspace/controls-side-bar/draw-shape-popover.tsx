@@ -1,10 +1,12 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { RadioChangeEvent } from 'antd/lib/radio';
 
 import {
     CombinedState,
     ShapeType,
     ObjectType,
+    RectDrawingMethod,
 } from 'reducers/interfaces';
 
 import {
@@ -23,6 +25,7 @@ interface DispatchToProps {
         labelID: number,
         objectType: ObjectType,
         points?: number,
+        rectDrawingMethod?: string,
     ): void;
 }
 
@@ -39,8 +42,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             labelID: number,
             objectType: ObjectType,
             points?: number,
+            rectDrawingMethod?: string,
         ): void {
-            dispatch(drawShape(shapeType, labelID, objectType, points));
+            dispatch(drawShape(shapeType, labelID, objectType, points, rectDrawingMethod));
         },
     };
 }
@@ -67,6 +71,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 type Props = StateToProps & DispatchToProps;
 
 interface State {
+    rectDrawingMethod?: string;
     numberOfPoints?: number;
     selectedLabelID: number;
 }
@@ -77,6 +82,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         super(props);
 
         const defaultLabelID = props.labels[0].id;
+        const defaultRectDrawingMethod = RectDrawingMethod.BY_TWO_POINTS;
         this.state = {
             selectedLabelID: defaultLabelID,
         };
@@ -91,6 +97,9 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         if (shapeType === ShapeType.POINTS) {
             this.minimumPoints = 1;
         }
+        if (shapeType === ShapeType.RECTANGLE) {
+            this.state.rectDrawingMethod = defaultRectDrawingMethod;
+        }
     }
 
     private onDraw(objectType: ObjectType): void {
@@ -101,6 +110,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         } = this.props;
 
         const {
+            rectDrawingMethod,
             numberOfPoints,
             selectedLabelID,
         } = this.state;
@@ -108,6 +118,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         canvasInstance.cancel();
         canvasInstance.draw({
             enabled: true,
+            rectDrawingMethod,
             numberOfPoints,
             shapeType,
             crosshair: shapeType === ShapeType.RECTANGLE,
@@ -116,6 +127,12 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         onDrawStart(shapeType, selectedLabelID,
             objectType, numberOfPoints);
     }
+
+    private onChangeRectDrawingMethod = (event: RadioChangeEvent): void => {
+        this.setState({
+            rectDrawingMethod: event.target.value,
+        });
+    };
 
     private onDrawShape = (): void => {
         this.onDraw(ObjectType.SHAPE);
@@ -163,6 +180,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
                 numberOfPoints={numberOfPoints}
                 onChangeLabel={this.onChangeLabel}
                 onChangePoints={this.onChangePoints}
+                onChangeRectDrawingMethod={this.onChangeRectDrawingMethod}
                 onDrawTrack={this.onDrawTrack}
                 onDrawShape={this.onDrawShape}
             />

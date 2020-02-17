@@ -29,7 +29,7 @@ function MoveControl(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Tooltip overlay='Move the image' placement='right'>
+        <Tooltip title='Move the image' placement='right'>
             <Icon
                 component={MoveIcon}
                 className={activeControl === ActiveControl.DRAG_CANVAS

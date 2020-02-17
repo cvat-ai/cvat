@@ -39,7 +39,7 @@ interface DispatchToProps {
     updateState(sessionInstance: any, frameNumber: number, objectState: any): void;
     collapseOrExpand(objectStates: any[], collapsed: boolean): void;
     activateObject: (activatedStateID: number | null) => void;
-    removeObject: (objectState: any) => void;
+    removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
 }
@@ -109,8 +109,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         activateObject(activatedStateID: number | null): void {
             dispatch(activateObjectAction(activatedStateID));
         },
-        removeObject(objectState: any): void {
-            dispatch(removeObjectAsync(objectState, true));
+        removeObject(sessionInstance: any, objectState: any): void {
+            dispatch(removeObjectAsync(sessionInstance, objectState, true));
         },
         copyShape(objectState: any): void {
             dispatch(copyShapeAction(objectState));
@@ -197,9 +197,10 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const {
             objectState,
             removeObject,
+            jobInstance,
         } = this.props;
 
-        removeObject(objectState);
+        removeObject(jobInstance, objectState);
     };
 
     private activate = (): void => {

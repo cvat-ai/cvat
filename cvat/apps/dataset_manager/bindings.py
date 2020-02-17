@@ -156,35 +156,31 @@ class CvatTaskExtractor(datumaro.Extractor):
 
         for tag_obj in cvat_anno.tags:
             anno_group = tag_obj.group
-            if isinstance(anno_group, int):
-                anno_group = anno_group
             anno_label = map_label(tag_obj.label)
             anno_attr = convert_attrs(tag_obj.label, tag_obj.attributes)
 
-            anno = datumaro.LabelObject(label=anno_label,
+            anno = datumaro.Label(label=anno_label,
                 attributes=anno_attr, group=anno_group)
             item_anno.append(anno)
 
         for shape_obj in cvat_anno.labeled_shapes:
             anno_group = shape_obj.group
-            if isinstance(anno_group, int):
-                anno_group = anno_group
             anno_label = map_label(shape_obj.label)
             anno_attr = convert_attrs(shape_obj.label, shape_obj.attributes)
 
             anno_points = shape_obj.points
             if shape_obj.type == ShapeType.POINTS:
-                anno = datumaro.PointsObject(anno_points,
+                anno = datumaro.Points(anno_points,
                     label=anno_label, attributes=anno_attr, group=anno_group)
             elif shape_obj.type == ShapeType.POLYLINE:
-                anno = datumaro.PolyLineObject(anno_points,
+                anno = datumaro.PolyLine(anno_points,
                     label=anno_label, attributes=anno_attr, group=anno_group)
             elif shape_obj.type == ShapeType.POLYGON:
-                anno = datumaro.PolygonObject(anno_points,
+                anno = datumaro.Polygon(anno_points,
                     label=anno_label, attributes=anno_attr, group=anno_group)
             elif shape_obj.type == ShapeType.RECTANGLE:
                 x0, y0, x1, y1 = anno_points
-                anno = datumaro.BboxObject(x0, y0, x1 - x0, y1 - y0,
+                anno = datumaro.Bbox(x0, y0, x1 - x0, y1 - y0,
                     label=anno_label, attributes=anno_attr, group=anno_group)
             else:
                 raise Exception("Unknown shape type '%s'" % (shape_obj.type))

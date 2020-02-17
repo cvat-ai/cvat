@@ -122,3 +122,17 @@ class ColormapOperationsTest(TestCase):
 
         self.assertTrue(np.array_equal(expected, actual),
             '%s\nvs.\n%s' % (expected, actual))
+
+    def test_can_merge_masks(self):
+        masks = [
+            np.array([0, 2, 4, 0, 0, 1]),
+            np.array([0, 1, 1, 0, 2, 0]),
+            np.array([0, 0, 2, 3, 0, 0]),
+        ]
+        expected = \
+            np.array([0, 1, 2, 3, 2, 1])
+
+        actual = mask_tools.merge_masks(masks)
+
+        self.assertTrue(np.array_equal(expected, actual),
+            '%s\nvs.\n%s' % (expected, actual))

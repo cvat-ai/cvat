@@ -37,7 +37,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
     return {
         hidden: state.tasks.hideEmpty && task.instance.jobs.length === 0,
-        deleted: deletes.byTask[id] ? deletes.byTask[id] === true : false,
+        deleted: id in deletes ? deletes[id] === true : false,
         previewImage: task.preview,
         taskInstance: task.instance,
         activeInference: state.models.inferences[id] || null,

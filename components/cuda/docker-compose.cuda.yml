@@ -15,4 +15,9 @@ services:
     environment:
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
-      NVIDIA_REQUIRE_CUDA: "cuda>=9.0"
+      # That environment variable is used by the Nvidia Container Runtime.
+      # The Nvidia Container Runtime parses this as:
+      #   :space:: logical OR
+      #   ,: Logical AND
+      # https://gitlab.com/nvidia/container-images/cuda/issues/31#note_149432780
+      NVIDIA_REQUIRE_CUDA: "cuda>=10.0 brand=tesla,driver>=384,driver<385 brand=tesla,driver>=410,driver<411"
