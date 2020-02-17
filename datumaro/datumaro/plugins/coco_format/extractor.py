@@ -15,7 +15,7 @@ from datumaro.components.extractor import (SourceExtractor,
     AnnotationType, Label, RleMask, Points, Polygon, Bbox, Caption,
     LabelCategories, PointsCategories
 )
-from datumaro.util.image import lazy_image
+from datumaro.util.image import Image
 
 from .format import CocoTask, CocoPath
 
@@ -117,7 +117,15 @@ class _CocoExtractor(SourceExtractor):
 
         for img_id in loader.getImgIds():
             image_info = loader.loadImgs(img_id)[0]
-            image = self._find_image(image_info['file_name'])
+            image_path = self._find_image(image_info['file_name'])
+            if not image_path:
+                image_path = image_info['file_name']
+            image_size = (image_info.get('height'), image_info.get('width'))
+            if all(image_size):
+                image_size = (int(image_size[0]), int(image_size[1]))
+            else:
+                image_size = None
+            image = Image(path=image_path, size=image_size)
 
             anns = loader.getAnnIds(imgIds=img_id)
             anns = loader.loadAnns(anns)
@@ -232,7 +240,8 @@ class _CocoExtractor(SourceExtractor):
         ]
         for image_path in search_paths:
             if osp.exists(image_path):
-                return lazy_image(image_path)
+                return image_path
+        return None
 
 class CocoImageInfoExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
