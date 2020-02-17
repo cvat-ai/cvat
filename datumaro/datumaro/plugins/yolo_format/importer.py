@@ -15,18 +15,20 @@ class YoloImporter(Importer):
         from datumaro.components.project import Project # cyclic import
         project = Project()
 
-        if not osp.exists(path):
-            raise Exception("Failed to find 'yolo' dataset at '%s'" % path)
-
         if path.endswith('.data') and osp.isfile(path):
             config_paths = [path]
         else:
             config_paths = glob(osp.join(path, '*.data'))
 
+        if not osp.exists(path) or not config_paths:
+            raise Exception("Failed to find 'yolo' dataset at '%s'" % path)
+
         for config_path in config_paths:
             log.info("Found a dataset at '%s'" % config_path)
 
-            source_name = osp.splitext(osp.basename(config_path))[0]
+            source_name = '%s_%s' % (
+                osp.basename(osp.dirname(config_path)),
+                osp.splitext(osp.basename(config_path))[0])
             project.add_source(source_name, {
                 'url': config_path,
                 'format': 'yolo',
