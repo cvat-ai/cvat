@@ -6,10 +6,11 @@ import {
     Reducer,
 } from 'redux';
 import { createLogger } from 'redux-logger';
+import isDev from 'utils/enviroment';
 
 
 const logger = createLogger({
-    predicate: () => process.env.NODE_ENV === 'development',
+    predicate: isDev,
     collapsed: true,
 });
 
@@ -23,7 +24,7 @@ let store: Store | null = null;
 export default function createCVATStore(createRootReducer: () => Reducer): void {
     let appliedMiddlewares = applyMiddleware(...middlewares);
 
-    if (process.env.NODE_ENV === 'development') {
+    if (isDev()) {
         // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
         const { composeWithDevTools } = require('redux-devtools-extension');
 
