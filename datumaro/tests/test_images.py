@@ -47,10 +47,10 @@ class ImageCacheTest(TestCase):
 
 class ImageTest(TestCase):
     def test_lazy_image_shape(self):
-        loader = lambda _: np.ones((5, 6, 7))
+        data = np.ones((5, 6, 7))
 
-        image_lazy = Image(loader=loader, size=(2, 4))
-        image_eager = Image(loader=loader)
+        image_lazy = Image(data=data, size=(2, 4))
+        image_eager = Image(data=data)
 
         self.assertEqual((2, 4), image_lazy.size)
         self.assertEqual((5, 6), image_eager.size)
@@ -66,10 +66,10 @@ class ImageTest(TestCase):
                 { 'data': image },
                 { 'data': image, 'path': path },
                 { 'data': image, 'path': path, 'size': (2, 4) },
+                { 'data': image, 'path': path, 'loader': load_image, 'size': (2, 4) },
                 { 'path': path },
                 { 'path': path, 'loader': load_image },
                 { 'path': path, 'size': (2, 4) },
-                { 'size': (2, 4) },
             ]:
                 img = Image(**args)
                 # pylint: disable=pointless-statement
