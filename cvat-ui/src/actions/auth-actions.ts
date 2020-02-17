@@ -1,7 +1,5 @@
-import { AnyAction, Dispatch, ActionCreator } from 'redux';
-import { ThunkAction } from 'redux-thunk';
-
 import getCore from 'cvat-core';
+import { ActionUnion, createAction, ThunkAction } from '../utils/redux';
 
 const cvat = getCore();
 
@@ -19,158 +17,79 @@ export enum AuthActionTypes {
     LOGOUT_FAILED = 'LOGOUT_FAILED',
 }
 
-export function registerSuccess(user: any): AnyAction {
-    return {
-        type: AuthActionTypes.REGISTER_SUCCESS,
-        payload: {
-            user,
-        },
-    };
-}
+const authActions = {
+    authorizeSuccess: (user: any) => createAction(AuthActionTypes.AUTHORIZED_SUCCESS, { user }),
+    authorizeFailed: (error: any) => createAction(AuthActionTypes.AUTHORIZED_FAILED, { error }),
+    login: () => createAction(AuthActionTypes.LOGIN),
+    loginSuccess: (user: any) => createAction(AuthActionTypes.LOGIN_SUCCESS, { user }),
+    loginFailed: (error: any) => createAction(AuthActionTypes.LOGIN_FAILED, { error }),
+    register: () => createAction(AuthActionTypes.REGISTER),
+    registerSuccess: (user: any) => createAction(AuthActionTypes.REGISTER_SUCCESS, { user }),
+    registerFailed: (error: any) => createAction(AuthActionTypes.REGISTER_FAILED, { error }),
+    logout: () => createAction(AuthActionTypes.LOGOUT),
+    logoutSuccess: () => createAction(AuthActionTypes.LOGOUT_SUCCESS),
+    logoutFailed: (error: any) => createAction(AuthActionTypes.LOGOUT_FAILED, { error }),
+};
 
-export function registerFailed(error: any): AnyAction {
-    return {
-        type: AuthActionTypes.REGISTER_FAILED,
-        payload: {
-            error,
-        },
-    };
-}
+export type AuthActions = ActionUnion<typeof authActions>;
 
-export function loginSuccess(user: any): AnyAction {
-    return {
-        type: AuthActionTypes.LOGIN_SUCCESS,
-        payload: {
-            user,
-        },
-    };
-}
-
-export function loginFailed(error: any): AnyAction {
-    return {
-        type: AuthActionTypes.LOGIN_FAILED,
-        payload: {
-            error,
-        },
-    };
-}
-
-export function logoutSuccess(): AnyAction {
-    return {
-        type: AuthActionTypes.LOGOUT_SUCCESS,
-        payload: {},
-    };
-}
-
-export function logoutFailed(error: any): AnyAction {
-    return {
-        type: AuthActionTypes.LOGOUT_FAILED,
-        payload: {
-            error,
-        },
-    };
-}
-
-export function authorizedSuccess(user: any): AnyAction {
-    return {
-        type: AuthActionTypes.AUTHORIZED_SUCCESS,
-        payload: {
-            user,
-        },
-    };
-}
-
-export function authorizedFailed(error: any): AnyAction {
-    return {
-        type: AuthActionTypes.AUTHORIZED_FAILED,
-        payload: {
-            error,
-        },
-    };
-}
-
-export function registerAsync(
+export const registerAsync = (
     username: string,
     firstName: string,
     lastName: string,
     email: string,
     password1: string,
     password2: string,
-): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch({
-            type: AuthActionTypes.REGISTER,
-            payload: {},
-        });
+): ThunkAction => async (
+    dispatch,
+) => {
+    dispatch(authActions.register());
 
-        let users = null;
-        try {
-            await cvat.server.register(username, firstName, lastName,
-                email, password1, password2);
-            users = await cvat.users.get({ self: true });
-        } catch (error) {
-            dispatch(registerFailed(error));
-            return;
-        }
+    try {
+        await cvat.server.register(username, firstName, lastName, email, password1, password2);
+        const users = await cvat.users.get({ self: true });
 
-        dispatch(registerSuccess(users[0]));
-    };
-}
+        dispatch(authActions.registerSuccess(users[0]));
+    } catch (error) {
+        dispatch(authActions.registerFailed(error));
+    }
+};
 
-export function loginAsync(username: string, password: string):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch({
-            type: AuthActionTypes.LOGIN,
-            payload: {},
-        });
+export const loginAsync = (username: string, password: string): ThunkAction => async (dispatch) => {
+    dispatch(authActions.login());
 
-        let users = null;
-        try {
-            await cvat.server.login(username, password);
-            users = await cvat.users.get({ self: true });
-        } catch (error) {
-            dispatch(loginFailed(error));
-            return;
-        }
+    try {
+        await cvat.server.login(username, password);
+        const users = await cvat.users.get({ self: true });
 
-        dispatch(loginSuccess(users[0]));
-    };
-}
+        dispatch(authActions.loginSuccess(users[0]));
+    } catch (error) {
+        dispatch(authActions.loginFailed(error));
+    }
+};
 
-export function logoutAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch({
-            type: AuthActionTypes.LOGOUT,
-            payload: {},
-        });
+export const logoutAsync = (): ThunkAction => async (dispatch) => {
+    dispatch(authActions.logout());
 
-        try {
-            await cvat.server.logout();
-        } catch (error) {
-            dispatch(logoutFailed(error));
-            return;
-        }
+    try {
+        await cvat.server.logout();
+        dispatch(authActions.logoutSuccess());
+    } catch (error) {
+        dispatch(authActions.logoutFailed(error));
+    }
+};
 
-        dispatch(logoutSuccess());
-    };
-}
-
-export function authorizedAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        let result = null;
-        try {
-            result = await cvat.server.authorized();
-        } catch (error) {
-            dispatch(authorizedFailed(error));
-            return;
-        }
+export const authorizedAsync = (): ThunkAction => async (dispatch) => {
+    try {
+        const result = await cvat.server.authorized();
 
         if (result) {
             const userInstance = (await cvat.users.get({ self: true }))[0];
-            dispatch(authorizedSuccess(userInstance));
+            dispatch(authActions.authorizeSuccess(userInstance));
         } else {
-            dispatch(authorizedSuccess(null));
+            dispatch(authActions.authorizeSuccess(null));
         }
-    };
-}
+    } catch (error) {
+        dispatch(authActions.authorizeFailed(error));
+    }
+};

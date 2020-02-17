@@ -1,6 +1,4 @@
-import { AnyAction } from 'redux';
-import { AuthActionTypes } from 'actions/auth-actions';
-
+import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { AuthState } from './interfaces';
 
 const defaultState: AuthState = {
@@ -9,7 +7,7 @@ const defaultState: AuthState = {
     user: null,
 };
 
-export default (state = defaultState, action: AnyAction): AuthState => {
+export default (state = defaultState, action: AuthActions): AuthState => {
     switch (action.type) {
         case AuthActionTypes.AUTHORIZED_SUCCESS:
             return {
@@ -53,7 +51,7 @@ export default (state = defaultState, action: AnyAction): AuthState => {
             return {
                 ...state,
                 fetching: true,
-                user: action.payload.user,
+                user: null,
             };
         case AuthActionTypes.REGISTER_SUCCESS:
             return {

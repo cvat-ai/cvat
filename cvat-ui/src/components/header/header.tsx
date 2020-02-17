@@ -152,8 +152,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         >
                             Models
                         </Button>
-                    )
-                }
+                    )}
                 { installedAnalytics
                     && (
                         <Button
@@ -169,8 +168,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         >
                             Analytics
                         </Button>
-                    )
-                }
+                    )}
             </div>
             <div className='cvat-right-header'>
                 <Button

@@ -1,15 +1,14 @@
-import React from 'react';
 import { connect } from 'react-redux';
-import { loginAsync } from 'actions/auth-actions';
 import LoginPageComponent from 'components/login-page/login-page';
 import { CombinedState } from 'reducers/interfaces';
+import { loginAsync } from 'actions/auth-actions';
 
 interface StateToProps {
     fetching: boolean;
 }
 
 interface DispatchToProps {
-    onLogin(username: string, password: string): void;
+    onLogin: typeof loginAsync;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -18,19 +17,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: any): DispatchToProps {
-    return {
-        onLogin: (...args): void => dispatch(loginAsync(...args)),
-    };
-}
-
-function LoginPageContainer(props: DispatchToProps & StateToProps): JSX.Element {
-    return (
-        <LoginPageComponent {...props} />
-    );
-}
+const mapDispatchToProps: DispatchToProps = {
+    onLogin: loginAsync,
+};
 
 export default connect(
     mapStateToProps,
     mapDispatchToProps,
-)(LoginPageContainer);
+)(LoginPageComponent);

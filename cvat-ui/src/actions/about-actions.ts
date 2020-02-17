@@ -1,7 +1,5 @@
-import { AnyAction, Dispatch, ActionCreator } from 'redux';
-import { ThunkAction } from 'redux-thunk';
-
 import getCore from 'cvat-core';
+import { ActionUnion, createAction, ThunkAction } from '../utils/redux';
 
 const core = getCore();
 
@@ -11,45 +9,23 @@ export enum AboutActionTypes {
     GET_ABOUT_FAILED = 'GET_ABOUT_FAILED',
 }
 
-function getAbout(): AnyAction {
-    const action = {
-        type: AboutActionTypes.GET_ABOUT,
-        payload: {},
-    };
+const aboutActions = {
+    getAbout: () => createAction(AboutActionTypes.GET_ABOUT),
+    getAboutSuccess: (server: any) => createAction(AboutActionTypes.GET_ABOUT_SUCCESS, { server }),
+    getAboutFailed: (error: any) => createAction(AboutActionTypes.GET_ABOUT_FAILED, { error }),
+};
 
-    return action;
-}
+export type AboutActions = ActionUnion<typeof aboutActions>;
 
-function getAboutSuccess(server: any): AnyAction {
-    const action = {
-        type: AboutActionTypes.GET_ABOUT_SUCCESS,
-        payload: { server },
-    };
+export const getAboutAsync = (): ThunkAction => async (dispatch) => {
+    dispatch(aboutActions.getAbout());
 
-    return action;
-}
-
-function getAboutFailed(error: any): AnyAction {
-    const action = {
-        type: AboutActionTypes.GET_ABOUT_FAILED,
-        payload: { error },
-    };
-
-    return action;
-}
-
-export function getAboutAsync():
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(getAbout());
-
-        try {
-            const about = await core.server.about();
-            dispatch(
-                getAboutSuccess(about),
-            );
-        } catch (error) {
-            dispatch(getAboutFailed(error));
-        }
-    };
-}
+    try {
+        const about = await core.server.about();
+        dispatch(
+            aboutActions.getAboutSuccess(about),
+        );
+    } catch (error) {
+        dispatch(aboutActions.getAboutFailed(error));
+    }
+};

@@ -32,7 +32,8 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         <ActionsMenuContainer
                             taskInstance={taskInstance}
                         />
-                    )}
+                    )
+                }
                 >
                     <Button size='large'>
                         <Text className='cvat-text-color'>Actions</Text>
