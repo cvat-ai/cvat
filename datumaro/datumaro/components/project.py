@@ -411,11 +411,22 @@ class Dataset(Extractor):
         if existing_item.has_image and current_item.has_image:
             if existing_item.image.has_data:
                 image = existing_item.image
-            elif current_item.image.has_data:
+            else:
                 image = current_item.image
+
+            if existing_item.image.path != current_item.image.path:
+                if not existing_item.image.path:
+                    image._path = current_item.image.path
+
+            if all([existing_item.image._size, current_item.image._size]):
+                assert existing_item.image._size == current_item.image._size, "Image info differs for item '%s'" % item.id
+            elif existing_item.image._size:
+                image._size = existing_item.image._size
+            else:
+                image._size = current_item.image._size
         elif existing_item.has_image:
             image = existing_item.image
-        elif current_item.has_image:
+        else:
             image = current_item.image
 
         return existing_item.wrap(path=path,
