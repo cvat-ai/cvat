@@ -135,10 +135,17 @@ class _Converter:
             for item in subset:
                 log.debug("Converting item '%s'", item.id)
 
+                image_filename = ''
+                if item.has_image:
+                    image_filename = item.image.filename
                 if self._save_images:
                     if item.has_image and item.image.has_data:
-                        save_image(osp.join(self._images_dir,
-                                item.id + VocPath.IMAGE_EXT),
+                        if image_filename:
+                            image_filename = osp.splitext(image_filename)[0]
+                        else:
+                            image_filename = item.id
+                        image_filename += VocPath.IMAGE_EXT
+                        save_image(osp.join(self._images_dir, image_filename),
                             item.image.data)
                     else:
                         log.debug("Item '%s' has no image" % item.id)
@@ -161,8 +168,7 @@ class _Converter:
                     else:
                         folder = ''
                     ET.SubElement(root_elem, 'folder').text = folder
-                    ET.SubElement(root_elem, 'filename').text = \
-                        item.id + VocPath.IMAGE_EXT
+                    ET.SubElement(root_elem, 'filename').text = image_filename
 
                     source_elem = ET.SubElement(root_elem, 'source')
                     ET.SubElement(source_elem, 'database').text = 'Unknown'

@@ -163,31 +163,29 @@ class TfDetectionApiExtractor(SourceExtractor):
                 item_id = osp.splitext(frame_filename)[0]
 
             annotations = []
-            for index, shape in enumerate(
-                    np.dstack((labels, xmins, ymins, xmaxs, ymaxs))[0]):
+            for shape in np.dstack((labels, xmins, ymins, xmaxs, ymaxs))[0]:
                 label = shape[0].decode('utf-8')
                 x = clamp(shape[1] * frame_width, 0, frame_width)
                 y = clamp(shape[2] * frame_height, 0, frame_height)
                 w = clamp(shape[3] * frame_width, 0, frame_width) - x
                 h = clamp(shape[4] * frame_height, 0, frame_height) - y
                 annotations.append(Bbox(x, y, w, h,
-                    label=dataset_labels.get(label, None), id=index
+                    label=dataset_labels.get(label)
                 ))
 
-            image_params = {}
+            image_size = None
             if frame_height and frame_width:
-                image_params['size'] = (frame_height, frame_width)
+                image_size = (frame_height, frame_width)
 
+            image_params = {}
             if frame_image and frame_format:
                 image_params['data'] = lazy_image(frame_image, decode_image)
-            elif frame_filename and images_dir:
-                image_path = osp.join(images_dir, frame_filename)
-                if osp.exists(image_path):
-                    image_params['path'] = image_path
+            if frame_filename and images_dir:
+                image_params['path'] = osp.join(images_dir, frame_filename)
 
-            image=None
+            image = None
             if image_params:
-                image = Image(**image_params)
+                image = Image(**image_params, size=image_size)
 
             dataset_items.append(DatasetItem(id=item_id, subset=subset_name,
                 image=image, annotations=annotations))
