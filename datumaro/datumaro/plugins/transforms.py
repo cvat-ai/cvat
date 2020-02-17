@@ -5,6 +5,7 @@
 
 from itertools import groupby
 import logging as log
+import os.path as osp
 
 import pycocotools.mask as mask_utils
 
@@ -253,3 +254,11 @@ class Reindex(Transform, CliPlugin):
     def __iter__(self):
         for i, item in enumerate(self._extractor):
             yield self.wrap_item(item, id=i + self._start)
+
+class IdFromImageName(Transform, CliPlugin):
+    def transform_item(self, item):
+        name = item.id
+        if item.has_image and item.image.filename:
+            name = osp.splitext(item.image.filename)[0]
+        return self.wrap_item(item, id=name)
+
