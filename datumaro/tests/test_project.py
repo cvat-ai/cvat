@@ -499,7 +499,7 @@ class DatasetItemTest(TestCase):
             # pylint: disable=no-value-for-parameter
             DatasetItem()
             # pylint: enable=no-value-for-parameter
-        except TypeError:
+        except AssertionError:
             has_error = True
 
         self.assertTrue(has_error)
@@ -508,6 +508,7 @@ class DatasetItemTest(TestCase):
     def test_ctors_with_image():
         for args in [
             { 'id': 0, 'image': None },
+            { 'id': 0, 'image': 'path.jpg' },
             { 'id': 0, 'image': np.array([1, 2, 3]) },
             { 'id': 0, 'image': lambda f: np.array([1, 2, 3]) },
             { 'id': 0, 'image': Image(data=np.array([1, 2, 3])) },
