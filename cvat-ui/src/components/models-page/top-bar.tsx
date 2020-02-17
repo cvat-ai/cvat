@@ -43,8 +43,7 @@ function TopBarComponent(props: Props): JSX.Element {
                         >
                             Create new model
                         </Button>
-                    )
-                }
+                    )}
             </Col>
         </Row>
     );

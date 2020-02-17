@@ -335,8 +335,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                 { withMapping && tags}
                 { withMapping
                     && mappingISAvailable
-                    && this.renderMappingInput(availableModelLabels, taskLabels)
-                }
+                    && this.renderMappingInput(availableModelLabels, taskLabels)}
                 { withMapping
                     && (
                         <div>
@@ -349,8 +348,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                                 Clean old annotations
                             </Checkbox>
                         </div>
-                    )
-                }
+                    )}
             </div>
         );
     }

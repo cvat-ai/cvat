@@ -33,8 +33,7 @@ function ResizeControl(props: Props): JSX.Element {
             <Icon
                 component={ZoomIcon}
                 className={activeControl === ActiveControl.ZOOM_CANVAS
-                    ? 'cvat-active-canvas-control' : ''
-                }
+                    ? 'cvat-active-canvas-control' : ''}
                 onClick={(): void => {
                     if (activeControl === ActiveControl.ZOOM_CANVAS) {
                         canvasInstance.zoomCanvas(false);

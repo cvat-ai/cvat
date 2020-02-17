@@ -96,20 +96,17 @@ function ObjectListHeader(props: Props): JSX.Element {
                 <Col span={2}>
                     { statesLocked
                         ? <Icon type='lock' onClick={unlockAllStates} />
-                        : <Icon type='unlock' onClick={lockAllStates} />
-                    }
+                        : <Icon type='unlock' onClick={lockAllStates} />}
                 </Col>
                 <Col span={2}>
                     { statesHidden
                         ? <Icon type='eye-invisible' onClick={showAllStates} />
-                        : <Icon type='eye' onClick={hideAllStates} />
-                    }
+                        : <Icon type='eye' onClick={hideAllStates} />}
                 </Col>
                 <Col span={2}>
                     { statesCollapsed
                         ? <Icon type='caret-down' onClick={expandAllStates} />
-                        : <Icon type='caret-up' onClick={collapseAllStates} />
-                    }
+                        : <Icon type='caret-up' onClick={collapseAllStates} />}
                 </Col>
                 <StatesOrderingSelector
                     statesOrdering={statesOrdering}

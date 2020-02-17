@@ -506,8 +506,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                                 <Text>Attributes</Text>
                             </Col>
                         </Row>
-                    )
-                }
+                    )}
                 { attributeItems.reverse() }
                 <Row type='flex' justify='start' align='middle'>
                     { this.renderDoneButton() }
