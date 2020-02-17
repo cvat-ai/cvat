@@ -576,18 +576,10 @@ class Caption(Annotation):
 
 class DatasetItem:
     # pylint: disable=redefined-builtin
-    def __init__(self, id, annotations=None,
-            subset=None, path=None, image=None, name=None):
+    def __init__(self, id=None, annotations=None,
+            subset=None, path=None, image=None):
         assert id is not None
-        id = str(id)
-        # TODO: if not isinstance(id, int):
-        #     id = int(id)
-        self._id = id
-
-        assert name is None or isinstance(name, str)
-        if not name:
-            name = str(id)
-        self._name = name
+        self._id = str(id)
 
         if subset is None:
             subset = ''
@@ -609,6 +601,8 @@ class DatasetItem:
 
         if callable(image) or isinstance(image, np.ndarray):
             image = Image(data=image)
+        elif isinstance(image, str):
+            image = Image(path=image)
         assert image is None or isinstance(image, Image)
         self._image = image
     # pylint: enable=redefined-builtin
@@ -616,10 +610,6 @@ class DatasetItem:
     @property
     def id(self):
         return self._id
-
-    @property
-    def name(self):
-        return self._name
 
     @property
     def subset(self):
@@ -647,12 +637,12 @@ class DatasetItem:
         return \
             (self.id == other.id) and \
             (self.subset == other.subset) and \
-            (self.annotations == other.annotations) and \
             (self.path == other.path) and \
+            (self.annotations == other.annotations) and \
             (self.image == other.image)
 
     def wrap(item, **kwargs):
-        expected_args = {'id', 'annotations', 'subset', 'path', 'image', 'name'}
+        expected_args = {'id', 'annotations', 'subset', 'path', 'image'}
         for k in expected_args:
             if k not in kwargs:
                 kwargs[k] = getattr(item, k)
@@ -675,9 +665,6 @@ class IExtractor:
         raise NotImplementedError()
 
     def select(self, pred):
-        raise NotImplementedError()
-
-    def get(self, item_id, subset=None, path=None):
         raise NotImplementedError()
 
 class _DatasetFilter:

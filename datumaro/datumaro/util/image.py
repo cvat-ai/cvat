@@ -7,6 +7,7 @@
 
 from io import BytesIO
 import numpy as np
+import os.path as osp
 
 from enum import Enum
 _IMAGE_BACKENDS = Enum('_IMAGE_BACKENDS', ['cv2', 'PIL'])
@@ -166,25 +167,30 @@ class Image:
             size=None):
         assert size is None or len(size) == 2
         if size is not None:
-            assert 0 < size[0] and 0 < size[1], size
+            assert len(size) == 2 and 0 < size[0] and 0 < size[1], size
             size = tuple(size)
         else:
             size = None
         self._size = size # (H, W)
 
         assert path is None or isinstance(path, str)
-        if not path:
+        if path is None:
             path = ''
         self._path = path
 
-        assert any(e is not None for e in (data, path, loader, size)), "Image can not be empty"
-        if data is None and (path or loader is not None):
-            data = lazy_image(path, loader=loader, cache=cache)
+        assert data is not None or path, "Image can not be empty"
+        if data is None and path:
+            if osp.isfile(path):
+                data = lazy_image(path, loader=loader, cache=cache)
         self._data = data
 
     @property
     def path(self):
         return self._path
+
+    @property
+    def filename(self):
+        return osp.basename(self._path)
 
     @property
     def data(self):
