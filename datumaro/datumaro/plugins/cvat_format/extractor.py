@@ -295,23 +295,22 @@ class CvatExtractor(SourceExtractor):
             raise NotImplementedError("Unknown annotation type '%s'" % ann_type)
 
     def _load_items(self, parsed):
-        for item_id, item_desc in parsed.items():
-            image = None
-            file_name = item_desc.get('name')
-            if not file_name:
-                file_name = item_id
-            image_path = self._find_image(file_name)
+        for frame_id, item_desc in parsed.items():
+            filename = item_desc.get('name')
+            if filename:
+                filename = self._find_image(filename)
+            if not filename:
+                filename = item_desc.get('name')
             image_size = (item_desc.get('height'), item_desc.get('width'))
             if all(image_size):
                 image_size = (int(image_size[0]), int(image_size[1]))
             else:
                 image_size = None
-            if image_path:
-                image = Image(path=image_path, size=image_size)
-            elif image_size:
-                image = Image(size=image_size)
+            image = None
+            if filename:
+                image = Image(path=filename, size=image_size)
 
-            parsed[item_id] = DatasetItem(id=item_id, subset=self._subset,
+            parsed[frame_id] = DatasetItem(id=frame_id, subset=self._subset,
                 image=image, annotations=item_desc.get('annotations'))
         return parsed
 
