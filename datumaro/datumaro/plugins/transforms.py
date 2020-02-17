@@ -9,7 +9,7 @@ import logging as log
 import pycocotools.mask as mask_utils
 
 from datumaro.components.extractor import (Transform, AnnotationType,
-    Mask, RleMask, Polygon)
+    Mask, RleMask, Polygon, Bbox)
 from datumaro.components.cli_plugin import CliPlugin
 import datumaro.util.mask_tools as mask_tools
 
@@ -237,6 +237,25 @@ class MasksToPolygons(Transform, CliPlugin):
             for p in polygons
         ]
 
+class ShapesToBoxes(Transform, CliPlugin):
+    def transform_item(self, item):
+        annotations = []
+        for ann in item.annotations:
+            if ann.type in { AnnotationType.mask, AnnotationType.polygon,
+                AnnotationType.polyline, AnnotationType.points,
+            }:
+                annotations.append(self.convert_shape(ann))
+            else:
+                annotations.append(ann)
+
+        return self.wrap_item(item, annotations=annotations)
+
+    @staticmethod
+    def convert_shape(shape):
+        bbox = shape.get_bbox()
+        return Bbox(*bbox, label=shape.label, z_order=shape.z_order,
+            id=shape.id, attributes=shape.attributes, group=shape.group)
+
 class Reindex(Transform, CliPlugin):
     @classmethod
     def build_cmdline_parser(cls, **kwargs):
@@ -253,3 +272,34 @@ class Reindex(Transform, CliPlugin):
     def __iter__(self):
         for i, item in enumerate(self._extractor):
             yield self.wrap_item(item, id=i + self._start)
+
+
+class MapSubsets(Transform, CliPlugin):
+    @staticmethod
+    def _mapping_arg(s):
+        parts = s.split(':')
+        if len(parts) != 2:
+            import argparse
+            raise argparse.ArgumentTypeError()
+        return parts
+
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
+        parser.add_argument('-s', '--subset', action='append',
+            type=cls._mapping_arg, dest='mapping',
+            help="Subset mapping of the form: 'src:dst' (repeatable)")
+        return parser
+
+    def __init__(self, extractor, mapping=None):
+        super().__init__(extractor)
+
+        if mapping is None:
+            mapping = {}
+        elif not isinstance(mapping, dict):
+            mapping = dict(tuple(m) for m in mapping)
+        self._mapping = mapping
+
+    def transform_item(self, item):
+        return self.wrap_item(item,
+            subset=self._mapping.get(item.subset, item.subset))

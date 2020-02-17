@@ -3,7 +3,7 @@ import numpy as np
 from unittest import TestCase
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    Mask, Polygon
+    Mask, Polygon, PolyLine, Points, Bbox
 )
 from datumaro.util.test_utils import compare_datasets
 import datumaro.plugins.transforms as transforms
@@ -186,3 +186,61 @@ class TransformsTest(TestCase):
         actual = transforms.MergeInstanceSegments(SrcExtractor(),
             include_polygons=True)
         compare_datasets(self, DstExtractor(), actual)
+
+    def test_map_subsets(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a'),
+                    DatasetItem(id=2, subset='b'),
+                    DatasetItem(id=3, subset='c'),
+                ])
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset=''),
+                    DatasetItem(id=2, subset='a'),
+                    DatasetItem(id=3, subset='c'),
+                ])
+
+        actual = transforms.MapSubsets(SrcExtractor(),
+            { 'a': '', 'b': 'a' })
+        compare_datasets(self, DstExtractor(), actual)
+
+    def test_shapes_to_boxes(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                        annotations=[
+                            Mask(np.array([
+                                    [0, 0, 1, 1, 1],
+                                    [0, 0, 0, 0, 1],
+                                    [1, 0, 0, 0, 1],
+                                    [1, 0, 0, 0, 0],
+                                    [1, 1, 1, 0, 0]],
+                                ), id=1),
+                            Polygon([1, 1, 4, 1, 4, 4, 1, 4], id=2),
+                            PolyLine([1, 1, 2, 1, 2, 2, 1, 2], id=3),
+                            Points([2, 2, 4, 2, 4, 4, 2, 4], id=4),
+                        ]
+                    ),
+                ])
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                        annotations=[
+                            Bbox(0, 0, 4, 4, id=1),
+                            Bbox(1, 1, 3, 3, id=2),
+                            Bbox(1, 1, 1, 1, id=3),
+                            Bbox(2, 2, 2, 2, id=4),
+                        ]
+                    ),
+                ])
+
+        actual = transforms.ShapesToBoxes(SrcExtractor())
+        compare_datasets(self, DstExtractor(), actual)
+
