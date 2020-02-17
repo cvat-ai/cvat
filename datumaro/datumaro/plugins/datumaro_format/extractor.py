@@ -96,17 +96,10 @@ class DatumaroExtractor(SourceExtractor):
 
             image = None
             image_info = item_desc.get('image', {})
-            if image_info.get('path'):
+            if image_info:
                 image_path = osp.join(self._path, DatumaroPath.IMAGES_DIR,
-                    image_info['path'])
-            else:
-                image_path = osp.join(self._path, DatumaroPath.IMAGES_DIR,
-                    item_id + DatumaroPath.IMAGE_EXT)
-            image_size = image_info.get('size')
-            if osp.isfile(image_path):
-                image = Image(path=image_path, size=image_size)
-            elif image_size:
-                image = Image(size=image_size)
+                    image_info.get('path', '')) # relative or absolute fits
+                image = Image(path=image_path, size=image_info.get('size'))
 
             annotations = self._load_annotations(item_desc)
 

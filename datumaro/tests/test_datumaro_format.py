@@ -49,7 +49,7 @@ class DatumaroConverterTest(TestCase):
                 DatasetItem(id=42, subset='test'),
 
                 DatasetItem(id=42),
-                DatasetItem(id=43, image=Image(size=(2, 4))),
+                DatasetItem(id=43, image=Image(path='1/b/c.qq', size=(2, 4))),
             ])
 
         def categories(self):
