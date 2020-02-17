@@ -696,7 +696,7 @@ class VocConverterTest(TestCase):
         class TestExtractor(TestExtractorBase):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, image=Image(size=(10, 15))),
+                    DatasetItem(id=1, image=Image(path='1.jpg', size=(10, 15))),
                 ])
 
         with TestDir() as test_dir:
