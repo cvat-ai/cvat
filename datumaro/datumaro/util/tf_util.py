@@ -26,12 +26,15 @@ def import_tf():
         pass
 
     # Enable eager execution in early versions to unlock dataset operations
+    eager_enabled = False
     try:
         tf.compat.v1.enable_eager_execution()
+        eager_enabled = True
     except AttributeError:
         pass
     try:
-        tf.enable_eager_execution()
+        if not eager_enabled:
+            tf.enable_eager_execution()
     except AttributeError:
         pass
 
