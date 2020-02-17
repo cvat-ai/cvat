@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { Link } from 'react-router-dom';
+
 import {
     Row,
     Col,
@@ -39,7 +41,11 @@ export default function JobListComponent(props: Props): JSX.Element {
         title: 'Job',
         dataIndex: 'job',
         key: 'job',
-        render: (id: number): JSX.Element => (<a href={`${baseURL}/?id=${id}`}>{ `Job #${id}` }</a>),
+        render: (id: number): JSX.Element => (<div>
+                <Link to={`/tasks/${taskInstance.id}/jobs/${id}`} >{`Job #${id}`}</Link>
+                {" | "}
+                <a href={`${baseURL}/?id=${id}`}>Old</a>
+            </div>),
     }, {
         title: 'Frames',
         dataIndex: 'frames',

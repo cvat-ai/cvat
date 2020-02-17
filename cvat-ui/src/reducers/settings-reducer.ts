@@ -119,6 +119,96 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case SettingsActionTypes.CHANGE_FRAME_STEP: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    frameStep: action.payload.frameStep,
+                }
+            }
+        }
+        case SettingsActionTypes.CHANGE_FRAME_SPEED: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    frameSpeed: action.payload.frameSpeed,
+                }
+            }
+        }
+        case SettingsActionTypes.SWITCH_RESET_ZOOM: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    resetZoom: action.payload.resetZoom,
+                }
+            }
+        }
+        case SettingsActionTypes.CHANGE_BRIGHTNESS_LEVEL: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    brightnessLevel: action.payload.level,
+                }
+            }
+        }
+        case SettingsActionTypes.CHANGE_CONTRAST_LEVEL: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    contrastLevel: action.payload.level,
+                }
+            }
+        }
+        case SettingsActionTypes.CHANGE_SATURATION_LEVEL: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    saturationLevel: action.payload.level,
+                }
+            }
+        }
+        case SettingsActionTypes.SWITCH_AUTO_SAVE: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    autoSave: action.payload.autoSave,
+                }
+            }
+        }
+        case SettingsActionTypes.CHANGE_AUTO_SAVE_INTERVAL: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    autoSaveInterval: action.payload.autoSaveInterval,
+                }
+            }
+        }
+        case SettingsActionTypes.CHANGE_AAM_ZOOM_MARGIN: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    aamZoomMargin: action.payload.aamZoomMargin,
+                }
+            }
+        }
+        case SettingsActionTypes.SWITCH_SHOWNIG_INTERPOLATED_TRACKS: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    showAllInterpolationTracks: action.payload.showAllInterpolationTracks,
+                }
+            }
+        }
         default: {
             return state;
         }

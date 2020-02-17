@@ -4,11 +4,17 @@ import { connect } from 'react-redux';
 import PlayerSettingsComponent from 'components/settings-page/player-settings';
 
 import {
+    changeFrameStep,
+    changeFrameSpeed,
+    switchResetZoom,
     switchRotateAll,
     switchGrid,
     changeGridSize,
     changeGridColor,
     changeGridOpacity,
+    changeBrightnessLevel,
+    changeContrastLevel,
+    changeSaturationLevel,
 } from 'actions/settings-actions';
 
 import {
@@ -54,20 +60,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        // will be implemented
-        // eslint-disable-next-line
         onChangeFrameStep(step: number): void {
-
+            dispatch(changeFrameStep(step));
         },
-        // will be implemented
-        // eslint-disable-next-line
         onChangeFrameSpeed(speed: FrameSpeed): void {
-
+            dispatch(changeFrameSpeed(speed));
         },
-        // will be implemented
-        // eslint-disable-next-line
         onSwitchResetZoom(enabled: boolean): void {
-
+            dispatch(switchResetZoom(enabled));
         },
         onSwitchRotateAll(rotateAll: boolean): void {
             dispatch(switchRotateAll(rotateAll));
@@ -84,20 +84,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onChangeGridOpacity(gridOpacity: number): void {
             dispatch(changeGridOpacity(gridOpacity));
         },
-        // will be implemented
-        // eslint-disable-next-line
         onChangeBrightnessLevel(level: number): void {
-
+            dispatch(changeBrightnessLevel(level));
         },
-        // will be implemented
-        // eslint-disable-next-line
         onChangeContrastLevel(level: number): void {
-
+            dispatch(changeContrastLevel(level));
         },
-        // will be implemented
-        // eslint-disable-next-line
         onChangeSaturationLevel(level: number): void {
-
+            dispatch(changeSaturationLevel(level));
         },
     };
 }
