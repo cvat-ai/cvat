@@ -5,6 +5,7 @@
 
 from itertools import groupby
 import logging as log
+import os.path as osp
 
 import pycocotools.mask as mask_utils
 
@@ -273,7 +274,6 @@ class Reindex(Transform, CliPlugin):
         for i, item in enumerate(self._extractor):
             yield self.wrap_item(item, id=i + self._start)
 
-
 class MapSubsets(Transform, CliPlugin):
     @staticmethod
     def _mapping_arg(s):
@@ -303,3 +303,10 @@ class MapSubsets(Transform, CliPlugin):
     def transform_item(self, item):
         return self.wrap_item(item,
             subset=self._mapping.get(item.subset, item.subset))
+
+class IdFromImageName(Transform, CliPlugin):
+    def transform_item(self, item):
+        name = item.id
+        if item.has_image and item.image.filename:
+            name = osp.splitext(item.image.filename)[0]
+        return self.wrap_item(item, id=name)
