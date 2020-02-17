@@ -10,7 +10,7 @@ import re
 from datumaro.components.extractor import (SourceExtractor, Extractor,
     DatasetItem, AnnotationType, Bbox, LabelCategories
 )
-from datumaro.util.image import lazy_image
+from datumaro.util.image import Image
 
 from .format import YoloPath
 
@@ -33,15 +33,30 @@ class YoloExtractor(SourceExtractor):
         def categories(self):
             return self._parent.categories()
 
-    def __init__(self, config_path):
+    def __init__(self, config_path, image_info=None):
         super().__init__()
 
         if not osp.isfile(config_path):
-            raise Exception("Can't read dataset descriptor file '%s'" % \
+            raise Exception("Can't read dataset descriptor file '%s'" %
                 config_path)
 
         rootpath = osp.dirname(config_path)
         self._path = rootpath
+
+        assert image_info is None or isinstance(image_info, (str, dict))
+        if image_info is None:
+            image_info = osp.join(rootpath, YoloPath.IMAGE_META_FILE)
+            if not osp.isfile(image_info):
+                image_info = {}
+        if isinstance(image_info, str):
+            if not osp.isfile(image_info):
+                raise Exception("Can't read image meta file '%s'" % image_info)
+            with open(image_info) as f:
+                image_info = {}
+                for line in f:
+                    image_name, h, w = line.strip().split()
+                    image_info[image_name] = (int(h), int(w))
+        self._image_info = image_info
 
         with open(config_path, 'r') as f:
             config_lines = f.readlines()
@@ -77,10 +92,10 @@ class YoloExtractor(SourceExtractor):
                 subset.items = OrderedDict(
                     (osp.splitext(osp.basename(p))[0], p.strip()) for p in f)
 
-            for image_path in subset.items.values():
+            for item_id, image_path in subset.items.items():
                 image_path = self._make_local_path(image_path)
-                if not osp.isfile(image_path):
-                    raise Exception("Can't find image '%s'" % image_path)
+                if not osp.isfile(image_path) and item_id not in image_info:
+                    raise Exception("Can't find image '%s'" % item_id)
 
             subsets[subset_name] = subset
 
@@ -103,8 +118,10 @@ class YoloExtractor(SourceExtractor):
 
         if isinstance(item, str):
             image_path = self._make_local_path(item)
-            image = lazy_image(image_path)
-            h, w, _ = image().shape
+            image_size = self._image_info.get(item_id)
+            image = Image(path=image_path, size=image_size)
+            h, w = image.size
+
             anno_path = osp.splitext(image_path)[0] + '.txt'
             annotations = self._parse_annotations(anno_path, w, h)
 
