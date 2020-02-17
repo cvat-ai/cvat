@@ -86,6 +86,8 @@ class VocExtractor(SourceExtractor):
                 ann_file_data = f.read()
                 ann_file_root = ET.fromstring(ann_file_data)
                 item = ann_file_root.find('filename').text
+                if not item:
+                    item = ann_item
                 item = osp.splitext(item)[0]
                 det_annotations[item] = ann_file_data
 
@@ -130,11 +132,8 @@ class VocExtractor(SourceExtractor):
                 yield item
 
     def _get(self, item_id, subset_name):
-        image = None
-        image_path = osp.join(self._path, VocPath.IMAGES_DIR,
+        image = osp.join(self._path, VocPath.IMAGES_DIR,
             item_id + VocPath.IMAGE_EXT)
-        if osp.isfile(image_path):
-            image = lazy_image(image_path)
 
         annotations = self._get_annotations(item_id)
 
