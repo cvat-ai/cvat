@@ -205,19 +205,6 @@
         REMOVED_OBJECT: 'Removed object',
     });
 
-    /* SearchDirection
-        * @enum {string}
-        * @name LogType
-        * @memberof module:API.cvat.enums
-        * @property {string} FORWARD 'forward'
-        * @property {string} BACKWARD 'backward'
-        * @readonly
-    */
-    const SearchDirection = Object.freeze({
-        FORWARD: 'forward',
-        BACKWARD: 'backward',
-    });
-
     /**
         * Array of hex colors
         * @type {module:API.cvat.classes.Loader[]} values
@@ -242,7 +229,6 @@
         ObjectShape,
         LogType,
         HistoryActions,
-        SearchDirection,
         colors,
     };
 })();
