@@ -210,17 +210,20 @@ class AnnotationsFilter {
 
     toJSONQuery(filters) {
         try {
+            if (!filters.length) {
+                return [[], '$.objects[*].clientID'];
+            }
+
             const groups = [];
             const expression = filters.map((filter) => `(${filter})`).join('|').replace(/\\"/g, '`');
             this._splitWithOperator(groups, expression);
-            return `$.objects[?(${this._join(groups)})].clientID`;
+            return [groups, `$.objects[?(${this._join(groups)})].clientID`];
         } catch (error) {
             throw new ArgumentError(`Wrong filter expression. ${error.toString()}`);
         }
     }
 
-    filter(statesData, filters) {
-        const query = this.toJSONQuery(filters);
+    filter(statesData, query) {
         try {
             const objects = this._convertObjects(statesData);
             return jsonpath.query(objects, query);

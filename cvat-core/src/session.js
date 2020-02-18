@@ -63,10 +63,10 @@
                         return result;
                     },
 
-                    async search(filter, frameFrom, frameTo) {
+                    async search(filters, frameFrom, frameTo) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.annotations.search,
-                                filter, frameFrom, frameTo);
+                                filters, frameFrom, frameTo);
                         return result;
                     },
 
@@ -294,7 +294,8 @@
                 * (attr["sunglass ( help ) es"]==true |
                 * (width > 150 | height > 150 & (clientID == serverID))))) </li>
                 * </ul>
-                * <b> If you have double quotes in your query string, please escape them using back slash: \" </b>
+                * <b> If you have double quotes in your query string,
+                * please escape them using back slash: \" </b>
                 * @method get
                 * @param {integer} frame get objects from the frame
                 * @param {boolean} allTracks show all tracks
@@ -309,13 +310,14 @@
                 * @async
             */
             /**
-                * Find frame which contains at least one object satisfied to a filter
+                * Find a frame in the range [from, to]
+                * that contains at least one object satisfied to a filter
                 * @method search
                 * @memberof Session.annotations
                 * @param {ObjectFilter} [filter = []] filter
                 * @param {integer} from lower bound of a search
                 * @param {integer} to upper bound of a search
-                * @returns {integer} the nearest frame which contains filtered objects
+                * @returns {integer|null} a frame that contains objects according to the filter
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
@@ -681,6 +683,7 @@
                 split: Object.getPrototypeOf(this).annotations.split.bind(this),
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
                 clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
+                search: Object.getPrototypeOf(this).annotations.search.bind(this),
                 upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
                 select: Object.getPrototypeOf(this).annotations.select.bind(this),
                 statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
@@ -1188,6 +1191,7 @@
                 split: Object.getPrototypeOf(this).annotations.split.bind(this),
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
                 clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
+                search: Object.getPrototypeOf(this).annotations.search.bind(this),
                 upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
                 select: Object.getPrototypeOf(this).annotations.select.bind(this),
                 statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
@@ -1257,6 +1261,7 @@
         putAnnotations,
         saveAnnotations,
         hasUnsavedChanges,
+        searchAnnotations,
         mergeAnnotations,
         splitAnnotations,
         groupAnnotations,
@@ -1336,6 +1341,35 @@
 
         const annotationsData = await getAnnotations(this, frame, allTracks, filters);
         return annotationsData;
+    };
+
+    Job.prototype.annotations.search.implementation = async function (filters, frameFrom, frameTo) {
+        if (!Array.isArray(filters) || filters.some((filter) => typeof (filter) !== 'string')) {
+            throw new ArgumentError(
+                'The filters argument must be an array of strings',
+            );
+        }
+
+        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+            throw new ArgumentError(
+                'The start and end frames both must be integer',
+            );
+        }
+
+        if (frameFrom < this.startFrame || frameFrom > this.stopFrame) {
+            throw new ArgumentError(
+                'The start frame is out of the job',
+            );
+        }
+
+        if (frameTo < this.startFrame || frameTo > this.stopFrame) {
+            throw new ArgumentError(
+                'The stop frame is out of the job',
+            );
+        }
+
+        const result = searchAnnotations(this, filters, frameFrom, frameTo);
+        return result;
     };
 
     Job.prototype.annotations.save.implementation = async function (onUpdate) {
@@ -1518,6 +1552,35 @@
         }
 
         const result = await getAnnotations(this, frame, allTracks, filters);
+        return result;
+    };
+
+    Job.prototype.annotations.search.implementation = async function (filters, frameFrom, frameTo) {
+        if (!Array.isArray(filters) || filters.some((filter) => typeof (filter) !== 'string')) {
+            throw new ArgumentError(
+                'The filters argument must be an array of strings',
+            );
+        }
+
+        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+            throw new ArgumentError(
+                'The start and end frames both must be integer',
+            );
+        }
+
+        if (frameFrom < 0 || frameFrom >= this.size) {
+            throw new ArgumentError(
+                'The start frame is out of the task',
+            );
+        }
+
+        if (frameTo < 0 || frameTo >= this.size) {
+            throw new ArgumentError(
+                'The stop frame is out of the job',
+            );
+        }
+
+        const result = searchAnnotations(this, filters, frameFrom, frameTo);
         return result;
     };
 

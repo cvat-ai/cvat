@@ -100,6 +100,19 @@
         // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
     }
 
+    function searchAnnotations(session, filters, frameFrom, frameTo) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).collection.search(filters, frameFrom, frameTo);
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
+    }
+
     function mergeAnnotations(session, objectStates) {
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
@@ -311,6 +324,7 @@
         saveAnnotations,
         hasUnsavedChanges,
         mergeAnnotations,
+        searchAnnotations,
         splitAnnotations,
         groupAnnotations,
         clearAnnotations,
