@@ -79,7 +79,8 @@ export default function UploadedModelItem(props: Props): JSX.Element {
                                     Delete
                             </Menu.Item>
                         </Menu>
-                    )}
+                    )
+                }
                 >
                     <Icon className='cvat-menu-icon' component={MenuIcon} />
                 </Dropdown>

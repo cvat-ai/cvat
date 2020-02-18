@@ -1,8 +1,7 @@
-import { AnyAction } from 'redux';
+import { AboutActions, AboutActionTypes } from 'actions/about-actions';
+import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { AboutState } from './interfaces';
 
-import { AuthActionTypes } from '../actions/auth-actions';
-import { AboutActionTypes } from '../actions/about-actions';
 
 const defaultState: AboutState = {
     server: {},
@@ -10,7 +9,10 @@ const defaultState: AboutState = {
     initialized: false,
 };
 
-export default function (state: AboutState = defaultState, action: AnyAction): AboutState {
+export default function (
+    state: AboutState = defaultState,
+    action: AboutActions | AuthActions,
+): AboutState {
     switch (action.type) {
         case AboutActionTypes.GET_ABOUT: {
             return {

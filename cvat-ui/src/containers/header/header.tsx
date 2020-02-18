@@ -1,13 +1,12 @@
-import React from 'react';
 import { connect } from 'react-redux';
 
-import { logoutAsync } from 'actions/auth-actions';
 import {
     SupportedPlugins,
     CombinedState,
 } from 'reducers/interfaces';
 
 import HeaderComponent from 'components/header/header';
+import { logoutAsync } from 'actions/auth-actions';
 
 interface StateToProps {
     logoutFetching: boolean;
@@ -20,7 +19,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onLogout(): void;
+    onLogout: typeof logoutAsync;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -39,19 +38,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: any): DispatchToProps {
-    return {
-        onLogout: (): void => dispatch(logoutAsync()),
-    };
-}
-
-function HeaderContainer(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <HeaderComponent {...props} />
-    );
-}
+const mapDispatchToProps: DispatchToProps = {
+    onLogout: logoutAsync,
+};
 
 export default connect(
     mapStateToProps,
     mapDispatchToProps,
-)(HeaderContainer);
+)(HeaderComponent);

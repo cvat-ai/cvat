@@ -49,8 +49,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                             <Icon type='close' />
                         </span>
                     </Tooltip>
-                )
-            }
+                )}
         </div>
     );
 }

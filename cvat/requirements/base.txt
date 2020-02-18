@@ -25,7 +25,7 @@ dj-pagination==2.4.0
 python-logstash==0.4.6
 django-revproxy==0.9.15
 rules==2.0
-GitPython==2.1.11
+GitPython==3.0.8
 coreapi==2.3.3
 django-filter==2.0.0
 Markdown==3.0.1

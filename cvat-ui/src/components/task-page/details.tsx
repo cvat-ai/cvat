@@ -245,24 +245,21 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                         <Icon type='check-circle' />
                                         Synchronized
                                     </Tag>
-                                )
-                            }
+                                )}
                             {repositoryStatus === 'merged'
                                 && (
                                     <Tag color='green'>
                                         <Icon type='check-circle' />
                                         Merged
                                     </Tag>
-                                )
-                            }
+                                )}
                             {repositoryStatus === 'syncing'
                                 && (
                                     <Tag color='purple'>
                                         <Icon type='loading' />
                                         Syncing
                                     </Tag>
-                                )
-                            }
+                                )}
                             {repositoryStatus === '!sync'
                                 && (
                                     <Tag
@@ -290,8 +287,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                         <Icon type='warning' />
                                         Synchronize
                                     </Tag>
-                                )
-                            }
+                                )}
                         </Col>
                     </Row>
                 )

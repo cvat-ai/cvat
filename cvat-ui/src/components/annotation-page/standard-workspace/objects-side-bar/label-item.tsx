@@ -114,14 +114,12 @@ function LabelItemComponent(props: Props): JSX.Element {
             <Col span={3}>
                 { statesLocked
                     ? <Icon type='lock' onClick={unlockStates} />
-                    : <Icon type='unlock' onClick={lockStates} />
-                }
+                    : <Icon type='unlock' onClick={lockStates} />}
             </Col>
             <Col span={3}>
                 { statesHidden
                     ? <Icon type='eye-invisible' onClick={showStates} />
-                    : <Icon type='eye' onClick={hideStates} />
-                }
+                    : <Icon type='eye' onClick={hideStates} />}
             </Col>
         </Row>
     );

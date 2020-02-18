@@ -68,8 +68,7 @@ function PlayerButtons(props: Props): JSX.Element {
                             onClick={onSwitchPlay}
                         />
                     </Tooltip>
-                )
-            }
+                )}
 
             <Tooltip title='Go next'>
                 <Icon component={NextIcon} onClick={onNextFrame} />

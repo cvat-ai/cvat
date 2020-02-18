@@ -53,8 +53,7 @@ export default function ModelsPageComponent(props: Props): JSX.Element {
         <div className='cvat-models-page'>
             <TopBarComponent installedAutoAnnotation={installedAutoAnnotation} />
             { !!integratedModels.length
-                && <BuiltModelsList models={integratedModels} />
-            }
+                && <BuiltModelsList models={integratedModels} />}
             { !!uploadedModels.length && (
                 <UploadedModelsList
                     registeredUsers={registeredUsers}
@@ -66,8 +65,7 @@ export default function ModelsPageComponent(props: Props): JSX.Element {
                 && !uploadedModels.length
                 && !installedTFAnnotation
                 && !installedTFSegmentation
-                && <EmptyListComponent />
-            }
+                && <EmptyListComponent />}
             <FeedbackComponent />
         </div>
     );
