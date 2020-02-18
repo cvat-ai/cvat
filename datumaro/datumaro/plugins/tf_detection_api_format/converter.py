@@ -189,9 +189,15 @@ class TfDetectionApiConverter(Converter, CliPlugin):
     def _make_tf_example(self, item):
         features = {
             'image/source_id': bytes_feature(str(item.id).encode('utf-8')),
-            'image/filename': bytes_feature(
-                ('%s%s' % (item.id, DetectionApiPath.IMAGE_EXT)).encode('utf-8')),
         }
+
+        image_filename = ''
+        if item.has_image:
+            image_filename = item.image.filename
+        if not image_filename:
+            image_filename = item.id + DetectionApiPath.IMAGE_EXT
+        features['image/filename'] = bytes_feature(
+            image_filename.encode('utf-8'))
 
         if not item.has_image:
             raise Exception("Failed to export dataset item '%s': "

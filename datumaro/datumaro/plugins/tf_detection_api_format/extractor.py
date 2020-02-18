@@ -195,8 +195,11 @@ class TfDetectionApiExtractor(SourceExtractor):
             image_params = {}
             if frame_image and frame_format:
                 image_params['data'] = lazy_image(frame_image, decode_image)
-            if frame_filename and images_dir:
-                image_params['path'] = osp.join(images_dir, frame_filename)
+            if frame_filename:
+                path = frame_filename
+                if images_dir:
+                    path = osp.join(images_dir, frame_filename)
+                image_params['path'] = path
 
             image = None
             if image_params:
