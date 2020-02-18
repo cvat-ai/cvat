@@ -36,6 +36,7 @@ const defaultState: AnnotationState = {
             number: 0,
             data: null,
             fetching: false,
+            changeTime: null
         },
         playing: false,
     },
@@ -157,6 +158,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 number,
                 data,
                 states,
+                frameChangeTime
             } = action.payload;
 
             const activatedStateID = states
@@ -171,6 +173,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         data,
                         number,
                         fetching: false,
+                        changeTime: frameChangeTime,
                     },
                 },
                 annotations: {

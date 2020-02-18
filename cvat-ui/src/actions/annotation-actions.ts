@@ -472,7 +472,7 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
-export function changeFrameAsync(toFrame: number):
+export function changeFrameAsync(toFrame: number, frameChangeTime: number | null):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const store = getCVATStore();
@@ -492,6 +492,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                         number: state.annotation.player.frame.number,
                         data: state.annotation.player.frame.data,
                         states: state.annotation.annotations.states,
+                        frameChangeTime,
                     },
                 });
 
@@ -512,6 +513,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                     number: toFrame,
                     data,
                     states,
+                    frameChangeTime,
                 },
             });
         } catch (error) {

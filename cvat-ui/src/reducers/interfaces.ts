@@ -297,6 +297,7 @@ export interface AnnotationState {
             number: number;
             data: any | null;
             fetching: boolean;
+            changeTime: number | null;
         };
         playing: boolean;
     };

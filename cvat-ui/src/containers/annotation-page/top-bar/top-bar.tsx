@@ -1,6 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
+import { Canvas } from 'cvat-canvas';
+
 import { SliderValue } from 'antd/lib/slider';
 
 import {
@@ -14,24 +16,28 @@ import {
 } from 'actions/annotation-actions';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, FrameSpeed } from 'reducers/interfaces';
 
 interface StateToProps {
     jobInstance: any;
     frameNumber: number;
     frameStep: number;
+    frameSpeed: FrameSpeed;
+    frameChangeTime: number | null;
     playing: boolean;
     saving: boolean;
+    canvasInstance: Canvas;
     canvasIsReady: boolean;
     savingStatuses: string[];
     undoAction?: string;
     redoAction?: string;
+    resetZoom: boolean;
     autoSave: boolean;
     autoSaveInterval: number;
 }
 
 interface DispatchToProps {
-    onChangeFrame(frame: number): void;
+    onChangeFrame(frame: number, time: number | null): void;
     onSwitchPlay(playing: boolean): void;
     onSaveAnnotation(sessionInstance: any): void;
     showStatistics(sessionInstance: any): void;
@@ -46,6 +52,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 playing,
                 frame: {
                     number: frameNumber,
+                    changeTime: frameChangeTime,
                 },
             },
             annotations: {
@@ -59,12 +66,15 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 instance: jobInstance,
             },
             canvas: {
+                instance: canvasInstance,
                 ready: canvasIsReady,
             },
         },
         settings: {
             player: {
+                frameSpeed,
                 frameStep,
+                resetZoom,
             },
             workspace: {
                 autoSave,
@@ -75,7 +85,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         frameStep,
+        frameSpeed,
+        frameChangeTime,
         playing,
+        canvasInstance,
         canvasIsReady,
         saving,
         savingStatuses,
@@ -83,6 +96,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         undoAction: history.undo[history.undo.length - 1],
         redoAction: history.redo[history.redo.length - 1],
+        resetZoom,
         autoSave,
         autoSaveInterval,
     };
@@ -90,8 +104,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onChangeFrame(frame: number): void {
-            dispatch(changeFrameAsync(frame));
+        onChangeFrame(frame: number, time: number | null): void {
+            dispatch(changeFrameAsync(frame, time));
         },
         onSwitchPlay(playing: boolean): void {
             dispatch(switchPlay(playing));
@@ -115,25 +129,29 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private autoSaveInterval: number | undefined;
+    private frameUpdateStartTime: number | undefined;
 
     public componentDidUpdate(): void {
         const {
             jobInstance,
             frameNumber,
+            frameChangeTime,
+            frameSpeed,
             playing,
             canvasIsReady,
-            onChangeFrame,
             onSwitchPlay,
         } = this.props;
 
+        
         if (playing && canvasIsReady) {
             if (frameNumber < jobInstance.stopFrame) {
+                const delay: number = frameChangeTime ? Math.max(0,~~(1000/frameSpeed) -  new Date().getTime() + frameChangeTime) : 0;
                 setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
-                        onChangeFrame(frameNumber + 1);
+                        this.onChangeFrame(frameNumber + 1, new Date().getTime());
                     }
-                });
+                }, delay);
             } else {
                 onSwitchPlay(false);
             }
@@ -152,11 +170,26 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (autoSave && !saving) {
                 this.onSaveAnnotation();
             }
-        }, autoSaveInterval/5, autoSave, saving);
+        }, autoSaveInterval, autoSave, saving);
     }
 
     public componentWillUnmount() : void {
         window.clearInterval(this.autoSaveInterval);
+    }
+
+    private onChangeFrame(newFrame: number, time: number | null = null): void {
+        const { 
+            canvasInstance,
+            canvasIsReady,
+            onChangeFrame,
+            resetZoom,
+        } = this.props;
+
+        onChangeFrame(newFrame, time);
+
+        if (canvasIsReady && resetZoom) {
+            canvasInstance.fit();
+        }
     }
 
     private undo = (): void => {
@@ -205,7 +238,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     private onFirstFrame = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             jobInstance,
             playing,
@@ -217,13 +249,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.onChangeFrame(newFrame);
         }
     };
 
     private onBackward = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             frameStep,
             jobInstance,
@@ -237,13 +268,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.onChangeFrame(newFrame);
         }
     };
 
     private onPrevFrame = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             jobInstance,
             playing,
@@ -256,13 +286,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.onChangeFrame(newFrame);
         }
     };
 
     private onNextFrame = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             jobInstance,
             playing,
@@ -275,13 +304,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.onChangeFrame(newFrame);
         }
     };
 
     private onForward = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             frameStep,
             jobInstance,
@@ -295,13 +323,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.onChangeFrame(newFrame);
         }
     };
 
     private onLastFrame = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             jobInstance,
             playing,
@@ -313,7 +340,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.onChangeFrame(newFrame);
         }
     };
 
@@ -330,27 +357,25 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const {
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         if (playing) {
             onSwitchPlay(false);
         }
-        onChangeFrame(value as number);
+        this.onChangeFrame(value as number);
     };
 
     private onChangePlayerInputValue = (value: number | undefined): void => {
         const {
             onSwitchPlay,
             playing,
-            onChangeFrame,
         } = this.props;
 
         if (typeof (value) !== 'undefined') {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(value);
+            this.onChangeFrame(value);
         }
     };
 

@@ -98,7 +98,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         changeFrame(frame: number): void {
-            dispatch(changeFrameAsync(frame));
+            dispatch(changeFrameAsync(frame, null));
         },
         updateState(sessionInstance: any, frameNumber: number, state: any): void {
             dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, [state]));
