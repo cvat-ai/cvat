@@ -14,7 +14,7 @@ import pycocotools.mask as mask_utils
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (DEFAULT_SUBSET_NAME,
-    AnnotationType, Points, Mask
+    AnnotationType, Points
 )
 from datumaro.components.cli_plugin import CliPlugin
 from datumaro.util import find
@@ -194,7 +194,7 @@ class _InstancesConverter(_TaskConverter):
             if inst[1]:
                 inst[1] = sum(new_segments, [])
             else:
-                mask = cls.merge_masks(new_segments)
+                mask = mask_tools.merge_masks(new_segments)
                 inst[2] = mask_tools.mask_to_rle(mask)
 
         return instances
@@ -228,14 +228,14 @@ class _InstancesConverter(_TaskConverter):
             if masks:
                 if mask is not None:
                     masks += [mask]
-                mask = self.merge_masks(masks)
+                mask = mask_tools.merge_masks([m.image for m in masks])
 
             if mask is not None:
                 mask = mask_tools.mask_to_rle(mask)
             polygons = []
         else:
             if masks:
-                mask = self.merge_masks(masks)
+                mask = mask_tools.merge_masks([m.image for m in masks])
                 polygons += mask_tools.mask_to_polygons(mask)
             mask = None
 
@@ -244,23 +244,6 @@ class _InstancesConverter(_TaskConverter):
     @staticmethod
     def find_group_leader(group):
         return max(group, key=lambda x: x.get_area())
-
-    @staticmethod
-    def merge_masks(masks):
-        if not masks:
-            return None
-
-        def get_mask(m):
-            if isinstance(m, Mask):
-                return m.image
-            else:
-                return m
-
-        binary_mask = get_mask(masks[0])
-        for m in masks[1:]:
-            binary_mask |= get_mask(m)
-
-        return binary_mask
 
     @staticmethod
     def compute_bbox(annotations):
