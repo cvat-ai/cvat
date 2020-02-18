@@ -50,6 +50,9 @@ interface StateToProps {
     gridOpacity: number;
     activeLabelID: number;
     activeObjectType: ObjectType;
+    brightnessLevel: number;
+    contrastLevel: number;
+    saturationLevel: number;
 }
 
 interface DispatchToProps {
@@ -104,6 +107,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 gridSize,
                 gridColor,
                 gridOpacity,
+                brightnessLevel,
+                contrastLevel,
+                saturationLevel,
             },
             shapes: {
                 opacity,
@@ -133,6 +139,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         gridOpacity,
         activeLabelID,
         activeObjectType,
+        brightnessLevel,
+        contrastLevel,
+        saturationLevel,
     };
 }
 

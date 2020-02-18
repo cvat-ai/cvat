@@ -26,6 +26,8 @@ interface StateToProps {
     savingStatuses: string[];
     undoAction?: string;
     redoAction?: string;
+    autoSave: boolean;
+    autoSaveInterval: number;
 }
 
 interface DispatchToProps {
@@ -64,6 +66,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
             player: {
                 frameStep,
             },
+            workspace: {
+                autoSave,
+                autoSaveInterval,
+            }
         },
     } = state;
 
@@ -77,6 +83,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         undoAction: history.undo[history.undo.length - 1],
         redoAction: history.redo[history.redo.length - 1],
+        autoSave,
+        autoSaveInterval,
     };
 }
 
@@ -106,6 +114,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
+    private autoSaveInterval: number | undefined;
+
     public componentDidUpdate(): void {
         const {
             jobInstance,
@@ -127,7 +137,26 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             } else {
                 onSwitchPlay(false);
             }
-        }
+        } 
+
+    }
+
+    componentDidMount(): void {
+        const {
+            autoSave, 
+            autoSaveInterval,
+            saving,
+         } = this.props;
+
+        this.autoSaveInterval = window.setInterval((autoSave: boolean, saving: boolean): void => {
+            if (autoSave && !saving) {
+                this.onSaveAnnotation();
+            }
+        }, autoSaveInterval/5, autoSave, saving);
+    }
+
+    public componentWillUnmount() : void {
+        window.clearInterval(this.autoSaveInterval);
     }
 
     private undo = (): void => {

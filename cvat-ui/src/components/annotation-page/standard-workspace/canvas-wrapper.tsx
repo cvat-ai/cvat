@@ -39,6 +39,9 @@ interface Props {
     gridOpacity: number;
     activeLabelID: number;
     activeObjectType: ObjectType;
+    brightnessLevel: number;
+    contrastLevel: number;
+    saturationLevel: number;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -325,6 +328,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onActivateObject,
             onUpdateContextMenu,
             onEditShape,
+            brightnessLevel,
+            contrastLevel,
+            saturationLevel,
         } = this.props;
 
         // Size
@@ -342,6 +348,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             gridPattern.style.opacity = `${gridOpacity / 100}`;
         }
         canvasInstance.grid(gridSize, gridSize);
+
+        // Filters
+        const backgroundElement = window.document.getElementById('cvat_canvas_background');
+        if (backgroundElement) {
+            backgroundElement.style.filter = `brightness(${brightnessLevel/50}) contrast(${contrastLevel/50}) saturate(${saturationLevel/50})`;
+        }
 
         // Events
         canvasInstance.html().addEventListener('mousedown', (e: MouseEvent): void => {

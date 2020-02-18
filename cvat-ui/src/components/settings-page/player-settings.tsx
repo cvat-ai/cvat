@@ -138,6 +138,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         max={1000}
                         step={1}
                         value={gridSize}
+                        disabled={!grid}
                         onChange={(value: number | undefined): void => {
                             if (value) {
                                 onChangeGridSize(value);
@@ -149,6 +150,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     <Text className='cvat-text-color'> Grid color </Text>
                     <Select
                         value={gridColor}
+                        disabled={!grid}
                         onChange={(color: GridColor): void => {
                             onChangeGridColor(color);
                         }}
@@ -166,6 +168,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         min={0}
                         max={100}
                         value={gridOpacity}
+                        disabled={!grid}
                         onChange={(value: number | [number, number]): void => {
                             onChangeGridOpacity(value as number);
                         }}
