@@ -3,7 +3,7 @@ import numpy as np
 from unittest import TestCase
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, Bbox, LabelCategories
+    AnnotationType, Bbox, Mask, LabelCategories
 )
 from datumaro.plugins.tf_detection_api_format.importer import TfDetectionApiImporter
 from datumaro.plugins.tf_detection_api_format.extractor import TfDetectionApiExtractor
@@ -63,6 +63,35 @@ class TfrecordConverterTest(TestCase):
         with TestDir() as test_dir:
             self._test_save_and_load(
                 TestExtractor(), TfDetectionApiConverter(save_images=True),
+                test_dir)
+
+    def test_can_save_masks(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='train', image=np.ones((4, 5, 3)),
+                        annotations=[
+                            Mask(image=np.array([
+                                [1, 0, 0, 1],
+                                [0, 1, 1, 0],
+                                [0, 1, 1, 0],
+                                [1, 0, 0, 1],
+                            ]), label=1),
+                        ]
+                    ),
+                ])
+
+            def categories(self):
+                label_cat = LabelCategories()
+                for label in range(10):
+                    label_cat.add('label_' + str(label))
+                return {
+                    AnnotationType.label: label_cat,
+                }
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(
+                TestExtractor(), TfDetectionApiConverter(save_masks=True),
                 test_dir)
 
     def test_can_save_dataset_with_no_subsets(self):
