@@ -1352,7 +1352,7 @@
 
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
             throw new ArgumentError(
-                'The start and end frames both must be integer',
+                'The start and end frames both must be an integer',
             );
         }
 
@@ -1564,7 +1564,7 @@
 
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
             throw new ArgumentError(
-                'The start and end frames both must be integer',
+                'The start and end frames both must be an integer',
             );
         }
 
@@ -1576,7 +1576,7 @@
 
         if (frameTo < 0 || frameTo >= this.size) {
             throw new ArgumentError(
-                'The stop frame is out of the job',
+                'The stop frame is out of the task',
             );
         }
 
