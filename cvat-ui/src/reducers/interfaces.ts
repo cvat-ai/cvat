@@ -209,6 +209,9 @@ export interface NotificationsState {
             savingJob: null | ErrorState;
             uploadAnnotations: null | ErrorState;
             removeAnnotations: null | ErrorState;
+            fetchingAnnotations: null | ErrorState;
+            undo: null | ErrorState;
+            redo: null | ErrorState;
         };
 
         [index: string]: any;
@@ -312,6 +315,7 @@ export interface AnnotationState {
         activatedStateID: number | null;
         collapsed: Record<number, boolean>;
         states: any[];
+        filters: string[];
         history: {
             undo: string[];
             redo: string[];

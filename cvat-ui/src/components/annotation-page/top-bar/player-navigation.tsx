@@ -3,6 +3,7 @@ import React from 'react';
 import {
     Row,
     Col,
+    Icon,
     Slider,
     Tooltip,
     InputNumber,
@@ -17,6 +18,7 @@ interface Props {
     frameNumber: number;
     onSliderChange(value: SliderValue): void;
     onInputChange(value: number | undefined): void;
+    onURLIconClick(): void;
 }
 
 function PlayerNavigation(props: Props): JSX.Element {
@@ -26,6 +28,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         frameNumber,
         onSliderChange,
         onInputChange,
+        onURLIconClick,
     } = props;
 
     return (
@@ -42,10 +45,15 @@ function PlayerNavigation(props: Props): JSX.Element {
                         />
                     </Col>
                 </Row>
-                <Row type='flex' justify='space-around'>
+                <Row type='flex' justify='center'>
                     <Col className='cvat-player-filename-wrapper'>
                         <Tooltip title='filename.png'>
                             <Text type='secondary'>filename.png</Text>
+                        </Tooltip>
+                    </Col>
+                    <Col offset={1}>
+                        <Tooltip title='Create frame URL'>
+                            <Icon className='cvat-player-frame-url-icon' type='link' onClick={onURLIconClick} />
                         </Tooltip>
                     </Col>
                 </Row>

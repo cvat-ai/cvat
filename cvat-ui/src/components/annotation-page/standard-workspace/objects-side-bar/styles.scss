@@ -63,13 +63,17 @@
     background: $objects-bar-tabs-color;
     padding: 5px;
 
-    > div:nth-child(1) > div > span {
-        > input {
-            text-indent: 10px;
-        }
+    > div:nth-child(1) > div:nth-child(1) {
+        height: 32px;
+        > .ant-select > div {
+            height: 32px;
+            > div {
+                height: 32px;
 
-        i {
-            @extend .cvat-object-sidebar-icon;
+                ul {
+                    display: flex;
+                }
+            }
         }
     }
 

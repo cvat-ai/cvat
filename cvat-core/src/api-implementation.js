@@ -9,7 +9,6 @@
     require:false
 */
 
-
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');

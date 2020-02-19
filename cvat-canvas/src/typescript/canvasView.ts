@@ -830,6 +830,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             occluded: state.occluded,
             hidden: state.hidden,
             lock: state.lock,
+            shapeType: state.shapeType,
             points: [...state.points],
             attributes: { ...state.attributes },
         };
@@ -963,16 +964,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private deactivate(): void {
         if (this.activeElement.clientID !== null) {
             const { clientID } = this.activeElement;
-            const [state] = this.controller.objects
-                .filter((_state: any): boolean => _state.clientID === clientID);
-            const shape = this.svgShapes[state.clientID];
+            const drawnState = this.drawnStates[clientID];
+            const shape = this.svgShapes[clientID];
+
             shape.removeClass('cvat_canvas_shape_activated');
 
             (shape as any).off('dragstart');
             (shape as any).off('dragend');
             (shape as any).draggable(false);
 
-            if (state.shapeType !== 'points') {
+            if (drawnState.shapeType !== 'points') {
                 this.selectize(false, shape);
             }
 
@@ -982,10 +983,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).resize(false);
 
             // TODO: Hide text only if it is hidden by settings
-            const text = this.svgTexts[state.clientID];
+            const text = this.svgTexts[clientID];
             if (text) {
                 text.remove();
-                delete this.svgTexts[state.clientID];
+                delete this.svgTexts[clientID];
             }
 
             this.activeElement = {

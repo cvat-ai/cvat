@@ -1,4 +1,5 @@
 import React from 'react';
+import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
 import { SliderValue } from 'antd/lib/slider';
@@ -325,6 +326,16 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         }
     };
 
+    private onURLIconClick = (): void => {
+        const { frameNumber } = this.props;
+        const {
+            origin,
+            pathname,
+        } = window.location;
+        const url = `${origin}${pathname}?frame=${frameNumber}`;
+        copy(url);
+    };
+
     public render(): JSX.Element {
         const {
             playing,
@@ -352,6 +363,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onLastFrame={this.onLastFrame}
                 onSliderChange={this.onChangePlayerSliderValue}
                 onInputChange={this.onChangePlayerInputValue}
+                onURLIconClick={this.onURLIconClick}
                 playing={playing}
                 saving={saving}
                 savingStatuses={savingStatuses}
