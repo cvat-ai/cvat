@@ -625,7 +625,7 @@ export function confirmCanvasReady(): AnyAction {
     };
 }
 
-export function getJobAsync(tid: number, jid: number):
+export function getJobAsync(tid: number, jid: number, initFrame: number):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch({
@@ -654,7 +654,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
             }
 
-            const frameNumber = Math.max(0, job.startFrame);
+            const frameNumber = Math.max(Math.min(job.stopFrame, initFrame), job.startFrame);
             const frameData = await job.frames.get(frameNumber);
             const states = await job.annotations.get(frameNumber, false, filters);
             const colors = [...cvat.enums.colors];

@@ -116,6 +116,19 @@
     user-select: none;
 }
 
+.cvat-player-frame-url-icon {
+    opacity: 0.7;
+    color: $info-icon-color;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    &:active {
+        opacity: 0.7;
+    }
+}
+
 .cvat-player-frame-selector {
     width: 5em;
     padding-right: 5px;

@@ -44,10 +44,19 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const { params } = own.match;
     const taskID = +params.tid;
     const jobID = +params.jid;
+    const searchParams = new URLSearchParams(window.location.search);
+    let initFrame = 0;
+    if (searchParams.has('frame')) {
+        initFrame = +(searchParams.get('frame') as string);
+        if (Number.isNaN(initFrame)) {
+            initFrame = 0;
+        }
+        own.history.replace(own.history.location.state);
+    }
 
     return {
         getJob(): void {
-            dispatch(getJobAsync(taskID, jobID));
+            dispatch(getJobAsync(taskID, jobID, initFrame));
         },
     };
 }
