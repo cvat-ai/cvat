@@ -59,6 +59,7 @@ const defaultState: AnnotationState = {
             undo: [],
             redo: [],
         },
+        unsaved: false,
     },
     propagate: {
         objectState: null,
@@ -220,6 +221,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.annotations.saving,
                         uploading: false,
                     },
+                    unsaved: false,
                 },
             };
         }
@@ -356,6 +358,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID: null,
+                    unsaved: true,
                 },
                 canvas: {
                     ...state.canvas,

@@ -27,6 +27,7 @@ interface StateToProps {
     frameChangeTime: number | null;
     playing: boolean;
     saving: boolean;
+    unsaved: boolean,
     canvasInstance: Canvas;
     canvasIsReady: boolean;
     savingStatuses: string[];
@@ -62,6 +63,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                     statuses: savingStatuses,
                 },
                 history,
+                unsaved,
             },
             job: {
                 instance: jobInstance,
@@ -93,6 +95,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasIsReady,
         saving,
         savingStatuses,
+        unsaved,
         frameNumber,
         jobInstance,
         undoAction: history.undo[history.undo.length - 1],
@@ -130,7 +133,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private autoSaveInterval: number | undefined;
-    private frameUpdateStartTime: number | undefined;
 
     public componentDidUpdate(): void {
         const {
@@ -156,8 +158,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             } else {
                 onSwitchPlay(false);
             }
-        } 
-
+        }
     }
 
     componentDidMount(): void {
@@ -165,6 +166,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             autoSave, 
             autoSaveInterval,
             saving,
+            unsaved,
          } = this.props;
 
         this.autoSaveInterval = window.setInterval((autoSave: boolean, saving: boolean): void => {
@@ -172,10 +174,21 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 this.onSaveAnnotation();
             }
         }, autoSaveInterval, autoSave, saving);
+
+        if (unsaved) {
+            window.addEventListener('beforeunload', this.beforeUnloadCallback);
+        }
     }
 
     public componentWillUnmount() : void {
         window.clearInterval(this.autoSaveInterval);
+        window.removeEventListener('beforeunload', this.beforeUnloadCallback);
+    }
+
+    private beforeUnloadCallback(event: BeforeUnloadEvent): any {
+        const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
+        (event || window.event).returnValue = confirmationMessage;
+        return confirmationMessage;
     }
 
     private onChangeFrame(newFrame: number, time: number | null = null): void {

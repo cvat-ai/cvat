@@ -325,6 +325,7 @@ export interface AnnotationState {
             uploading: boolean;
             statuses: string[];
         };
+        unsaved: boolean,
     };
     propagate: {
         objectState: any | null;
