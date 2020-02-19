@@ -65,6 +65,9 @@ const defaultState: NotificationsState = {
             savingJob: null,
             uploadAnnotations: null,
             removeAnnotations: null,
+            fetchingAnnotations: null,
+            undo: null,
+            redo: null,
         },
     },
     messages: {
@@ -674,6 +677,51 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         removeAnnotations: {
                             message: 'Could not remove annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.FETCH_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        fetchingAnnotations: {
+                            message: 'Could not fetch annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.REDO_ACTION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        redo: {
+                            message: 'Could not redo',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UNDO_ACTION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        undo: {
+                            message: 'Could not undo',
                             reason: action.payload.error.toString(),
                         },
                     },

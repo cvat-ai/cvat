@@ -77,16 +77,16 @@
         }
     }
 
-    async function getAnnotations(session, frame, filter) {
+    async function getAnnotations(session, frame, allTracks, filters) {
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (cache.has(session)) {
-            return cache.get(session).collection.get(frame, filter);
+            return cache.get(session).collection.get(frame, allTracks, filters);
         }
 
         await getAnnotationsFromServer(session);
-        return cache.get(session).collection.get(frame, filter);
+        return cache.get(session).collection.get(frame, allTracks, filters);
     }
 
     async function saveAnnotations(session, onUpdate) {
@@ -98,6 +98,19 @@
         }
 
         // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
+    }
+
+    function searchAnnotations(session, filters, frameFrom, frameTo) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).collection.search(filters, frameFrom, frameTo);
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
     }
 
     function mergeAnnotations(session, objectStates) {
@@ -311,6 +324,7 @@
         saveAnnotations,
         hasUnsavedChanges,
         mergeAnnotations,
+        searchAnnotations,
         splitAnnotations,
         groupAnnotations,
         clearAnnotations,

@@ -1,4 +1,5 @@
 import React from 'react';
+import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 import {
     ActiveControl,
@@ -203,6 +204,22 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         removeObject(jobInstance, objectState);
     };
 
+    private createURL = (): void => {
+        const {
+            objectState,
+            frameNumber,
+        } = this.props;
+
+        const {
+            origin,
+            pathname,
+        } = window.location;
+
+        const search = `frame=${frameNumber}&object=${objectState.serverID}`;
+        const url = `${origin}${pathname}?${search}`;
+        copy(url);
+    };
+
     private activate = (): void => {
         const {
             activateObject,
@@ -354,6 +371,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}
                 clientID={objectState.clientID}
+                serverID={objectState.serverID}
                 occluded={objectState.occluded}
                 outside={objectState.outside}
                 locked={objectState.lock}
@@ -385,6 +403,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 remove={this.remove}
                 copy={this.copy}
                 propagate={this.propagate}
+                createURL={this.createURL}
                 setOccluded={this.setOccluded}
                 unsetOccluded={this.unsetOccluded}
                 setOutside={this.setOutside}

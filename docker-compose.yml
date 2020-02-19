@@ -17,6 +17,7 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_DB: cvat
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - cvat_db:/var/lib/postgresql/data
 

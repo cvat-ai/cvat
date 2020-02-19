@@ -33,13 +33,20 @@ import {
 } from 'reducers/interfaces';
 
 function ItemMenu(
+    serverID: number | undefined,
     locked: boolean,
     copy: (() => void),
     remove: (() => void),
     propagate: (() => void),
+    createURL: (() => void),
 ): JSX.Element {
     return (
         <Menu key='unique' className='cvat-object-item-menu'>
+            <Menu.Item>
+                <Button disabled={serverID === undefined} type='link' icon='link' onClick={createURL}>
+                    Create object URL
+                </Button>
+            </Menu.Item>
             <Menu.Item>
                 <Button type='link' icon='copy' onClick={copy}>
                     Make a copy
@@ -77,6 +84,7 @@ function ItemMenu(
 
 interface ItemTopComponentProps {
     clientID: number;
+    serverID: number | undefined;
     labelID: number;
     labels: any[];
     type: string;
@@ -85,11 +93,13 @@ interface ItemTopComponentProps {
     copy(): void;
     remove(): void;
     propagate(): void;
+    createURL(): void;
 }
 
 function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
     const {
         clientID,
+        serverID,
         labelID,
         labels,
         type,
@@ -98,6 +108,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         copy,
         remove,
         propagate,
+        createURL,
     } = props;
 
     return (
@@ -119,7 +130,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
             <Col span={2}>
                 <Dropdown
                     placement='bottomLeft'
-                    overlay={ItemMenu(locked, copy, remove, propagate)}
+                    overlay={ItemMenu(serverID, locked, copy, remove, propagate, createURL)}
                 >
                     <Icon type='more' />
                 </Dropdown>
@@ -495,6 +506,7 @@ interface Props {
     objectType: ObjectType;
     shapeType: ShapeType;
     clientID: number;
+    serverID: number | undefined;
     labelID: number;
     occluded: boolean;
     outside: boolean | undefined;
@@ -515,6 +527,7 @@ interface Props {
     activate(): void;
     copy(): void;
     propagate(): void;
+    createURL(): void;
     remove(): void;
     setOccluded(): void;
     unsetOccluded(): void;
@@ -541,6 +554,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         && nextProps.labelID === prevProps.labelID
         && nextProps.color === prevProps.color
         && nextProps.clientID === prevProps.clientID
+        && nextProps.serverID === prevProps.serverID
         && nextProps.objectType === prevProps.objectType
         && nextProps.shapeType === prevProps.shapeType
         && nextProps.collapsed === prevProps.collapsed
@@ -559,6 +573,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         objectType,
         shapeType,
         clientID,
+        serverID,
         occluded,
         outside,
         locked,
@@ -579,6 +594,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         activate,
         copy,
         propagate,
+        createURL,
         remove,
         setOccluded,
         unsetOccluded,
@@ -609,6 +625,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
             style={{ borderLeftStyle: 'solid', borderColor: ` ${color}` }}
         >
             <ItemTop
+                serverID={serverID}
                 clientID={clientID}
                 labelID={labelID}
                 labels={labels}
@@ -618,6 +635,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 copy={copy}
                 remove={remove}
                 propagate={propagate}
+                createURL={createURL}
             />
             <ItemButtons
                 objectType={objectType}

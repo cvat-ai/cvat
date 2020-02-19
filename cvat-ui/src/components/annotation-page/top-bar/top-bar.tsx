@@ -33,6 +33,7 @@ interface Props {
     onLastFrame(): void;
     onSliderChange(value: SliderValue): void;
     onInputChange(value: number | undefined): void;
+    onURLIconClick(): void;
     onUndoClick(): void;
     onRedoClick(): void;
 }
@@ -58,6 +59,7 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
         onLastFrame,
         onSliderChange,
         onInputChange,
+        onURLIconClick,
         onUndoClick,
         onRedoClick,
     } = props;
@@ -92,6 +94,7 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
                             frameNumber={frameNumber}
                             onSliderChange={onSliderChange}
                             onInputChange={onInputChange}
+                            onURLIconClick={onURLIconClick}
                         />
                     </Row>
                 </Col>

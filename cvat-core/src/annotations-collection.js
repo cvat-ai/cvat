@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2019 Intel Corporation
+* Copyright (C) 2019-2020 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -22,6 +22,7 @@
         Tag,
         objectStateFactory,
     } = require('./annotations-objects');
+    const AnnotationsFilter = require('./annotations-filter');
     const { checkObjectType } = require('./common');
     const Statistics = require('./statistics');
     const { Label } = require('./labels');
@@ -110,6 +111,7 @@
                 return labelAccumulator;
             }, {});
 
+            this.annotationsFilter = new AnnotationsFilter();
             this.history = data.history;
             this.shapes = {}; // key is a frame
             this.tags = {}; // key is a frame
@@ -193,24 +195,45 @@
             return data;
         }
 
-        get(frame) {
+        get(frame, allTracks, filters) {
             const { tracks } = this;
             const shapes = this.shapes[frame] || [];
             const tags = this.tags[frame] || [];
 
-            const objects = tracks.concat(shapes).concat(tags).filter((object) => !object.removed);
-            // filtering here
+            const objects = [].concat(tracks, shapes, tags);
+            const visible = {
+                models: [],
+                data: [],
+            };
 
-            const objectStates = [];
             for (const object of objects) {
-                const stateData = object.get(frame);
-                if (stateData.outside && !stateData.keyframe) {
+                if (object.removed) {
                     continue;
                 }
 
-                const objectState = objectStateFactory.call(object, frame, stateData);
-                objectStates.push(objectState);
+                const stateData = object.get(frame);
+                if (!allTracks && stateData.outside && !stateData.keyframe) {
+                    continue;
+                }
+
+                visible.models.push(object);
+                visible.data.push(stateData);
             }
+
+            const [, query] = this.annotationsFilter.toJSONQuery(filters);
+            let filtered = [];
+            if (filters.length) {
+                filtered = this.annotationsFilter.filter(visible.data, query);
+            }
+
+            const objectStates = [];
+            visible.data.forEach((stateData, idx) => {
+                if (!filters.length || filtered.includes(stateData.clientID)) {
+                    const model = visible.models[idx];
+                    const objectState = objectStateFactory.call(model, frame, stateData);
+                    objectStates.push(objectState);
+                }
+            });
 
             return objectStates;
         }
@@ -798,6 +821,106 @@
                 state: minimumState,
                 distance: minimumDistance,
             };
+        }
+
+        search(filters, frameFrom, frameTo) {
+            const [groups, query] = this.annotationsFilter.toJSONQuery(filters);
+            const sign = Math.sign(frameTo - frameFrom);
+
+            const flattenedQuery = groups.flat(Number.MAX_SAFE_INTEGER);
+            const containsDifficultProperties = flattenedQuery
+                .some((fragment) => fragment
+                    .match(/^width/) || fragment.match(/^height/));
+
+            const deepSearch = (deepSearchFrom, deepSearchTo) => {
+                // deepSearchFrom is expected to be a frame that doesn't satisfy a filter
+                // deepSearchTo is expected to be a frame that satifies a filter
+
+                let [prev, next] = [deepSearchFrom, deepSearchTo];
+                // half division method instead of linear search
+                while (!(Math.abs(prev - next) === 1)) {
+                    const middle = next + Math.floor((prev - next) / 2);
+                    const shapesData = this.tracks.map((track) => track.get(middle));
+                    const filtered = this.annotationsFilter.filter(shapesData, query);
+                    if (filtered.length) {
+                        next = middle;
+                    } else {
+                        prev = middle;
+                    }
+                }
+
+                return next;
+            };
+
+            const keyframesMemory = {};
+            const predicate = sign > 0
+                ? (frame) => frame <= frameTo
+                : (frame) => frame >= frameTo;
+            const update = sign > 0
+                ? (frame) => frame + 1
+                : (frame) => frame - 1;
+            for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+                // First prepare all data for the frame
+                // Consider all shapes, tags, and tracks that have keyframe here
+                // In particular consider first and last frame as keyframes for all frames
+                const statesData = [].concat(
+                    (frame in this.shapes ? this.shapes[frame] : [])
+                        .map((shape) => shape.get(frame)),
+                    (frame in this.tags ? this.tags[frame] : [])
+                        .map((tag) => tag.get(frame)),
+                );
+                const tracks = Object.values(this.tracks)
+                    .filter((track) => (
+                        frame in track.shapes
+                        || frame === frameFrom
+                        || frame === frameTo
+                    ));
+                statesData.push(...tracks.map((track) => track.get(frame)));
+
+                // Nothing to filtering, go to the next iteration
+                if (!statesData.length) {
+                    continue;
+                }
+
+                // Filtering
+                const filtered = this.annotationsFilter.filter(statesData, query);
+
+                // Now we are checking whether we need deep search or not
+                // Deep search is needed in some difficult cases
+                // For example when filter contains fields which
+                // can be changed between keyframes (like: height and width of a shape)
+                // It's expected, that a track doesn't satisfy a filter on the previous keyframe
+                // At the same time it sutisfies the filter on the next keyframe
+                let withDeepSearch = false;
+                if (containsDifficultProperties) {
+                    for (const track of tracks) {
+                        const trackIsSatisfy = filtered.includes(track.clientID);
+                        if (!trackIsSatisfy) {
+                            keyframesMemory[track.clientID] = [
+                                filtered.includes(track.clientID),
+                                frame,
+                            ];
+                        } else if (keyframesMemory[track.clientID]
+                            && keyframesMemory[track.clientID][0] === false) {
+                            withDeepSearch = true;
+                        }
+                    }
+                }
+
+                if (withDeepSearch) {
+                    const reducer = sign > 0 ? Math.min : Math.max;
+                    const deepSearchFrom = reducer(
+                        ...Object.values(keyframesMemory).map((value) => value[1]),
+                    );
+                    return deepSearch(deepSearchFrom, frame);
+                }
+
+                if (filtered.length) {
+                    return frame;
+                }
+            }
+
+            return null;
         }
     }
 
