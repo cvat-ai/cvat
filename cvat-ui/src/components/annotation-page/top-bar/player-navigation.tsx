@@ -52,7 +52,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                         </Tooltip>
                     </Col>
                     <Col offset={1}>
-                        <Tooltip title='Copy frame URL'>
+                        <Tooltip title='Create frame URL'>
                             <Icon className='cvat-player-frame-url-icon' type='link' onClick={onURLIconClick} />
                         </Tooltip>
                     </Col>

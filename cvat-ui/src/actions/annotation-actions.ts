@@ -625,8 +625,12 @@ export function confirmCanvasReady(): AnyAction {
     };
 }
 
-export function getJobAsync(tid: number, jid: number, initFrame: number):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getJobAsync(
+    tid: number,
+    jid: number,
+    initialFrame: number,
+    initialFilters: string[],
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch({
             type: AnnotationActionTypes.GET_JOB,
@@ -635,7 +639,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
         try {
             const state: CombinedState = getStore().getState();
-            const { filters } = receiveAnnotationsParameters();
+            const filters = initialFilters;
 
             // First check state if the task is already there
             let task = state.tasks.current
@@ -654,7 +658,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
             }
 
-            const frameNumber = Math.max(Math.min(job.stopFrame, initFrame), job.startFrame);
+            const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
             const frameData = await job.frames.get(frameNumber);
             const states = await job.annotations.get(frameNumber, false, filters);
             const colors = [...cvat.enums.colors];
@@ -667,6 +671,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                     frameNumber,
                     frameData,
                     colors,
+                    filters,
                 },
             });
         } catch (error) {

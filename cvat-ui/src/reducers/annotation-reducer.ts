@@ -91,6 +91,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 states,
                 frameNumber: number,
                 colors,
+                filters,
                 frameData: data,
             } = action.payload;
 
@@ -110,6 +111,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     states,
+                    filters,
                 },
                 player: {
                     ...state.player,
