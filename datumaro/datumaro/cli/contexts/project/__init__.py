@@ -16,7 +16,8 @@ from datumaro.components.dataset_filter import DatasetItemEncoder
 from datumaro.components.extractor import AnnotationType
 from datumaro.components.cli_plugin import CliPlugin
 from .diff import DiffVisualizer
-from ...util import add_subparser, CliException, MultilineFormatter
+from ...util import add_subparser, CliException, MultilineFormatter, \
+    make_file_name
 from ...util.project import make_project_path, load_project, \
     generate_next_dir_name
 
@@ -286,8 +287,8 @@ def export_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-export-%s' % \
-            (project.config.project_name, args.format))
+        dst_dir = generate_next_dir_name('%s-%s' % \
+            (project.config.project_name, make_file_name(args.format)))
     dst_dir = osp.abspath(dst_dir)
 
     try:
@@ -554,8 +555,8 @@ def transform_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-transform' % \
-            project.config.project_name)
+        dst_dir = generate_next_dir_name('%s-%s' % \
+            (project.config.project_name, make_file_name(args.transform)))
     dst_dir = osp.abspath(dst_dir)
 
     extra_args = {}
@@ -648,7 +649,7 @@ def info_command(args):
         print_extractor_info(subset, indent="      ")
 
     print("Models:")
-    for model_name, model in env.config.models.items():
+    for model_name, model in config.models.items():
         print("  model '%s':" % model_name)
         print("    type:", model.launcher)
 
