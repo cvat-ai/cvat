@@ -216,7 +216,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         } = window.location;
 
         const search = `frame=${frameNumber}&object=${objectState.serverID}`;
-        const url = `${origin}${pathname}?${encodeURIComponent(search)}`;
+        const url = `${origin}${pathname}?${search}`;
         copy(url);
     };
 

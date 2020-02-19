@@ -44,7 +44,7 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const { params } = own.match;
     const taskID = +params.tid;
     const jobID = +params.jid;
-    const searchParams = new URLSearchParams(decodeURIComponent(window.location.search));
+    const searchParams = new URLSearchParams(window.location.search);
     const initialFilters: string[] = [];
     let initialFrame = 0;
 
