@@ -27,7 +27,6 @@ interface StateToProps {
     frameDelay: number;
     playing: boolean;
     saving: boolean;
-    unsaved: boolean;
     canvasInstance: Canvas;
     canvasIsReady: boolean;
     savingStatuses: string[];
@@ -63,7 +62,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                     statuses: savingStatuses,
                 },
                 history,
-                unsaved,
             },
             job: {
                 instance: jobInstance,
@@ -95,7 +93,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasIsReady,
         saving,
         savingStatuses,
-        unsaved,
         frameNumber,
         jobInstance,
         undoAction: history.undo[history.undo.length - 1],
