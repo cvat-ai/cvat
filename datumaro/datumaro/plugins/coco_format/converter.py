@@ -14,12 +14,13 @@ import pycocotools.mask as mask_utils
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (DEFAULT_SUBSET_NAME,
-    AnnotationType, Points, Mask
+    AnnotationType, Points
 )
 from datumaro.components.cli_plugin import CliPlugin
 from datumaro.util import find
 from datumaro.util.image import save_image
 import datumaro.util.mask_tools as mask_tools
+import datumaro.util.annotation_tools as anno_tools
 
 from .format import CocoTask, CocoPath
 
@@ -194,7 +195,7 @@ class _InstancesConverter(_TaskConverter):
             if inst[1]:
                 inst[1] = sum(new_segments, [])
             else:
-                mask = cls.merge_masks(new_segments)
+                mask = mask_tools.merge_masks(new_segments)
                 inst[2] = mask_tools.mask_to_rle(mask)
 
         return instances
@@ -205,8 +206,8 @@ class _InstancesConverter(_TaskConverter):
         masks = [a for a in group if a.type == AnnotationType.mask]
 
         anns = boxes + polygons + masks
-        leader = self.find_group_leader(anns)
-        bbox = self.compute_bbox(anns)
+        leader = anno_tools.find_group_leader(anns)
+        bbox = anno_tools.compute_bbox(anns)
         mask = None
         polygons = [p.points for p in polygons]
 
@@ -228,68 +229,29 @@ class _InstancesConverter(_TaskConverter):
             if masks:
                 if mask is not None:
                     masks += [mask]
-                mask = self.merge_masks(masks)
+                mask = mask_tools.merge_masks([m.image for m in masks])
 
             if mask is not None:
                 mask = mask_tools.mask_to_rle(mask)
             polygons = []
         else:
             if masks:
-                mask = self.merge_masks(masks)
+                mask = mask_tools.merge_masks([m.image for m in masks])
                 polygons += mask_tools.mask_to_polygons(mask)
             mask = None
 
         return [leader, polygons, mask, bbox]
 
     @staticmethod
-    def find_group_leader(group):
-        return max(group, key=lambda x: x.get_area())
-
-    @staticmethod
-    def merge_masks(masks):
-        if not masks:
-            return None
-
-        def get_mask(m):
-            if isinstance(m, Mask):
-                return m.image
-            else:
-                return m
-
-        binary_mask = get_mask(masks[0])
-        for m in masks[1:]:
-            binary_mask |= get_mask(m)
-
-        return binary_mask
-
-    @staticmethod
-    def compute_bbox(annotations):
-        boxes = [ann.get_bbox() for ann in annotations]
-        x0 = min((b[0] for b in boxes), default=0)
-        y0 = min((b[1] for b in boxes), default=0)
-        x1 = max((b[0] + b[2] for b in boxes), default=0)
-        y1 = max((b[1] + b[3] for b in boxes), default=0)
-        return [x0, y0, x1 - x0, y1 - y0]
-
-    @staticmethod
     def find_instance_anns(annotations):
         return [a for a in annotations
-            if a.type in { AnnotationType.bbox, AnnotationType.polygon } or \
-                a.type == AnnotationType.mask and a.label is not None
+            if a.type in { AnnotationType.bbox,
+                AnnotationType.polygon, AnnotationType.mask }
         ]
 
     @classmethod
     def find_instances(cls, annotations):
-        instance_anns = cls.find_instance_anns(annotations)
-
-        ann_groups = []
-        for g_id, group in groupby(instance_anns, lambda a: a.group):
-            if not g_id:
-                ann_groups.extend(([a] for a in group))
-            else:
-                ann_groups.append(list(group))
-
-        return ann_groups
+        return anno_tools.find_instances(cls.find_instance_anns(annotations))
 
     def save_annotations(self, item):
         instances = self.find_instances(item.annotations)

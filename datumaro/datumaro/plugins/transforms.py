@@ -3,16 +3,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-from itertools import groupby
 import logging as log
 import os.path as osp
 
 import pycocotools.mask as mask_utils
 
 from datumaro.components.extractor import (Transform, AnnotationType,
-    Mask, RleMask, Polygon, Bbox)
+    RleMask, Polygon, Bbox)
 from datumaro.components.cli_plugin import CliPlugin
 import datumaro.util.mask_tools as mask_tools
+from datumaro.util.annotation_tools import find_group_leader, find_instances
 
 
 class CropCoveredSegments(Transform, CliPlugin):
@@ -125,7 +125,7 @@ class MergeInstanceSegments(Transform, CliPlugin):
         if not polygons and not masks:
             return []
 
-        leader = cls.find_group_leader(polygons + masks)
+        leader = find_group_leader(polygons + masks)
         instance = []
 
         # Build the resulting mask
@@ -138,9 +138,10 @@ class MergeInstanceSegments(Transform, CliPlugin):
             instance += polygons # keep unused polygons
 
         if masks:
+            masks = [m.image for m in masks]
             if mask is not None:
                 masks += [mask]
-            mask = cls.merge_masks(masks)
+            mask = mask_tools.merge_masks(masks)
 
         if mask is None:
             return instance
@@ -155,40 +156,9 @@ class MergeInstanceSegments(Transform, CliPlugin):
         return instance
 
     @staticmethod
-    def find_group_leader(group):
-        return max(group, key=lambda x: x.get_area())
-
-    @staticmethod
-    def merge_masks(masks):
-        if not masks:
-            return None
-
-        def get_mask(m):
-            if isinstance(m, Mask):
-                return m.image
-            else:
-                return m
-
-        binary_mask = get_mask(masks[0])
-        for m in masks[1:]:
-            binary_mask |= get_mask(m)
-
-        return binary_mask
-
-    @staticmethod
     def find_instances(annotations):
-        segment_anns = (a for a in annotations
-            if a.type in {AnnotationType.polygon, AnnotationType.mask}
-        )
-
-        ann_groups = []
-        for g_id, group in groupby(segment_anns, lambda a: a.group):
-            if g_id is None:
-                ann_groups.extend(([a] for a in group))
-            else:
-                ann_groups.append(list(group))
-
-        return ann_groups
+        return find_instances(a for a in annotations
+            if a.type in {AnnotationType.polygon, AnnotationType.mask})
 
 class PolygonsToMasks(Transform, CliPlugin):
     def transform_item(self, item):

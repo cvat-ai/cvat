@@ -159,8 +159,10 @@ class TransformsTest(TestCase):
                                     [1, 0, 0, 0, 0],
                                     [1, 1, 1, 0, 0]],
                                 ),
-                                z_order=0),
+                                z_order=0, group=1),
                             Polygon([1, 1, 4, 1, 4, 4, 1, 4],
+                                z_order=1, group=1),
+                            Polygon([0, 0, 0, 2, 2, 2, 2, 0],
                                 z_order=1),
                         ]
                     ),
@@ -178,7 +180,15 @@ class TransformsTest(TestCase):
                                     [1, 1, 1, 1, 0],
                                     [1, 1, 1, 0, 0]],
                                 ),
-                                z_order=0),
+                                z_order=0, group=1),
+                            Mask(np.array([
+                                    [1, 1, 0, 0, 0],
+                                    [1, 1, 0, 0, 0],
+                                    [0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0]],
+                                ),
+                                z_order=1),
                         ]
                     ),
                 ])
