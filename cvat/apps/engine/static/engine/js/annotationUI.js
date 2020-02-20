@@ -295,6 +295,8 @@ function setupMenu(job, task, shapeCollectionModel,
                     <td> ${byLabelsStat[labelId].polylines.interpolation} </td>
                     <td> ${byLabelsStat[labelId].points.annotation} </td>
                     <td> ${byLabelsStat[labelId].points.interpolation} </td>
+                    <td> ${byLabelsStat[labelId].cuboids.annotation} </td>
+                    <td> ${byLabelsStat[labelId].cuboids.interpolation} </td>
                     <td> ${byLabelsStat[labelId].manually} </td>
                     <td> ${byLabelsStat[labelId].interpolated} </td>
                     <td class="semiBold"> ${byLabelsStat[labelId].total} </td>
@@ -312,6 +314,8 @@ function setupMenu(job, task, shapeCollectionModel,
                 <td> ${totalStat.polylines.interpolation} </td>
                 <td> ${totalStat.points.annotation} </td>
                 <td> ${totalStat.points.interpolation} </td>
+                <td> ${totalStat.cuboids.annotation} </td>
+                <td> ${totalStat.cuboids.interpolation} </td>
                 <td> ${totalStat.manually} </td>
                 <td> ${totalStat.interpolated} </td>
                 <td> ${totalStat.total} </td>
@@ -670,13 +674,15 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
         'track count': totalStat.boxes.annotation + totalStat.boxes.interpolation
             + totalStat.polygons.annotation + totalStat.polygons.interpolation
             + totalStat.polylines.annotation + totalStat.polylines.interpolation
-            + totalStat.points.annotation + totalStat.points.interpolation,
+            + totalStat.points.annotation + totalStat.points.interpolation
+            + totalStat.cuboids.annotation + totalStat.cuboids.interpolation,
         'frame count': window.cvat.player.frames.stop - window.cvat.player.frames.start + 1,
         'object count': totalStat.total,
         'box count': totalStat.boxes.annotation + totalStat.boxes.interpolation,
         'polygon count': totalStat.polygons.annotation + totalStat.polygons.interpolation,
         'polyline count': totalStat.polylines.annotation + totalStat.polylines.interpolation,
         'points count': totalStat.points.annotation + totalStat.points.interpolation,
+        'cuboid count': totalStat.cuboids.annotation + totalStat.cuboids.interpolation,
     });
     loadJobEvent.close();
 
