@@ -5,7 +5,6 @@
 
 import codecs
 from collections import OrderedDict
-from itertools import groupby
 import logging as log
 import os
 import os.path as osp
@@ -18,6 +17,8 @@ from datumaro.components.converter import Converter
 from datumaro.components.cli_plugin import CliPlugin
 from datumaro.util.image import encode_image
 from datumaro.util.mask_tools import merge_masks
+from datumaro.util.annotation_tools import (compute_bbox,
+    find_group_leader, find_instances)
 from datumaro.util.tf_util import import_tf as _import_tf
 
 from .format import DetectionApiPath
@@ -100,51 +101,24 @@ class TfDetectionApiConverter(Converter, CliPlugin):
                     tf_example = self._make_tf_example(item)
                     writer.write(tf_example.SerializeToString())
 
+    @staticmethod
+    def _find_instances(annotations):
+        return find_instances(a for a in annotations
+            if a.type in { AnnotationType.bbox, AnnotationType.mask })
+
     def _find_instance_parts(self, group, img_width, img_height):
         boxes = [a for a in group if a.type == AnnotationType.bbox]
         masks = [a for a in group if a.type == AnnotationType.mask]
 
         anns = boxes + masks
-        leader = self.find_group_leader(anns)
-        bbox = self._compute_bbox(anns)
+        leader = find_group_leader(anns)
+        bbox = compute_bbox(anns)
 
         mask = None
         if self._save_masks:
             mask = merge_masks([m.image for m in masks])
 
         return [leader, mask, bbox]
-
-    @staticmethod
-    def find_group_leader(group):
-        return max(group, key=lambda x: x.get_area())
-
-    @staticmethod
-    def _compute_bbox(annotations):
-        boxes = [ann.get_bbox() for ann in annotations]
-        x0 = min((b[0] for b in boxes), default=0)
-        y0 = min((b[1] for b in boxes), default=0)
-        x1 = max((b[0] + b[2] for b in boxes), default=0)
-        y1 = max((b[1] + b[3] for b in boxes), default=0)
-        return [x0, y0, x1 - x0, y1 - y0]
-
-    @staticmethod
-    def _find_instance_anns(annotations):
-        return [a for a in annotations
-            if a.type in { AnnotationType.bbox, AnnotationType.mask }
-        ]
-
-    @classmethod
-    def _find_instances(cls, annotations):
-        instance_anns = cls._find_instance_anns(annotations)
-
-        ann_groups = []
-        for g_id, group in groupby(instance_anns, lambda a: a.group):
-            if not g_id:
-                ann_groups.extend(([a] for a in group))
-            else:
-                ann_groups.append(list(group))
-
-        return ann_groups
 
     def _export_instances(self, instances, width, height):
         xmins = [] # List of normalized left x coordinates of bounding boxes (1 per box)
