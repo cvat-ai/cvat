@@ -58,6 +58,10 @@ const defaultState: AnnotationState = {
             undo: [],
             redo: [],
         },
+        zLayer: {
+            max: 0,
+            cur: 0,
+        },
     },
     propagate: {
         objectState: null,
@@ -879,6 +883,34 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     filters,
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_Z_LAYER: {
+            const { cur } = action.payload;
+            const { max } = state.annotations.zLayer;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    zLayer: {
+                        ...state.annotations.zLayer,
+                        cur: Math.max(Math.min(cur, max), 0),
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.ADD_Z_LAYER: {
+            const { max } = state.annotations.zLayer;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    zLayer: {
+                        ...state.annotations.zLayer,
+                        max: max + 1,
+                        cur: max + 1,
+                    },
                 },
             };
         }

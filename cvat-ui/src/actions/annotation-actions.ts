@@ -109,6 +109,23 @@ export enum AnnotationActionTypes {
     CHANGE_ANNOTATIONS_FILTERS = 'CHANGE_ANNOTATIONS_FILTERS',
     FETCH_ANNOTATIONS_SUCCESS = 'FETCH_ANNOTATIONS_SUCCESS',
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
+    SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
+    ADD_Z_LAYER = 'ADD_Z_LAYER',
+}
+
+export function addZLayer(): AnyAction {
+    return {
+        type: AnnotationActionTypes.ADD_Z_LAYER,
+    };
+}
+
+export function switchZLayer(cur: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_Z_LAYER,
+        payload: {
+            cur,
+        },
+    };
 }
 
 export function fetchAnnotationsAsync(sessionInstance: any):

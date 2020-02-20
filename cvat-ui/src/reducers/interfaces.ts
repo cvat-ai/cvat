@@ -324,6 +324,10 @@ export interface AnnotationState {
             uploading: boolean;
             statuses: string[];
         };
+        zLayer: {
+            max: number;
+            cur: number;
+        };
     };
     propagate: {
         objectState: any | null;

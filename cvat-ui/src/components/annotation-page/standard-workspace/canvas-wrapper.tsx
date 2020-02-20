@@ -4,7 +4,10 @@ import {
     Layout,
     Slider,
     Icon,
+    Tooltip,
 } from 'antd';
+
+import { SliderValue } from 'antd/lib//slider';
 
 import {
     ColorBy,
@@ -41,6 +44,8 @@ interface Props {
     gridOpacity: number;
     activeLabelID: number;
     activeObjectType: ObjectType;
+    maxZLayer: number;
+    curZLayer: number;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -58,6 +63,8 @@ interface Props {
     onActivateObject(activatedStateID: number | null): void;
     onSelectObjects(selectedStatesID: number[]): void;
     onUpdateContextMenu(visible: boolean, left: number, top: number): void;
+    onAddZLayer(): void;
+    onSwitchZLayer(cur: number): void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -464,6 +471,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
+        const {
+            maxZLayer,
+            curZLayer,
+            onSwitchZLayer,
+            onAddZLayer,
+        } = this.props;
+
         return (
             <Layout.Content style={{ position: 'relative' }}>
                 {/*
@@ -480,8 +494,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                     }}
                 />
                 <div className='cvat-canvas-z-axis-wrapper'>
-                    <Slider min={0} max={10} vertical reverse defaultValue={0} />
-                    <Icon type='plus-circle' />
+                    <Slider
+                        min={0}
+                        max={maxZLayer}
+                        value={curZLayer}
+                        vertical
+                        reverse
+                        defaultValue={0}
+                        onChange={(value: SliderValue): void => onSwitchZLayer(value as number)}
+                    />
+                    <Tooltip title={`Add new layer ${maxZLayer + 1} and switch to it`}>
+                        <Icon type='plus-circle' onClick={onAddZLayer} />
+                    </Tooltip>
                 </div>
             </Layout.Content>
         );
