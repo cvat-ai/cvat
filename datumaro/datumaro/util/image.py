@@ -169,8 +169,6 @@ class Image:
         if size is not None:
             assert len(size) == 2 and 0 < size[0] and 0 < size[1], size
             size = tuple(size)
-        else:
-            size = None
         self._size = size # (H, W)
 
         assert path is None or isinstance(path, str)
