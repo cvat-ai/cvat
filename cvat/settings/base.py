@@ -190,10 +190,11 @@ UI_SCHEME = os.environ.get('UI_SCHEME', 'http')
 UI_HOST = os.environ.get('UI_HOST', 'localhost')
 UI_PORT = os.environ.get('UI_PORT', '3000')
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = [UI_HOST]
+CSRF_TRUSTED_ORIGINS = [UI_HOST, UI_SCHEME + '://' + UI_HOST]
+
 UI_URL = '{}://{}'.format(UI_SCHEME, UI_HOST)
 
-if UI_PORT and UI_PORT != '80':
+if UI_PORT and UI_PORT != '80' and UI_PORT != '443':
     UI_URL += ':{}'.format(UI_PORT)
 
 CORS_ORIGIN_WHITELIST = [UI_URL]
