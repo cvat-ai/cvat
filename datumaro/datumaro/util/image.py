@@ -7,6 +7,7 @@
 
 from io import BytesIO
 import numpy as np
+import os.path as osp
 
 from enum import Enum
 _IMAGE_BACKENDS = Enum('_IMAGE_BACKENDS', ['cv2', 'PIL'])
@@ -123,14 +124,16 @@ def decode_image(image_bytes):
 
 
 class lazy_image:
-    def __init__(self, path, loader=load_image, cache=None):
+    def __init__(self, path, loader=None, cache=None):
+        if loader is None:
+            loader = load_image
         self.path = path
         self.loader = loader
 
         # Cache:
         # - False: do not cache
-        # - None: use default (don't store in a class variable)
-        # - object: use this object as a cache
+        # - None: use the global cache
+        # - object: an object to be used as cache
         assert cache in {None, False} or isinstance(cache, object)
         self.cache = cache
 
@@ -138,9 +141,9 @@ class lazy_image:
         image = None
         image_id = hash(self) # path is not necessary hashable or a file path
 
-        cache = self._get_cache()
+        cache = self._get_cache(self.cache)
         if cache is not None:
-            image = self._get_cache().get(image_id)
+            image = cache.get(image_id)
 
         if image is None:
             image = self.loader(self.path)
@@ -148,8 +151,8 @@ class lazy_image:
                 cache.push(image_id, image)
         return image
 
-    def _get_cache(self):
-        cache = self.cache
+    @staticmethod
+    def _get_cache(cache):
         if cache is None:
             cache = _ImageCache.get_instance()
         elif cache == False:
@@ -158,3 +161,63 @@ class lazy_image:
 
     def __hash__(self):
         return hash((id(self), self.path, self.loader))
+
+class Image:
+    def __init__(self, data=None, path=None, loader=None, cache=None,
+            size=None):
+        assert size is None or len(size) == 2
+        if size is not None:
+            assert len(size) == 2 and 0 < size[0] and 0 < size[1], size
+            size = tuple(size)
+        else:
+            size = None
+        self._size = size # (H, W)
+
+        assert path is None or isinstance(path, str)
+        if path is None:
+            path = ''
+        self._path = path
+
+        assert data is not None or path, "Image can not be empty"
+        if data is None and path:
+            if osp.isfile(path):
+                data = lazy_image(path, loader=loader, cache=cache)
+        self._data = data
+
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def filename(self):
+        return osp.basename(self._path)
+
+    @property
+    def data(self):
+        if callable(self._data):
+            return self._data()
+        return self._data
+
+    @property
+    def has_data(self):
+        return self._data is not None
+
+    @property
+    def size(self):
+        if self._size is None:
+            data = self.data
+            if data is not None:
+                self._size = data.shape[:2]
+        return self._size
+
+    def __eq__(self, other):
+        if isinstance(other, np.ndarray):
+            return self.has_data and np.array_equal(self.data, other)
+
+        if not isinstance(other, __class__):
+            return False
+        return \
+            (np.array_equal(self.size, other.size)) and \
+            (self.has_data == other.has_data) and \
+            (self.has_data and np.array_equal(self.data, other.data) or \
+                not self.has_data)

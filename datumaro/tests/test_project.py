@@ -11,10 +11,11 @@ from datumaro.components.converter import Converter
 from datumaro.components.extractor import (Extractor, DatasetItem,
     Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
 )
+from datumaro.util.image import Image
 from datumaro.components.config import Config, DefaultConfig, SchemaBuilder
 from datumaro.components.dataset_filter import \
     XPathDatasetFilter, XPathAnnotationsFilter, DatasetItemEncoder
-from datumaro.util.test_utils import TestDir
+from datumaro.util.test_utils import TestDir, compare_datasets
 
 
 class ProjectTest(TestCase):
@@ -135,12 +136,12 @@ class ProjectTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 for i in range(5):
-                    yield DatasetItem(id=i, subset='train', image=i)
+                    yield DatasetItem(id=i, subset='train', image=np.array([i]))
 
         class TestLauncher(Launcher):
             def launch(self, inputs):
                 for i, inp in enumerate(inputs):
-                    yield [ Label(attributes={'idx': i, 'data': inp}) ]
+                    yield [ Label(attributes={'idx': i, 'data': inp.item()}) ]
 
         model_name = 'model'
         launcher_name = 'custom_launcher'
@@ -165,19 +166,18 @@ class ProjectTest(TestCase):
         class TestExtractorSrc(Extractor):
             def __iter__(self):
                 for i in range(2):
-                    yield DatasetItem(id=i, subset='train', image=i,
-                        annotations=[ Label(i) ])
+                    yield DatasetItem(id=i, image=np.ones([2, 2, 3]) * i,
+                        annotations=[Label(i)])
 
         class TestLauncher(Launcher):
             def launch(self, inputs):
                 for inp in inputs:
-                    yield [ Label(inp) ]
+                    yield [ Label(inp[0, 0, 0]) ]
 
         class TestConverter(Converter):
             def __call__(self, extractor, save_dir):
                 for item in extractor:
                     with open(osp.join(save_dir, '%s.txt' % item.id), 'w') as f:
-                        f.write(str(item.subset) + '\n')
                         f.write(str(item.annotations[0].label) + '\n')
 
         class TestExtractorDst(Extractor):
@@ -189,11 +189,8 @@ class ProjectTest(TestCase):
                 for path in self.items:
                     with open(path, 'r') as f:
                         index = osp.splitext(osp.basename(path))[0]
-                        subset = f.readline().strip()
                         label = int(f.readline().strip())
-                        assert subset == 'train'
-                        yield DatasetItem(id=index, subset=subset,
-                            annotations=[ Label(label) ])
+                        yield DatasetItem(id=index, annotations=[Label(label)])
 
         model_name = 'model'
         launcher_name = 'custom_launcher'
@@ -476,6 +473,11 @@ class ExtractorTest(TestCase):
                     DatasetItem(id=2, subset='train'),
 
                     DatasetItem(id=3, subset='test'),
+                    DatasetItem(id=4, subset='test'),
+
+                    DatasetItem(id=1),
+                    DatasetItem(id=2),
+                    DatasetItem(id=3),
                 ])
 
         extractor_name = 'ext1'
@@ -485,8 +487,30 @@ class ExtractorTest(TestCase):
             'url': 'path',
             'format': extractor_name,
         })
-        project.set_subsets(['train'])
 
         dataset = project.make_dataset()
 
-        self.assertEqual(3, len(dataset))
+        compare_datasets(self, CustomExtractor(), dataset)
+
+class DatasetItemTest(TestCase):
+    def test_ctor_requires_id(self):
+        has_error = False
+        try:
+            # pylint: disable=no-value-for-parameter
+            DatasetItem()
+            # pylint: enable=no-value-for-parameter
+        except AssertionError:
+            has_error = True
+
+        self.assertTrue(has_error)
+
+    @staticmethod
+    def test_ctors_with_image():
+        for args in [
+            { 'id': 0, 'image': None },
+            { 'id': 0, 'image': 'path.jpg' },
+            { 'id': 0, 'image': np.array([1, 2, 3]) },
+            { 'id': 0, 'image': lambda f: np.array([1, 2, 3]) },
+            { 'id': 0, 'image': Image(data=np.array([1, 2, 3])) },
+        ]:
+            DatasetItem(**args)

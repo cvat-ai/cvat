@@ -8,6 +8,7 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
 from datumaro.plugins.tf_detection_api_format.importer import TfDetectionApiImporter
 from datumaro.plugins.tf_detection_api_format.extractor import TfDetectionApiExtractor
 from datumaro.plugins.tf_detection_api_format.converter import TfDetectionApiConverter
+from datumaro.util.image import Image
 from datumaro.util.test_utils import TestDir, compare_datasets
 
 
@@ -33,16 +34,16 @@ class TfrecordConverterTest(TestCase):
                     DatasetItem(id=1, subset='train',
                         image=np.ones((16, 16, 3)),
                         annotations=[
-                            Bbox(0, 4, 4, 8, label=2, id=0),
-                            Bbox(0, 4, 4, 4, label=3, id=1),
-                            Bbox(2, 4, 4, 4, id=2),
+                            Bbox(0, 4, 4, 8, label=2),
+                            Bbox(0, 4, 4, 4, label=3),
+                            Bbox(2, 4, 4, 4),
                         ]
                     ),
 
                     DatasetItem(id=2, subset='val',
                         image=np.ones((8, 8, 3)),
                         annotations=[
-                            Bbox(1, 2, 4, 2, label=3, id=0),
+                            Bbox(1, 2, 4, 2, label=3),
                         ]
                     ),
 
@@ -71,15 +72,15 @@ class TfrecordConverterTest(TestCase):
                     DatasetItem(id=1,
                         image=np.ones((16, 16, 3)),
                         annotations=[
-                            Bbox(2, 1, 4, 4, label=2, id=0),
-                            Bbox(4, 2, 8, 4, label=3, id=1),
+                            Bbox(2, 1, 4, 4, label=2),
+                            Bbox(4, 2, 8, 4, label=3),
                         ]
                     ),
 
                     DatasetItem(id=2,
                         image=np.ones((8, 8, 3)) * 2,
                         annotations=[
-                            Bbox(4, 4, 4, 4, label=3, id=0),
+                            Bbox(4, 4, 4, 4, label=3),
                         ]
                     ),
 
@@ -100,6 +101,20 @@ class TfrecordConverterTest(TestCase):
             self._test_save_and_load(
                 TestExtractor(), TfDetectionApiConverter(save_images=True),
                 test_dir)
+
+    def test_can_save_dataset_with_image_info(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=Image(path='1/q.e', size=(10, 15))),
+                ])
+
+            def categories(self):
+                return { AnnotationType.label: LabelCategories() }
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                TfDetectionApiConverter(), test_dir)
 
     def test_labelmap_parsing(self):
         text = """

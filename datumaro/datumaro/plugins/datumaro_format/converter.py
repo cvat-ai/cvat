@@ -30,9 +30,9 @@ def _cast(value, type_conv, default=None):
         return default
 
 class _SubsetWriter:
-    def __init__(self, name, converter):
+    def __init__(self, name, context):
         self._name = name
-        self._converter = converter
+        self._context = context
 
         self._data = {
             'info': {},
@@ -58,6 +58,15 @@ class _SubsetWriter:
         }
         if item.path:
             item_desc['path'] = item.path
+        if item.has_image:
+            path = item.image.path
+            if self._context._save_images:
+                path = self._context._save_image(item)
+
+            item_desc['image'] = {
+                'size': item.image.size,
+                'path': path,
+            }
         self.items.append(item_desc)
 
         for ann in item.annotations:
@@ -123,7 +132,7 @@ class _SubsetWriter:
         self._next_mask_id += 1
 
         filename = '%d%s' % (mask_id, DatumaroPath.MASK_EXT)
-        masks_dir = osp.join(self._converter._annotations_dir,
+        masks_dir = osp.join(self._context._annotations_dir,
             DatumaroPath.MASKS_DIR)
         os.makedirs(masks_dir, exist_ok=True)
         path = osp.join(masks_dir, filename)
@@ -226,7 +235,7 @@ class _SubsetWriter:
         return converted
 
 class _Converter:
-    def __init__(self, extractor, save_dir, save_images=False,):
+    def __init__(self, extractor, save_dir, save_images=False):
         self._extractor = extractor
         self._save_dir = save_dir
         self._save_images = save_images
@@ -257,21 +266,25 @@ class _Converter:
                 subset = DEFAULT_SUBSET_NAME
             writer = subsets[subset]
 
-            if self._save_images:
-                self._save_image(item)
             writer.write_item(item)
 
         for subset, writer in subsets.items():
             writer.write(annotations_dir)
 
     def _save_image(self, item):
-        image = item.image
+        image = item.image.data
         if image is None:
-            return
+            return ''
 
-        image_path = osp.join(self._images_dir,
-            str(item.id) + DatumaroPath.IMAGE_EXT)
+        filename = item.image.filename
+        if filename:
+            filename = osp.splitext(filename)[0]
+        else:
+            filename = item.id
+        filename += DatumaroPath.IMAGE_EXT
+        image_path = osp.join(self._images_dir, filename)
         save_image(image_path, image)
+        return filename
 
 class DatumaroConverter(Converter, CliPlugin):
     @classmethod

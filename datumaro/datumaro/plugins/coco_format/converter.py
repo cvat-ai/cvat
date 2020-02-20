@@ -67,15 +67,18 @@ class _TaskConverter:
     def is_empty(self):
         return len(self._data['annotations']) == 0
 
+    def _get_image_id(self, item):
+        return self._context._get_image_id(item)
+
     def save_image_info(self, item, filename):
         if item.has_image:
-            h, w = item.image.shape[:2]
+            h, w = item.image.size
         else:
             h = 0
             w = 0
 
         self._data['images'].append({
-            'id': _cast(item.id, int, 0),
+            'id': self._get_image_id(item),
             'width': int(w),
             'height': int(h),
             'file_name': _cast(filename, str, ''),
@@ -130,13 +133,13 @@ class _CaptionsConverter(_TaskConverter):
         pass
 
     def save_annotations(self, item):
-        for ann in item.annotations:
+        for ann_idx, ann in enumerate(item.annotations):
             if ann.type != AnnotationType.caption:
                 continue
 
             elem = {
                 'id': self._get_ann_id(ann),
-                'image_id': _cast(item.id, int, 0),
+                'image_id': self._get_image_id(item),
                 'category_id': 0, # NOTE: workaround for a bug in cocoapi
                 'caption': ann.caption,
             }
@@ -144,7 +147,8 @@ class _CaptionsConverter(_TaskConverter):
                 try:
                     elem['score'] = float(ann.attributes['score'])
                 except Exception as e:
-                    log.warning("Failed to convert attribute 'score': %e" % e)
+                    log.warning("Item '%s', ann #%s: failed to convert "
+                        "attribute 'score': %e" % (item.id, ann_idx, e))
 
             self.annotations.append(elem)
 
@@ -293,10 +297,10 @@ class _InstancesConverter(_TaskConverter):
             return
 
         if not item.has_image:
-            log.warn("Skipping writing instances for "
-                "item '%s' as it has no image info" % item.id)
+            log.warn("Item '%s': skipping writing instances "
+                "since no image info available" % item.id)
             return
-        h, w, _ = item.image.shape
+        h, w = item.image.size
         instances = [self.find_instance_parts(i, w, h) for i in instances]
 
         if self._context._crop_covered:
@@ -319,7 +323,7 @@ class _InstancesConverter(_TaskConverter):
         area = 0
         if segmentation:
             if item.has_image:
-                h, w, _ = item.image.shape
+                h, w = item.image.size
             else:
                 # NOTE: here we can guess the image size as
                 # it is only needed for the area computation
@@ -339,7 +343,7 @@ class _InstancesConverter(_TaskConverter):
 
         elem = {
             'id': self._get_ann_id(ann),
-            'image_id': _cast(item.id, int, 0),
+            'image_id': self._get_image_id(item),
             'category_id': _cast(ann.label, int, -1) + 1,
             'segmentation': segmentation,
             'area': float(area),
@@ -350,7 +354,8 @@ class _InstancesConverter(_TaskConverter):
             try:
                 elem['score'] = float(ann.attributes['score'])
             except Exception as e:
-                log.warning("Failed to convert attribute 'score': %e" % e)
+                log.warning("Item '%s': failed to convert attribute "
+                    "'score': %e" % (item.id, e))
 
         return elem
 
@@ -452,14 +457,15 @@ class _LabelsConverter(_TaskConverter):
 
             elem = {
                 'id': self._get_ann_id(ann),
-                'image_id': _cast(item.id, int, 0),
+                'image_id': self._get_image_id(item),
                 'category_id': int(ann.label) + 1,
             }
             if 'score' in ann.attributes:
                 try:
                     elem['score'] = float(ann.attributes['score'])
                 except Exception as e:
-                    log.warning("Failed to convert attribute 'score': %e" % e)
+                    log.warning("Item '%s': failed to convert attribute "
+                        "'score': %e" % (item.id, e))
 
             self.annotations.append(elem)
 
@@ -501,31 +507,50 @@ class _Converter:
 
         self._crop_covered = crop_covered
 
-    def make_dirs(self):
+        self._image_ids = {}
+
+    def _make_dirs(self):
         self._images_dir = osp.join(self._save_dir, CocoPath.IMAGES_DIR)
         os.makedirs(self._images_dir, exist_ok=True)
 
         self._ann_dir = osp.join(self._save_dir, CocoPath.ANNOTATIONS_DIR)
         os.makedirs(self._ann_dir, exist_ok=True)
 
-    def make_task_converter(self, task):
+    def _make_task_converter(self, task):
         if task not in self._TASK_CONVERTER:
             raise NotImplementedError()
         return self._TASK_CONVERTER[task](self)
 
-    def make_task_converters(self):
+    def _make_task_converters(self):
         return {
-            task: self.make_task_converter(task) for task in self._tasks
+            task: self._make_task_converter(task) for task in self._tasks
         }
 
-    def save_image(self, item, filename):
-        path = osp.join(self._images_dir, filename)
-        save_image(path, item.image)
+    def _get_image_id(self, item):
+        image_id = self._image_ids.get(item.id)
+        if image_id is None:
+            image_id = _cast(item.id, int, len(self._image_ids) + 1)
+            self._image_ids[item.id] = image_id
+        return image_id
 
-        return path
+    def _save_image(self, item):
+        image = item.image.data
+        if image is None:
+            log.warning("Item '%s' has no image" % item.id)
+            return ''
+
+        filename = item.image.filename
+        if filename:
+            filename = osp.splitext(filename)[0]
+        else:
+            filename = item.id
+        filename += CocoPath.IMAGE_EXT
+        path = osp.join(self._images_dir, filename)
+        save_image(path, image)
+        return filename
 
     def convert(self):
-        self.make_dirs()
+        self._make_dirs()
 
         subsets = self._extractor.subsets()
         if len(subsets) == 0:
@@ -538,18 +563,18 @@ class _Converter:
                 subset_name = DEFAULT_SUBSET_NAME
                 subset = self._extractor
 
-            task_converters = self.make_task_converters()
+            task_converters = self._make_task_converters()
             for task_conv in task_converters.values():
                 task_conv.save_categories(subset)
             for item in subset:
                 filename = ''
                 if item.has_image:
-                    filename = str(item.id) + CocoPath.IMAGE_EXT
+                    filename = item.image.filename
                 if self._save_images:
                     if item.has_image:
-                        self.save_image(item, filename)
+                        filename = self._save_image(item)
                     else:
-                        log.debug("Item '%s' has no image" % item.id)
+                        log.debug("Item '%s' has no image info" % item.id)
                 for task_conv in task_converters.values():
                     task_conv.save_image_info(item, filename)
                     task_conv.save_annotations(item)

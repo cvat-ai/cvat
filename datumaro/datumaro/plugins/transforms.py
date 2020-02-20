@@ -5,6 +5,7 @@
 
 from itertools import groupby
 import logging as log
+import os.path as osp
 
 import pycocotools.mask as mask_utils
 
@@ -28,7 +29,7 @@ class CropCoveredSegments(Transform, CliPlugin):
 
         if not item.has_image:
             raise Exception("Image info is required for this transform")
-        h, w = item.image.shape[:2]
+        h, w = item.image.size
         segments = self.crop_segments(segments, w, h)
 
         annotations += segments
@@ -107,7 +108,7 @@ class MergeInstanceSegments(Transform, CliPlugin):
 
         if not item.has_image:
             raise Exception("Image info is required for this transform")
-        h, w = item.image.shape[:2]
+        h, w = item.image.size
         instances = self.find_instances(segments)
         segments = [self.merge_segments(i, w, h, self._include_polygons)
             for i in instances]
@@ -196,7 +197,7 @@ class PolygonsToMasks(Transform, CliPlugin):
             if ann.type == AnnotationType.polygon:
                 if not item.has_image:
                     raise Exception("Image info is required for this transform")
-                h, w = item.image.shape[:2]
+                h, w = item.image.size
                 annotations.append(self.convert_polygon(ann, h, w))
             else:
                 annotations.append(ann)
@@ -273,7 +274,6 @@ class Reindex(Transform, CliPlugin):
         for i, item in enumerate(self._extractor):
             yield self.wrap_item(item, id=i + self._start)
 
-
 class MapSubsets(Transform, CliPlugin):
     @staticmethod
     def _mapping_arg(s):
@@ -303,3 +303,10 @@ class MapSubsets(Transform, CliPlugin):
     def transform_item(self, item):
         return self.wrap_item(item,
             subset=self._mapping.get(item.subset, item.subset))
+
+class IdFromImageName(Transform, CliPlugin):
+    def transform_item(self, item):
+        name = item.id
+        if item.has_image and item.image.filename:
+            name = osp.splitext(item.image.filename)[0]
+        return self.wrap_item(item, id=name)
