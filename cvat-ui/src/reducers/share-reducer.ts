@@ -1,7 +1,5 @@
-import { AnyAction } from 'redux';
-
-import { ShareActionTypes } from 'actions/share-actions';
-import { AuthActionTypes } from 'actions/auth-actions';
+import { ShareActionTypes, ShareActions } from 'actions/share-actions';
+import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import {
     ShareState,
     ShareFileInfo,
@@ -16,7 +14,10 @@ const defaultState: ShareState = {
     },
 };
 
-export default function (state = defaultState, action: AnyAction): ShareState {
+export default function (
+    state: ShareState = defaultState,
+    action: ShareActions | AuthActions,
+): ShareState {
     switch (action.type) {
         case ShareActionTypes.LOAD_SHARE_DATA_SUCCESS: {
             const { values } = action.payload;
