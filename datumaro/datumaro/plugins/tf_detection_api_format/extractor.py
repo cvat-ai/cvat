@@ -170,7 +170,7 @@ class TfDetectionApiExtractor(SourceExtractor):
                 label = shape[0].decode('utf-8')
 
                 mask = None
-                if masks:
+                if len(masks) != 0:
                     mask = masks[shape_id]
 
                 if mask is not None:
@@ -196,10 +196,7 @@ class TfDetectionApiExtractor(SourceExtractor):
             if frame_image and frame_format:
                 image_params['data'] = lazy_image(frame_image, decode_image)
             if frame_filename:
-                path = frame_filename
-                if images_dir:
-                    path = osp.join(images_dir, frame_filename)
-                image_params['path'] = path
+                image_params['path'] = osp.join(images_dir, frame_filename)
 
             image = None
             if image_params:
