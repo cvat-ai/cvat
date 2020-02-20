@@ -24,7 +24,7 @@ interface StateToProps {
     frameNumber: number;
     frameStep: number;
     frameSpeed: FrameSpeed;
-    frameChangeTime: number | null;
+    frameDelay: number;
     playing: boolean;
     saving: boolean;
     unsaved: boolean;
@@ -39,7 +39,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onChangeFrame(frame: number, time: number | null): void;
+    onChangeFrame(frame: number): void;
     onSwitchPlay(playing: boolean): void;
     onSaveAnnotation(sessionInstance: any): void;
     showStatistics(sessionInstance: any): void;
@@ -54,7 +54,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 playing,
                 frame: {
                     number: frameNumber,
-                    changeTime: frameChangeTime,
+                    delay: frameDelay,
                 },
             },
             annotations: {
@@ -89,7 +89,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         frameStep,
         frameSpeed,
-        frameChangeTime,
+        frameDelay,
         playing,
         canvasInstance,
         canvasIsReady,
@@ -108,8 +108,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onChangeFrame(frame: number, time: number | null): void {
-            dispatch(changeFrameAsync(frame, time));
+        onChangeFrame(frame: number): void {
+            dispatch(changeFrameAsync(frame));
         },
         onSwitchPlay(playing: boolean): void {
             dispatch(switchPlay(playing));
@@ -159,36 +159,33 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const {
             jobInstance,
             frameNumber,
-            frameChangeTime,
-            frameSpeed,
+            frameDelay,
             playing,
             canvasIsReady,
             onSwitchPlay,
-            unsaved,
         } = this.props;
 
 
         if (playing && canvasIsReady) {
             if (frameNumber < jobInstance.stopFrame) {
-                const delay: number = frameChangeTime
-                    ? Math.max(0, Math.round(1000 / frameSpeed)
-                    - new Date().getTime() + frameChangeTime) : 0;
                 setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
-                        this.onChangeFrame(frameNumber + 1, new Date().getTime());
+                        this.onChangeFrame(frameNumber + 1);
                     }
-                }, delay);
+                }, frameDelay);
             } else {
                 onSwitchPlay(false);
             }
         }
 
-        if (unsaved) {
-            window.addEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
-        } else {
-            window.removeEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
-        }
+        jobInstance.annotations.hasUnsavedChanges().then((unsaved: boolean) => {
+            if (unsaved) {
+                window.addEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
+            } else {
+                window.removeEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
+            }
+        });
     }
 
     public componentWillUnmount(): void {
@@ -196,18 +193,19 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         window.removeEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
     }
 
-    private onChangeFrame(newFrame: number, time: number | null = null): void {
+    private onChangeFrame(newFrame: number): void {
         const {
             canvasInstance,
-            canvasIsReady,
             onChangeFrame,
             resetZoom,
         } = this.props;
 
-        onChangeFrame(newFrame, time);
+        onChangeFrame(newFrame);
 
-        if (canvasIsReady && resetZoom) {
-            canvasInstance.fit();
+        if (resetZoom) {
+            canvasInstance.html().addEventListener('canvas.setup', () => {
+                canvasInstance.fit();
+            }, { once: true });
         }
     }
 

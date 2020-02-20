@@ -300,6 +300,7 @@ export interface AnnotationState {
             number: number;
             data: any | null;
             fetching: boolean;
+            delay: number;
             changeTime: number | null;
         };
         playing: boolean;

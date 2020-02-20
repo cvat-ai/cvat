@@ -45,7 +45,7 @@ export default function JobListComponent(props: Props): JSX.Element {
             <div>
                 <Link to={`/tasks/${taskId}/jobs/${id}`}>{`Job #${id}`}</Link>
                 {' | '}
-                <a href={`${baseURL}/?id=${id}`}>Old</a>
+                <a href={`${baseURL}/?id=${id}`}>Legacy UI</a>
             </div>
         ),
     }, {

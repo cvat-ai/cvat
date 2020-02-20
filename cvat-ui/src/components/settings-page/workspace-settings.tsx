@@ -58,7 +58,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         value={Math.round(autoSaveInterval / (60 * 1000))}
                         onChange={(value: number | undefined): void => {
                             if (value) {
-                                onChangeAutoSaveInterval(value as number * 60 * 1000);
+                                onChangeAutoSaveInterval(value * 60 * 1000);
                             }
                         }}
                     />

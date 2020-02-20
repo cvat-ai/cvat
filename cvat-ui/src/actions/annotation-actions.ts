@@ -545,7 +545,7 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
-export function changeFrameAsync(toFrame: number, frameChangeTime: number | null):
+export function changeFrameAsync(toFrame: number):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
@@ -558,13 +558,17 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             }
 
             if (toFrame === frame) {
+                const currentTime = new Date().getTime();
+                const delay = Math.max(0, Math.round(1000 / state.settings.player.frameSpeed)
+                    - currentTime + (state.annotation.player.frame.changeTime as number));
                 dispatch({
                     type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                     payload: {
                         number: state.annotation.player.frame.number,
                         data: state.annotation.player.frame.data,
                         states: state.annotation.annotations.states,
-                        frameChangeTime,
+                        changeTime: currentTime + delay,
+                        delay,
                     },
                 });
 
@@ -579,13 +583,17 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
             const data = await job.frames.get(toFrame);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
+            const currentTime = new Date().getTime();
+            const delay = Math.max(0, Math.round(1000 / state.settings.player.frameSpeed)
+                - currentTime + (state.annotation.player.frame.changeTime as number));
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                 payload: {
                     number: toFrame,
                     data,
                     states,
-                    frameChangeTime,
+                    changeTime: currentTime + delay,
+                    delay,
                 },
             });
         } catch (error) {
