@@ -170,7 +170,7 @@ class TfDetectionApiExtractor(SourceExtractor):
                 label = shape[0].decode('utf-8')
 
                 mask = None
-                if masks:
+                if len(masks) != 0:
                     mask = masks[shape_id]
 
                 if mask is not None:
