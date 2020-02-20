@@ -36,16 +36,18 @@ export default function JobListComponent(props: Props): JSX.Element {
         onJobUpdate,
     } = props;
 
-    const { jobs } = taskInstance;
+    const { jobs, id: taskId } = taskInstance;
     const columns = [{
         title: 'Job',
         dataIndex: 'job',
         key: 'job',
-        render: (id: number): JSX.Element => (<div>
-                <Link to={`/tasks/${taskInstance.id}/jobs/${id}`} >{`Job #${id}`}</Link>
-                {" | "}
+        render: (id: number): JSX.Element => (
+            <div>
+                <Link to={`/tasks/${taskId}/jobs/${id}`}>{`Job #${id}`}</Link>
+                {' | '}
                 <a href={`${baseURL}/?id=${id}`}>Old</a>
-            </div>),
+            </div>
+        ),
     }, {
         title: 'Frames',
         dataIndex: 'frames',

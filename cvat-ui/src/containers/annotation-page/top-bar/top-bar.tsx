@@ -27,7 +27,7 @@ interface StateToProps {
     frameChangeTime: number | null;
     playing: boolean;
     saving: boolean;
-    unsaved: boolean,
+    unsaved: boolean;
     canvasInstance: Canvas;
     canvasIsReady: boolean;
     savingStatuses: string[];
@@ -82,7 +82,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             workspace: {
                 autoSave,
                 autoSaveInterval,
-            }
+            },
         },
     } = state;
 
@@ -132,7 +132,28 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
+    private static beforeUnloadCallback(event: BeforeUnloadEvent): any {
+        const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
+        // eslint-disable-next-line no-param-reassign
+        (event || window.event).returnValue = confirmationMessage;
+        return confirmationMessage;
+    }
+
     private autoSaveInterval: number | undefined;
+
+    componentDidMount(): void {
+        const {
+            autoSave,
+            autoSaveInterval,
+            saving,
+        } = this.props;
+
+        this.autoSaveInterval = window.setInterval((): void => {
+            if (autoSave && !saving) {
+                this.onSaveAnnotation();
+            }
+        }, autoSaveInterval);
+    }
 
     public componentDidUpdate(): void {
         const {
@@ -143,12 +164,15 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             playing,
             canvasIsReady,
             onSwitchPlay,
+            unsaved,
         } = this.props;
 
-        
+
         if (playing && canvasIsReady) {
             if (frameNumber < jobInstance.stopFrame) {
-                const delay: number = frameChangeTime ? Math.max(0,~~(1000/frameSpeed) -  new Date().getTime() + frameChangeTime) : 0;
+                const delay: number = frameChangeTime
+                    ? Math.max(0, Math.round(1000 / frameSpeed)
+                    - new Date().getTime() + frameChangeTime) : 0;
                 setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
@@ -159,40 +183,21 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onSwitchPlay(false);
             }
         }
-    }
-
-    componentDidMount(): void {
-        const {
-            autoSave, 
-            autoSaveInterval,
-            saving,
-            unsaved,
-         } = this.props;
-
-        this.autoSaveInterval = window.setInterval((autoSave: boolean, saving: boolean): void => {
-            if (autoSave && !saving) {
-                this.onSaveAnnotation();
-            }
-        }, autoSaveInterval, autoSave, saving);
 
         if (unsaved) {
-            window.addEventListener('beforeunload', this.beforeUnloadCallback);
+            window.addEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
+        } else {
+            window.removeEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
         }
     }
 
-    public componentWillUnmount() : void {
+    public componentWillUnmount(): void {
         window.clearInterval(this.autoSaveInterval);
-        window.removeEventListener('beforeunload', this.beforeUnloadCallback);
-    }
-
-    private beforeUnloadCallback(event: BeforeUnloadEvent): any {
-        const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
-        (event || window.event).returnValue = confirmationMessage;
-        return confirmationMessage;
+        window.removeEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
     }
 
     private onChangeFrame(newFrame: number, time: number | null = null): void {
-        const { 
+        const {
             canvasInstance,
             canvasIsReady,
             onChangeFrame,

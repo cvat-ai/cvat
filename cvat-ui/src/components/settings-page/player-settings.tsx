@@ -79,8 +79,8 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             <Row type='flex' align='bottom' className='cvat-player-settings-step'>
                 <Col>
                     <Text className='cvat-text-color'> Player step </Text>
-                    <InputNumber 
-                        min={2} 
+                    <InputNumber
+                        min={2}
                         max={1000}
                         value={frameStep}
                         onChange={(value: number | undefined): void => {
@@ -102,7 +102,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             <Row type='flex' align='middle' className='cvat-player-settings-speed'>
                 <Col>
                     <Text className='cvat-text-color'> Player speed </Text>
-                    <Select 
+                    <Select
                         value={frameSpeed}
                         onChange={(speed: FrameSpeed): void => {
                             onChangeFrameSpeed(speed);
@@ -220,8 +220,8 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 </Col>
                 <Col>
                     <Slider
-                        min={0}
-                        max={100}
+                        min={50}
+                        max={200}
                         value={brightnessLevel}
                         onChange={(value: number | [number, number]): void => {
                             onChangeBrightnessLevel(value as number);
@@ -235,12 +235,12 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 </Col>
                 <Col>
                     <Slider
-                        min={0}
-                        max={100}
+                        min={50}
+                        max={200}
                         value={contrastLevel}
                         onChange={(value: number | [number, number]): void => {
                             onChangeContrastLevel(value as number);
-                        }}    
+                        }}
                     />
                 </Col>
             </Row>
@@ -251,7 +251,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 <Col>
                     <Slider
                         min={0}
-                        max={100}
+                        max={300}
                         value={saturationLevel}
                         onChange={(value: number | [number, number]): void => {
                             onChangeSaturationLevel(value as number);

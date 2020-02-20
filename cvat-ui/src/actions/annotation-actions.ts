@@ -27,7 +27,8 @@ function getStore(): Store<CombinedState> {
     return store;
 }
 
-function receiveAnnotationsParameters(): { filters: string[]; frame: number, showAllInterpolationTracks: boolean } {
+function receiveAnnotationsParameters():
+{ filters: string[]; frame: number; showAllInterpolationTracks: boolean } {
     if (store === null) {
         store = getCVATStore();
     }
@@ -117,7 +118,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
-            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const states = await sessionInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
             dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
                 payload: {
@@ -153,7 +155,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             // TODO: use affected IDs as an optimization
             await sessionInstance.actions.undo();
             const history = await sessionInstance.actions.get();
-            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const states = await sessionInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
 
             dispatch({
                 type: AnnotationActionTypes.UNDO_ACTION_SUCCESS,
@@ -182,7 +185,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             // TODO: use affected IDs as an optimization
             await sessionInstance.actions.redo();
             const history = await sessionInstance.actions.get();
-            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const states = await sessionInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
 
             dispatch({
                 type: AnnotationActionTypes.REDO_ACTION_SUCCESS,
@@ -664,7 +668,8 @@ export function getJobAsync(
 
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
             const frameData = await job.frames.get(frameNumber);
-            const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
+            const states = await job.annotations
+                .get(frameNumber, showAllInterpolationTracks, filters);
             const colors = [...cvat.enums.colors];
 
             dispatch({
@@ -803,7 +808,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             });
         } catch (error) {
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
-            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const states = await sessionInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
             dispatch({
                 type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
                 payload: {
@@ -821,7 +827,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
             await sessionInstance.annotations.put(statesToCreate);
-            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const states = await sessionInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
             const history = await sessionInstance.actions.get();
 
             dispatch({
@@ -848,7 +855,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
             await sessionInstance.annotations.merge(statesToMerge);
-            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const states = await sessionInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
             const history = await sessionInstance.actions.get();
 
             dispatch({
@@ -875,7 +883,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
             await sessionInstance.annotations.group(statesToGroup);
-            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const states = await sessionInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
             const history = await sessionInstance.actions.get();
 
             dispatch({
@@ -902,7 +911,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
         try {
             await sessionInstance.annotations.split(stateToSplit, frame);
-            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const states = await sessionInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
             const history = await sessionInstance.actions.get();
 
             dispatch({
@@ -934,7 +944,8 @@ export function changeLabelColorAsync(
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
             const updatedLabel = label;
             updatedLabel.color = color;
-            const states = await sessionInstance.annotations.get(frameNumber, showAllInterpolationTracks, filters);
+            const states = await sessionInstance.annotations
+                .get(frameNumber, showAllInterpolationTracks, filters);
             const history = await sessionInstance.actions.get();
 
             dispatch({

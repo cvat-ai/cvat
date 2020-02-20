@@ -352,7 +352,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         // Filters
         const backgroundElement = window.document.getElementById('cvat_canvas_background');
         if (backgroundElement) {
-            backgroundElement.style.filter = `brightness(${brightnessLevel/50}) contrast(${contrastLevel/50}) saturate(${saturationLevel/50})`;
+            backgroundElement.style.filter = `brightness(${brightnessLevel / 100}) contrast(${contrastLevel / 100}) saturate(${saturationLevel / 100})`;
         }
 
         // Events

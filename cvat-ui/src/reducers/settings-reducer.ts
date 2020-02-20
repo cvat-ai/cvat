@@ -30,9 +30,9 @@ const defaultState: SettingsState = {
         gridSize: 100,
         gridColor: GridColor.White,
         gridOpacity: 0,
-        brightnessLevel: 50,
-        contrastLevel: 50,
-        saturationLevel: 50,
+        brightnessLevel: 100,
+        contrastLevel: 100,
+        saturationLevel: 100,
     },
 };
 
@@ -125,8 +125,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     frameStep: action.payload.frameStep,
-                }
-            }
+                },
+            };
         }
         case SettingsActionTypes.CHANGE_FRAME_SPEED: {
             return {
@@ -134,8 +134,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     frameSpeed: action.payload.frameSpeed,
-                }
-            }
+                },
+            };
         }
         case SettingsActionTypes.SWITCH_RESET_ZOOM: {
             return {
@@ -143,8 +143,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     resetZoom: action.payload.resetZoom,
-                }
-            }
+                },
+            };
         }
         case SettingsActionTypes.CHANGE_BRIGHTNESS_LEVEL: {
             return {
@@ -152,8 +152,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     brightnessLevel: action.payload.level,
-                }
-            }
+                },
+            };
         }
         case SettingsActionTypes.CHANGE_CONTRAST_LEVEL: {
             return {
@@ -161,8 +161,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     contrastLevel: action.payload.level,
-                }
-            }
+                },
+            };
         }
         case SettingsActionTypes.CHANGE_SATURATION_LEVEL: {
             return {
@@ -170,8 +170,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     saturationLevel: action.payload.level,
-                }
-            }
+                },
+            };
         }
         case SettingsActionTypes.SWITCH_AUTO_SAVE: {
             return {
@@ -179,8 +179,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     autoSave: action.payload.autoSave,
-                }
-            }
+                },
+            };
         }
         case SettingsActionTypes.CHANGE_AUTO_SAVE_INTERVAL: {
             return {
@@ -188,8 +188,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     autoSaveInterval: action.payload.autoSaveInterval,
-                }
-            }
+                },
+            };
         }
         case SettingsActionTypes.CHANGE_AAM_ZOOM_MARGIN: {
             return {
@@ -197,8 +197,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     aamZoomMargin: action.payload.aamZoomMargin,
-                }
-            }
+                },
+            };
         }
         case SettingsActionTypes.SWITCH_SHOWNIG_INTERPOLATED_TRACKS: {
             return {
@@ -206,8 +206,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     showAllInterpolationTracks: action.payload.showAllInterpolationTracks,
-                }
-            }
+                },
+            };
         }
         default: {
             return state;
