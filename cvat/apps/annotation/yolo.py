@@ -8,7 +8,7 @@ format_spec = {
         {
             "display_name": "{name} {format} {version}",
             "format": "ZIP",
-            "version": "1.0",
+            "version": "1.1",
             "handler": "dump"
         },
     ],
@@ -16,7 +16,7 @@ format_spec = {
         {
             "display_name": "{name} {format} {version}",
             "format": "ZIP",
-            "version": "1.0",
+            "version": "1.1",
             "handler": "load"
         },
     ],
