@@ -2,6 +2,8 @@ import React from 'react';
 
 import {
     Layout,
+    Slider,
+    Icon,
 } from 'antd';
 
 import {
@@ -463,12 +465,25 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         return (
-            // This element doesn't have any props
-            // So, React isn't going to rerender it
-            // And it's a reason why cvat-canvas appended in mount function works
-            <Layout.Content
-                className='cvat-canvas-container'
-            />
+            <Layout.Content style={{ position: 'relative' }}>
+                {/*
+                    This element doesn't have any props
+                    So, React isn't going to rerender it
+                    And it's a reason why cvat-canvas appended in mount function works
+                */}
+                <div
+                    className='cvat-canvas-container'
+                    style={{
+                        overflow: 'hidden',
+                        width: '100%',
+                        height: '100%',
+                    }}
+                />
+                <div className='cvat-canvas-z-axis-wrapper'>
+                    <Slider min={0} max={10} vertical reverse defaultValue={0} />
+                    <Icon type='plus-circle' />
+                </div>
+            </Layout.Content>
         );
     }
 }
