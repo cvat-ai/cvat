@@ -67,16 +67,10 @@ parser.add_argument(
             (default user: %(default)s).'''
 )
 parser.add_argument(
-    '--server-host',
+    '--server-url',
     type=str,
-    default='localhost',
-    help='host (default: %(default)s)'
-)
-parser.add_argument(
-    '--server-port',
-    type=int,
-    default='8080',
-    help='port (default: %(default)s)'
+    default='http://localhost:8080',
+    help='host url (default: %(default)s)'
 )
 parser.add_argument(
     '--debug',

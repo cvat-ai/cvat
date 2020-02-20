@@ -19,7 +19,7 @@ class TestCLI(APITestCase):
     def setUp(self, mock_stdout):
         self.client = RequestsClient()
         self.client.auth = HTTPBasicAuth('admin', 'admin')
-        self.api = CVAT_API_V1('testserver', '')
+        self.api = CVAT_API_V1('http://testserver')
         self.cli = CLI(self.client, self.api)
         self.taskname = 'test_task'
         self.cli.tasks_create(self.taskname,
