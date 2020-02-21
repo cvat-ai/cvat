@@ -26,18 +26,21 @@ format_spec = {
 def dump(file_object, annotations):
     from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor
     from cvat.apps.dataset_manager.util import make_zip_archive
-    from datumaro.components.project import Environment
+    from datumaro.components.project import Environment, Dataset
     from tempfile import TemporaryDirectory
 
     env = Environment()
     polygons_to_masks = env.transforms.get('polygons_to_masks')
     boxes_to_masks = env.transforms.get('boxes_to_masks')
+    merge_instance_segments = env.transforms.get('merge_instance_segments')
     id_from_image = env.transforms.get('id_from_image_name')
 
     extractor = CvatAnnotationsExtractor('', annotations)
     extractor = extractor.transform(polygons_to_masks)
     extractor = extractor.transform(boxes_to_masks)
+    extractor = extractor.transform(merge_instance_segments)
     extractor = extractor.transform(id_from_image)
+    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     converter = env.make_converter('voc_segmentation',
         apply_colormap=True, label_map='source')
     with TemporaryDirectory() as temp_dir:
