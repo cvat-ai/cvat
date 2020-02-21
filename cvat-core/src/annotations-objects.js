@@ -1064,7 +1064,7 @@
                     points: [...leftPosition.points],
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
-                    zOrder: 0,
+                    zOrder: leftPosition.zOrder,
                     keyframe: targetFrame in this.shapes,
                 };
             }
@@ -1074,7 +1074,7 @@
                     points: [...rightPosition.points],
                     occluded: rightPosition.occluded,
                     outside: true,
-                    zOrder: 0,
+                    zOrder: rightPosition.zOrder,
                     keyframe: targetFrame in this.shapes,
                 };
             }

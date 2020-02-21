@@ -725,6 +725,7 @@
                 } else {
                     checkObjectType('state occluded', state.occluded, 'boolean', null);
                     checkObjectType('state points', state.points, null, Array);
+                    checkObjectType('state zOrder', state.zOrder, 'integer', null);
 
                     for (const coord of state.points) {
                         checkObjectType('point coordinate', coord, 'number', null);
@@ -746,7 +747,7 @@
                             occluded: state.occluded || false,
                             points: [...state.points],
                             type: state.shapeType,
-                            z_order: 0,
+                            z_order: state.zOrder,
                         });
                     } else if (state.objectType === 'track') {
                         constructed.tracks.push({
@@ -763,7 +764,7 @@
                                 outside: false,
                                 points: [...state.points],
                                 type: state.shapeType,
-                                z_order: 0,
+                                z_order: state.zOrder,
                             }],
                         });
                     } else {

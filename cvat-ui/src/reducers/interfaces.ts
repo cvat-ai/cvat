@@ -325,6 +325,7 @@ export interface AnnotationState {
             statuses: string[];
         };
         zLayer: {
+            min: number;
             max: number;
             cur: number;
         };

@@ -59,6 +59,7 @@ const defaultState: AnnotationState = {
             redo: [],
         },
         zLayer: {
+            min: 0,
             max: 0,
             cur: 0,
         },
@@ -97,6 +98,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 colors,
                 filters,
                 frameData: data,
+                minZ,
+                maxZ,
             } = action.payload;
 
             return {
@@ -116,6 +119,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     states,
                     filters,
+                    zLayer: {
+                        min: minZ,
+                        max: maxZ,
+                        cur: maxZ,
+                    },
                 },
                 player: {
                     ...state.player,
@@ -164,6 +172,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 number,
                 data,
                 states,
+                minZ,
+                maxZ,
             } = action.payload;
 
             const activatedStateID = states
@@ -184,6 +194,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID,
                     states,
+                    zLayer: {
+                        min: minZ,
+                        max: maxZ,
+                        cur: maxZ,
+                    },
                 },
             };
         }
@@ -845,6 +860,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const {
                 history,
                 states,
+                minZ,
+                maxZ,
             } = action.payload;
 
             const activatedStateID = states
@@ -858,11 +875,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID,
                     states,
                     history,
+                    zLayer: {
+                        min: minZ,
+                        max: maxZ,
+                        cur: maxZ,
+                    },
                 },
             };
         }
         case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS: {
-            const { states } = action.payload;
+            const { states, minZ, maxZ } = action.payload;
             const activatedStateID = states
                 .map((_state: any) => _state.clientID).includes(state.annotations.activatedStateID)
                 ? state.annotations.activatedStateID : null;
@@ -873,6 +895,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID,
                     states,
+                    zLayer: {
+                        min: minZ,
+                        max: maxZ,
+                        cur: maxZ,
+                    },
                 },
             };
         }
@@ -888,14 +915,29 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.SWITCH_Z_LAYER: {
             const { cur } = action.payload;
-            const { max } = state.annotations.zLayer;
+            const { max, min } = state.annotations.zLayer;
+
+            let { activatedStateID } = state.annotations;
+            if (activatedStateID !== null) {
+                const idx = state.annotations.states
+                    .map((_state: any) => _state.clientID).indexOf(activatedStateID);
+                if (idx !== -1) {
+                    if (state.annotations.states[idx].zOrder > cur) {
+                        activatedStateID = null;
+                    }
+                } else {
+                    activatedStateID = null;
+                }
+            }
+
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
+                    activatedStateID,
                     zLayer: {
                         ...state.annotations.zLayer,
-                        cur: Math.max(Math.min(cur, max), 0),
+                        cur: Math.max(Math.min(cur, max), min),
                     },
                 },
             };

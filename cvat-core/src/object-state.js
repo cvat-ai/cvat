@@ -34,7 +34,7 @@
                 occluded: null,
                 keyframe: null,
 
-                zOrder: null,
+                zOrder: 0,
                 lock: null,
                 color: null,
                 hidden: null,

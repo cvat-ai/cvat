@@ -52,6 +52,7 @@ interface StateToProps {
     gridOpacity: number;
     activeLabelID: number;
     activeObjectType: ObjectType;
+    minZLayer: number;
     maxZLayer: number;
     curZLayer: number;
 }
@@ -103,6 +104,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 selectedStatesID,
                 zLayer: {
                     cur: curZLayer,
+                    min: minZLayer,
                     max: maxZLayer,
                 },
             },
@@ -144,6 +146,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeLabelID,
         activeObjectType,
         curZLayer,
+        minZLayer,
         maxZLayer,
     };
 }

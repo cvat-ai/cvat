@@ -77,12 +77,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onDrawDone(data: object, continueDraw?: boolean): void {
         if (data) {
+            const { zLayer } = this.controller;
             const event: CustomEvent = new CustomEvent('canvas.drawn', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
                     // eslint-disable-next-line new-cap
-                    state: data,
+                    state: {
+                        ...data,
+                        zOrder: zLayer || 0,
+                    },
                     continue: continueDraw,
                 },
             });
@@ -365,6 +369,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private setupObjects(states: any[]): void {
+        const { zLayer } = this.controller;
         const { offset } = this.controller.geometry;
         const translate = (points: number[]): number[] => points
             .map((coord: number): number => coord + offset);
@@ -690,7 +695,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.transformCanvas();
         } else if (reason === UpdateReasons.IMAGE_MOVED) {
             this.moveCanvas();
-        } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
+        } else if (reason === UpdateReasons.OBJECTS_UPDATED || reason === UpdateReasons.SET_Z_LAYER) {
             if (this.mode === Mode.GROUP) {
                 this.groupHandler.resetSelectedObjects();
             }
@@ -1009,12 +1014,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         const { clientID } = activeElement;
+        const { zLayer } = this.controller;
         if (clientID === null) {
             return;
         }
 
         const [state] = this.controller.objects
             .filter((_state: any): boolean => _state.clientID === clientID);
+
+        if (!state) {
+            return;
+        }
 
         if (state.shapeType === 'points') {
             this.svgShapes[clientID].remember('_selectHandler').nested
