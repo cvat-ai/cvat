@@ -984,6 +984,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         sorted.forEach((pair): void => {
             this.content.appendChild(pair[0]);
         });
+
+        this.content.prepend(...sorted.map((pair): SVGElement => pair[0]));
     }
 
     private deactivate(): void {
