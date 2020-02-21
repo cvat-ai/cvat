@@ -2658,9 +2658,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "COCO JSON 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
-            elif annotation_format == "MASK ZIP 1.0":
-                annotations["shapes"] = rectangle_shapes_with_attrs + rectangle_shapes_wo_attrs + polygon_shapes_wo_attrs
-                annotations["tracks"] = rectangle_tracks_with_attrs + rectangle_tracks_wo_attrs
+            elif annotation_format == "MASK ZIP 1.1":
+                annotations["shapes"] = rectangle_shapes_wo_attrs + polygon_shapes_wo_attrs
+                annotations["tracks"] = rectangle_tracks_wo_attrs
 
             elif annotation_format == "MOT CSV 1.0":
                 annotations["tracks"] = rectangle_tracks_wo_attrs
@@ -2730,6 +2730,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     }
 
                     for loader in annotation_format["loaders"]:
+                        if loader["display_name"] == "MASK ZIP 1.1":
+                            continue # can't really predict the result and check
                         response = self._upload_api_v1_tasks_id_annotations(task["id"], annotator, uploaded_data, "format={}".format(loader["display_name"]))
                         self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 

@@ -38,18 +38,17 @@ Format selection is possible after clicking on the Upload annotation / Dump anno
 [Datumaro](datumaro/README.md) dataset framework allows additional dataset transformations
 via its command line tool.
 
-| Annotation format                                                                  | Dumper | Loader |
-| ---------------------------------------------------------------------------------- | ------ | ------ |
-| [CVAT XML v1.1 for images](cvat/apps/documentation/xml_format.md#annotation)       | X      | X      |
-| [CVAT XML v1.1 for a video](cvat/apps/documentation/xml_format.md#interpolation)   | X      | X      |
-| [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                              | X      | X      |
-| [YOLO](https://pjreddie.com/darknet/yolo/)                                         | X      | X      |
-| [MS COCO Object Detection](http://cocodataset.org/#format-data)                    | X      | X      |
-| PNG mask                                                                           | X      |        |
-| PNG instance mask                                                                  | X      |        |
-| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)              | X      | X      |
-| [MOT](https://motchallenge.net/)                                                   | X      | X      |
-| [LabelMe](http://labelme.csail.mit.edu/Release3.0)                                 | X      | X      |
+| Annotation format                                                                          | Dumper | Loader |
+| ------------------------------------------------------------------------------------------ | ------ | ------ |
+| [CVAT XML v1.1 for images](cvat/apps/documentation/xml_format.md#annotation)               | X      | X      |
+| [CVAT XML v1.1 for a video](cvat/apps/documentation/xml_format.md#interpolation)           | X      | X      |
+| [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                      | X      | X      |
+| [YOLO](https://pjreddie.com/darknet/yolo/)                                                 | X      | X      |
+| [MS COCO Object Detection](http://cocodataset.org/#format-data)                            | X      | X      |
+| PNG class mask + instance mask as in [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/) | X      | X      |
+| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)                      | X      | X      |
+| [MOT](https://motchallenge.net/)                                                           | X      | X      |
+| [LabelMe](http://labelme.csail.mit.edu/Release3.0)                                         | X      | X      |
 
 ## Links
 - [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)

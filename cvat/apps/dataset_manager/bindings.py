@@ -211,6 +211,22 @@ def import_dm_annotations(dm_dataset, cvat_task_anno):
     for item in dm_dataset:
         frame_number = match_frame(item, cvat_task_anno)
 
+        # do not store one-item groups
+        group_map = { 0: 0 }
+        group_size = { 0: 0 }
+        for ann in item.annotations:
+            if ann.type in shapes:
+                group = group_map.get(ann.group)
+                if group is None:
+                    group = len(group_map)
+                    group_map[ann.group] = group
+                    group_size[ann.group] = 1
+                else:
+                    group_size[ann.group] += 1
+        group_map = {g: s for g, s in group_size.items()
+            if 1 < s and group_map[g]}
+        group_map = {g: i for i, g in enumerate([0] + sorted(group_map))}
+
         for ann in item.annotations:
             if ann.type in shapes:
                 cvat_task_anno.add_shape(cvat_task_anno.LabeledShape(
@@ -219,5 +235,6 @@ def import_dm_annotations(dm_dataset, cvat_task_anno):
                     label=label_cat.items[ann.label].name,
                     points=ann.points,
                     occluded=False,
+                    group=group_map.get(ann.group, 0),
                     attributes=[],
                 ))

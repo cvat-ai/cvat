@@ -181,6 +181,27 @@ class PolygonsToMasks(Transform, CliPlugin):
         return RleMask(rle=rle, label=polygon.label, z_order=polygon.z_order,
             id=polygon.id, attributes=polygon.attributes, group=polygon.group)
 
+class BoxesToMasks(Transform, CliPlugin):
+    def transform_item(self, item):
+        annotations = []
+        for ann in item.annotations:
+            if ann.type == AnnotationType.bbox:
+                if not item.has_image:
+                    raise Exception("Image info is required for this transform")
+                h, w = item.image.size
+                annotations.append(self.convert_bbox(ann, h, w))
+            else:
+                annotations.append(ann)
+
+        return self.wrap_item(item, annotations=annotations)
+
+    @staticmethod
+    def convert_bbox(bbox, img_h, img_w):
+        rle = mask_utils.frPyObjects([bbox.as_polygon()], img_h, img_w)[0]
+
+        return RleMask(rle=rle, label=bbox.label, z_order=bbox.z_order,
+            id=bbox.id, attributes=bbox.attributes, group=bbox.group)
+
 class MasksToPolygons(Transform, CliPlugin):
     def transform_item(self, item):
         annotations = []

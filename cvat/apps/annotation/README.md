@@ -506,18 +506,48 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
 - downloaded file: a zip archive with the following structure:
   ```bash
   taskname.zip
-  ├── frame_000001.png
-  ├── frame_000002.png
-  ├── frame_000003.png
-  ├── ...
-  └── colormap.txt
+  ├── labelmap.txt # optional, required for non-VOC labels
+  ├── ImageSets/
+  │   └── Segmentation/
+  │       └── default.txt # list of image names without extension
+  ├── SegmentationClass/ # merged class masks
+  │   └── image1.png
+  │   └── image2.png
+  └── SegmentationObject/ # merged instance masks
+      └── image1.png
+      └── image2.png
   ```
   Mask is a png image with several (RGB) channels where each pixel has own color which corresponds to a label.
   Color generation correspond to the Pascal VOC color generation
   [algorithm](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/devkit_doc.html#sec:voclabelcolormap).
   (0, 0, 0) is used for background.
-  `colormap.txt` file contains the values of the used colors in RGB format.
+  `labelmap.txt` file contains the values of the used colors in RGB format. The file structure:
+  ```bash
+  # label:color_rgb:parts:actions
+  background:0,128,0::
+  aeroplane:10,10,128::
+  bicycle:10,128,0::
+  bird:0,108,128::
+  boat:108,0,100::
+  bottle:18,0,8::
+  bus:12,28,0::
+  ```
 - supported shapes - Rectangles, Polygons
 
 #### Mask loader description
-Not supported
+- uploaded file: a zip archive of the following structure:
+  ```bash
+  name.zip
+  ├── labelmap.txt # optional, required for non-VOC labels
+  ├── ImageSets/
+  │   └── Segmentation/
+  │       └── <any_subset_name>.txt
+  ├── SegmentationClass/
+  │   └── image1.png
+  │   └── image2.png
+  └── SegmentationObject/
+      └── image.png
+      └── image2.png
+  ```
+- supported shapes: Polygons
+- additional comments: the CVAT task should be created with the full label set that may be in the annotation files

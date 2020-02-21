@@ -361,6 +361,7 @@ class _KeypointsConverter(_InstancesConverter):
 
     @classmethod
     def find_solitary_points(cls, annotations):
+        annotations = sorted(annotations, key=lambda a: a.group)
         solitary_points = []
 
         for g_id, group in groupby(annotations, lambda a: a.group):

@@ -7,6 +7,7 @@ from itertools import groupby
 
 
 def find_instances(instance_anns):
+    instance_anns = sorted(instance_anns, key=lambda a: a.group)
     ann_groups = []
     for g_id, group in groupby(instance_anns, lambda a: a.group):
         if not g_id:
