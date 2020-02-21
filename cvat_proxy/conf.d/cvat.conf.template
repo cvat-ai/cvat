@@ -1,11 +1,11 @@
 server {
-    listen       ${CVAT_PORT};
+    listen       80;
     server_name  _ default;
     return       404;
 }
 
 server {
-    listen       ${CVAT_PORT};
+    listen       80;
     server_name  ${CVAT_HOST};
 
     location ~* /api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*  {
@@ -21,7 +21,7 @@ server {
 
         if ( $query_string ~ "^id=\d+.*" ) { return 418; }
 
-        proxy_pass              http://cvat_ui:80;
+        proxy_pass              http://cvat_ui;
         proxy_pass_header       X-CSRFToken;
         proxy_set_header        Host $http_host;
         proxy_pass_header       Set-Cookie;

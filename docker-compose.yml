@@ -82,22 +82,17 @@ services:
     container_name: cvat_proxy
     image: nginx:stable-alpine
     restart: always
-    networks:
-      default:
-        aliases:
-          - proxy
     depends_on:
       - cvat
       - cvat_ui
     environment:
       CVAT_HOST: localhost
-      CVAT_PORT: 80
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./cvat_proxy/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./cvat_proxy/conf.d/cvat.conf.template:/etc/nginx/conf.d/cvat.conf.template:ro
-    command: /bin/sh -c "envsubst '$$CVAT_HOST $$CVAT_PORT' < /etc/nginx/conf.d/cvat.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+    command: /bin/sh -c "envsubst '$$CVAT_HOST' < /etc/nginx/conf.d/cvat.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
 
 volumes:
   cvat_db:
