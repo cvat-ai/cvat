@@ -262,9 +262,8 @@ docker-compose down
 
 ### Advanced settings
 
-If you want to access you instance of CVAT outside of your localhost you should
-specify the [ALLOWED_HOSTS](https://docs.djangoproject.com/en/2.0/ref/settings/#allowed-hosts)
-environment variable. The best way to do that is to create
+If you want to access your instance of CVAT outside of your localhost you should
+specify the `CVAT_HOST` environment variable. The best way to do that is to create
 [docker-compose.override.yml](https://docs.docker.com/compose/extends/) and put
 all your extra settings here.
 
@@ -272,11 +271,9 @@ all your extra settings here.
 version: "2.3"
 
 services:
-  cvat:
+  cvat_proxy:
     environment:
-      ALLOWED_HOSTS: .example.com
-    ports:
-      - "80:8080"
+      CVAT_HOST: .example.com
 ```
 
 Please don't forget include this file to docker-compose commands using the `-f`
