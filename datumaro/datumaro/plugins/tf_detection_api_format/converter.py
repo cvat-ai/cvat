@@ -5,7 +5,6 @@
 
 import codecs
 from collections import OrderedDict
-from itertools import groupby
 import logging as log
 import os
 import os.path as osp
