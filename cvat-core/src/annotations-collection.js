@@ -119,13 +119,11 @@
             this.objects = {}; // key is a client id
             this.count = 0;
             this.flush = false;
-            this.collectionZ = {}; // key is a frame, {max, min} are values
             this.groups = {
                 max: 0,
             }; // it is an object to we can pass it as an argument by a reference
             this.injection = {
                 labels: this.labels,
-                collectionZ: this.collectionZ,
                 groups: this.groups,
                 frameMeta: this.frameMeta,
                 history: this.history,
@@ -461,7 +459,7 @@
                 points: [...objectState.points],
                 occluded: objectState.occluded,
                 outside: objectState.outside,
-                zOrder: 0,
+                zOrder: objectState.zOrder,
                 attributes: Object.keys(objectState.attributes)
                     .reduce((accumulator, attrID) => {
                         if (!labelAttributes[attrID].mutable) {
