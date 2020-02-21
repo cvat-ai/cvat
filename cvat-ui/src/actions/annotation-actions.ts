@@ -48,6 +48,7 @@ export enum AnnotationActionTypes {
     GET_JOB = 'GET_JOB',
     GET_JOB_SUCCESS = 'GET_JOB_SUCCESS',
     GET_JOB_FAILED = 'GET_JOB_FAILED',
+    REMOVE_JOB = 'REMOVE_JOB',
     CHANGE_FRAME = 'CHANGE_FRAME',
     CHANGE_FRAME_SUCCESS = 'CHANGE_FRAME_SUCCESS',
     CHANGE_FRAME_FAILED = 'CHANGE_FRAME_FAILED',
@@ -699,6 +700,12 @@ export function getJobAsync(
                 },
             });
         }
+    };
+}
+
+export function removeJob(): AnyAction {
+    return {
+        type: AnnotationActionTypes.REMOVE_JOB,
     };
 }
 

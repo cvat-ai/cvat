@@ -2,6 +2,9 @@ import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
+import { withRouter } from 'react-router';
+import { RouteComponentProps } from 'react-router-dom';
+
 import { Canvas } from 'cvat-canvas';
 
 import { SliderValue } from 'antd/lib/slider';
@@ -127,7 +130,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-type Props = StateToProps & DispatchToProps;
+type Props = StateToProps & DispatchToProps & RouteComponentProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private static beforeUnloadCallback(event: BeforeUnloadEvent): any {
         const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
@@ -137,6 +140,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     }
 
     private autoSaveInterval: number | undefined;
+    private unblock: any;
 
     componentDidMount(): void {
         const {
@@ -150,6 +154,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 this.onSaveAnnotation();
             }
         }, autoSaveInterval);
+
+        this.checkUnsavedChanges();
     }
 
     public componentDidUpdate(): void {
@@ -176,18 +182,16 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             }
         }
 
-        jobInstance.annotations.hasUnsavedChanges().then((unsaved: boolean) => {
-            if (unsaved) {
-                window.addEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
-            } else {
-                window.removeEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
-            }
-        });
+        this.checkUnsavedChanges();
     }
 
     public componentWillUnmount(): void {
         window.clearInterval(this.autoSaveInterval);
         window.removeEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
+        if (typeof this.unblock === 'function') {
+            this.unblock();
+            this.unblock = undefined;
+        }
     }
 
     private onChangeFrame(newFrame: number): void {
@@ -403,6 +407,34 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         copy(url);
     };
 
+    private checkUnsavedChanges(): void {
+        const {
+            jobInstance,
+            history,
+        } = this.props;
+
+        jobInstance.annotations.hasUnsavedChanges().then((unsaved: boolean) => {
+            if (unsaved) {
+                window.addEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
+                if (this.unblock === undefined) {
+                    this.unblock = history.block((location) => {
+                        if (location.pathname !== '/settings' && location.pathname
+                                !== `/tasks/${jobInstance.task.id}/jobs/${jobInstance.id}`) {
+                            return 'You have unsaved changes, please confirm leaving this page.';
+                        }
+                        return undefined;
+                    });
+                }
+            } else {
+                window.removeEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
+                if (typeof this.unblock === 'function') {
+                    this.unblock();
+                    this.unblock = undefined;
+                }
+            }
+        });
+    }
+
     public render(): JSX.Element {
         const {
             playing,
@@ -411,6 +443,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance: {
                 startFrame,
                 stopFrame,
+                annotations,
             },
             frameNumber,
             undoAction,
@@ -437,6 +470,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 startFrame={startFrame}
                 stopFrame={stopFrame}
                 frameNumber={frameNumber}
+                annotations={annotations}
                 undoAction={undoAction}
                 redoAction={redoAction}
                 onUndoClick={this.undo}
@@ -446,7 +480,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     }
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(AnnotationTopBarContainer);
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps,
+    )(AnnotationTopBarContainer),
+);

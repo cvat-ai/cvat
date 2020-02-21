@@ -141,6 +141,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.REMOVE_JOB: {
+            return {
+                ...defaultState,
+                canvas: {
+                    ...defaultState.canvas,
+                    instance: new Canvas(),
+                },
+            };
+        }
         case AnnotationActionTypes.CHANGE_FRAME: {
             return {
                 ...state,

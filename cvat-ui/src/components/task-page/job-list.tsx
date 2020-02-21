@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { Link } from 'react-router-dom';
+import { RouteComponentProps } from 'react-router';
+import { withRouter } from 'react-router-dom';
 
 import {
     Row,
@@ -26,14 +27,21 @@ const baseURL = core.config.backendAPI.slice(0, -7);
 interface Props {
     taskInstance: any;
     registeredUsers: any[];
+    currentJobId: number | null;
     onJobUpdate(jobInstance: any): void;
+    onJobremove(): void;
 }
 
-export default function JobListComponent(props: Props): JSX.Element {
+function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
     const {
         taskInstance,
         registeredUsers,
         onJobUpdate,
+        onJobremove,
+        currentJobId,
+        history: {
+            push,
+        },
     } = props;
 
     const { jobs, id: taskId } = taskInstance;
@@ -43,9 +51,19 @@ export default function JobListComponent(props: Props): JSX.Element {
         key: 'job',
         render: (id: number): JSX.Element => (
             <div>
-                <Link to={`/tasks/${taskId}/jobs/${id}`}>{`Job #${id}`}</Link>
-                {' | '}
-                <a href={`${baseURL}/?id=${id}`}>Legacy UI</a>
+                <Button
+                    type='link'
+                    onClick={(): void => {
+                        if (currentJobId !== id) {
+                            onJobremove();
+                        }
+                        push(`/tasks/${taskId}/jobs/${id}`);
+                    }}
+                >
+                    {`Job #${id}`}
+                </Button>
+                |
+                <Button type='link' href={`${baseURL}/?id=${id}`}>Legacy UI</Button>
             </div>
         ),
     }, {
@@ -176,3 +194,5 @@ export default function JobListComponent(props: Props): JSX.Element {
         </div>
     );
 }
+
+export default withRouter(JobListComponent);
