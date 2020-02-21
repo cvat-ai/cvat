@@ -368,8 +368,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
+
     private setupObjects(states: any[]): void {
-        const { zLayer } = this.controller;
         const { offset } = this.controller.geometry;
         const translate = (points: number[]): number[] => points
             .map((coord: number): number => coord + offset);
@@ -408,6 +408,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.addObjects(created, translate);
         this.updateObjects(updated, translate);
+        this.sortObjects();
 
         if (this.controller.activeElement.clientID !== null) {
             const { clientID } = this.controller.activeElement;
@@ -690,12 +691,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.setupObjects([]);
             this.moveCanvas();
             this.resizeCanvas();
-        } else if (reason === UpdateReasons.IMAGE_ZOOMED || reason === UpdateReasons.IMAGE_FITTED) {
+        } else if ([UpdateReasons.IMAGE_ZOOMED, UpdateReasons.IMAGE_FITTED].includes(reason)) {
             this.moveCanvas();
             this.transformCanvas();
         } else if (reason === UpdateReasons.IMAGE_MOVED) {
             this.moveCanvas();
-        } else if (reason === UpdateReasons.OBJECTS_UPDATED || reason === UpdateReasons.SET_Z_LAYER) {
+        } else if ([UpdateReasons.OBJECTS_UPDATED, UpdateReasons.SET_Z_LAYER].includes(reason)) {
             if (this.mode === Mode.GROUP) {
                 this.groupHandler.resetSelectedObjects();
             }
@@ -966,6 +967,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
+    private sortObjects(): void {
+        // TODO: Can be significantly optimized
+        const states = Array.from(
+            this.content.getElementsByClassName('cvat_canvas_shape'),
+        ).map((state: SVGElement): [SVGElement, number] => (
+            [state, +state.getAttribute('data-z-order')]
+        ));
+
+        const needSort = states.some((pair): boolean => pair[1] !== states[0][1]);
+        if (!states.length || !needSort) {
+            return;
+        }
+
+        const sorted = states.sort((a, b): number => a[1] - b[1]);
+        sorted.forEach((pair): void => {
+            this.content.appendChild(pair[0]);
+        });
+    }
+
     private deactivate(): void {
         if (this.activeElement.clientID !== null) {
             const { clientID } = this.activeElement;
@@ -994,6 +1014,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 delete this.svgTexts[clientID];
             }
 
+            this.sortObjects();
+
             this.activeElement = {
                 clientID: null,
                 attributeID: null,
@@ -1014,7 +1036,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         const { clientID } = activeElement;
-        const { zLayer } = this.controller;
         if (clientID === null) {
             return;
         }
@@ -1050,7 +1071,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         const self = this;
-        this.content.append(shape.node);
+        if (state.shapeType === 'points') {
+            this.content.append(this.svgShapes[clientID]
+                .remember('_selectHandler').nested);
+            // TODO: Fix for points
+        } else {
+            this.content.append(shape.node);
+        }
+
         (shape as any).draggable().on('dragstart', (): void => {
             this.mode = Mode.DRAG;
             if (text) {
@@ -1207,7 +1235,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             'shape-rendering': 'geometricprecision',
             stroke: state.color,
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-            zOrder: state.zOrder,
+            'data-z-order': state.zOrder,
         }).move(xtl, ytl)
             .addClass('cvat_canvas_shape');
 
@@ -1231,7 +1259,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             'shape-rendering': 'geometricprecision',
             stroke: state.color,
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-            zOrder: state.zOrder,
+            'data-z-order': state.zOrder,
         }).addClass('cvat_canvas_shape');
 
         if (state.occluded) {
@@ -1254,7 +1282,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             'shape-rendering': 'geometricprecision',
             stroke: state.color,
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-            zOrder: state.zOrder,
+            'data-z-order': state.zOrder,
         }).addClass('cvat_canvas_shape');
 
         if (state.occluded) {
@@ -1274,9 +1302,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const group = basicPolyline.remember('_selectHandler').nested
             .addClass('cvat_canvas_shape').attr({
                 clientID: state.clientID,
-                zOrder: state.zOrder,
                 id: `cvat_canvas_shape_${state.clientID}`,
                 fill: state.color,
+                'data-z-order': state.zOrder,
             }).style({
                 'fill-opacity': 1,
             });
