@@ -1,5 +1,5 @@
+import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import getCore from 'cvat-core';
-import { ActionUnion, createAction, ThunkAction } from '../utils/redux';
 
 const cvat = getCore();
 
