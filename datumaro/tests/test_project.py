@@ -4,8 +4,7 @@ import os.path as osp
 
 from unittest import TestCase
 
-from datumaro.components.project import Project, Environment
-from datumaro.components.project import Source, Model
+from datumaro.components.config_model import Source, Model
 from datumaro.components.launcher import Launcher, InferenceWrapper
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (Extractor, DatasetItem,
@@ -372,7 +371,7 @@ class DatasetFilterTest(TestCase):
         self.assertEqual(2, len(filtered))
 
     def test_annotations_filter_can_be_applied(self):
-        class SrcTestExtractor(Extractor):
+        class SrcExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=0),
@@ -386,7 +385,7 @@ class DatasetFilterTest(TestCase):
                     ]),
                 ])
 
-        class DstTestExtractor(Extractor):
+        class DstExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=0),
@@ -398,15 +397,15 @@ class DatasetFilterTest(TestCase):
                     ]),
                 ])
 
-        extractor = SrcTestExtractor()
+        extractor = SrcExtractor()
 
         filtered = XPathAnnotationsFilter(extractor,
             '/item/annotation[label_id = 0]')
 
-        self.assertListEqual(list(filtered), list(DstTestExtractor()))
+        self.assertListEqual(list(filtered), list(DstExtractor()))
 
     def test_annotations_filter_can_remove_empty_items(self):
-        class SrcTestExtractor(Extractor):
+        class SrcExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=0),
@@ -420,7 +419,7 @@ class DatasetFilterTest(TestCase):
                     ]),
                 ])
 
-        class DstTestExtractor(Extractor):
+        class DstExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=2, annotations=[
@@ -428,12 +427,12 @@ class DatasetFilterTest(TestCase):
                     ]),
                 ])
 
-        extractor = SrcTestExtractor()
+        extractor = SrcExtractor()
 
         filtered = XPathAnnotationsFilter(extractor,
             '/item/annotation[label_id = 2]', remove_empty=True)
 
-        self.assertListEqual(list(filtered), list(DstTestExtractor()))
+        self.assertListEqual(list(filtered), list(DstExtractor()))
 
 class ConfigTest(TestCase):
     def test_can_produce_multilayer_config_from_dict(self):

@@ -84,7 +84,8 @@ def compare_datasets(test, expected, actual):
     test.assertEqual(sorted(expected.subsets()), sorted(actual.subsets()))
     test.assertEqual(len(expected), len(actual))
     for item_a in expected:
-        item_b = find(actual, lambda x: x.id == item_a.id)
+        item_b = find(actual, lambda x: x.id == item_a.id and \
+            x.subset == item_a.subset)
         test.assertFalse(item_b is None, item_a.id)
         test.assertEqual(len(item_a.annotations), len(item_b.annotations))
         for ann_a in item_a.annotations:
