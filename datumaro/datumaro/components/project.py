@@ -321,17 +321,17 @@ class Dataset(Extractor):
         subsets = defaultdict(lambda: Subset(dataset))
         for source in sources:
             for item in source:
-                path = None # NOTE: merge everything into our own dataset
-
                 existing_item = subsets[item.subset].items.get(item.id)
                 if existing_item is not None:
-                    item = self._merge_items(existing_item, item, path=path)
-                else:
-                    item = item.wrap(path=path, annotations=item.annotations)
+                    path = existing_item.path
+                    if item.path != path:
+                        path = None
+                    item = cls._merge_items(existing_item, item, path=path)
 
                 subsets[item.subset].items[item.id] = item
 
-        self._subsets = dict(subsets)
+        dataset._subsets = dict(subsets)
+        return dataset
 
     def __init__(self, categories=None):
         super().__init__()
@@ -419,7 +419,7 @@ class Dataset(Extractor):
                     image._path = current_item.image.path
 
             if all([existing_item.image._size, current_item.image._size]):
-                assert existing_item.image._size == current_item.image._size, "Image info differs for item '%s'" % item.id
+                assert existing_item.image._size == current_item.image._size, "Image info differs for item '%s'" % existing_item.id
             elif existing_item.image._size:
                 image._size = existing_item.image._size
             else:
