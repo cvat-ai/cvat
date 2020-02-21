@@ -18,7 +18,6 @@ jest.mock('../../src/server-proxy', () => {
 const AnnotationsFilter = require('../../src/annotations-filter');
 // Initialize api
 window.cvat = require('../../src/api');
-const serverProxy = require('../../src/server-proxy');
 
 // Test cases
 describe('Feature: toJSONQuery', () => {
