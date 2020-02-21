@@ -302,45 +302,6 @@ class Subset(Extractor):
     def categories(self):
         return self._parent.categories()
 
-class DatasetItemWrapper(DatasetItem):
-    def __init__(self, item, path, annotations, image=None):
-        self._item = item
-        if path is None:
-            path = []
-        self._path = path
-        self._annotations = annotations
-        self._image = image
-
-    @DatasetItem.id.getter
-    def id(self):
-        return self._item.id
-
-    @DatasetItem.subset.getter
-    def subset(self):
-        return self._item.subset
-
-    @DatasetItem.path.getter
-    def path(self):
-        return self._path
-
-    @DatasetItem.annotations.getter
-    def annotations(self):
-        return self._annotations
-
-    @DatasetItem.has_image.getter
-    def has_image(self):
-        if self._image is not None:
-            return True
-        return self._item.has_image
-
-    @DatasetItem.image.getter
-    def image(self):
-        if self._image is not None:
-            if callable(self._image):
-                return self._image()
-            return self._image
-        return self._item.image
-
 class Dataset(Extractor):
     @classmethod
     def from_extractors(cls, *sources):
@@ -364,17 +325,9 @@ class Dataset(Extractor):
 
                 existing_item = subsets[item.subset].items.get(item.id)
                 if existing_item is not None:
-                    image = None
-                    if existing_item.has_image:
-                        # TODO: think of image comparison
-                        image = cls._lazy_image(existing_item)
-
-                    item = DatasetItemWrapper(item=item, path=path,
-                        image=image, annotations=self._merge_anno(
-                            existing_item.annotations, item.annotations))
+                    item = self._merge_items(existing_item, item, path=path)
                 else:
-                    item = DatasetItemWrapper(item=item, path=path,
-                        annotations=item.annotations)
+                    item = item.wrap(path=path, annotations=item.annotations)
 
                 subsets[item.subset].items[item.id] = item
 
@@ -423,8 +376,7 @@ class Dataset(Extractor):
         if subset is None:
             subset = item.subset
 
-        item = DatasetItemWrapper(item=item, path=None,
-            annotations=item.annotations)
+        item = item.wrap(path=None, annotations=item.annotations)
         if item.subset not in self._subsets:
             self._subsets[item.subset] = Subset(self)
         self._subsets[subset].items[item_id] = item
@@ -452,6 +404,34 @@ class Dataset(Extractor):
     def _lazy_image(item):
         # NOTE: avoid https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
         return lambda: item.image
+
+    @classmethod
+    def _merge_items(cls, existing_item, current_item, path=None):
+        image = None
+        if existing_item.has_image and current_item.has_image:
+            if existing_item.image.has_data:
+                image = existing_item.image
+            else:
+                image = current_item.image
+
+            if existing_item.image.path != current_item.image.path:
+                if not existing_item.image.path:
+                    image._path = current_item.image.path
+
+            if all([existing_item.image._size, current_item.image._size]):
+                assert existing_item.image._size == current_item.image._size, "Image info differs for item '%s'" % item.id
+            elif existing_item.image._size:
+                image._size = existing_item.image._size
+            else:
+                image._size = current_item.image._size
+        elif existing_item.has_image:
+            image = existing_item.image
+        else:
+            image = current_item.image
+
+        return existing_item.wrap(path=path,
+            image=image, annotations=cls._merge_anno(
+                existing_item.annotations, current_item.annotations))
 
     @staticmethod
     def _merge_anno(a, b):
@@ -520,17 +500,10 @@ class ProjectDataset(Dataset):
             for item in source:
                 existing_item = subsets[item.subset].items.get(item.id)
                 if existing_item is not None:
-                    image = None
-                    if existing_item.has_image:
-                        # TODO: think of image comparison
-                        image = self._lazy_image(existing_item)
-
                     path = existing_item.path
                     if item.path != path:
                         path = None # NOTE: move to our own dataset
-                    item = DatasetItemWrapper(item=item, path=path,
-                        image=image, annotations=self._merge_anno(
-                            existing_item.annotations, item.annotations))
+                    item = self._merge_items(existing_item, item, path=path)
                 else:
                     s_config = config.sources[source_name]
                     if s_config and \
@@ -542,8 +515,7 @@ class ProjectDataset(Dataset):
                         if path is None:
                             path = []
                         path = [source_name] + path
-                    item = DatasetItemWrapper(item=item, path=path,
-                        annotations=item.annotations)
+                    item = item.wrap(path=path, annotations=item.annotations)
 
                 subsets[item.subset].items[item.id] = item
 
@@ -558,7 +530,7 @@ class ProjectDataset(Dataset):
                         if existing_item.has_image:
                             # TODO: think of image comparison
                             image = self._lazy_image(existing_item)
-                        item = DatasetItemWrapper(item=item, path=None,
+                        item = item.wrap(path=None,
                             annotations=item.annotations, image=image)
 
                 subsets[item.subset].items[item.id] = item
@@ -597,8 +569,7 @@ class ProjectDataset(Dataset):
         if subset is None:
             subset = item.subset
 
-        item = DatasetItemWrapper(item=item, path=path,
-            annotations=item.annotations)
+        item = item.wrap(path=path, annotations=item.annotations)
         if item.subset not in self._subsets:
             self._subsets[item.subset] = Subset(self)
         self._subsets[subset].items[item_id] = item

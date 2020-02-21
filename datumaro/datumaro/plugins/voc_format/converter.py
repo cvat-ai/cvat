@@ -135,11 +135,18 @@ class _Converter:
             for item in subset:
                 log.debug("Converting item '%s'", item.id)
 
+                image_filename = ''
+                if item.has_image:
+                    image_filename = item.image.filename
                 if self._save_images:
-                    if item.has_image:
-                        save_image(osp.join(self._images_dir,
-                                item.id + VocPath.IMAGE_EXT),
-                            item.image)
+                    if item.has_image and item.image.has_data:
+                        if image_filename:
+                            image_filename = osp.splitext(image_filename)[0]
+                        else:
+                            image_filename = item.id
+                        image_filename += VocPath.IMAGE_EXT
+                        save_image(osp.join(self._images_dir, image_filename),
+                            item.image.data)
                     else:
                         log.debug("Item '%s' has no image" % item.id)
 
@@ -161,8 +168,7 @@ class _Converter:
                     else:
                         folder = ''
                     ET.SubElement(root_elem, 'folder').text = folder
-                    ET.SubElement(root_elem, 'filename').text = \
-                        item.id + VocPath.IMAGE_EXT
+                    ET.SubElement(root_elem, 'filename').text = image_filename
 
                     source_elem = ET.SubElement(root_elem, 'source')
                     ET.SubElement(source_elem, 'database').text = 'Unknown'
@@ -170,9 +176,12 @@ class _Converter:
                     ET.SubElement(source_elem, 'image').text = 'Unknown'
 
                     if item.has_image:
-                        image_shape = item.image.shape
-                        h, w = image_shape[:2]
-                        c = 1 if len(image_shape) == 2 else image_shape[2]
+                        h, w = item.image.size
+                        if item.image.has_data:
+                            image_shape = item.image.data.shape
+                            c = 1 if len(image_shape) == 2 else image_shape[2]
+                        else:
+                            c = 3
                         size_elem = ET.SubElement(root_elem, 'size')
                         ET.SubElement(size_elem, 'width').text = str(w)
                         ET.SubElement(size_elem, 'height').text = str(h)
@@ -467,7 +476,8 @@ class _Converter:
     def _make_label_id_map(self):
         source_labels = {
             id: label.name for id, label in
-            enumerate(self._extractor.categories()[AnnotationType.label].items)
+            enumerate(self._extractor.categories().get(
+                AnnotationType.label, LabelCategories()).items)
         }
         target_labels = {
             label.name: id for id, label in
@@ -510,7 +520,11 @@ class VocConverter(Converter, CliPlugin):
     def _get_labelmap(s):
         if osp.isfile(s):
             return s
-        return LabelmapType[s].name
+        try:
+            return LabelmapType[s].name
+        except KeyError:
+            import argparse
+            raise argparse.ArgumentTypeError()
 
     @classmethod
     def build_cmdline_parser(cls, **kwargs):

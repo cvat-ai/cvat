@@ -1,12 +1,11 @@
 import numpy as np
-import os.path as osp
 
 from unittest import TestCase
 
 from datumaro.components.project import Project
 from datumaro.components.extractor import Extractor, DatasetItem
+from datumaro.plugins.image_dir import ImageDirConverter
 from datumaro.util.test_utils import TestDir, compare_datasets
-from datumaro.util.image import save_image
 
 
 class ImageDirFormatTest(TestCase):
@@ -21,8 +20,7 @@ class ImageDirFormatTest(TestCase):
         with TestDir() as test_dir:
             source_dataset = self.TestExtractor()
 
-            for item in source_dataset:
-                save_image(osp.join(test_dir, '%s.jpg' % item.id), item.image)
+            ImageDirConverter()(source_dataset, save_dir=test_dir)
 
             project = Project.import_from(test_dir, 'image_dir')
             parsed_dataset = project.make_dataset()

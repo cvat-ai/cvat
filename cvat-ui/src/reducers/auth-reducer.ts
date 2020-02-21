@@ -7,7 +7,7 @@ const defaultState: AuthState = {
     user: null,
 };
 
-export default (state = defaultState, action: AuthActions): AuthState => {
+export default function (state = defaultState, action: AuthActions): AuthState {
     switch (action.type) {
         case AuthActionTypes.AUTHORIZED_SUCCESS:
             return {
@@ -67,4 +67,4 @@ export default (state = defaultState, action: AuthActions): AuthState => {
         default:
             return state;
     }
-};
+}

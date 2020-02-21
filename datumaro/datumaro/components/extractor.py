@@ -7,6 +7,7 @@ from collections import namedtuple
 from enum import Enum
 import numpy as np
 
+from datumaro.util.image import Image
 
 AnnotationType = Enum('AnnotationType',
     [
@@ -418,8 +419,8 @@ class PolyLine(_Shape):
 
 class Polygon(_Shape):
     # pylint: disable=redefined-builtin
-    def __init__(self, points=None, z_order=None,
-            label=None, id=None, attributes=None, group=None):
+    def __init__(self, points=None, label=None,
+            z_order=None, id=None, attributes=None, group=None):
         if points is not None:
             # keep the message on the single line to produce
             # informative output
@@ -575,27 +576,34 @@ class Caption(Annotation):
 
 class DatasetItem:
     # pylint: disable=redefined-builtin
-    def __init__(self, id, annotations=None,
+    def __init__(self, id=None, annotations=None,
             subset=None, path=None, image=None):
         assert id is not None
-        if not isinstance(id, str):
-            id = str(id)
-        assert len(id) != 0
-        self._id = id
+        self._id = str(id)
 
         if subset is None:
             subset = ''
-        assert isinstance(subset, str)
+        else:
+            subset = str(subset)
         self._subset = subset
 
         if path is None:
             path = []
+        else:
+            path = list(path)
         self._path = path
 
         if annotations is None:
             annotations = []
+        else:
+            annotations = list(annotations)
         self._annotations = annotations
 
+        if callable(image) or isinstance(image, np.ndarray):
+            image = Image(data=image)
+        elif isinstance(image, str):
+            image = Image(path=image)
+        assert image is None or isinstance(image, Image)
         self._image = image
     # pylint: enable=redefined-builtin
 
@@ -617,8 +625,6 @@ class DatasetItem:
 
     @property
     def image(self):
-        if callable(self._image):
-            return self._image()
         return self._image
 
     @property
@@ -631,11 +637,16 @@ class DatasetItem:
         return \
             (self.id == other.id) and \
             (self.subset == other.subset) and \
-            (self.annotations == other.annotations) and \
             (self.path == other.path) and \
-            (self.has_image == other.has_image) and \
-            (self.has_image and np.array_equal(self.image, other.image) or \
-                not self.has_image)
+            (self.annotations == other.annotations) and \
+            (self.image == other.image)
+
+    def wrap(item, **kwargs):
+        expected_args = {'id', 'annotations', 'subset', 'path', 'image'}
+        for k in expected_args:
+            if k not in kwargs:
+                kwargs[k] = getattr(item, k)
+        return DatasetItem(**kwargs)
 
 class IExtractor:
     def __iter__(self):
@@ -654,9 +665,6 @@ class IExtractor:
         raise NotImplementedError()
 
     def select(self, pred):
-        raise NotImplementedError()
-
-    def get(self, item_id, subset=None, path=None):
         raise NotImplementedError()
 
 class _DatasetFilter:
@@ -741,16 +749,9 @@ class Importer:
         raise NotImplementedError()
 
 class Transform(Extractor):
-    @classmethod
-    def wrap_item(cls, item, **kwargs):
-        expected_args = {'id', 'annotations', 'subset', 'path', 'image'}
-        for k in expected_args:
-            if k not in kwargs:
-                if k == 'image' and item.has_image:
-                    kwargs[k] = lambda: item.image
-                else:
-                    kwargs[k] = getattr(item, k)
-        return DatasetItem(**kwargs)
+    @staticmethod
+    def wrap_item(item, **kwargs):
+        return item.wrap(**kwargs)
 
     def __init__(self, extractor):
         super().__init__()

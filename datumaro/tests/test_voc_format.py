@@ -27,7 +27,7 @@ from datumaro.plugins.voc_format.converter import (
 )
 from datumaro.plugins.voc_format.importer import VocImporter
 from datumaro.components.project import Project
-from datumaro.util.image import save_image
+from datumaro.util.image import save_image, Image
 from datumaro.util.test_utils import TestDir, compare_datasets
 
 
@@ -171,13 +171,11 @@ def generate_dummy_voc(path):
     return subsets
 
 class TestExtractorBase(Extractor):
-    _categories = VOC.make_voc_categories()
-
     def _label(self, voc_label):
         return self.categories()[AnnotationType.label].find(voc_label)[0]
 
     def categories(self):
-        return self._categories
+        return VOC.make_voc_categories()
 
 class VocExtractorTest(TestCase):
     def test_can_load_voc_cls(self):
@@ -693,6 +691,17 @@ class VocConverterTest(TestCase):
             self._test_save_and_load(
                 SrcExtractor(), VocConverter(label_map=label_map),
                 test_dir, target_dataset=DstExtractor())
+
+    def test_can_save_dataset_with_image_info(self):
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=Image(path='1.jpg', size=(10, 15))),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                VocConverter(label_map='voc'), test_dir)
 
 class VocImportTest(TestCase):
     def test_can_import(self):

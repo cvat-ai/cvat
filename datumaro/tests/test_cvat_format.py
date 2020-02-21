@@ -12,7 +12,7 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
 from datumaro.plugins.cvat_format.importer import CvatImporter
 from datumaro.plugins.cvat_format.converter import CvatConverter
 from datumaro.plugins.cvat_format.format import CvatPath
-from datumaro.util.image import save_image
+from datumaro.util.image import save_image, Image
 from datumaro.util.test_utils import TestDir, compare_datasets
 
 
@@ -82,7 +82,7 @@ class CvatExtractorTest(TestCase):
         save_image(osp.join(images_dir, 'img1.jpg'), np.ones((10, 10, 3)))
         item2_elem = ET.SubElement(root_elem, 'image')
         item2_elem.attrib.update({
-            'id': '1', 'name': 'img1', 'width': '8', 'height': '8'
+            'id': '1', 'name': 'img1', 'width': '10', 'height': '10'
         })
 
         item2_ann1_elem = ET.SubElement(item2_elem, 'polygon')
@@ -159,7 +159,7 @@ class CvatConverterTest(TestCase):
         label_categories.items[2].attributes.update(['a1', 'a2'])
         label_categories.attributes.update(['z_order', 'occluded'])
 
-        class SrcTestExtractor(Extractor):
+        class SrcExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
@@ -192,12 +192,15 @@ class CvatConverterTest(TestCase):
                             PolyLine([5, 0, 9, 0, 5, 5]), # will be skipped as no label
                         ]
                     ),
+
+                    DatasetItem(id=3, subset='s3', image=Image(
+                        path='3.jpg', size=(2, 4))),
                 ])
 
             def categories(self):
                 return { AnnotationType.label: label_categories }
 
-        class DstTestExtractor(Extractor):
+        class DstExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
@@ -232,12 +235,15 @@ class CvatConverterTest(TestCase):
                                 attributes={ 'z_order': 1, 'occluded': False }),
                         ]
                     ),
+
+                    DatasetItem(id=3, subset='s3', image=Image(
+                        path='3.jpg', size=(2, 4))),
                 ])
 
             def categories(self):
                 return { AnnotationType.label: label_categories }
 
         with TestDir() as test_dir:
-            self._test_save_and_load(SrcTestExtractor(),
+            self._test_save_and_load(SrcExtractor(),
                 CvatConverter(save_images=True), test_dir,
-                target_dataset=DstTestExtractor())
+                target_dataset=DstExtractor())
