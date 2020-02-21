@@ -450,6 +450,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const {
                 history,
                 states: updatedStates,
+                minZ,
+                maxZ,
             } = action.payload;
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
@@ -462,10 +464,18 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 }
             }
 
+            const maxZLayer = Math.max(state.annotations.zLayer.max, maxZ);
+            const minZLayer = Math.min(state.annotations.zLayer.min, minZ);
+
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
+                    zLayer: {
+                        min: minZLayer,
+                        max: maxZLayer,
+                        cur: maxZLayer,
+                    },
                     states: nextStates,
                     history,
                 },

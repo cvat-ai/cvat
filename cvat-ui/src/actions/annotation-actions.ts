@@ -833,12 +833,15 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 .map((objectState: any): Promise<any> => objectState.save());
             const states = await Promise.all(promises);
             const history = await sessionInstance.actions.get();
+            const [minZ, maxZ] = computeZRange(states);
 
             dispatch({
                 type: AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS,
                 payload: {
                     states,
                     history,
+                    minZ,
+                    maxZ,
                 },
             });
         } catch (error) {

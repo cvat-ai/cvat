@@ -26,6 +26,8 @@ import {
     LastIcon,
     PreviousIcon,
     NextIcon,
+    BackgroundIcon,
+    ForegroundIcon,
 } from 'icons';
 
 import {
@@ -39,6 +41,8 @@ function ItemMenu(
     remove: (() => void),
     propagate: (() => void),
     createURL: (() => void),
+    toBackground: (() => void),
+    toForeground: (() => void),
 ): JSX.Element {
     return (
         <Menu key='unique' className='cvat-object-item-menu'>
@@ -55,6 +59,18 @@ function ItemMenu(
             <Menu.Item>
                 <Button type='link' icon='block' onClick={propagate}>
                     Propagate
+                </Button>
+            </Menu.Item>
+            <Menu.Item>
+                <Button type='link' onClick={toBackground}>
+                    <Icon component={BackgroundIcon} />
+                    To background
+                </Button>
+            </Menu.Item>
+            <Menu.Item>
+                <Button type='link' onClick={toForeground}>
+                    <Icon component={ForegroundIcon} />
+                    To foreground
                 </Button>
             </Menu.Item>
             <Menu.Item>
@@ -94,6 +110,8 @@ interface ItemTopComponentProps {
     remove(): void;
     propagate(): void;
     createURL(): void;
+    toBackground(): void;
+    toForeground(): void;
 }
 
 function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
@@ -109,6 +127,8 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         remove,
         propagate,
         createURL,
+        toBackground,
+        toForeground,
     } = props;
 
     return (
@@ -130,7 +150,16 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
             <Col span={2}>
                 <Dropdown
                     placement='bottomLeft'
-                    overlay={ItemMenu(serverID, locked, copy, remove, propagate, createURL)}
+                    overlay={ItemMenu(
+                        serverID,
+                        locked,
+                        copy,
+                        remove,
+                        propagate,
+                        createURL,
+                        toBackground,
+                        toForeground,
+                    )}
                 >
                     <Icon type='more' />
                 </Dropdown>
@@ -528,6 +557,8 @@ interface Props {
     copy(): void;
     propagate(): void;
     createURL(): void;
+    toBackground(): void;
+    toForeground(): void;
     remove(): void;
     setOccluded(): void;
     unsetOccluded(): void;
@@ -595,6 +626,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
         copy,
         propagate,
         createURL,
+        toBackground,
+        toForeground,
         remove,
         setOccluded,
         unsetOccluded,
@@ -636,6 +669,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 remove={remove}
                 propagate={propagate}
                 createURL={createURL}
+                toBackground={toBackground}
+                toForeground={toForeground}
             />
             <ItemButtons
                 objectType={objectType}

@@ -839,6 +839,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             shapeType: state.shapeType,
             points: [...state.points],
             attributes: { ...state.attributes },
+            zOrder: state.zOrder,
         };
     }
 
@@ -854,6 +855,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         .style('display', none ? 'none' : '');
                 } else {
                     this.svgShapes[clientID].style('display', none ? 'none' : '');
+                }
+            }
+
+            if (drawnState.zOrder !== state.zOrder) {
+                if (state.shapeType === 'points') {
+                    this.svgShapes[clientID].remember('_selectHandler').nested
+                        .attr('data-z-order', state.zOrder);
+                } else {
+                    this.svgShapes[clientID].attr('data-z-order', state.zOrder);
                 }
             }
 
