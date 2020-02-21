@@ -504,6 +504,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 />
                 <div className='cvat-canvas-z-axis-wrapper'>
                     <Slider
+                        disabled={minZLayer === maxZLayer}
                         min={minZLayer}
                         max={maxZLayer}
                         value={curZLayer}

@@ -1073,8 +1073,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const self = this;
         if (state.shapeType === 'points') {
             this.content.append(this.svgShapes[clientID]
-                .remember('_selectHandler').nested);
-            // TODO: Fix for points
+                .remember('_selectHandler').nested.node);
         } else {
             this.content.append(shape.node);
         }
