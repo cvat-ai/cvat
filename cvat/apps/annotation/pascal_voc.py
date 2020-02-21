@@ -39,7 +39,7 @@ def load(file_object, annotations):
 def dump(file_object, annotations):
     from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor
     from cvat.apps.dataset_manager.util import make_zip_archive
-    from datumaro.components.project import Environment
+    from datumaro.components.project import Environment, Dataset
     from tempfile import TemporaryDirectory
 
     env = Environment()
@@ -47,6 +47,7 @@ def dump(file_object, annotations):
 
     extractor = CvatAnnotationsExtractor('', annotations)
     extractor = extractor.transform(id_from_image)
+    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     converter = env.make_converter('voc_detection')
     with TemporaryDirectory() as temp_dir:
         converter(extractor, save_dir=temp_dir)
