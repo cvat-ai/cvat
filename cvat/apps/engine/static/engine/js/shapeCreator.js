@@ -17,6 +17,8 @@
     STROKE_WIDTH:false
     SVG:false
     BorderSticker: false
+    CuboidModel:false
+    Cuboid2PointViewModel:false
 */
 
 class ShapeCreatorModel extends Listener {
@@ -54,7 +56,7 @@ class ShapeCreatorModel extends Listener {
         }
 
         // FIXME: In the future we have to make some generic solution
-        if (this._defaultMode === 'interpolation' 
+        if (this._defaultMode === 'interpolation'
             && ['box', 'points', 'box_by_4_points'].includes(this._defaultType)) {
             data.shapes = [];
             data.shapes.push(Object.assign({}, result, data));
@@ -126,7 +128,7 @@ class ShapeCreatorModel extends Listener {
     }
 
     set defaultType(type) {
-        if (!['box', 'box_by_4_points', 'points', 'polygon', 'polyline'].includes(type)) {
+        if (!['box', 'box_by_4_points', 'points', 'polygon', 'polyline', "cuboid"].includes(type)) {
             throw Error(`Unknown shape type found ${type}`);
         }
         this._defaultType = type;
@@ -235,7 +237,7 @@ class ShapeCreatorView {
             // FIXME: In the future we have to make some generic solution
             const mode = this._modeSelector.prop('value');
             const type = $(e.target).prop('value');
-            if (type !== 'box' && type !== 'box_by_4_points' 
+            if (type !== 'box' && type !== 'box_by_4_points'
                 && !(type === 'points' && this._polyShapeSize === 1) && mode !== 'annotation') {
                 this._modeSelector.prop('value', 'annotation');
                 this._controller.setDefaultShapeMode('annotation');
@@ -313,6 +315,59 @@ class ShapeCreatorView {
         });
     }
 
+    _createCuboidEvent() {
+        let sizeUI = null;
+        const backFaceOffset = 20;
+        this._drawInstance = this._frameContent.rect().draw({ snapToGrid: 0.1 }).addClass("shapeCreation").attr({
+            "stroke-width": STROKE_WIDTH / this._scale,
+        })
+            .on("drawstop", (e) => {
+                if (this._cancel) {
+                    return;
+                }
+                if (sizeUI) {
+                    sizeUI.rm();
+                    sizeUI = null;
+                }
+
+                const rect = window.cvat.translate.box.canvasToActual(e.target.getBBox());
+
+                const p1 = { x: rect.x, y: rect.y + 1 };
+                const p2 = { x: rect.x, y: rect.y - 1 + rect.height };
+                const p3 = { x: rect.x + rect.width, y: rect.y };
+                const p4 = { x: rect.x + rect.width, y: rect.y + rect.height };
+
+                const p5 = { x: p3.x + backFaceOffset, y: p3.y - backFaceOffset + 1 };
+                const p6 = { x: p3.x + backFaceOffset, y: p4.y - backFaceOffset - 1 };
+
+                let points = [p1, p2, p3, p4, p5, p6];
+
+                if (!CuboidModel.isWithinFrame(points)) {
+                    this._controller.switchCreateMode(true);
+                    return;
+                }
+
+                const viewModel = new Cuboid2PointViewModel(points);
+                points = viewModel.getPoints();
+
+                points = PolyShapeModel.convertNumberArrayToString(points);
+                e.target.setAttribute("points",
+                    window.cvat.translate.points.actualToCanvas(points));
+                this._controller.finish({ points }, this._type);
+                this._controller.switchCreateMode(true);
+            })
+            .on("drawupdate", (e) => {
+                sizeUI = drawBoxSize.call(sizeUI, this._frameContent,
+                    this._frameText, e.target.getBBox());
+            })
+            .on("drawcancel", () => {
+                if (sizeUI) {
+                    sizeUI.rm();
+                    sizeUI = null;
+                }
+            });
+    }
+
     _createPolyEvents() {
         // If number of points for poly shape specified, use it.
         // Dicrement number on draw new point events. Drawstart trigger when create first point
@@ -369,7 +424,10 @@ class ShapeCreatorView {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY,
             };
-            numberOfPoints ++;
+            numberOfPoints += 1;
+            if (this._type === "cuboid" && numberOfPoints === 4) {
+                this._drawInstance.draw("done");
+            }
         });
 
         this._commonBordersCheckbox.css('display', '').trigger('change.shapeCreator');
@@ -426,8 +484,8 @@ class ShapeCreatorView {
             }
         });
         // Also we need callback on drawdone event for get points
-        this._drawInstance.on('drawdone', function(e) {
-            let actualPoints = window.cvat.translate.points.canvasToActual(e.target.getAttribute('points'));
+        this._drawInstance.on("drawdone", (e) => {
+            let actualPoints = window.cvat.translate.points.canvasToActual(e.target.getAttribute("points"));
             actualPoints = PolyShapeModel.convertStringToNumberArray(actualPoints);
 
             // Min 2 points for polyline and 3 points for polygon
@@ -437,32 +495,218 @@ class ShapeCreatorView {
                 }
                 else if (this._type === 'polygon' && actualPoints.length < 3) {
                     showMessage("Min 3 points must be for polygon drawing.");
-                }
-                else {
-                    let frameWidth = window.cvat.player.geometry.frameWidth;
-                    let frameHeight = window.cvat.player.geometry.frameHeight;
-                    for (let point of actualPoints) {
+                } else if (this._type === "cuboid" && (actualPoints.length !== 4)) {
+                    showMessage("Exactly 4 points must be used for cuboid drawing."
+                        + " Second point must be below the first point."
+                        + "(HINT) The first 3 points define the front face"
+                        + " and the last point should define the depth and orientation of the cuboid ");
+                } else if (this._type === "cuboid") {
+                    let points = this._makeCuboid(actualPoints);
+                    const viewModel = new Cuboid2PointViewModel(points);
+                    if (!CuboidModel.isWithinFrame(points)) {
+                        this._controller.switchCreateMode(true);
+                        return;
+                    }
+
+                    points = viewModel.getPoints();
+
+                    points = PolyShapeModel.convertNumberArrayToString(points);
+                    e.target.setAttribute("points",
+                        window.cvat.translate.points.actualToCanvas(points));
+                    this._controller.finish({ points }, this._type);
+                    this._controller.switchCreateMode(true);
+                } else {
+                    const { frameWidth } = window.cvat.player.geometry;
+                    const { frameHeight } = window.cvat.player.geometry;
+                    for (const point of actualPoints) {
                         point.x = Math.clamp(point.x, 0, frameWidth);
                         point.y = Math.clamp(point.y, 0, frameHeight);
                     }
-                    actualPoints =  PolyShapeModel.convertNumberArrayToString(actualPoints);
+                    actualPoints = PolyShapeModel.convertNumberArrayToString(actualPoints);
 
                     // Update points in a view in order to get an updated box
-                    e.target.setAttribute('points', window.cvat.translate.points.actualToCanvas(actualPoints));
-                    let polybox = e.target.getBBox();
-                    let w = polybox.width;
-                    let h = polybox.height;
-                    let area = w * h;
-                    let type = this._type;
+                    e.target.setAttribute("points", window.cvat.translate.points.actualToCanvas(actualPoints));
+                    const polybox = e.target.getBBox();
+                    const w = polybox.width;
+                    const h = polybox.height;
+                    const area = w * h;
+                    const type = this._type;
 
-                    if (area >= AREA_TRESHOLD || type === 'points' && numberOfPoints || type === 'polyline' && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
-                        this._controller.finish({points: actualPoints}, type);
+                    if (area >= AREA_TRESHOLD || type === "points" && numberOfPoints || type === "polyline" && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
+                        this._controller.finish({ points: actualPoints }, type);
                     }
                 }
             }
 
             this._controller.switchCreateMode(true);
-        }.bind(this));
+        });
+    }
+
+    _sortClockwise(points){
+         points.sort((a, b) => a.y - b.y);
+        // Get center y
+        const cy = (points[0].y + points[points.length - 1].y) / 2;
+
+        // Sort from right to left
+        points.sort((a, b) => b.x - a.x);
+
+        // Get center x
+        const cx = (points[0].x + points[points.length - 1].x) / 2;
+
+        // Center point
+        var center = {
+            x : cx,
+            y : cy
+        };
+
+        // Starting angle used to reference other angles
+        var startAng;
+        points.forEach((point) => {
+            var ang = Math.atan2(point.y - center.y, point.x - center.x);
+            if (!startAng) {
+                startAng = ang;
+            } else {
+                if (ang < startAng) { // ensure that all points are clockwise of the start point
+                    ang += Math.PI * 2;
+                }
+            }
+            point.angle = ang; // add the angle to the point
+        });
+
+        // first sort clockwise
+        points.sort((a, b) => a.angle - b.angle);
+        return points.reverse();
+    }
+
+    _makeCuboid(actualPoints){
+        let unsortedPlanePoints = actualPoints.slice(0,3);
+        function rotate( array , times ){
+            while( times-- ){
+                var temp = array.shift();
+                array.push( temp );
+            }
+        }
+
+        let plane1;
+        let plane2 = {p1:actualPoints[0], p2:actualPoints[0], p3:actualPoints[0], p4:actualPoints[0]};
+
+        // completing the plane
+        const vector = {
+            x: actualPoints[2].x - actualPoints[1].x,
+            y: actualPoints[2].y - actualPoints[1].y,
+        }
+
+        // sorting the first plane
+        unsortedPlanePoints.push({x:actualPoints[0].x + vector.x, y: actualPoints[0].y + vector.y});
+        let sortedPlanePoints = this._sortClockwise(unsortedPlanePoints);
+        let leftIndex = 0;
+        for(let i = 0; i<4; i++){
+            leftIndex = sortedPlanePoints[`${i}`].x < sortedPlanePoints[`${leftIndex}`].x ? i : leftIndex;
+        }
+        rotate(sortedPlanePoints,leftIndex);
+        plane1 = {
+            p1:sortedPlanePoints[0],
+            p2:sortedPlanePoints[1],
+            p3:sortedPlanePoints[2],
+            p4:sortedPlanePoints[3]
+        };
+
+       const vec = {
+            x: actualPoints[3].x - actualPoints[2].x,
+            y: actualPoints[3].y - actualPoints[2].y,
+        };
+        // determine the orientation
+        let angle = Math.atan2(vec.y,vec.x);
+
+        // making the other plane
+        plane2.p1 =  {x:plane1.p1.x + vec.x, y:plane1.p1.y + vec.y};
+        plane2.p2 =  {x:plane1.p2.x + vec.x, y:plane1.p2.y + vec.y};
+        plane2.p3 =  {x:plane1.p3.x + vec.x, y:plane1.p3.y + vec.y};
+        plane2.p4 =  {x:plane1.p4.x + vec.x, y:plane1.p4.y + vec.y};
+
+
+        let points ;
+        // right
+        if(Math.abs(angle) < Math.PI/2-0.1){
+            return this._setupCuboidPoints(actualPoints);
+        }
+
+        // left
+        else if(Math.abs(angle) > Math.PI/2+0.1){
+            return this._setupCuboidPoints(actualPoints);
+        }
+        // down
+        else if(angle>0){
+            points = [plane1.p1,plane2.p1,plane1.p2,plane2.p2,plane1.p3,plane2.p3];
+            points[0].y+=0.1;
+            points[4].y+=0.1;
+            return [plane1.p1,plane2.p1,plane1.p2,plane2.p2,plane1.p3,plane2.p3];
+        }
+        // up
+        else{
+            points = [plane2.p1,plane1.p1,plane2.p2,plane1.p2,plane2.p3,plane1.p3];
+            points[0].y+=0.1;
+            points[4].y+=0.1;
+            return points;
+        }
+    }
+
+    _setupCuboidPoints(actualPoints) {
+        let left,right,left2,right2;
+        let p1,p2,p3,p4,p5,p6;
+
+        const height = Math.abs(actualPoints[0].x - actualPoints[1].x)
+            < Math.abs(actualPoints[1].x - actualPoints[2].x)
+            ? Math.abs(actualPoints[1].y - actualPoints[0].y)
+            : Math.abs(actualPoints[1].y - actualPoints[2].y);
+
+        // seperate into left and right point
+        // we pick the first and third point because we know assume they will be on
+        // opposite corners
+        if(actualPoints[0].x < actualPoints[2].x){
+            left = actualPoints[0];
+            right = actualPoints[2];
+        }else{
+            left = actualPoints[2];
+            right = actualPoints[0];
+        }
+
+        // get other 2 points using the given height
+        if(left.y < right.y){
+            left2 = { x: left.x, y: left.y + height };
+            right2 = { x: right.x, y: right.y - height };
+        }else{
+            left2 = { x: left.x, y: left.y - height };
+            right2 = { x: right.x, y: right.y + height };
+        }
+
+        // get the vector for the last point relative to the previous point
+        const vec = {
+            x: actualPoints[3].x - actualPoints[2].x,
+            y: actualPoints[3].y - actualPoints[2].y,
+        };
+
+        if(left.y < left2.y){
+            p1 = left;
+            p2 = left2;
+        }else{
+            p1 = left2;
+            p2 = left;
+        }
+
+        if(right.y < right2.y){
+            p3 = right;
+            p4 = right2;
+        }else{
+            p3 = right2;
+            p4 = right;
+        }
+
+         p5 = { x: p3.x + vec.x, y: p3.y + vec.y + 0.1 };
+         p6 = { x: p4.x + vec.x, y: p4.y + vec.y - 0.1 };
+
+        p1.y += 0.1;
+        return  [p1, p2, p3, p4, p5, p6];
     }
 
     _create() {
@@ -608,15 +852,21 @@ class ShapeCreatorView {
                 });
             this._createPolyEvents();
             break;
+        case "cuboid":
+            this._drawInstance = this._frameContent.polyline().draw({ snapToGrid: 0.1 }).addClass("shapeCreation").attr({
+                "stroke-width": STROKE_WIDTH / this._scale,
+            });
+            this._createPolyEvents();
+            break;
         default:
             throw Error(`Bad type found ${this._type}`);
         }
     }
 
     _rescaleDrawPoints() {
-        let scale = this._scale;
-        $('.svg_draw_point').each(function() {
-            this.instance.radius(2.5 / scale).attr('stroke-width', 1 / scale);
+        const scale = this._scale;
+        $(".svg_draw_point").each(function () {
+            this.instance.radius(2.5 / scale).attr("stroke-width", 1 / scale);
         });
     }
 
