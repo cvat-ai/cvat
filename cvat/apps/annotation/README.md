@@ -229,36 +229,56 @@ It may take some time.
 ### [YOLO](https://pjreddie.com/darknet/yolo/)
 #### Yolo dumper description
 - downloaded file: a zip archive with following structure:
+  [Format specification](https://github.com/AlexeyAB/darknet#how-to-train-to-detect-your-custom-objects)
   ```bash
-  taskname.zip
-  ├── frame_000001.txt
-  ├── frame_000002.txt
-  ├── ...
-  └── obj.names
+  archive.zip/
+  ├── obj.data
+  ├── obj.names
+  ├── obj_<subset>_data
+  │   ├── image1.txt
+  │   └── image2.txt
+  └── train.txt # list of subset image paths
+
+  # the only valid subsets are: train, valid
+  # train.txt and valid.txt:
+  obj_<subset>_data/image1.jpg
+  obj_<subset>_data/image2.jpg
+
+  # obj.data:
+  classes = 3 # optional
+  names = obj.names
+  train = train.txt
+  valid = valid.txt # optional
+  backup = backup/ # optional
+
+  # obj.names:
+  cat
+  dog
+  airplane
+
+  # image_name.txt:
+  # label_id - id from obj.names
+  # cx, cy - relative coordinates of the bbox center
+  # rw, rh - relative size of the bbox
+  # label_id cx cy rw rh
+  1 0.3 0.8 0.1 0.3
+  2 0.7 0.2 0.3 0.1
   ```
   Each annotation `*.txt` file has a name that corresponds to the name of the image file
   (e.g. `frame_000001.txt` is the annotation for the `frame_000001.jpg` image).
-  Short description of  `*.txt` file structure: each line describes label and bounding box
+  The `*.txt` file structure: each line describes label and bounding box
   in the following format `label_id cx cy w h`.
   `obj.names` contains the ordered list of label names.
 - supported shapes - Rectangles
 
 #### Yolo loader description
--   uploaded file: a zip archive with following structure:
-    ```bash
-    taskname.zip
-    ├── frame_000001.txt
-    ├── frame_000002.txt
-    ├── frame_000003.txt
-    ├── ...
-    └──obj.names
-    ```
-    It should be possible to match the CVAT frame(imagename) and annotation filename
+-   uploaded file: a zip archive of the same structure as above
+    It must be possible to match the CVAT frame (image name) and annotation file name
     There are 2 options:
     1. full match between image name and name of annotation `*.txt` file
-       (in case of a task was created from images or archive of images).
-    1. match by frame number (if CVAT cannot match by name). File name should be in the following format `frame_%6d.jpg`.
-       It will be used when task was created from a video.
+       (in cases when a task was created from images or archive of images).
+    1. match by frame number (if CVAT cannot match by name). File name should be in the following format `<number>.jpg`.
+       It should be used when task was created from a video.
 
 -   supported shapes: Rectangles
 -   additional comments: the CVAT task should be created with the full label set that may be in the annotation files
