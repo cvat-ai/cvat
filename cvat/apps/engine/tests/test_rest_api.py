@@ -1674,7 +1674,7 @@ class JobAnnotationAPITestCase(APITestCase):
     def _check_response(self, response, data):
         if not response.status_code in [
             status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED]:
-                compare_objects(self, data, response.data, ignore_keys=["id"])
+            compare_objects(self, data, response.data, ignore_keys=["id"])
 
     def _run_api_v1_jobs_id_annotations(self, owner, assignee, annotator):
         task, jobs = self._create_task(owner, assignee)

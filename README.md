@@ -45,8 +45,7 @@ via its command line tool.
 | [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                              | X      | X      |
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                         | X      | X      |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)                    | X      | X      |
-| PNG mask                                                                           | X      |        |
-| PNG instance mask                                                                  | X      |        |
+| PNG class mask + instance mask as in [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/) | X      | X      |
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)              | X      | X      |
 | [MOT](https://motchallenge.net/)                                                   | X      | X      |
 | [LabelMe](http://labelme.csail.mit.edu/Release3.0)                                 | X      | X      |
