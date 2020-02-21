@@ -502,7 +502,7 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   [algorithm](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/devkit_doc.html#sec:voclabelcolormap).
   (0, 0, 0) is used for background.
   `labelmap.txt` file contains the values of the used colors in RGB format. The file structure:
-  ```
+  ```bash
   # label:color_rgb:parts:actions
   background:0,128,0::
   aeroplane:10,10,128::
