@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Intel Corporation
+ * Copyright (C) 2018-2020 Intel Corporation
  * SPDX-License-Identifier: MIT
 */
 
@@ -85,6 +85,7 @@ describe('Feature: put annotations', () => {
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
+            zOrder: 0,
         });
 
         await task.annotations.put([state]);
@@ -104,6 +105,7 @@ describe('Feature: put annotations', () => {
             points: [0, 0, 100, 100],
             occluded: false,
             label: job.task.labels[0],
+            zOrder: 0,
         });
 
         await job.annotations.put([state]);
@@ -123,6 +125,7 @@ describe('Feature: put annotations', () => {
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
+            zOrder: 0,
         });
 
         await task.annotations.put([state]);
@@ -142,6 +145,7 @@ describe('Feature: put annotations', () => {
             points: [0, 0, 100, 100],
             occluded: false,
             label: job.task.labels[0],
+            zOrder: 0,
         });
 
         await job.annotations.put([state]);
@@ -158,6 +162,7 @@ describe('Feature: put annotations', () => {
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
+            zOrder: 0,
         });
 
         expect(task.annotations.put([state]))
@@ -175,9 +180,42 @@ describe('Feature: put annotations', () => {
             attributes: { 'bad key': 55 },
             occluded: true,
             label: task.labels[0],
+            zOrder: 0,
         });
 
         expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('put shape with bad zOrder to a task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        await task.annotations.clear(true);
+        const state = new window.cvat.classes.ObjectState({
+            frame: 1,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            shapeType: window.cvat.enums.ObjectShape.POLYGON,
+            points: [0, 0, 100, 0, 100, 50],
+            attributes: { 'bad key': 55 },
+            occluded: true,
+            label: task.labels[0],
+            zOrder: 'bad value',
+        });
+
+        expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+
+        const state1 = new window.cvat.classes.ObjectState({
+            frame: 1,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            shapeType: window.cvat.enums.ObjectShape.POLYGON,
+            points: [0, 0, 100, 0, 100, 50],
+            attributes: { 'bad key': 55 },
+            occluded: true,
+            label: task.labels[0],
+            zOrder: NaN,
+        });
+
+        expect(task.annotations.put([state1]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
@@ -191,6 +229,7 @@ describe('Feature: put annotations', () => {
             occluded: true,
             points: [],
             label: task.labels[0],
+            zOrder: 0,
         });
 
         await expect(task.annotations.put([state]))
@@ -214,6 +253,7 @@ describe('Feature: put annotations', () => {
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
+            zOrder: 0,
         });
 
         expect(task.annotations.put([state]))
@@ -229,6 +269,7 @@ describe('Feature: put annotations', () => {
             shapeType: window.cvat.enums.ObjectShape.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
+            zOrder: 0,
         });
 
         await expect(task.annotations.put([state]))
@@ -253,6 +294,7 @@ describe('Feature: put annotations', () => {
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
+            zOrder: 0,
         });
 
         expect(task.annotations.put([state]))
@@ -296,6 +338,7 @@ describe('Feature: save annotations', () => {
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
+            zOrder: 0,
         });
 
         expect(await task.annotations.hasUnsavedChanges()).toBe(false);
@@ -341,6 +384,7 @@ describe('Feature: save annotations', () => {
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: job.task.labels[0],
+            zOrder: 0,
         });
 
         expect(await job.annotations.hasUnsavedChanges()).toBe(false);
@@ -574,6 +618,7 @@ describe('Feature: group annotations', () => {
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
+            zOrder: 0,
         });
 
         expect(task.annotations.group([state]))

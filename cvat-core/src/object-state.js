@@ -34,7 +34,7 @@
                 occluded: null,
                 keyframe: null,
 
-                zOrder: null,
+                zOrder: undefined,
                 lock: null,
                 color: null,
                 hidden: null,
@@ -372,36 +372,6 @@
                 .apiWrapper.call(this, ObjectState.prototype.delete, force);
             return result;
         }
-
-        /**
-            * Set the highest ZOrder within a frame
-            * @method up
-            * @memberof module:API.cvat.classes.ObjectState
-            * @readonly
-            * @instance
-            * @async
-            * @throws {module:API.cvat.exceptions.PluginError}
-        */
-        async up() {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, ObjectState.prototype.up);
-            return result;
-        }
-
-        /**
-            * Set the lowest ZOrder within a frame
-            * @method down
-            * @memberof module:API.cvat.classes.ObjectState
-            * @readonly
-            * @instance
-            * @async
-            * @throws {module:API.cvat.exceptions.PluginError}
-        */
-        async down() {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, ObjectState.prototype.down);
-            return result;
-        }
     }
 
     // Updates element in collection which contains it
@@ -421,23 +391,6 @@
 
         return false;
     };
-
-    ObjectState.prototype.up.implementation = async function () {
-        if (this.__internal && this.__internal.up) {
-            return this.__internal.up();
-        }
-
-        return false;
-    };
-
-    ObjectState.prototype.down.implementation = async function () {
-        if (this.__internal && this.__internal.down) {
-            return this.__internal.down();
-        }
-
-        return false;
-    };
-
 
     module.exports = ObjectState;
 })();
