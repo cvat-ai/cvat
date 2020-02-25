@@ -234,10 +234,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             minZLayer,
         } = this.props;
 
-        if (objectState.zOrder !== minZLayer) {
-            objectState.zOrder = minZLayer - 1;
-            this.commit();
-        }
+        objectState.zOrder = minZLayer - 1;
+        this.commit();
     };
 
     private toForeground = (): void => {
@@ -246,10 +244,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             maxZLayer,
         } = this.props;
 
-        if (objectState.zOrder !== maxZLayer) {
-            objectState.zOrder = maxZLayer + 1;
-            this.commit();
-        }
+        objectState.zOrder = maxZLayer + 1;
+        this.commit();
     };
 
     private activate = (): void => {
