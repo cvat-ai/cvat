@@ -71,7 +71,6 @@ Canvas itself handles:
 
     interface Canvas {
         html(): HTMLDivElement;
-        version(): string;
         setup(frameData: any, objectStates: any[]): void;
         activate(clientID: number, attributeID?: number): void;
         rotate(rotation: Rotation, remember?: boolean): void;
