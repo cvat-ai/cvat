@@ -14,11 +14,13 @@ import {
     Menu,
     Button,
     Modal,
+    Popover,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
 import { RadioChangeEvent } from 'antd/lib/radio';
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
 
 import {
     ObjectOutsideIcon,
@@ -548,6 +550,7 @@ interface Props {
     keyframe: boolean | undefined;
     attrValues: Record<number, string>;
     color: string;
+    colors: string[];
 
     labels: any[];
     attributes: any[];
@@ -576,6 +579,7 @@ interface Props {
     show(): void;
     changeLabel(labelID: string): void;
     changeAttribute(attrID: number, value: string): void;
+    changeColor(color: string): void;
     collapse(): void;
 }
 
@@ -617,6 +621,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         attrValues,
         labelID,
         color,
+        colors,
 
         attributes,
         labels,
@@ -645,6 +650,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         show,
         changeLabel,
         changeAttribute,
+        changeColor,
         collapse,
     } = props;
 
@@ -655,59 +661,77 @@ function ObjectItemComponent(props: Props): JSX.Element {
         : 'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
 
     return (
-        <div
-            onMouseEnter={activate}
-            id={`cvat-objects-sidebar-state-item-${clientID}`}
-            className={className}
-            style={{ borderLeftStyle: 'solid', borderColor: ` ${color}` }}
-        >
-            <ItemTop
-                serverID={serverID}
-                clientID={clientID}
-                labelID={labelID}
-                labels={labels}
-                type={type}
-                locked={locked}
-                changeLabel={changeLabel}
-                copy={copy}
-                remove={remove}
-                propagate={propagate}
-                createURL={createURL}
-                toBackground={toBackground}
-                toForeground={toForeground}
-            />
-            <ItemButtons
-                objectType={objectType}
-                occluded={occluded}
-                outside={outside}
-                locked={locked}
-                hidden={hidden}
-                keyframe={keyframe}
-                navigateFirstKeyframe={navigateFirstKeyframe}
-                navigatePrevKeyframe={navigatePrevKeyframe}
-                navigateNextKeyframe={navigateNextKeyframe}
-                navigateLastKeyframe={navigateLastKeyframe}
-                setOccluded={setOccluded}
-                unsetOccluded={unsetOccluded}
-                setOutside={setOutside}
-                unsetOutside={unsetOutside}
-                setKeyframe={setKeyframe}
-                unsetKeyframe={unsetKeyframe}
-                lock={lock}
-                unlock={unlock}
-                hide={hide}
-                show={show}
-            />
-            { !!attributes.length
-                && (
-                    <ItemAttributes
-                        collapsed={collapsed}
-                        attributes={attributes}
-                        values={attrValues}
-                        collapse={collapse}
-                        changeAttribute={changeAttribute}
+        <div style={{ display: 'flex' }}>
+            <Popover
+                placement='left'
+                trigger='click'
+                content={(
+                    <ColorChanger
+                        onChange={changeColor}
+                        colors={colors}
                     />
                 )}
+            >
+                <div
+                    className='cvat-objects-sidebar-state-item-color'
+                    style={{ background: ` ${color}` }}
+                />
+            </Popover>
+
+            <div
+                onMouseEnter={activate}
+                id={`cvat-objects-sidebar-state-item-${clientID}`}
+                className={className}
+                style={{ borderColor: ` ${color}` }}
+            >
+                <ItemTop
+                    serverID={serverID}
+                    clientID={clientID}
+                    labelID={labelID}
+                    labels={labels}
+                    type={type}
+                    locked={locked}
+                    changeLabel={changeLabel}
+                    copy={copy}
+                    remove={remove}
+                    propagate={propagate}
+                    createURL={createURL}
+                    toBackground={toBackground}
+                    toForeground={toForeground}
+                />
+                <ItemButtons
+                    objectType={objectType}
+                    occluded={occluded}
+                    outside={outside}
+                    locked={locked}
+                    hidden={hidden}
+                    keyframe={keyframe}
+                    navigateFirstKeyframe={navigateFirstKeyframe}
+                    navigatePrevKeyframe={navigatePrevKeyframe}
+                    navigateNextKeyframe={navigateNextKeyframe}
+                    navigateLastKeyframe={navigateLastKeyframe}
+                    setOccluded={setOccluded}
+                    unsetOccluded={unsetOccluded}
+                    setOutside={setOutside}
+                    unsetOutside={unsetOutside}
+                    setKeyframe={setKeyframe}
+                    unsetKeyframe={unsetKeyframe}
+                    lock={lock}
+                    unlock={unlock}
+                    hide={hide}
+                    show={show}
+                />
+                { !!attributes.length
+                    && (
+                        <ItemAttributes
+                            collapsed={collapsed}
+                            attributes={attributes}
+                            values={attrValues}
+                            collapse={collapse}
+                            changeAttribute={changeAttribute}
+                        />
+                    )}
+            </div>
         </div>
     );
 }

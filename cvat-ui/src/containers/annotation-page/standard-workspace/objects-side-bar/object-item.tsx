@@ -32,6 +32,7 @@ interface StateToProps {
     activated: boolean;
     colorBy: ColorBy;
     ready: boolean;
+    colors: string[];
     activeControl: ActiveControl;
     minZLayer: number;
     maxZLayer: number;
@@ -73,6 +74,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 ready,
                 activeControl,
             },
+            colors,
         },
         settings: {
             shapes: {
@@ -96,6 +98,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         ready,
         activeControl,
         colorBy,
+        colors,
         jobInstance,
         frameNumber,
         activated: activatedStateID === own.clientID,
@@ -331,6 +334,15 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         collapseOrExpand([objectState], !collapsed);
     };
 
+    private changeColor = (color: string): void => {
+        const {
+            objectState,
+        } = this.props;
+
+        objectState.color = color;
+        this.commit();
+    };
+
     private changeLabel = (labelID: string): void => {
         const {
             objectState,
@@ -370,6 +382,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             frameNumber,
             activated,
             colorBy,
+            colors,
         } = this.props;
 
         const {
@@ -408,6 +421,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 attrValues={{ ...objectState.attributes }}
                 labelID={objectState.label.id}
                 color={stateColor}
+                colors={colors}
                 attributes={attributes}
                 labels={labels}
                 collapsed={collapsed}
@@ -444,6 +458,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 unlock={this.unlock}
                 hide={this.hide}
                 show={this.show}
+                changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
