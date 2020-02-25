@@ -107,6 +107,7 @@
     > .ant-slider-rail {
         background-color: $player-slider-color;
     }
+
 }
 
 .cvat-player-filename-wrapper {
@@ -118,7 +119,7 @@
 
 .cvat-player-frame-url-icon {
     opacity: 0.7;
-    color: $info-icon-color;
+    color: $objects-bar-icons-color;
 
     &:hover {
         opacity: 1;

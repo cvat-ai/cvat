@@ -21,6 +21,8 @@ import {
     activateObject,
     selectObjects,
     updateCanvasContextMenu,
+    addZLayer,
+    switchZLayer,
 } from 'actions/annotation-actions';
 import {
     ColorBy,
@@ -50,6 +52,9 @@ interface StateToProps {
     gridOpacity: number;
     activeLabelID: number;
     activeObjectType: ObjectType;
+    minZLayer: number;
+    maxZLayer: number;
+    curZLayer: number;
 }
 
 interface DispatchToProps {
@@ -70,6 +75,8 @@ interface DispatchToProps {
     onActivateObject: (activatedStateID: number | null) => void;
     onSelectObjects: (selectedStatesID: number[]) => void;
     onUpdateContextMenu(visible: boolean, left: number, top: number): void;
+    onAddZLayer(): void;
+    onSwitchZLayer(cur: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -95,6 +102,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 states: annotations,
                 activatedStateID,
                 selectedStatesID,
+                zLayer: {
+                    cur: curZLayer,
+                    min: minZLayer,
+                    max: maxZLayer,
+                },
             },
             sidebarCollapsed,
         },
@@ -133,6 +145,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         gridOpacity,
         activeLabelID,
         activeObjectType,
+        curZLayer,
+        minZLayer,
+        maxZLayer,
     };
 }
 
@@ -192,6 +207,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onUpdateContextMenu(visible: boolean, left: number, top: number): void {
             dispatch(updateCanvasContextMenu(visible, left, top));
+        },
+        onAddZLayer(): void {
+            dispatch(addZLayer());
+        },
+        onSwitchZLayer(cur: number): void {
+            dispatch(switchZLayer(cur));
         },
     };
 }

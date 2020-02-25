@@ -42,6 +42,17 @@ function receiveAnnotationsParameters(): { filters: string[]; frame: number } {
     };
 }
 
+function computeZRange(states: any[]): number[] {
+    let minZ = states.length ? states[0].zOrder : 0;
+    let maxZ = states.length ? states[0].zOrder : 0;
+    states.forEach((state: any): void => {
+        minZ = Math.min(minZ, state.zOrder);
+        maxZ = Math.max(maxZ, state.zOrder);
+    });
+
+    return [minZ, maxZ];
+}
+
 export enum AnnotationActionTypes {
     GET_JOB = 'GET_JOB',
     GET_JOB_SUCCESS = 'GET_JOB_SUCCESS',
@@ -109,6 +120,23 @@ export enum AnnotationActionTypes {
     CHANGE_ANNOTATIONS_FILTERS = 'CHANGE_ANNOTATIONS_FILTERS',
     FETCH_ANNOTATIONS_SUCCESS = 'FETCH_ANNOTATIONS_SUCCESS',
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
+    SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
+    ADD_Z_LAYER = 'ADD_Z_LAYER',
+}
+
+export function addZLayer(): AnyAction {
+    return {
+        type: AnnotationActionTypes.ADD_Z_LAYER,
+    };
+}
+
+export function switchZLayer(cur: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_Z_LAYER,
+        payload: {
+            cur,
+        },
+    };
 }
 
 export function fetchAnnotationsAsync(sessionInstance: any):
@@ -117,10 +145,14 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             const { filters, frame } = receiveAnnotationsParameters();
             const states = await sessionInstance.annotations.get(frame, false, filters);
+            const [minZ, maxZ] = computeZRange(states);
+
             dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
                 payload: {
                     states,
+                    minZ,
+                    maxZ,
                 },
             });
         } catch (error) {
@@ -153,12 +185,15 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             await sessionInstance.actions.undo();
             const history = await sessionInstance.actions.get();
             const states = await sessionInstance.annotations.get(frame, false, filters);
+            const [minZ, maxZ] = computeZRange(states);
 
             dispatch({
                 type: AnnotationActionTypes.UNDO_ACTION_SUCCESS,
                 payload: {
                     history,
                     states,
+                    minZ,
+                    maxZ,
                 },
             });
         } catch (error) {
@@ -182,12 +217,15 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             await sessionInstance.actions.redo();
             const history = await sessionInstance.actions.get();
             const states = await sessionInstance.annotations.get(frame, false, filters);
+            const [minZ, maxZ] = computeZRange(states);
 
             dispatch({
                 type: AnnotationActionTypes.REDO_ACTION_SUCCESS,
                 payload: {
                     history,
                     states,
+                    minZ,
+                    maxZ,
                 },
             });
         } catch (error) {
@@ -573,12 +611,15 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
             const data = await job.frames.get(toFrame);
             const states = await job.annotations.get(toFrame, false, filters);
+            const [minZ, maxZ] = computeZRange(states);
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                 payload: {
                     number: toFrame,
                     data,
                     states,
+                    minZ,
+                    maxZ,
                 },
             });
         } catch (error) {
@@ -661,6 +702,7 @@ export function getJobAsync(
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
             const frameData = await job.frames.get(frameNumber);
             const states = await job.annotations.get(frameNumber, false, filters);
+            const [minZ, maxZ] = computeZRange(states);
             const colors = [...cvat.enums.colors];
 
             dispatch({
@@ -672,6 +714,8 @@ export function getJobAsync(
                     frameData,
                     colors,
                     filters,
+                    minZ,
+                    maxZ,
                 },
             });
         } catch (error) {
@@ -789,12 +833,15 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 .map((objectState: any): Promise<any> => objectState.save());
             const states = await Promise.all(promises);
             const history = await sessionInstance.actions.get();
+            const [minZ, maxZ] = computeZRange(states);
 
             dispatch({
                 type: AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS,
                 payload: {
                     states,
                     history,
+                    minZ,
+                    maxZ,
                 },
             });
         } catch (error) {

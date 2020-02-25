@@ -210,6 +210,10 @@ class AnnotationsFilter {
 
     toJSONQuery(filters) {
         try {
+            if (!Array.isArray(filters) || filters.some((value) => typeof (value) !== 'string')) {
+                throw Error('Argument must be an array of strings');
+            }
+
             if (!filters.length) {
                 return [[], '$.objects[*].clientID'];
             }
