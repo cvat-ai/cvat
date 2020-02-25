@@ -23,6 +23,10 @@ format_spec = {
 }
 
 def load(file_object, annotations):
+    from glob import glob
+    import os
+    import os.path as osp
+    import shutil
     from pyunpack import Archive
     from tempfile import TemporaryDirectory
     from datumaro.plugins.voc_format.importer import VocImporter
@@ -31,6 +35,20 @@ def load(file_object, annotations):
     archive_file = file_object if isinstance(file_object, str) else getattr(file_object, "name")
     with TemporaryDirectory() as tmp_dir:
         Archive(archive_file).extractall(tmp_dir)
+
+        # support flat archive layout
+        anno_dir = osp.join(tmp_dir, 'Annotations')
+        if not osp.isdir(anno_dir):
+            anno_files = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
+            subsets_dir = osp.join(tmp_dir, 'ImageSets', 'Main')
+            os.makedirs(subsets_dir, exist_ok=True)
+            with open(osp.join(subsets_dir, 'train.txt'), 'w') as subset_file:
+                for f in anno_files:
+                    subset_file.write(osp.splitext(osp.basename(f))[0] + '\n')
+
+            os.makedirs(anno_dir, exist_ok=True)
+            for f in anno_files:
+                shutil.move(f, anno_dir)
 
         dm_project = VocImporter()(tmp_dir)
         dm_dataset = dm_project.make_dataset()

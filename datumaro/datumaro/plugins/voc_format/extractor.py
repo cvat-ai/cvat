@@ -53,8 +53,12 @@ class VocExtractor(SourceExtractor):
                 subset_name = None
             subset = __class__.Subset(subset_name, self)
 
+            subset.items = []
             with open(osp.join(subsets_dir, subset_file_name + '.txt'), 'r') as f:
-                subset.items = [line.split()[0] for line in f]
+                for line in f:
+                    line = line.split()[0].strip()
+                    if line:
+                        subset.items.append(line)
 
             subsets[subset_name] = subset
         return subsets
