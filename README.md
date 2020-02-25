@@ -57,12 +57,7 @@ via its command line tool.
 
 ## Online Demo
 
-[Onepanel](https://www.onepanel.io/) has added CVAT as an environment into their platform and a running demo of CVAT can be accessed at [CVAT Public Demo](https://c.onepanel.io/onepanel-demo/projects/cvat-public-demo/workspaces).
-
-After you click the link above:
-
-- Click on "GO TO WORKSPACE" and the CVAT environment will load up
-- The environment is backed by a K80 GPU
+[Onepanel](https://www.onepanel.io/) has added CVAT as an environment into their platform and a running demo of CVAT can be accessed at [CVAT Public Demo](https://c.onepanel.io/onepanel-demo/projects/cvat-public-demo/workspaces?utm_source=cvat).
 
 If you have any questions, please contact Onepanel directly at support@onepanel.io. If you are in the Onepanel application, you can also use the chat icon in the bottom right corner.
 
