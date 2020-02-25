@@ -114,12 +114,12 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
     return (
         <Row type='flex' align='middle'>
             <Col span={10}>
-                <Text style={{ fontSize: 16 }}>{clientID}</Text>
+                <Text style={{ fontSize: 12 }}>{clientID}</Text>
                 <br />
-                <Text style={{ fontSize: 10 }}>{type}</Text>
+                <Text type='secondary' style={{ fontSize: 10 }}>{type}</Text>
             </Col>
             <Col span={12}>
-                <Select value={`${labelID}`} onChange={changeLabel}>
+                <Select size='small' value={`${labelID}`} onChange={changeLabel}>
                     { labels.map((label: any): JSX.Element => (
                         <Select.Option key={label.id} value={`${label.id}`}>
                             {label.name}
@@ -320,7 +320,7 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                         changeAttribute(attrID, value);
                     }}
                 >
-                    <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                    <Text strong className='cvat-text'>
                         {attrName}
                     </Text>
                 </Checkbox>
@@ -336,6 +336,7 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                         <Text strong className='cvat-text'>{attrName}</Text>
                     </legend>
                     <Radio.Group
+                        size='small'
                         value={attrValue}
                         onChange={(event: RadioChangeEvent): void => {
                             changeAttribute(attrID, event.target.value);
@@ -354,12 +355,13 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
         return (
             <>
                 <Col span={24}>
-                    <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                    <Text strong className='cvat-text'>
                         {attrName}
                     </Text>
                 </Col>
                 <Col span={24}>
                     <Select
+                        size='small'
                         onChange={(value: string): void => {
                             changeAttribute(attrID, value);
                         }}
@@ -381,12 +383,13 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
         return (
             <>
                 <Col span={24}>
-                    <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                    <Text strong className='cvat-text'>
                         {attrName}
                     </Text>
                 </Col>
                 <Col span={24}>
                     <InputNumber
+                        size='small'
                         onChange={(value: number | undefined): void => {
                             if (typeof (value) !== 'undefined') {
                                 changeAttribute(attrID, `${value}`);
@@ -406,12 +409,13 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
     return (
         <>
             <Col span={24}>
-                <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                <Text strong className='cvat-text'>
                     {attrName}
                 </Text>
             </Col>
             <Col span={24}>
                 <Input
+                    size='small'
                     onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
                         changeAttribute(attrID, event.target.value);
                     }}
@@ -472,7 +476,7 @@ function ItemAttributesComponent(props: ItemAttributesComponentProps): JSX.Eleme
                 onChange={collapse}
             >
                 <Collapse.Panel
-                    header='Details'
+                    header={<span style={{ fontSize: '11px' }}>Details</span>}
                     key='details'
                 >
                     { sorted.map((attribute: any): JSX.Element => (
