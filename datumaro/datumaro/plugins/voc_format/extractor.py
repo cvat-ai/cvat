@@ -226,7 +226,7 @@ class VocExtractor(SourceExtractor):
             for obj_id, object_elem in enumerate(root_elem.findall('object')):
                 obj_id += 1
                 attributes = {}
-                group = None
+                group = obj_id
 
                 obj_label_id = None
                 label_elem = object_elem.find('name')
@@ -271,20 +271,21 @@ class VocExtractor(SourceExtractor):
                 for action, present in actions.items():
                     attributes[action] = present
 
+                has_parts = False
                 for part_elem in object_elem.findall('part'):
                     part = part_elem.find('name').text
                     part_label_id = self._get_label_id(part)
                     part_bbox = self._parse_bbox(part_elem)
-                    group = obj_id
 
                     if self._task is not VocTask.person_layout:
                         break
                     if part_bbox is None:
                         continue
+                    has_parts = True
                     item_annotations.append(Bbox(*part_bbox, label=part_label_id,
                         group=group))
 
-                if self._task is VocTask.person_layout and not group:
+                if self._task is VocTask.person_layout and not has_parts:
                     continue
                 if self._task is VocTask.action_classification and not actions:
                     continue
