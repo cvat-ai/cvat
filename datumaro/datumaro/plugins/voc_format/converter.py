@@ -411,8 +411,10 @@ class _Converter:
             # generate colormap from the input dataset
             labels = self._extractor.categories() \
                 .get(AnnotationType.label, LabelCategories())
-            label_map = OrderedDict(
-                (item.name, [None, [], []]) for item in labels.items)
+            label_map = OrderedDict()
+            label_map['background'] = [None, [], []]
+            for item in labels.items:
+                label_map[item.name] = [None, [], []]
 
         elif label_map_source in [LabelmapType.guess.name, None]:
             # generate colormap for union of VOC and input dataset labels
