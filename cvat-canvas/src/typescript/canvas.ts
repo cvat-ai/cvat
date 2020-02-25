@@ -28,6 +28,9 @@ import {
 } from './canvasView';
 
 import '../scss/canvas.scss';
+import pjson from '../../package.json';
+
+const CanvasVersion = pjson.version;
 
 interface Canvas {
     html(): HTMLDivElement;
@@ -130,8 +133,8 @@ class CanvasImpl implements Canvas {
     }
 }
 
-
 export {
     CanvasImpl as Canvas,
     Rotation,
+    CanvasVersion,
 };
