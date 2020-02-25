@@ -302,15 +302,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             // TODO: In this approach CVAT-UI know details of implementations CVAT-CANVAS (svg.js)
             const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
             if (shapeView) {
-                if (['rect', 'polygon', 'polyline'].includes(shapeView.tagName)) {
-                    (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
-                    (shapeView as any).instance.stroke({ color: blackBorders ? 'black' : shapeColor });
-                } else {
-                    // group of points
-                    for (const child of (shapeView as any).instance.children()) {
-                        child.fill({ color: shapeColor });
-                    }
+                const handler = (shapeView as any).instance.remember('_selectHandler');
+                if (handler && handler.nested) {
+                    handler.nested.fill({ color: shapeColor });
                 }
+                (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
+                (shapeView as any).instance.stroke({ color: blackBorders ? 'black' : shapeColor });
             }
         }
     }
