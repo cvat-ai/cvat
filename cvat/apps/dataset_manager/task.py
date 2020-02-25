@@ -94,7 +94,8 @@ class TaskProject:
             CvatImagesDirExtractor)
 
     def _import_from_task(self, user):
-        self._project = Project.generate(self._project_dir)
+        self._project = Project.generate(self._project_dir,
+            config={'project_name': self._db_task.name})
 
         self._project.add_source('task_%s_images' % self._db_task.id, {
             'url': self._db_task.get_data_dirname(),
