@@ -186,6 +186,7 @@ class TaskProject:
             for db_image in self._db_task.image_set.all():
                 frame_info = {
                     'id': db_image.frame,
+                    'name': osp.basename(db_image.path),
                     'width': db_image.width,
                     'height': db_image.height,
                 }
