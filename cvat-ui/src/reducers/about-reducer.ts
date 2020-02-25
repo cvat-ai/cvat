@@ -2,9 +2,17 @@ import { AboutActions, AboutActionTypes } from 'actions/about-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { AboutState } from './interfaces';
 
+import { CanvasVersion } from '../cvat-canvas';
+import getCore from '../cvat-core';
+import pjson from '../../package.json';
 
 const defaultState: AboutState = {
     server: {},
+    packageVersion: {
+        core: getCore().client.version,
+        canvas: CanvasVersion,
+        ui: pjson.version,
+    },
     fetching: false,
     initialized: false,
 };

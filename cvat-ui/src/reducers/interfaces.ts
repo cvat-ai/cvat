@@ -88,6 +88,11 @@ export interface UsersState {
 
 export interface AboutState {
     server: any;
+    packageVersion: {
+        core: string;
+        canvas: string;
+        ui: string;
+    };
     fetching: boolean;
     initialized: boolean;
 }

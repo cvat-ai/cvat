@@ -71,6 +71,7 @@ Canvas itself handles:
 
     interface Canvas {
         html(): HTMLDivElement;
+        version(): string;
         setup(frameData: any, objectStates: any[]): void;
         activate(clientID: number, attributeID?: number): void;
         rotate(rotation: Rotation, remember?: boolean): void;
@@ -133,6 +134,8 @@ Standard JS events are used.
 ```js
     // Create an instance of a canvas
     const canvas = new window.canvas.Canvas();
+
+    console.log('Version', window.canvas.CanvasVersion);
 
     // Put canvas to a html container
     htmlContainer.appendChild(canvas.html());
