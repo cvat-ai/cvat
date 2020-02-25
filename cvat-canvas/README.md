@@ -134,6 +134,8 @@ Standard JS events are used.
     // Create an instance of a canvas
     const canvas = new window.canvas.Canvas();
 
+    console.log('Version', window.canvas.CanvasVersion);
+
     // Put canvas to a html container
     htmlContainer.appendChild(canvas.html());
     canvas.fitCanvas();
