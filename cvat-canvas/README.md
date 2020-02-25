@@ -71,6 +71,7 @@ Canvas itself handles:
 
     interface Canvas {
         html(): HTMLDivElement;
+        setZLayer(zLayer: number | null): void;
         setup(frameData: any, objectStates: any[]): void;
         activate(clientID: number, attributeID?: number): void;
         rotate(rotation: Rotation, remember?: boolean): void;
@@ -147,9 +148,6 @@ Standard JS events are used.
     });
 ```
 
-## States
-
- ![](images/states.svg)
 
 ## API Reaction
 
@@ -170,3 +168,4 @@ Standard JS events are used.
 | dragCanvas() | +    | -        | -         | -       | -       | -       | +    | -    |
 | zoomCanvas() | +    | -        | -         | -       | -       | -       | -    | +    |
 | cancel()     | -    | +        | +         | +       | +       | +       | +    | +    |
+| setZLayer()  | +    | +        | +         | +       | +       | +       | +    | +    |
