@@ -42,6 +42,7 @@ interface Props {
     brightnessLevel: number;
     contrastLevel: number;
     saturationLevel: number;
+    resetZoom: boolean;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -92,6 +93,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             canvasInstance,
             sidebarCollapsed,
             activatedStateID,
+            resetZoom,
         } = this.props;
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -144,6 +146,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
             || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
             this.updateShapesView();
+        }
+
+        if (prevProps.frame !== frameData.number && resetZoom) {
+            canvasInstance.html().addEventListener('canvas.setup', () => {
+                canvasInstance.fit();
+            }, { once: true });
         }
 
         this.activateOnCanvas();

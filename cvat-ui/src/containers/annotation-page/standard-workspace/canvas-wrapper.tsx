@@ -53,6 +53,7 @@ interface StateToProps {
     brightnessLevel: number;
     contrastLevel: number;
     saturationLevel: number;
+    resetZoom: boolean;
 }
 
 interface DispatchToProps {
@@ -110,6 +111,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 brightnessLevel,
                 contrastLevel,
                 saturationLevel,
+                resetZoom,
             },
             shapes: {
                 opacity,
@@ -142,6 +144,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         brightnessLevel,
         contrastLevel,
         saturationLevel,
+        resetZoom,
     };
 }
 

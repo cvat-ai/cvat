@@ -27,9 +27,7 @@ const baseURL = core.config.backendAPI.slice(0, -7);
 interface Props {
     taskInstance: any;
     registeredUsers: any[];
-    currentJobId: number | null;
     onJobUpdate(jobInstance: any): void;
-    onJobremove(): void;
 }
 
 function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
@@ -37,8 +35,6 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
         taskInstance,
         registeredUsers,
         onJobUpdate,
-        onJobremove,
-        currentJobId,
         history: {
             push,
         },
@@ -54,9 +50,6 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                 <Button
                     type='link'
                     onClick={(): void => {
-                        if (currentJobId !== id) {
-                            onJobremove();
-                        }
                         push(`/tasks/${taskId}/jobs/${id}`);
                     }}
                 >

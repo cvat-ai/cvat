@@ -1,6 +1,8 @@
 import './styles.scss';
 import React from 'react';
 
+import { RouteComponentProps } from 'react-router';
+
 import {
     Layout,
     Spin,
@@ -17,14 +19,24 @@ interface Props {
     getJob(): void;
 }
 
-export default function AnnotationPageComponent(props: Props): JSX.Element {
+type RoutePros = RouteComponentProps<{
+    tid: string;
+    jid: string;
+}>;
+
+export default function AnnotationPageComponent(props: Props & RoutePros): JSX.Element {
     const {
         job,
         fetching,
         getJob,
+        match: {
+            params,
+        },
     } = props;
 
-    if (job === null) {
+    const jid = +params.jid;
+
+    if (job === null || (job !== undefined && job.id !== jid)) {
         if (!fetching) {
             getJob();
         }

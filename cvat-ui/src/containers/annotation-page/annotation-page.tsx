@@ -74,7 +74,7 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     };
 }
 
-function AnnotationPageContainer(props: StateToProps & DispatchToProps): JSX.Element {
+function AnnotationPageContainer(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
     return (
         <AnnotationPageComponent {...props} />
     );

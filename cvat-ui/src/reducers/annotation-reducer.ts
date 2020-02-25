@@ -141,7 +141,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.REMOVE_JOB: {
+        case AnnotationActionTypes.CLOSE_JOB: {
             return {
                 ...defaultState,
                 canvas: {

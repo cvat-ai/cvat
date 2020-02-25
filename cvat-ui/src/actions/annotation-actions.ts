@@ -12,6 +12,7 @@ import {
     ShapeType,
     ObjectType,
     Task,
+    FrameSpeed,
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core';
@@ -48,7 +49,7 @@ export enum AnnotationActionTypes {
     GET_JOB = 'GET_JOB',
     GET_JOB_SUCCESS = 'GET_JOB_SUCCESS',
     GET_JOB_FAILED = 'GET_JOB_FAILED',
-    REMOVE_JOB = 'REMOVE_JOB',
+    CLOSE_JOB = 'CLOSE_JOB',
     CHANGE_FRAME = 'CHANGE_FRAME',
     CHANGE_FRAME_SUCCESS = 'CHANGE_FRAME_SUCCESS',
     CHANGE_FRAME_FAILED = 'CHANGE_FRAME_FAILED',
@@ -112,6 +113,7 @@ export enum AnnotationActionTypes {
     CHANGE_ANNOTATIONS_FILTERS = 'CHANGE_ANNOTATIONS_FILTERS',
     FETCH_ANNOTATIONS_SUCCESS = 'FETCH_ANNOTATIONS_SUCCESS',
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
+    ROTATE_FRAME = 'ROTATE_FRAME',
 }
 
 export function fetchAnnotationsAsync(sessionInstance: any):
@@ -559,17 +561,12 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             }
 
             if (toFrame === frame) {
-                const currentTime = new Date().getTime();
-                const delay = Math.max(0, Math.round(1000 / state.settings.player.frameSpeed)
-                    - currentTime + (state.annotation.player.frame.changeTime as number));
                 dispatch({
                     type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                     payload: {
                         number: state.annotation.player.frame.number,
                         data: state.annotation.player.frame.data,
                         states: state.annotation.annotations.states,
-                        changeTime: currentTime + delay,
-                        delay,
                     },
                 });
 
@@ -585,7 +582,21 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             const data = await job.frames.get(toFrame);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
             const currentTime = new Date().getTime();
-            const delay = Math.max(0, Math.round(1000 / state.settings.player.frameSpeed)
+            let frameSpeed;
+            switch (state.settings.player.frameSpeed) {
+                case (FrameSpeed.Fast): {
+                    frameSpeed = (FrameSpeed.Fast as number) / 2;
+                    break;
+                }
+                case (FrameSpeed.Fastest): {
+                    frameSpeed = (FrameSpeed.Fastest as number) / 3;
+                    break;
+                }
+                default: {
+                    frameSpeed = state.settings.player.frameSpeed as number;
+                }
+            }
+            const delay = Math.max(0, Math.round(1000 / frameSpeed)
                 - currentTime + (state.annotation.player.frame.changeTime as number));
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
@@ -658,7 +669,14 @@ export function getJobAsync(
             const filters = initialFilters;
             const { showAllInterpolationTracks } = state.settings.workspace;
 
-            // First check state if the task is already there
+            // Check if already loaded job is different from asking one
+            if (state.annotation.job.instance && state.annotation.job.instance.id !== jid) {
+                dispatch({
+                    type: AnnotationActionTypes.CLOSE_JOB,
+                });
+            }
+
+            // Check state if the task is already there
             let task = state.tasks.current
                 .filter((_task: Task) => _task.instance.id === tid)
                 .map((_task: Task) => _task.instance)[0];
@@ -700,12 +718,6 @@ export function getJobAsync(
                 },
             });
         }
-    };
-}
-
-export function removeJob(): AnyAction {
-    return {
-        type: AnnotationActionTypes.REMOVE_JOB,
     };
 }
 
