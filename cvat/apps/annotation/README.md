@@ -236,7 +236,7 @@ This is native CVAT annotation format.
     (See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task)
     guide for details)
 1.  zip the corresponding annotation files
-1.  click `Upload annotation` button, choose `Pascal VOC ZIP 1.0`
+1.  click `Upload annotation` button, choose `Pascal VOC ZIP 1.1`
 and select the *.zip file with annotations from previous step.
 It may take some time.
 
