@@ -9,7 +9,7 @@ import xml.etree as ET
 
 from datumaro.components.extractor import (SourceExtractor,
     DEFAULT_SUBSET_NAME, DatasetItem,
-    AnnotationType, Points, Polygon, PolyLine, Bbox,
+    AnnotationType, Points, Polygon, PolyLine, Bbox, Label,
     LabelCategories
 )
 from datumaro.util.image import Image
@@ -73,6 +73,8 @@ class CvatExtractor(SourceExtractor):
 
         track = None
         shape = None
+        tag = None
+        attributes = None
         image = None
         for ev, el in context:
             if ev == 'start':
@@ -92,16 +94,25 @@ class CvatExtractor(SourceExtractor):
                         'height': el.attrib.get('height'),
                     }
                 elif el.tag in cls._SUPPORTED_SHAPES and (track or image):
+                    attributes = {}
                     shape = {
                         'type': None,
-                        'attributes': {},
+                        'attributes': attributes,
                     }
                     if track:
                         shape.update(track)
                     if image:
                         shape.update(image)
+                elif el.tag == 'tag' and image:
+                    attributes = {}
+                    tag = {
+                        'frame': image['frame'],
+                        'attributes': attributes,
+                        'group': int(el.attrib.get('group_id', 0)),
+                        'label': el.attrib['label'],
+                    }
             elif ev == 'end':
-                if el.tag == 'attribute' and shape is not None:
+                if el.tag == 'attribute' and attributes is not None:
                     attr_value = el.text
                     if el.text in ['true', 'false']:
                         attr_value = attr_value == 'true'
@@ -110,7 +121,7 @@ class CvatExtractor(SourceExtractor):
                             attr_value = float(attr_value)
                         except Exception:
                             pass
-                    shape['attributes'][el.attrib['name']] = attr_value
+                    attributes[el.attrib['name']] = attr_value
                 elif el.tag in cls._SUPPORTED_SHAPES:
                     if track is not None:
                         shape['frame'] = el.attrib['frame']
@@ -136,10 +147,16 @@ class CvatExtractor(SourceExtractor):
 
                     frame_desc = items.get(shape['frame'], {'annotations': []})
                     frame_desc['annotations'].append(
-                        cls._parse_ann(shape, categories))
+                        cls._parse_shape_ann(shape, categories))
                     items[shape['frame']] = frame_desc
                     shape = None
 
+                elif el.tag == 'tag':
+                    frame_desc = items.get(tag['frame'], {'annotations': []})
+                    frame_desc['annotations'].append(
+                        cls._parse_tag_ann(tag, categories))
+                    items[tag['frame']] = frame_desc
+                    tag = None
                 elif el.tag == 'track':
                     track = None
                 elif el.tag == 'image':
@@ -252,7 +269,7 @@ class CvatExtractor(SourceExtractor):
         return categories, frame_size
 
     @classmethod
-    def _parse_ann(cls, ann, categories):
+    def _parse_shape_ann(cls, ann, categories):
         ann_id = ann.get('id')
         ann_type = ann['type']
 
@@ -293,6 +310,14 @@ class CvatExtractor(SourceExtractor):
 
         else:
             raise NotImplementedError("Unknown annotation type '%s'" % ann_type)
+
+    @classmethod
+    def _parse_tag_ann(cls, ann, categories):
+        label = ann.get('label')
+        label_id = categories[AnnotationType.label].find(label)[0]
+        group = ann.get('group')
+        attributes = ann.get('attributes')
+        return Label(label_id, attributes=attributes, group=group)
 
     def _load_items(self, parsed):
         for frame_id, item_desc in parsed.items():
