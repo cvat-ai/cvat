@@ -6,7 +6,7 @@ import {
     CombinedState,
 } from 'reducers/interfaces';
 
-import { showRunModelDialog } from 'actions/models-actions';
+import { modelsActions } from 'actions/models-actions';
 import {
     dumpAnnotationsAsync,
     loadAnnotationsAsync,
@@ -95,7 +95,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(deleteTaskAsync(taskInstance));
         },
         openRunModelWindow: (taskInstance: any): void => {
-            dispatch(showRunModelDialog(taskInstance));
+            dispatch(modelsActions.showRunModelDialog(taskInstance));
         },
     };
 }

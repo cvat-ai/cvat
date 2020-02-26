@@ -10,6 +10,8 @@ import {
     Icon,
     Progress,
     Dropdown,
+    Tooltip,
+    Modal,
 } from 'antd';
 
 import moment from 'moment';
@@ -24,6 +26,7 @@ export interface TaskItemProps {
     deleted: boolean;
     hidden: boolean;
     activeInference: ActiveInference | null;
+    cancelAutoAnnotation(): void;
 }
 
 class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps> {
@@ -50,7 +53,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const name = `${taskInstance.name.substring(0, 70)}${taskInstance.name.length > 70 ? '...' : ''}`;
 
         return (
-            <Col span={10}>
+            <Col span={10} className='cvat-task-item-description'>
                 <Text strong type='secondary'>{`#${id}: `}</Text>
                 <Text strong className='cvat-text-color'>{name}</Text>
                 <br />
@@ -72,6 +75,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const {
             taskInstance,
             activeInference,
+            cancelAutoAnnotation,
         } = this.props;
         // Count number of jobs and performed jobs
         const numOfJobs = taskInstance.jobs.length;
@@ -128,8 +132,8 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                                     <Text strong>Automatic annotation</Text>
                                 </Col>
                             </Row>
-                            <Row>
-                                <Col>
+                            <Row type='flex' justify='space-between'>
+                                <Col span={22}>
                                     <Progress
                                         percent={Math.floor(activeInference.progress)}
                                         strokeColor={{
@@ -140,6 +144,23 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                                         strokeWidth={5}
                                         size='small'
                                     />
+                                </Col>
+                                <Col span={1} className='close-auto-annotation-icon'>
+                                    <Tooltip title='Cancel automatic annotation'>
+                                        <Icon
+                                            type='close'
+                                            onClick={() => {
+                                                Modal.confirm({
+                                                    title: 'You are going to cancel automatic annotation?',
+                                                    content: 'Reached progress will be lost. Continue?',
+                                                    okType: 'danger',
+                                                    onOk() {
+                                                        cancelAutoAnnotation();
+                                                    },
+                                                });
+                                            }}
+                                        />
+                                    </Tooltip>
                                 </Col>
                             </Row>
                         </>
@@ -160,6 +181,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 <Row type='flex' justify='end'>
                     <Col>
                         <Button
+                            className='cvat-item-open-task-button'
                             type='primary'
                             size='large'
                             ghost
@@ -170,7 +192,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     </Col>
                 </Row>
                 <Row type='flex' justify='end'>
-                    <Col>
+                    <Col className='cvat-item-open-task-actions'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
                             <Icon className='cvat-menu-icon' component={MenuIcon} />
