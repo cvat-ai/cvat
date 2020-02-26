@@ -840,6 +840,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             points: [...state.points],
             attributes: { ...state.attributes },
             zOrder: state.zOrder,
+            pinned: state.pinned,
         };
     }
 
@@ -873,6 +874,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 } else {
                     this.svgShapes[clientID].removeClass('cvat_canvas_shape_occluded');
                 }
+            }
+
+            if (drawnState.pinned !== state.pinned && this.activeElement.clientID !== null) {
+                const activeElement = { ...this.activeElement };
+                this.deactivate();
+                this.activate(activeElement);
             }
 
             if (state.points
@@ -1006,9 +1013,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             shape.removeClass('cvat_canvas_shape_activated');
 
-            (shape as any).off('dragstart');
-            (shape as any).off('dragend');
-            (shape as any).draggable(false);
+            if (!drawnState.pinned) {
+                (shape as any).off('dragstart');
+                (shape as any).off('dragend');
+                (shape as any).draggable(false);
+            }
 
             if (drawnState.shapeType !== 'points') {
                 this.selectize(false, shape);
@@ -1090,36 +1099,38 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.content.append(shape.node);
         }
 
-        (shape as any).draggable().on('dragstart', (): void => {
-            this.mode = Mode.DRAG;
-            if (text) {
-                text.addClass('cvat_canvas_hidden');
-            }
-        }).on('dragend', (e: CustomEvent): void => {
-            if (text) {
-                text.removeClass('cvat_canvas_hidden');
-                self.updateTextPosition(
-                    text,
-                    shape,
-                );
-            }
+        if (!state.pinned) {
+            (shape as any).draggable().on('dragstart', (): void => {
+                this.mode = Mode.DRAG;
+                if (text) {
+                    text.addClass('cvat_canvas_hidden');
+                }
+            }).on('dragend', (e: CustomEvent): void => {
+                if (text) {
+                    text.removeClass('cvat_canvas_hidden');
+                    self.updateTextPosition(
+                        text,
+                        shape,
+                    );
+                }
 
-            this.mode = Mode.IDLE;
+                this.mode = Mode.IDLE;
 
-            const p1 = e.detail.handler.startPoints.point;
-            const p2 = e.detail.p;
-            const delta = 1;
-            const { offset } = this.controller.geometry;
-            if (Math.sqrt(((p1.x - p2.x) ** 2) + ((p1.y - p2.y) ** 2)) >= delta) {
-                const points = pointsToArray(
-                    shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} `
-                        + `${shape.attr('x') + shape.attr('width')},`
-                        + `${shape.attr('y') + shape.attr('height')}`,
-                ).map((x: number): number => x - offset);
+                const p1 = e.detail.handler.startPoints.point;
+                const p2 = e.detail.p;
+                const delta = 1;
+                const { offset } = this.controller.geometry;
+                if (Math.sqrt(((p1.x - p2.x) ** 2) + ((p1.y - p2.y) ** 2)) >= delta) {
+                    const points = pointsToArray(
+                        shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} `
+                            + `${shape.attr('x') + shape.attr('width')},`
+                            + `${shape.attr('y') + shape.attr('height')}`,
+                    ).map((x: number): number => x - offset);
 
-                this.onEditDone(state, points);
-            }
-        });
+                    this.onEditDone(state, points);
+                }
+            });
+        }
 
         if (state.shapeType !== 'points') {
             this.selectize(true, shape);

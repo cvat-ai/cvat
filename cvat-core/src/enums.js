@@ -196,6 +196,7 @@
         CHANGED_ZORDER: 'Changed z-order',
         CHANGED_KEYFRAME: 'Changed keyframe',
         CHANGED_LOCK: 'Changed lock',
+        CHANGED_PINNED: 'Changed pinned',
         CHANGED_COLOR: 'Changed color',
         CHANGED_HIDDEN: 'Changed hidden',
         MERGED_OBJECTS: 'Merged objects',

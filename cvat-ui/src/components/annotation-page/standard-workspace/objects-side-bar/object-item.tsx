@@ -175,6 +175,7 @@ interface ItemButtonsComponentProps {
     occluded: boolean;
     outside: boolean | undefined;
     locked: boolean;
+    pinned: boolean;
     hidden: boolean;
     keyframe: boolean | undefined;
 
@@ -191,6 +192,8 @@ interface ItemButtonsComponentProps {
     unsetKeyframe(): void;
     lock(): void;
     unlock(): void;
+    pin(): void;
+    unpin(): void;
     hide(): void;
     show(): void;
 }
@@ -201,6 +204,7 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
         occluded,
         outside,
         locked,
+        pinned,
         hidden,
         keyframe,
 
@@ -217,6 +221,8 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
         unsetKeyframe,
         lock,
         unlock,
+        pin,
+        unpin,
         hide,
         show,
     } = props;
@@ -273,6 +279,11 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                                 ? <Icon type='star' theme='filled' onClick={unsetKeyframe} />
                                 : <Icon type='star' onClick={setKeyframe} />}
                         </Col>
+                        <Col span={4}>
+                            { pinned
+                                ? <Icon type='pushpin' theme='filled' onClick={unpin} />
+                                : <Icon type='pushpin' onClick={pin} />}
+                        </Col>
                     </Row>
                 </Col>
             </Row>
@@ -283,20 +294,25 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
         <Row type='flex' align='middle' justify='space-around'>
             <Col span={20} style={{ textAlign: 'center' }}>
                 <Row type='flex' justify='space-around'>
-                    <Col span={8}>
+                    <Col span={6}>
                         { locked
                             ? <Icon type='lock' onClick={unlock} />
                             : <Icon type='unlock' onClick={lock} />}
                     </Col>
-                    <Col span={8}>
+                    <Col span={6}>
                         { occluded
                             ? <Icon type='team' onClick={unsetOccluded} />
                             : <Icon type='user' onClick={setOccluded} />}
                     </Col>
-                    <Col span={8}>
+                    <Col span={6}>
                         { hidden
                             ? <Icon type='eye-invisible' onClick={show} />
                             : <Icon type='eye' onClick={hide} />}
+                    </Col>
+                    <Col span={6}>
+                        { pinned
+                            ? <Icon type='pushpin' theme='filled' onClick={unpin} />
+                            : <Icon type='pushpin' onClick={pin} />}
                     </Col>
                 </Row>
             </Col>
@@ -540,6 +556,7 @@ interface Props {
     occluded: boolean;
     outside: boolean | undefined;
     locked: boolean;
+    pinned: boolean;
     hidden: boolean;
     keyframe: boolean | undefined;
     attrValues: Record<number, string>;
@@ -568,6 +585,8 @@ interface Props {
     unsetKeyframe(): void;
     lock(): void;
     unlock(): void;
+    pin(): void;
+    unpin(): void;
     hide(): void;
     show(): void;
     changeLabel(labelID: string): void;
@@ -578,6 +597,7 @@ interface Props {
 function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
     return nextProps.activated === prevProps.activated
         && nextProps.locked === prevProps.locked
+        && nextProps.pinned === prevProps.pinned
         && nextProps.occluded === prevProps.occluded
         && nextProps.outside === prevProps.outside
         && nextProps.hidden === prevProps.hidden
@@ -608,6 +628,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         occluded,
         outside,
         locked,
+        pinned,
         hidden,
         keyframe,
         attrValues,
@@ -637,6 +658,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
         unsetKeyframe,
         lock,
         unlock,
+        pin,
+        unpin,
         hide,
         show,
         changeLabel,
@@ -677,6 +700,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 occluded={occluded}
                 outside={outside}
                 locked={locked}
+                pinned={pinned}
                 hidden={hidden}
                 keyframe={keyframe}
                 navigateFirstKeyframe={navigateFirstKeyframe}
@@ -691,6 +715,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 unsetKeyframe={unsetKeyframe}
                 lock={lock}
                 unlock={unlock}
+                pin={pin}
+                unpin={unpin}
                 hide={hide}
                 show={show}
             />

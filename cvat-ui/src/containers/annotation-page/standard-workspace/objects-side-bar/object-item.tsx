@@ -277,6 +277,18 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         this.commit();
     };
 
+    private pin = (): void => {
+        const { objectState } = this.props;
+        objectState.pinned = true;
+        this.commit();
+    };
+
+    private unpin = (): void => {
+        const { objectState } = this.props;
+        objectState.pinned = false;
+        this.commit();
+    };
+
     private show = (): void => {
         const { objectState } = this.props;
         objectState.hidden = false;
@@ -407,6 +419,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 occluded={objectState.occluded}
                 outside={objectState.outside}
                 locked={objectState.lock}
+                pinned={objectState.pinned}
                 hidden={objectState.hidden}
                 keyframe={objectState.keyframe}
                 attrValues={{ ...objectState.attributes }}
@@ -446,6 +459,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 unsetKeyframe={this.unsetKeyframe}
                 lock={this.lock}
                 unlock={this.unlock}
+                pin={this.pin}
+                unpin={this.unpin}
                 hide={this.hide}
                 show={this.show}
                 changeLabel={this.changeLabel}
