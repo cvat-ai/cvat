@@ -148,7 +148,8 @@ class TfDetectionApiExtractor(SourceExtractor):
                 parsed_record['image/object/class/text'],
                 default_value=b'').numpy()
             masks = tf.sparse.to_dense(
-                parsed_record['image/object/mask']).numpy()
+                parsed_record['image/object/mask'],
+                default_value=b'').numpy()
 
             for label, label_id in zip(labels, label_ids):
                 label = label.decode('utf-8')

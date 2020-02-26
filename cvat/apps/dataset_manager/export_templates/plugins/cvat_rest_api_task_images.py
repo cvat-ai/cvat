@@ -103,10 +103,12 @@ class cvat_rest_api_task_images(datumaro.SourceExtractor):
         items = []
         for entry in image_list:
             item_id = entry['id']
+            item_filename = entry.get('name', str(item_id))
             size = None
             if entry.get('height') and entry.get('width'):
                 size = (entry['height'], entry['width'])
-            image = Image(data=self._make_image_loader(item_id), size=size)
+            image = Image(data=self._make_image_loader(item_id),
+                path=item_filename, size=size)
             item = datumaro.DatasetItem(id=item_id, image=image)
             items.append((item.id, item))
 
