@@ -2660,13 +2660,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             tags_wo_attrs = [{
                 "frame": 2,
                 "label_id": task["labels"][1]["id"],
-                "group": 3,
+                "group": 0,
                 "attributes": []
             }]
             tags_with_attrs = [{
                 "frame": 1,
                 "label_id": task["labels"][0]["id"],
-                "group": 0,
+                "group": 3,
                 "attributes": [
                     {
                         "spec_id": task["labels"][0]["attributes"][0]["id"],
