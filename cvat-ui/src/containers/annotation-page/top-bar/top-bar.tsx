@@ -32,7 +32,6 @@ interface StateToProps {
     savingStatuses: string[];
     undoAction?: string;
     redoAction?: string;
-    resetZoom: boolean;
     autoSave: boolean;
     autoSaveInterval: number;
 }
@@ -74,7 +73,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             player: {
                 frameSpeed,
                 frameStep,
-                resetZoom,
             },
             workspace: {
                 autoSave,
@@ -95,7 +93,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         undoAction: history.undo[history.undo.length - 1],
         redoAction: history.redo[history.redo.length - 1],
-        resetZoom,
         autoSave,
         autoSaveInterval,
     };
@@ -127,21 +124,16 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps & RouteComponentProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
-    private static beforeUnloadCallback(event: BeforeUnloadEvent): any {
-        const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
-        // eslint-disable-next-line no-param-reassign
-        event.returnValue = confirmationMessage;
-        return confirmationMessage;
-    }
-
     private autoSaveInterval: number | undefined;
     private unblock: any;
 
-    componentDidMount(): void {
+    public componentDidMount(): void {
         const {
             autoSave,
             autoSaveInterval,
             saving,
+            history,
+            jobInstance,
         } = this.props;
 
         this.autoSaveInterval = window.setInterval((): void => {
@@ -150,7 +142,15 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             }
         }, autoSaveInterval);
 
-        this.checkUnsavedChanges();
+        this.unblock = history.block((location: any) => {
+            if (jobInstance.annotations.hasUnsavedChanges() && location.pathname !== '/settings'
+                && location.pathname !== `/tasks/${jobInstance.task.id}/jobs/${jobInstance.id}`) {
+                return 'You have unsaved changes, please confirm leaving this page.';
+            }
+            return undefined;
+        });
+        this.beforeUnloadCallback = this.beforeUnloadCallback.bind(this);
+        window.addEventListener('beforeunload', this.beforeUnloadCallback);
     }
 
     public componentDidUpdate(): void {
@@ -169,10 +169,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         if (playing && canvasIsReady) {
             if (frameNumber < jobInstance.stopFrame) {
                 let framesSkiped = 0;
-                if (frameSpeed === FrameSpeed.Fast) {
+                if (frameSpeed === FrameSpeed.Fast
+                    && (frameNumber + 1 < jobInstance.stopFrame)) {
                     framesSkiped = 1;
                 }
-                if (frameSpeed === FrameSpeed.Fastest) {
+                if (frameSpeed === FrameSpeed.Fastest
+                    && (frameNumber + 2 < jobInstance.stopFrame)) {
                     framesSkiped = 2;
                 }
 
@@ -186,17 +188,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onSwitchPlay(false);
             }
         }
-
-        this.checkUnsavedChanges();
     }
 
     public componentWillUnmount(): void {
         window.clearInterval(this.autoSaveInterval);
-        window.removeEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
-        if (typeof this.unblock === 'function') {
-            this.unblock();
-            this.unblock = undefined;
-        }
+        window.removeEventListener('beforeunload', this.beforeUnloadCallback);
+        this.unblock();
     }
 
     private undo = (): void => {
@@ -404,32 +401,15 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         copy(url);
     };
 
-    private checkUnsavedChanges(): void {
-        const {
-            jobInstance,
-            history,
-        } = this.props;
-
-        jobInstance.annotations.hasUnsavedChanges().then((unsaved: boolean) => {
-            if (unsaved) {
-                window.addEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
-                if (this.unblock === undefined) {
-                    this.unblock = history.block((location) => {
-                        if (location.pathname !== '/settings' && location.pathname
-                                !== `/tasks/${jobInstance.task.id}/jobs/${jobInstance.id}`) {
-                            return 'You have unsaved changes, please confirm leaving this page.';
-                        }
-                        return undefined;
-                    });
-                }
-            } else {
-                window.removeEventListener('beforeunload', AnnotationTopBarContainer.beforeUnloadCallback);
-                if (typeof this.unblock === 'function') {
-                    this.unblock();
-                    this.unblock = undefined;
-                }
-            }
-        });
+    private beforeUnloadCallback(event: BeforeUnloadEvent): any {
+        const { jobInstance } = this.props;
+        if (jobInstance.annotations.hasUnsavedChanges()) {
+            const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
+            // eslint-disable-next-line no-param-reassign
+            event.returnValue = confirmationMessage;
+            return confirmationMessage;
+        }
+        return undefined;
     }
 
     public render(): JSX.Element {

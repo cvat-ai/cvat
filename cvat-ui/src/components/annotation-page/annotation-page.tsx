@@ -19,24 +19,16 @@ interface Props {
     getJob(): void;
 }
 
-type RoutePros = RouteComponentProps<{
-    tid: string;
-    jid: string;
-}>;
 
-export default function AnnotationPageComponent(props: Props & RoutePros): JSX.Element {
+export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
         job,
         fetching,
         getJob,
-        match: {
-            params,
-        },
     } = props;
 
-    const jid = +params.jid;
 
-    if (job === null || (job !== undefined && job.id !== jid)) {
+    if (job === null) {
         if (!fetching) {
             getJob();
         }
