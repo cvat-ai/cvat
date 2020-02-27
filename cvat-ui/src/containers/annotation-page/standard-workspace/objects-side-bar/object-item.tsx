@@ -8,9 +8,11 @@ import {
 } from 'reducers/interfaces';
 import {
     collapseObjectItems,
+    changeLabelColorAsync,
     updateAnnotationsAsync,
     changeFrameAsync,
     removeObjectAsync,
+    changeGroupColorAsync,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
     propagateObject as propagateObjectAction,
@@ -46,6 +48,8 @@ interface DispatchToProps {
     removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
+    changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
+    changeGroupColor(sessionInstance: any, frameNumber: number, group: number, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -129,6 +133,22 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         propagateObject(objectState: any): void {
             dispatch(propagateObjectAction(objectState));
+        },
+        changeLabelColor(
+            sessionInstance: any,
+            frameNumber: number,
+            label: any,
+            color: string,
+        ): void {
+            dispatch(changeLabelColorAsync(sessionInstance, frameNumber, label, color));
+        },
+        changeGroupColor(
+            sessionInstance: any,
+            frameNumber: number,
+            group: number,
+            color: string,
+        ): void {
+            dispatch(changeGroupColorAsync(sessionInstance, frameNumber, group, color));
         },
     };
 }
@@ -336,11 +356,22 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private changeColor = (color: string): void => {
         const {
+            jobInstance,
             objectState,
+            colorBy,
+            changeLabelColor,
+            changeGroupColor,
+            frameNumber,
         } = this.props;
 
-        objectState.color = color;
-        this.commit();
+        if (colorBy === ColorBy.INSTANCE) {
+            objectState.color = color;
+            this.commit();
+        } else if (colorBy === ColorBy.GROUP) {
+            changeGroupColor(jobInstance, frameNumber, objectState.group.id, color);
+        } else if (colorBy === ColorBy.LABEL) {
+            changeLabelColor(jobInstance, frameNumber, objectState.label, color);
+        }
     };
 
     private changeLabel = (labelID: string): void => {
