@@ -35,9 +35,9 @@ const CanvasVersion = pjson.version;
 interface Canvas {
     html(): HTMLDivElement;
     setZLayer(zLayer: number | null): void;
-    setup(frameData: any, objectStates: any[]): void;
+    setup(frameData: any, objectStates: any[], frameAngle: number): void;
     activate(clientID: number | null, attributeID?: number): void;
-    rotate(rotation: Rotation, remember?: boolean): void;
+    rotate(rotation: Rotation): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -74,8 +74,8 @@ class CanvasImpl implements Canvas {
         this.model.setZLayer(zLayer);
     }
 
-    public setup(frameData: any, objectStates: any[]): void {
-        this.model.setup(frameData, objectStates);
+    public setup(frameData: any, objectStates: any[], frameAngle: number): void {
+        this.model.setup(frameData, objectStates, frameAngle);
     }
 
     public fitCanvas(): void {
@@ -97,8 +97,8 @@ class CanvasImpl implements Canvas {
         this.model.activate(clientID, attributeID);
     }
 
-    public rotate(rotation: Rotation, remember: boolean = false): void {
-        this.model.rotate(rotation, remember);
+    public rotate(rotation: Rotation): void {
+        this.model.rotate(rotation);
     }
 
     public focus(clientID: number, padding: number = 0): void {
