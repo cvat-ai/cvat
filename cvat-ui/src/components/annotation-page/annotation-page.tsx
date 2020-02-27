@@ -1,8 +1,6 @@
 import './styles.scss';
 import React from 'react';
 
-import { RouteComponentProps } from 'react-router';
-
 import {
     Layout,
     Spin,
