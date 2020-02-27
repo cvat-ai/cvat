@@ -40,6 +40,7 @@ const defaultState: AnnotationState = {
             changeTime: null,
         },
         playing: false,
+        frameAngles: [],
     },
     drawing: {
         activeShapeType: ShapeType.RECTANGLE,
@@ -134,6 +135,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         number,
                         data,
                     },
+                    frameAngles: Array(job.stopFrame - job.startFrame).fill(0),
                 },
                 drawing: {
                     ...state.drawing,
@@ -226,6 +228,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.player.frame,
                         fetching: false,
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.ROTATE_FRAME: {
+            const { frame, angle, rotateAll } = action.payload;
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    frameAngles: state.player.frameAngles.map((_angle: number, idx: number) => (
+                        rotateAll || frame === idx ? angle : _angle)),
                 },
             };
         }

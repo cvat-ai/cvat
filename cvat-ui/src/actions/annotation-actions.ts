@@ -17,6 +17,7 @@ import {
 
 import getCore from 'cvat-core';
 import { getCVATStore } from 'cvat-store';
+import { Rotation } from '../../../cvat-canvas/src/typescript/canvas';
 
 const cvat = getCore();
 let store: null | Store<CombinedState> = null;
@@ -124,6 +125,7 @@ export enum AnnotationActionTypes {
     CHANGE_ANNOTATIONS_FILTERS = 'CHANGE_ANNOTATIONS_FILTERS',
     FETCH_ANNOTATIONS_SUCCESS = 'FETCH_ANNOTATIONS_SUCCESS',
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
+    ROTATE_FRAME = 'ROTATE_FRAME',
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
     ADD_Z_LAYER = 'ADD_Z_LAYER',
 }
@@ -658,6 +660,31 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 },
             });
         }
+    };
+}
+
+
+export function rotateCurrentFrame(angle: Rotation): AnyAction {
+    const state: CombinedState = getStore().getState();
+    const { number: frameNumber } = state.annotation.player.frame;
+    const { rotateAll } = state.settings.player;
+    const previousFrameAngle = state.annotation.player.frameAngles[frameNumber
+        - state.annotation.job.instance.startFrame];
+    let frameAngle = previousFrameAngle;
+    if (angle === Rotation.CLOCKWISE90) {
+        frameAngle += 90;
+    } else {
+        frameAngle += 270;
+    }
+    frameAngle %= 360;
+
+    return {
+        type: AnnotationActionTypes.ROTATE_FRAME,
+        payload: {
+            frame: frameNumber - state.annotation.job.instance.startFrame,
+            angle: frameAngle,
+            rotateAll,
+        },
     };
 }
 

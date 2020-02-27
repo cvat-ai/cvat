@@ -309,6 +309,7 @@ export interface AnnotationState {
             changeTime: number | null;
         };
         playing: boolean;
+        frameAngles: number[];
     };
     drawing: {
         activeShapeType: ShapeType;

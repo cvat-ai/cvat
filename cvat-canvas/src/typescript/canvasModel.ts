@@ -130,9 +130,9 @@ export interface CanvasModel {
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
 
-    setup(frameData: any, objectStates: any[]): void;
+    setup(frameData: any, objectStates: any[], frameAngle: number): void;
     activate(clientID: number | null, attributeID: number | null): void;
-    rotate(rotation: Rotation, remember: boolean): void;
+    rotate(rotation: Rotation): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -163,7 +163,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         gridSize: Size;
         left: number;
         objects: any[];
-        rememberAngle: boolean;
         scale: number;
         top: number;
         zLayer: number | null;
@@ -205,7 +204,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             left: 0,
             objects: [],
-            rememberAngle: false,
             scale: 1,
             top: 0,
             zLayer: null,
@@ -301,9 +299,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.ZOOM_CANVAS);
     }
 
-    public setup(frameData: any, objectStates: any[]): void {
+    public setup(frameData: any, objectStates: any[], frameAngle: number): void {
         if (frameData.number === this.data.imageID) {
             this.data.objects = objectStates;
+            if (this.data.angle !== frameAngle) {
+                this.data.angle = frameAngle;
+                this.fit();
+            }
             this.notify(UpdateReasons.OBJECTS_UPDATED);
             return;
         }
@@ -320,10 +322,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 return;
             }
 
-            if (!this.data.rememberAngle) {
-                this.data.angle = 0;
+            if (this.data.angle !== frameAngle) {
+                this.data.angle = frameAngle;
+                this.fit();
             }
-
             this.data.imageSize = {
                 height: (frameData.height as number),
                 width: (frameData.width as number),
@@ -352,7 +354,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.SHAPE_ACTIVATED);
     }
 
-    public rotate(rotation: Rotation, remember: boolean = false): void {
+    public rotate(rotation: Rotation): void {
         if (rotation === Rotation.CLOCKWISE90) {
             this.data.angle += 90;
         } else {
@@ -360,7 +362,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.data.angle %= 360;
-        this.data.rememberAngle = remember;
         this.fit();
     }
 
