@@ -1,7 +1,7 @@
-/*
- * Copyright (C) 2019 Intel Corporation
- * SPDX-License-Identifier: MIT
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 
 /* eslint-disable */
 const path = require('path');

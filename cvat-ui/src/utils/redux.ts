@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { Action, ActionCreatorsMapObject, AnyAction } from 'redux';
 import { ThunkAction as _ThunkAction } from 'redux-thunk';
 import { CombinedState } from '../reducers/interfaces';
