@@ -464,9 +464,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const circle: SVG.Circle = this.nested
                         .circle(this.options.pointSize)
                         .stroke('black')
-                        .fill(shape.node.getAttribute('fill') || 'inherit')
+                        .fill('inherit')
                         .center(cx, cy)
                         .attr({
+                            'fill-opacity': 1,
                             'stroke-width': consts.POINTS_STROKE_WIDTH / self.geometry.scale,
                         });
 
@@ -495,6 +496,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).selectize(false, {
                 deepSelect: true,
             });
+        }
+
+        const handler = shape.remember('_selectHandler');
+        if (handler && handler.nested) {
+            handler.nested.fill(shape.attr('fill'));
         }
     }
 
@@ -1314,10 +1320,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .addClass('cvat_canvas_shape').attr({
                 clientID: state.clientID,
                 id: `cvat_canvas_shape_${state.clientID}`,
-                fill: state.color,
                 'data-z-order': state.zOrder,
-            }).style({
-                'fill-opacity': 1,
             });
 
         group.bbox = basicPolyline.bbox.bind(basicPolyline);

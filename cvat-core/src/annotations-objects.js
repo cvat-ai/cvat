@@ -345,7 +345,7 @@
 
             if (updated.color) {
                 checkObjectType('color', data.color, 'string', null);
-                if (/^#[0-9A-F]{6}$/i.test(data.color)) {
+                if (!/^#[0-9A-F]{6}$/i.test(data.color)) {
                     throw new ArgumentError(
                         `Got invalid color value: "${data.color}"`,
                     );
