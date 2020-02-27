@@ -28,9 +28,13 @@ import {
 } from './canvasView';
 
 import '../scss/canvas.scss';
+import pjson from '../../package.json';
+
+const CanvasVersion = pjson.version;
 
 interface Canvas {
     html(): HTMLDivElement;
+    setZLayer(zLayer: number | null): void;
     setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number | null, attributeID?: number): void;
     rotate(rotation: Rotation, remember?: boolean): void;
@@ -64,6 +68,10 @@ class CanvasImpl implements Canvas {
 
     public html(): HTMLDivElement {
         return this.view.html();
+    }
+
+    public setZLayer(zLayer: number | null): void {
+        this.model.setZLayer(zLayer);
     }
 
     public setup(frameData: any, objectStates: any[]): void {
@@ -130,8 +138,8 @@ class CanvasImpl implements Canvas {
     }
 }
 
-
 export {
     CanvasImpl as Canvas,
     Rotation,
+    CanvasVersion,
 };

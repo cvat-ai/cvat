@@ -33,6 +33,8 @@ interface StateToProps {
     colorBy: ColorBy;
     ready: boolean;
     activeControl: ActiveControl;
+    minZLayer: number;
+    maxZLayer: number;
 }
 
 interface DispatchToProps {
@@ -52,6 +54,10 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 states,
                 collapsed: statesCollapsed,
                 activatedStateID,
+                zLayer: {
+                    min: minZLayer,
+                    max: maxZLayer,
+                },
             },
             job: {
                 attributes: jobAttributes,
@@ -93,6 +99,8 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         jobInstance,
         frameNumber,
         activated: activatedStateID === own.clientID,
+        minZLayer,
+        maxZLayer,
     };
 }
 
@@ -218,6 +226,30 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const search = `frame=${frameNumber}&object=${objectState.serverID}`;
         const url = `${origin}${pathname}?${search}`;
         copy(url);
+    };
+
+    private toBackground = (): void => {
+        const {
+            objectState,
+            minZLayer,
+        } = this.props;
+
+        if (objectState.zOrder !== minZLayer) {
+            objectState.zOrder = minZLayer - 1;
+            this.commit();
+        }
+    };
+
+    private toForeground = (): void => {
+        const {
+            objectState,
+            maxZLayer,
+        } = this.props;
+
+        if (objectState.zOrder !== maxZLayer) {
+            objectState.zOrder = maxZLayer + 1;
+            this.commit();
+        }
     };
 
     private activate = (): void => {
@@ -404,6 +436,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 copy={this.copy}
                 propagate={this.propagate}
                 createURL={this.createURL}
+                toBackground={this.toBackground}
+                toForeground={this.toForeground}
                 setOccluded={this.setOccluded}
                 unsetOccluded={this.unsetOccluded}
                 setOutside={this.setOutside}

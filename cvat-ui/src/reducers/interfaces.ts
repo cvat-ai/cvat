@@ -88,6 +88,11 @@ export interface UsersState {
 
 export interface AboutState {
     server: any;
+    packageVersion: {
+        core: string;
+        canvas: string;
+        ui: string;
+    };
     fetching: boolean;
     initialized: boolean;
 }
@@ -325,6 +330,11 @@ export interface AnnotationState {
         saving: {
             uploading: boolean;
             statuses: string[];
+        };
+        zLayer: {
+            min: number;
+            max: number;
+            cur: number;
         };
     };
     propagate: {

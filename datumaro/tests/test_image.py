@@ -8,7 +8,7 @@ import datumaro.util.image as image_module
 from datumaro.util.test_utils import TestDir
 
 
-class ImageTest(TestCase):
+class ImageOperationsTest(TestCase):
     def setUp(self):
         self.default_backend = image_module._IMAGE_BACKEND
 

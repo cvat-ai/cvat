@@ -6,25 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0.alpha] - 2020-02-XX
 ### Added
-- Server only support for projects. Extend REST API v1 (/api/v1/projects*).
-- Ability to [get basic information about users without admin permissions](
-https://github.com/opencv/cvat/issues/750).
-- Changed REST API: removed PUT and added DELETE methods for /api/v1/users/ID.
+- Server only support for projects. Extend REST API v1 (/api/v1/projects*)
+- Ability to get basic information about users without admin permissions ([#750](https://github.com/opencv/cvat/issues/750))
+- Changed REST API: removed PUT and added DELETE methods for /api/v1/users/ID
 - Mask-RCNN Auto Annotation Script in OpenVINO format
 - Yolo Auto Annotation Script
 - Auto segmentation using Mask_RCNN component (Keras+Tensorflow Mask R-CNN Segmentation)
-- Added MOT CSV format support
-- Ability to dump/load annotations in LabelMe format from UI
 - REST API to export an annotation task (images + annotations)
-- Datumaro is an experimental framework to build, analyze, debug and visualize datasets for DL algorithms
-- Text Detection Auto Annoation Script in OpenVINO format for version 4
+- [Datumaro](https://github.com/opencv/cvat/tree/develop/datumaro) - a framework to build, analyze, debug and visualize datasets
+- Text Detection Auto Annotation Script in OpenVINO format for version 4
 - Added in OpenVINO Semantic Segmentation for roads
 - Ability to visualize labels when using Auto Annotation runner
+- MOT CSV format support ([#830](https://github.com/opencv/cvat/pull/830))
+- LabelMe format support ([#844](https://github.com/opencv/cvat/pull/844))
+- Segmentation MASK format import (as polygons) ([#1163](https://github.com/opencv/cvat/pull/1163))
+- Git repositories can be specified with IPv4 address ([#827](https://github.com/opencv/cvat/pull/827))
 
 ### Changed
 - page_size parameter for all REST API methods
 - React & Redux & Antd based dashboard
 - Yolov3 interpretation script fix and changes to mapping.json
+- YOLO format support ([#1151](https://github.com/opencv/cvat/pull/1151))
 
 ### Deprecated
 -
@@ -33,8 +35,12 @@ https://github.com/opencv/cvat/issues/750).
 -
 
 ### Fixed
-- [Mask problem on coco json style](https://github.com/opencv/cvat/issues/718)
-- [Exception in Git plugin](https://github.com/opencv/cvat/issues/826)
+- Exception in Git plugin [#826](https://github.com/opencv/cvat/issues/826)
+- Label ids in TFrecord format now start from 1 [#866](https://github.com/opencv/cvat/issues/866)
+- Mask problem in COCO JSON style [#718](https://github.com/opencv/cvat/issues/718)
+- Datasets (or tasks) can be joined and split to subsets with Datumaro [#791](https://github.com/opencv/cvat/issues/791)
+- Output labels for VOC format can be specified with Datumaro [#942](https://github.com/opencv/cvat/issues/942)
+- Annotations can be filtered before dumping with Datumaro [#994](https://github.com/opencv/cvat/issues/994)
 
 ### Security
 -

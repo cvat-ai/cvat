@@ -8,7 +8,7 @@ format_spec = {
         {
             "display_name": "{name} {format} {version}",
             "format": "ZIP",
-            "version": "1.0",
+            "version": "1.1",
             "handler": "dump"
         },
     ],
@@ -16,101 +16,57 @@ format_spec = {
         {
             "display_name": "{name} {format} {version}",
             "format": "ZIP",
-            "version": "1.0",
+            "version": "1.1",
             "handler": "load"
         },
     ],
 }
 
 def load(file_object, annotations):
-    from pyunpack import Archive
+    from glob import glob
     import os
+    import os.path as osp
+    import shutil
+    from pyunpack import Archive
     from tempfile import TemporaryDirectory
+    from datumaro.plugins.voc_format.importer import VocImporter
+    from cvat.apps.dataset_manager.bindings import import_dm_annotations
 
-    def parse_xml_file(annotation_file):
-        import xml.etree.ElementTree as ET
-        root = ET.parse(annotation_file).getroot()
-        frame_number = annotations.match_frame(root.find('filename').text)
-
-        for obj_tag in root.iter('object'):
-            bbox_tag = obj_tag.find("bndbox")
-            label = obj_tag.find('name').text
-            xmin = float(bbox_tag.find('xmin').text)
-            ymin = float(bbox_tag.find('ymin').text)
-            xmax = float(bbox_tag.find('xmax').text)
-            ymax = float(bbox_tag.find('ymax').text)
-            truncated = obj_tag.find('truncated')
-            truncated = truncated.text if truncated is not None else 0
-            difficult = obj_tag.find('difficult')
-            difficult = difficult.text if difficult is not None else 0
-
-            annotations.add_shape(annotations.LabeledShape(
-                type='rectangle',
-                frame=frame_number,
-                label=label,
-                points=[xmin, ymin, xmax, ymax],
-                occluded=False,
-                attributes=[
-                    annotations.Attribute('truncated', truncated),
-                    annotations.Attribute('difficult', difficult),
-                ],
-            ))
-
-    archive_file = getattr(file_object, 'name')
+    archive_file = file_object if isinstance(file_object, str) else getattr(file_object, "name")
     with TemporaryDirectory() as tmp_dir:
         Archive(archive_file).extractall(tmp_dir)
 
-        for dirpath, _, filenames in os.walk(tmp_dir):
-            for _file in filenames:
-                if '.xml' == os.path.splitext(_file)[1]:
-                    parse_xml_file(os.path.join(dirpath, _file))
+        # support flat archive layout
+        anno_dir = osp.join(tmp_dir, 'Annotations')
+        if not osp.isdir(anno_dir):
+            anno_files = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
+            subsets_dir = osp.join(tmp_dir, 'ImageSets', 'Main')
+            os.makedirs(subsets_dir, exist_ok=True)
+            with open(osp.join(subsets_dir, 'train.txt'), 'w') as subset_file:
+                for f in anno_files:
+                    subset_file.write(osp.splitext(osp.basename(f))[0] + '\n')
+
+            os.makedirs(anno_dir, exist_ok=True)
+            for f in anno_files:
+                shutil.move(f, anno_dir)
+
+        dm_project = VocImporter()(tmp_dir)
+        dm_dataset = dm_project.make_dataset()
+        import_dm_annotations(dm_dataset, annotations)
 
 def dump(file_object, annotations):
-    from pascal_voc_writer import Writer
-    import os
-    from zipfile import ZipFile
+    from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor
+    from cvat.apps.dataset_manager.util import make_zip_archive
+    from datumaro.components.project import Environment, Dataset
     from tempfile import TemporaryDirectory
 
-    with TemporaryDirectory() as out_dir:
-        with ZipFile(file_object, 'w') as output_zip:
-            for frame_annotation in annotations.group_by_frame():
-                image_name = frame_annotation.name
-                width = frame_annotation.width
-                height = frame_annotation.height
+    env = Environment()
+    id_from_image = env.transforms.get('id_from_image_name')
 
-                writer = Writer(image_name, width, height)
-                writer.template_parameters['path'] = ''
-                writer.template_parameters['folder'] = ''
-
-                for shape in frame_annotation.labeled_shapes:
-                    if shape.type != "rectangle":
-                        continue
-
-                    label = shape.label
-                    xtl = shape.points[0]
-                    ytl = shape.points[1]
-                    xbr = shape.points[2]
-                    ybr = shape.points[3]
-
-                    difficult = 0
-                    truncated = 0
-                    for attribute in shape.attributes:
-                        if attribute.name == 'truncated' and 'true' == attribute.value.lower():
-                            truncated = 1
-                        elif attribute.name == 'difficult' and 'true' == attribute.value.lower():
-                            difficult = 1
-
-                    writer.addObject(
-                        name=label,
-                        xmin=xtl,
-                        ymin=ytl,
-                        xmax=xbr,
-                        ymax=ybr,
-                        truncated=truncated,
-                        difficult=difficult,
-                    )
-
-                anno_name = os.path.basename('{}.{}'.format(os.path.splitext(image_name)[0], 'xml'))
-                anno_file = os.path.join(out_dir, anno_name)
-                writer.save(anno_file)
-                output_zip.write(filename=anno_file, arcname=anno_name)
+    extractor = CvatAnnotationsExtractor('', annotations)
+    extractor = extractor.transform(id_from_image)
+    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
+    converter = env.make_converter('voc_detection')
+    with TemporaryDirectory() as temp_dir:
+        converter(extractor, save_dir=temp_dir)
+        make_zip_archive(temp_dir, file_object)

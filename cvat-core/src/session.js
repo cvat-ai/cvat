@@ -290,7 +290,7 @@
                 *   <li> clientID == 50 </li>
                 *   <li> (label=="car" & attr["parked"]==true)
                 * | (label=="pedestrian" & width > 150) </li>
-                *   <li> (( label==["car \\"mazda\\""]) &
+                *   <li> (( label==["car \"mazda\""]) &
                 * (attr["sunglass ( help ) es"]==true |
                 * (width > 150 | height > 150 & (clientID == serverID))))) </li>
                 * </ul>

@@ -559,7 +559,9 @@
             async function dumpAnnotations(id, name, format) {
                 const { backendAPI } = config;
                 const filename = name.replace(/\//g, '_');
-                let url = `${backendAPI}/tasks/${id}/annotations/${filename}?format=${format}`;
+                const baseURL = `${backendAPI}/tasks/${id}/annotations/${encodeURIComponent(filename)}`;
+                let query = `format=${encodeURIComponent(format)}`;
+                let url = `${baseURL}?${query}`;
 
                 return new Promise((resolve, reject) => {
                     async function request() {
@@ -569,7 +571,8 @@
                             if (response.status === 202) {
                                 setTimeout(request, 3000);
                             } else {
-                                url = `${url}&action=download`;
+                                query = `${query}&action=download`;
+                                url = `${baseURL}?${query}`;
                                 resolve(url);
                             }
                         }).catch((errorData) => {

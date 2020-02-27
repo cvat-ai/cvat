@@ -9,8 +9,9 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.plugins.datumaro_format.converter import DatumaroConverter
-from datumaro.util.test_utils import TestDir, item_to_str
 from datumaro.util.mask_tools import generate_colormap
+from datumaro.util.image import Image
+from datumaro.util.test_utils import TestDir, item_to_str
 
 
 class DatumaroConverterTest(TestCase):
@@ -48,7 +49,7 @@ class DatumaroConverterTest(TestCase):
                 DatasetItem(id=42, subset='test'),
 
                 DatasetItem(id=42),
-                DatasetItem(id=43),
+                DatasetItem(id=43, image=Image(path='1/b/c.qq', size=(2, 4))),
             ])
 
         def categories(self):

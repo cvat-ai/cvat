@@ -38,8 +38,6 @@
         objectState.__internal = {
             save: this.save.bind(this, frame, objectState),
             delete: this.delete.bind(this),
-            up: this.up.bind(this, frame, objectState),
-            down: this.down.bind(this, frame, objectState),
         };
 
         return objectState;
@@ -270,20 +268,10 @@
             super(data, clientID, injection);
 
             this.frameMeta = injection.frameMeta;
-            this.collectionZ = injection.collectionZ;
             this.hidden = false;
 
             this.color = color;
             this.shapeType = null;
-        }
-
-        _getZ(frame) {
-            this.collectionZ[frame] = this.collectionZ[frame] || {
-                max: 0,
-                min: 0,
-            };
-
-            return this.collectionZ[frame];
         }
 
         _validateStateBeforeSave(frame, data, updated) {
@@ -392,20 +380,6 @@
                 'Is not implemented',
             );
         }
-
-        // Increase ZOrder within frame
-        up(frame, objectState) {
-            const z = this._getZ(frame);
-            z.max++;
-            objectState.zOrder = z.max;
-        }
-
-        // Decrease ZOrder within frame
-        down(frame, objectState) {
-            const z = this._getZ(frame);
-            z.min--;
-            objectState.zOrder = z.min;
-        }
     }
 
     class Shape extends Drawn {
@@ -414,10 +388,6 @@
             this.points = data.points;
             this.occluded = data.occluded;
             this.zOrder = data.z_order;
-
-            const z = this._getZ(this.frame);
-            z.max = Math.max(z.max, this.zOrder || 0);
-            z.min = Math.min(z.min, this.zOrder || 0);
         }
 
         // Method is used to export data to the server
@@ -581,10 +551,6 @@
                         return attributeAccumulator;
                     }, {}),
                 };
-
-                const z = this._getZ(value.frame);
-                z.max = Math.max(z.max, value.z_order);
-                z.min = Math.min(z.min, value.z_order);
 
                 return shapeAccumulator;
             }, {});
@@ -1064,7 +1030,7 @@
                     points: [...leftPosition.points],
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
-                    zOrder: 0,
+                    zOrder: leftPosition.zOrder,
                     keyframe: targetFrame in this.shapes,
                 };
             }
@@ -1074,7 +1040,7 @@
                     points: [...rightPosition.points],
                     occluded: rightPosition.occluded,
                     outside: true,
-                    zOrder: 0,
+                    zOrder: rightPosition.zOrder,
                     keyframe: targetFrame in this.shapes,
                 };
             }

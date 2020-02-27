@@ -119,6 +119,11 @@ def create_xml_dumper(file_object):
             self.xmlgen.startElement("points", points)
             self._level += 1
 
+        def open_cuboid(self, cuboid):
+            self._indent()
+            self.xmlgen.startElement("cuboid", cuboid)
+            self._level += 1
+
         def add_attribute(self, attribute):
             self._indent()
             self.xmlgen.startElement("attribute", {"name": attribute["name"]})
@@ -144,6 +149,11 @@ def create_xml_dumper(file_object):
             self._level -= 1
             self._indent()
             self.xmlgen.endElement("points")
+
+        def close_cuboid(self):
+            self._level -= 1
+            self._indent()
+            self.xmlgen.endElement("cuboid")
 
         def close_image(self):
             self._level -= 1
@@ -191,6 +201,25 @@ def dump_as_cvat_annotation(file_object, annotations):
                     ("xbr", "{:.2f}".format(shape.points[2])),
                     ("ybr", "{:.2f}".format(shape.points[3]))
                 ]))
+            elif shape.type == "cuboid":
+                dump_data.update(OrderedDict([
+                    ("xtl1", "{:.2f}".format(shape.points[0])),
+                    ("ytl1", "{:.2f}".format(shape.points[1])),
+                    ("xbl1", "{:.2f}".format(shape.points[2])),
+                    ("ybl1", "{:.2f}".format(shape.points[3])),
+                    ("xtr1", "{:.2f}".format(shape.points[4])),
+                    ("ytr1", "{:.2f}".format(shape.points[5])),
+                    ("xbr1", "{:.2f}".format(shape.points[6])),
+                    ("ybr1", "{:.2f}".format(shape.points[7])),
+                    ("xtl2", "{:.2f}".format(shape.points[8])),
+                    ("ytl2", "{:.2f}".format(shape.points[9])),
+                    ("xbl2", "{:.2f}".format(shape.points[10])),
+                    ("ybl2", "{:.2f}".format(shape.points[11])),
+                    ("xtr2", "{:.2f}".format(shape.points[12])),
+                    ("ytr2", "{:.2f}".format(shape.points[13])),
+                    ("xbr2", "{:.2f}".format(shape.points[14])),
+                    ("ybr2", "{:.2f}".format(shape.points[15]))
+                ]))
             else:
                 dump_data.update(OrderedDict([
                     ("points", ';'.join((
@@ -206,6 +235,7 @@ def dump_as_cvat_annotation(file_object, annotations):
             if shape.group:
                 dump_data['group_id'] = str(shape.group)
 
+
             if shape.type == "rectangle":
                 dumper.open_box(dump_data)
             elif shape.type == "polygon":
@@ -214,6 +244,8 @@ def dump_as_cvat_annotation(file_object, annotations):
                 dumper.open_polyline(dump_data)
             elif shape.type == "points":
                 dumper.open_points(dump_data)
+            elif shape.type == "cuboid":
+                dumper.open_cuboid(dump_data)
             else:
                 raise NotImplementedError("unknown shape type")
 
@@ -231,6 +263,8 @@ def dump_as_cvat_annotation(file_object, annotations):
                 dumper.close_polyline()
             elif shape.type == "points":
                 dumper.close_points()
+            elif shape.type == "cuboid":
+                dumper.close_cuboid()
             else:
                 raise NotImplementedError("unknown shape type")
 
@@ -268,6 +302,25 @@ def dump_as_cvat_interpolation(file_object, annotations):
                     ("xbr", "{:.2f}".format(shape.points[2])),
                     ("ybr", "{:.2f}".format(shape.points[3])),
                 ]))
+            elif shape.type == "cuboid":
+                dump_data.update(OrderedDict([
+                    ("xtl1", "{:.2f}".format(shape.points[0])),
+                    ("ytl1", "{:.2f}".format(shape.points[1])),
+                    ("xbl1", "{:.2f}".format(shape.points[2])),
+                    ("ybl1", "{:.2f}".format(shape.points[3])),
+                    ("xtr1", "{:.2f}".format(shape.points[4])),
+                    ("ytr1", "{:.2f}".format(shape.points[5])),
+                    ("xbr1", "{:.2f}".format(shape.points[6])),
+                    ("ybr1", "{:.2f}".format(shape.points[7])),
+                    ("xtl2", "{:.2f}".format(shape.points[8])),
+                    ("ytl2", "{:.2f}".format(shape.points[9])),
+                    ("xbl2", "{:.2f}".format(shape.points[10])),
+                    ("ybl2", "{:.2f}".format(shape.points[11])),
+                    ("xtr2", "{:.2f}".format(shape.points[12])),
+                    ("ytr2", "{:.2f}".format(shape.points[13])),
+                    ("xbr2", "{:.2f}".format(shape.points[14])),
+                    ("ybr2", "{:.2f}".format(shape.points[15]))
+                ]))
             else:
                 dump_data.update(OrderedDict([
                     ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
@@ -285,6 +338,8 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 dumper.open_polyline(dump_data)
             elif shape.type == "points":
                 dumper.open_points(dump_data)
+            elif shape.type == "cuboid":
+                dumper.open_cuboid(dump_data)
             else:
                 raise NotImplementedError("unknown shape type")
 
@@ -302,6 +357,8 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 dumper.close_polyline()
             elif shape.type == "points":
                 dumper.close_points()
+            elif shape.type == "cuboid":
+                dumper.close_cuboid()
             else:
                 raise NotImplementedError("unknown shape type")
         dumper.close_track()
@@ -347,7 +404,7 @@ def load(file_object, annotations):
     context = iter(context)
     ev, _ = next(context)
 
-    supported_shapes = ('box', 'polygon', 'polyline', 'points')
+    supported_shapes = ('box', 'polygon', 'polyline', 'points', 'cuboid')
 
     track = None
     shape = None
@@ -393,6 +450,24 @@ def load(file_object, annotations):
                     shape['points'].append(el.attrib['ytl'])
                     shape['points'].append(el.attrib['xbr'])
                     shape['points'].append(el.attrib['ybr'])
+                elif el.tag == 'cuboid':
+                    shape['points'].append(el.attrib['xtl1'])
+                    shape['points'].append(el.attrib['ytl1'])
+                    shape['points'].append(el.attrib['xbl1'])
+                    shape['points'].append(el.attrib['ybl1'])
+                    shape['points'].append(el.attrib['xtr1'])
+                    shape['points'].append(el.attrib['ytr1'])
+                    shape['points'].append(el.attrib['xbr1'])
+                    shape['points'].append(el.attrib['ybr1'])
+
+                    shape['points'].append(el.attrib['xtl2'])
+                    shape['points'].append(el.attrib['ytl2'])
+                    shape['points'].append(el.attrib['xbl2'])
+                    shape['points'].append(el.attrib['ybl2'])
+                    shape['points'].append(el.attrib['xtr2'])
+                    shape['points'].append(el.attrib['ytr2'])
+                    shape['points'].append(el.attrib['xbr2'])
+                    shape['points'].append(el.attrib['ybr2'])
                 else:
                     for pair in el.attrib['points'].split(';'):
                         shape['points'].extend(map(float, pair.split(',')))

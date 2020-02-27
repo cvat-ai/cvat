@@ -1,11 +1,10 @@
 import numpy as np
 import os.path as osp
-from PIL import Image
 
 from unittest import TestCase
 
 from datumaro.util.test_utils import TestDir
-from datumaro.util.image import lazy_image
+from datumaro.util.image import lazy_image, load_image, save_image, Image
 from datumaro.util.image_cache import ImageCache
 
 
@@ -13,10 +12,8 @@ class LazyImageTest(TestCase):
     def test_cache_works(self):
         with TestDir() as test_dir:
             image = np.ones((100, 100, 3), dtype=np.uint8)
-            image = Image.fromarray(image).convert('RGB')
-
             image_path = osp.join(test_dir, 'image.jpg')
-            image.save(image_path)
+            save_image(image_path, image)
 
             caching_loader = lazy_image(image_path, cache=None)
             self.assertTrue(caching_loader() is caching_loader())
@@ -47,3 +44,36 @@ class ImageCacheTest(TestCase):
         ImageCache.get_instance().clear()
         self.assertTrue(loader() is loader())
         self.assertEqual(ImageCache.get_instance().size(), 1)
+
+class ImageTest(TestCase):
+    def test_lazy_image_shape(self):
+        data = np.ones((5, 6, 7))
+
+        image_lazy = Image(data=data, size=(2, 4))
+        image_eager = Image(data=data)
+
+        self.assertEqual((2, 4), image_lazy.size)
+        self.assertEqual((5, 6), image_eager.size)
+
+    @staticmethod
+    def test_ctors():
+        with TestDir() as test_dir:
+            path = osp.join(test_dir, 'path.png')
+            image = np.ones([2, 4, 3])
+            save_image(path, image)
+
+            for args in [
+                { 'data': image },
+                { 'data': image, 'path': path },
+                { 'data': image, 'path': path, 'size': (2, 4) },
+                { 'data': image, 'path': path, 'loader': load_image, 'size': (2, 4) },
+                { 'path': path },
+                { 'path': path, 'loader': load_image },
+                { 'path': path, 'size': (2, 4) },
+            ]:
+                img = Image(**args)
+                # pylint: disable=pointless-statement
+                if img.has_data:
+                    img.data
+                img.size
+                # pylint: enable=pointless-statement

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from lxml import etree as ET # NOTE: lxml has proper XPath implementation
-from datumaro.components.extractor import (DatasetItem, Extractor,
+from datumaro.components.extractor import (Transform,
     Annotation, AnnotationType,
     Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
 )
@@ -31,11 +31,12 @@ class DatasetItemEncoder:
     def encode_image(cls, image):
         image_elem = ET.Element('image')
 
-        h, w = image.shape[:2]
-        c = 1 if len(image.shape) == 2 else image.shape[2]
+        h, w = image.size
         ET.SubElement(image_elem, 'width').text = str(w)
         ET.SubElement(image_elem, 'height').text = str(h)
-        ET.SubElement(image_elem, 'depth').text = str(c)
+
+        ET.SubElement(image_elem, 'has_data').text = '%d' % int(image.has_data)
+        ET.SubElement(image_elem, 'path').text = image.path
 
         return image_elem
 
@@ -81,10 +82,6 @@ class DatasetItemEncoder:
         ET.SubElement(ann_elem, 'label').text = \
             str(cls._get_label(obj.label, categories))
         ET.SubElement(ann_elem, 'label_id').text = str(obj.label)
-
-        mask = obj.image
-        if mask is not None:
-            ann_elem.append(cls.encode_image(mask))
 
         return ann_elem
 
@@ -218,39 +215,9 @@ def XPathDatasetFilter(extractor, xpath=None):
         DatasetItemEncoder.encode(item, extractor.categories())))
     return extractor.select(f)
 
-class XPathAnnotationsFilter(Extractor): # NOTE: essentially, a transform
-    class ItemWrapper(DatasetItem):
-        def __init__(self, item, annotations):
-            self._item = item
-            self._annotations = annotations
-
-        @DatasetItem.id.getter
-        def id(self):
-            return self._item.id
-
-        @DatasetItem.subset.getter
-        def subset(self):
-            return self._item.subset
-
-        @DatasetItem.path.getter
-        def path(self):
-            return self._item.path
-
-        @DatasetItem.annotations.getter
-        def annotations(self):
-            return self._annotations
-
-        @DatasetItem.has_image.getter
-        def has_image(self):
-            return self._item.has_image
-
-        @DatasetItem.image.getter
-        def image(self):
-            return self._item.image
-
+class XPathAnnotationsFilter(Transform):
     def __init__(self, extractor, xpath=None, remove_empty=False):
-        super().__init__()
-        self._extractor = extractor
+        super().__init__(extractor)
 
         if xpath is not None:
             xpath = ET.XPath(xpath)
@@ -258,24 +225,16 @@ class XPathAnnotationsFilter(Extractor): # NOTE: essentially, a transform
 
         self._remove_empty = remove_empty
 
-    def __len__(self):
-        return len(self._extractor)
-
     def __iter__(self):
         for item in self._extractor:
-            item = self._filter_item(item)
+            item = self.transform_item(item)
             if item is not None:
                 yield item
 
-    def subsets(self):
-        return self._extractor.subsets()
-
-    def categories(self):
-        return self._extractor.categories()
-
-    def _filter_item(self, item):
+    def transform_item(self, item):
         if self._filter is None:
             return item
+
         encoded = DatasetItemEncoder.encode(item, self._extractor.categories())
         filtered = self._filter(encoded)
         filtered = [elem for elem in filtered if elem.tag == 'annotation']
@@ -285,4 +244,4 @@ class XPathAnnotationsFilter(Extractor): # NOTE: essentially, a transform
 
         if self._remove_empty and len(annotations) == 0:
             return None
-        return self.ItemWrapper(item, annotations)
+        return self.wrap_item(item, annotations=annotations)

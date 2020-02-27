@@ -16,7 +16,8 @@ from datumaro.components.dataset_filter import DatasetItemEncoder
 from datumaro.components.extractor import AnnotationType
 from datumaro.components.cli_plugin import CliPlugin
 from .diff import DiffVisualizer
-from ...util import add_subparser, CliException, MultilineFormatter
+from ...util import add_subparser, CliException, MultilineFormatter, \
+    make_file_name
 from ...util.project import make_project_path, load_project, \
     generate_next_dir_name
 
@@ -155,15 +156,16 @@ def import_command(args):
     if project_name is None:
         project_name = osp.basename(project_dir)
 
-    extra_args = {}
     try:
         env = Environment()
         importer = env.make_importer(args.format)
-        if hasattr(importer, 'from_cmdline'):
-            extra_args = importer.from_cmdline(args.extra_args)
     except KeyError:
         raise CliException("Importer for format '%s' is not found" % \
             args.format)
+
+    extra_args = {}
+    if hasattr(importer, 'from_cmdline'):
+        extra_args = importer.from_cmdline(args.extra_args)
 
     log.info("Importing project from '%s' as '%s'" % \
         (args.source, args.format))
@@ -286,18 +288,19 @@ def export_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-export-%s' % \
-            (project.config.project_name, args.format))
+        dst_dir = generate_next_dir_name('%s-%s' % \
+            (project.config.project_name, make_file_name(args.format)))
     dst_dir = osp.abspath(dst_dir)
 
     try:
         converter = project.env.converters.get(args.format)
-        if hasattr(converter, 'from_cmdline'):
-            extra_args = converter.from_cmdline(args.extra_args)
-            converter = converter(**extra_args)
     except KeyError:
         raise CliException("Converter for format '%s' is not found" % \
             args.format)
+
+    if hasattr(converter, 'from_cmdline'):
+        extra_args = converter.from_cmdline(args.extra_args)
+        converter = converter(**extra_args)
 
     filter_args = FilterModes.make_filter_args(args.filter_mode)
 
@@ -554,17 +557,18 @@ def transform_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-transform' % \
-            project.config.project_name)
+        dst_dir = generate_next_dir_name('%s-%s' % \
+            (project.config.project_name, make_file_name(args.transform)))
     dst_dir = osp.abspath(dst_dir)
 
-    extra_args = {}
     try:
         transform = project.env.transforms.get(args.transform)
-        if hasattr(transform, 'from_cmdline'):
-            extra_args = transform.from_cmdline(args.extra_args)
     except KeyError:
         raise CliException("Transform '%s' is not found" % args.transform)
+
+    extra_args = {}
+    if hasattr(transform, 'from_cmdline'):
+        extra_args = transform.from_cmdline(args.extra_args)
 
     log.info("Loading the project...")
     dataset = project.make_dataset()
@@ -648,7 +652,7 @@ def info_command(args):
         print_extractor_info(subset, indent="      ")
 
     print("Models:")
-    for model_name, model in env.config.models.items():
+    for model_name, model in config.models.items():
         print("  model '%s':" % model_name)
         print("    type:", model.launcher)
 
