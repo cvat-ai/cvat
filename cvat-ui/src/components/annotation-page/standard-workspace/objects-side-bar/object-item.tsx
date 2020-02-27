@@ -14,11 +14,13 @@ import {
     Menu,
     Button,
     Modal,
+    Popover,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
 import { RadioChangeEvent } from 'antd/lib/radio';
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
 
 import {
     ObjectOutsideIcon,
@@ -134,12 +136,12 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
     return (
         <Row type='flex' align='middle'>
             <Col span={10}>
-                <Text style={{ fontSize: 16 }}>{clientID}</Text>
+                <Text style={{ fontSize: 12 }}>{clientID}</Text>
                 <br />
-                <Text style={{ fontSize: 10 }}>{type}</Text>
+                <Text type='secondary' style={{ fontSize: 10 }}>{type}</Text>
             </Col>
             <Col span={12}>
-                <Select value={`${labelID}`} onChange={changeLabel}>
+                <Select size='small' value={`${labelID}`} onChange={changeLabel}>
                     { labels.map((label: any): JSX.Element => (
                         <Select.Option key={label.id} value={`${label.id}`}>
                             {label.name}
@@ -365,7 +367,7 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                         changeAttribute(attrID, value);
                     }}
                 >
-                    <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                    <Text strong className='cvat-text'>
                         {attrName}
                     </Text>
                 </Checkbox>
@@ -381,6 +383,7 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                         <Text strong className='cvat-text'>{attrName}</Text>
                     </legend>
                     <Radio.Group
+                        size='small'
                         value={attrValue}
                         onChange={(event: RadioChangeEvent): void => {
                             changeAttribute(attrID, event.target.value);
@@ -399,12 +402,13 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
         return (
             <>
                 <Col span={24}>
-                    <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                    <Text strong className='cvat-text'>
                         {attrName}
                     </Text>
                 </Col>
                 <Col span={24}>
                     <Select
+                        size='small'
                         onChange={(value: string): void => {
                             changeAttribute(attrID, value);
                         }}
@@ -426,12 +430,13 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
         return (
             <>
                 <Col span={24}>
-                    <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                    <Text strong className='cvat-text'>
                         {attrName}
                     </Text>
                 </Col>
                 <Col span={24}>
                     <InputNumber
+                        size='small'
                         onChange={(value: number | undefined): void => {
                             if (typeof (value) !== 'undefined') {
                                 changeAttribute(attrID, `${value}`);
@@ -451,12 +456,13 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
     return (
         <>
             <Col span={24}>
-                <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                <Text strong className='cvat-text'>
                     {attrName}
                 </Text>
             </Col>
             <Col span={24}>
                 <Input
+                    size='small'
                     onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
                         changeAttribute(attrID, event.target.value);
                     }}
@@ -517,7 +523,7 @@ function ItemAttributesComponent(props: ItemAttributesComponentProps): JSX.Eleme
                 onChange={collapse}
             >
                 <Collapse.Panel
-                    header='Details'
+                    header={<span style={{ fontSize: '11px' }}>Details</span>}
                     key='details'
                 >
                     { sorted.map((attribute: any): JSX.Element => (
@@ -561,6 +567,7 @@ interface Props {
     keyframe: boolean | undefined;
     attrValues: Record<number, string>;
     color: string;
+    colors: string[];
 
     labels: any[];
     attributes: any[];
@@ -591,6 +598,7 @@ interface Props {
     show(): void;
     changeLabel(labelID: string): void;
     changeAttribute(attrID: number, value: string): void;
+    changeColor(color: string): void;
     collapse(): void;
 }
 
@@ -634,6 +642,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         attrValues,
         labelID,
         color,
+        colors,
 
         attributes,
         labels,
@@ -664,6 +673,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         show,
         changeLabel,
         changeAttribute,
+        changeColor,
         collapse,
     } = props;
 
@@ -674,62 +684,80 @@ function ObjectItemComponent(props: Props): JSX.Element {
         : 'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
 
     return (
-        <div
-            onMouseEnter={activate}
-            id={`cvat-objects-sidebar-state-item-${clientID}`}
-            className={className}
-            style={{ borderLeftStyle: 'solid', borderColor: ` ${color}` }}
-        >
-            <ItemTop
-                serverID={serverID}
-                clientID={clientID}
-                labelID={labelID}
-                labels={labels}
-                type={type}
-                locked={locked}
-                changeLabel={changeLabel}
-                copy={copy}
-                remove={remove}
-                propagate={propagate}
-                createURL={createURL}
-                toBackground={toBackground}
-                toForeground={toForeground}
-            />
-            <ItemButtons
-                objectType={objectType}
-                occluded={occluded}
-                outside={outside}
-                locked={locked}
-                pinned={pinned}
-                hidden={hidden}
-                keyframe={keyframe}
-                navigateFirstKeyframe={navigateFirstKeyframe}
-                navigatePrevKeyframe={navigatePrevKeyframe}
-                navigateNextKeyframe={navigateNextKeyframe}
-                navigateLastKeyframe={navigateLastKeyframe}
-                setOccluded={setOccluded}
-                unsetOccluded={unsetOccluded}
-                setOutside={setOutside}
-                unsetOutside={unsetOutside}
-                setKeyframe={setKeyframe}
-                unsetKeyframe={unsetKeyframe}
-                lock={lock}
-                unlock={unlock}
-                pin={pin}
-                unpin={unpin}
-                hide={hide}
-                show={show}
-            />
-            { !!attributes.length
-                && (
-                    <ItemAttributes
-                        collapsed={collapsed}
-                        attributes={attributes}
-                        values={attrValues}
-                        collapse={collapse}
-                        changeAttribute={changeAttribute}
+        <div style={{ display: 'flex' }}>
+            <Popover
+                placement='left'
+                trigger='click'
+                content={(
+                    <ColorChanger
+                        onChange={changeColor}
+                        colors={colors}
                     />
                 )}
+            >
+                <div
+                    className='cvat-objects-sidebar-state-item-color'
+                    style={{ background: ` ${color}` }}
+                />
+            </Popover>
+
+            <div
+                onMouseEnter={activate}
+                id={`cvat-objects-sidebar-state-item-${clientID}`}
+                className={className}
+                style={{ borderColor: ` ${color}` }}
+            >
+                <ItemTop
+                    serverID={serverID}
+                    clientID={clientID}
+                    labelID={labelID}
+                    labels={labels}
+                    type={type}
+                    locked={locked}
+                    changeLabel={changeLabel}
+                    copy={copy}
+                    remove={remove}
+                    propagate={propagate}
+                    createURL={createURL}
+                    toBackground={toBackground}
+                    toForeground={toForeground}
+                />
+                <ItemButtons
+                    objectType={objectType}
+                    occluded={occluded}
+                    outside={outside}
+                    locked={locked}
+                    pinned={pinned}
+                    hidden={hidden}
+                    keyframe={keyframe}
+                    navigateFirstKeyframe={navigateFirstKeyframe}
+                    navigatePrevKeyframe={navigatePrevKeyframe}
+                    navigateNextKeyframe={navigateNextKeyframe}
+                    navigateLastKeyframe={navigateLastKeyframe}
+                    setOccluded={setOccluded}
+                    unsetOccluded={unsetOccluded}
+                    setOutside={setOutside}
+                    unsetOutside={unsetOutside}
+                    setKeyframe={setKeyframe}
+                    unsetKeyframe={unsetKeyframe}
+                    lock={lock}
+                    unlock={unlock}
+                    pin={pin}
+                    unpin={unpin}
+                    hide={hide}
+                    show={show}
+                />
+                { !!attributes.length
+                    && (
+                        <ItemAttributes
+                            collapsed={collapsed}
+                            attributes={attributes}
+                            values={attrValues}
+                            collapse={collapse}
+                            changeAttribute={changeAttribute}
+                        />
+                    )}
+            </div>
         </div>
     );
 }
