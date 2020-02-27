@@ -47,16 +47,21 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
         key: 'job',
         render: (id: number): JSX.Element => (
             <div>
-                <Button
-                    type='link'
-                    onClick={(): void => {
-                        push(`/tasks/${taskId}/jobs/${id}`);
-                    }}
-                >
-                    {`Job #${id}`}
-                </Button>
+                <Button type='link' href={`${baseURL}/?id=${id}`}>{`Job #${id}`}</Button>
                 |
-                <Button type='link' href={`${baseURL}/?id=${id}`}>Legacy UI</Button>
+                <Tooltip title='Beta version of new UI written in React. It is to get
+                                acquainted only, we do not recommend use it to annotations
+                                process because it is lack of some features and can be unstable.'
+                >
+                    <Button
+                        type='link'
+                        onClick={(): void => {
+                            push(`/tasks/${taskId}/jobs/${id}`);
+                        }}
+                    >
+                        Try new UI
+                    </Button>
+                </Tooltip>
             </div>
         ),
     }, {
