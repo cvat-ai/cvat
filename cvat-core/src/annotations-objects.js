@@ -1077,7 +1077,7 @@
                 id: this.serverID,
                 frame: this.frame,
                 label_id: this.label.id,
-                group: this.groupObject,
+                group: this.group,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     attributeAccumulator.push({
                         spec_id: attrId,
@@ -1104,10 +1104,7 @@
                 lock: this.lock,
                 attributes: { ...this.attributes },
                 label: this.label,
-                group: {
-                    color: this.group ? colors[this.group % colors.length] : defaultGroupColor,
-                    id: this.group,
-                },
+                group: this.groupObject,
                 updated: this.updated,
                 frame,
             };
