@@ -8,6 +8,7 @@ import {
 } from 'reducers/interfaces';
 import {
     collapseObjectItems,
+    changeLabelColorAsync,
     updateAnnotationsAsync,
     changeFrameAsync,
     removeObjectAsync,
@@ -46,6 +47,7 @@ interface DispatchToProps {
     removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
+    changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -129,6 +131,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         propagateObject(objectState: any): void {
             dispatch(propagateObjectAction(objectState));
+        },
+        changeLabelColor(
+            sessionInstance: any,
+            frameNumber: number,
+            label: any,
+            color: string,
+        ): void {
+            dispatch(changeLabelColorAsync(sessionInstance, frameNumber, label, color));
         },
     };
 }
@@ -336,11 +346,21 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private changeColor = (color: string): void => {
         const {
+            jobInstance,
             objectState,
+            colorBy,
+            changeLabelColor,
+            frameNumber,
         } = this.props;
 
-        objectState.color = color;
-        this.commit();
+        if (colorBy === ColorBy.INSTANCE) {
+            objectState.color = color;
+            this.commit();
+        } else if (colorBy === ColorBy.GROUP) {
+
+        } else if (colorBy === ColorBy.LABEL) {
+            changeLabelColor(jobInstance, frameNumber, objectState.label, color);
+        }
     };
 
     private changeLabel = (labelID: string): void => {
