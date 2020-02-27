@@ -8,6 +8,7 @@ import {
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
+import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 
 interface Props {
     autoSave: boolean;
@@ -26,6 +27,10 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
         autoSaveInterval,
         aamZoomMargin,
         showAllInterpolationTracks,
+        onSwitchAutoSave,
+        onChangeAutoSaveInterval,
+        onChangeAAMZoomMargin,
+        onSwitchShowingInterpolatedTracks,
     } = props;
 
     return (
@@ -35,6 +40,9 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Checkbox
                         className='cvat-text-color cvat-workspace-settings-auto-save'
                         checked={autoSave}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchAutoSave(event.target.checked);
+                        }}
                     >
                         Enable auto save
                     </Checkbox>
@@ -48,6 +56,11 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         max={60}
                         step={1}
                         value={Math.round(autoSaveInterval / (60 * 1000))}
+                        onChange={(value: number | undefined): void => {
+                            if (value) {
+                                onChangeAutoSaveInterval(value * 60 * 1000);
+                            }
+                        }}
                     />
                     <Text type='secondary'> minutes </Text>
                 </Col>
@@ -57,6 +70,9 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Checkbox
                         className='cvat-text-color'
                         checked={showAllInterpolationTracks}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchShowingInterpolatedTracks(event.target.checked);
+                        }}
                     >
                         Show all interpolation tracks
                     </Checkbox>
@@ -68,7 +84,16 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
             <Row className='cvat-workspace-settings-aam-zoom-margin'>
                 <Col>
                     <Text className='cvat-text-color'> Attribute annotation mode (AAM) zoom margin </Text>
-                    <InputNumber min={0} max={1000} value={aamZoomMargin} />
+                    <InputNumber
+                        min={0}
+                        max={1000}
+                        value={aamZoomMargin}
+                        onChange={(value: number | undefined): void => {
+                            if (value) {
+                                onChangeAAMZoomMargin(value);
+                            }
+                        }}
+                    />
                 </Col>
             </Row>
         </div>

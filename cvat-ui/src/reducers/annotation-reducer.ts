@@ -36,6 +36,8 @@ const defaultState: AnnotationState = {
             number: 0,
             data: null,
             fetching: false,
+            delay: 0,
+            changeTime: null,
         },
         playing: false,
     },
@@ -151,6 +153,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.CLOSE_JOB: {
+            return {
+                ...defaultState,
+                canvas: {
+                    ...defaultState.canvas,
+                    instance: new Canvas(),
+                },
+            };
+        }
         case AnnotationActionTypes.CHANGE_FRAME: {
             return {
                 ...state,
@@ -174,6 +185,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 states,
                 minZ,
                 maxZ,
+                delay,
+                changeTime,
             } = action.payload;
 
             const activatedStateID = states
@@ -188,6 +201,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         data,
                         number,
                         fetching: false,
+                        changeTime,
+                        delay,
                     },
                 },
                 annotations: {
