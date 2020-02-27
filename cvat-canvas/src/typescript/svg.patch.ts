@@ -1,7 +1,9 @@
-import * as SVG from 'svg.js';
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /* eslint-disable */
-
+import * as SVG from 'svg.js';
 import 'svg.draggable.js';
 import 'svg.resize.js';
 import 'svg.select.js';

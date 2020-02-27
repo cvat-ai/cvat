@@ -15,7 +15,7 @@ Next steps should work on clear Ubuntu 18.04.
 - Install necessary dependencies:
 
 ```sh
-$ sudo apt-get install -y curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
+$ sudo apt update && apt install -y nodejs npm curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
 ```
 
 -   Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
@@ -45,23 +45,28 @@ Password: ***
 Password (again): ***
 ```
 
-- Install UI packages and start UI debug server:
+- Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
 ```sh
-cd cvat-core && npm install
-cd ../cvat-canvas && npm install
-cd ../cvat-ui && npm install
-npm start
+npm install && \
+cd cvat-core && npm install && \
+cd ../cvat-canvas && npm install && \
+cd ../cvat-ui && npm install && npm start
 ```
 
-- Run Visual Studio Code from the virtual environment
+- Open new terminal (Ctrl + Shift + T), run Visual Studio Code from the virtual environment
 
 ```sh
- code .
+ cd .. && source .env/bin/activate && code
 ```
 
--   Inside Visual Studio Code install [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome) and [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extensions
+-   Install followig vscode extensions:
+    - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
+    - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
+    - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+    - [vscode-remark-lint](https://marketplace.visualstudio.com/items?itemName=drewbourne.vscode-remark-lint)
+    - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
 
--   Reload Visual Studio Code
+-   Reload Visual Studio Code from virtual environment
 
 -   Select `server: debug` configuration and start it (F5) to run REST server and its workers
 

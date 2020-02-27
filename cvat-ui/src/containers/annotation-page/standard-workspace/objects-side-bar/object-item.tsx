@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
