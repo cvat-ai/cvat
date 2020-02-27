@@ -50,8 +50,8 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                 <Button type='link' href={`${baseURL}/?id=${id}`}>{`Job #${id}`}</Button>
                 |
                 <Tooltip title='Beta version of new UI written in React. It is to get
-                                acquainted only, we do not recommend use it to annotations
-                                process because it is lack of some features and can be unstable.'
+                                acquainted only, we do not recommend use it to annotation
+                                process because it lacks of some features and can be unstable.'
                 >
                     <Button
                         type='link'

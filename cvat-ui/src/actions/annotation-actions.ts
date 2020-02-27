@@ -1040,3 +1040,22 @@ export function changeLabelColorAsync(
         }
     };
 }
+
+export function changeGroupColorAsync(
+    sessionInstance: any,
+    frameNumber: number,
+    group: number,
+    color: string,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const state: CombinedState = getStore().getState();
+        const groupStates = state.annotation.annotations.states
+            .filter((_state: any): boolean => _state.group.id === group);
+        if (groupStates.length) {
+            groupStates[0].group.color = color;
+            dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, groupStates));
+        } else {
+            dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, []));
+        }
+    };
+}

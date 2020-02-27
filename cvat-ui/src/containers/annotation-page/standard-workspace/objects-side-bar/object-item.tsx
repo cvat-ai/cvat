@@ -12,6 +12,7 @@ import {
     updateAnnotationsAsync,
     changeFrameAsync,
     removeObjectAsync,
+    changeGroupColorAsync,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
     propagateObject as propagateObjectAction,
@@ -48,6 +49,7 @@ interface DispatchToProps {
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
+    changeGroupColor(sessionInstance: any, frameNumber: number, group: number, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -139,6 +141,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             color: string,
         ): void {
             dispatch(changeLabelColorAsync(sessionInstance, frameNumber, label, color));
+        },
+        changeGroupColor(
+            sessionInstance: any,
+            frameNumber: number,
+            group: number,
+            color: string,
+        ): void {
+            dispatch(changeGroupColorAsync(sessionInstance, frameNumber, group, color));
         },
     };
 }
@@ -350,6 +360,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             objectState,
             colorBy,
             changeLabelColor,
+            changeGroupColor,
             frameNumber,
         } = this.props;
 
@@ -357,7 +368,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             objectState.color = color;
             this.commit();
         } else if (colorBy === ColorBy.GROUP) {
-
+            changeGroupColor(jobInstance, frameNumber, objectState.group.id, color);
         } else if (colorBy === ColorBy.LABEL) {
             changeLabelColor(jobInstance, frameNumber, objectState.label, color);
         }
