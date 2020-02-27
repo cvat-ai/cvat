@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 export interface Attribute {
     id: number;
     name: string;

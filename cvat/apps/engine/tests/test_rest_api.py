@@ -2650,8 +2650,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "CVAT XML 1.1 for images":
                 annotations["shapes"] = rectangle_shapes_with_attrs + rectangle_shapes_wo_attrs
 
-            elif annotation_format == "PASCAL VOC ZIP 1.0" or \
-                 annotation_format == "YOLO ZIP 1.0" or \
+            elif annotation_format == "PASCAL VOC ZIP 1.1" or \
+                 annotation_format == "YOLO ZIP 1.1" or \
                  annotation_format == "TFRecord ZIP 1.0":
                  annotations["shapes"] = rectangle_shapes_wo_attrs
 

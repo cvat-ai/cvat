@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import './styles.scss';
 import React from 'react';
 import {
@@ -11,7 +15,6 @@ import {
 import Text from 'antd/lib/typography/Text';
 
 import { RouteComponentProps } from 'react-router';
-import { withRouter } from 'react-router-dom';
 
 import WorkspaceSettingsContainer from 'containers/settings-page/workspace-settings';
 import PlayerSettingsContainer from 'containers/settings-page/player-settings';
@@ -76,4 +79,4 @@ function SettingsPage(props: RouteComponentProps): JSX.Element {
     );
 }
 
-export default withRouter(SettingsPage);
+export default SettingsPage;

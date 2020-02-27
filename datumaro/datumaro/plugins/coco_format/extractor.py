@@ -170,7 +170,7 @@ class _CocoExtractor(SourceExtractor):
                 )
 
             segmentation = ann.get('segmentation')
-            if segmentation is not None:
+            if segmentation and segmentation != [[]]:
                 rle = None
 
                 if isinstance(segmentation, list):

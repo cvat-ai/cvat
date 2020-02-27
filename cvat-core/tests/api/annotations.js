@@ -341,11 +341,11 @@ describe('Feature: save annotations', () => {
             zOrder: 0,
         });
 
-        expect(await task.annotations.hasUnsavedChanges()).toBe(false);
+        expect(task.annotations.hasUnsavedChanges()).toBe(false);
         await task.annotations.put([state]);
-        expect(await task.annotations.hasUnsavedChanges()).toBe(true);
+        expect(task.annotations.hasUnsavedChanges()).toBe(true);
         await task.annotations.save();
-        expect(await task.annotations.hasUnsavedChanges()).toBe(false);
+        expect(task.annotations.hasUnsavedChanges()).toBe(false);
         annotations = await task.annotations.get(0);
         expect(annotations).toHaveLength(length + 1);
     });
@@ -354,23 +354,23 @@ describe('Feature: save annotations', () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
 
-        expect(await task.annotations.hasUnsavedChanges()).toBe(false);
+        expect(task.annotations.hasUnsavedChanges()).toBe(false);
         annotations[0].occluded = true;
         await annotations[0].save();
-        expect(await task.annotations.hasUnsavedChanges()).toBe(true);
+        expect(task.annotations.hasUnsavedChanges()).toBe(true);
         await task.annotations.save();
-        expect(await task.annotations.hasUnsavedChanges()).toBe(false);
+        expect(task.annotations.hasUnsavedChanges()).toBe(false);
     });
 
     test('delete & save annotations for a task', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
 
-        expect(await task.annotations.hasUnsavedChanges()).toBe(false);
+        expect(task.annotations.hasUnsavedChanges()).toBe(false);
         await annotations[0].delete();
-        expect(await task.annotations.hasUnsavedChanges()).toBe(true);
+        expect(task.annotations.hasUnsavedChanges()).toBe(true);
         await task.annotations.save();
-        expect(await task.annotations.hasUnsavedChanges()).toBe(false);
+        expect(task.annotations.hasUnsavedChanges()).toBe(false);
     });
 
     test('create & save annotations for a job', async () => {
@@ -387,11 +387,11 @@ describe('Feature: save annotations', () => {
             zOrder: 0,
         });
 
-        expect(await job.annotations.hasUnsavedChanges()).toBe(false);
+        expect(job.annotations.hasUnsavedChanges()).toBe(false);
         await job.annotations.put([state]);
-        expect(await job.annotations.hasUnsavedChanges()).toBe(true);
+        expect(job.annotations.hasUnsavedChanges()).toBe(true);
         await job.annotations.save();
-        expect(await job.annotations.hasUnsavedChanges()).toBe(false);
+        expect(job.annotations.hasUnsavedChanges()).toBe(false);
         annotations = await job.annotations.get(0);
         expect(annotations).toHaveLength(length + 1);
     });
@@ -400,23 +400,23 @@ describe('Feature: save annotations', () => {
         const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
         const annotations = await job.annotations.get(0);
 
-        expect(await job.annotations.hasUnsavedChanges()).toBe(false);
+        expect(job.annotations.hasUnsavedChanges()).toBe(false);
         annotations[0].points = [0, 100, 200, 300];
         await annotations[0].save();
-        expect(await job.annotations.hasUnsavedChanges()).toBe(true);
+        expect(job.annotations.hasUnsavedChanges()).toBe(true);
         await job.annotations.save();
-        expect(await job.annotations.hasUnsavedChanges()).toBe(false);
+        expect(job.annotations.hasUnsavedChanges()).toBe(false);
     });
 
     test('delete & save annotations for a job', async () => {
         const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
         const annotations = await job.annotations.get(0);
 
-        expect(await job.annotations.hasUnsavedChanges()).toBe(false);
+        expect(job.annotations.hasUnsavedChanges()).toBe(false);
         await annotations[0].delete();
-        expect(await job.annotations.hasUnsavedChanges()).toBe(true);
+        expect(job.annotations.hasUnsavedChanges()).toBe(true);
         await job.annotations.save();
-        expect(await job.annotations.hasUnsavedChanges()).toBe(false);
+        expect(job.annotations.hasUnsavedChanges()).toBe(false);
     });
 
     test('delete & save annotations for a job when there are a track and a shape with the same id', async () => {
@@ -658,11 +658,11 @@ describe('Feature: clear annotations', () => {
         expect(annotations.length).not.toBe(0);
         annotations[0].occluded = true;
         await annotations[0].save();
-        expect(await task.annotations.hasUnsavedChanges()).toBe(true);
+        expect(task.annotations.hasUnsavedChanges()).toBe(true);
         await task.annotations.clear(true);
         annotations = await task.annotations.get(0);
         expect(annotations.length).not.toBe(0);
-        expect(await task.annotations.hasUnsavedChanges()).toBe(false);
+        expect(task.annotations.hasUnsavedChanges()).toBe(false);
     });
 
     test('clear annotations with reload in a job', async () => {
@@ -671,11 +671,11 @@ describe('Feature: clear annotations', () => {
         expect(annotations.length).not.toBe(0);
         annotations[0].occluded = true;
         await annotations[0].save();
-        expect(await job.annotations.hasUnsavedChanges()).toBe(true);
+        expect(job.annotations.hasUnsavedChanges()).toBe(true);
         await job.annotations.clear(true);
         annotations = await job.annotations.get(0);
         expect(annotations.length).not.toBe(0);
-        expect(await job.annotations.hasUnsavedChanges()).toBe(false);
+        expect(job.annotations.hasUnsavedChanges()).toBe(false);
     });
 
     test('clear annotations with bad reload parameter', async () => {

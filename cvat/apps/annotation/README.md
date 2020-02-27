@@ -170,44 +170,58 @@ This is native CVAT annotation format.
 - supported shapes - Rectangles, Polygons, Polylines, Points
 
 ### [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
+- [Format specification](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf)
 
 #### Pascal dumper description
-- downloaded file: a zip archive with following structure:
+- downloaded file: a zip archive of the following structure:
   ```bash
-  taskname.zip
-  ├── frame_000001.xml
-  ├── frame_000002.xml
-  ├── frame_000003.xml
-  └── ...
+  taskname.zip/
+  ├── Annotations/
+  │   ├── <image_name1>.xml
+  │   ├── <image_name2>.xml
+  │   └── <image_nameN>.xml
+  ├── ImageSets/
+  │   └── Main/
+  │       └── default.txt
+  └── labelmap.txt
   ```
-  Each annotation `*.xml` file has a name that corresponds to the name of the image file
-  (e.g. `frame_000001.xml` is the annotation for the `frame_000001.jpg` image).
-  Detailed structure specification of the `*.xml` file can be found
-  [here](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf).
-- supported shapes - Rectangles
-- additional comments: If you plan to use 'truncated' and 'difficult' attributes please add the corresponding
+
+- supported shapes: Rectangles
+- additional comments: If you plan to use `truncated` and `difficult` attributes please add the corresponding
   items to the CVAT label attributes:
   `~checkbox=difficult:false ~checkbox=truncated:false`
 
 #### Pascal loader description
--   uploaded file: a zip archive with following structure:
-    ```bash
-    taskname.zip
-    ├── frame_000001.xml
-    ├── frame_000002.xml
-    ├── frame_000003.xml
-    └── ...
-    ```
-    It should be possible to match the CVAT frame(imagename) and image filename from the annotation \*.xml
-    file (the tag filename, e.g. `<filename>2008_004457.jpg</filename>`). There are 2 options:
-    1. full match between image name and filename from annotation *.xml
-       file (in case of a task was created from images or archive of images).
-    1. match by frame number (if CVAT cannot match by name). File name should be in the following format `frame_%6d.jpg`.
-       It will be used when task was created from a video.
+- uploaded file: a zip archive of the structure declared above or the following:
+  ```bash
+  taskname.zip/
+  ├── <image_name1>.xml
+  ├── <image_name2>.xml
+  ├── <image_nameN>.xml
+  └── labelmap.txt # optional
+  ```
 
--   supported shapes: Rectangles
--   limitations: Support of Pascal VOC object detection format
--   additional comments: the CVAT task should be created with the full label set that may be in the annotation files
+  The `labelmap.txt` file contains dataset labels. It **must** be included
+  if dataset labels **differ** from VOC default labels. The file structure:
+  ```bash
+  # label : color_rgb : 'body' parts : actions
+  background:::
+  aeroplane:::
+  bicycle:::
+  bird:::
+  ```
+
+  It must be possible for CVAT to match the frame (image name) and file name from annotation \*.xml
+  file (the tag filename, e.g. `<filename>2008_004457.jpg</filename>`). There are 2 options:
+  1. full match between image name and filename from annotation \*.xml
+      (in cases when task was created from images or image archive).
+  1. match by frame number (if CVAT cannot match by name). File name should
+      be in the following format `<number>.jpg`.
+      It should be used when task was created from a video.
+
+- supported shapes: Rectangles
+- limitations: Support of Pascal VOC object detection format
+- additional comments: the CVAT task should be created with the full label set that may be in the annotation files
 
 #### How to create a task from Pascal VOC dataset
 1.  Download the Pascal Voc dataset (Can be downloaded from the
@@ -222,7 +236,7 @@ This is native CVAT annotation format.
     (See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task)
     guide for details)
 1.  zip the corresponding annotation files
-1.  click `Upload annotation` button, choose `Pascal VOC ZIP 1.0`
+1.  click `Upload annotation` button, choose `Pascal VOC ZIP 1.1`
 and select the *.zip file with annotations from previous step.
 It may take some time.
 

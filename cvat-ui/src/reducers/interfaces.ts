@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { Canvas } from 'cvat-canvas';
 
 export type StringObject = {
@@ -313,6 +317,8 @@ export interface AnnotationState {
             number: number;
             data: any | null;
             fetching: boolean;
+            delay: number;
+            changeTime: number | null;
         };
         playing: boolean;
     };

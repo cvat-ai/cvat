@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -47,6 +51,10 @@ interface Props {
     curZLayer: number;
     minZLayer: number;
     maxZLayer: number;
+    brightnessLevel: number;
+    contrastLevel: number;
+    saturationLevel: number;
+    resetZoom: boolean;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -102,6 +110,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             sidebarCollapsed,
             activatedStateID,
             curZLayer,
+            resetZoom,
         } = this.props;
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -154,6 +163,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
             || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
             this.updateShapesView();
+        }
+
+        if (prevProps.frame !== frameData.number && resetZoom) {
+            canvasInstance.html().addEventListener('canvas.setup', () => {
+                canvasInstance.fit();
+            }, { once: true });
         }
 
         if (prevProps.curZLayer !== curZLayer) {
@@ -302,15 +317,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             // TODO: In this approach CVAT-UI know details of implementations CVAT-CANVAS (svg.js)
             const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
             if (shapeView) {
-                if (['rect', 'polygon', 'polyline'].includes(shapeView.tagName)) {
-                    (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
-                    (shapeView as any).instance.stroke({ color: blackBorders ? 'black' : shapeColor });
-                } else {
-                    // group of points
-                    for (const child of (shapeView as any).instance.children()) {
-                        child.fill({ color: shapeColor });
-                    }
+                const handler = (shapeView as any).instance.remember('_selectHandler');
+                if (handler && handler.nested) {
+                    handler.nested.fill({ color: shapeColor });
                 }
+                (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
+                (shapeView as any).instance.stroke({ color: blackBorders ? 'black' : shapeColor });
             }
         }
     }
@@ -342,6 +354,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onActivateObject,
             onUpdateContextMenu,
             onEditShape,
+            brightnessLevel,
+            contrastLevel,
+            saturationLevel,
         } = this.props;
 
         // Size
@@ -359,6 +374,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             gridPattern.style.opacity = `${gridOpacity / 100}`;
         }
         canvasInstance.grid(gridSize, gridSize);
+
+        // Filters
+        const backgroundElement = window.document.getElementById('cvat_canvas_background');
+        if (backgroundElement) {
+            backgroundElement.style.filter = `brightness(${brightnessLevel / 100}) contrast(${contrastLevel / 100}) saturate(${saturationLevel / 100})`;
+        }
 
         // Events
         canvasInstance.html().addEventListener('mousedown', (e: MouseEvent): void => {

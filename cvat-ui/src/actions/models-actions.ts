@@ -1,5 +1,8 @@
-import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
+import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
     Model,
     ModelType,

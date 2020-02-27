@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
@@ -24,7 +28,9 @@ interface DispatchToProps {
     getJob(): void;
 }
 
-function mapStateToProps(state: CombinedState): StateToProps {
+function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
+    const { params } = own.match;
+    const jobID = +params.jid;
     const {
         annotation: {
             job: {
@@ -35,7 +41,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     } = state;
 
     return {
-        job,
+        job: !job || jobID === job.id ? job : null,
         fetching,
     };
 }

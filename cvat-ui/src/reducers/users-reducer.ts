@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import { UsersActionTypes, UsersActions } from 'actions/users-actions';
 import { UsersState } from './interfaces';

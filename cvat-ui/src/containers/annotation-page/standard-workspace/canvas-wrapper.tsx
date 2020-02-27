@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { connect } from 'react-redux';
 
@@ -52,6 +56,10 @@ interface StateToProps {
     gridOpacity: number;
     activeLabelID: number;
     activeObjectType: ObjectType;
+    brightnessLevel: number;
+    contrastLevel: number;
+    saturationLevel: number;
+    resetZoom: boolean;
     minZLayer: number;
     maxZLayer: number;
     curZLayer: number;
@@ -116,6 +124,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 gridSize,
                 gridColor,
                 gridOpacity,
+                brightnessLevel,
+                contrastLevel,
+                saturationLevel,
+                resetZoom,
             },
             shapes: {
                 opacity,
@@ -145,6 +157,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         gridOpacity,
         activeLabelID,
         activeObjectType,
+        brightnessLevel,
+        contrastLevel,
+        saturationLevel,
+        resetZoom,
         curZLayer,
         minZLayer,
         maxZLayer,

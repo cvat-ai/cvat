@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from collections import defaultdict
+import logging as log
 import os
 import os.path as osp
 from xml.etree import ElementTree as ET
@@ -13,7 +14,7 @@ from datumaro.components.extractor import (SourceExtractor, Extractor,
     AnnotationType, Label, Mask, Bbox, CompiledMask
 )
 from datumaro.util import dir_items
-from datumaro.util.image import lazy_image
+from datumaro.util.image import lazy_image, Image
 from datumaro.util.mask_tools import lazy_mask, invert_colormap
 
 from .format import (
@@ -52,8 +53,12 @@ class VocExtractor(SourceExtractor):
                 subset_name = None
             subset = __class__.Subset(subset_name, self)
 
+            subset.items = []
             with open(osp.join(subsets_dir, subset_file_name + '.txt'), 'r') as f:
-                subset.items = [line.split()[0] for line in f]
+                for line in f:
+                    line = line.split()[0].strip()
+                    if line:
+                        subset.items.append(line)
 
             subsets[subset_name] = subset
         return subsets
@@ -84,12 +89,7 @@ class VocExtractor(SourceExtractor):
         for ann_item in det_anno_items:
             with open(osp.join(det_anno_dir, ann_item + '.xml'), 'r') as f:
                 ann_file_data = f.read()
-                ann_file_root = ET.fromstring(ann_file_data)
-                item = ann_file_root.find('filename').text
-                if not item:
-                    item = ann_item
-                item = osp.splitext(item)[0]
-                det_annotations[item] = ann_file_data
+                det_annotations[ann_item] = ann_file_data
 
         self._annotations[VocTask.detection] = det_annotations
 
@@ -134,6 +134,19 @@ class VocExtractor(SourceExtractor):
     def _get(self, item_id, subset_name):
         image = osp.join(self._path, VocPath.IMAGES_DIR,
             item_id + VocPath.IMAGE_EXT)
+        det_annotations = self._annotations.get(VocTask.detection)
+        if det_annotations is not None:
+            det_annotations = det_annotations.get(item_id)
+        if det_annotations is not None:
+            root_elem = ET.fromstring(det_annotations)
+            height = root_elem.find('size/height')
+            if height is not None:
+                height = int(height.text)
+            width = root_elem.find('size/width')
+            if width is not None:
+                width = int(width.text)
+            if height and width:
+                image = Image(path=image, size=(height, width))
 
         annotations = self._get_annotations(item_id)
 
@@ -217,7 +230,7 @@ class VocExtractor(SourceExtractor):
             for obj_id, object_elem in enumerate(root_elem.findall('object')):
                 obj_id += 1
                 attributes = {}
-                group = None
+                group = obj_id
 
                 obj_label_id = None
                 label_elem = object_elem.find('name')
@@ -262,20 +275,21 @@ class VocExtractor(SourceExtractor):
                 for action, present in actions.items():
                     attributes[action] = present
 
+                has_parts = False
                 for part_elem in object_elem.findall('part'):
                     part = part_elem.find('name').text
                     part_label_id = self._get_label_id(part)
                     part_bbox = self._parse_bbox(part_elem)
-                    group = obj_id
 
                     if self._task is not VocTask.person_layout:
                         break
                     if part_bbox is None:
                         continue
+                    has_parts = True
                     item_annotations.append(Bbox(*part_bbox, label=part_label_id,
                         group=group))
 
-                if self._task is VocTask.person_layout and not group:
+                if self._task is VocTask.person_layout and not has_parts:
                     continue
                 if self._task is VocTask.action_classification and not actions:
                     continue
@@ -699,7 +713,7 @@ class VocComp_9_10_Extractor(VocResultsExtractor):
 
     def _load_categories(self):
         from collections import OrderedDict
-        from datumaro.components.formats.voc import VocAction
+        from .format import VocAction
         label_map = OrderedDict((a.name, [[], [], []]) for a in VocAction)
         self._categories = make_voc_categories(label_map)
 

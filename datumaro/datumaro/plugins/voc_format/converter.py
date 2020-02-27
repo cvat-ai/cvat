@@ -235,7 +235,8 @@ class _Converter:
                         if bbox is not None:
                             _write_xml_bbox(bbox, obj_elem)
 
-                        for part_bbox in filter(lambda x: obj.id == x.group,
+                        for part_bbox in filter(
+                                lambda x: obj.group and obj.group == x.group,
                                 layout_bboxes):
                             part_elem = ET.SubElement(obj_elem, 'part')
                             ET.SubElement(part_elem, 'name').text = \

@@ -211,7 +211,7 @@ class VocExtractorTest(TestCase):
                                     'difficult': False,
                                     'occluded': False,
                                 },
-                                id=1,
+                                id=1, group=1,
                             ),
                             Bbox(4, 5, 2, 2, label=self._label('person'),
                                 attributes={
@@ -382,14 +382,14 @@ class VocConverterTest(TestCase):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=1, subset='a', annotations=[
-                        Bbox(2, 3, 4, 5, label=2, id=1,
+                        Bbox(2, 3, 4, 5, label=2, id=1, group=1,
                             attributes={
                                 'truncated': False,
                                 'difficult': False,
                                 'occluded': True,
                             }
                         ),
-                        Bbox(2, 3, 4, 5, label=3, id=2,
+                        Bbox(2, 3, 4, 5, label=3, id=2, group=2,
                             attributes={
                                 'truncated': True,
                                 'difficult': False,
@@ -399,7 +399,7 @@ class VocConverterTest(TestCase):
                     ]),
 
                     DatasetItem(id=2, subset='b', annotations=[
-                        Bbox(5, 4, 6, 5, label=3, id=1,
+                        Bbox(5, 4, 6, 5, label=3, id=1, group=1,
                             attributes={
                                 'truncated': False,
                                 'difficult': True,
@@ -498,16 +498,16 @@ class VocConverterTest(TestCase):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=1, subset='a', annotations=[
-                        Bbox(2, 3, 4, 5, label=2, id=1,
-                            attributes={
+                        Bbox(2, 3, 4, 5, label=2,
+                            id=1, group=1, attributes={
                                 'truncated': True,
                                 'difficult': False,
                                 'occluded': False,
                                 # no attributes here in the label categories
                             }
                         ),
-                        Bbox(5, 4, 3, 2, label=self._label('person'), id=2,
-                            attributes={
+                        Bbox(5, 4, 3, 2, label=self._label('person'),
+                            id=2, group=2, attributes={
                                 'truncated': True,
                                 'difficult': False,
                                 'occluded': False,
@@ -579,7 +579,7 @@ class VocConverterTest(TestCase):
             def __iter__(self):
                 yield DatasetItem(id=1, annotations=[
                     # drop non voc label
-                    Bbox(2, 3, 4, 5, label=self._label('cat'), id=1,
+                    Bbox(2, 3, 4, 5, label=self._label('cat'), id=1, group=1,
                         attributes={
                             'truncated': False,
                             'difficult': False,
@@ -615,16 +615,15 @@ class VocConverterTest(TestCase):
         class DstExtractor(TestExtractorBase):
             def __iter__(self):
                 yield DatasetItem(id=1, annotations=[
-                    Bbox(2, 3, 4, 5, label=self._label(VOC.VocLabel(1).name), id=1,
-                        attributes={
+                    Bbox(2, 3, 4, 5, label=self._label(VOC.VocLabel(1).name),
+                        id=1, group=1, attributes={
                             'truncated': False,
                             'difficult': False,
                             'occluded': False,
                         }
                     ),
-                    Bbox(1, 2, 3, 4,
-                        label=self._label('non_voc_label'), id=2,
-                        attributes={
+                    Bbox(1, 2, 3, 4, label=self._label('non_voc_label'),
+                        id=2, group=2, attributes={
                             'truncated': False,
                             'difficult': False,
                             'occluded': False,
@@ -663,15 +662,15 @@ class VocConverterTest(TestCase):
         class DstExtractor(TestExtractorBase):
             def __iter__(self):
                 yield DatasetItem(id=1, annotations=[
-                    Bbox(2, 3, 4, 5, label=self._label('label_1'), id=1,
-                        attributes={
+                    Bbox(2, 3, 4, 5, label=self._label('label_1'),
+                        id=1, group=1, attributes={
                             'truncated': False,
                             'difficult': False,
                             'occluded': False,
                         }
                     ),
-                    Bbox(1, 2, 3, 4, label=self._label('label_2'), id=2,
-                        attributes={
+                    Bbox(1, 2, 3, 4, label=self._label('label_2'),
+                        id=2, group=2, attributes={
                             'truncated': False,
                             'difficult': False,
                             'occluded': False,

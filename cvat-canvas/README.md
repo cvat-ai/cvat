@@ -150,7 +150,6 @@ Standard JS events are used.
     });
 ```
 
-
 ## API Reaction
 
 |              | IDLE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING | DRAG | ZOOM |

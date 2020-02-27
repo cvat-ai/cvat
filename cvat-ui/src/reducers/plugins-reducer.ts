@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { PluginsActionTypes, PluginActions } from 'actions/plugins-actions';
 import { registerGitPlugin } from 'utils/git-utils';
 import {

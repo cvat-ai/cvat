@@ -1,5 +1,16 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { connect } from 'react-redux';
+
+import {
+    switchAutoSave,
+    changeAutoSaveInterval,
+    changeAAMZoomMargin,
+    switchShowingInterpolatedTracks,
+} from 'actions/settings-actions';
 
 import {
     CombinedState,
@@ -38,27 +49,19 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(): DispatchToProps {
+function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        // will be implemented
-        // eslint-disable-next-line
         onSwitchAutoSave(enabled: boolean): void {
-
+            dispatch(switchAutoSave(enabled));
         },
-        // will be implemented
-        // eslint-disable-next-line
         onChangeAutoSaveInterval(interval: number): void {
-
+            dispatch(changeAutoSaveInterval(interval));
         },
-        // will be implemented
-        // eslint-disable-next-line
         onChangeAAMZoomMargin(margin: number): void {
-
+            dispatch(changeAAMZoomMargin(margin));
         },
-        // will be implemented
-        // eslint-disable-next-line
         onSwitchShowingInterpolatedTracks(enabled: boolean): void {
-
+            dispatch(switchShowingInterpolatedTracks(enabled));
         },
     };
 }

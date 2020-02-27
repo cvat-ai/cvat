@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
@@ -8,9 +12,11 @@ import {
 } from 'reducers/interfaces';
 import {
     collapseObjectItems,
+    changeLabelColorAsync,
     updateAnnotationsAsync,
     changeFrameAsync,
     removeObjectAsync,
+    changeGroupColorAsync,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
     propagateObject as propagateObjectAction,
@@ -32,6 +38,7 @@ interface StateToProps {
     activated: boolean;
     colorBy: ColorBy;
     ready: boolean;
+    colors: string[];
     activeControl: ActiveControl;
     minZLayer: number;
     maxZLayer: number;
@@ -45,6 +52,8 @@ interface DispatchToProps {
     removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
+    changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
+    changeGroupColor(sessionInstance: any, frameNumber: number, group: number, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -73,6 +82,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 ready,
                 activeControl,
             },
+            colors,
         },
         settings: {
             shapes: {
@@ -96,6 +106,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         ready,
         activeControl,
         colorBy,
+        colors,
         jobInstance,
         frameNumber,
         activated: activatedStateID === own.clientID,
@@ -126,6 +137,22 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         propagateObject(objectState: any): void {
             dispatch(propagateObjectAction(objectState));
+        },
+        changeLabelColor(
+            sessionInstance: any,
+            frameNumber: number,
+            label: any,
+            color: string,
+        ): void {
+            dispatch(changeLabelColorAsync(sessionInstance, frameNumber, label, color));
+        },
+        changeGroupColor(
+            sessionInstance: any,
+            frameNumber: number,
+            group: number,
+            color: string,
+        ): void {
+            dispatch(changeGroupColorAsync(sessionInstance, frameNumber, group, color));
         },
     };
 }
@@ -234,10 +261,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             minZLayer,
         } = this.props;
 
-        if (objectState.zOrder !== minZLayer) {
-            objectState.zOrder = minZLayer - 1;
-            this.commit();
-        }
+        objectState.zOrder = minZLayer - 1;
+        this.commit();
     };
 
     private toForeground = (): void => {
@@ -246,10 +271,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             maxZLayer,
         } = this.props;
 
-        if (objectState.zOrder !== maxZLayer) {
-            objectState.zOrder = maxZLayer + 1;
-            this.commit();
-        }
+        objectState.zOrder = maxZLayer + 1;
+        this.commit();
     };
 
     private activate = (): void => {
@@ -335,6 +358,26 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         collapseOrExpand([objectState], !collapsed);
     };
 
+    private changeColor = (color: string): void => {
+        const {
+            jobInstance,
+            objectState,
+            colorBy,
+            changeLabelColor,
+            changeGroupColor,
+            frameNumber,
+        } = this.props;
+
+        if (colorBy === ColorBy.INSTANCE) {
+            objectState.color = color;
+            this.commit();
+        } else if (colorBy === ColorBy.GROUP) {
+            changeGroupColor(jobInstance, frameNumber, objectState.group.id, color);
+        } else if (colorBy === ColorBy.LABEL) {
+            changeLabelColor(jobInstance, frameNumber, objectState.label, color);
+        }
+    };
+
     private changeLabel = (labelID: string): void => {
         const {
             objectState,
@@ -374,6 +417,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             frameNumber,
             activated,
             colorBy,
+            colors,
         } = this.props;
 
         const {
@@ -412,6 +456,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 attrValues={{ ...objectState.attributes }}
                 labelID={objectState.label.id}
                 color={stateColor}
+                colors={colors}
                 attributes={attributes}
                 labels={labels}
                 collapsed={collapsed}
@@ -448,6 +493,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 unlock={this.unlock}
                 hide={this.hide}
                 show={this.show}
+                changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
