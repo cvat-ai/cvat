@@ -127,6 +127,7 @@
                 groups: this.groups,
                 frameMeta: this.frameMeta,
                 history: this.history,
+                groupColors: {},
             };
         }
 
@@ -139,7 +140,8 @@
 
             for (const tag of data.tags) {
                 const clientID = ++this.count;
-                const tagModel = new Tag(tag, clientID, this.injection);
+                const color = colors[clientID % colors.length];
+                const tagModel = new Tag(tag, clientID, color, this.injection);
                 this.tags[tagModel.frame] = this.tags[tagModel.frame] || [];
                 this.tags[tagModel.frame].push(tagModel);
                 this.objects[clientID] = tagModel;

@@ -2,6 +2,9 @@ import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
+import { withRouter } from 'react-router';
+import { RouteComponentProps } from 'react-router-dom';
+
 import { SliderValue } from 'antd/lib/slider';
 
 import {
@@ -15,18 +18,22 @@ import {
 } from 'actions/annotation-actions';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, FrameSpeed } from 'reducers/interfaces';
 
 interface StateToProps {
     jobInstance: any;
     frameNumber: number;
     frameStep: number;
+    frameSpeed: FrameSpeed;
+    frameDelay: number;
     playing: boolean;
     saving: boolean;
     canvasIsReady: boolean;
     savingStatuses: string[];
     undoAction?: string;
     redoAction?: string;
+    autoSave: boolean;
+    autoSaveInterval: number;
 }
 
 interface DispatchToProps {
@@ -45,6 +52,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 playing,
                 frame: {
                     number: frameNumber,
+                    delay: frameDelay,
                 },
             },
             annotations: {
@@ -63,13 +71,20 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         settings: {
             player: {
+                frameSpeed,
                 frameStep,
+            },
+            workspace: {
+                autoSave,
+                autoSaveInterval,
             },
         },
     } = state;
 
     return {
         frameStep,
+        frameSpeed,
+        frameDelay,
         playing,
         canvasIsReady,
         saving,
@@ -78,6 +93,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         undoAction: history.undo[history.undo.length - 1],
         redoAction: history.redo[history.redo.length - 1],
+        autoSave,
+        autoSaveInterval,
     };
 }
 
@@ -105,30 +122,78 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-type Props = StateToProps & DispatchToProps;
+type Props = StateToProps & DispatchToProps & RouteComponentProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
+    private autoSaveInterval: number | undefined;
+    private unblock: any;
+
+    public componentDidMount(): void {
+        const {
+            autoSave,
+            autoSaveInterval,
+            saving,
+            history,
+            jobInstance,
+        } = this.props;
+
+        this.autoSaveInterval = window.setInterval((): void => {
+            if (autoSave && !saving) {
+                this.onSaveAnnotation();
+            }
+        }, autoSaveInterval);
+
+        this.unblock = history.block((location: any) => {
+            if (jobInstance.annotations.hasUnsavedChanges() && location.pathname !== '/settings'
+                && location.pathname !== `/tasks/${jobInstance.task.id}/jobs/${jobInstance.id}`) {
+                return 'You have unsaved changes, please confirm leaving this page.';
+            }
+            return undefined;
+        });
+        this.beforeUnloadCallback = this.beforeUnloadCallback.bind(this);
+        window.addEventListener('beforeunload', this.beforeUnloadCallback);
+    }
+
     public componentDidUpdate(): void {
         const {
             jobInstance,
+            frameSpeed,
             frameNumber,
+            frameDelay,
             playing,
             canvasIsReady,
-            onChangeFrame,
             onSwitchPlay,
+            onChangeFrame,
         } = this.props;
+
 
         if (playing && canvasIsReady) {
             if (frameNumber < jobInstance.stopFrame) {
+                let framesSkiped = 0;
+                if (frameSpeed === FrameSpeed.Fast
+                    && (frameNumber + 1 < jobInstance.stopFrame)) {
+                    framesSkiped = 1;
+                }
+                if (frameSpeed === FrameSpeed.Fastest
+                    && (frameNumber + 2 < jobInstance.stopFrame)) {
+                    framesSkiped = 2;
+                }
+
                 setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
-                        onChangeFrame(frameNumber + 1);
+                        onChangeFrame(frameNumber + 1 + framesSkiped);
                     }
-                });
+                }, frameDelay);
             } else {
                 onSwitchPlay(false);
             }
         }
+    }
+
+    public componentWillUnmount(): void {
+        window.clearInterval(this.autoSaveInterval);
+        window.removeEventListener('beforeunload', this.beforeUnloadCallback);
+        this.unblock();
     }
 
     private undo = (): void => {
@@ -177,11 +242,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     private onFirstFrame = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             jobInstance,
             playing,
             onSwitchPlay,
+            onChangeFrame,
         } = this.props;
 
         const newFrame = jobInstance.startFrame;
@@ -195,12 +260,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     private onBackward = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             frameStep,
             jobInstance,
             playing,
             onSwitchPlay,
+            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -215,11 +280,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     private onPrevFrame = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             jobInstance,
             playing,
             onSwitchPlay,
+            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -234,11 +299,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     private onNextFrame = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             jobInstance,
             playing,
             onSwitchPlay,
+            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -253,12 +318,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     private onForward = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             frameStep,
             jobInstance,
             playing,
             onSwitchPlay,
+            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -273,11 +338,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     private onLastFrame = (): void => {
         const {
-            onChangeFrame,
             frameNumber,
             jobInstance,
             playing,
             onSwitchPlay,
+            onChangeFrame,
         } = this.props;
 
         const newFrame = jobInstance.stopFrame;
@@ -314,8 +379,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private onChangePlayerInputValue = (value: number | undefined): void => {
         const {
             onSwitchPlay,
-            playing,
             onChangeFrame,
+            playing,
         } = this.props;
 
         if (typeof (value) !== 'undefined') {
@@ -335,6 +400,17 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const url = `${origin}${pathname}?frame=${frameNumber}`;
         copy(url);
     };
+
+    private beforeUnloadCallback(event: BeforeUnloadEvent): any {
+        const { jobInstance } = this.props;
+        if (jobInstance.annotations.hasUnsavedChanges()) {
+            const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
+            // eslint-disable-next-line no-param-reassign
+            event.returnValue = confirmationMessage;
+            return confirmationMessage;
+        }
+        return undefined;
+    }
 
     public render(): JSX.Element {
         const {
@@ -379,7 +455,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     }
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(AnnotationTopBarContainer);
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps,
+    )(AnnotationTopBarContainer),
+);
