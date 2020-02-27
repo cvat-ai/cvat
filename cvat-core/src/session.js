@@ -77,12 +77,6 @@
                         return result;
                     },
 
-                    async hasUnsavedChanges() {
-                        const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.hasUnsavedChanges);
-                        return result;
-                    },
-
                     async merge(objectStates) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.annotations.merge, objectStates);
@@ -105,6 +99,12 @@
                     async exportDataset(format) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.annotations.exportDataset, format);
+                        return result;
+                    },
+
+                    hasUnsavedChanges() {
+                        const result = prototype.annotations
+                            .hasUnsavedChanges.implementation.call(this);
                         return result;
                     },
                 },
@@ -381,14 +381,14 @@
                 * @async
             */
             /**
-                * Indicate if there are any changes in
+                * Method indicates if there are any changes in
                 * annotations which haven't been saved on a server
+                * </br><b> This function cannot be wrapped with a plugin </b>
                 * @method hasUnsavedChanges
                 * @memberof Session.annotations
                 * @returns {boolean}
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @instance
-                * @async
             */
             /**
                 * Export as a dataset.

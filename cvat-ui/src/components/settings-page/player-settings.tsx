@@ -61,11 +61,17 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         brightnessLevel,
         contrastLevel,
         saturationLevel,
+        onChangeFrameStep,
+        onChangeFrameSpeed,
+        onSwitchResetZoom,
         onSwitchRotateAll,
         onSwitchGrid,
         onChangeGridSize,
         onChangeGridColor,
         onChangeGridOpacity,
+        onChangeBrightnessLevel,
+        onChangeContrastLevel,
+        onChangeSaturationLevel,
     } = props;
 
     return (
@@ -73,7 +79,16 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             <Row type='flex' align='bottom' className='cvat-player-settings-step'>
                 <Col>
                     <Text className='cvat-text-color'> Player step </Text>
-                    <InputNumber min={2} max={1000} value={frameStep} />
+                    <InputNumber
+                        min={2}
+                        max={1000}
+                        value={frameStep}
+                        onChange={(value: number | undefined): void => {
+                            if (value) {
+                                onChangeFrameStep(value);
+                            }
+                        }}
+                    />
                 </Col>
                 <Col offset={1}>
                     <Text type='secondary'>
@@ -87,7 +102,12 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             <Row type='flex' align='middle' className='cvat-player-settings-speed'>
                 <Col>
                     <Text className='cvat-text-color'> Player speed </Text>
-                    <Select value={frameSpeed}>
+                    <Select
+                        value={frameSpeed}
+                        onChange={(speed: FrameSpeed): void => {
+                            onChangeFrameSpeed(speed);
+                        }}
+                    >
                         <Select.Option key='fastest' value={FrameSpeed.Fastest}>Fastest</Select.Option>
                         <Select.Option key='fast' value={FrameSpeed.Fast}>Fast</Select.Option>
                         <Select.Option key='usual' value={FrameSpeed.Usual}>Usual</Select.Option>
@@ -118,6 +138,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         max={1000}
                         step={1}
                         value={gridSize}
+                        disabled={!grid}
                         onChange={(value: number | undefined): void => {
                             if (value) {
                                 onChangeGridSize(value);
@@ -129,6 +150,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     <Text className='cvat-text-color'> Grid color </Text>
                     <Select
                         value={gridColor}
+                        disabled={!grid}
                         onChange={(color: GridColor): void => {
                             onChangeGridColor(color);
                         }}
@@ -146,6 +168,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         min={0}
                         max={100}
                         value={gridOpacity}
+                        disabled={!grid}
                         onChange={(value: number | [number, number]): void => {
                             onChangeGridOpacity(value as number);
                         }}
@@ -160,6 +183,9 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                             <Checkbox
                                 className='cvat-text-color'
                                 checked={resetZoom}
+                                onChange={(event: CheckboxChangeEvent): void => {
+                                    onSwitchResetZoom(event.target.checked);
+                                }}
                             >
                                 Reset zoom
                             </Checkbox>
@@ -193,7 +219,14 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     Brightness
                 </Col>
                 <Col>
-                    <Slider min={0} max={100} value={brightnessLevel} />
+                    <Slider
+                        min={50}
+                        max={200}
+                        value={brightnessLevel}
+                        onChange={(value: number | [number, number]): void => {
+                            onChangeBrightnessLevel(value as number);
+                        }}
+                    />
                 </Col>
             </Row>
             <Row className='cvat-player-settings-contrast'>
@@ -201,7 +234,14 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     Contrast
                 </Col>
                 <Col>
-                    <Slider min={0} max={100} value={contrastLevel} />
+                    <Slider
+                        min={50}
+                        max={200}
+                        value={contrastLevel}
+                        onChange={(value: number | [number, number]): void => {
+                            onChangeContrastLevel(value as number);
+                        }}
+                    />
                 </Col>
             </Row>
             <Row className='cvat-player-settings-saturation'>
@@ -209,7 +249,14 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     Saturation
                 </Col>
                 <Col>
-                    <Slider min={0} max={100} value={saturationLevel} />
+                    <Slider
+                        min={0}
+                        max={300}
+                        value={saturationLevel}
+                        onChange={(value: number | [number, number]): void => {
+                            onChangeSaturationLevel(value as number);
+                        }}
+                    />
                 </Col>
             </Row>
         </div>

@@ -1,5 +1,8 @@
 import React from 'react';
 
+import { RouteComponentProps } from 'react-router';
+import { withRouter } from 'react-router-dom';
+
 import {
     Row,
     Col,
@@ -27,19 +30,40 @@ interface Props {
     onJobUpdate(jobInstance: any): void;
 }
 
-export default function JobListComponent(props: Props): JSX.Element {
+function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
     const {
         taskInstance,
         registeredUsers,
         onJobUpdate,
+        history: {
+            push,
+        },
     } = props;
 
-    const { jobs } = taskInstance;
+    const { jobs, id: taskId } = taskInstance;
     const columns = [{
         title: 'Job',
         dataIndex: 'job',
         key: 'job',
-        render: (id: number): JSX.Element => (<a href={`${baseURL}/?id=${id}`}>{ `Job #${id}` }</a>),
+        render: (id: number): JSX.Element => (
+            <div>
+                <Button type='link' href={`${baseURL}/?id=${id}`}>{`Job #${id}`}</Button>
+                |
+                <Tooltip title='Beta version of new UI written in React. It is to get
+                                acquainted only, we do not recommend use it to annotations
+                                process because it is lack of some features and can be unstable.'
+                >
+                    <Button
+                        type='link'
+                        onClick={(): void => {
+                            push(`/tasks/${taskId}/jobs/${id}`);
+                        }}
+                    >
+                        Try new UI
+                    </Button>
+                </Tooltip>
+            </div>
+        ),
     }, {
         title: 'Frames',
         dataIndex: 'frames',
@@ -168,3 +192,5 @@ export default function JobListComponent(props: Props): JSX.Element {
         </div>
     );
 }
+
+export default withRouter(JobListComponent);

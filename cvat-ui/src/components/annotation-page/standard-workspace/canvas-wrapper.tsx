@@ -47,6 +47,10 @@ interface Props {
     curZLayer: number;
     minZLayer: number;
     maxZLayer: number;
+    brightnessLevel: number;
+    contrastLevel: number;
+    saturationLevel: number;
+    resetZoom: boolean;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -102,6 +106,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             sidebarCollapsed,
             activatedStateID,
             curZLayer,
+            resetZoom,
         } = this.props;
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -154,6 +159,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
             || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
             this.updateShapesView();
+        }
+
+        if (prevProps.frame !== frameData.number && resetZoom) {
+            canvasInstance.html().addEventListener('canvas.setup', () => {
+                canvasInstance.fit();
+            }, { once: true });
         }
 
         if (prevProps.curZLayer !== curZLayer) {
@@ -339,6 +350,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onActivateObject,
             onUpdateContextMenu,
             onEditShape,
+            brightnessLevel,
+            contrastLevel,
+            saturationLevel,
         } = this.props;
 
         // Size
@@ -356,6 +370,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             gridPattern.style.opacity = `${gridOpacity / 100}`;
         }
         canvasInstance.grid(gridSize, gridSize);
+
+        // Filters
+        const backgroundElement = window.document.getElementById('cvat_canvas_background');
+        if (backgroundElement) {
+            backgroundElement.style.filter = `brightness(${brightnessLevel / 100}) contrast(${contrastLevel / 100}) saturate(${saturationLevel / 100})`;
+        }
 
         // Events
         canvasInstance.html().addEventListener('mousedown', (e: MouseEvent): void => {
