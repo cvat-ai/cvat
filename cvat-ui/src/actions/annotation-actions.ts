@@ -13,11 +13,11 @@ import {
     ObjectType,
     Task,
     FrameSpeed,
+    Rotation,
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core';
 import { getCVATStore } from 'cvat-store';
-import { Rotation } from '../../../cvat-canvas/src/typescript/canvas';
 
 const cvat = getCore();
 let store: null | Store<CombinedState> = null;
@@ -664,24 +664,20 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 }
 
 
-export function rotateCurrentFrame(angle: Rotation): AnyAction {
+export function rotateCurrentFrame(rotation: Rotation): AnyAction {
     const state: CombinedState = getStore().getState();
     const { number: frameNumber } = state.annotation.player.frame;
+    const { startFrame } = state.annotation.job.instance;
+    const { frameAngles } = state.annotation.player;
     const { rotateAll } = state.settings.player;
-    const previousFrameAngle = state.annotation.player.frameAngles[frameNumber
-        - state.annotation.job.instance.startFrame];
-    let frameAngle = previousFrameAngle;
-    if (angle === Rotation.CLOCKWISE90) {
-        frameAngle += 90;
-    } else {
-        frameAngle += 270;
-    }
-    frameAngle %= 360;
+
+    const frameAngle = (frameAngles[frameNumber - startFrame]
+        + (rotation === Rotation.CLOCKWISE90 ? 90 : 270)) % 360;
 
     return {
         type: AnnotationActionTypes.ROTATE_FRAME,
         payload: {
-            frame: frameNumber - state.annotation.job.instance.startFrame,
+            offset: frameNumber - state.annotation.job.instance.startFrame,
             angle: frameAngle,
             rotateAll,
         },

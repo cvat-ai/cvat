@@ -12,10 +12,10 @@ import {
 
 import {
     Rotation,
-} from 'cvat-canvas';
+} from 'reducers/interfaces';
 
 interface Props {
-    rotateFrame(angle: Rotation): void;
+    rotateFrame(rotation: Rotation): void;
 }
 
 function RotateControl(props: Props): JSX.Element {

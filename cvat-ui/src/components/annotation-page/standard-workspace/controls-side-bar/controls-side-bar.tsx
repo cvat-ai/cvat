@@ -8,6 +8,7 @@ import {
 
 import {
     ActiveControl,
+    Rotation
 } from 'reducers/interfaces';
 
 import {
@@ -18,7 +19,7 @@ import {
     Canvas,
 } from 'cvat-canvas';
 
-import RotateControl from 'containers/annotation-page/standard-workspace/controls-side-bar/rotate-control';
+import RotateControl from './rotate-control';
 import CursorControl from './cursor-control';
 import MoveControl from './move-control';
 import FitControl from './fit-control';
@@ -38,6 +39,7 @@ interface Props {
     mergeObjects(enabled: boolean): void;
     groupObjects(enabled: boolean): void;
     splitTrack(enabled: boolean): void;
+    rotateFrame(rotation: Rotation): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
@@ -48,6 +50,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         mergeObjects,
         groupObjects,
         splitTrack,
+        rotateFrame,
     } = props;
 
     return (
@@ -58,7 +61,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         >
             <CursorControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
-            <RotateControl />
+            <RotateControl rotateFrame={rotateFrame} />
 
             <hr />
 

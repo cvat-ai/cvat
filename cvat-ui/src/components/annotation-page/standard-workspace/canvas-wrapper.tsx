@@ -154,8 +154,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        if (prevProps.annotations !== annotations || prevProps.frameData !== frameData
-            || prevProps.frameAngles !== frameAngles) {
+        if (prevProps.annotations !== annotations || prevProps.frameData !== frameData) {
             this.updateCanvas();
         }
 
@@ -172,6 +171,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (prevProps.curZLayer !== curZLayer) {
             canvasInstance.setZLayer(curZLayer);
+        }
+
+        if (prevProps.frameAngles !== frameAngles) {
+            this.rotate();
         }
 
         this.activateOnCanvas();
@@ -329,8 +332,19 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     private updateCanvas(): void {
         const {
             annotations,
-            frame,
             frameData,
+            canvasInstance,
+        } = this.props;
+
+        if (frameData !== null) {
+            canvasInstance.setup(frameData, annotations);
+            this.rotate();
+        }
+    }
+
+    private rotate(): void {
+        const {
+            frame,
             frameAngles,
             canvasInstance,
             jobInstance,
@@ -338,9 +352,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const frameAngle = frameAngles[frame - jobInstance.startFrame];
 
-        if (frameData !== null) {
-            canvasInstance.setup(frameData, annotations, frameAngle);
-        }
+        canvasInstance.rotate(frameAngle);
     }
 
     private initialSetup(): void {

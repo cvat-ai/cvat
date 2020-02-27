@@ -232,13 +232,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.ROTATE_FRAME: {
-            const { frame, angle, rotateAll } = action.payload;
+            const { offset, angle, rotateAll } = action.payload;
             return {
                 ...state,
                 player: {
                     ...state.player,
                     frameAngles: state.player.frameAngles.map((_angle: number, idx: number) => (
-                        rotateAll || frame === idx ? angle : _angle)),
+                        rotateAll || offset === idx ? angle : _angle)),
                 },
             };
         }

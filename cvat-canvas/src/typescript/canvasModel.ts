@@ -69,11 +69,6 @@ export enum FrameZoom {
     MAX = 10,
 }
 
-export enum Rotation {
-    ANTICLOCKWISE90,
-    CLOCKWISE90,
-}
-
 export enum UpdateReasons {
     IMAGE_CHANGED = 'image_changed',
     IMAGE_ZOOMED = 'image_zoomed',
@@ -130,9 +125,9 @@ export interface CanvasModel {
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
 
-    setup(frameData: any, objectStates: any[], frameAngle: number): void;
+    setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number | null, attributeID: number | null): void;
-    rotate(rotation: Rotation): void;
+    rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -299,13 +294,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.ZOOM_CANVAS);
     }
 
-    public setup(frameData: any, objectStates: any[], frameAngle: number): void {
+    public setup(frameData: any, objectStates: any[]): void {
         if (frameData.number === this.data.imageID) {
             this.data.objects = objectStates;
-            if (this.data.angle !== frameAngle) {
-                this.data.angle = frameAngle;
-                this.fit();
-            }
             this.notify(UpdateReasons.OBJECTS_UPDATED);
             return;
         }
@@ -322,10 +313,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 return;
             }
 
-            if (this.data.angle !== frameAngle) {
-                this.data.angle = frameAngle;
-                this.fit();
-            }
             this.data.imageSize = {
                 height: (frameData.height as number),
                 width: (frameData.width as number),
@@ -354,15 +341,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.SHAPE_ACTIVATED);
     }
 
-    public rotate(rotation: Rotation): void {
-        if (rotation === Rotation.CLOCKWISE90) {
-            this.data.angle += 90;
-        } else {
-            this.data.angle -= 90;
+    public rotate(rotationAngle: number): void {
+        if (this.data.angle !== rotationAngle) {
+            this.data.angle = rotationAngle;
+            this.fit();
         }
-
-        this.data.angle %= 360;
-        this.fit();
     }
 
     public focus(clientID: number, padding: number): void {

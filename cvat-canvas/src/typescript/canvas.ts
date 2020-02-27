@@ -4,7 +4,6 @@
 */
 
 import {
-    Rotation,
     DrawData,
     MergeData,
     SplitData,
@@ -35,9 +34,9 @@ const CanvasVersion = pjson.version;
 interface Canvas {
     html(): HTMLDivElement;
     setZLayer(zLayer: number | null): void;
-    setup(frameData: any, objectStates: any[], frameAngle: number): void;
+    setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number | null, attributeID?: number): void;
-    rotate(rotation: Rotation): void;
+    rotate(rotationAngle: number): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -74,8 +73,8 @@ class CanvasImpl implements Canvas {
         this.model.setZLayer(zLayer);
     }
 
-    public setup(frameData: any, objectStates: any[], frameAngle: number): void {
-        this.model.setup(frameData, objectStates, frameAngle);
+    public setup(frameData: any, objectStates: any[]): void {
+        this.model.setup(frameData, objectStates);
     }
 
     public fitCanvas(): void {
@@ -97,8 +96,8 @@ class CanvasImpl implements Canvas {
         this.model.activate(clientID, attributeID);
     }
 
-    public rotate(rotation: Rotation): void {
-        this.model.rotate(rotation);
+    public rotate(rotationAngle: number): void {
+        this.model.rotate(rotationAngle);
     }
 
     public focus(clientID: number, padding: number = 0): void {
@@ -140,6 +139,5 @@ class CanvasImpl implements Canvas {
 
 export {
     CanvasImpl as Canvas,
-    Rotation,
     CanvasVersion,
 };
