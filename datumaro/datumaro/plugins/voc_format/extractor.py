@@ -155,7 +155,12 @@ class VocExtractor(SourceExtractor):
 
     def _get_label_id(self, label):
         label_id, _ = self._categories[AnnotationType.label].find(label)
-        assert label_id is not None
+        if label_id is None:
+            log.debug("Unknown label '%s'. Loaded labels: %s",
+                label,
+                ', '.join("'%s'" % s.name
+                    for s in self._categories[AnnotationType.label].items))
+            raise Exception("Unknown label '%s'" % label)
         return label_id
 
     @staticmethod
