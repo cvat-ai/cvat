@@ -1,4 +1,8 @@
-import { Canvas } from 'cvat-canvas';
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import { Canvas, RectDrawingMethod } from 'cvat-canvas';
 
 export type StringObject = {
     [index: string]: string;
@@ -245,11 +249,6 @@ export enum ActiveControl {
     GROUP = 'group',
     SPLIT = 'split',
     EDIT = 'edit',
-}
-
-export enum RectDrawingMethod {
-    BY_TWO_POINTS = 'by_two_points',
-    BY_FOUR_POINTS = 'by_four_points'
 }
 
 export enum ShapeType {

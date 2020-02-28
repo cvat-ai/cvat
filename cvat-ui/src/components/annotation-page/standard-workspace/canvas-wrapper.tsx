@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -97,10 +101,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             colorBy,
             selectedOpacity,
             blackBorders,
-            grid,
-            gridSize,
-            gridColor,
-            gridOpacity,
             frameData,
             frameAngle,
             annotations,
@@ -120,34 +120,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        if (prevProps.grid !== grid) {
-            const gridElement = window.document.getElementById('cvat_canvas_grid');
-            if (gridElement) {
-                gridElement.style.display = grid ? 'block' : 'none';
-            }
-        }
-
-        if (prevProps.gridSize !== gridSize) {
-            canvasInstance.grid(gridSize, gridSize);
-        }
-
-        if (prevProps.gridColor !== gridColor) {
-            const gridPattern = window.document.getElementById('cvat_canvas_grid_pattern');
-            if (gridPattern) {
-                gridPattern.style.stroke = gridColor.toLowerCase();
-            }
-        }
-
-        if (prevProps.gridOpacity !== gridOpacity) {
-            const gridPattern = window.document.getElementById('cvat_canvas_grid_pattern');
-            if (gridPattern) {
-                gridPattern.style.opacity = `${gridOpacity / 100}`;
-            }
-        }
-
         if (prevProps.activatedStateID !== null
             && prevProps.activatedStateID !== activatedStateID) {
             canvasInstance.activate(null);
+        }
+
+        if (activatedStateID) {
             const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
             if (el) {
                 (el as any).instance.fill({ opacity: opacity / 100 });
@@ -158,15 +136,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             this.updateCanvas();
         }
 
-        if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
-            || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
-            this.updateShapesView();
-        }
-
         if (prevProps.frame !== frameData.number && resetZoom) {
             canvasInstance.html().addEventListener('canvas.setup', () => {
                 canvasInstance.fit();
             }, { once: true });
+        }
+
+        if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
+            || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
+            this.updateShapesView();
         }
 
         if (prevProps.curZLayer !== curZLayer) {

@@ -7,6 +7,7 @@
     require:false
 */
 
+
 (() => {
     const ObjectState = require('./object-state');
     const {
@@ -136,9 +137,10 @@
     }
 
     class Annotation {
-        constructor(data, clientID, injection) {
+        constructor(data, clientID, color, injection) {
             this.taskLabels = injection.labels;
             this.history = injection.history;
+            this.groupColors = injection.groupColors;
             this.clientID = clientID;
             this.serverID = data.id;
             this.group = data.group;
@@ -146,11 +148,31 @@
             this.frame = data.frame;
             this.removed = false;
             this.lock = false;
+            this.color = color;
             this.updated = Date.now();
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
             }, {});
+            this.groupObject = Object.defineProperties({}, {
+                color: {
+                    get: () => {
+                        if (this.group) {
+                            return this.groupColors[this.group]
+                                || colors[this.group % colors.length];
+                        }
+                        return defaultGroupColor;
+                    },
+                    set: (newColor) => {
+                        if (this.group && typeof (newColor) === 'string' && /^#[0-9A-F]{6}$/i.test(newColor)) {
+                            this.groupColors[this.group] = newColor;
+                        }
+                    },
+                },
+                id: {
+                    get: () => this.group,
+                },
+            });
             this.appendDefaultAttributes(this.label);
 
             injection.groups.max = Math.max(injection.groups.max, this.group);
@@ -227,51 +249,6 @@
             }, () => {
                 this.attributes = redoAttributes;
             }, [this.clientID]);
-        }
-
-        appendDefaultAttributes(label) {
-            const labelAttributes = label.attributes;
-            for (const attribute of labelAttributes) {
-                if (!(attribute.id in this.attributes)) {
-                    this.attributes[attribute.id] = attribute.defaultValue;
-                }
-            }
-        }
-
-        updateTimestamp(updated) {
-            const anyChanges = updated.label || updated.attributes || updated.points
-                || updated.outside || updated.occluded || updated.keyframe
-                || updated.zOrder;
-
-            if (anyChanges) {
-                this.updated = Date.now();
-            }
-        }
-
-        delete(force) {
-            if (!this.lock || force) {
-                this.removed = true;
-
-                this.history.do(HistoryActions.REMOVED_OBJECT, () => {
-                    this.removed = false;
-                }, () => {
-                    this.removed = true;
-                }, [this.clientID]);
-            }
-
-            return this.removed;
-        }
-    }
-
-    class Drawn extends Annotation {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, injection);
-
-            this.frameMeta = injection.frameMeta;
-            this.hidden = false;
-
-            this.color = color;
-            this.shapeType = null;
         }
 
         _validateStateBeforeSave(frame, data, updated) {
@@ -363,6 +340,48 @@
             return fittedPoints;
         }
 
+        appendDefaultAttributes(label) {
+            const labelAttributes = label.attributes;
+            for (const attribute of labelAttributes) {
+                if (!(attribute.id in this.attributes)) {
+                    this.attributes[attribute.id] = attribute.defaultValue;
+                }
+            }
+        }
+
+        updateTimestamp(updated) {
+            const anyChanges = updated.label || updated.attributes || updated.points
+                || updated.outside || updated.occluded || updated.keyframe
+                || updated.zOrder;
+
+            if (anyChanges) {
+                this.updated = Date.now();
+            }
+        }
+
+        delete(force) {
+            if (!this.lock || force) {
+                this.removed = true;
+
+                this.history.do(HistoryActions.REMOVED_OBJECT, () => {
+                    this.removed = false;
+                }, () => {
+                    this.removed = true;
+                }, [this.clientID]);
+            }
+
+            return this.removed;
+        }
+    }
+
+    class Drawn extends Annotation {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.frameMeta = injection.frameMeta;
+            this.hidden = false;
+            this.shapeType = null;
+        }
+
         save() {
             throw new ScriptingError(
                 'Is not implemented',
@@ -432,10 +451,7 @@
                 points: [...this.points],
                 attributes: { ...this.attributes },
                 label: this.label,
-                group: {
-                    color: this.group ? colors[this.group % colors.length] : defaultGroupColor,
-                    id: this.group,
-                },
+                group: this.groupObject,
                 color: this.color,
                 hidden: this.hidden,
                 updated: this.updated,
@@ -618,10 +634,7 @@
             return {
                 ...this.getPosition(frame, prev, next),
                 attributes: this.getAttributes(frame),
-                group: {
-                    color: this.group ? colors[this.group % colors.length] : defaultGroupColor,
-                    id: this.group,
-                },
+                group: this.groupObject,
                 objectType: ObjectType.TRACK,
                 shapeType: this.shapeType,
                 clientID: this.clientID,
@@ -1053,8 +1066,8 @@
     }
 
     class Tag extends Annotation {
-        constructor(data, clientID, injection) {
-            super(data, clientID, injection);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
         }
 
         // Method is used to export data to the server
@@ -1091,7 +1104,7 @@
                 lock: this.lock,
                 attributes: { ...this.attributes },
                 label: this.label,
-                group: this.group,
+                group: this.groupObject,
                 updated: this.updated,
                 frame,
             };

@@ -1,10 +1,8 @@
-/*
-* Copyright (C) 2019 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 import { MasterImpl } from './master';
-
 
 export interface Size {
     width: number;
@@ -37,10 +35,15 @@ export interface ActiveElement {
     attributeID: number | null;
 }
 
+export enum RectDrawingMethod {
+    CLASSIC = 'By 2 points',
+    EXTREME_POINTS = 'By 4 points'
+}
+
 export interface DrawData {
     enabled: boolean;
     shapeType?: string;
-    rectDrawingMethod?: string;
+    rectDrawingMethod?: RectDrawingMethod;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;

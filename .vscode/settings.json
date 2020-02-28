@@ -32,4 +32,6 @@
         "-s",
         "./datumaro",
     ],
+    "licenser.license": "Custom",
+    "licenser.customHeader": "Copyright (C) @YEAR@ Intel Corporation\n\nSPDX-License-Identifier: MIT"
 }

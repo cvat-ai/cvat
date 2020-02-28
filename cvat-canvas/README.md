@@ -32,10 +32,15 @@ Canvas itself handles:
 ### API Methods
 
 ```ts
+    enum RectDrawingMethod {
+        CLASSIC = 'By 2 points',
+        EXTREME_POINTS = 'By 4 points'
+    }
+
     interface DrawData {
         enabled: boolean;
         shapeType?: string;
-        rectDrawingMethod?: string;
+        rectDrawingMethod?: RectDrawingMethod;
         numberOfPoints?: number;
         initialState?: any;
         crosshair?: boolean;
@@ -142,9 +147,9 @@ Standard JS events are used.
         enabled: true,
         shapeType: 'rectangle',
         crosshair: true,
+        rectDrawingMethod: window.Canvas.RectDrawingMethod.CLASSIC,
     });
 ```
-
 
 ## API Reaction
 

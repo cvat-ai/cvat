@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import {
     AnyAction,
     Dispatch,
@@ -17,6 +21,7 @@ import {
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core';
+import { RectDrawingMethod } from 'cvat-canvas';
 import { getCVATStore } from 'cvat-store';
 
 const cvat = getCore();
@@ -826,7 +831,7 @@ export function drawShape(
     labelID: number,
     objectType: ObjectType,
     points?: number,
-    rectDrawingMethod?: string,
+    rectDrawingMethod?: RectDrawingMethod,
 ): AnyAction {
     let activeControl = ActiveControl.DRAW_RECTANGLE;
     if (shapeType === ShapeType.POLYGON) {
@@ -1060,6 +1065,25 @@ export function changeLabelColorAsync(
                     error,
                 },
             });
+        }
+    };
+}
+
+export function changeGroupColorAsync(
+    sessionInstance: any,
+    frameNumber: number,
+    group: number,
+    color: string,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const state: CombinedState = getStore().getState();
+        const groupStates = state.annotation.annotations.states
+            .filter((_state: any): boolean => _state.group.id === group);
+        if (groupStates.length) {
+            groupStates[0].group.color = color;
+            dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, groupStates));
+        } else {
+            dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, []));
         }
     };
 }
