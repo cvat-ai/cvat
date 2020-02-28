@@ -74,7 +74,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 type Props = StateToProps & DispatchToProps;
 
 interface State {
-    rectDrawingMethod: RectDrawingMethod;
+    rectDrawingMethod?: RectDrawingMethod;
     numberOfPoints?: number;
     selectedLabelID: number;
 }
@@ -89,7 +89,8 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         const defaultRectDrawingMethod = RectDrawingMethod.CLASSIC;
         this.state = {
             selectedLabelID: defaultLabelID,
-            rectDrawingMethod: defaultRectDrawingMethod,
+            rectDrawingMethod: shapeType === ShapeType.RECTANGLE
+                ? defaultRectDrawingMethod : undefined,
         };
 
         if (shapeType === ShapeType.POLYGON) {
@@ -126,7 +127,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         });
 
         onDrawStart(shapeType, selectedLabelID,
-            objectType, numberOfPoints);
+            objectType, numberOfPoints, rectDrawingMethod);
     }
 
     private onChangeRectDrawingMethod = (event: RadioChangeEvent): void => {

@@ -21,9 +21,9 @@ import { ShapeType } from 'reducers/interfaces';
 
 interface Props {
     shapeType: ShapeType;
-    rectDrawingMethod: RectDrawingMethod;
     labels: any[];
     minimumPoints: number;
+    rectDrawingMethod?: RectDrawingMethod;
     numberOfPoints?: number;
     selectedLabeID: number;
     onChangeLabel(value: string): void;
