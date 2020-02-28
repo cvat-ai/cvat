@@ -224,6 +224,14 @@
     cursor: w-resize;
 }
 
+.svg_select_points_ns{
+    cursor: ns-resize;
+}
+
+.svg_select_points_ew{
+    cursor: ew-resize;
+}
+
 .shape-creator-border-point {
     opacity: 0.55;
 }

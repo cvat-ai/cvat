@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import './styles.scss';
 import React from 'react';
 
@@ -236,7 +240,7 @@ export default class LabelsEditor
                 tabBarStyle={{ marginBottom: '0px' }}
                 tabBarExtraContent={(
                     <>
-                        <Tooltip overlay='Copied to clipboard!' trigger='click'>
+                        <Tooltip title='Copied to clipboard!' trigger='click'>
                             <Button
                                 type='link'
                                 icon='copy'

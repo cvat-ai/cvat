@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import './styles.scss';
 import React from 'react';
 
@@ -16,14 +20,10 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
-import getCore from 'cvat-core';
 import {
     CVATLogo,
     AccountIcon,
 } from 'icons';
-
-const core = getCore();
-const serverHost = core.config.backendAPI.slice(0, -7);
 
 interface HeaderContainerProps {
     onLogout: () => void;
@@ -32,8 +32,14 @@ interface HeaderContainerProps {
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
+    serverHost: string;
     username: string;
-    serverAbout: any;
+    toolName: string;
+    serverVersion: string;
+    serverDescription: string;
+    coreVersion: string;
+    canvasVersion: string;
+    uiVersion: string;
 }
 
 type Props = HeaderContainerProps & RouteComponentProps;
@@ -45,7 +51,13 @@ function HeaderContainer(props: Props): JSX.Element {
         installedTFAnnotation,
         installedAnalytics,
         username,
-        serverAbout,
+        toolName,
+        serverHost,
+        serverVersion,
+        serverDescription,
+        coreVersion,
+        canvasVersion,
+        uiVersion,
         onLogout,
         logoutFetching,
     } = props;
@@ -61,26 +73,42 @@ function HeaderContainer(props: Props): JSX.Element {
         const FORUM = 'https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit';
 
         Modal.info({
-            title: `${serverAbout.name}`,
+            title: `${toolName}`,
             content: (
                 <div>
                     <p>
-                        {`${serverAbout.description}`}
+                        {`${serverDescription}`}
                     </p>
                     <p>
                         <Text strong>
                             Server version:
                         </Text>
                         <Text type='secondary'>
-                            {` ${serverAbout.version}`}
+                            {` ${serverVersion}`}
                         </Text>
                     </p>
                     <p>
                         <Text strong>
-                            Client version:
+                            Core version:
                         </Text>
                         <Text type='secondary'>
-                            {` ${core.client.version}`}
+                            {` ${coreVersion}`}
+                        </Text>
+                    </p>
+                    <p>
+                        <Text strong>
+                            Canvas version:
+                        </Text>
+                        <Text type='secondary'>
+                            {` ${canvasVersion}`}
+                        </Text>
+                    </p>
+                    <p>
+                        <Text strong>
+                            UI version:
+                        </Text>
+                        <Text type='secondary'>
+                            {` ${uiVersion}`}
                         </Text>
                     </p>
                     <Row type='flex' justify='space-around'>
@@ -152,8 +180,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         >
                             Models
                         </Button>
-                    )
-                }
+                    )}
                 { installedAnalytics
                     && (
                         <Button
@@ -169,8 +196,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         >
                             Analytics
                         </Button>
-                    )
-                }
+                    )}
             </div>
             <div className='cvat-right-header'>
                 <Button

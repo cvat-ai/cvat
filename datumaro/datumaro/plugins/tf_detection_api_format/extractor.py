@@ -10,12 +10,13 @@ import re
 
 from datumaro.components.extractor import (SourceExtractor,
     DEFAULT_SUBSET_NAME, DatasetItem,
-    AnnotationType, Bbox, LabelCategories
+    AnnotationType, Bbox, Mask, LabelCategories
 )
-from datumaro.util.image import lazy_image, decode_image
+from datumaro.util.image import Image, decode_image, lazy_image
 from datumaro.util.tf_util import import_tf as _import_tf
 
 from .format import DetectionApiPath
+tf = _import_tf()
 
 
 def clamp(value, _min, _max):
@@ -92,8 +93,6 @@ class TfDetectionApiExtractor(SourceExtractor):
 
     @classmethod
     def _parse_tfrecord_file(cls, filepath, subset_name, images_dir):
-        tf = _import_tf()
-
         dataset = tf.data.TFRecordDataset(filepath)
         features = {
             'image/filename': tf.io.FixedLenFeature([], tf.string),
@@ -148,6 +147,9 @@ class TfDetectionApiExtractor(SourceExtractor):
             labels = tf.sparse.to_dense(
                 parsed_record['image/object/class/text'],
                 default_value=b'').numpy()
+            masks = tf.sparse.to_dense(
+                parsed_record['image/object/mask'],
+                default_value=b'').numpy()
 
             for label, label_id in zip(labels, label_ids):
                 label = label.decode('utf-8')
@@ -164,24 +166,42 @@ class TfDetectionApiExtractor(SourceExtractor):
                 item_id = osp.splitext(frame_filename)[0]
 
             annotations = []
-            for index, shape in enumerate(
+            for shape_id, shape in enumerate(
                     np.dstack((labels, xmins, ymins, xmaxs, ymaxs))[0]):
                 label = shape[0].decode('utf-8')
-                x = clamp(shape[1] * frame_width, 0, frame_width)
-                y = clamp(shape[2] * frame_height, 0, frame_height)
-                w = clamp(shape[3] * frame_width, 0, frame_width) - x
-                h = clamp(shape[4] * frame_height, 0, frame_height) - y
-                annotations.append(Bbox(x, y, w, h,
-                    label=dataset_labels.get(label, None), id=index
-                ))
+
+                mask = None
+                if len(masks) != 0:
+                    mask = masks[shape_id]
+
+                if mask is not None:
+                    if isinstance(mask, bytes):
+                        mask = lazy_image(mask, decode_image)
+                    annotations.append(Mask(image=mask,
+                        label=dataset_labels.get(label)
+                    ))
+                else:
+                    x = clamp(shape[1] * frame_width, 0, frame_width)
+                    y = clamp(shape[2] * frame_height, 0, frame_height)
+                    w = clamp(shape[3] * frame_width, 0, frame_width) - x
+                    h = clamp(shape[4] * frame_height, 0, frame_height) - y
+                    annotations.append(Bbox(x, y, w, h,
+                        label=dataset_labels.get(label)
+                    ))
+
+            image_size = None
+            if frame_height and frame_width:
+                image_size = (frame_height, frame_width)
+
+            image_params = {}
+            if frame_image and frame_format:
+                image_params['data'] = lazy_image(frame_image, decode_image)
+            if frame_filename:
+                image_params['path'] = osp.join(images_dir, frame_filename)
 
             image = None
-            if image is None and frame_image and frame_format:
-                image = lazy_image(frame_image, loader=decode_image)
-            if image is None and frame_filename and images_dir:
-                image_path = osp.join(images_dir, frame_filename)
-                if osp.exists(image_path):
-                    image = lazy_image(image_path)
+            if image_params:
+                image = Image(**image_params, size=image_size)
 
             dataset_items.append(DatasetItem(id=item_id, subset=subset_name,
                 image=image, annotations=annotations))

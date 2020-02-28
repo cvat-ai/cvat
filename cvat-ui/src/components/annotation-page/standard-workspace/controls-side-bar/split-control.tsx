@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -42,7 +46,7 @@ function SplitControl(props: Props): JSX.Element {
         };
 
     return (
-        <Tooltip overlay='Split a track' placement='right'>
+        <Tooltip title='Split a track' placement='right'>
             <Icon {...dynamicIconProps} component={SplitIcon} />
         </Tooltip>
     );

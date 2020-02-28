@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -23,7 +27,7 @@ function FitControl(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Tooltip overlay='Fit the image' placement='right'>
+        <Tooltip title='Fit the image' placement='right'>
             <Icon component={FitIcon} onClick={(): void => canvasInstance.fit()} />
         </Tooltip>
     );

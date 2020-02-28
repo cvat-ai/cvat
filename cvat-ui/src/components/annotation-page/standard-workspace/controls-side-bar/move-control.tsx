@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -29,12 +33,11 @@ function MoveControl(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Tooltip overlay='Move the image' placement='right'>
+        <Tooltip title='Move the image' placement='right'>
             <Icon
                 component={MoveIcon}
                 className={activeControl === ActiveControl.DRAG_CANVAS
-                    ? 'cvat-active-canvas-control' : ''
-                }
+                    ? 'cvat-active-canvas-control' : ''}
                 onClick={(): void => {
                     if (activeControl === ActiveControl.DRAG_CANVAS) {
                         canvasInstance.dragCanvas(false);

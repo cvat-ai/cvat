@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -90,7 +94,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
     });
 
     const makeShapesTracksTitle = (title: string): JSX.Element => (
-        <Tooltip overlay='Shapes / Tracks'>
+        <Tooltip title='Shapes / Tracks'>
             <Text strong style={{ marginRight: 5 }}>{title}</Text>
             <Icon className='cvat-info-circle-icon' type='question-circle' />
         </Tooltip>

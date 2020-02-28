@@ -75,17 +75,24 @@ class YoloConverter(Converter, CliPlugin):
             image_paths = OrderedDict()
 
             for item in subset:
-                image_name = '%s.jpg' % item.id
+                if not item.has_image:
+                    raise Exception("Failed to export item '%s': "
+                        "item has no image info" % item.id)
+                height, width = item.image.size
+
+                image_name = item.image.filename
+                item_name = osp.splitext(item.image.filename)[0]
+                if self._save_images:
+                    if item.has_image and item.image.has_data:
+                        if not item_name:
+                            item_name = item.id
+                        image_name = item_name + '.jpg'
+                        save_image(osp.join(subset_dir, image_name),
+                            item.image.data)
+                    else:
+                        log.warning("Item '%s' has no image" % item.id)
                 image_paths[item.id] = osp.join('data',
                     osp.basename(subset_dir), image_name)
-
-                if self._save_images:
-                    if item.has_image:
-                        save_image(osp.join(subset_dir, image_name), item.image)
-                    else:
-                        log.debug("Item '%s' has no images" % item.id)
-
-                height, width = item.image.shape[:2]
 
                 yolo_annotation = ''
                 for bbox in item.annotations:
@@ -98,7 +105,7 @@ class YoloConverter(Converter, CliPlugin):
                     yolo_bb = ' '.join('%.6f' % p for p in yolo_bb)
                     yolo_annotation += '%s %s\n' % (bbox.label, yolo_bb)
 
-                annotation_path = osp.join(subset_dir, '%s.txt' % item.id)
+                annotation_path = osp.join(subset_dir, '%s.txt' % item_name)
                 with open(annotation_path, 'w') as f:
                     f.write(yolo_annotation)
 

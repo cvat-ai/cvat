@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
@@ -62,8 +66,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                             </Text>
                             <br />
                         </>
-                    )
-                }
+                    )}
                 <Text type='secondary'>{`Last updated ${updated}`}</Text>
             </Col>
         );
@@ -94,6 +97,8 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
             progressText = <Text strong className={progressColor}>Pending</Text>;
         }
 
+        const jobsProgress = numOfCompleted / numOfJobs;
+
         return (
             <Col span={6}>
                 <Row type='flex' justify='space-between' align='top'>
@@ -111,7 +116,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     <Col>
                         <Progress
                             className={`${progressColor} cvat-task-progress`}
-                            percent={numOfCompleted * 100 / numOfJobs}
+                            percent={jobsProgress * 100}
                             strokeColor='#1890FF'
                             showInfo={false}
                             strokeWidth={5}
@@ -142,8 +147,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                                 </Col>
                             </Row>
                         </>
-                    )
-                }
+                    )}
             </Col>
         );
     }

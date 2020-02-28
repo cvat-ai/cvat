@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -14,11 +18,13 @@ import {
     Menu,
     Button,
     Modal,
+    Popover,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
 import { RadioChangeEvent } from 'antd/lib/radio';
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
 
 import {
     ObjectOutsideIcon,
@@ -26,6 +32,8 @@ import {
     LastIcon,
     PreviousIcon,
     NextIcon,
+    BackgroundIcon,
+    ForegroundIcon,
 } from 'icons';
 
 import {
@@ -33,13 +41,22 @@ import {
 } from 'reducers/interfaces';
 
 function ItemMenu(
+    serverID: number | undefined,
     locked: boolean,
     copy: (() => void),
     remove: (() => void),
     propagate: (() => void),
+    createURL: (() => void),
+    toBackground: (() => void),
+    toForeground: (() => void),
 ): JSX.Element {
     return (
         <Menu key='unique' className='cvat-object-item-menu'>
+            <Menu.Item>
+                <Button disabled={serverID === undefined} type='link' icon='link' onClick={createURL}>
+                    Create object URL
+                </Button>
+            </Menu.Item>
             <Menu.Item>
                 <Button type='link' icon='copy' onClick={copy}>
                     Make a copy
@@ -48,6 +65,18 @@ function ItemMenu(
             <Menu.Item>
                 <Button type='link' icon='block' onClick={propagate}>
                     Propagate
+                </Button>
+            </Menu.Item>
+            <Menu.Item>
+                <Button type='link' onClick={toBackground}>
+                    <Icon component={BackgroundIcon} />
+                    To background
+                </Button>
+            </Menu.Item>
+            <Menu.Item>
+                <Button type='link' onClick={toForeground}>
+                    <Icon component={ForegroundIcon} />
+                    To foreground
                 </Button>
             </Menu.Item>
             <Menu.Item>
@@ -77,6 +106,7 @@ function ItemMenu(
 
 interface ItemTopComponentProps {
     clientID: number;
+    serverID: number | undefined;
     labelID: number;
     labels: any[];
     type: string;
@@ -85,11 +115,15 @@ interface ItemTopComponentProps {
     copy(): void;
     remove(): void;
     propagate(): void;
+    createURL(): void;
+    toBackground(): void;
+    toForeground(): void;
 }
 
 function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
     const {
         clientID,
+        serverID,
         labelID,
         labels,
         type,
@@ -98,17 +132,20 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         copy,
         remove,
         propagate,
+        createURL,
+        toBackground,
+        toForeground,
     } = props;
 
     return (
         <Row type='flex' align='middle'>
             <Col span={10}>
-                <Text style={{ fontSize: 16 }}>{clientID}</Text>
+                <Text style={{ fontSize: 12 }}>{clientID}</Text>
                 <br />
-                <Text style={{ fontSize: 10 }}>{type}</Text>
+                <Text type='secondary' style={{ fontSize: 10 }}>{type}</Text>
             </Col>
             <Col span={12}>
-                <Select value={`${labelID}`} onChange={changeLabel}>
+                <Select size='small' value={`${labelID}`} onChange={changeLabel}>
                     { labels.map((label: any): JSX.Element => (
                         <Select.Option key={label.id} value={`${label.id}`}>
                             {label.name}
@@ -119,7 +156,16 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
             <Col span={2}>
                 <Dropdown
                     placement='bottomLeft'
-                    overlay={ItemMenu(locked, copy, remove, propagate)}
+                    overlay={ItemMenu(
+                        serverID,
+                        locked,
+                        copy,
+                        remove,
+                        propagate,
+                        createURL,
+                        toBackground,
+                        toForeground,
+                    )}
                 >
                     <Icon type='more' />
                 </Dropdown>
@@ -189,58 +235,49 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                         <Col span={6}>
                             { navigateFirstKeyframe
                                 ? <Icon component={FirstIcon} onClick={navigateFirstKeyframe} />
-                                : <Icon component={FirstIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
-                            }
+                                : <Icon component={FirstIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                         <Col span={6}>
                             { navigatePrevKeyframe
                                 ? <Icon component={PreviousIcon} onClick={navigatePrevKeyframe} />
-                                : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
-                            }
+                                : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                         <Col span={6}>
                             { navigateNextKeyframe
                                 ? <Icon component={NextIcon} onClick={navigateNextKeyframe} />
-                                : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
-                            }
+                                : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                         <Col span={6}>
                             { navigateLastKeyframe
                                 ? <Icon component={LastIcon} onClick={navigateLastKeyframe} />
-                                : <Icon component={LastIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
-                            }
+                                : <Icon component={LastIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                     </Row>
                     <Row type='flex' justify='space-around'>
                         <Col span={4}>
                             { outside
                                 ? <Icon component={ObjectOutsideIcon} onClick={unsetOutside} />
-                                : <Icon type='select' onClick={setOutside} />
-                            }
+                                : <Icon type='select' onClick={setOutside} />}
                         </Col>
                         <Col span={4}>
                             { locked
                                 ? <Icon type='lock' onClick={unlock} />
-                                : <Icon type='unlock' onClick={lock} />
-                            }
+                                : <Icon type='unlock' onClick={lock} />}
                         </Col>
                         <Col span={4}>
                             { occluded
                                 ? <Icon type='team' onClick={unsetOccluded} />
-                                : <Icon type='user' onClick={setOccluded} />
-                            }
+                                : <Icon type='user' onClick={setOccluded} />}
                         </Col>
                         <Col span={4}>
                             { hidden
                                 ? <Icon type='eye-invisible' onClick={show} />
-                                : <Icon type='eye' onClick={hide} />
-                            }
+                                : <Icon type='eye' onClick={hide} />}
                         </Col>
                         <Col span={4}>
                             { keyframe
                                 ? <Icon type='star' theme='filled' onClick={unsetKeyframe} />
-                                : <Icon type='star' onClick={setKeyframe} />
-                            }
+                                : <Icon type='star' onClick={setKeyframe} />}
                         </Col>
                     </Row>
                 </Col>
@@ -255,20 +292,17 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                     <Col span={8}>
                         { locked
                             ? <Icon type='lock' onClick={unlock} />
-                            : <Icon type='unlock' onClick={lock} />
-                        }
+                            : <Icon type='unlock' onClick={lock} />}
                     </Col>
                     <Col span={8}>
                         { occluded
                             ? <Icon type='team' onClick={unsetOccluded} />
-                            : <Icon type='user' onClick={setOccluded} />
-                        }
+                            : <Icon type='user' onClick={setOccluded} />}
                     </Col>
                     <Col span={8}>
                         { hidden
                             ? <Icon type='eye-invisible' onClick={show} />
-                            : <Icon type='eye' onClick={hide} />
-                        }
+                            : <Icon type='eye' onClick={hide} />}
                     </Col>
                 </Row>
             </Col>
@@ -321,7 +355,7 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                         changeAttribute(attrID, value);
                     }}
                 >
-                    <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                    <Text strong className='cvat-text'>
                         {attrName}
                     </Text>
                 </Checkbox>
@@ -337,6 +371,7 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                         <Text strong className='cvat-text'>{attrName}</Text>
                     </legend>
                     <Radio.Group
+                        size='small'
                         value={attrValue}
                         onChange={(event: RadioChangeEvent): void => {
                             changeAttribute(attrID, event.target.value);
@@ -355,12 +390,13 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
         return (
             <>
                 <Col span={24}>
-                    <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                    <Text strong className='cvat-text'>
                         {attrName}
                     </Text>
                 </Col>
                 <Col span={24}>
                     <Select
+                        size='small'
                         onChange={(value: string): void => {
                             changeAttribute(attrID, value);
                         }}
@@ -382,12 +418,13 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
         return (
             <>
                 <Col span={24}>
-                    <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                    <Text strong className='cvat-text'>
                         {attrName}
                     </Text>
                 </Col>
                 <Col span={24}>
                     <InputNumber
+                        size='small'
                         onChange={(value: number | undefined): void => {
                             if (typeof (value) !== 'undefined') {
                                 changeAttribute(attrID, `${value}`);
@@ -407,12 +444,13 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
     return (
         <>
             <Col span={24}>
-                <Text strong className='cvat-text' style={{ fontSize: '1.2em' }}>
+                <Text strong className='cvat-text'>
                     {attrName}
                 </Text>
             </Col>
             <Col span={24}>
                 <Input
+                    size='small'
                     onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
                         changeAttribute(attrID, event.target.value);
                     }}
@@ -473,7 +511,7 @@ function ItemAttributesComponent(props: ItemAttributesComponentProps): JSX.Eleme
                 onChange={collapse}
             >
                 <Collapse.Panel
-                    header='Details'
+                    header={<span style={{ fontSize: '11px' }}>Details</span>}
                     key='details'
                 >
                     { sorted.map((attribute: any): JSX.Element => (
@@ -507,6 +545,7 @@ interface Props {
     objectType: ObjectType;
     shapeType: ShapeType;
     clientID: number;
+    serverID: number | undefined;
     labelID: number;
     occluded: boolean;
     outside: boolean | undefined;
@@ -515,6 +554,7 @@ interface Props {
     keyframe: boolean | undefined;
     attrValues: Record<number, string>;
     color: string;
+    colors: string[];
 
     labels: any[];
     attributes: any[];
@@ -527,6 +567,9 @@ interface Props {
     activate(): void;
     copy(): void;
     propagate(): void;
+    createURL(): void;
+    toBackground(): void;
+    toForeground(): void;
     remove(): void;
     setOccluded(): void;
     unsetOccluded(): void;
@@ -540,6 +583,7 @@ interface Props {
     show(): void;
     changeLabel(labelID: string): void;
     changeAttribute(attrID: number, value: string): void;
+    changeColor(color: string): void;
     collapse(): void;
 }
 
@@ -553,6 +597,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         && nextProps.labelID === prevProps.labelID
         && nextProps.color === prevProps.color
         && nextProps.clientID === prevProps.clientID
+        && nextProps.serverID === prevProps.serverID
         && nextProps.objectType === prevProps.objectType
         && nextProps.shapeType === prevProps.shapeType
         && nextProps.collapsed === prevProps.collapsed
@@ -571,6 +616,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         objectType,
         shapeType,
         clientID,
+        serverID,
         occluded,
         outside,
         locked,
@@ -579,6 +625,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         attrValues,
         labelID,
         color,
+        colors,
 
         attributes,
         labels,
@@ -591,6 +638,9 @@ function ObjectItemComponent(props: Props): JSX.Element {
         activate,
         copy,
         propagate,
+        createURL,
+        toBackground,
+        toForeground,
         remove,
         setOccluded,
         unsetOccluded,
@@ -604,6 +654,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         show,
         changeLabel,
         changeAttribute,
+        changeColor,
         collapse,
     } = props;
 
@@ -614,56 +665,77 @@ function ObjectItemComponent(props: Props): JSX.Element {
         : 'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
 
     return (
-        <div
-            onMouseEnter={activate}
-            id={`cvat-objects-sidebar-state-item-${clientID}`}
-            className={className}
-            style={{ borderLeftStyle: 'solid', borderColor: ` ${color}` }}
-        >
-            <ItemTop
-                clientID={clientID}
-                labelID={labelID}
-                labels={labels}
-                type={type}
-                locked={locked}
-                changeLabel={changeLabel}
-                copy={copy}
-                remove={remove}
-                propagate={propagate}
-            />
-            <ItemButtons
-                objectType={objectType}
-                occluded={occluded}
-                outside={outside}
-                locked={locked}
-                hidden={hidden}
-                keyframe={keyframe}
-                navigateFirstKeyframe={navigateFirstKeyframe}
-                navigatePrevKeyframe={navigatePrevKeyframe}
-                navigateNextKeyframe={navigateNextKeyframe}
-                navigateLastKeyframe={navigateLastKeyframe}
-                setOccluded={setOccluded}
-                unsetOccluded={unsetOccluded}
-                setOutside={setOutside}
-                unsetOutside={unsetOutside}
-                setKeyframe={setKeyframe}
-                unsetKeyframe={unsetKeyframe}
-                lock={lock}
-                unlock={unlock}
-                hide={hide}
-                show={show}
-            />
-            { !!attributes.length
-                && (
-                    <ItemAttributes
-                        collapsed={collapsed}
-                        attributes={attributes}
-                        values={attrValues}
-                        collapse={collapse}
-                        changeAttribute={changeAttribute}
+        <div style={{ display: 'flex' }}>
+            <Popover
+                placement='left'
+                trigger='click'
+                content={(
+                    <ColorChanger
+                        onChange={changeColor}
+                        colors={colors}
                     />
-                )
-            }
+                )}
+            >
+                <div
+                    className='cvat-objects-sidebar-state-item-color'
+                    style={{ background: ` ${color}` }}
+                />
+            </Popover>
+
+            <div
+                onMouseEnter={activate}
+                id={`cvat-objects-sidebar-state-item-${clientID}`}
+                className={className}
+                style={{ borderColor: ` ${color}` }}
+            >
+                <ItemTop
+                    serverID={serverID}
+                    clientID={clientID}
+                    labelID={labelID}
+                    labels={labels}
+                    type={type}
+                    locked={locked}
+                    changeLabel={changeLabel}
+                    copy={copy}
+                    remove={remove}
+                    propagate={propagate}
+                    createURL={createURL}
+                    toBackground={toBackground}
+                    toForeground={toForeground}
+                />
+                <ItemButtons
+                    objectType={objectType}
+                    occluded={occluded}
+                    outside={outside}
+                    locked={locked}
+                    hidden={hidden}
+                    keyframe={keyframe}
+                    navigateFirstKeyframe={navigateFirstKeyframe}
+                    navigatePrevKeyframe={navigatePrevKeyframe}
+                    navigateNextKeyframe={navigateNextKeyframe}
+                    navigateLastKeyframe={navigateLastKeyframe}
+                    setOccluded={setOccluded}
+                    unsetOccluded={unsetOccluded}
+                    setOutside={setOutside}
+                    unsetOutside={unsetOutside}
+                    setKeyframe={setKeyframe}
+                    unsetKeyframe={unsetKeyframe}
+                    lock={lock}
+                    unlock={unlock}
+                    hide={hide}
+                    show={show}
+                />
+                { !!attributes.length
+                    && (
+                        <ItemAttributes
+                            collapsed={collapsed}
+                            attributes={attributes}
+                            values={attrValues}
+                            collapse={collapse}
+                            changeAttribute={changeAttribute}
+                        />
+                    )}
+            </div>
         </div>
     );
 }

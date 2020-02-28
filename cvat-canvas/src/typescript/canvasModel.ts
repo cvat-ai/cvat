@@ -1,7 +1,6 @@
-/*
-* Copyright (C) 2019 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 import { MasterImpl } from './master';
 
@@ -40,6 +39,7 @@ export interface ActiveElement {
 export interface DrawData {
     enabled: boolean;
     shapeType?: string;
+    rectDrawingMethod?: string;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
@@ -79,6 +79,7 @@ export enum UpdateReasons {
     IMAGE_FITTED = 'image_fitted',
     IMAGE_MOVED = 'image_moved',
     GRID_UPDATED = 'grid_updated',
+    SET_Z_LAYER = 'set_z_layer',
 
     OBJECTS_UPDATED = 'objects_updated',
     SHAPE_ACTIVATED = 'shape_activated',
@@ -112,6 +113,7 @@ export enum Mode {
 export interface CanvasModel {
     readonly image: HTMLImageElement | null;
     readonly objects: any[];
+    readonly zLayer: number | null;
     readonly gridSize: Size;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
@@ -123,6 +125,7 @@ export interface CanvasModel {
     geometry: Geometry;
     mode: Mode;
 
+    setZLayer(zLayer: number | null): void;
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
 
@@ -162,6 +165,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         rememberAngle: boolean;
         scale: number;
         top: number;
+        zLayer: number | null;
         drawData: DrawData;
         mergeData: MergeData;
         groupData: GroupData;
@@ -203,6 +207,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             rememberAngle: false,
             scale: 1,
             top: 0,
+            zLayer: null,
             drawData: {
                 enabled: false,
                 initialState: null,
@@ -219,6 +224,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             selected: null,
             mode: Mode.IDLE,
         };
+    }
+
+    public setZLayer(zLayer: number | null): void {
+        this.data.zLayer = zLayer;
+        this.notify(UpdateReasons.SET_Z_LAYER);
     }
 
     public zoom(x: number, y: number, direction: number): void {
@@ -514,11 +524,20 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         ));
     }
 
+    public get zLayer(): number | null {
+        return this.data.zLayer;
+    }
+
     public get image(): HTMLImageElement | null {
         return this.data.image;
     }
 
     public get objects(): any[] {
+        if (this.data.zLayer !== null) {
+            return this.data.objects
+                .filter((object: any): boolean => object.zOrder <= this.data.zLayer);
+        }
+
         return this.data.objects;
     }
 

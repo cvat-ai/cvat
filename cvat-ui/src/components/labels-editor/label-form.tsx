@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -138,7 +142,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
         return (
             <Col span={4}>
                 <Form.Item>
-                    <Tooltip overlay='An HTML element representing the attribute'>
+                    <Tooltip title='An HTML element representing the attribute'>
                         { form.getFieldDecorator(`type[${key}]`, {
                             initialValue: type,
                         })(
@@ -188,7 +192,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
         };
 
         return (
-            <Tooltip overlay='Press enter to add a new value'>
+            <Tooltip title='Press enter to add a new value'>
                 <Form.Item>
                     { form.getFieldDecorator(`values[${key}]`, {
                         initialValue: existedValues,
@@ -215,7 +219,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
         const { form } = this.props;
 
         return (
-            <Tooltip overlay='Specify a default value'>
+            <Tooltip title='Specify a default value'>
                 <Form.Item>
                     { form.getFieldDecorator(`values[${key}]`, {
                         initialValue: value,
@@ -299,7 +303,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
         return (
             <Form.Item>
-                <Tooltip overlay='Can this attribute be changed frame to frame?'>
+                <Tooltip title='Can this attribute be changed frame to frame?'>
                     { form.getFieldDecorator(`mutable[${key}]`, {
                         initialValue: value,
                         valuePropName: 'checked',
@@ -316,7 +320,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
         return (
             <Form.Item>
-                <Tooltip overlay='Delete the attribute'>
+                <Tooltip title='Delete the attribute'>
                     <Button
                         type='link'
                         className='cvat-delete-attribute-button'
@@ -417,7 +421,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
     private renderDoneButton(): JSX.Element {
         return (
             <Col>
-                <Tooltip overlay='Save the label and return'>
+                <Tooltip title='Save the label and return'>
                     <Button
                         style={{ width: '150px' }}
                         type='primary'
@@ -440,7 +444,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
             label ? <div />
                 : (
                     <Col offset={1}>
-                        <Tooltip overlay='Save the label and create one more'>
+                        <Tooltip title='Save the label and create one more'>
                             <Button
                                 style={{ width: '150px' }}
                                 type='primary'
@@ -462,7 +466,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
         return (
             <Col offset={1}>
-                <Tooltip overlay='Do not save the label and return'>
+                <Tooltip title='Do not save the label and return'>
                     <Button
                         style={{ width: '150px' }}
                         type='danger'
@@ -506,8 +510,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                                 <Text>Attributes</Text>
                             </Col>
                         </Row>
-                    )
-                }
+                    )}
                 { attributeItems.reverse() }
                 <Row type='flex' justify='start' align='middle'>
                     { this.renderDoneButton() }

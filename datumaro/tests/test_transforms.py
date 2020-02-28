@@ -3,7 +3,7 @@ import numpy as np
 from unittest import TestCase
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    Mask, Polygon
+    Mask, Polygon, PolyLine, Points, Bbox
 )
 from datumaro.util.test_utils import compare_datasets
 import datumaro.plugins.transforms as transforms
@@ -159,8 +159,10 @@ class TransformsTest(TestCase):
                                     [1, 0, 0, 0, 0],
                                     [1, 1, 1, 0, 0]],
                                 ),
-                                z_order=0),
+                                z_order=0, group=1),
                             Polygon([1, 1, 4, 1, 4, 4, 1, 4],
+                                z_order=1, group=1),
+                            Polygon([0, 0, 0, 2, 2, 2, 2, 0],
                                 z_order=1),
                         ]
                     ),
@@ -178,11 +180,143 @@ class TransformsTest(TestCase):
                                     [1, 1, 1, 1, 0],
                                     [1, 1, 1, 0, 0]],
                                 ),
-                                z_order=0),
+                                z_order=0, group=1),
+                            Mask(np.array([
+                                    [1, 1, 0, 0, 0],
+                                    [1, 1, 0, 0, 0],
+                                    [0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0]],
+                                ),
+                                z_order=1),
                         ]
                     ),
                 ])
 
         actual = transforms.MergeInstanceSegments(SrcExtractor(),
             include_polygons=True)
+        compare_datasets(self, DstExtractor(), actual)
+
+    def test_map_subsets(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a'),
+                    DatasetItem(id=2, subset='b'),
+                    DatasetItem(id=3, subset='c'),
+                ])
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset=''),
+                    DatasetItem(id=2, subset='a'),
+                    DatasetItem(id=3, subset='c'),
+                ])
+
+        actual = transforms.MapSubsets(SrcExtractor(),
+            { 'a': '', 'b': 'a' })
+        compare_datasets(self, DstExtractor(), actual)
+
+    def test_shapes_to_boxes(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                        annotations=[
+                            Mask(np.array([
+                                    [0, 0, 1, 1, 1],
+                                    [0, 0, 0, 0, 1],
+                                    [1, 0, 0, 0, 1],
+                                    [1, 0, 0, 0, 0],
+                                    [1, 1, 1, 0, 0]],
+                                ), id=1),
+                            Polygon([1, 1, 4, 1, 4, 4, 1, 4], id=2),
+                            PolyLine([1, 1, 2, 1, 2, 2, 1, 2], id=3),
+                            Points([2, 2, 4, 2, 4, 4, 2, 4], id=4),
+                        ]
+                    ),
+                ])
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                        annotations=[
+                            Bbox(0, 0, 4, 4, id=1),
+                            Bbox(1, 1, 3, 3, id=2),
+                            Bbox(1, 1, 1, 1, id=3),
+                            Bbox(2, 2, 2, 2, id=4),
+                        ]
+                    ),
+                ])
+
+        actual = transforms.ShapesToBoxes(SrcExtractor())
+        compare_datasets(self, DstExtractor(), actual)
+
+    def test_id_from_image(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image='path.jpg'),
+                    DatasetItem(id=2),
+                ])
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='path', image='path.jpg'),
+                    DatasetItem(id=2),
+                ])
+
+        actual = transforms.IdFromImageName(SrcExtractor())
+        compare_datasets(self, DstExtractor(), actual)
+
+    def test_boxes_to_masks(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                        annotations=[
+                            Bbox(0, 0, 3, 3, z_order=1),
+                            Bbox(0, 0, 3, 1, z_order=2),
+                            Bbox(0, 2, 3, 1, z_order=3),
+                        ]
+                    ),
+                ])
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                        annotations=[
+                            Mask(np.array([
+                                    [1, 1, 1, 0, 0],
+                                    [1, 1, 1, 0, 0],
+                                    [1, 1, 1, 0, 0],
+                                    [0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0]],
+                                ),
+                                z_order=1),
+                            Mask(np.array([
+                                    [1, 1, 1, 0, 0],
+                                    [0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0]],
+                                ),
+                                z_order=2),
+                            Mask(np.array([
+                                    [0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0],
+                                    [1, 1, 1, 0, 0],
+                                    [0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0]],
+                                ),
+                                z_order=3),
+                        ]
+                    ),
+                ])
+
+        actual = transforms.BoxesToMasks(SrcExtractor())
         compare_datasets(self, DstExtractor(), actual)

@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { combineReducers, Reducer } from 'redux';
 import authReducer from './auth-reducer';
 import tasksReducer from './tasks-reducer';

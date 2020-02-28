@@ -5,11 +5,12 @@
 
 # pylint: disable=exec-used
 
+import cv2
+import numpy as np
 import os
 import os.path as osp
-import numpy as np
-import subprocess
 import platform
+import subprocess
 
 from openvino.inference_engine import IENetwork, IEPlugin
 
@@ -141,8 +142,6 @@ class OpenVinoLauncher(Launcher):
         self._net = plugin.load(network=network, num_requests=1)
 
     def infer(self, inputs):
-        import cv2
-
         assert len(inputs.shape) == 4, \
             "Expected an input image in (N, H, W, C) format, got %s" % \
                 (inputs.shape)

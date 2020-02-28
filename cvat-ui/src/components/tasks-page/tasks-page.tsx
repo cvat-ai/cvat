@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
@@ -223,8 +227,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
                         <TaskListContainer
                             onSwitchPage={this.handlePagination}
                         />
-                    ) : <EmptyListComponent />
-                }
+                    ) : <EmptyListComponent />}
                 <FeedbackComponent />
             </div>
         );

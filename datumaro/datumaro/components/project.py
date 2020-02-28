@@ -12,11 +12,13 @@ import inspect
 import logging as log
 import os
 import os.path as osp
+import shutil
 import sys
 
 from datumaro.components.config import Config, DEFAULT_FORMAT
-from datumaro.components.config_model import *
-from datumaro.components.extractor import DatasetItem, Extractor
+from datumaro.components.config_model import (Model, Source,
+    PROJECT_DEFAULT_CONFIG, PROJECT_SCHEMA)
+from datumaro.components.extractor import Extractor
 from datumaro.components.launcher import InferenceWrapper
 from datumaro.components.dataset_filter import \
     XPathDatasetFilter, XPathAnnotationsFilter
@@ -302,45 +304,6 @@ class Subset(Extractor):
     def categories(self):
         return self._parent.categories()
 
-class DatasetItemWrapper(DatasetItem):
-    def __init__(self, item, path, annotations, image=None):
-        self._item = item
-        if path is None:
-            path = []
-        self._path = path
-        self._annotations = annotations
-        self._image = image
-
-    @DatasetItem.id.getter
-    def id(self):
-        return self._item.id
-
-    @DatasetItem.subset.getter
-    def subset(self):
-        return self._item.subset
-
-    @DatasetItem.path.getter
-    def path(self):
-        return self._path
-
-    @DatasetItem.annotations.getter
-    def annotations(self):
-        return self._annotations
-
-    @DatasetItem.has_image.getter
-    def has_image(self):
-        if self._image is not None:
-            return True
-        return self._item.has_image
-
-    @DatasetItem.image.getter
-    def image(self):
-        if self._image is not None:
-            if callable(self._image):
-                return self._image()
-            return self._image
-        return self._item.image
-
 class Dataset(Extractor):
     @classmethod
     def from_extractors(cls, *sources):
@@ -360,25 +323,17 @@ class Dataset(Extractor):
         subsets = defaultdict(lambda: Subset(dataset))
         for source in sources:
             for item in source:
-                path = None # NOTE: merge everything into our own dataset
-
                 existing_item = subsets[item.subset].items.get(item.id)
                 if existing_item is not None:
-                    image = None
-                    if existing_item.has_image:
-                        # TODO: think of image comparison
-                        image = cls._lazy_image(existing_item)
-
-                    item = DatasetItemWrapper(item=item, path=path,
-                        image=image, annotations=self._merge_anno(
-                            existing_item.annotations, item.annotations))
-                else:
-                    item = DatasetItemWrapper(item=item, path=path,
-                        annotations=item.annotations)
+                    path = existing_item.path
+                    if item.path != path:
+                        path = None
+                    item = cls._merge_items(existing_item, item, path=path)
 
                 subsets[item.subset].items[item.id] = item
 
-        self._subsets = dict(subsets)
+        dataset._subsets = dict(subsets)
+        return dataset
 
     def __init__(self, categories=None):
         super().__init__()
@@ -423,8 +378,7 @@ class Dataset(Extractor):
         if subset is None:
             subset = item.subset
 
-        item = DatasetItemWrapper(item=item, path=None,
-            annotations=item.annotations)
+        item = item.wrap(path=None, annotations=item.annotations)
         if item.subset not in self._subsets:
             self._subsets[item.subset] = Subset(self)
         self._subsets[subset].items[item_id] = item
@@ -452,6 +406,34 @@ class Dataset(Extractor):
     def _lazy_image(item):
         # NOTE: avoid https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
         return lambda: item.image
+
+    @classmethod
+    def _merge_items(cls, existing_item, current_item, path=None):
+        image = None
+        if existing_item.has_image and current_item.has_image:
+            if existing_item.image.has_data:
+                image = existing_item.image
+            else:
+                image = current_item.image
+
+            if existing_item.image.path != current_item.image.path:
+                if not existing_item.image.path:
+                    image._path = current_item.image.path
+
+            if all([existing_item.image._size, current_item.image._size]):
+                assert existing_item.image._size == current_item.image._size, "Image info differs for item '%s'" % existing_item.id
+            elif existing_item.image._size:
+                image._size = existing_item.image._size
+            else:
+                image._size = current_item.image._size
+        elif existing_item.has_image:
+            image = existing_item.image
+        else:
+            image = current_item.image
+
+        return existing_item.wrap(path=path,
+            image=image, annotations=cls._merge_anno(
+                existing_item.annotations, current_item.annotations))
 
     @staticmethod
     def _merge_anno(a, b):
@@ -520,17 +502,10 @@ class ProjectDataset(Dataset):
             for item in source:
                 existing_item = subsets[item.subset].items.get(item.id)
                 if existing_item is not None:
-                    image = None
-                    if existing_item.has_image:
-                        # TODO: think of image comparison
-                        image = self._lazy_image(existing_item)
-
                     path = existing_item.path
                     if item.path != path:
                         path = None # NOTE: move to our own dataset
-                    item = DatasetItemWrapper(item=item, path=path,
-                        image=image, annotations=self._merge_anno(
-                            existing_item.annotations, item.annotations))
+                    item = self._merge_items(existing_item, item, path=path)
                 else:
                     s_config = config.sources[source_name]
                     if s_config and \
@@ -542,8 +517,7 @@ class ProjectDataset(Dataset):
                         if path is None:
                             path = []
                         path = [source_name] + path
-                    item = DatasetItemWrapper(item=item, path=path,
-                        annotations=item.annotations)
+                    item = item.wrap(path=path, annotations=item.annotations)
 
                 subsets[item.subset].items[item.id] = item
 
@@ -558,7 +532,7 @@ class ProjectDataset(Dataset):
                         if existing_item.has_image:
                             # TODO: think of image comparison
                             image = self._lazy_image(existing_item)
-                        item = DatasetItemWrapper(item=item, path=None,
+                        item = item.wrap(path=None,
                             annotations=item.annotations, image=image)
 
                 subsets[item.subset].items[item.id] = item
@@ -597,8 +571,7 @@ class ProjectDataset(Dataset):
         if subset is None:
             subset = item.subset
 
-        item = DatasetItemWrapper(item=item, path=path,
-            annotations=item.annotations)
+        item = item.wrap(path=path, annotations=item.annotations)
         if item.subset not in self._subsets:
             self._subsets[item.subset] = Subset(self)
         self._subsets[subset].items[item_id] = item
@@ -674,6 +647,7 @@ class ProjectDataset(Dataset):
             dst_project = Project(Config(self.config))
             dst_project.config.remove('project_dir')
             dst_project.config.remove('sources')
+        dst_project.config.project_name = osp.basename(save_dir)
 
         dst_dataset = dst_project.make_dataset()
         dst_dataset.define_categories(extractor.categories())
@@ -700,16 +674,21 @@ class ProjectDataset(Dataset):
     def export_project(self, save_dir, converter,
             filter_expr=None, filter_annotations=False, remove_empty=False):
         # NOTE: probably this function should be in the ViewModel layer
-        save_dir = osp.abspath(save_dir)
-        os.makedirs(save_dir, exist_ok=True)
-
         dataset = self
         if filter_expr:
             dataset = dataset.extract(filter_expr,
                 filter_annotations=filter_annotations,
                 remove_empty=remove_empty)
 
-        converter(dataset, save_dir)
+        save_dir = osp.abspath(save_dir)
+        save_dir_existed = osp.exists(save_dir)
+        try:
+            os.makedirs(save_dir, exist_ok=True)
+            converter(dataset, save_dir)
+        except Exception:
+            if not save_dir_existed:
+                shutil.rmtree(save_dir)
+            raise
 
     def extract_project(self, filter_expr, filter_annotations=False,
             save_dir=None, remove_empty=False):
@@ -722,24 +701,41 @@ class ProjectDataset(Dataset):
         self._save_branch_project(filtered, save_dir=save_dir)
 
 class Project:
-    @staticmethod
-    def load(path):
+    @classmethod
+    def load(cls, path):
         path = osp.abspath(path)
-        if osp.isdir(path):
-            path = osp.join(path, PROJECT_DEFAULT_CONFIG.project_filename)
-        config = Config.parse(path)
-        config.project_dir = osp.dirname(path)
-        config.project_filename = osp.basename(path)
+        config_path = osp.join(path, PROJECT_DEFAULT_CONFIG.env_dir,
+            PROJECT_DEFAULT_CONFIG.project_filename)
+        config = Config.parse(config_path)
+        config.project_dir = path
+        config.project_filename = osp.basename(config_path)
         return Project(config)
 
     def save(self, save_dir=None):
         config = self.config
+
         if save_dir is None:
             assert config.project_dir
-            save_dir = osp.abspath(config.project_dir)
-        os.makedirs(save_dir, exist_ok=True)
-        config_path = osp.join(save_dir, config.project_filename)
-        config.dump(config_path)
+            project_dir = config.project_dir
+        else:
+            project_dir = save_dir
+
+        env_dir = osp.join(project_dir, config.env_dir)
+        save_dir = osp.abspath(env_dir)
+
+        project_dir_existed = osp.exists(project_dir)
+        env_dir_existed = osp.exists(env_dir)
+        try:
+            os.makedirs(save_dir, exist_ok=True)
+
+            config_path = osp.join(save_dir, config.project_filename)
+            config.dump(config_path)
+        except Exception:
+            if not env_dir_existed:
+                shutil.rmtree(save_dir, ignore_errors=True)
+            if not project_dir_existed:
+                shutil.rmtree(project_dir, ignore_errors=True)
+            raise
 
     @staticmethod
     def generate(save_dir, config=None):
@@ -763,8 +759,8 @@ class Project:
     def make_dataset(self):
         return ProjectDataset(self)
 
-    def add_source(self, name, value=Source()):
-        if isinstance(value, (dict, Config)):
+    def add_source(self, name, value=None):
+        if value is None or isinstance(value, (dict, Config)):
             value = Source(value)
         self.config.sources[name] = value
         self.env.sources.register(name, value)
@@ -788,8 +784,8 @@ class Project:
         else:
             self.config.subsets = value
 
-    def add_model(self, name, value=Model()):
-        if isinstance(value, (dict, Config)):
+    def add_model(self, name, value=None):
+        if value is None or isinstance(value, (dict, Config)):
             value = Model(value)
         self.env.register_model(name, value)
         self.config.models[name] = value

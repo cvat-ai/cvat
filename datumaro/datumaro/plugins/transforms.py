@@ -3,15 +3,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-from itertools import groupby
 import logging as log
+import os.path as osp
 
 import pycocotools.mask as mask_utils
 
 from datumaro.components.extractor import (Transform, AnnotationType,
-    Mask, RleMask, Polygon)
+    RleMask, Polygon, Bbox)
 from datumaro.components.cli_plugin import CliPlugin
 import datumaro.util.mask_tools as mask_tools
+from datumaro.util.annotation_tools import find_group_leader, find_instances
 
 
 class CropCoveredSegments(Transform, CliPlugin):
@@ -28,7 +29,7 @@ class CropCoveredSegments(Transform, CliPlugin):
 
         if not item.has_image:
             raise Exception("Image info is required for this transform")
-        h, w = item.image.shape[:2]
+        h, w = item.image.size
         segments = self.crop_segments(segments, w, h)
 
         annotations += segments
@@ -107,7 +108,7 @@ class MergeInstanceSegments(Transform, CliPlugin):
 
         if not item.has_image:
             raise Exception("Image info is required for this transform")
-        h, w = item.image.shape[:2]
+        h, w = item.image.size
         instances = self.find_instances(segments)
         segments = [self.merge_segments(i, w, h, self._include_polygons)
             for i in instances]
@@ -124,7 +125,7 @@ class MergeInstanceSegments(Transform, CliPlugin):
         if not polygons and not masks:
             return []
 
-        leader = cls.find_group_leader(polygons + masks)
+        leader = find_group_leader(polygons + masks)
         instance = []
 
         # Build the resulting mask
@@ -137,9 +138,10 @@ class MergeInstanceSegments(Transform, CliPlugin):
             instance += polygons # keep unused polygons
 
         if masks:
+            masks = [m.image for m in masks]
             if mask is not None:
                 masks += [mask]
-            mask = cls.merge_masks(masks)
+            mask = mask_tools.merge_masks(masks)
 
         if mask is None:
             return instance
@@ -154,40 +156,9 @@ class MergeInstanceSegments(Transform, CliPlugin):
         return instance
 
     @staticmethod
-    def find_group_leader(group):
-        return max(group, key=lambda x: x.get_area())
-
-    @staticmethod
-    def merge_masks(masks):
-        if not masks:
-            return None
-
-        def get_mask(m):
-            if isinstance(m, Mask):
-                return m.image
-            else:
-                return m
-
-        binary_mask = get_mask(masks[0])
-        for m in masks[1:]:
-            binary_mask |= get_mask(m)
-
-        return binary_mask
-
-    @staticmethod
     def find_instances(annotations):
-        segment_anns = (a for a in annotations
-            if a.type in {AnnotationType.polygon, AnnotationType.mask}
-        )
-
-        ann_groups = []
-        for g_id, group in groupby(segment_anns, lambda a: a.group):
-            if g_id is None:
-                ann_groups.extend(([a] for a in group))
-            else:
-                ann_groups.append(list(group))
-
-        return ann_groups
+        return find_instances(a for a in annotations
+            if a.type in {AnnotationType.polygon, AnnotationType.mask})
 
 class PolygonsToMasks(Transform, CliPlugin):
     def transform_item(self, item):
@@ -196,7 +167,7 @@ class PolygonsToMasks(Transform, CliPlugin):
             if ann.type == AnnotationType.polygon:
                 if not item.has_image:
                     raise Exception("Image info is required for this transform")
-                h, w = item.image.shape[:2]
+                h, w = item.image.size
                 annotations.append(self.convert_polygon(ann, h, w))
             else:
                 annotations.append(ann)
@@ -209,6 +180,27 @@ class PolygonsToMasks(Transform, CliPlugin):
 
         return RleMask(rle=rle, label=polygon.label, z_order=polygon.z_order,
             id=polygon.id, attributes=polygon.attributes, group=polygon.group)
+
+class BoxesToMasks(Transform, CliPlugin):
+    def transform_item(self, item):
+        annotations = []
+        for ann in item.annotations:
+            if ann.type == AnnotationType.bbox:
+                if not item.has_image:
+                    raise Exception("Image info is required for this transform")
+                h, w = item.image.size
+                annotations.append(self.convert_bbox(ann, h, w))
+            else:
+                annotations.append(ann)
+
+        return self.wrap_item(item, annotations=annotations)
+
+    @staticmethod
+    def convert_bbox(bbox, img_h, img_w):
+        rle = mask_utils.frPyObjects([bbox.as_polygon()], img_h, img_w)[0]
+
+        return RleMask(rle=rle, label=bbox.label, z_order=bbox.z_order,
+            id=bbox.id, attributes=bbox.attributes, group=bbox.group)
 
 class MasksToPolygons(Transform, CliPlugin):
     def transform_item(self, item):
@@ -237,6 +229,25 @@ class MasksToPolygons(Transform, CliPlugin):
             for p in polygons
         ]
 
+class ShapesToBoxes(Transform, CliPlugin):
+    def transform_item(self, item):
+        annotations = []
+        for ann in item.annotations:
+            if ann.type in { AnnotationType.mask, AnnotationType.polygon,
+                AnnotationType.polyline, AnnotationType.points,
+            }:
+                annotations.append(self.convert_shape(ann))
+            else:
+                annotations.append(ann)
+
+        return self.wrap_item(item, annotations=annotations)
+
+    @staticmethod
+    def convert_shape(shape):
+        bbox = shape.get_bbox()
+        return Bbox(*bbox, label=shape.label, z_order=shape.z_order,
+            id=shape.id, attributes=shape.attributes, group=shape.group)
+
 class Reindex(Transform, CliPlugin):
     @classmethod
     def build_cmdline_parser(cls, **kwargs):
@@ -253,3 +264,40 @@ class Reindex(Transform, CliPlugin):
     def __iter__(self):
         for i, item in enumerate(self._extractor):
             yield self.wrap_item(item, id=i + self._start)
+
+class MapSubsets(Transform, CliPlugin):
+    @staticmethod
+    def _mapping_arg(s):
+        parts = s.split(':')
+        if len(parts) != 2:
+            import argparse
+            raise argparse.ArgumentTypeError()
+        return parts
+
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
+        parser.add_argument('-s', '--subset', action='append',
+            type=cls._mapping_arg, dest='mapping',
+            help="Subset mapping of the form: 'src:dst' (repeatable)")
+        return parser
+
+    def __init__(self, extractor, mapping=None):
+        super().__init__(extractor)
+
+        if mapping is None:
+            mapping = {}
+        elif not isinstance(mapping, dict):
+            mapping = dict(tuple(m) for m in mapping)
+        self._mapping = mapping
+
+    def transform_item(self, item):
+        return self.wrap_item(item,
+            subset=self._mapping.get(item.subset, item.subset))
+
+class IdFromImageName(Transform, CliPlugin):
+    def transform_item(self, item):
+        name = item.id
+        if item.has_image and item.image.filename:
+            name = osp.splitext(item.image.filename)[0]
+        return self.wrap_item(item, id=name)

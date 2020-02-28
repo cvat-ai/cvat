@@ -142,7 +142,7 @@ def parse_label_map(path):
                 assert len(color) == 3, \
                     "Label '%s' has wrong color, expected 'r,g,b', got '%s'" % \
                     (name, color)
-                color = tuple([int(c) for c in color][::-1])
+                color = tuple([int(c) for c in color])
             else:
                 color = None
 
@@ -164,7 +164,7 @@ def write_label_map(path, label_map):
         f.write('# label:color_rgb:parts:actions\n')
         for label_name, label_desc in label_map.items():
             if label_desc[0]:
-                color_rgb = ','.join(str(c) for c in label_desc[0][::-1])
+                color_rgb = ','.join(str(c) for c in label_desc[0])
             else:
                 color_rgb = ''
 

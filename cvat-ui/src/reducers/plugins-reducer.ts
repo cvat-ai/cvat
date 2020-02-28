@@ -1,12 +1,12 @@
-import { AnyAction } from 'redux';
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
-import { PluginsActionTypes } from 'actions/plugins-actions';
-import { AuthActionTypes } from 'actions/auth-actions';
+import { PluginsActionTypes, PluginActions } from 'actions/plugins-actions';
 import { registerGitPlugin } from 'utils/git-utils';
 import {
     PluginsState,
 } from './interfaces';
-
 
 const defaultState: PluginsState = {
     fetching: false,
@@ -19,7 +19,11 @@ const defaultState: PluginsState = {
         ANALYTICS: false,
     },
 };
-export default function (state = defaultState, action: AnyAction): PluginsState {
+
+export default function (
+    state: PluginsState = defaultState,
+    action: PluginActions,
+): PluginsState {
     switch (action.type) {
         case PluginsActionTypes.CHECK_PLUGINS: {
             return {
@@ -40,11 +44,6 @@ export default function (state = defaultState, action: AnyAction): PluginsState 
                 initialized: true,
                 fetching: false,
                 list,
-            };
-        }
-        case AuthActionTypes.LOGOUT_SUCCESS: {
-            return {
-                ...defaultState,
             };
         }
         default:

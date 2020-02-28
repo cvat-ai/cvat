@@ -1,8 +1,17 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
     Layout,
+    Slider,
+    Icon,
+    Tooltip,
 } from 'antd';
+
+import { SliderValue } from 'antd/lib//slider';
 
 import {
     ColorBy,
@@ -39,6 +48,13 @@ interface Props {
     gridOpacity: number;
     activeLabelID: number;
     activeObjectType: ObjectType;
+    curZLayer: number;
+    minZLayer: number;
+    maxZLayer: number;
+    brightnessLevel: number;
+    contrastLevel: number;
+    saturationLevel: number;
+    resetZoom: boolean;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -56,12 +72,15 @@ interface Props {
     onActivateObject(activatedStateID: number | null): void;
     onSelectObjects(selectedStatesID: number[]): void;
     onUpdateContextMenu(visible: boolean, left: number, top: number): void;
+    onAddZLayer(): void;
+    onSwitchZLayer(cur: number): void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
         const {
             canvasInstance,
+            curZLayer,
         } = this.props;
 
         // It's awful approach from the point of view React
@@ -70,6 +89,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             .getElementsByClassName('cvat-canvas-container');
         wrapper.appendChild(canvasInstance.html());
 
+        canvasInstance.setZLayer(curZLayer);
         this.initialSetup();
         this.updateCanvas();
     }
@@ -89,6 +109,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             canvasInstance,
             sidebarCollapsed,
             activatedStateID,
+            curZLayer,
+            resetZoom,
         } = this.props;
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -141,6 +163,16 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
             || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
             this.updateShapesView();
+        }
+
+        if (prevProps.frame !== frameData.number && resetZoom) {
+            canvasInstance.html().addEventListener('canvas.setup', () => {
+                canvasInstance.fit();
+            }, { once: true });
+        }
+
+        if (prevProps.curZLayer !== curZLayer) {
+            canvasInstance.setZLayer(curZLayer);
         }
 
         this.activateOnCanvas();
@@ -285,15 +317,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             // TODO: In this approach CVAT-UI know details of implementations CVAT-CANVAS (svg.js)
             const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
             if (shapeView) {
-                if (['rect', 'polygon', 'polyline'].includes(shapeView.tagName)) {
-                    (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
-                    (shapeView as any).instance.stroke({ color: blackBorders ? 'black' : shapeColor });
-                } else {
-                    // group of points
-                    for (const child of (shapeView as any).instance.children()) {
-                        child.fill({ color: shapeColor });
-                    }
+                const handler = (shapeView as any).instance.remember('_selectHandler');
+                if (handler && handler.nested) {
+                    handler.nested.fill({ color: shapeColor });
                 }
+                (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
+                (shapeView as any).instance.stroke({ color: blackBorders ? 'black' : shapeColor });
             }
         }
     }
@@ -325,6 +354,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onActivateObject,
             onUpdateContextMenu,
             onEditShape,
+            brightnessLevel,
+            contrastLevel,
+            saturationLevel,
         } = this.props;
 
         // Size
@@ -342,6 +374,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             gridPattern.style.opacity = `${gridOpacity / 100}`;
         }
         canvasInstance.grid(gridSize, gridSize);
+
+        // Filters
+        const backgroundElement = window.document.getElementById('cvat_canvas_background');
+        if (backgroundElement) {
+            backgroundElement.style.filter = `brightness(${brightnessLevel / 100}) contrast(${contrastLevel / 100}) saturate(${saturationLevel / 100})`;
+        }
 
         // Events
         canvasInstance.html().addEventListener('mousedown', (e: MouseEvent): void => {
@@ -462,13 +500,45 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
+        const {
+            maxZLayer,
+            curZLayer,
+            minZLayer,
+            onSwitchZLayer,
+            onAddZLayer,
+        } = this.props;
+
         return (
-            // This element doesn't have any props
-            // So, React isn't going to rerender it
-            // And it's a reason why cvat-canvas appended in mount function works
-            <Layout.Content
-                className='cvat-canvas-container'
-            />
+            <Layout.Content style={{ position: 'relative' }}>
+                {/*
+                    This element doesn't have any props
+                    So, React isn't going to rerender it
+                    And it's a reason why cvat-canvas appended in mount function works
+                */}
+                <div
+                    className='cvat-canvas-container'
+                    style={{
+                        overflow: 'hidden',
+                        width: '100%',
+                        height: '100%',
+                    }}
+                />
+                <div className='cvat-canvas-z-axis-wrapper'>
+                    <Slider
+                        disabled={minZLayer === maxZLayer}
+                        min={minZLayer}
+                        max={maxZLayer}
+                        value={curZLayer}
+                        vertical
+                        reverse
+                        defaultValue={0}
+                        onChange={(value: SliderValue): void => onSwitchZLayer(value as number)}
+                    />
+                    <Tooltip title={`Add new layer ${maxZLayer + 1} and switch to it`}>
+                        <Icon type='plus-circle' onClick={onAddZLayer} />
+                    </Tooltip>
+                </div>
+            </Layout.Content>
         );
     }
 }

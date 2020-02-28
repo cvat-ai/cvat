@@ -1,7 +1,9 @@
-import { AnyAction } from 'redux';
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
-import { AuthActionTypes } from 'actions/auth-actions';
-import { UsersActionTypes } from 'actions/users-actions';
+import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
+import { UsersActionTypes, UsersActions } from 'actions/users-actions';
 import { UsersState } from './interfaces';
 
 const defaultState: UsersState = {
@@ -10,7 +12,10 @@ const defaultState: UsersState = {
     initialized: false,
 };
 
-export default function (state: UsersState = defaultState, action: AnyAction): UsersState {
+export default function (
+    state: UsersState = defaultState,
+    action: UsersActions | AuthActions,
+): UsersState {
     switch (action.type) {
         case UsersActionTypes.GET_USERS: {
             return {

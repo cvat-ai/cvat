@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -9,53 +13,7 @@ import {
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
-
-interface PopoverContentProps {
-    colors: string[];
-    changeColor(color: string): void;
-}
-
-function PopoverContent(props: PopoverContentProps): JSX.Element {
-    const {
-        colors,
-        changeColor,
-    } = props;
-
-    const cols = 6;
-    const rows = Math.ceil(colors.length / cols);
-
-    const antdRows = [];
-    for (let row = 0; row < rows; row++) {
-        const antdCols = [];
-        for (let col = 0; col < cols; col++) {
-            const idx = row * cols + col;
-            if (idx >= colors.length) {
-                break;
-            }
-            const color = colors[idx];
-            antdCols.push(
-                <Col key={col} span={4}>
-                    <Button
-                        onClick={(): void => changeColor(color)}
-                        style={{ background: color }}
-                        className='cvat-label-item-color-button'
-                    />
-                </Col>,
-            );
-        }
-
-        antdRows.push(
-            // eslint-disable-next-line react/no-children-prop
-            <Row key={row} children={antdCols} />,
-        );
-    }
-
-    return (
-        <>
-            {antdRows}
-        </>
-    );
-}
+import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
 
 interface Props {
     labelName: string;
@@ -99,8 +57,8 @@ function LabelItemComponent(props: Props): JSX.Element {
                     placement='left'
                     trigger='click'
                     content={(
-                        <PopoverContent
-                            changeColor={changeColor}
+                        <ColorChanger
+                            onChange={changeColor}
                             colors={labelColors}
                         />
                     )}
@@ -114,14 +72,12 @@ function LabelItemComponent(props: Props): JSX.Element {
             <Col span={3}>
                 { statesLocked
                     ? <Icon type='lock' onClick={unlockStates} />
-                    : <Icon type='unlock' onClick={lockStates} />
-                }
+                    : <Icon type='unlock' onClick={lockStates} />}
             </Col>
             <Col span={3}>
                 { statesHidden
                     ? <Icon type='eye-invisible' onClick={showStates} />
-                    : <Icon type='eye' onClick={hideStates} />
-                }
+                    : <Icon type='eye' onClick={hideStates} />}
             </Col>
         </Row>
     );

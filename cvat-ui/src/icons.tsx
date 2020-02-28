@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import SVGCVATLogo from './assets/cvat-logo.svg';
@@ -33,6 +37,8 @@ import SVGInfoIcon from './assets/info-icon.svg';
 import SVGFullscreenIcon from './assets/fullscreen-icon.svg';
 import SVGObjectOutsideIcon from './assets/object-outside-icon.svg';
 import SVGObjectInsideIcon from './assets/object-inside-icon.svg';
+import SVGBackgroundIcon from './assets/background-icon.svg';
+import SVGForegroundIcon from './assets/foreground-icon.svg';
 
 export const CVATLogo = React.memo(
     (): JSX.Element => <SVGCVATLogo />,
@@ -132,4 +138,10 @@ export const ObjectOutsideIcon = React.memo(
 );
 export const ObjectInsideIcon = React.memo(
     (): JSX.Element => <SVGObjectInsideIcon />,
+);
+export const BackgroundIcon = React.memo(
+    (): JSX.Element => <SVGBackgroundIcon />,
+);
+export const ForegroundIcon = React.memo(
+    (): JSX.Element => <SVGForegroundIcon />,
 );

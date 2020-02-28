@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2019 Intel Corporation
+* Copyright (C) 2019-2020 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -56,16 +56,17 @@
                         return result;
                     },
 
-                    async get(frame, filter = {}) {
+                    async get(frame, allTracks = false, filters = []) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.get, frame, filter);
+                            .apiWrapper.call(this, prototype.annotations.get,
+                                frame, allTracks, filters);
                         return result;
                     },
 
-                    async search(filter, frameFrom, frameTo) {
+                    async search(filters, frameFrom, frameTo) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.annotations.search,
-                                filter, frameFrom, frameTo);
+                                filters, frameFrom, frameTo);
                         return result;
                     },
 
@@ -73,12 +74,6 @@
                         const result = await PluginRegistry
                             .apiWrapper.call(this,
                                 prototype.annotations.select, objectStates, x, y);
-                        return result;
-                    },
-
-                    async hasUnsavedChanges() {
-                        const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.hasUnsavedChanges);
                         return result;
                     },
 
@@ -104,6 +99,12 @@
                     async exportDataset(format) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.annotations.exportDataset, format);
+                        return result;
+                    },
+
+                    hasUnsavedChanges() {
+                        const result = prototype.annotations
+                            .hasUnsavedChanges.implementation.call(this);
                         return result;
                     },
                 },
@@ -146,12 +147,12 @@
             }),
             actions: Object.freeze({
                 value: {
-                    async undo(count) {
+                    async undo(count = 1) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.actions.undo, count);
                         return result;
                     },
-                    async redo(count) {
+                    async redo(count = 1) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.actions.redo, count);
                         return result;
@@ -159,6 +160,11 @@
                     async clear() {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.actions.clear);
+                        return result;
+                    },
+                    async get() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.actions.get);
                         return result;
                     },
                 },
@@ -274,23 +280,33 @@
                 * @async
             */
             /**
-                * @typedef {Object} ObjectFilter
-                * @property {string} [label] a name of a label
-                * @property {module:API.cvat.enums.ObjectType} [type]
-                * @property {module:API.cvat.enums.ObjectShape} [shape]
-                * @property {boolean} [occluded] a value of occluded property
-                * @property {boolean} [lock] a value of lock property
-                * @property {number} [width] a width of a shape
-                * @property {number} [height] a height of a shape
-                * @property {Object[]} [attributes] dictionary with "name: value" pairs
-                * @global
-            */
-            /**
                 * Get annotations for a specific frame
+                * </br> Filter supports following operators:
+                * ==, !=, >, >=, <, <=, ~= and (), |, & for grouping.
+                * </br> Filter supports properties:
+                * width, height, label, serverID, clientID, type, shape, occluded
+                * </br> All prop values are case-sensitive. CVAT uses json queries for search.
+                * </br> Examples:
+                * <ul>
+                *   <li> label=="car" | label==["road sign"] </li>
+                *   <li> width >= height </li>
+                *   <li> attr["Attribute 1"] == attr["Attribute 2"] </li>
+                *   <li> type=="track" & shape="rectangle" </li>
+                *   <li> clientID == 50 </li>
+                *   <li> (label=="car" & attr["parked"]==true)
+                * | (label=="pedestrian" & width > 150) </li>
+                *   <li> (( label==["car \"mazda\""]) &
+                * (attr["sunglass ( help ) es"]==true |
+                * (width > 150 | height > 150 & (clientID == serverID))))) </li>
+                * </ul>
+                * <b> If you have double quotes in your query string,
+                * please escape them using back slash: \" </b>
                 * @method get
                 * @param {integer} frame get objects from the frame
-                * @param {ObjectFilter[]} [filter = []]
-                * get only objects are satisfied to specific filter
+                * @param {boolean} allTracks show all tracks
+                * even if they are outside and not keyframe
+                * @param {string[]} [filters = []]
+                * get only objects that satisfied to specific filters
                 * @returns {module:API.cvat.classes.ObjectState[]}
                 * @memberof Session.annotations
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -299,13 +315,14 @@
                 * @async
             */
             /**
-                * Find frame which contains at least one object satisfied to a filter
+                * Find a frame in the range [from, to]
+                * that contains at least one object satisfied to a filter
                 * @method search
                 * @memberof Session.annotations
                 * @param {ObjectFilter} [filter = []] filter
                 * @param {integer} from lower bound of a search
                 * @param {integer} to upper bound of a search
-                * @returns {integer} the nearest frame which contains filtered objects
+                * @returns {integer|null} a frame that contains objects according to the filter
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
@@ -369,14 +386,14 @@
                 * @async
             */
             /**
-                * Indicate if there are any changes in
+                * Method indicates if there are any changes in
                 * annotations which haven't been saved on a server
+                * </br><b> This function cannot be wrapped with a plugin </b>
                 * @method hasUnsavedChanges
                 * @memberof Session.annotations
                 * @returns {boolean}
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @instance
-                * @async
             */
             /**
                 * Export as a dataset.
@@ -469,28 +486,48 @@
             */
 
             /**
-                * Is a dictionary of pairs "id:action" where "id" is an identifier of an object
-                * which has been affected by undo/redo and "action" is what exactly has been
-                * done with the object. Action can be: "created", "deleted", "updated".
-                * Size of an output array equal the param "count".
-                * @typedef {Object} HistoryAction
+                * @typedef {Object} HistoryActions
+                * @property {string[]} [undo] - array of possible actions to undo
+                * @property {string[]} [redo] - array of possible actions to redo
                 * @global
             */
             /**
-                * Undo actions
+                * Make undo
                 * @method undo
                 * @memberof Session.actions
-                * @returns {HistoryAction}
+                * @param {number} [count=1] number of actions to undo
+                * @returns {number[]} Array of affected objects
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
+            */
+            /**
+                * Make redo
+                * @method redo
+                * @memberof Session.actions
+                * @param {number} [count=1] number of actions to redo
+                * @returns {number[]} Array of affected objects
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
+            */
+            /**
+                * Remove all actions from history
+                * @method clear
+                * @memberof Session.actions
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @instance
                 * @async
             */
             /**
-                * Redo actions
-                * @method redo
+                * Get actions
+                * @method get
                 * @memberof Session.actions
-                * @returns {HistoryAction}
+                * @returns {HistoryActions}
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
                 * @async
             */
@@ -661,11 +698,19 @@
                 split: Object.getPrototypeOf(this).annotations.split.bind(this),
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
                 clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
+                search: Object.getPrototypeOf(this).annotations.search.bind(this),
                 upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
                 select: Object.getPrototypeOf(this).annotations.select.bind(this),
                 statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
                 hasUnsavedChanges: Object.getPrototypeOf(this)
                     .annotations.hasUnsavedChanges.bind(this),
+            };
+
+            this.actions = {
+                undo: Object.getPrototypeOf(this).actions.undo.bind(this),
+                redo: Object.getPrototypeOf(this).actions.redo.bind(this),
+                clear: Object.getPrototypeOf(this).actions.clear.bind(this),
+                get: Object.getPrototypeOf(this).actions.get.bind(this),
             };
 
             this.frames = {
@@ -1192,6 +1237,7 @@
                 split: Object.getPrototypeOf(this).annotations.split.bind(this),
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
                 clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
+                search: Object.getPrototypeOf(this).annotations.search.bind(this),
                 upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
                 select: Object.getPrototypeOf(this).annotations.select.bind(this),
                 statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
@@ -1199,6 +1245,13 @@
                     .annotations.hasUnsavedChanges.bind(this),
                 exportDataset: Object.getPrototypeOf(this)
                     .annotations.exportDataset.bind(this),
+            };
+
+            this.actions = {
+                undo: Object.getPrototypeOf(this).actions.undo.bind(this),
+                redo: Object.getPrototypeOf(this).actions.redo.bind(this),
+                clear: Object.getPrototypeOf(this).actions.clear.bind(this),
+                get: Object.getPrototypeOf(this).actions.get.bind(this),
             };
 
             this.frames = {
@@ -1255,6 +1308,7 @@
         putAnnotations,
         saveAnnotations,
         hasUnsavedChanges,
+        searchAnnotations,
         mergeAnnotations,
         splitAnnotations,
         groupAnnotations,
@@ -1264,6 +1318,10 @@
         uploadAnnotations,
         dumpAnnotations,
         exportDataset,
+        undoActions,
+        redoActions,
+        clearActions,
+        getActions,
     } = require('./annotations');
 
     buildDublicatedAPI(Job.prototype);
@@ -1319,15 +1377,56 @@
     };
 
     // TODO: Check filter for annotations
-    Job.prototype.annotations.get.implementation = async function (frame, filter) {
+    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
+        if (!Array.isArray(filters) || filters.some((filter) => typeof (filter) !== 'string')) {
+            throw new ArgumentError(
+                'The filters argument must be an array of strings',
+            );
+        }
+
+        if (!Number.isInteger(frame)) {
+            throw new ArgumentError(
+                'The frame argument must be an integer',
+            );
+        }
+
         if (frame < this.startFrame || frame > this.stopFrame) {
             throw new ArgumentError(
                 `Frame ${frame} does not exist in the job`,
             );
         }
 
-        const annotationsData = await getAnnotations(this, frame, filter);
+        const annotationsData = await getAnnotations(this, frame, allTracks, filters);
         return annotationsData;
+    };
+
+    Job.prototype.annotations.search.implementation = async function (filters, frameFrom, frameTo) {
+        if (!Array.isArray(filters) || filters.some((filter) => typeof (filter) !== 'string')) {
+            throw new ArgumentError(
+                'The filters argument must be an array of strings',
+            );
+        }
+
+        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+            throw new ArgumentError(
+                'The start and end frames both must be an integer',
+            );
+        }
+
+        if (frameFrom < this.startFrame || frameFrom > this.stopFrame) {
+            throw new ArgumentError(
+                'The start frame is out of the job',
+            );
+        }
+
+        if (frameTo < this.startFrame || frameTo > this.stopFrame) {
+            throw new ArgumentError(
+                'The stop frame is out of the job',
+            );
+        }
+
+        const result = searchAnnotations(this, filters, frameFrom, frameTo);
+        return result;
     };
 
     Job.prototype.annotations.save.implementation = async function (onUpdate) {
@@ -1382,6 +1481,31 @@
 
     Job.prototype.annotations.dump.implementation = async function (name, dumper) {
         const result = await dumpAnnotations(this, name, dumper);
+        return result;
+    };
+
+    Job.prototype.annotations.exportDataset.implementation = async function (format) {
+        const result = await exportDataset(this.task, format);
+        return result;
+    };
+
+    Job.prototype.actions.undo.implementation = function (count) {
+        const result = undoActions(this, count);
+        return result;
+    };
+
+    Job.prototype.actions.redo.implementation = function (count) {
+        const result = redoActions(this, count);
+        return result;
+    };
+
+    Job.prototype.actions.clear.implementation = function () {
+        const result = clearActions(this);
+        return result;
+    };
+
+    Job.prototype.actions.get.implementation = function () {
+        const result = getActions(this);
         return result;
     };
 
@@ -1489,7 +1613,13 @@
     };
 
     // TODO: Check filter for annotations
-    Task.prototype.annotations.get.implementation = async function (frame, filter) {
+    Task.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
+        if (!Array.isArray(filters) || filters.some((filter) => typeof (filter) !== 'string')) {
+            throw new ArgumentError(
+                'The filters argument must be an array of strings',
+            );
+        }
+
         if (!Number.isInteger(frame) || frame < 0) {
             throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
@@ -1502,7 +1632,36 @@
             );
         }
 
-        const result = await getAnnotations(this, frame, filter);
+        const result = await getAnnotations(this, frame, allTracks, filters);
+        return result;
+    };
+
+    Job.prototype.annotations.search.implementation = async function (filters, frameFrom, frameTo) {
+        if (!Array.isArray(filters) || filters.some((filter) => typeof (filter) !== 'string')) {
+            throw new ArgumentError(
+                'The filters argument must be an array of strings',
+            );
+        }
+
+        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+            throw new ArgumentError(
+                'The start and end frames both must be an integer',
+            );
+        }
+
+        if (frameFrom < 0 || frameFrom >= this.size) {
+            throw new ArgumentError(
+                'The start frame is out of the task',
+            );
+        }
+
+        if (frameTo < 0 || frameTo >= this.size) {
+            throw new ArgumentError(
+                'The stop frame is out of the task',
+            );
+        }
+
+        const result = searchAnnotations(this, filters, frameFrom, frameTo);
         return result;
     };
 
@@ -1563,6 +1722,26 @@
 
     Task.prototype.annotations.exportDataset.implementation = async function (format) {
         const result = await exportDataset(this, format);
+        return result;
+    };
+
+    Task.prototype.actions.undo.implementation = function (count) {
+        const result = undoActions(this, count);
+        return result;
+    };
+
+    Task.prototype.actions.redo.implementation = function (count) {
+        const result = redoActions(this, count);
+        return result;
+    };
+
+    Task.prototype.actions.clear.implementation = function () {
+        const result = clearActions(this);
+        return result;
+    };
+
+    Task.prototype.actions.get.implementation = function () {
+        const result = getActions(this);
         return result;
     };
 })();

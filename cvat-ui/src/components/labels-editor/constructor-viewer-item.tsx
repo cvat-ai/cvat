@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -49,8 +53,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                             <Icon type='close' />
                         </span>
                     </Tooltip>
-                )
-            }
+                )}
         </div>
     );
 }

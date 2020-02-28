@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { Canvas } from 'cvat-canvas';
 
 export type StringObject = {
@@ -88,6 +92,11 @@ export interface UsersState {
 
 export interface AboutState {
     server: any;
+    packageVersion: {
+        core: string;
+        canvas: string;
+        ui: string;
+    };
     fetching: boolean;
     initialized: boolean;
 }
@@ -209,6 +218,9 @@ export interface NotificationsState {
             savingJob: null | ErrorState;
             uploadAnnotations: null | ErrorState;
             removeAnnotations: null | ErrorState;
+            fetchingAnnotations: null | ErrorState;
+            undo: null | ErrorState;
+            redo: null | ErrorState;
         };
 
         [index: string]: any;
@@ -237,6 +249,11 @@ export enum ActiveControl {
     GROUP = 'group',
     SPLIT = 'split',
     EDIT = 'edit',
+}
+
+export enum RectDrawingMethod {
+    BY_TWO_POINTS = 'by_two_points',
+    BY_FOUR_POINTS = 'by_four_points'
 }
 
 export enum ShapeType {
@@ -292,11 +309,14 @@ export interface AnnotationState {
             number: number;
             data: any | null;
             fetching: boolean;
+            delay: number;
+            changeTime: number | null;
         };
         playing: boolean;
     };
     drawing: {
         activeShapeType: ShapeType;
+        activeRectDrawingMethod?: RectDrawingMethod;
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;
@@ -306,9 +326,19 @@ export interface AnnotationState {
         activatedStateID: number | null;
         collapsed: Record<number, boolean>;
         states: any[];
+        filters: string[];
+        history: {
+            undo: string[];
+            redo: string[];
+        };
         saving: {
             uploading: boolean;
             statuses: string[];
+        };
+        zLayer: {
+            min: number;
+            max: number;
+            cur: number;
         };
     };
     propagate: {

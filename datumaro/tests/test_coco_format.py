@@ -19,8 +19,7 @@ from datumaro.plugins.coco_format.converter import (
     CocoLabelsConverter,
 )
 from datumaro.plugins.coco_format.importer import CocoImporter
-from datumaro.util.image import save_image
-from datumaro.util import find
+from datumaro.util.image import save_image, Image
 from datumaro.util.test_utils import TestDir, compare_datasets
 
 
@@ -100,7 +99,7 @@ class CocoImporterTest(TestCase):
         os.makedirs(img_dir)
         os.makedirs(ann_dir)
 
-        image = np.ones((10, 5, 3), dtype=np.uint8)
+        image = np.ones((10, 5, 3))
         save_image(osp.join(img_dir, '000000000001.jpg'), image)
 
         annotation = self.generate_annotation()
@@ -109,30 +108,33 @@ class CocoImporterTest(TestCase):
             json.dump(annotation, outfile)
 
     def test_can_import(self):
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=np.ones((10, 5, 3)), subset='val',
+                        annotations=[
+                            Polygon([0, 0, 1, 0, 1, 2, 0, 2], label=0,
+                                id=1, group=1, attributes={'is_crowd': False}),
+                            Mask(np.array(
+                                [[1, 0, 0, 1, 0]] * 5 +
+                                [[1, 1, 1, 1, 0]] * 5
+                                ), label=0,
+                                id=2, group=2, attributes={'is_crowd': True}),
+                        ]
+                    ),
+                ])
+
+            def categories(self):
+                label_cat = LabelCategories()
+                label_cat.add('TEST')
+                return { AnnotationType.label: label_cat }
+
         with TestDir() as test_dir:
             self.COCO_dataset_generate(test_dir)
-            project = Project.import_from(test_dir, 'coco')
-            dataset = project.make_dataset()
 
-            self.assertListEqual(['val'], sorted(dataset.subsets()))
-            self.assertEqual(1, len(dataset))
+            dataset = Project.import_from(test_dir, 'coco').make_dataset()
 
-            item = next(iter(dataset))
-            self.assertTrue(item.has_image)
-            self.assertEqual(np.sum(item.image), np.prod(item.image.shape))
-            self.assertEqual(2, len(item.annotations))
-
-            ann_1 = find(item.annotations, lambda x: x.id == 1)
-            ann_1_poly = find(item.annotations, lambda x: \
-                x.group == ann_1.id and x.type == AnnotationType.polygon)
-            self.assertFalse(ann_1 is None)
-            self.assertFalse(ann_1_poly is None)
-
-            ann_2 = find(item.annotations, lambda x: x.id == 2)
-            ann_2_mask = find(item.annotations, lambda x: \
-                x.group == ann_2.id and x.type == AnnotationType.mask)
-            self.assertFalse(ann_2 is None)
-            self.assertFalse(ann_2_mask is None)
+            compare_datasets(self, DstExtractor(), dataset)
 
 class CocoConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
@@ -629,6 +631,17 @@ class CocoConverterTest(TestCase):
                 return {
                     AnnotationType.label: label_cat,
                 }
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                CocoConverter(), test_dir)
+
+    def test_can_save_dataset_with_image_info(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=Image(path='1.jpg', size=(10, 15))),
+                ])
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),

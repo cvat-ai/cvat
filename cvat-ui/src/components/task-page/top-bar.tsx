@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -32,7 +36,8 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         <ActionsMenuContainer
                             taskInstance={taskInstance}
                         />
-                    )}
+                    )
+                }
                 >
                     <Button size='large'>
                         <Text className='cvat-text-color'>Actions</Text>

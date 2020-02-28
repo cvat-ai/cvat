@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -42,7 +46,7 @@ function MergeControl(props: Props): JSX.Element {
         };
 
     return (
-        <Tooltip overlay='Merge shapes/tracks' placement='right'>
+        <Tooltip title='Merge shapes/tracks' placement='right'>
             <Icon {...dynamicIconProps} component={MergeIcon} />
         </Tooltip>
     );

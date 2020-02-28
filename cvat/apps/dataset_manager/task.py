@@ -96,7 +96,8 @@ class TaskProject:
                 FrameProvider(self._db_task.data)))
 
     def _import_from_task(self, user):
-        self._project = Project.generate(self._project_dir)
+        self._project = Project.generate(self._project_dir,
+            config={'project_name': self._db_task.name})
 
         self._project.add_source('task_%s_images' % self._db_task.id, {
             'format': _TASK_IMAGES_EXTRACTOR,
@@ -187,6 +188,7 @@ class TaskProject:
             for db_image in self._db_task.data.images.all():
                 frame_info = {
                     'id': db_image.frame,
+                    'name': osp.basename(db_image.path),
                     'width': db_image.width,
                     'height': db_image.height,
                 }

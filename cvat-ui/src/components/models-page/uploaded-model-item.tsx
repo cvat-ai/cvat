@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -79,7 +83,8 @@ export default function UploadedModelItem(props: Props): JSX.Element {
                                     Delete
                             </Menu.Item>
                         </Menu>
-                    )}
+                    )
+                }
                 >
                     <Icon className='cvat-menu-icon' component={MenuIcon} />
                 </Dropdown>

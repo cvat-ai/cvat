@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import './styles.scss';
 import React from 'react';
 
@@ -17,12 +21,14 @@ interface Props {
     getJob(): void;
 }
 
+
 export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
         job,
         fetching,
         getJob,
     } = props;
+
 
     if (job === null) {
         if (!fetching) {

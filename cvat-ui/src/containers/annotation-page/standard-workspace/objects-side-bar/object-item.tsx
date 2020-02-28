@@ -1,4 +1,9 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
+import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 import {
     ActiveControl,
@@ -7,9 +12,11 @@ import {
 } from 'reducers/interfaces';
 import {
     collapseObjectItems,
+    changeLabelColorAsync,
     updateAnnotationsAsync,
     changeFrameAsync,
     removeObjectAsync,
+    changeGroupColorAsync,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
     propagateObject as propagateObjectAction,
@@ -31,7 +38,10 @@ interface StateToProps {
     activated: boolean;
     colorBy: ColorBy;
     ready: boolean;
+    colors: string[];
     activeControl: ActiveControl;
+    minZLayer: number;
+    maxZLayer: number;
 }
 
 interface DispatchToProps {
@@ -39,9 +49,11 @@ interface DispatchToProps {
     updateState(sessionInstance: any, frameNumber: number, objectState: any): void;
     collapseOrExpand(objectStates: any[], collapsed: boolean): void;
     activateObject: (activatedStateID: number | null) => void;
-    removeObject: (objectState: any) => void;
+    removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
+    changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
+    changeGroupColor(sessionInstance: any, frameNumber: number, group: number, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -51,6 +63,10 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 states,
                 collapsed: statesCollapsed,
                 activatedStateID,
+                zLayer: {
+                    min: minZLayer,
+                    max: maxZLayer,
+                },
             },
             job: {
                 attributes: jobAttributes,
@@ -66,6 +82,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 ready,
                 activeControl,
             },
+            colors,
         },
         settings: {
             shapes: {
@@ -89,9 +106,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         ready,
         activeControl,
         colorBy,
+        colors,
         jobInstance,
         frameNumber,
         activated: activatedStateID === own.clientID,
+        minZLayer,
+        maxZLayer,
     };
 }
 
@@ -109,14 +129,30 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         activateObject(activatedStateID: number | null): void {
             dispatch(activateObjectAction(activatedStateID));
         },
-        removeObject(objectState: any): void {
-            dispatch(removeObjectAsync(objectState, true));
+        removeObject(sessionInstance: any, objectState: any): void {
+            dispatch(removeObjectAsync(sessionInstance, objectState, true));
         },
         copyShape(objectState: any): void {
             dispatch(copyShapeAction(objectState));
         },
         propagateObject(objectState: any): void {
             dispatch(propagateObjectAction(objectState));
+        },
+        changeLabelColor(
+            sessionInstance: any,
+            frameNumber: number,
+            label: any,
+            color: string,
+        ): void {
+            dispatch(changeLabelColorAsync(sessionInstance, frameNumber, label, color));
+        },
+        changeGroupColor(
+            sessionInstance: any,
+            frameNumber: number,
+            group: number,
+            color: string,
+        ): void {
+            dispatch(changeGroupColorAsync(sessionInstance, frameNumber, group, color));
         },
     };
 }
@@ -197,9 +233,46 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const {
             objectState,
             removeObject,
+            jobInstance,
         } = this.props;
 
-        removeObject(objectState);
+        removeObject(jobInstance, objectState);
+    };
+
+    private createURL = (): void => {
+        const {
+            objectState,
+            frameNumber,
+        } = this.props;
+
+        const {
+            origin,
+            pathname,
+        } = window.location;
+
+        const search = `frame=${frameNumber}&object=${objectState.serverID}`;
+        const url = `${origin}${pathname}?${search}`;
+        copy(url);
+    };
+
+    private toBackground = (): void => {
+        const {
+            objectState,
+            minZLayer,
+        } = this.props;
+
+        objectState.zOrder = minZLayer - 1;
+        this.commit();
+    };
+
+    private toForeground = (): void => {
+        const {
+            objectState,
+            maxZLayer,
+        } = this.props;
+
+        objectState.zOrder = maxZLayer + 1;
+        this.commit();
     };
 
     private activate = (): void => {
@@ -285,6 +358,26 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         collapseOrExpand([objectState], !collapsed);
     };
 
+    private changeColor = (color: string): void => {
+        const {
+            jobInstance,
+            objectState,
+            colorBy,
+            changeLabelColor,
+            changeGroupColor,
+            frameNumber,
+        } = this.props;
+
+        if (colorBy === ColorBy.INSTANCE) {
+            objectState.color = color;
+            this.commit();
+        } else if (colorBy === ColorBy.GROUP) {
+            changeGroupColor(jobInstance, frameNumber, objectState.group.id, color);
+        } else if (colorBy === ColorBy.LABEL) {
+            changeLabelColor(jobInstance, frameNumber, objectState.label, color);
+        }
+    };
+
     private changeLabel = (labelID: string): void => {
         const {
             objectState,
@@ -324,6 +417,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             frameNumber,
             activated,
             colorBy,
+            colors,
         } = this.props;
 
         const {
@@ -353,6 +447,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}
                 clientID={objectState.clientID}
+                serverID={objectState.serverID}
                 occluded={objectState.occluded}
                 outside={objectState.outside}
                 locked={objectState.lock}
@@ -361,6 +456,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 attrValues={{ ...objectState.attributes }}
                 labelID={objectState.label.id}
                 color={stateColor}
+                colors={colors}
                 attributes={attributes}
                 labels={labels}
                 collapsed={collapsed}
@@ -384,6 +480,9 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 remove={this.remove}
                 copy={this.copy}
                 propagate={this.propagate}
+                createURL={this.createURL}
+                toBackground={this.toBackground}
+                toForeground={this.toForeground}
                 setOccluded={this.setOccluded}
                 unsetOccluded={this.unsetOccluded}
                 setOutside={this.setOutside}
@@ -394,6 +493,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 unlock={this.unlock}
                 hide={this.hide}
                 show={this.show}
+                changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}

@@ -99,16 +99,12 @@ Model-View-ViewModel (MVVM) UI pattern is used.
     ├── .datumaro/
     |   ├── config.yml
     │   ├── .git/
-    │   ├── importers/
-    │   │   ├── custom_format_importer1.py
-    │   │   └── ...
-    │   ├── statistics/
-    │   │   ├── custom_statistic1.py
-    │   │   └── ...
-    │   ├── visualizers/
-    │   │   ├── custom_visualizer1.py
-    │   │   └── ...
-    │   └── extractors/
+    │   ├── models/
+    │   └── plugins/
+    │       ├── plugin1/
+    │       |   ├── file1.py
+    │       |   └── file2.py
+    │       ├── plugin2.py
     │       ├── custom_extractor1.py
     │       └── ...
     ├── dataset/
@@ -117,3 +113,83 @@ Model-View-ViewModel (MVVM) UI pattern is used.
         └── ...
 ```
 <!--lint enable fenced-code-flag-->
+
+### Plugins
+
+Plugins are optional components, which extend the project. In Datumaro there are
+several types of plugins, which include:
+- `extractor` - produces dataset items from data source
+- `importer` - recognizes dataset type and creates project
+- `converter` - exports dataset to a specific format
+- `transformation` - modifies dataset items or other properties
+- `launcher` - executes models
+
+Plugins reside in plugin directories:
+- `datumaro/plugins` for builtin components
+- `<project_dir>/.datumaro/plugins` for project-specific components
+
+A plugin is a python file or package with any name, which exports some symbols.
+To export a symbol put it to `exports` list of the module like this:
+
+``` python
+class MyComponent1: ...
+class MyComponent2: ...
+exports = [MyComponent1, MyComponent2]
+```
+
+or inherit it from one of special classes:
+``` python
+from datumaro.components.extractor import Importer, SourceExtractor, Transform
+from datumaro.components.launcher import Launcher
+from datumaro.components.converter import Converter
+```
+
+There is an additional class to modify plugin appearance at command line:
+
+``` python
+from datumaro.components.cli_plugin import CliPlugin
+```
+
+Plugin example:
+
+<!--lint disable fenced-code-flag-->
+
+```
+datumaro/plugins/
+- my_plugin1/file1.py
+- my_plugin1/file2.py
+- my_plugin2.py
+```
+
+<!--lint enable fenced-code-flag-->
+
+`my_plugin1/file2.py` contents:
+
+``` python
+from datumaro.components.extractor import Transform, CliPlugin
+from .file1 import something, useful
+
+class MyTransform(Transform, CliPlugin):
+    NAME = "custom_name"
+    """
+    Some description.
+    """
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
+        parser.add_argument('-q', help="Some help")
+        return parser
+   ...
+```
+
+`my_plugin2.py` contents:
+
+``` python
+from datumaro.components.extractor import SourceExtractor
+
+class MyFormat: ...
+class MyFormatExtractor(SourceExtractor): ...
+
+exports = [MyFormat] # explicit exports declaration
+# MyFormatExtractor won't be exported
+```

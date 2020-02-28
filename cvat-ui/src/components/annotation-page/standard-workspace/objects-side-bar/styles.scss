@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 @import 'base.scss';
 
 .cvat-objects-appearance-collapse.ant-collapse {
@@ -27,7 +31,7 @@
     fill: $objects-bar-icons-color;
     color: $objects-bar-icons-color;
 
-    font-size: 21px;
+    font-size: 15px;
 
     &:hover {
         transform: scale(1.1);
@@ -63,13 +67,17 @@
     background: $objects-bar-tabs-color;
     padding: 5px;
 
-    > div:nth-child(1) > div > span {
-        > input {
-            text-indent: 10px;
-        }
+    > div:nth-child(1) > div:nth-child(1) {
+        height: 32px;
+        > .ant-select > div {
+            height: 32px;
+            > div {
+                height: 32px;
 
-        i {
-            @extend .cvat-object-sidebar-icon;
+                ul {
+                    display: flex;
+                }
+            }
         }
     }
 
@@ -110,13 +118,25 @@
     background: $active-object-item-background-color;
 }
 
+.cvat-objects-sidebar-state-item-color {
+    width: 7px;
+    opacity: 1;
+
+    &:hover {
+        opacity: 0.7;
+    }
+}
+
 .cvat-objects-sidebar-state-item {
     width: 100%;
-    padding: 5px 5px 5px 5px;
-    border-left-width: 5px;
+    padding: 5px 3px 3px 3px;
     border-bottom: 1px dashed;
 
     > div:nth-child(1) {
+        > div:nth-child(1) {
+            line-height: 12px;
+        }
+
         > div:nth-child(3) > i {
             @extend .cvat-object-sidebar-icon;
             font-size: 25px;
@@ -129,16 +149,12 @@
 
     > div:nth-child(2)  {
         > div > div {
-            margin-top: 10px;
+            margin-top: 5px;
         }
 
         i {
             @extend .cvat-object-sidebar-icon;
         }
-    }
-
-    > div:nth-child(3) {
-        margin-top: 10px;
     }
 }
 
@@ -189,7 +205,7 @@
         max-width: 80%;
         overflow: hidden;
         max-height: 1.2em;
-        font-size: 1.2em;
+        font-size: 1em;
 
         > span {
             padding: 0 10px;
