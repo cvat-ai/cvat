@@ -10,6 +10,7 @@ import {
     GroupData,
     CanvasModel,
     CanvasModelImpl,
+    RectDrawingMethod,
 } from './canvasModel';
 
 import {
@@ -141,4 +142,5 @@ export {
     CanvasImpl as Canvas,
     Rotation,
     CanvasVersion,
+    RectDrawingMethod,
 };

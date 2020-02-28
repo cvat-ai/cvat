@@ -20,6 +20,7 @@ import {
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core';
+import { RectDrawingMethod } from 'cvat-canvas';
 import { getCVATStore } from 'cvat-store';
 
 const cvat = getCore();
@@ -807,7 +808,7 @@ export function drawShape(
     labelID: number,
     objectType: ObjectType,
     points?: number,
-    rectDrawingMethod?: string,
+    rectDrawingMethod?: RectDrawingMethod,
 ): AnyAction {
     let activeControl = ActiveControl.DRAW_RECTANGLE;
     if (shapeType === ShapeType.POLYGON) {

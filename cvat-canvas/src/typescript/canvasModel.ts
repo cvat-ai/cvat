@@ -4,7 +4,6 @@
 
 import { MasterImpl } from './master';
 
-
 export interface Size {
     width: number;
     height: number;
@@ -36,10 +35,15 @@ export interface ActiveElement {
     attributeID: number | null;
 }
 
+export enum RectDrawingMethod {
+    CLASSIC = 'By 2 points',
+    EXTREME_POINTS = 'By 4 points'
+}
+
 export interface DrawData {
     enabled: boolean;
     shapeType?: string;
-    rectDrawingMethod?: string;
+    rectDrawingMethod?: RectDrawingMethod;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
