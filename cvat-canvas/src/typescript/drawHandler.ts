@@ -10,6 +10,7 @@ import './svg.patch';
 import {
     DrawData,
     Geometry,
+    RectDrawingMethod,
 } from './canvasModel';
 
 import {
@@ -160,7 +161,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 const { drawInstance } = this;
                 this.drawInstance = null;
                 if (this.drawData.shapeType === 'rectangle'
-                    && this.drawData.rectDrawingMethod !== 'by_four_points') {
+                    && this.drawData.rectDrawingMethod !== RectDrawingMethod.EXTREME_POINTS) {
                     drawInstance.draw('cancel');
                 } else {
                     drawInstance.draw('done');
@@ -206,10 +207,10 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing').attr({
                 'stroke-width': 0,
                 opacity: 0,
-            }).on('drawstart', () => {
+            }).on('drawstart', (): void => {
                 // init numberOfPoints as one on drawstart
                 numberOfPoints = 1;
-            }).on('drawpoint', (e: CustomEvent) => {
+            }).on('drawpoint', (e: CustomEvent): void => {
                 // increase numberOfPoints by one on drawpoint
                 numberOfPoints += 1;
 
@@ -227,11 +228,11 @@ export class DrawHandlerImpl implements DrawHandler {
                         this.onDrawDone(null);
                     }
                 }
-            }).on('undopoint', () => {
+            }).on('undopoint', (): void => {
                 if (numberOfPoints > 0) {
                     numberOfPoints -= 1;
                 }
-            }).off('drawdone').on('drawdone', () => {
+            }).on('drawdone', (): void => {
                 // close drawing mode without drawing rect
                 this.onDrawDone(null);
             });
@@ -578,7 +579,7 @@ export class DrawHandlerImpl implements DrawHandler {
             this.setupPasteEvents();
         } else {
             if (this.drawData.shapeType === 'rectangle') {
-                if (this.drawData.rectDrawingMethod === 'by_four_points') {
+                if (this.drawData.rectDrawingMethod === RectDrawingMethod.EXTREME_POINTS) {
                     // draw box by extreme clicking
                     this.drawBoxBy4Points();
                 } else {
