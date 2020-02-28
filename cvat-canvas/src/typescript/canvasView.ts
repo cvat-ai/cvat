@@ -626,7 +626,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.content.addEventListener('mousedown', (event): void => {
             if ([1, 2].includes(event.which)) {
-                self.controller.enableDrag(event.clientX, event.clientY);
+                if (![Mode.ZOOM_CANVAS, Mode.GROUP].includes(this.mode) || event.which === 2) {
+                    self.controller.enableDrag(event.clientX, event.clientY);
+                }
                 event.preventDefault();
             }
         });
@@ -1072,7 +1074,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.activeElement = { ...activeElement };
         const shape = this.svgShapes[clientID];
         let text = this.svgTexts[clientID];
-        // Draw text if it's hidden by default
         if (!text) {
             text = this.addText(state);
             this.svgTexts[state.clientID] = text;
