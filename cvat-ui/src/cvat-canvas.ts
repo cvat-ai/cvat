@@ -4,14 +4,12 @@
 
 import {
     Canvas,
-    Rotation,
     CanvasVersion,
     RectDrawingMethod,
 } from '../../cvat-canvas/src/typescript/canvas';
 
 export {
     Canvas,
-    Rotation,
     CanvasVersion,
     RectDrawingMethod,
 };

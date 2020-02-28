@@ -72,11 +72,6 @@ export enum FrameZoom {
     MAX = 10,
 }
 
-export enum Rotation {
-    ANTICLOCKWISE90,
-    CLOCKWISE90,
-}
-
 export enum UpdateReasons {
     IMAGE_CHANGED = 'image_changed',
     IMAGE_ZOOMED = 'image_zoomed',
@@ -135,7 +130,7 @@ export interface CanvasModel {
 
     setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number | null, attributeID: number | null): void;
-    rotate(rotation: Rotation, remember: boolean): void;
+    rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -166,7 +161,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         gridSize: Size;
         left: number;
         objects: any[];
-        rememberAngle: boolean;
         scale: number;
         top: number;
         zLayer: number | null;
@@ -208,7 +202,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             left: 0,
             objects: [],
-            rememberAngle: false,
             scale: 1,
             top: 0,
             zLayer: null,
@@ -323,10 +316,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 return;
             }
 
-            if (!this.data.rememberAngle) {
-                this.data.angle = 0;
-            }
-
             this.data.imageSize = {
                 height: (frameData.height as number),
                 width: (frameData.width as number),
@@ -355,16 +344,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.SHAPE_ACTIVATED);
     }
 
-    public rotate(rotation: Rotation, remember: boolean = false): void {
-        if (rotation === Rotation.CLOCKWISE90) {
-            this.data.angle += 90;
-        } else {
-            this.data.angle -= 90;
+    public rotate(rotationAngle: number): void {
+        if (this.data.angle !== rotationAngle) {
+            this.data.angle = (360 + Math.floor((rotationAngle) / 90) * 90) % 360;
+            this.fit();
         }
-
-        this.data.angle %= 360;
-        this.data.rememberAngle = remember;
-        this.fit();
     }
 
     public focus(clientID: number, padding: number): void {

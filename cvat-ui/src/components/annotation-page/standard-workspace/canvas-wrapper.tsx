@@ -37,6 +37,7 @@ interface Props {
     selectedStatesID: number[];
     annotations: any[];
     frameData: any;
+    frameAngle: number;
     frame: number;
     opacity: number;
     colorBy: ColorBy;
@@ -101,6 +102,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             selectedOpacity,
             blackBorders,
             frameData,
+            frameAngle,
             annotations,
             canvasInstance,
             sidebarCollapsed,
@@ -147,6 +149,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (prevProps.curZLayer !== curZLayer) {
             canvasInstance.setZLayer(curZLayer);
+        }
+
+        if (prevProps.frameAngle !== frameAngle) {
+            canvasInstance.rotate(frameAngle);
         }
 
         this.activateOnCanvas();
@@ -305,11 +311,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             annotations,
             frameData,
+            frameAngle,
             canvasInstance,
         } = this.props;
 
         if (frameData !== null) {
             canvasInstance.setup(frameData, annotations);
+            canvasInstance.rotate(frameAngle);
         }
     }
 

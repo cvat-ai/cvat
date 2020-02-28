@@ -11,11 +11,13 @@ import {
     mergeObjects,
     groupObjects,
     splitTrack,
+    rotateCurrentFrame,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import {
     ActiveControl,
     CombinedState,
+    Rotation,
 } from 'reducers/interfaces';
 
 interface StateToProps {
@@ -28,6 +30,7 @@ interface DispatchToProps {
     mergeObjects(enabled: boolean): void;
     groupObjects(enabled: boolean): void;
     splitTrack(enabled: boolean): void;
+    rotateFrame(angle: Rotation): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -62,6 +65,9 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         },
         splitTrack(enabled: boolean): void {
             dispatch(splitTrack(enabled));
+        },
+        rotateFrame(rotation: Rotation): void {
+            dispatch(rotateCurrentFrame(rotation));
         },
     };
 }

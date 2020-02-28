@@ -275,6 +275,11 @@ export enum ContextMenuType {
     CANVAS_SHAPE = 'canvas_shape',
 }
 
+export enum Rotation {
+    ANTICLOCKWISE90,
+    CLOCKWISE90,
+}
+
 export interface AnnotationState {
     activities: {
         loads: {
@@ -308,6 +313,7 @@ export interface AnnotationState {
             changeTime: number | null;
         };
         playing: boolean;
+        frameAngles: number[];
     };
     drawing: {
         activeShapeType: ShapeType;

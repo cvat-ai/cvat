@@ -16,18 +16,15 @@ import {
 
 import {
     Rotation,
-    Canvas,
-} from 'cvat-canvas';
+} from 'reducers/interfaces';
 
 interface Props {
-    canvasInstance: Canvas;
-    rotateAll: boolean;
+    rotateFrame(rotation: Rotation): void;
 }
 
 function RotateControl(props: Props): JSX.Element {
     const {
-        rotateAll,
-        canvasInstance,
+        rotateFrame,
     } = props;
 
     return (
@@ -39,16 +36,14 @@ function RotateControl(props: Props): JSX.Element {
                     <Tooltip title='Rotate the image anticlockwise' placement='topRight'>
                         <Icon
                             className='cvat-rotate-canvas-controls-left'
-                            onClick={(): void => canvasInstance
-                                .rotate(Rotation.ANTICLOCKWISE90, rotateAll)}
+                            onClick={(): void => rotateFrame(Rotation.ANTICLOCKWISE90)}
                             component={RotateIcon}
                         />
                     </Tooltip>
                     <Tooltip title='Rotate the image clockwise' placement='topRight'>
                         <Icon
                             className='cvat-rotate-canvas-controls-right'
-                            onClick={(): void => canvasInstance
-                                .rotate(Rotation.CLOCKWISE90, rotateAll)}
+                            onClick={(): void => rotateFrame(Rotation.CLOCKWISE90)}
                             component={RotateIcon}
                         />
                     </Tooltip>
