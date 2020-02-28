@@ -34,7 +34,7 @@ const defaultState: SettingsState = {
         grid: false,
         gridSize: 100,
         gridColor: GridColor.White,
-        gridOpacity: 0,
+        gridOpacity: 100,
         brightnessLevel: 100,
         contrastLevel: 100,
         saturationLevel: 100,

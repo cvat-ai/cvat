@@ -552,7 +552,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.grid.setAttribute('version', '2');
         this.gridPath.setAttribute('d', 'M 1000 0 L 0 0 0 1000');
         this.gridPath.setAttribute('fill', 'none');
-        this.gridPath.setAttribute('stroke-width', '1.5');
+        this.gridPath.setAttribute('stroke-width', `${consts.BASE_GRID_WIDTH}`);
+        this.gridPath.setAttribute('opacity', 'inherit');
         this.gridPattern.setAttribute('id', 'cvat_canvas_grid_pattern');
         this.gridPattern.setAttribute('width', '100');
         this.gridPattern.setAttribute('height', '100');
