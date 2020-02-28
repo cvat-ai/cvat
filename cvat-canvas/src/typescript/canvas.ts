@@ -1,7 +1,6 @@
-/*
-* Copyright (C) 2019 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 import {
     Rotation,
@@ -11,6 +10,7 @@ import {
     GroupData,
     CanvasModel,
     CanvasModelImpl,
+    RectDrawingMethod,
 } from './canvasModel';
 
 import {
@@ -142,4 +142,5 @@ export {
     CanvasImpl as Canvas,
     Rotation,
     CanvasVersion,
+    RectDrawingMethod,
 };

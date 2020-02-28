@@ -10,7 +10,8 @@ import os
 import os.path as osp
 import shutil
 
-from datumaro.components.project import Project, Environment
+from datumaro.components.project import Project, Environment, \
+    PROJECT_DEFAULT_CONFIG as DEFAULT_CONFIG
 from datumaro.components.comparator import Comparator
 from datumaro.components.dataset_filter import DatasetItemEncoder
 from datumaro.components.extractor import AnnotationType
@@ -18,8 +19,7 @@ from datumaro.components.cli_plugin import CliPlugin
 from .diff import DiffVisualizer
 from ...util import add_subparser, CliException, MultilineFormatter, \
     make_file_name
-from ...util.project import make_project_path, load_project, \
-    generate_next_dir_name
+from ...util.project import load_project, generate_next_dir_name
 
 
 def build_create_parser(parser_ctor=argparse.ArgumentParser):
@@ -48,19 +48,23 @@ def build_create_parser(parser_ctor=argparse.ArgumentParser):
 
 def create_command(args):
     project_dir = osp.abspath(args.dst_dir)
-    project_path = make_project_path(project_dir)
 
-    if osp.isdir(project_dir) and os.listdir(project_dir):
+    project_env_dir = osp.join(project_dir, DEFAULT_CONFIG.env_dir)
+    if osp.isdir(project_env_dir) and os.listdir(project_env_dir):
         if not args.overwrite:
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % project_dir)
+                "(pass --overwrite to force creation)" % project_env_dir)
         else:
-            shutil.rmtree(project_dir)
-    os.makedirs(project_dir, exist_ok=True)
+            shutil.rmtree(project_env_dir, ignore_errors=True)
 
-    if not args.overwrite and osp.isfile(project_path):
-        raise CliException("Project file '%s' already exists "
-            "(pass --overwrite to force creation)" % project_path)
+    own_dataset_dir = osp.join(project_dir, DEFAULT_CONFIG.dataset_dir)
+    if osp.isdir(own_dataset_dir) and os.listdir(own_dataset_dir):
+        if not args.overwrite:
+            raise CliException("Directory '%s' already exists "
+                "(pass --overwrite to force creation)" % own_dataset_dir)
+        else:
+            # NOTE: remove the dir to avoid using data from previous project
+            shutil.rmtree(own_dataset_dir)
 
     project_name = args.name
     if project_name is None:
@@ -138,19 +142,23 @@ def build_import_parser(parser_ctor=argparse.ArgumentParser):
 
 def import_command(args):
     project_dir = osp.abspath(args.dst_dir)
-    project_path = make_project_path(project_dir)
 
-    if osp.isdir(project_dir) and os.listdir(project_dir):
+    project_env_dir = osp.join(project_dir, DEFAULT_CONFIG.env_dir)
+    if osp.isdir(project_env_dir) and os.listdir(project_env_dir):
         if not args.overwrite:
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % project_dir)
+                "(pass --overwrite to force creation)" % project_env_dir)
         else:
-            shutil.rmtree(project_dir)
-    os.makedirs(project_dir, exist_ok=True)
+            shutil.rmtree(project_env_dir, ignore_errors=True)
 
-    if not args.overwrite and osp.isfile(project_path):
-        raise CliException("Project file '%s' already exists "
-            "(pass --overwrite to force creation)" % project_path)
+    own_dataset_dir = osp.join(project_dir, DEFAULT_CONFIG.dataset_dir)
+    if osp.isdir(own_dataset_dir) and os.listdir(own_dataset_dir):
+        if not args.overwrite:
+            raise CliException("Directory '%s' already exists "
+                "(pass --overwrite to force creation)" % own_dataset_dir)
+        else:
+            # NOTE: remove the dir to avoid using data from previous project
+            shutil.rmtree(own_dataset_dir)
 
     project_name = args.name
     if project_name is None:

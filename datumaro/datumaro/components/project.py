@@ -12,11 +12,13 @@ import inspect
 import logging as log
 import os
 import os.path as osp
+import shutil
 import sys
 
 from datumaro.components.config import Config, DEFAULT_FORMAT
-from datumaro.components.config_model import *
-from datumaro.components.extractor import DatasetItem, Extractor
+from datumaro.components.config_model import (Model, Source,
+    PROJECT_DEFAULT_CONFIG, PROJECT_SCHEMA)
+from datumaro.components.extractor import Extractor
 from datumaro.components.launcher import InferenceWrapper
 from datumaro.components.dataset_filter import \
     XPathDatasetFilter, XPathAnnotationsFilter
@@ -672,16 +674,21 @@ class ProjectDataset(Dataset):
     def export_project(self, save_dir, converter,
             filter_expr=None, filter_annotations=False, remove_empty=False):
         # NOTE: probably this function should be in the ViewModel layer
-        save_dir = osp.abspath(save_dir)
-        os.makedirs(save_dir, exist_ok=True)
-
         dataset = self
         if filter_expr:
             dataset = dataset.extract(filter_expr,
                 filter_annotations=filter_annotations,
                 remove_empty=remove_empty)
 
-        converter(dataset, save_dir)
+        save_dir = osp.abspath(save_dir)
+        save_dir_existed = osp.exists(save_dir)
+        try:
+            os.makedirs(save_dir, exist_ok=True)
+            converter(dataset, save_dir)
+        except Exception:
+            if not save_dir_existed:
+                shutil.rmtree(save_dir)
+            raise
 
     def extract_project(self, filter_expr, filter_annotations=False,
             save_dir=None, remove_empty=False):
@@ -694,24 +701,41 @@ class ProjectDataset(Dataset):
         self._save_branch_project(filtered, save_dir=save_dir)
 
 class Project:
-    @staticmethod
-    def load(path):
+    @classmethod
+    def load(cls, path):
         path = osp.abspath(path)
-        if osp.isdir(path):
-            path = osp.join(path, PROJECT_DEFAULT_CONFIG.project_filename)
-        config = Config.parse(path)
-        config.project_dir = osp.dirname(path)
-        config.project_filename = osp.basename(path)
+        config_path = osp.join(path, PROJECT_DEFAULT_CONFIG.env_dir,
+            PROJECT_DEFAULT_CONFIG.project_filename)
+        config = Config.parse(config_path)
+        config.project_dir = path
+        config.project_filename = osp.basename(config_path)
         return Project(config)
 
     def save(self, save_dir=None):
         config = self.config
+
         if save_dir is None:
             assert config.project_dir
-            save_dir = osp.abspath(config.project_dir)
-        os.makedirs(save_dir, exist_ok=True)
-        config_path = osp.join(save_dir, config.project_filename)
-        config.dump(config_path)
+            project_dir = config.project_dir
+        else:
+            project_dir = save_dir
+
+        env_dir = osp.join(project_dir, config.env_dir)
+        save_dir = osp.abspath(env_dir)
+
+        project_dir_existed = osp.exists(project_dir)
+        env_dir_existed = osp.exists(env_dir)
+        try:
+            os.makedirs(save_dir, exist_ok=True)
+
+            config_path = osp.join(save_dir, config.project_filename)
+            config.dump(config_path)
+        except Exception:
+            if not env_dir_existed:
+                shutil.rmtree(save_dir, ignore_errors=True)
+            if not project_dir_existed:
+                shutil.rmtree(project_dir, ignore_errors=True)
+            raise
 
     @staticmethod
     def generate(save_dir, config=None):
@@ -735,8 +759,8 @@ class Project:
     def make_dataset(self):
         return ProjectDataset(self)
 
-    def add_source(self, name, value=Source()):
-        if isinstance(value, (dict, Config)):
+    def add_source(self, name, value=None):
+        if value is None or isinstance(value, (dict, Config)):
             value = Source(value)
         self.config.sources[name] = value
         self.env.sources.register(name, value)
@@ -760,8 +784,8 @@ class Project:
         else:
             self.config.subsets = value
 
-    def add_model(self, name, value=Model()):
-        if isinstance(value, (dict, Config)):
+    def add_model(self, name, value=None):
+        if value is None or isinstance(value, (dict, Config)):
             value = Model(value)
         self.env.register_model(name, value)
         self.config.models[name] = value
