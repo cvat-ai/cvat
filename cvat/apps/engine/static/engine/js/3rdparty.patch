@@ -6,10 +6,9 @@ Subject: [PATCH] Applied patch
 ---
  .../static/engine/js/3rdparty/svg.draggable.js  |  1 +
  .../static/engine/js/3rdparty/svg.draw.js       | 17 +++++++++++++++--
- .../engine/static/engine/js/3rdparty/svg.js     |  2 +-
  .../static/engine/js/3rdparty/svg.resize.min.js |  2 +-
  .../static/engine/js/3rdparty/svg.select.js     |  5 ++++-
- 5 files changed, 22 insertions(+), 5 deletions(-)
+ 4 files changed, 21 insertions(+), 4 deletions(-)
 
 diff --git a/cvat/apps/engine/static/engine/js/3rdparty/svg.draggable.js b/cvat/apps/engine/static/engine/js/3rdparty/svg.draggable.js
 index d88abf5..aba474c 100644
@@ -78,19 +77,6 @@ index 68dbf2a..20a6917 100644
              }
          }
  
-diff --git a/cvat/apps/engine/static/engine/js/3rdparty/svg.js b/cvat/apps/engine/static/engine/js/3rdparty/svg.js
-index 72737da..c865ef8 100644
---- a/cvat/apps/engine/static/engine/js/3rdparty/svg.js
-+++ b/cvat/apps/engine/static/engine/js/3rdparty/svg.js
-@@ -3503,7 +3503,7 @@ SVG.off = function(node, event, listener) {
-       SVG.off(node, event)
- 
-     delete SVG.listeners[index]
--    delete SVG.handlerMap[index]
-+    SVG.handlerMap.splice(index, 1)
- 
-   }
- }
 diff --git a/cvat/apps/engine/static/engine/js/3rdparty/svg.resize.min.js b/cvat/apps/engine/static/engine/js/3rdparty/svg.resize.min.js
 index 2dca34b..50ef3d3 100644
 --- a/cvat/apps/engine/static/engine/js/3rdparty/svg.resize.min.js
@@ -131,7 +117,7 @@ index 47e07bd..cee6d34 100644
  
      if (!this.pointSelection.isSelected && !this.rectSelection.isSelected) {
          this.nested.remove();
-+        SVG.off(this.node);
++        SVG.off(this.nested.node);
          delete this.nested;
 -
      }
