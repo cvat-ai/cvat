@@ -1060,22 +1060,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const [state] = this.controller.objects
             .filter((_state: any): boolean => _state.clientID === clientID);
 
-        if (!state) {
-            return;
-        }
-
-        if (state.shapeType === 'points') {
+        if (state && state.shapeType === 'points') {
             this.svgShapes[clientID].remember('_selectHandler').nested
                 .style('pointer-events', state.lock ? 'none' : '');
         }
 
-        if (state.hidden || state.lock) {
+        if (!state || state.hidden || state.outside) {
             return;
         }
 
         this.activeElement = { ...activeElement };
         const shape = this.svgShapes[clientID];
-        shape.addClass('cvat_canvas_shape_activated');
         let text = this.svgTexts[clientID];
         // Draw text if it's hidden by default
         if (!text) {
@@ -1087,7 +1082,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             );
         }
 
-        const self = this;
+        if (state.lock) {
+            return;
+        }
+
+        shape.addClass('cvat_canvas_shape_activated');
         if (state.shapeType === 'points') {
             this.content.append(this.svgShapes[clientID]
                 .remember('_selectHandler').nested.node);
@@ -1103,7 +1102,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }).on('dragend', (e: CustomEvent): void => {
             if (text) {
                 text.removeClass('cvat_canvas_hidden');
-                self.updateTextPosition(
+                this.updateTextPosition(
                     text,
                     shape,
                 );
@@ -1153,7 +1152,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             if (text) {
                 text.removeClass('cvat_canvas_hidden');
-                self.updateTextPosition(
+                this.updateTextPosition(
                     text,
                     shape,
                 );
