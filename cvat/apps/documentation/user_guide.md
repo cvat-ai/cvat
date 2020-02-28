@@ -1031,6 +1031,11 @@ Before starting, you have to be sure that ``Cuboid`` is selected.
 Press ``N`` for entering drawing mode. There are many ways to draw a cuboid. You may draw the cuboid by placing 4 points, after which the drawing completes automatically. The first 3 points will represent a plane of the cuboid while the last point represents the depth of that plane. For the first 3 points, it is recomended to only draw the 2 closest side faces, as well as the top and bottom face. 
 
 A few examples:
+![](static/documentation/images/CuboidDrawing1.gif)
+
+![](static/documentation/images/CuboidDrawing2.gif)
+
+![](static/documentation/images/CuboidDrawing3.gif)
 
 
 ### Editing the cuboid
@@ -1042,14 +1047,22 @@ The cuboid can be moved by simply dragging the shape as normal.
 The cuboid can be extended by dragging on the point in the middle of the edges. 
 The cuboid can also be extended up and down by dragging the point at the vertices. 
 
+![](static/documentation/images/CuboidEditing1.gif)
+
 To draw with perpective effects it is assumed that the front face is the closest to the camera. To begin simply drag the points on the vertices that are not on the pink/front face while holding ``Shift``. The cuboid can then be edited as usual.
+
+![](static/documentation/images/EditingPerspective.gif)
 
 If you wish to reset perspective effects, you may right click on cuboid, and select ``Reset Perspective`` to return to a regular cuboid. 
 
 The location of the pink face can be swapped with the adjacent visible side face. This is done by right clicking on the cuboid and selecting ``Switch Perspective Orientation``. Note that this will also reset the perspective effects. 
 
+![](static/documentation/images/ResetPerspective.gif)
+
 Certain faces of the cuboid can also be edited, these faces are the left, right and dorsal faces, relative to the pink face. 
 Simply drag the faces to move them independently from the rest of the cuboid. 
+
+![](static/documentation/images/CuboidEditing2.gif)
 
 ## Annotation with points
 
