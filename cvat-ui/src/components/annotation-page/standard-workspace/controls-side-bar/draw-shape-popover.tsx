@@ -139,6 +139,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                 <Col span={12}>
                     <Button
                         onClick={onDrawTrack}
+                        disabled={shapeType !== ShapeType.RECTANGLE}
                     >
                         Track
                     </Button>
