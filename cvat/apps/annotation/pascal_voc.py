@@ -36,6 +36,14 @@ def load(file_object, annotations):
     with TemporaryDirectory() as tmp_dir:
         Archive(archive_file).extractall(tmp_dir)
 
+        # put label map from the task if not present
+        labelmap_file = osp.join(tmp_dir, 'labelmap.txt')
+        if not osp.isfile(labelmap_file):
+            labels = (label['name'] + ':::'
+                for _, label in annotations.meta['task']['labels'])
+            with open(labelmap_file, 'w') as f:
+                f.write('\n'.join(labels))
+
         # support flat archive layout
         anno_dir = osp.join(tmp_dir, 'Annotations')
         if not osp.isdir(anno_dir):
