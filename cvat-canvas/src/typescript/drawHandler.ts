@@ -125,14 +125,7 @@ export class DrawHandlerImpl implements DrawHandler {
         }
 
         if (this.drawInstance) {
-            // Draw plugin isn't activated when draw from initialState
-            // So, we don't need to use any draw events
-            if (!this.drawData.initialState) {
-                this.drawInstance.off('drawdone');
-                this.drawInstance.off('drawstop');
-                this.drawInstance.draw('stop');
-            }
-
+            this.drawInstance.off();
             this.drawInstance.remove();
             this.drawInstance = null;
         }
@@ -155,27 +148,32 @@ export class DrawHandlerImpl implements DrawHandler {
 
     private closeDrawing(): void {
         if (this.drawInstance) {
-            // Draw plugin isn't activated when draw from initialState
-            // So, we don't need to use any draw events
-            if (!this.drawData.initialState) {
+            // Draw plugin in some cases isn't activated
+            // For example when draw from initialState
+            // Or when no drawn points, but we call cancel() drawing
+            // We check if it is activated with remember function
+            if (this.drawInstance.remember('_paintHandler')) {
                 const { drawInstance } = this;
+
+                // set this.drawInstance to null to avoid stackoverflow
+                // calling closeDrawing recursively
+                // onDrawDone => controller => model => view => closeDrawing
                 this.drawInstance = null;
+
                 if (this.drawData.shapeType === 'rectangle'
-                    && this.drawData.rectDrawingMethod !== RectDrawingMethod.EXTREME_POINTS) {
+                        && this.drawData.rectDrawingMethod !== RectDrawingMethod.EXTREME_POINTS) {
                     drawInstance.draw('cancel');
                 } else {
                     drawInstance.draw('done');
                 }
+
+                // Now we assign drawInstance back to right work of release()
                 this.drawInstance = drawInstance;
                 this.release();
             } else {
                 this.release();
                 this.onDrawDone(null);
             }
-
-            // here is a cycle
-            // onDrawDone => controller => model => view => closeDrawing
-            // one call of closeDrawing is unuseful, but it's okey
         }
     }
 
