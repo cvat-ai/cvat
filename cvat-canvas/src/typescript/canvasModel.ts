@@ -343,7 +343,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public rotate(rotationAngle: number): void {
         if (this.data.angle !== rotationAngle) {
-            this.data.angle = rotationAngle;
+            this.data.angle = (360 + Math.floor((rotationAngle) / 90) * 90) % 360;
             this.fit();
         }
     }

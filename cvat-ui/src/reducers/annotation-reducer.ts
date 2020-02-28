@@ -135,7 +135,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         number,
                         data,
                     },
-                    frameAngles: Array(job.stopFrame - job.startFrame).fill(0),
+                    frameAngles: Array(job.stopFrame - job.startFrame + 1).fill(0),
                 },
                 drawing: {
                     ...state.drawing,

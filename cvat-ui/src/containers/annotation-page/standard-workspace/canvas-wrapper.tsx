@@ -41,7 +41,7 @@ interface StateToProps {
     selectedStatesID: number[];
     annotations: any[];
     frameData: any;
-    frameAngles: number[];
+    frameAngle: number;
     frame: number;
     opacity: number;
     colorBy: ColorBy;
@@ -141,7 +141,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasInstance,
         jobInstance,
         frameData,
-        frameAngles,
+        frameAngle: frameAngles[frame - jobInstance.startFrame],
         frame,
         activatedStateID,
         selectedStatesID,

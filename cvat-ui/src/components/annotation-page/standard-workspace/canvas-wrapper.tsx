@@ -33,7 +33,7 @@ interface Props {
     selectedStatesID: number[];
     annotations: any[];
     frameData: any;
-    frameAngles: number[];
+    frameAngle: number;
     frame: number;
     opacity: number;
     colorBy: ColorBy;
@@ -102,7 +102,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             gridColor,
             gridOpacity,
             frameData,
-            frameAngles,
+            frameAngle,
             annotations,
             canvasInstance,
             sidebarCollapsed,
@@ -173,8 +173,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             canvasInstance.setZLayer(curZLayer);
         }
 
-        if (prevProps.frameAngles !== frameAngles) {
-            this.rotate();
+        if (prevProps.frameAngle !== frameAngle) {
+            canvasInstance.rotate(frameAngle);
         }
 
         this.activateOnCanvas();
@@ -333,26 +333,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             annotations,
             frameData,
+            frameAngle,
             canvasInstance,
         } = this.props;
 
         if (frameData !== null) {
             canvasInstance.setup(frameData, annotations);
-            this.rotate();
+            canvasInstance.rotate(frameAngle);
         }
-    }
-
-    private rotate(): void {
-        const {
-            frame,
-            frameAngles,
-            canvasInstance,
-            jobInstance,
-        } = this.props;
-
-        const frameAngle = frameAngles[frame - jobInstance.startFrame];
-
-        canvasInstance.rotate(frameAngle);
     }
 
     private initialSetup(): void {
