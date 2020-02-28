@@ -106,11 +106,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.geometry,
             );
         } else {
+            this.mode = Mode.IDLE;
             this.controller.draw({
                 enabled: false,
             });
-
-            this.mode = Mode.IDLE;
         }
     }
 
@@ -763,13 +762,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
-            if (data.enabled) {
+            if (data.enabled && this.mode === Mode.IDLE) {
                 this.canvas.style.cursor = 'crosshair';
                 this.mode = Mode.DRAW;
+                this.drawHandler.draw(data, this.geometry);
             } else {
                 this.canvas.style.cursor = '';
+                if (this.mode !== Mode.IDLE) {
+                    this.drawHandler.draw(data, this.geometry);
+                }
             }
-            this.drawHandler.draw(data, this.geometry);
         } else if (reason === UpdateReasons.MERGE) {
             const data: MergeData = this.controller.mergeData;
             if (data.enabled) {
