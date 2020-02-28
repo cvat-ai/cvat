@@ -320,3 +320,40 @@ class TransformsTest(TestCase):
 
         actual = transforms.BoxesToMasks(SrcExtractor())
         compare_datasets(self, DstExtractor(), actual)
+
+    def test_random_split(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset="a"),
+                    DatasetItem(id=2, subset="a"),
+                    DatasetItem(id=3, subset="b"),
+                    DatasetItem(id=4, subset="b"),
+                    DatasetItem(id=5, subset="b"),
+                    DatasetItem(id=6, subset=""),
+                    DatasetItem(id=7, subset=""),
+                ])
+
+        actual = transforms.RandomSplit(SrcExtractor(), splits=[
+            ('train', 4.0 / 7.0),
+            ('test', 3.0 / 7.0),
+        ])
+
+        self.assertEqual(4, len(actual.get_subset('train')))
+        self.assertEqual(3, len(actual.get_subset('test')))
+
+    def test_random_split_gives_error_on_non1_ratios(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([DatasetItem(id=1)])
+
+        has_error = False
+        try:
+            transforms.RandomSplit(SrcExtractor(), splits=[
+                ('train', 0.5),
+                ('test', 0.7),
+            ])
+        except Exception:
+            has_error = True
+
+        self.assertTrue(has_error)
