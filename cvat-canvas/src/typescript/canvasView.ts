@@ -125,6 +125,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 },
             });
 
+            this.drawnStates[state.clientID].points = points;
             this.canvas.dispatchEvent(event);
         } else {
             const event: CustomEvent = new CustomEvent('canvas.canceled', {
