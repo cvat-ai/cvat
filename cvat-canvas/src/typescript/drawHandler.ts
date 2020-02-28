@@ -216,9 +216,6 @@ export class DrawHandlerImpl implements DrawHandler {
                 if (numberOfPoints > 0) {
                     numberOfPoints -= 1;
                 }
-            }).on('drawdone', (): void => {
-                // close drawing mode without drawing rect
-                this.cancel();
             });
 
         this.drawPolyshape();
