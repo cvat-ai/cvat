@@ -1030,7 +1030,7 @@ Before starting, you have to be sure that ``Cuboid`` is selected.
 
 Press ``N`` for entering drawing mode. There are many ways to draw a cuboid. You may draw the cuboid by placing 4 points, after which the drawing completes automatically. The first 3 points will represent a plane of the cuboid while the last point represents the depth of that plane. For the first 3 points, it is recomended to only draw the 2 closest side faces, as well as the top and bottom face. 
 
-A few examples:
+A few examples:    
 ![](static/documentation/images/CuboidDrawing1.gif)
 
 ![](static/documentation/images/CuboidDrawing2.gif)
