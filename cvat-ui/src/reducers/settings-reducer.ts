@@ -4,6 +4,7 @@
 
 import { AnyAction } from 'redux';
 import { SettingsActionTypes } from 'actions/settings-actions';
+import { AnnotationActionTypes } from 'actions/annotation-actions';
 
 import {
     SettingsState,
@@ -210,6 +211,17 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     showAllInterpolationTracks: action.payload.showAllInterpolationTracks,
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_JOB_SUCCESS: {
+            const { job } = action.payload;
+
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    resetZoom: job && job.task.mode === 'annotation',
                 },
             };
         }
