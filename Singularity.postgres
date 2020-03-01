@@ -1,0 +1,9 @@
+Bootstrap: docker
+From: postgres:10-alpine
+
+%environment
+export POSTGRES_USER=root
+export POSTGRES_DB=cvat
+
+%startscript
+exec /usr/local/bin/docker-entrypoint.sh postgres "${@}"

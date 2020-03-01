@@ -1,0 +1,41 @@
+version: "1.0"
+instances:
+
+  cvatdb:
+    build: 
+      context: .
+      recipe: Singularity.postgres
+    ports:
+     - "5432:5432"
+    volumes:
+      - volumes/db:/var/lib/postgresql/data
+
+  cvatredis:
+    image: docker://redis:4.0-alpine
+
+  cvat:
+    build:
+      context: .
+      recipe: Singularity
+    depends_on:
+      - cvatredis
+      - cvatdb
+    ports:
+      - "8443:8443"
+      - "8080:8080"
+    build:
+      context: .
+    volumes:
+      - volumes/data:/home/django/data
+      - volumes/keys:/home/django/keys
+      - volumes/logs:/home/django/logs
+      - volumes/models:/home/django/models
+
+  cvatui:
+    build:
+      context: .
+      recipe: Singularity.ui
+    depends_on:
+      - cvat
+    ports:
+      - "7080:80"

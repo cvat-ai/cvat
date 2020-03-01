@@ -1,4 +1,5 @@
 # Project Specific
+/volumes/
 /data/
 /models/
 /share/
@@ -13,6 +14,11 @@
 !/ssh/README.md
 node_modules
 /Mask_RCNN/
+
+# Singularity Containers
+*.sif
+etc.hosts
+resolv.conf
 
 # Ignore temporary files
 docker-compose.override.yml
