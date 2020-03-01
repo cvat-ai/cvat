@@ -2638,6 +2638,47 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "occluded": False
             }]
 
+            polygon_shapes_with_attrs = [{
+                "frame": 2,
+                "label_id": task["labels"][0]["id"],
+                "group": 1,
+                "attributes": [
+                    {
+                        "spec_id": task["labels"][0]["attributes"][0]["id"],
+                        "value": task["labels"][0]["attributes"][0]["values"][1]
+                    },
+                    {
+                        "spec_id": task["labels"][0]["attributes"][1]["id"],
+                        "value": task["labels"][0]["attributes"][1]["default_value"]
+                    }
+                ],
+                "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2, 4.44, 5.55],
+                "type": "polygon",
+                "occluded": True
+            }]
+
+            tags_wo_attrs = [{
+                "frame": 2,
+                "label_id": task["labels"][1]["id"],
+                "group": 3,
+                "attributes": []
+            }]
+            tags_with_attrs = [{
+                "frame": 1,
+                "label_id": task["labels"][0]["id"],
+                "group": 0,
+                "attributes": [
+                    {
+                        "spec_id": task["labels"][0]["attributes"][0]["id"],
+                        "value": task["labels"][0]["attributes"][0]["values"][1]
+                    },
+                    {
+                        "spec_id": task["labels"][0]["attributes"][1]["id"],
+                        "value": task["labels"][0]["attributes"][1]["default_value"]
+                    }
+                ],
+            }]
+
             annotations = {
                     "version": 0,
                     "tags": [],
@@ -2648,7 +2689,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["tracks"] = rectangle_tracks_with_attrs + rectangle_tracks_wo_attrs
 
             elif annotation_format == "CVAT XML 1.1 for images":
-                annotations["shapes"] = rectangle_shapes_with_attrs + rectangle_shapes_wo_attrs
+                annotations["shapes"] = rectangle_shapes_with_attrs + rectangle_shapes_wo_attrs \
+                    + polygon_shapes_wo_attrs + polygon_shapes_with_attrs
+                annotations["tags"] = tags_with_attrs + tags_wo_attrs
 
             elif annotation_format == "PASCAL VOC ZIP 1.1" or \
                  annotation_format == "YOLO ZIP 1.1" or \

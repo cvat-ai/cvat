@@ -236,5 +236,14 @@ def import_dm_annotations(dm_dataset, cvat_task_anno):
                     points=ann.points,
                     occluded=False,
                     group=group_map.get(ann.group, 0),
-                    attributes=[],
+                    attributes=[cvat_task_anno.Attribute(name=n, value=str(v))
+                        for n, v in ann.attributes.items()],
+                ))
+            elif ann.type == datumaro.AnnotationType.label:
+                cvat_task_anno.add_shape(cvat_task_anno.Tag(
+                    frame=frame_number,
+                    label=label_cat.items[ann.label].name,
+                    group=group_map.get(ann.group, 0),
+                    attributes=[cvat_task_anno.Attribute(name=n, value=str(v))
+                        for n, v in ann.attributes.items()],
                 ))
