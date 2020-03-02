@@ -214,8 +214,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       is highlighted if a task has the interpolation mode.
       - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
       is highlighted if a task has the annotation mode. 
-      - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
-      - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
+      - [PASCAL VOC ZIP 1.1](http://host.robots.ox.ac.uk/pascal/VOC/)
+      - [YOLO ZIP 1.1](https://pjreddie.com/darknet/yolo/)
       - [COCO JSON 1.0](http://cocodataset.org/#format-data)
       - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file
       with the value of each color.
@@ -523,8 +523,8 @@ Usage examples:
 
     ![](static/documentation/images/image029.jpg "Example XML format") 
 
-    - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
-    - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
+    - [PASCAL VOC ZIP 1.1](http://host.robots.ox.ac.uk/pascal/VOC/)
+    - [YOLO ZIP 1.1](https://pjreddie.com/darknet/yolo/)
     - [COCO JSON 1.0](http://cocodataset.org/#format-data)
     - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file with
     the value of each color

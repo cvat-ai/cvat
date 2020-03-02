@@ -2660,13 +2660,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             tags_wo_attrs = [{
                 "frame": 2,
                 "label_id": task["labels"][1]["id"],
-                "group": 3,
+                "group": 0,
                 "attributes": []
             }]
             tags_with_attrs = [{
                 "frame": 1,
                 "label_id": task["labels"][0]["id"],
-                "group": 0,
+                "group": 3,
                 "attributes": [
                     {
                         "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -2693,10 +2693,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     + polygon_shapes_wo_attrs + polygon_shapes_with_attrs
                 annotations["tags"] = tags_with_attrs + tags_wo_attrs
 
-            elif annotation_format == "PASCAL VOC ZIP 1.1" or \
-                 annotation_format == "YOLO ZIP 1.1" or \
+            elif annotation_format == "PASCAL VOC ZIP 1.1":
+                annotations["shapes"] = rectangle_shapes_wo_attrs
+                annotations["tags"] = tags_wo_attrs
+
+            elif annotation_format == "YOLO ZIP 1.1" or \
                  annotation_format == "TFRecord ZIP 1.0":
-                 annotations["shapes"] = rectangle_shapes_wo_attrs
+                annotations["shapes"] = rectangle_shapes_wo_attrs
 
             elif annotation_format == "COCO JSON 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
