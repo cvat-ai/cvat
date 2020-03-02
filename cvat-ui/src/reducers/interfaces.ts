@@ -328,6 +328,7 @@ export interface AnnotationState {
         collapsed: Record<number, boolean>;
         states: any[];
         filters: string[];
+        filtersHistory: string[];
         history: {
             undo: string[];
             redo: string[];
