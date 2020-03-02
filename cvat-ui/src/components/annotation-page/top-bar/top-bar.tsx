@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 
 import {
     Row,
@@ -42,7 +43,7 @@ interface Props {
     onRedoClick(): void;
 }
 
-function AnnotationTopBarComponent(props: Props): JSX.Element {
+export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     const {
         saving,
         savingStatuses,
@@ -68,8 +69,27 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
         onRedoClick,
     } = props;
 
+    const keyMap = {
+        SAVE_JOB: {
+            name: 'Save the job',
+            description: 'Send all changes of annotations to the server',
+            sequence: 'ctrl+s',
+            action: 'keydown',
+        },
+    };
+
+    const handlers = {
+        SAVE_JOB: (event: KeyboardEvent | undefined) => {
+            if (event) {
+                event.preventDefault();
+            }
+            onSaveAnnotation();
+        },
+    };
+
     return (
         <Layout.Header className='cvat-annotation-header'>
+            <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers} />
             <Row type='flex' justify='space-between'>
                 <LeftGroup
                     saving={saving}
@@ -107,5 +127,3 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
         </Layout.Header>
     );
 }
-
-export default React.memo(AnnotationTopBarComponent);

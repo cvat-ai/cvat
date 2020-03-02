@@ -16,6 +16,7 @@ import { getFormatsAsync } from './actions/formats-actions';
 import { checkPluginsAsync } from './actions/plugins-actions';
 import { getUsersAsync } from './actions/users-actions';
 import { getAboutAsync } from './actions/about-actions';
+import { shortcutsActions } from './actions/shortcuts-actions';
 import {
     resetErrors,
     resetMessages,
@@ -54,6 +55,8 @@ interface DispatchToProps {
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
+    showShortcutsHelp: () => void;
+    hideShortcutsHelp: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -90,19 +93,15 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadAbout: (): void => dispatch(getAboutAsync()),
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
+        showShortcutsHelp: (): void => dispatch(shortcutsActions.showShortcutsHelp()),
+        hideShortcutsHelp: (): void => dispatch(shortcutsActions.hideShortcutsHelp()),
     };
-}
-
-function reduxAppWrapper(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <CVATApplication {...props} />
-    );
 }
 
 const ReduxAppWrapper = connect(
     mapStateToProps,
     mapDispatchToProps,
-)(reduxAppWrapper);
+)(CVATApplication);
 
 ReactDOM.render(
     (

@@ -414,6 +414,10 @@ export interface SettingsState {
     player: PlayerSettingsState;
 }
 
+export interface ShortcutsState {
+    visibleShortcutsHelp: boolean;
+}
+
 export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
@@ -426,4 +430,5 @@ export interface CombinedState {
     notifications: NotificationsState;
     annotation: AnnotationState;
     settings: SettingsState;
+    shortcuts: ShortcutsState;
 }

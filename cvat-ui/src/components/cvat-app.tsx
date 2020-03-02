@@ -5,6 +5,7 @@
 import 'antd/dist/antd.less';
 import '../styles.scss';
 import React from 'react';
+import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 import { BrowserRouter } from 'react-router-dom';
 import {
     Switch,
@@ -17,6 +18,7 @@ import {
     notification,
 } from 'antd';
 
+import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
 import SettingsPageContainer from 'containers/settings-page/settings-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
@@ -38,6 +40,8 @@ type CVATAppProps = {
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
+    showShortcutsHelp: () => void;
+    hideShortcutsHelp: () => void;
     userInitialized: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
@@ -191,6 +195,8 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             installedTFSegmentation,
             installedTFAnnotation,
             user,
+            showShortcutsHelp,
+            hideShortcutsHelp,
         } = this.props;
 
         const readyForRender = (userInitialized && user == null)
@@ -200,6 +206,36 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const withModels = installedAutoAnnotation
             || installedTFAnnotation || installedTFSegmentation;
 
+        const keyMap = {
+            SHOW_SHORTCUTS: {
+                name: 'Show shortcuts',
+                description: 'Open a list of available shortcuts',
+                sequence: 'f1',
+                action: 'keydown',
+            },
+            HIDE_SHORTCUTS: {
+                name: 'Hide shortcuts',
+                description: 'Close the list of available shortcuts',
+                sequence: 'f1',
+                action: 'keyup',
+            },
+        };
+
+        const handlers = {
+            SHOW_SHORTCUTS: (event: KeyboardEvent | undefined) => {
+                if (event) {
+                    event.preventDefault();
+                }
+                showShortcutsHelp();
+            },
+            HIDE_SHORTCUTS: (event: KeyboardEvent | undefined) => {
+                if (event) {
+                    event.preventDefault();
+                }
+                hideShortcutsHelp();
+            },
+        };
+
         if (readyForRender) {
             if (user) {
                 return (
@@ -207,18 +243,24 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                         <Layout>
                             <HeaderContainer> </HeaderContainer>
                             <Layout.Content>
-                                <Switch>
-                                    <Route exact path='/settings' component={SettingsPageContainer} />
-                                    <Route exact path='/tasks' component={TasksPageContainer} />
-                                    <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
-                                    <Route exact path='/tasks/:id' component={TaskPageContainer} />
-                                    <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                    { withModels
-                                        && <Route exact path='/models' component={ModelsPageContainer} /> }
-                                    { installedAutoAnnotation
-                                        && <Route exact path='/models/create' component={CreateModelPageContainer} /> }
-                                    <Redirect push to='/tasks' />
-                                </Switch>
+                                <ShorcutsDialog />
+                                <GlobalHotKeys
+                                    keyMap={keyMap as KeyMap}
+                                    handlers={handlers}
+                                >
+                                    <Switch>
+                                        <Route exact path='/settings' component={SettingsPageContainer} />
+                                        <Route exact path='/tasks' component={TasksPageContainer} />
+                                        <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
+                                        <Route exact path='/tasks/:id' component={TaskPageContainer} />
+                                        <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
+                                        { withModels
+                                            && <Route exact path='/models' component={ModelsPageContainer} /> }
+                                        { installedAutoAnnotation
+                                            && <Route exact path='/models/create' component={CreateModelPageContainer} /> }
+                                        <Redirect push to='/tasks' />
+                                    </Switch>
+                                </GlobalHotKeys>
                                 {/* eslint-disable-next-line */}
                                 <a id='downloadAnchor' style={{ display: 'none' }} download/>
                             </Layout.Content>
