@@ -89,7 +89,7 @@ class FrameProvider {
             }
             if (!(`${start}:${end}` in this._decodingBlocks)) {
                 this._requestedBlockDecode = {
-                    block: block || this._blocks[Math.floor(start / this.blockSize)],
+                    block: block || this._blocks[Math.floor(start / this._blockSize)],
                     start,
                     end,
                     resolveCallback,

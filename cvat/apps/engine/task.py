@@ -253,7 +253,7 @@ def _create_thread(tid, data):
     original_chunk_writer = original_chunk_writer_class(100)
 
     frame_counter = 0
-    total_len = sum(len(e) for e in extractors)
+    total_len = sum(len(e) for e in extractors) or 100
     image_names = []
     image_sizes = []
     for extractor in extractors:

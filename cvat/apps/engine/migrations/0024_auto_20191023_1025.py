@@ -7,6 +7,9 @@ import glob
 import logging
 import sys
 import traceback
+import itertools
+import multiprocessing
+import time
 
 from django.db import migrations, models
 import django.db.models.deletion
@@ -17,23 +20,211 @@ from cvat.apps.engine.media_extractors import (VideoReader, ArchiveReader, ZipRe
     ZipChunkWriter, ZipCompressedChunkWriter, get_mime)
 from cvat.apps.engine.models import DataChoice
 
-def create_data_objects(apps, schema_editor):
-    def fix_path(path):
+MIGRATION_THREAD_COUNT = 2
+
+def fix_path(path):
         ind = path.find('.upload')
         if ind != -1:
             path = path[ind + len('.upload') + 1:]
         return path
 
-    def get_frame_step(frame_filter):
-        match = re.search("step\s*=\s*([1-9]\d*)", frame_filter)
-        return int(match.group(1)) if match else 1
+def get_frame_step(frame_filter):
+    match = re.search("step\s*=\s*([1-9]\d*)", frame_filter)
+    return int(match.group(1)) if match else 1
 
-    def get_task_on_disk():
-        folders = [os.path.relpath(f, settings.DATA_ROOT)
-            for f in glob.glob(os.path.join(settings.DATA_ROOT, '*'), recursive=False)]
+def get_task_on_disk():
+    folders = [os.path.relpath(f, settings.DATA_ROOT)
+        for f in glob.glob(os.path.join(settings.DATA_ROOT, '*'), recursive=False)]
 
-        return set(int(f) for f in folders if f.isdigit())
+    return set(int(f) for f in folders if f.isdigit())
 
+def get_frame_path(task_data_dir, frame):
+    d1 = str(int(frame) // 10000)
+    d2 = str(int(frame) // 100)
+    path = os.path.join(task_data_dir, d1, d2,
+        str(frame) + '.jpg')
+
+    return path
+
+def slice_by_size(frames, size):
+    it = itertools.islice(frames, 0, None)
+    frames = list(itertools.islice(it, 0, size , 1))
+    while frames:
+        yield frames
+        frames = list(itertools.islice(it, 0, size, 1))
+
+def migrate_task_data(db_task_id, db_data_id, original_video, original_images, size, start_frame,
+    stop_frame, frame_filter, image_quality, chunk_size, return_dict):
+    try:
+        db_data_dir = os.path.join(settings.MEDIA_DATA_ROOT, str(db_data_id))
+        compressed_cache_dir = os.path.join(db_data_dir, 'compressed')
+        original_cache_dir = os.path.join(db_data_dir, 'original')
+        old_db_task_dir = os.path.join(settings.DATA_ROOT, str(db_task_id))
+        old_task_data_dir = os.path.join(old_db_task_dir, 'data')
+        if os.path.exists(old_task_data_dir) and size != 0:
+            if original_video:
+                if os.path.exists(original_video):
+                    reader = VideoReader([original_video], get_frame_step(frame_filter), start_frame, stop_frame)
+                    original_chunk_writer = Mpeg4ChunkWriter(100)
+                    compressed_chunk_writer = ZipCompressedChunkWriter(image_quality)
+
+                    for chunk_idx, chunk_images in enumerate(reader.slice_by_size(chunk_size)):
+                        original_chunk_path = os.path.join(original_cache_dir, '{}.mp4'.format(chunk_idx))
+                        original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
+
+                        compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.zip'.format(chunk_idx))
+                        compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
+
+                    reader.save_preview(os.path.join(db_data_dir, 'preview.jpeg'))
+                else:
+                    original_chunk_writer = ZipChunkWriter(100)
+                    for chunk_idx, chunk_image_ids in enumerate(slice_by_size(range(size), chunk_size)):
+                        chunk_images = []
+                        for image_id in chunk_image_ids:
+                            image_path = get_frame_path(old_task_data_dir, image_id)
+                            chunk_images.append((image_path, image_path))
+
+                        original_chunk_path = os.path.join(original_cache_dir, '{}.zip'.format(chunk_idx))
+                        original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
+
+                        compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.zip'.format(chunk_idx))
+                        os.symlink(original_chunk_path, compressed_chunk_path)
+                        shutil.copyfile(get_frame_path(old_task_data_dir, image_id), os.path.join(db_data_dir, 'preview.jpeg'))
+            else:
+                reader = None
+                if os.path.exists(original_images[0]): # task created from images
+                    reader = ImageListReader(original_images)
+                else: # task created from archive or pdf
+                    archives = []
+                    pdfs = []
+                    zips = []
+                    for p in glob.iglob(os.path.join(db_data_dir, 'raw', '**', '*'), recursive=True):
+                        mime_type = get_mime(p)
+                        if mime_type == 'archive':
+                            archives.append(p)
+                        elif mime_type == 'pdf':
+                            pdfs.append(p)
+                        elif mime_type == 'zip':
+                            zips.append(p)
+                    if archives:
+                        reader = ArchiveReader(archives, get_frame_step(frame_filter), start_frame, stop_frame)
+                    elif zips:
+                        reader = ZipReader(archives, get_frame_step(frame_filter), start_frame, stop_frame)
+                    elif pdfs:
+                        reader = PdfReader(pdfs, get_frame_step(frame_filter), start_frame, stop_frame)
+
+                if not reader:
+                    original_chunk_writer = ZipChunkWriter(100)
+                    for chunk_idx, chunk_image_ids in enumerate(slice_by_size(range(size), chunk_size)):
+                        chunk_images = []
+                        for image_id in chunk_image_ids:
+                            image_path = get_frame_path(old_task_data_dir, image_id)
+                            chunk_images.append((image_path, image_path))
+
+                        original_chunk_path = os.path.join(original_cache_dir, '{}.zip'.format(chunk_idx))
+                        original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
+
+                        compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.zip'.format(chunk_idx))
+                        os.symlink(original_chunk_path, compressed_chunk_path)
+                        shutil.copyfile(get_frame_path(old_task_data_dir, image_id), os.path.join(db_data_dir, 'preview.jpeg'))
+                else:
+                    original_chunk_writer = ZipChunkWriter(100)
+                    compressed_chunk_writer = ZipCompressedChunkWriter(image_quality)
+
+                    for chunk_idx, chunk_images in enumerate(reader.slice_by_size(chunk_size)):
+                        compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.zip'.format(chunk_idx))
+                        compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
+
+                        original_chunk_path = os.path.join(original_cache_dir, '{}.zip'.format(chunk_idx))
+                        original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
+
+                    reader.save_preview(os.path.join(db_data_dir, 'preview.jpeg'))
+            shutil.rmtree(old_db_task_dir)
+        return_dict[db_task_id] = (True, '')
+    except Exception as e:
+        traceback.print_exc(file=sys.stderr)
+        return_dict[db_task_id] = (False, str(e))
+    return 0
+
+def migrate_task_schema(db_task, Data, log):
+    log.info('Start schema migration of task ID {}.'.format(db_task.id))
+    try:
+        # create folders
+        new_task_dir = os.path.join(settings.TASKS_ROOT, str(db_task.id))
+        os.makedirs(new_task_dir, exist_ok=True)
+        os.makedirs(os.path.join(new_task_dir, 'artifacts'),  exist_ok=True)
+        new_task_logs_dir = os.path.join(new_task_dir, 'logs')
+        os.makedirs(new_task_logs_dir,  exist_ok=True)
+
+        # create Data object
+        db_data = Data.objects.create(
+            size=db_task.size,
+            image_quality=db_task.image_quality,
+            start_frame=db_task.start_frame,
+            stop_frame=db_task.stop_frame,
+            frame_filter=db_task.frame_filter,
+            compressed_chunk_type = DataChoice.IMAGESET,
+            original_chunk_type = DataChoice.VIDEO if db_task.mode == 'interpolation' else DataChoice.IMAGESET,
+        )
+        db_data.save()
+
+        db_task.data = db_data
+
+        db_data_dir = os.path.join(settings.MEDIA_DATA_ROOT, str(db_data.id))
+        os.makedirs(db_data_dir, exist_ok=True)
+        compressed_cache_dir = os.path.join(db_data_dir, 'compressed')
+        os.makedirs(compressed_cache_dir, exist_ok=True)
+
+        original_cache_dir = os.path.join(db_data_dir, 'original')
+        os.makedirs(original_cache_dir, exist_ok=True)
+
+        old_db_task_dir = os.path.join(settings.DATA_ROOT, str(db_task.id))
+
+        # move logs
+        for log_file in ('task.log', 'client.log'):
+            task_log_file = os.path.join(old_db_task_dir, log_file)
+            if os.path.isfile(task_log_file):
+                shutil.move(task_log_file, new_task_logs_dir)
+
+        if hasattr(db_task, 'video'):
+            db_task.video.data = db_data
+            db_task.video.path = fix_path(db_task.video.path)
+            db_task.video.save()
+
+        for db_image in db_task.image_set.all():
+            db_image.data = db_data
+            db_image.path = fix_path(db_image.path)
+            db_image.save()
+
+        old_raw_dir = os.path.join(old_db_task_dir, '.upload')
+        new_raw_dir = os.path.join(db_data_dir, 'raw')
+
+        for client_file in db_task.clientfile_set.all():
+            client_file.file = client_file.file.path.replace(old_raw_dir, new_raw_dir)
+            client_file.save()
+
+        for server_file in db_task.serverfile_set.all():
+            server_file.file = server_file.file.replace(old_raw_dir, new_raw_dir)
+            server_file.save()
+
+        for remote_file in db_task.remotefile_set.all():
+            remote_file.file = remote_file.file.replace(old_raw_dir, new_raw_dir)
+            remote_file.save()
+
+        db_task.save()
+
+        #move old raw data
+        if os.path.exists(old_raw_dir):
+            shutil.move(old_raw_dir, new_raw_dir)
+
+        return (db_task.id, db_data.id)
+
+    except Exception as e:
+        log.error('Cannot migrate schema for the task: {}'.format(db_task.id))
+        log.error(str(e))
+        traceback.print_exc(file=sys.stderr)
+
+def create_data_objects(apps, schema_editor):
     migration_name = os.path.splitext(os.path.basename(__file__))[0]
     migration_log_file = '{}.log'.format(migration_name)
     stdout = sys.stdout
@@ -53,148 +244,70 @@ def create_data_objects(apps, schema_editor):
     Task = apps.get_model('engine', 'Task')
     Data = apps.get_model('engine', 'Data')
 
-    db_tasks = Task.objects.prefetch_related("image_set").select_related("video")
+    db_tasks = Task.objects
     task_count = db_tasks.count()
+    log.info('\nStart schema migration...')
+    migrated_db_tasks = []
+    for counter, db_task in enumerate(db_tasks.all().iterator()):
+        res = migrate_task_schema(db_task, Data, log)
+        log.info('Schema migration for the task {} completed. Progress {}/{}'.format(db_task.id, counter+1, task_count))
+        if res:
+            migrated_db_tasks.append(res)
+
+    log.info('\nSchema migration is finished...')
     log.info('\nStart data migration...')
-    for task_idx, db_task in enumerate(db_tasks):
-        progress = (100 * task_idx) // task_count
-        log.info('Start migration of task ID {}. Progress: {}% | {}/{}.'.format(db_task.id, progress, task_idx + 1, task_count))
-        try:
-            # create folders
-            new_task_dir = os.path.join(settings.TASKS_ROOT, str(db_task.id))
-            os.makedirs(new_task_dir)
-            os.makedirs(os.path.join(new_task_dir, 'artifacts'))
-            new_task_logs_dir = os.path.join(new_task_dir, 'logs')
-            os.makedirs(new_task_logs_dir)
 
-            # create Data object
-            db_data = Data.objects.create(
-                size=db_task.size,
-                image_quality=db_task.image_quality,
-                start_frame=db_task.start_frame,
-                stop_frame=db_task.stop_frame,
-                frame_filter=db_task.frame_filter,
-                compressed_chunk_type = DataChoice.IMAGESET,
-                original_chunk_type = DataChoice.VIDEO if db_task.mode == 'interpolation' else DataChoice.IMAGESET,
-            )
-            db_data.save()
+    manager = multiprocessing.Manager()
+    return_dict = manager.dict()
 
-            db_task.data = db_data
+    def create_process(db_task_id, db_data_id):
+        db_data = Data.objects.get(pk=db_data_id)
+        db_data_dir = os.path.join(settings.MEDIA_DATA_ROOT, str(db_data_id))
+        new_raw_dir = os.path.join(db_data_dir, 'raw')
 
-            db_data_dir = os.path.join(settings.MEDIA_DATA_ROOT, str(db_data.id))
-            os.makedirs(db_data_dir)
-            compressed_cache_dir = os.path.join(db_data_dir, 'compressed')
-            os.makedirs(compressed_cache_dir)
+        original_video = None
+        original_images = None
+        if hasattr(db_data, 'video'):
+            original_video = os.path.join(new_raw_dir, db_data.video.path)
+        else:
+            original_images = [os.path.realpath(os.path.join(new_raw_dir, db_image.path)) for db_image in db_data.images.all()]
 
-            original_cache_dir = os.path.join(db_data_dir, 'original')
-            os.makedirs(original_cache_dir)
+        args = (db_task_id, db_data_id, original_video, original_images, db_data.size,
+            db_data.start_frame, db_data.stop_frame, db_data.frame_filter, db_data.image_quality, db_data.chunk_size, return_dict)
 
-            old_db_task_dir = os.path.join(settings.DATA_ROOT, str(db_task.id))
+        return multiprocessing.Process(target=migrate_task_data, args=args)
 
-            # prepare media data
-            old_task_data_dir = os.path.join(old_db_task_dir, 'data')
-            if os.path.exists(old_task_data_dir) and db_data.size != 0:
-                if hasattr(db_task, 'video'):
-                    if os.path.exists(db_task.video.path):
-                        reader = VideoReader([db_task.video.path], get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
-                        original_chunk_writer = Mpeg4ChunkWriter(100)
-                        compressed_chunk_writer = ZipCompressedChunkWriter(db_data.image_quality)
-
-                        for chunk_idx, chunk_images in enumerate(reader.slice_by_size(db_data.chunk_size)):
-                            original_chunk_path = os.path.join(original_cache_dir, '{}.mp4'.format(chunk_idx))
-                            original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
-
-                            compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.zip'.format(chunk_idx))
-                            compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
-
-                        reader.save_preview(os.path.join(db_data_dir, 'preview.jpeg'))
+    results = {}
+    task_idx = 0
+    while True:
+        for res_idx in list(results.keys()):
+            res = results[res_idx]
+            if not res.is_alive():
+                del results[res_idx]
+                if res.exitcode == 0:
+                    ret_code, message = return_dict[res_idx]
+                    if ret_code:
+                        counter = (task_idx - len(results))
+                        progress = (100 * counter) / task_count
+                        log.info('Data migration for the task {} completed. Progress: {:.02f}% | {}/{}.'.format(res_idx, progress, counter, task_count))
                     else:
-                        log.error('No raw video data found for task {}'.format(db_task.id))
+                        log.error('Cannot migrate data for the task: {}'.format(res_idx))
+                        log.error(str(message))
+                    if res_idx in disk_tasks:
+                        disk_tasks.remove(res_idx)
                 else:
-                    original_images = [os.path.realpath(db_image.path) for db_image in db_task.image_set.all()]
-                    reader = None
-                    if os.path.exists(original_images[0]): # task created from images
-                        reader = ImageListReader(original_images)
-                    else: # task created from archive or pdf
-                        archives = []
-                        pdfs = []
-                        zips = []
-                        for p in glob.iglob(os.path.join(old_db_task_dir, '.upload', '**', '*'), recursive=True):
-                            mime_type = get_mime(p)
-                            if mime_type == 'archive':
-                                archives.append(p)
-                            elif mime_type == 'pdf':
-                                pdfs.append(p)
-                            elif mime_type == 'zip':
-                                zips.append(p)
-                        if archives:
-                            reader = ArchiveReader(archives, get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
-                        elif zips:
-                            reader = ZipReader(archives, get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
-                        elif pdfs:
-                            reader = PdfReader(pdfs, get_frame_step(db_data.frame_filter), db_data.start_frame, db_data.stop_frame)
+                    log.error('#Cannot migrate data for the task: {}'.format(res_idx))
 
-                    if not reader:
-                        log.error('No raw data found for task {}'.format(db_task.id))
-                    else:
-                        original_chunk_writer = ZipChunkWriter(100)
-                        compressed_chunk_writer = ZipCompressedChunkWriter(db_data.image_quality)
+        while task_idx < len(migrated_db_tasks) and len(results) < MIGRATION_THREAD_COUNT:
+            log.info('Start data migration for the task {}, data ID {}'.format(migrated_db_tasks[task_idx][0], migrated_db_tasks[task_idx][1]))
+            results[migrated_db_tasks[task_idx][0]] = create_process(*migrated_db_tasks[task_idx])
+            results[migrated_db_tasks[task_idx][0]].start()
+            task_idx += 1
 
-                        for chunk_idx, chunk_images in enumerate(reader.slice_by_size(db_data.chunk_size)):
-                            compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.zip'.format(chunk_idx))
-                            compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
+        if len(results) == 0:
+            break
 
-                            original_chunk_path = os.path.join(original_cache_dir, '{}.zip'.format(chunk_idx))
-                            original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
-
-                        reader.save_preview(os.path.join(db_data_dir, 'preview.jpeg'))
-
-            # move logs
-            for log_file in ('task.log', 'client.log'):
-                task_log_file = os.path.join(old_db_task_dir, log_file)
-                if os.path.isfile(task_log_file):
-                    shutil.move(task_log_file, new_task_logs_dir)
-
-            if hasattr(db_task, 'video'):
-                db_task.video.data = db_data
-                db_task.video.path = fix_path(db_task.video.path)
-                db_task.video.save()
-
-            for db_image in db_task.image_set.all():
-                db_image.data = db_data
-                db_image.path = fix_path(db_image.path)
-                db_image.save()
-
-            old_raw_dir = os.path.join(old_db_task_dir, '.upload')
-            new_raw_dir = os.path.join(db_data_dir, 'raw')
-
-            for client_file in db_task.clientfile_set.all():
-                client_file.file = client_file.file.path.replace(old_raw_dir, new_raw_dir)
-                client_file.save()
-
-            for server_file in db_task.serverfile_set.all():
-                server_file.file = server_file.file.replace(old_raw_dir, new_raw_dir)
-                server_file.save()
-
-            for remote_file in db_task.remotefile_set.all():
-                remote_file.file = remote_file.file.replace(old_raw_dir, new_raw_dir)
-                remote_file.save()
-
-            db_task.save()
-
-            if db_task.id in disk_tasks:
-                disk_tasks.remove(db_task.id)
-
-            #move old raw data
-            if os.path.exists(old_raw_dir):
-                shutil.move(old_raw_dir, new_raw_dir)
-
-            shutil.rmtree(old_db_task_dir)
-
-        except Exception as e:
-            log.error('Cannot migrate data for the task: {}'.format(db_task.id))
-            log.error(str(e))
-            traceback.print_exc(file=sys.stderr)
+        time.sleep(5)
 
     if disk_tasks:
         suspicious_tasks_dir = os.path.join(settings.DATA_ROOT, 'suspicious_tasks')
