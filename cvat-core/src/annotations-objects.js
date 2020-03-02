@@ -320,6 +320,10 @@
                 checkObjectType('lock', data.lock, 'boolean', null);
             }
 
+            if (updated.pinned) {
+                checkObjectType('pinned', data.pinned, 'boolean', null);
+            }
+
             if (updated.color) {
                 checkObjectType('color', data.color, 'string', null);
                 if (!/^#[0-9A-F]{6}$/i.test(data.color)) {
@@ -379,7 +383,21 @@
             super(data, clientID, color, injection);
             this.frameMeta = injection.frameMeta;
             this.hidden = false;
+            this.pinned = true;
             this.shapeType = null;
+        }
+
+        _savePinned(pinned) {
+            const undoPinned = this.pinned;
+            const redoPinned = pinned;
+
+            this.history.do(HistoryActions.CHANGED_PINNED, () => {
+                this.pinned = undoPinned;
+            }, () => {
+                this.pinned = redoPinned;
+            }, [this.clientID]);
+
+            this.pinned = pinned;
         }
 
         save() {
@@ -455,6 +473,7 @@
                 color: this.color,
                 hidden: this.hidden,
                 updated: this.updated,
+                pinned: this.pinned,
                 frame,
             };
         }
@@ -535,6 +554,10 @@
 
             if (updated.lock) {
                 this._saveLock(data.lock);
+            }
+
+            if (updated.pinned) {
+                this._savePinned(data.pinned);
             }
 
             if (updated.color) {
@@ -644,6 +667,7 @@
                 hidden: this.hidden,
                 updated: this.updated,
                 label: this.label,
+                pinned: this.pinned,
                 keyframes: {
                     prev,
                     next,
@@ -984,6 +1008,10 @@
                 this._saveLock(data.lock);
             }
 
+            if (updated.pinned) {
+                this._savePinned(data.pinned);
+            }
+
             if (updated.color) {
                 this._saveColor(data.color);
             }
@@ -1148,6 +1176,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.RECTANGLE;
+            this.pinned = false;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -1315,6 +1344,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.RECTANGLE;
+            this.pinned = false;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
