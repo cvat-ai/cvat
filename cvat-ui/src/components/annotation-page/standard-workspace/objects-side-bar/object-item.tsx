@@ -178,6 +178,7 @@ const ItemTop = React.memo(ItemTopComponent);
 
 interface ItemButtonsComponentProps {
     objectType: ObjectType;
+    shapeType: ShapeType;
     occluded: boolean;
     outside: boolean | undefined;
     locked: boolean;
@@ -207,6 +208,7 @@ interface ItemButtonsComponentProps {
 function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
     const {
         objectType,
+        shapeType,
         occluded,
         outside,
         locked,
@@ -238,58 +240,62 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
             <Row type='flex' align='middle' justify='space-around'>
                 <Col span={20} style={{ textAlign: 'center' }}>
                     <Row type='flex' justify='space-around'>
-                        <Col span={6}>
+                        <Col>
                             { navigateFirstKeyframe
                                 ? <Icon component={FirstIcon} onClick={navigateFirstKeyframe} />
                                 : <Icon component={FirstIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
-                        <Col span={6}>
+                        <Col>
                             { navigatePrevKeyframe
                                 ? <Icon component={PreviousIcon} onClick={navigatePrevKeyframe} />
                                 : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
-                        <Col span={6}>
+                        <Col>
                             { navigateNextKeyframe
                                 ? <Icon component={NextIcon} onClick={navigateNextKeyframe} />
                                 : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
-                        <Col span={6}>
+                        <Col>
                             { navigateLastKeyframe
                                 ? <Icon component={LastIcon} onClick={navigateLastKeyframe} />
                                 : <Icon component={LastIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                     </Row>
                     <Row type='flex' justify='space-around'>
-                        <Col span={4}>
+                        <Col>
                             { outside
                                 ? <Icon component={ObjectOutsideIcon} onClick={unsetOutside} />
                                 : <Icon type='select' onClick={setOutside} />}
                         </Col>
-                        <Col span={4}>
+                        <Col>
                             { locked
                                 ? <Icon type='lock' onClick={unlock} />
                                 : <Icon type='unlock' onClick={lock} />}
                         </Col>
-                        <Col span={4}>
+                        <Col>
                             { occluded
                                 ? <Icon type='team' onClick={unsetOccluded} />
                                 : <Icon type='user' onClick={setOccluded} />}
                         </Col>
-                        <Col span={4}>
+                        <Col>
                             { hidden
                                 ? <Icon type='eye-invisible' onClick={show} />
                                 : <Icon type='eye' onClick={hide} />}
                         </Col>
-                        <Col span={4}>
+                        <Col>
                             { keyframe
                                 ? <Icon type='star' theme='filled' onClick={unsetKeyframe} />
                                 : <Icon type='star' onClick={setKeyframe} />}
                         </Col>
-                        <Col span={4}>
-                            { pinned
-                                ? <Icon type='pushpin' theme='filled' onClick={unpin} />
-                                : <Icon type='pushpin' onClick={pin} />}
-                        </Col>
+                        {
+                            shapeType !== ShapeType.POINTS && (
+                                <Col>
+                                    { pinned
+                                        ? <Icon type='pushpin' theme='filled' onClick={unpin} />
+                                        : <Icon type='pushpin' onClick={pin} />}
+                                </Col>
+                            )
+                        }
                     </Row>
                 </Col>
             </Row>
@@ -300,26 +306,30 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
         <Row type='flex' align='middle' justify='space-around'>
             <Col span={20} style={{ textAlign: 'center' }}>
                 <Row type='flex' justify='space-around'>
-                    <Col span={6}>
+                    <Col>
                         { locked
                             ? <Icon type='lock' onClick={unlock} />
                             : <Icon type='unlock' onClick={lock} />}
                     </Col>
-                    <Col span={6}>
+                    <Col>
                         { occluded
                             ? <Icon type='team' onClick={unsetOccluded} />
                             : <Icon type='user' onClick={setOccluded} />}
                     </Col>
-                    <Col span={6}>
+                    <Col>
                         { hidden
                             ? <Icon type='eye-invisible' onClick={show} />
                             : <Icon type='eye' onClick={hide} />}
                     </Col>
-                    <Col span={6}>
-                        { pinned
-                            ? <Icon type='pushpin' theme='filled' onClick={unpin} />
-                            : <Icon type='pushpin' onClick={pin} />}
-                    </Col>
+                    {
+                        shapeType !== ShapeType.POINTS && (
+                            <Col>
+                                { pinned
+                                    ? <Icon type='pushpin' theme='filled' onClick={unpin} />
+                                    : <Icon type='pushpin' onClick={pin} />}
+                            </Col>
+                        )
+                    }
                 </Row>
             </Col>
         </Row>
@@ -727,6 +737,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toForeground={toForeground}
                 />
                 <ItemButtons
+                    shapeType={shapeType}
                     objectType={objectType}
                     occluded={occluded}
                     outside={outside}
