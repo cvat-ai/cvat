@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    Rotation,
     DrawData,
     MergeData,
     SplitData,
     GroupData,
     CanvasModel,
     CanvasModelImpl,
+    RectDrawingMethod,
 } from './canvasModel';
 
 import {
@@ -36,7 +36,7 @@ interface Canvas {
     setZLayer(zLayer: number | null): void;
     setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number | null, attributeID?: number): void;
-    rotate(rotation: Rotation, remember?: boolean): void;
+    rotate(rotationAngle: number): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -96,8 +96,8 @@ class CanvasImpl implements Canvas {
         this.model.activate(clientID, attributeID);
     }
 
-    public rotate(rotation: Rotation, remember: boolean = false): void {
-        this.model.rotate(rotation, remember);
+    public rotate(rotationAngle: number): void {
+        this.model.rotate(rotationAngle);
     }
 
     public focus(clientID: number, padding: number = 0): void {
@@ -139,6 +139,6 @@ class CanvasImpl implements Canvas {
 
 export {
     CanvasImpl as Canvas,
-    Rotation,
     CanvasVersion,
+    RectDrawingMethod,
 };

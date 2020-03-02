@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 const BASE_STROKE_WIDTH = 1.75;
-const BASE_GRID_WIDTH = 1;
+const BASE_GRID_WIDTH = 2;
 const BASE_POINT_SIZE = 5;
 const TEXT_MARGIN = 10;
 const AREA_THRESHOLD = 9;

@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 from unittest import TestCase
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, Points, Polygon, PolyLine, Bbox,
+    AnnotationType, Points, Polygon, PolyLine, Bbox, Label,
     LabelCategories,
 )
 from datumaro.plugins.cvat_format.importer import CvatImporter
@@ -173,6 +173,8 @@ class CvatConverterTest(TestCase):
                             Points([1, 1, 3, 2, 2, 3],
                                 label=2,
                                 attributes={ 'a1': 'x', 'a2': 42 }),
+                            Label(1),
+                            Label(2, attributes={ 'a1': 'y', 'a2': 44 }),
                         ]
                     ),
                     DatasetItem(id=1, subset='s1',
@@ -215,6 +217,8 @@ class CvatConverterTest(TestCase):
                                 label=2,
                                 attributes={ 'z_order': 0, 'occluded': False,
                                     'a1': 'x', 'a2': 42 }),
+                            Label(1),
+                            Label(2, attributes={ 'a1': 'y', 'a2': 44 }),
                         ]
                     ),
                     DatasetItem(id=1, subset='s1',

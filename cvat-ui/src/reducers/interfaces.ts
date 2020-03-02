@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Canvas } from 'cvat-canvas';
+import { Canvas, RectDrawingMethod } from 'cvat-canvas';
 
 export type StringObject = {
     [index: string]: string;
@@ -251,11 +251,6 @@ export enum ActiveControl {
     EDIT = 'edit',
 }
 
-export enum RectDrawingMethod {
-    BY_TWO_POINTS = 'by_two_points',
-    BY_FOUR_POINTS = 'by_four_points'
-}
-
 export enum ShapeType {
     RECTANGLE = 'rectangle',
     POLYGON = 'polygon',
@@ -278,6 +273,11 @@ export enum StatesOrdering {
 export enum ContextMenuType {
     CANVAS = 'canvas',
     CANVAS_SHAPE = 'canvas_shape',
+}
+
+export enum Rotation {
+    ANTICLOCKWISE90,
+    CLOCKWISE90,
 }
 
 export interface AnnotationState {
@@ -313,6 +313,7 @@ export interface AnnotationState {
             changeTime: number | null;
         };
         playing: boolean;
+        frameAngles: number[];
     };
     drawing: {
         activeShapeType: ShapeType;

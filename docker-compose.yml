@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 #
@@ -37,8 +37,6 @@ services:
     depends_on:
       - cvat_redis
       - cvat_db
-    ports:
-      - "8080:8080"
     build:
       context: .
       args:
@@ -54,11 +52,7 @@ services:
         OPENVINO_TOOLKIT: "no"
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
-      UI_SCHEME: http
-      UI_HOST: localhost
-      UI_PORT: 7080
-
-
+      ALLOWED_HOSTS: '*'
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -67,7 +61,6 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: nginx
     restart: always
     build:
       context: .
@@ -76,9 +69,6 @@ services:
         https_proxy:
         no_proxy:
         socks_proxy:
-        REACT_APP_API_PROTOCOL: http
-        REACT_APP_API_HOST: localhost
-        REACT_APP_API_PORT: 8080
       dockerfile: Dockerfile.ui
 
     networks:
@@ -87,8 +77,22 @@ services:
           - ui
     depends_on:
       - cvat
+
+  cvat_proxy:
+    container_name: cvat_proxy
+    image: nginx:stable-alpine
+    restart: always
+    depends_on:
+      - cvat
+      - cvat_ui
+    environment:
+      CVAT_HOST: localhost
     ports:
-      - "7080:80"
+      - "8080:80"
+    volumes:
+      - ./cvat_proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./cvat_proxy/conf.d/cvat.conf.template:/etc/nginx/conf.d/cvat.conf.template:ro
+    command: /bin/sh -c "envsubst '$$CVAT_HOST' < /etc/nginx/conf.d/cvat.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
 
 volumes:
   cvat_db:

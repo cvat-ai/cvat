@@ -10,6 +10,7 @@ import './svg.patch';
 import {
     DrawData,
     Geometry,
+    RectDrawingMethod,
 } from './canvasModel';
 
 import {
@@ -43,6 +44,7 @@ export class DrawHandlerImpl implements DrawHandler {
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
     private drawInstance: any;
+    private initialized: boolean;
     private pointsGroup: SVG.G | null;
     private shapeSizeElement: ShapeSizeElement;
 
@@ -113,6 +115,12 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private release(): void {
+        if (!this.initialized) {
+            // prevents recursive calls
+            return;
+        }
+
+        this.initialized = false;
         this.canvas.off('mousedown.draw');
         this.canvas.off('mouseup.draw');
         this.canvas.off('mousemove.draw');
@@ -123,18 +131,21 @@ export class DrawHandlerImpl implements DrawHandler {
             this.pointsGroup = null;
         }
 
-        if (this.drawInstance) {
-            // Draw plugin isn't activated when draw from initialState
-            // So, we don't need to use any draw events
-            if (!this.drawData.initialState) {
-                this.drawInstance.off('drawdone');
-                this.drawInstance.off('drawstop');
-                this.drawInstance.draw('stop');
+        // Draw plugin in some cases isn't activated
+        // For example when draw from initialState
+        // Or when no drawn points, but we call cancel() drawing
+        // We check if it is activated with remember function
+        if (this.drawInstance.remember('_paintHandler')) {
+            if (this.drawData.shapeType !== 'rectangle') {
+                // Check for unsaved drawn shapes
+                this.drawInstance.draw('done');
             }
-
-            this.drawInstance.remove();
-            this.drawInstance = null;
+            // Clear drawing
+            this.drawInstance.draw('stop');
         }
+        this.drawInstance.off();
+        this.drawInstance.remove();
+        this.drawInstance = null;
 
         if (this.shapeSizeElement) {
             this.shapeSizeElement.rm();
@@ -152,45 +163,19 @@ export class DrawHandlerImpl implements DrawHandler {
         }
     }
 
-    private closeDrawing(): void {
-        if (this.drawInstance) {
-            // Draw plugin isn't activated when draw from initialState
-            // So, we don't need to use any draw events
-            if (!this.drawData.initialState) {
-                const { drawInstance } = this;
-                this.drawInstance = null;
-                if (this.drawData.shapeType === 'rectangle'
-                    && this.drawData.rectDrawingMethod !== 'by_four_points') {
-                    drawInstance.draw('cancel');
-                } else {
-                    drawInstance.draw('done');
-                }
-                this.drawInstance = drawInstance;
-                this.release();
-            } else {
-                this.release();
-                this.onDrawDone(null);
-            }
-
-            // here is a cycle
-            // onDrawDone => controller => model => view => closeDrawing
-            // one call of closeDrawing is unuseful, but it's okey
-        }
-    }
-
     private drawBox(): void {
         this.drawInstance = this.canvas.rect();
         this.drawInstance.on('drawstop', (e: Event): void => {
             const bbox = (e.target as SVGRectElement).getBBox();
             const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+            const { shapeType } = this.drawData;
+            this.cancel();
 
             if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
                 this.onDrawDone({
-                    shapeType: this.drawData.shapeType,
+                    shapeType,
                     points: [xtl, ytl, xbr, ybr],
                 });
-            } else {
-                this.onDrawDone(null);
             }
         }).on('drawupdate', (): void => {
             this.shapeSizeElement.update(this.drawInstance);
@@ -206,10 +191,10 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing').attr({
                 'stroke-width': 0,
                 opacity: 0,
-            }).on('drawstart', () => {
+            }).on('drawstart', (): void => {
                 // init numberOfPoints as one on drawstart
                 numberOfPoints = 1;
-            }).on('drawpoint', (e: CustomEvent) => {
+            }).on('drawpoint', (e: CustomEvent): void => {
                 // increase numberOfPoints by one on drawpoint
                 numberOfPoints += 1;
 
@@ -217,23 +202,20 @@ export class DrawHandlerImpl implements DrawHandler {
                 if (numberOfPoints === 4) {
                     const bbox = (e.target as SVGPolylineElement).getBBox();
                     const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+                    const { shapeType } = this.drawData;
+                    this.cancel();
 
                     if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
                         this.onDrawDone({
-                            shapeType: this.drawData.shapeType,
+                            shapeType,
                             points: [xtl, ytl, xbr, ybr],
                         });
-                    } else {
-                        this.onDrawDone(null);
                     }
                 }
-            }).on('undopoint', () => {
+            }).on('undopoint', (): void => {
                 if (numberOfPoints > 0) {
                     numberOfPoints -= 1;
                 }
-            }).off('drawdone').on('drawdone', () => {
-                // close drawing mode without drawing rect
-                this.onDrawDone(null);
             });
 
         this.drawPolyshape();
@@ -308,34 +290,31 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
             const targetPoints = pointsToArray((e.target as SVGElement).getAttribute('points'));
 
-            const {
-                points,
-                box,
-            } = this.getFinalPolyshapeCoordinates(targetPoints);
+            const { points, box } = this.getFinalPolyshapeCoordinates(targetPoints);
+            const { shapeType } = this.drawData;
+            this.cancel();
 
-            if (this.drawData.shapeType === 'polygon'
+            if (shapeType === 'polygon'
                 && ((box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD)
                 && points.length >= 3 * 2) {
                 this.onDrawDone({
-                    shapeType: this.drawData.shapeType,
+                    shapeType,
                     points,
                 });
-            } else if (this.drawData.shapeType === 'polyline'
+            } else if (shapeType === 'polyline'
                 && ((box.xbr - box.xtl) >= consts.SIZE_THRESHOLD
                 || (box.ybr - box.ytl) >= consts.SIZE_THRESHOLD)
                 && points.length >= 2 * 2) {
                 this.onDrawDone({
-                    shapeType: this.drawData.shapeType,
+                    shapeType,
                     points,
                 });
-            } else if (this.drawData.shapeType === 'points'
+            } else if (shapeType === 'points'
                 && (e.target as any).getAttribute('points') !== '0,0') {
                 this.onDrawDone({
-                    shapeType: this.drawData.shapeType,
+                    shapeType,
                     points,
                 });
-            } else {
-                this.onDrawDone(null);
             }
         });
     }
@@ -578,7 +557,7 @@ export class DrawHandlerImpl implements DrawHandler {
             this.setupPasteEvents();
         } else {
             if (this.drawData.shapeType === 'rectangle') {
-                if (this.drawData.rectDrawingMethod === 'by_four_points') {
+                if (this.drawData.rectDrawingMethod === RectDrawingMethod.EXTREME_POINTS) {
                     // draw box by extreme clicking
                     this.drawBoxBy4Points();
                 } else {
@@ -596,6 +575,8 @@ export class DrawHandlerImpl implements DrawHandler {
             }
             this.setupDrawEvents();
         }
+
+        this.initialized = true;
     }
 
     public constructor(
@@ -606,6 +587,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.onDrawDone = onDrawDone;
         this.canvas = canvas;
         this.text = text;
+        this.initialized = false;
         this.drawData = null;
         this.geometry = null;
         this.crosshair = null;
@@ -686,7 +668,7 @@ export class DrawHandlerImpl implements DrawHandler {
             this.initDrawing();
             this.startDraw();
         } else {
-            this.closeDrawing();
+            this.cancel();
             this.drawData = drawData;
         }
     }
@@ -694,8 +676,5 @@ export class DrawHandlerImpl implements DrawHandler {
     public cancel(): void {
         this.release();
         this.onDrawDone(null);
-        // here is a cycle
-        // onDrawDone => controller => model => view => closeDrawing
-        // one call of closeDrawing is unuseful, but it's okey
     }
 }

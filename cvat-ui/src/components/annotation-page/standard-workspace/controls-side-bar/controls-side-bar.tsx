@@ -12,6 +12,7 @@ import {
 
 import {
     ActiveControl,
+    Rotation
 } from 'reducers/interfaces';
 
 import {
@@ -22,9 +23,9 @@ import {
     Canvas,
 } from 'cvat-canvas';
 
+import RotateControl from './rotate-control';
 import CursorControl from './cursor-control';
 import MoveControl from './move-control';
-import RotateControl from './rotate-control';
 import FitControl from './fit-control';
 import ResizeControl from './resize-control';
 import DrawRectangleControl from './draw-rectangle-control';
@@ -37,23 +38,23 @@ import SplitControl from './split-control';
 
 interface Props {
     canvasInstance: Canvas;
-    rotateAll: boolean;
     activeControl: ActiveControl;
 
     mergeObjects(enabled: boolean): void;
     groupObjects(enabled: boolean): void;
     splitTrack(enabled: boolean): void;
+    rotateFrame(rotation: Rotation): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
         canvasInstance,
         activeControl,
-        rotateAll,
 
         mergeObjects,
         groupObjects,
         splitTrack,
+        rotateFrame,
     } = props;
 
     return (
@@ -64,7 +65,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         >
             <CursorControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
-            <RotateControl canvasInstance={canvasInstance} rotateAll={rotateAll} />
+            <RotateControl rotateFrame={rotateFrame} />
 
             <hr />
 

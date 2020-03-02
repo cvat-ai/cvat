@@ -1,0 +1,37 @@
+server {
+    listen       80;
+    server_name  _ default;
+    return       404;
+}
+
+server {
+    listen       80;
+    server_name  ${CVAT_HOST};
+
+    location ~* /api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*  {
+        proxy_pass              http://cvat:8080;
+        proxy_pass_header       X-CSRFToken;
+        proxy_set_header        Host $http_host;
+        proxy_pass_header       Set-Cookie;
+    }
+
+    location / {
+        # workaround for match location by arguments
+        error_page 418 = @annotation_ui;
+
+        if ( $query_string ~ "^id=\d+.*" ) { return 418; }
+
+        proxy_pass              http://cvat_ui;
+        proxy_pass_header       X-CSRFToken;
+        proxy_set_header        Host $http_host;
+        proxy_pass_header       Set-Cookie;
+    }
+
+    # old annotation ui, will be removed in the future.
+    location @annotation_ui {
+        proxy_pass              http://cvat:8080;
+        proxy_pass_header       X-CSRFToken;
+        proxy_set_header        Host $http_host;
+        proxy_pass_header       Set-Cookie;
+    }
+}

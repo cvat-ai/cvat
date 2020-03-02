@@ -124,6 +124,11 @@ def create_xml_dumper(file_object):
             self.xmlgen.startElement("cuboid", cuboid)
             self._level += 1
 
+        def open_tag(self, tag):
+            self._indent()
+            self.xmlgen.startElement("tag", tag)
+            self._level += 1
+
         def add_attribute(self, attribute):
             self._indent()
             self.xmlgen.startElement("attribute", {"name": attribute["name"]})
@@ -154,6 +159,11 @@ def create_xml_dumper(file_object):
             self._level -= 1
             self._indent()
             self.xmlgen.endElement("cuboid")
+
+        def close_tag(self):
+            self._level -= 1
+            self._indent()
+            self.xmlgen.endElement("tag")
 
         def close_image(self):
             self._level -= 1
@@ -267,6 +277,22 @@ def dump_as_cvat_annotation(file_object, annotations):
                 dumper.close_cuboid()
             else:
                 raise NotImplementedError("unknown shape type")
+
+        for tag in frame_annotation.tags:
+            tag_data = OrderedDict([
+                ("label", tag.label),
+            ])
+            if tag.group:
+                tag_data["group_id"] = str(tag.group)
+            dumper.open_tag(tag_data)
+
+            for attr in tag.attributes:
+                dumper.add_attribute(OrderedDict([
+                    ("name", attr.name),
+                    ("value", attr.value)
+                ]))
+
+            dumper.close_tag()
 
         dumper.close_image()
     dumper.close_root()
@@ -408,7 +434,9 @@ def load(file_object, annotations):
 
     track = None
     shape = None
+    tag = None
     image_is_opened = False
+    attributes = None
     for ev, el in context:
         if ev == 'start':
             if el.tag == 'track':
@@ -421,13 +449,22 @@ def load(file_object, annotations):
                 image_is_opened = True
                 frame_id = int(el.attrib['id'])
             elif el.tag in supported_shapes and (track is not None or image_is_opened):
+                attributes = []
                 shape = {
-                    'attributes': [],
+                    'attributes': attributes,
                     'points': [],
                 }
+            elif el.tag == 'tag' and image_is_opened:
+                attributes = []
+                tag = {
+                    'frame': frame_id,
+                    'label': el.attrib['label'],
+                    'group': int(el.attrib.get('group_id', 0)),
+                    'attributes': attributes,
+                }
         elif ev == 'end':
-            if el.tag == 'attribute' and shape is not None:
-                shape['attributes'].append(annotations.Attribute(
+            if el.tag == 'attribute' and attributes is not None:
+                attributes.append(annotations.Attribute(
                     name=el.attrib['name'],
                     value=el.text,
                 ))
@@ -484,4 +521,7 @@ def load(file_object, annotations):
                 track = None
             elif el.tag == 'image':
                 image_is_opened = False
+            elif el.tag == 'tag':
+                annotations.add_tag(annotations.Tag(**tag))
+                tag = None
             el.clear()

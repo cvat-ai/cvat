@@ -16,16 +16,14 @@ import {
 import { RadioChangeEvent } from 'antd/lib/radio';
 import Text from 'antd/lib/typography/Text';
 
-import {
-    ShapeType,
-    RectDrawingMethod,
-} from 'reducers/interfaces';
+import { RectDrawingMethod } from 'cvat-canvas';
+import { ShapeType } from 'reducers/interfaces';
 
 interface Props {
     shapeType: ShapeType;
-    rectDrawingMethod: RectDrawingMethod;
     labels: any[];
     minimumPoints: number;
+    rectDrawingMethod?: RectDrawingMethod;
     numberOfPoints?: number;
     selectedLabeID: number;
     onChangeLabel(value: string): void;
@@ -42,6 +40,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         minimumPoints,
         selectedLabeID,
         numberOfPoints,
+        rectDrawingMethod,
         onDrawTrack,
         onDrawShape,
         onChangeLabel,
@@ -92,17 +91,17 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                             <Col>
                                 <Radio.Group
                                     style={{ display: 'flex' }}
-                                    defaultValue={RectDrawingMethod.BY_TWO_POINTS}
+                                    value={rectDrawingMethod}
                                     onChange={onChangeRectDrawingMethod}
                                 >
                                     <Radio
-                                        value={RectDrawingMethod.BY_TWO_POINTS}
+                                        value={RectDrawingMethod.CLASSIC}
                                         style={{ width: 'auto' }}
                                     >
                                         By 2 Points
                                     </Radio>
                                     <Radio
-                                        value={RectDrawingMethod.BY_FOUR_POINTS}
+                                        value={RectDrawingMethod.EXTREME_POINTS}
                                         style={{ width: 'auto' }}
                                     >
                                         By 4 Points
@@ -139,6 +138,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                 <Col span={12}>
                     <Button
                         onClick={onDrawTrack}
+                        disabled={shapeType !== ShapeType.RECTANGLE}
                     >
                         Track
                     </Button>
