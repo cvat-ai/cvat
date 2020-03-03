@@ -249,10 +249,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         <HeaderContainer> </HeaderContainer>
                         <Layout.Content>
                             <ShorcutsDialog />
-                            <GlobalHotKeys
-                                keyMap={keyMap as KeyMap}
-                                handlers={handlers}
-                            >
+                            <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers}>
                                 <Switch>
                                     <Route exact path='/settings' component={SettingsPageContainer} />
                                     <Route exact path='/tasks' component={TasksPageContainer} />

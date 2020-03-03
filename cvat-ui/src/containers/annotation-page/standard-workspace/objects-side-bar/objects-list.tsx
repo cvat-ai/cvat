@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
+import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 
 import { SelectValue } from 'antd/lib/select';
 
@@ -221,27 +222,61 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { annotationsFilters } = this.props;
+        const { annotationsFilters, statesHidden, statesLocked } = this.props;
         const {
             sortedStatesID,
             statesOrdering,
         } = this.state;
 
+        const keyMap = {
+            SWITCH_ALL_LOCK: {
+                name: 'Lock/unlock all objects',
+                description: 'Locking objects allows to prevent any updates',
+                sequence: 't+l',
+                action: 'keydown',
+            },
+            SWITCH_ALL_HIDDEN: {
+                name: 'Hide/show all objects',
+                description: 'Hidden objects are invisible on the canvas',
+                sequence: 't+h',
+                action: 'keydown',
+            },
+        };
+
+        const handlers = {
+            SWITCH_ALL_LOCK: (event: KeyboardEvent | undefined) => {
+                if (event) {
+                    event.preventDefault();
+                }
+
+                this.lockAllStates(!statesLocked);
+            },
+            SWITCH_ALL_HIDDEN: (event: KeyboardEvent | undefined) => {
+                if (event) {
+                    event.preventDefault();
+                }
+
+                this.hideAllStates(!statesHidden);
+            },
+        };
+
         return (
-            <ObjectsListComponent
-                {...this.props}
-                statesOrdering={statesOrdering}
-                sortedStatesID={sortedStatesID}
-                annotationsFilters={annotationsFilters}
-                changeStatesOrdering={this.onChangeStatesOrdering}
-                changeAnnotationsFilters={this.onChangeAnnotationsFilters}
-                lockAllStates={this.onLockAllStates}
-                unlockAllStates={this.onUnlockAllStates}
-                collapseAllStates={this.onCollapseAllStates}
-                expandAllStates={this.onExpandAllStates}
-                hideAllStates={this.onHideAllStates}
-                showAllStates={this.onShowAllStates}
-            />
+            <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers} allowChanges>
+                <ObjectsListComponent
+                    {...this.props}
+                    statesOrdering={statesOrdering}
+                    sortedStatesID={sortedStatesID}
+                    annotationsFilters={annotationsFilters}
+                    changeStatesOrdering={this.onChangeStatesOrdering}
+                    changeAnnotationsFilters={this.onChangeAnnotationsFilters}
+                    lockAllStates={this.onLockAllStates}
+                    unlockAllStates={this.onUnlockAllStates}
+                    collapseAllStates={this.onCollapseAllStates}
+                    expandAllStates={this.onExpandAllStates}
+                    hideAllStates={this.onHideAllStates}
+                    showAllStates={this.onShowAllStates}
+                />
+            </GlobalHotKeys>
         );
     }
 }
