@@ -321,6 +321,7 @@ export interface AnnotationState {
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;
+        activeInitialState?: any;
     };
     annotations: {
         selectedStatesID: number[];

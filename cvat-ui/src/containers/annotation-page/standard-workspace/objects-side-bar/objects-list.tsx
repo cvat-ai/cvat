@@ -15,6 +15,7 @@ import {
     removeObjectAsync,
     changeAnnotationsFilters as changeAnnotationsFiltersAction,
     collapseObjectItems,
+    copyShape as copyShapeAction,
 } from 'actions/annotation-actions';
 
 import {
@@ -42,6 +43,7 @@ interface DispatchToProps {
     changeAnnotationsFilters(sessionInstance: any, filters: string[]): void;
     collapseStates(states: any[], value: boolean): void;
     removeObject: (sessionInstance: any, objectState: any, force: boolean) => void;
+    copyShape: (objectState: any) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -115,6 +117,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         removeObject(sessionInstance: any, objectState: any, force: boolean): void {
             dispatch(removeObjectAsync(sessionInstance, objectState, force));
+        },
+        copyShape(objectState: any): void {
+            dispatch(copyShapeAction(objectState));
         },
     };
 }
@@ -251,6 +256,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             jobInstance,
             updateAnnotations,
             removeObject,
+            copyShape,
             maxZLayer,
             minZLayer,
         } = this.props;
@@ -318,6 +324,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 name: 'To foreground',
                 description: 'Put an active object "closer" to the user (increase z axis value)',
                 sequences: ['+', '='],
+                action: 'keydown',
+            },
+            COPY_SHAPE: {
+                name: 'Copy shape',
+                description: 'Copy shape to CVAT internal clipboard',
+                sequence: 'ctrl+c',
                 action: 'keydown',
             },
         };
@@ -411,6 +423,13 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 if (state && state.objectType !== ObjectType.TAG) {
                     state.zOrder = maxZLayer + 1;
                     updateAnnotations(jobInstance, frameNumber, [state]);
+                }
+            },
+            COPY_SHAPE: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state && state.objectType !== ObjectType.TAG) {
+                    copyShape(state);
                 }
             },
         };

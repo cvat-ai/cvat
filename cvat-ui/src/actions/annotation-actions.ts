@@ -82,6 +82,7 @@ export enum AnnotationActionTypes {
     GROUP_OBJECTS = 'GROUP_OBJECTS',
     SPLIT_TRACK = 'SPLIT_TRACK',
     COPY_SHAPE = 'COPY_SHAPE',
+    PASTE_SHAPE = 'PASTE_SHAPE',
     EDIT_SHAPE = 'EDIT_SHAPE',
     DRAW_SHAPE = 'DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
@@ -521,6 +522,13 @@ export function editShape(enabled: boolean): AnyAction {
         payload: {
             enabled,
         },
+    };
+}
+
+export function pasteShape(): AnyAction {
+    return {
+        type: AnnotationActionTypes.PASTE_SHAPE,
+        payload: {},
     };
 }
 

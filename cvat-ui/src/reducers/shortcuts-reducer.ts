@@ -1,4 +1,3 @@
-
 import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actions';
 import { ShortcutsState } from './interfaces';
 
