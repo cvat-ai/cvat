@@ -24,6 +24,19 @@ function ShorcutsDialog(props: StateToProps): JSX.Element | null {
     const { visible } = props;
     const keyMap = getApplicationKeyMap();
 
+    const splitToRows = (data: string[]): JSX.Element => (
+        <>
+            {
+                data.map((item: string): JSX.Element => (
+                    <>
+                        <span>{item}</span>
+                        <br />
+                    </>
+                ))
+            }
+        </>
+    );
+
     const columns = [{
         title: 'Name',
         dataIndex: 'name',
@@ -32,10 +45,12 @@ function ShorcutsDialog(props: StateToProps): JSX.Element | null {
         title: 'Shorcut',
         dataIndex: 'shortcut',
         key: 'shortcut',
+        render: splitToRows,
     }, {
         title: 'Action',
         dataIndex: 'action',
         key: 'action',
+        render: splitToRows,
     }, {
         title: 'Description',
         dataIndex: 'description',
@@ -46,10 +61,8 @@ function ShorcutsDialog(props: StateToProps): JSX.Element | null {
         key: id,
         name: keyMap[key].name || key,
         description: keyMap[key].description || '',
-        shortcut: keyMap[key].sequences.map((value) => value.sequence)
-            .join('\n'),
-        action: keyMap[key].sequences.map((value) => value.action || 'keydown')
-            .join('\n'),
+        shortcut: keyMap[key].sequences.map((value) => value.sequence),
+        action: keyMap[key].sequences.map((value) => value.action || 'keydown'),
     }));
 
     return (

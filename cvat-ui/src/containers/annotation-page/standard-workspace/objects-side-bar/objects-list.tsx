@@ -19,7 +19,9 @@ import {
 import {
     CombinedState,
     StatesOrdering,
+    ObjectType,
 } from 'reducers/interfaces';
+import { object } from 'prop-types';
 
 interface StateToProps {
     jobInstance: any;
@@ -267,6 +269,24 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 sequence: 'h',
                 action: 'keydown',
             },
+            SWITCH_OCCLUDED: {
+                name: 'Switch occluded',
+                description: 'Change occluded property for an active object',
+                sequences: ['q', '/'],
+                action: 'keydown',
+            },
+            SWITCH_KEYFRAME: {
+                name: 'Switch keyframe',
+                description: 'Change keyframe property for an active track',
+                sequences: ['k'],
+                action: 'keydown',
+            },
+            SWITCH_OUTSIDE: {
+                name: 'Switch outside',
+                description: 'Change outside property for an active track',
+                sequences: ['o'],
+                action: 'keydown',
+            },
         };
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -313,10 +333,34 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations(jobInstance, frameNumber, [state]);
                 }
             },
+            SWITCH_OCCLUDED: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state && state.objectType !== ObjectType.TAG) {
+                    state.occluded = !state.occluded;
+                    updateAnnotations(jobInstance, frameNumber, [state]);
+                }
+            },
+            SWITCH_KEYFRAME: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state && state.objectType === ObjectType.TRACK) {
+                    state.keyframe = !state.keyframe;
+                    updateAnnotations(jobInstance, frameNumber, [state]);
+                }
+            },
+            SWITCH_OUTSIDE: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state && state.objectType === ObjectType.TRACK) {
+                    state.outside = !state.outside;
+                    updateAnnotations(jobInstance, frameNumber, [state]);
+                }
+            },
         };
 
         return (
-            <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers} allowChanges>
+            <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges>
                 <ObjectsListComponent
                     {...this.props}
                     statesOrdering={statesOrdering}
