@@ -629,7 +629,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (![Mode.ZOOM_CANVAS, Mode.GROUP].includes(this.mode) || event.which === 2) {
                     self.controller.enableDrag(event.clientX, event.clientY);
                 }
-                event.preventDefault();
             }
         });
 
