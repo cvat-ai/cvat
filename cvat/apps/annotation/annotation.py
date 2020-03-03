@@ -360,7 +360,7 @@ class Annotation:
     def _import_tag(self, tag):
         _tag = tag._asdict()
         label_id = self._get_label_id(_tag.pop('label'))
-        _tag['frame'] = (int(_tag['frame']) - self._db_task.data.start_frame) // self._frame_step
+        _tag['frame'] = (int(_tag['frame']) - self._db_task.start_frame) // self._frame_step
         _tag['label_id'] = label_id
         _tag['attributes'] = [self._import_attribute(label_id, attrib) for attrib in _tag['attributes']
                                   if self._get_attribute_id(label_id, attrib.name)]
@@ -375,7 +375,7 @@ class Annotation:
     def _import_shape(self, shape):
         _shape = shape._asdict()
         label_id = self._get_label_id(_shape.pop('label'))
-        _shape['frame'] = (int(_shape['frame']) - self._db_task.data.start_frame) // self._frame_step
+        _shape['frame'] = (int(_shape['frame']) - self._db_task.start_frame) // self._frame_step
         _shape['label_id'] = label_id
         _shape['attributes'] = [self._import_attribute(label_id, attrib) for attrib in _shape['attributes']
                                     if self._get_attribute_id(label_id, attrib.name)]
@@ -385,12 +385,12 @@ class Annotation:
         _track = track._asdict()
         label_id = self._get_label_id(_track.pop('label'))
         _track['frame'] = (min(int(shape.frame) for shape in _track['shapes']) - \
-            self._db_task.data.start_frame) // self._frame_step
+            self._db_task.start_frame) // self._frame_step
         _track['label_id'] = label_id
         _track['attributes'] = []
         _track['shapes'] = [shape._asdict() for shape in _track['shapes']]
         for shape in _track['shapes']:
-            shape['frame'] = (int(shape['frame']) - self._db_task.data.start_frame) // self._frame_step
+            shape['frame'] = (int(shape['frame']) - self._db_task.start_frame) // self._frame_step
             _track['attributes'] = [self._import_attribute(label_id, attrib) for attrib in shape['attributes']
                                         if self._get_immutable_attribute_id(label_id, attrib.name)]
             shape['attributes']  = [self._import_attribute(label_id, attrib) for attrib in shape['attributes']
