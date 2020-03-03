@@ -341,7 +341,7 @@
                 checkObjectType('keyframe', data.keyframe, 'boolean', null);
                 if (!this.shapes || (Object.keys(this.shapes).length === 1 && !data.keyframe)) {
                     throw new ArgumentError(
-                        'Can not remove the latest keyframe of an object. Try to remove the object instead',
+                        'Can not remove the latest keyframe of an object. Consider removing the object instead',
                     );
                 }
             }
