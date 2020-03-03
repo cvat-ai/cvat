@@ -2,10 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AnyAction } from 'redux';
-
-import { ModelsActionTypes } from 'actions/models-actions';
-import { AuthActionTypes } from 'actions/auth-actions';
+import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
+import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import { ModelsState } from './interfaces';
 
 const defaultState: ModelsState = {
@@ -18,7 +16,7 @@ const defaultState: ModelsState = {
     inferences: {},
 };
 
-export default function (state = defaultState, action: AnyAction): ModelsState {
+export default function (state = defaultState, action: ModelsActions | AuthActions): ModelsState {
     switch (action.type) {
         case ModelsActionTypes.GET_MODELS: {
             return {
@@ -90,7 +88,7 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
             };
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
-            const inferences = { ...state.inferences };
+            const { inferences } = state;
             if (action.payload.activeInference.status === 'finished') {
                 delete inferences[action.payload.taskID];
             } else {
@@ -99,16 +97,25 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
 
             return {
                 ...state,
-                inferences,
+                inferences: { ...inferences },
             };
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_FAILED: {
-            const inferences = { ...state.inferences };
+            const { inferences } = state;
             delete inferences[action.payload.taskID];
 
             return {
                 ...state,
-                inferences,
+                inferences: { ...inferences },
+            };
+        }
+        case ModelsActionTypes.CANCEL_INFERENCE_SUCCESS: {
+            const { inferences } = state;
+            delete inferences[action.payload.taskID];
+
+            return {
+                ...state,
+                inferences: { ...inferences },
             };
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {

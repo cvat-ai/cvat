@@ -134,10 +134,17 @@ export enum RQStatus {
     failed = 'failed',
 }
 
+export enum ModelType {
+    OPENVINO = 'openvino',
+    RCNN = 'rcnn',
+    MASK_RCNN = 'mask_rcnn',
+}
+
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
     error: string;
+    modelType: ModelType;
 }
 
 export interface ModelsState {
@@ -199,6 +206,7 @@ export interface NotificationsState {
             starting: null | ErrorState;
             deleting: null | ErrorState;
             fetching: null | ErrorState;
+            canceling: null | ErrorState;
             metaFetching: null | ErrorState;
             inferenceStatusFetching: null | ErrorState;
         };
