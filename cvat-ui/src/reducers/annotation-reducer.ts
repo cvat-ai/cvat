@@ -61,7 +61,7 @@ const defaultState: AnnotationState = {
         collapsed: {},
         states: [],
         filters: [],
-        filtersHistory: [],
+        filtersHistory: JSON.parse(window.localStorage.getItem('filtersHistory') as string) || [],
         history: {
             undo: [],
             redo: [],
@@ -947,20 +947,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS: {
-            const { filters } = action.payload;
-            const { filtersHistory, filters: oldFilters } = state.annotations;
-
-            filters.forEach((element: string) => {
-                if (!(filtersHistory.includes(element) || oldFilters.includes(element))) {
-                    filtersHistory.push(element);
-                }
-            });
+            const { filters, filtersHistory } = action.payload;
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    filtersHistory: filtersHistory.slice(-10),
+                    filtersHistory,
                     filters,
                 },
             };
