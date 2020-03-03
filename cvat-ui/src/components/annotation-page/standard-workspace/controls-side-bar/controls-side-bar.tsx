@@ -5,19 +5,13 @@
 import React from 'react';
 
 import {
-    Icon,
     Layout,
-    Tooltip,
 } from 'antd';
 
 import {
     ActiveControl,
-    Rotation
+    Rotation,
 } from 'reducers/interfaces';
-
-import {
-    TagIcon,
-} from 'icons';
 
 import {
     Canvas,
@@ -32,6 +26,7 @@ import DrawRectangleControl from './draw-rectangle-control';
 import DrawPolygonControl from './draw-polygon-control';
 import DrawPolylineControl from './draw-polyline-control';
 import DrawPointsControl from './draw-points-control';
+import SetupTagControl from './setup-tag-control';
 import MergeControl from './merge-control';
 import GroupControl from './group-control';
 import SplitControl from './split-control';
@@ -91,9 +86,10 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 isDrawing={activeControl === ActiveControl.DRAW_POINTS}
             />
 
-            <Tooltip title='Setup a tag' placement='right'>
-                <Icon component={TagIcon} style={{ pointerEvents: 'none', opacity: 0.5 }} />
-            </Tooltip>
+            <SetupTagControl
+                canvasInstance={canvasInstance}
+                isDrawing={false}
+            />
 
             <hr />
 

@@ -245,6 +245,7 @@ export enum ActiveControl {
     DRAW_POLYGON = 'draw_polygon',
     DRAW_POLYLINE = 'draw_polyline',
     DRAW_POINTS = 'draw_points',
+    SETUP_TAG = 'setup_tag',
     MERGE = 'merge',
     GROUP = 'group',
     SPLIT = 'split',
