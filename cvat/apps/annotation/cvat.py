@@ -466,7 +466,7 @@ def load(file_object, annotations):
             if el.tag == 'attribute' and attributes is not None:
                 attributes.append(annotations.Attribute(
                     name=el.attrib['name'],
-                    value=el.text,
+                    value=el.text or "",
                 ))
             if el.tag in supported_shapes:
                 if track is not None:
