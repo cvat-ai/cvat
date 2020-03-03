@@ -42,7 +42,7 @@ function ShorcutsDialog(props: StateToProps): JSX.Element | null {
         dataIndex: 'name',
         key: 'name',
     }, {
-        title: 'Shorcut',
+        title: 'Shortcut',
         dataIndex: 'shortcut',
         key: 'shortcut',
         render: splitToRows,

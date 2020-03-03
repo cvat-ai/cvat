@@ -21,7 +21,6 @@ import {
     StatesOrdering,
     ObjectType,
 } from 'reducers/interfaces';
-import { object } from 'prop-types';
 
 interface StateToProps {
     jobInstance: any;
