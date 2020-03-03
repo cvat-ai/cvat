@@ -339,6 +339,11 @@
 
             if (updated.keyframe) {
                 checkObjectType('keyframe', data.keyframe, 'boolean', null);
+                if (!this.shapes || (Object.keys(this.shapes).length === 1 && !data.keyframe)) {
+                    throw new ArgumentError(
+                        'Can not remove the latest keyframe of an object. Try to remove the object instead',
+                    );
+                }
             }
 
             return fittedPoints;
@@ -964,7 +969,8 @@
             const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
 
-            if ((keyframe && wasKeyframe) || (!keyframe && !wasKeyframe)) {
+            if ((keyframe && wasKeyframe)
+                || (!keyframe && !wasKeyframe)) {
                 return;
             }
 
