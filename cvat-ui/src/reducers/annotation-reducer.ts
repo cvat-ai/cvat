@@ -4,7 +4,7 @@
 
 import { AnyAction } from 'redux';
 
-import { Canvas } from 'cvat-canvas';
+import { Canvas, CanvasMode } from 'cvat-canvas';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import {
@@ -609,9 +609,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.ACTIVATE_OBJECT: {
+            const { activatedStateID } = action.payload;
             const {
-                activatedStateID,
-            } = action.payload;
+                canvas: {
+                    activeControl,
+                    instance,
+                },
+            } = state;
+
+            if (activeControl !== ActiveControl.CURSOR || instance.mode() !== CanvasMode.IDLE) {
+                return state;
+            }
 
             return {
                 ...state,
