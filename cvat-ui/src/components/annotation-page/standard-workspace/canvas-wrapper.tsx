@@ -374,6 +374,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         });
 
+        canvasInstance.html().addEventListener('click', (): void => {
+            if (document.activeElement) {
+                (document.activeElement as HTMLElement).blur();
+            }
+        });
+
         canvasInstance.html().addEventListener('contextmenu', (e: MouseEvent): void => {
             const {
                 activatedStateID,

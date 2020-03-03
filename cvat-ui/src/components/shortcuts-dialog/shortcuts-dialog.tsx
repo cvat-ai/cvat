@@ -24,17 +24,14 @@ function ShorcutsDialog(props: StateToProps): JSX.Element | null {
     const { visible } = props;
     const keyMap = getApplicationKeyMap();
 
-    const splitToRows = (data: string[]): JSX.Element => (
-        <>
-            {
-                data.map((item: string): JSX.Element => (
-                    <>
-                        <span>{item}</span>
-                        <br />
-                    </>
-                ))
-            }
-        </>
+    const splitToRows = (data: string[]): JSX.Element[] => (
+        data.map((item: string, id: number): JSX.Element => (
+            // eslint-disable-next-line react/no-array-index-key
+            <span key={id}>
+                {item}
+                <br />
+            </span>
+        ))
     );
 
     const columns = [{
@@ -73,6 +70,7 @@ function ShorcutsDialog(props: StateToProps): JSX.Element | null {
             width={800}
             okButtonProps={{ style: { display: 'none' } }}
             cancelButtonProps={{ style: { display: 'none' } }}
+            zIndex={1001} /* default antd is 1000 */
         >
             <Table dataSource={dataSource} columns={columns} size='small' />
         </Modal>

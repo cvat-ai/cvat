@@ -12,6 +12,7 @@ import ObjectsListComponent from 'components/annotation-page/standard-workspace/
 import {
     updateAnnotationsAsync,
     fetchAnnotationsAsync,
+    removeObjectAsync,
     changeAnnotationsFilters as changeAnnotationsFiltersAction,
     collapseObjectItems,
 } from 'actions/annotation-actions';
@@ -32,12 +33,15 @@ interface StateToProps {
     objectStates: any[];
     annotationsFilters: string[];
     activatedStateID: number | null;
+    minZLayer: number;
+    maxZLayer: number;
 }
 
 interface DispatchToProps {
     updateAnnotations(sessionInstance: any, frameNumber: number, states: any[]): void;
     changeAnnotationsFilters(sessionInstance: any, filters: string[]): void;
     collapseStates(states: any[], value: boolean): void;
+    removeObject: (sessionInstance: any, objectState: any, force: boolean) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -48,6 +52,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 filters: annotationsFilters,
                 collapsed,
                 activatedStateID,
+                zLayer: {
+                    min: minZLayer,
+                    max: maxZLayer,
+                },
             },
             job: {
                 instance: jobInstance,
@@ -85,6 +93,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         annotationsFilters,
         activatedStateID,
+        minZLayer,
+        maxZLayer,
     };
 }
 
@@ -102,6 +112,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         ): void {
             dispatch(changeAnnotationsFiltersAction(filters));
             dispatch(fetchAnnotationsAsync(sessionInstance));
+        },
+        removeObject(sessionInstance: any, objectState: any, force: boolean): void {
+            dispatch(removeObjectAsync(sessionInstance, objectState, force));
         },
     };
 }
@@ -237,6 +250,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             frameNumber,
             jobInstance,
             updateAnnotations,
+            removeObject,
+            maxZLayer,
+            minZLayer,
         } = this.props;
         const {
             sortedStatesID,
@@ -277,13 +293,31 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_KEYFRAME: {
                 name: 'Switch keyframe',
                 description: 'Change keyframe property for an active track',
-                sequences: ['k'],
+                sequence: 'k',
                 action: 'keydown',
             },
             SWITCH_OUTSIDE: {
                 name: 'Switch outside',
                 description: 'Change outside property for an active track',
-                sequences: ['o'],
+                sequence: 'o',
+                action: 'keydown',
+            },
+            DELETE_OBJECT: {
+                name: 'Delete object',
+                description: 'Delete an active object. Use shift to force delete of locked objects',
+                sequences: ['del', 'shift+del'],
+                action: 'keydown',
+            },
+            TO_BACKGROUND: {
+                name: 'To background',
+                description: 'Put an active object "farther" from the user (decrease z axis value)',
+                sequences: ['-', '_'],
+                action: 'keydown',
+            },
+            TO_FOREGROUND: {
+                name: 'To foreground',
+                description: 'Put an active object "closer" to the user (increase z axis value)',
+                sequences: ['+', '='],
                 action: 'keydown',
             },
         };
@@ -353,6 +387,29 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state && state.objectType === ObjectType.TRACK) {
                     state.outside = !state.outside;
+                    updateAnnotations(jobInstance, frameNumber, [state]);
+                }
+            },
+            DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state) {
+                    removeObject(jobInstance, state, event ? event.shiftKey : false);
+                }
+            },
+            TO_BACKGROUND: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state && state.objectType !== ObjectType.TAG) {
+                    state.zOrder = minZLayer - 1;
+                    updateAnnotations(jobInstance, frameNumber, [state]);
+                }
+            },
+            TO_FOREGROUND: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state && state.objectType !== ObjectType.TAG) {
+                    state.zOrder = maxZLayer + 1;
                     updateAnnotations(jobInstance, frameNumber, [state]);
                 }
             },

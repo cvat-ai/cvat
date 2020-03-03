@@ -893,6 +893,11 @@ export function updateAnnotationsAsync(sessionInstance: any, frame: number, stat
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
+            if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {
+                // deactivate object to visualize changes immediately (UX)
+                dispatch(activateObject(null));
+            }
+
             const promises = statesToUpdate
                 .map((objectState: any): Promise<any> => objectState.save());
             const states = await Promise.all(promises);
