@@ -30,6 +30,7 @@ interface StateToProps {
     statesCollapsed: boolean;
     objectStates: any[];
     annotationsFilters: string[];
+    activatedStateID: number | null;
 }
 
 interface DispatchToProps {
@@ -45,6 +46,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 states: objectStates,
                 filters: annotationsFilters,
                 collapsed,
+                activatedStateID,
             },
             job: {
                 instance: jobInstance,
@@ -63,9 +65,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
     let statesCollapsed = true;
 
     objectStates.forEach((objectState: any) => {
-        const { clientID } = objectState;
-        statesHidden = statesHidden && objectState.hidden;
-        statesLocked = statesLocked && objectState.lock;
+        const { clientID, lock } = objectState;
+        if (!lock) {
+            statesHidden = statesHidden && objectState.hidden;
+            statesLocked = statesLocked && objectState.lock;
+        }
         const stateCollapsed = clientID in collapsed ? collapsed[clientID] : true;
         statesCollapsed = statesCollapsed && stateCollapsed;
     });
@@ -79,6 +83,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameNumber,
         jobInstance,
         annotationsFilters,
+        activatedStateID,
     };
 }
 
@@ -222,7 +227,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { annotationsFilters, statesHidden, statesLocked } = this.props;
+        const {
+            annotationsFilters,
+            statesHidden,
+            statesLocked,
+            activatedStateID,
+            objectStates,
+            frameNumber,
+            jobInstance,
+            updateAnnotations,
+        } = this.props;
         const {
             sortedStatesID,
             statesOrdering,
@@ -231,32 +245,73 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         const keyMap = {
             SWITCH_ALL_LOCK: {
                 name: 'Lock/unlock all objects',
-                description: 'Locking objects allows to prevent any updates',
+                description: 'Change locked state for all objects in the side bar',
                 sequence: 't+l',
+                action: 'keydown',
+            },
+            SWITCH_LOCK: {
+                name: 'Lock/unlock an object',
+                description: 'Change locked state for an active object',
+                sequence: 'l',
                 action: 'keydown',
             },
             SWITCH_ALL_HIDDEN: {
                 name: 'Hide/show all objects',
-                description: 'Hidden objects are invisible on the canvas',
+                description: 'Change hidden state for objects in the side bar',
                 sequence: 't+h',
+                action: 'keydown',
+            },
+            SWITCH_HIDDEN: {
+                name: 'Hide/show an object',
+                description: 'Change hidden state for an active object',
+                sequence: 'h',
                 action: 'keydown',
             },
         };
 
+        const preventDefault = (event: KeyboardEvent | undefined): void => {
+            if (event) {
+                event.preventDefault();
+            }
+        };
+
+        const activatedStated = (): any | null => {
+            if (activatedStateID !== null) {
+                const [state] = objectStates
+                    .filter((objectState: any): boolean => (
+                        objectState.clientID === activatedStateID
+                    ));
+
+                return state || null;
+            }
+
+            return null;
+        };
+
         const handlers = {
             SWITCH_ALL_LOCK: (event: KeyboardEvent | undefined) => {
-                if (event) {
-                    event.preventDefault();
-                }
-
+                preventDefault(event);
                 this.lockAllStates(!statesLocked);
             },
-            SWITCH_ALL_HIDDEN: (event: KeyboardEvent | undefined) => {
-                if (event) {
-                    event.preventDefault();
+            SWITCH_LOCK: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state) {
+                    state.lock = !state.lock;
+                    updateAnnotations(jobInstance, frameNumber, [state]);
                 }
-
+            },
+            SWITCH_ALL_HIDDEN: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
                 this.hideAllStates(!statesHidden);
+            },
+            SWITCH_HIDDEN: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state) {
+                    state.hidden = !state.hidden;
+                    updateAnnotations(jobInstance, frameNumber, [state]);
+                }
             },
         };
 

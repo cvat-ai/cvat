@@ -5,7 +5,6 @@
 import 'antd/dist/antd.less';
 import '../styles.scss';
 import React from 'react';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 import {
     Switch,
     Route,
@@ -13,6 +12,8 @@ import {
     withRouter,
     RouteComponentProps,
 } from 'react-router';
+import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+
 import {
     Spin,
     Layout,
