@@ -1088,7 +1088,7 @@
 
             throw new DataError(
                 'No one left position or right position was found. '
-                + `Interpolation impossible. Client ID: ${this.id}`,
+                + `Interpolation impossible. Client ID: ${this.clientID}`,
             );
         }
     }
