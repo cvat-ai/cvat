@@ -415,7 +415,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 outside=True,
                 keyframe=True,
                 z_order=shape.z_order,
-                frame=shape.frame + 1,
+                frame=shape.frame + annotations.frame_step,
                 attributes=shape.attributes,
             ),
             ],
