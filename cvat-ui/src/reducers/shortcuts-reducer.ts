@@ -8,16 +8,10 @@ const defaultState: ShortcutsState = {
 
 export default (state = defaultState, action: ShortcutsActions): ShortcutsState => {
     switch (action.type) {
-        case ShortcutsActionsTypes.SHOW_SHORTCUTS_HELP: {
+        case ShortcutsActionsTypes.SWITCH_SHORTCUT_DIALOG: {
             return {
                 ...state,
-                visibleShortcutsHelp: true,
-            };
-        }
-        case ShortcutsActionsTypes.HIDE_SHORTCUTS_HELP: {
-            return {
-                ...state,
-                visibleShortcutsHelp: false,
+                visibleShortcutsHelp: !state.visibleShortcutsHelp,
             };
         }
         default: {

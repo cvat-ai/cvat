@@ -5,6 +5,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { connect, Provider } from 'react-redux';
+import { BrowserRouter } from 'react-router-dom';
 
 import CVATApplication from './components/cvat-app';
 
@@ -55,8 +56,7 @@ interface DispatchToProps {
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
-    showShortcutsHelp: () => void;
-    hideShortcutsHelp: () => void;
+    switchShortcutsDialog: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -93,8 +93,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadAbout: (): void => dispatch(getAboutAsync()),
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
-        showShortcutsHelp: (): void => dispatch(shortcutsActions.showShortcutsHelp()),
-        hideShortcutsHelp: (): void => dispatch(shortcutsActions.hideShortcutsHelp()),
+        switchShortcutsDialog: (): void => dispatch(shortcutsActions.switchShortcutsDialog()),
     };
 }
 
@@ -106,7 +105,9 @@ const ReduxAppWrapper = connect(
 ReactDOM.render(
     (
         <Provider store={cvatStore}>
-            <ReduxAppWrapper />
+            <BrowserRouter>
+                <ReduxAppWrapper />
+            </BrowserRouter>
         </Provider>
     ),
     document.getElementById('root'),
