@@ -13,6 +13,7 @@ import {
     rotateCurrentFrame,
     repeatDrawShape,
     pasteShape,
+    resetAnnotationsGroup,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import {
@@ -32,6 +33,7 @@ interface DispatchToProps {
     groupObjects(enabled: boolean): void;
     splitTrack(enabled: boolean): void;
     rotateFrame(angle: Rotation): void;
+    resetGroup(): void;
     repeatDrawShape(): void;
     pasteShape(): void;
 }
@@ -77,6 +79,9 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         },
         pasteShape(): void {
             dispatch(pasteShape());
+        },
+        resetGroup(): void {
+            dispatch(resetAnnotationsGroup());
         },
     };
 }

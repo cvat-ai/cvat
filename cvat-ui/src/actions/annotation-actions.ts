@@ -94,6 +94,8 @@ export enum AnnotationActionTypes {
     CREATE_ANNOTATIONS_FAILED = 'CREATE_ANNOTATIONS_FAILED',
     MERGE_ANNOTATIONS_SUCCESS = 'MERGE_ANNOTATIONS_SUCCESS',
     MERGE_ANNOTATIONS_FAILED = 'MERGE_ANNOTATIONS_FAILED',
+    RESET_ANNOTATIONS_GROUP = 'RESET_ANNOTATIONS_GROUP',
+    GROUP_ANNOTATIONS = 'GROUP_ANNOTATIONS',
     GROUP_ANNOTATIONS_SUCCESS = 'GROUP_ANNOTATIONS_SUCCESS',
     GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
@@ -1012,12 +1014,30 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
-export function groupAnnotationsAsync(sessionInstance: any, frame: number, statesToGroup: any[]):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function resetAnnotationsGroup(): AnyAction {
+    return {
+        type: AnnotationActionTypes.RESET_ANNOTATIONS_GROUP,
+        payload: {},
+    };
+}
+
+export function groupAnnotationsAsync(
+    sessionInstance: any,
+    frame: number,
+    statesToGroup: any[],
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
-            await sessionInstance.annotations.group(statesToGroup);
+            const reset = getStore().getState().annotation.annotations.resetGroupFlag;
+
+            // The action below set resetFlag to false
+            dispatch({
+                type: AnnotationActionTypes.GROUP_ANNOTATIONS,
+                payload: {},
+            });
+
+            await sessionInstance.annotations.group(statesToGroup, reset);
             const states = await sessionInstance.annotations
                 .get(frame, showAllInterpolationTracks, filters);
             const history = await sessionInstance.actions.get();

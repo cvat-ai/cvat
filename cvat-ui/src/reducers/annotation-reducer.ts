@@ -61,7 +61,10 @@ const defaultState: AnnotationState = {
         collapsed: {},
         states: [],
         filters: [],
-        filtersHistory: JSON.parse(window.localStorage.getItem('filtersHistory') as string) || [],
+        filtersHistory: JSON.parse(
+            window.localStorage.getItem('filtersHistory') || '[]',
+        ),
+        resetGroupFlag: false,
         history: {
             undo: [],
             redo: [],
@@ -589,6 +592,24 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     states,
                     history,
+                },
+            };
+        }
+        case AnnotationActionTypes.RESET_ANNOTATIONS_GROUP: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    resetGroupFlag: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.GROUP_ANNOTATIONS: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    resetGroupFlag: false,
                 },
             };
         }

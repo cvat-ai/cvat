@@ -47,6 +47,7 @@ interface Props {
     rotateFrame(rotation: Rotation): void;
     repeatDrawShape(): void;
     pasteShape(): void;
+    resetGroup(): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
@@ -60,6 +61,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         rotateFrame,
         repeatDrawShape,
         pasteShape,
+        resetGroup,
     } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -158,7 +160,13 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         },
         RESET_GROUP: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
-            // TODO
+            const grouping = activeControl === ActiveControl.GROUP;
+            if (!grouping) {
+                return;
+            }
+            resetGroup();
+            canvasInstance.group({ enabled: false });
+            groupObjects(false);
         },
         CANCEL: (event: KeyboardEvent | undefined) => {
             preventDefault(event);

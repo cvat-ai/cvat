@@ -338,6 +338,7 @@ export interface AnnotationState {
         states: any[];
         filters: string[];
         filtersHistory: string[];
+        resetGroupFlag: boolean;
         history: {
             undo: string[];
             redo: string[];
