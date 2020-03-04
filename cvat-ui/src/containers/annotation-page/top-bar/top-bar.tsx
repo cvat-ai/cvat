@@ -10,6 +10,7 @@ import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 
+import { InputNumber } from 'antd';
 import { SliderValue } from 'antd/lib/slider';
 
 import {
@@ -431,6 +432,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             redoAction,
         } = this.props;
 
+        const inputFrameRef = React.createRef<InputNumber>();
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
                 event.preventDefault();
@@ -498,6 +500,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 sequence: 'space',
                 action: 'keydown',
             },
+            FOCUS_INPUT_FRAME: {
+                name: 'Focus input frame',
+                description: 'Focus on the element to change the current frame',
+                sequences: ['`', '~'],
+                action: 'keydown',
+            },
         };
 
         const handlers = {
@@ -545,6 +553,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 preventDefault(event);
                 this.onSwitchPlay();
             },
+            FOCUS_INPUT_FRAME: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                if (inputFrameRef.current) {
+                    inputFrameRef.current.focus();
+                }
+            },
         };
 
         return (
@@ -568,6 +582,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                     startFrame={startFrame}
                     stopFrame={stopFrame}
                     frameNumber={frameNumber}
+                    inputFrameRef={inputFrameRef}
                     undoAction={undoAction}
                     redoAction={redoAction}
                     onUndoClick={this.undo}
