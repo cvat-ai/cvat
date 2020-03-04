@@ -120,6 +120,7 @@ class Annotation:
         self._MAX_ANNO_SIZE=30000
         self._frame_info = {}
         self._frame_mapping = {}
+        self._frame_step = db_task.get_frame_step()
 
         db_labels = self._db_task.label_set.all().prefetch_related('attributespec_set').order_by('pk')
 
@@ -270,7 +271,7 @@ class Annotation:
     def _export_tracked_shape(self, shape):
         return Annotation.TrackedShape(
             type=shape["type"],
-            frame=self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step(),
+            frame=self._db_task.start_frame + shape["frame"] * self._frame_step,
             points=shape["points"],
             occluded=shape["occluded"],
             outside=shape.get("outside", False),
@@ -283,7 +284,7 @@ class Annotation:
         return Annotation.LabeledShape(
             type=shape["type"],
             label=self._get_label_name(shape["label_id"]),
-            frame=self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step(),
+            frame=self._db_task.start_frame + shape["frame"] * self._frame_step,
             points=shape["points"],
             occluded=shape["occluded"],
             z_order=shape.get("z_order", 0),
@@ -293,7 +294,7 @@ class Annotation:
 
     def _export_tag(self, tag):
         return Annotation.Tag(
-            frame=self._db_task.start_frame + tag["frame"] * self._db_task.get_frame_step(),
+            frame=self._db_task.start_frame + tag["frame"] * self._frame_step,
             label=self._get_label_name(tag["label_id"]),
             group=tag.get("group", 0),
             attributes=self._export_attributes(tag["attributes"]),
@@ -302,7 +303,7 @@ class Annotation:
     def group_by_frame(self):
         def _get_frame(annotations, shape):
             db_image = self._frame_info[shape["frame"]]
-            frame = self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step()
+            frame = self._db_task.start_frame + shape["frame"] * self._frame_step
             rpath = db_image['path'].split(os.path.sep)
             if len(rpath) != 1:
                 rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
@@ -359,6 +360,7 @@ class Annotation:
     def _import_tag(self, tag):
         _tag = tag._asdict()
         label_id = self._get_label_id(_tag.pop('label'))
+        _tag['frame'] = (int(_tag['frame']) - self._db_task.start_frame) // self._frame_step
         _tag['label_id'] = label_id
         _tag['attributes'] = [self._import_attribute(label_id, attrib) for attrib in _tag['attributes']
                                   if self._get_attribute_id(label_id, attrib.name)]
@@ -373,6 +375,7 @@ class Annotation:
     def _import_shape(self, shape):
         _shape = shape._asdict()
         label_id = self._get_label_id(_shape.pop('label'))
+        _shape['frame'] = (int(_shape['frame']) - self._db_task.start_frame) // self._frame_step
         _shape['label_id'] = label_id
         _shape['attributes'] = [self._import_attribute(label_id, attrib) for attrib in _shape['attributes']
                                     if self._get_attribute_id(label_id, attrib.name)]
@@ -381,11 +384,13 @@ class Annotation:
     def _import_track(self, track):
         _track = track._asdict()
         label_id = self._get_label_id(_track.pop('label'))
-        _track['frame'] = min(shape.frame for shape in _track['shapes'])
+        _track['frame'] = (min(int(shape.frame) for shape in _track['shapes']) - \
+            self._db_task.start_frame) // self._frame_step
         _track['label_id'] = label_id
         _track['attributes'] = []
         _track['shapes'] = [shape._asdict() for shape in _track['shapes']]
         for shape in _track['shapes']:
+            shape['frame'] = (int(shape['frame']) - self._db_task.start_frame) // self._frame_step
             _track['attributes'] = [self._import_attribute(label_id, attrib) for attrib in shape['attributes']
                                         if self._get_immutable_attribute_id(label_id, attrib.name)]
             shape['attributes']  = [self._import_attribute(label_id, attrib) for attrib in shape['attributes']
@@ -430,6 +435,10 @@ class Annotation:
     @property
     def frame_info(self):
         return self._frame_info
+
+    @property
+    def frame_step(self):
+        return self._frame_step
 
     @staticmethod
     def _get_filename(path):
