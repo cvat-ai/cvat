@@ -419,6 +419,44 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.REPEAT_DRAW_SHAPE: {
+            const {
+                activeShapeType,
+                activeNumOfPoints,
+                activeRectDrawingMethod,
+            } = state.drawing;
+
+            let activeControl = ActiveControl.DRAW_RECTANGLE;
+            if (activeShapeType === ShapeType.POLYGON) {
+                activeControl = ActiveControl.DRAW_POLYGON;
+            } else if (activeShapeType === ShapeType.POLYLINE) {
+                activeControl = ActiveControl.DRAW_POLYLINE;
+            } else if (activeShapeType === ShapeType.POINTS) {
+                activeControl = ActiveControl.DRAW_POINTS;
+            }
+
+            const { instance: canvasInstance } = state.canvas;
+            canvasInstance.cancel();
+            canvasInstance.draw({
+                enabled: true,
+                rectDrawingMethod: activeRectDrawingMethod,
+                numberOfPoints: activeNumOfPoints,
+                shapeType: activeShapeType,
+                crosshair: activeShapeType === ShapeType.RECTANGLE,
+            });
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
+            };
+        }
         case AnnotationActionTypes.MERGE_OBJECTS: {
             const { enabled } = action.payload;
             const activeControl = enabled

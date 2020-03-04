@@ -11,6 +11,8 @@ import {
     groupObjects,
     splitTrack,
     rotateCurrentFrame,
+    repeatDrawShape,
+    pasteShape,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import {
@@ -30,6 +32,8 @@ interface DispatchToProps {
     groupObjects(enabled: boolean): void;
     splitTrack(enabled: boolean): void;
     rotateFrame(angle: Rotation): void;
+    repeatDrawShape(): void;
+    pasteShape(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -67,6 +71,12 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         },
         rotateFrame(rotation: Rotation): void {
             dispatch(rotateCurrentFrame(rotation));
+        },
+        repeatDrawShape(): void {
+            dispatch(repeatDrawShape());
+        },
+        pasteShape(): void {
+            dispatch(pasteShape());
         },
     };
 }

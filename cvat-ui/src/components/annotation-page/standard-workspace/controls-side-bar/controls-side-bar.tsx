@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 
 import {
     Icon,
@@ -12,7 +13,7 @@ import {
 
 import {
     ActiveControl,
-    Rotation
+    Rotation,
 } from 'reducers/interfaces';
 
 import {
@@ -44,6 +45,8 @@ interface Props {
     groupObjects(enabled: boolean): void;
     splitTrack(enabled: boolean): void;
     rotateFrame(rotation: Rotation): void;
+    repeatDrawShape(): void;
+    pasteShape(): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
@@ -55,7 +58,123 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         groupObjects,
         splitTrack,
         rotateFrame,
+        repeatDrawShape,
+        pasteShape,
     } = props;
+
+    const preventDefault = (event: KeyboardEvent | undefined): void => {
+        if (event) {
+            event.preventDefault();
+        }
+    };
+
+    const keyMap = {
+        PASTE_SHAPE: {
+            name: 'Paste shape',
+            description: 'Paste a shape from internal CVAT clipboard',
+            sequence: 'ctrl+v',
+            action: 'keydown',
+        },
+        SWITCH_DRAW_MODE: {
+            name: 'Draw mode',
+            description: 'Repeat the latest procedure of drawing with the same parameters',
+            sequence: 'n',
+            action: 'keydown',
+        },
+        SWITCH_MERGE_MODE: {
+            name: 'Merge mode',
+            description: 'Activate or deactivate mode to merging shapes',
+            sequence: 'm',
+            action: 'keydown',
+        },
+        SWITCH_GROUP_MODE: {
+            name: 'Group mode',
+            description: 'Activate or deactivate mode to grouping shapes',
+            sequence: 'g',
+            action: 'keydown',
+        },
+        RESET_GROUP: {
+            name: 'Reset group',
+            description: 'Reset group for selected shapes (in group mode)',
+            sequence: 'shift+g',
+            action: 'keydown',
+        },
+        CANCEL: {
+            name: 'Cancel',
+            description: 'Cancel any active canvas mode',
+            sequence: 'esc',
+            action: 'keydown',
+        },
+        CLOCKWISE_ROTATION: {
+            name: 'Rotate clockwise',
+            description: 'Change image angle (add 90 degrees)',
+            sequence: 'ctrl+r',
+            action: 'keydown',
+        },
+        ANTICLOCKWISE_ROTATION: {
+            name: 'Rotate anticlockwise',
+            description: 'Change image angle (substract 90 degrees)',
+            sequence: 'ctrl+shift+r',
+            action: 'keydown',
+        },
+    };
+
+    const handlers = {
+        PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            pasteShape();
+        },
+        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            const drawing = [ActiveControl.DRAW_POINTS, ActiveControl.DRAW_POLYGON,
+                ActiveControl.DRAW_POLYLINE, ActiveControl.DRAW_RECTANGLE].includes(activeControl);
+
+            if (!drawing) {
+                canvasInstance.cancel();
+                // repeateDrawShapes gets all the latest parameters
+                // and calls canvasInstance.draw() with them
+                repeatDrawShape();
+            } else {
+                canvasInstance.draw({ enabled: false });
+            }
+        },
+        SWITCH_MERGE_MODE: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            const merging = activeControl === ActiveControl.MERGE;
+            if (!merging) {
+                canvasInstance.cancel();
+            }
+            canvasInstance.merge({ enabled: !merging });
+            mergeObjects(!merging);
+        },
+        SWITCH_GROUP_MODE: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            const grouping = activeControl === ActiveControl.GROUP;
+            if (!grouping) {
+                canvasInstance.cancel();
+            }
+            canvasInstance.group({ enabled: !grouping });
+            groupObjects(!grouping);
+        },
+        RESET_GROUP: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            // TODO
+        },
+        CANCEL: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeControl !== ActiveControl.CURSOR) {
+                canvasInstance.cancel();
+            }
+        },
+        CLOCKWISE_ROTATION: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            rotateFrame(Rotation.CLOCKWISE90);
+        },
+        ANTICLOCKWISE_ROTATION: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            rotateFrame(Rotation.ANTICLOCKWISE90);
+        },
+    };
 
     return (
         <Layout.Sider
@@ -63,6 +182,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             theme='light'
             width={44}
         >
+            <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
+
             <CursorControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <RotateControl rotateFrame={rotateFrame} />

@@ -10,7 +10,6 @@ import {
     Icon,
     Tooltip,
 } from 'antd';
-
 import { SliderValue } from 'antd/lib//slider';
 
 import {

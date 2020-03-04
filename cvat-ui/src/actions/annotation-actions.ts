@@ -85,6 +85,7 @@ export enum AnnotationActionTypes {
     PASTE_SHAPE = 'PASTE_SHAPE',
     EDIT_SHAPE = 'EDIT_SHAPE',
     DRAW_SHAPE = 'DRAW_SHAPE',
+    REPEAT_DRAW_SHAPE = 'REPEAT_DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
     RESET_CANVAS = 'RESET_CANVAS',
     UPDATE_ANNOTATIONS_SUCCESS = 'UPDATE_ANNOTATIONS_SUCCESS',
@@ -872,6 +873,13 @@ export function drawShape(
             activeControl,
             rectDrawingMethod,
         },
+    };
+}
+
+export function repeatDrawShape(): AnyAction {
+    return {
+        type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
+        payload: {},
     };
 }
 
