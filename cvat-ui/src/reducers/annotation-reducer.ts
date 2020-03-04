@@ -439,7 +439,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             }
 
             const { instance: canvasInstance } = state.canvas;
-            canvasInstance.cancel();
             canvasInstance.draw({
                 enabled: true,
                 rectDrawingMethod: activeRectDrawingMethod,
@@ -724,7 +723,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.PASTE_SHAPE: {
             const initialState = state.drawing.activeInitialState;
             if (initialState) {
-                state.canvas.instance.cancel();
                 state.canvas.instance.draw({
                     enabled: true,
                     initialState,

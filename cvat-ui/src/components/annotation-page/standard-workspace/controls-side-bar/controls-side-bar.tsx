@@ -124,6 +124,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const handlers = {
         PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
+            canvasInstance.cancel();
             pasteShape();
         },
         SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
