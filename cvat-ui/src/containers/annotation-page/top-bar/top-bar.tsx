@@ -438,6 +438,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         };
 
         const keyMap = {
+            SAVE_JOB: {
+                name: 'Save the job',
+                description: 'Send all changes of annotations to the server',
+                sequence: 'ctrl+s',
+                action: 'keydown',
+            },
             UNDO: {
                 name: 'Undo action',
                 description: 'Cancel the latest action related with objects',
@@ -464,6 +470,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 if (redoAction) {
                     this.redo();
                 }
+            },
+            SAVE_JOB: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                this.onSaveAnnotation();
             },
         };
 
