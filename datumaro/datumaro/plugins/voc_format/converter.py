@@ -59,10 +59,7 @@ class _Converter:
         elif isinstance(tasks, VocTask):
             tasks = {tasks}
         else:
-            for t in tasks:
-                assert t in VocTask
-            if not isinstance(tasks, set):
-                tasks = set(tasks)
+            tasks = set(t if t in VocTask else VocTask[t] for t in tasks)
         self._tasks = tasks
 
         self._extractor = extractor

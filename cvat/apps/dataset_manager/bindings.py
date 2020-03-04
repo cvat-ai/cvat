@@ -240,7 +240,7 @@ def import_dm_annotations(dm_dataset, cvat_task_anno):
                         for n, v in ann.attributes.items()],
                 ))
             elif ann.type == datumaro.AnnotationType.label:
-                cvat_task_anno.add_shape(cvat_task_anno.Tag(
+                cvat_task_anno.add_tag(cvat_task_anno.Tag(
                     frame=frame_number,
                     label=label_cat.items[ann.label].name,
                     group=group_map.get(ann.group, 0),

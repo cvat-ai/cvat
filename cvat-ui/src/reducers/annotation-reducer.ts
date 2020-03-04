@@ -4,7 +4,7 @@
 
 import { AnyAction } from 'redux';
 
-import { Canvas } from 'cvat-canvas';
+import { Canvas, CanvasMode } from 'cvat-canvas';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import {
@@ -61,6 +61,7 @@ const defaultState: AnnotationState = {
         collapsed: {},
         states: [],
         filters: [],
+        filtersHistory: JSON.parse(window.localStorage.getItem('filtersHistory') as string) || [],
         history: {
             undo: [],
             redo: [],
@@ -609,9 +610,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.ACTIVATE_OBJECT: {
+            const { activatedStateID } = action.payload;
             const {
-                activatedStateID,
-            } = action.payload;
+                canvas: {
+                    activeControl,
+                    instance,
+                },
+            } = state;
+
+            if (activeControl !== ActiveControl.CURSOR || instance.mode() !== CanvasMode.IDLE) {
+                return state;
+            }
 
             return {
                 ...state,
@@ -946,11 +955,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS: {
-            const { filters } = action.payload;
+            const { filters, filtersHistory } = action.payload;
+
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
+                    filtersHistory,
                     filters,
                 },
             };

@@ -4,12 +4,14 @@
 
 import {
     Canvas,
+    CanvasMode,
     CanvasVersion,
     RectDrawingMethod,
 } from '../../cvat-canvas/src/typescript/canvas';
 
 export {
     Canvas,
+    CanvasMode,
     CanvasVersion,
     RectDrawingMethod,
 };

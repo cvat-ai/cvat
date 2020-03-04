@@ -339,7 +339,7 @@ It may take some time.
    ```bash
    cat train.txt | while read p; do echo ${p%/*/*}/labels/${${p##*/}%%.*}.txt; done | zip labels.zip -j -@ obj.names
    ```
-1. Click `Upload annotation` button, choose `YOLO ZIP 1.0` and select the *.zip file with labels from previous step.
+1. Click `Upload annotation` button, choose `YOLO ZIP 1.1` and select the *.zip file with labels from previous step.
    It may take some time.
 
 ### [MS COCO Object Detection](http://cocodataset.org/#format-data)

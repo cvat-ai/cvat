@@ -320,6 +320,10 @@
                 checkObjectType('lock', data.lock, 'boolean', null);
             }
 
+            if (updated.pinned) {
+                checkObjectType('pinned', data.pinned, 'boolean', null);
+            }
+
             if (updated.color) {
                 checkObjectType('color', data.color, 'string', null);
                 if (!/^#[0-9A-F]{6}$/i.test(data.color)) {
@@ -335,6 +339,11 @@
 
             if (updated.keyframe) {
                 checkObjectType('keyframe', data.keyframe, 'boolean', null);
+                if (!this.shapes || (Object.keys(this.shapes).length === 1 && !data.keyframe)) {
+                    throw new ArgumentError(
+                        'Can not remove the latest keyframe of an object. Consider removing the object instead',
+                    );
+                }
             }
 
             return fittedPoints;
@@ -379,7 +388,21 @@
             super(data, clientID, color, injection);
             this.frameMeta = injection.frameMeta;
             this.hidden = false;
+            this.pinned = true;
             this.shapeType = null;
+        }
+
+        _savePinned(pinned) {
+            const undoPinned = this.pinned;
+            const redoPinned = pinned;
+
+            this.history.do(HistoryActions.CHANGED_PINNED, () => {
+                this.pinned = undoPinned;
+            }, () => {
+                this.pinned = redoPinned;
+            }, [this.clientID]);
+
+            this.pinned = pinned;
         }
 
         save() {
@@ -455,6 +478,7 @@
                 color: this.color,
                 hidden: this.hidden,
                 updated: this.updated,
+                pinned: this.pinned,
                 frame,
             };
         }
@@ -535,6 +559,10 @@
 
             if (updated.lock) {
                 this._saveLock(data.lock);
+            }
+
+            if (updated.pinned) {
+                this._savePinned(data.pinned);
             }
 
             if (updated.color) {
@@ -644,6 +672,7 @@
                 hidden: this.hidden,
                 updated: this.updated,
                 label: this.label,
+                pinned: this.pinned,
                 keyframes: {
                     prev,
                     next,
@@ -940,7 +969,8 @@
             const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
 
-            if ((keyframe && wasKeyframe) || (!keyframe && !wasKeyframe)) {
+            if ((keyframe && wasKeyframe)
+                || (!keyframe && !wasKeyframe)) {
                 return;
             }
 
@@ -982,6 +1012,10 @@
 
             if (updated.lock) {
                 this._saveLock(data.lock);
+            }
+
+            if (updated.pinned) {
+                this._savePinned(data.pinned);
             }
 
             if (updated.color) {
@@ -1060,7 +1094,7 @@
 
             throw new DataError(
                 'No one left position or right position was found. '
-                + `Interpolation impossible. Client ID: ${this.id}`,
+                + `Interpolation impossible. Client ID: ${this.clientID}`,
             );
         }
     }
@@ -1148,6 +1182,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.RECTANGLE;
+            this.pinned = false;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -1315,6 +1350,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.RECTANGLE;
+            this.pinned = false;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }

@@ -29,6 +29,7 @@ interface StateToProps {
     statesCollapsed: boolean;
     objectStates: any[];
     annotationsFilters: string[];
+    annotationsFiltersHistory: string[];
 }
 
 interface DispatchToProps {
@@ -43,6 +44,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 states: objectStates,
                 filters: annotationsFilters,
+                filtersHistory: annotationsFiltersHistory,
                 collapsed,
             },
             job: {
@@ -78,6 +80,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameNumber,
         jobInstance,
         annotationsFilters,
+        annotationsFiltersHistory,
     };
 }
 
@@ -221,7 +224,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { annotationsFilters } = this.props;
+        const {
+            annotationsFilters,
+            annotationsFiltersHistory,
+        } = this.props;
         const {
             sortedStatesID,
             statesOrdering,
@@ -233,6 +239,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 statesOrdering={statesOrdering}
                 sortedStatesID={sortedStatesID}
                 annotationsFilters={annotationsFilters}
+                annotationsFiltersHistory={annotationsFiltersHistory}
                 changeStatesOrdering={this.onChangeStatesOrdering}
                 changeAnnotationsFilters={this.onChangeAnnotationsFilters}
                 lockAllStates={this.onLockAllStates}
