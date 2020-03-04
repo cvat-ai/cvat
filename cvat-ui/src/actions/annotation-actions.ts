@@ -179,10 +179,22 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 }
 
 export function changeAnnotationsFilters(filters: string[]): AnyAction {
+    const state: CombinedState = getStore().getState();
+    const { filtersHistory, filters: oldFilters } = state.annotation.annotations;
+
+    filters.forEach((element: string) => {
+        if (!(filtersHistory.includes(element) || oldFilters.includes(element))) {
+            filtersHistory.push(element);
+        }
+    });
+
+    window.localStorage.setItem('filtersHistory', JSON.stringify(filtersHistory.slice(-10)));
+
     return {
         type: AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS,
         payload: {
             filters,
+            filtersHistory: filtersHistory.slice(-10),
         },
     };
 }

@@ -39,7 +39,7 @@
                 color: null,
                 hidden: null,
                 pinned: null,
-                keyframes: null,
+                keyframes: serialized.keyframes,
                 group: serialized.group,
                 updated: serialized.updated,
 

@@ -342,18 +342,22 @@ class TransformsTest(TestCase):
         self.assertEqual(4, len(actual.get_subset('train')))
         self.assertEqual(3, len(actual.get_subset('test')))
 
-    def test_random_split_gives_error_on_non1_ratios(self):
+    def test_random_split_gives_error_on_wrong_ratios(self):
         class SrcExtractor(Extractor):
             def __iter__(self):
                 return iter([DatasetItem(id=1)])
 
-        has_error = False
-        try:
+        with self.assertRaises(Exception):
             transforms.RandomSplit(SrcExtractor(), splits=[
                 ('train', 0.5),
                 ('test', 0.7),
             ])
-        except Exception:
-            has_error = True
 
-        self.assertTrue(has_error)
+        with self.assertRaises(Exception):
+            transforms.RandomSplit(SrcExtractor(), splits=[])
+
+        with self.assertRaises(Exception):
+            transforms.RandomSplit(SrcExtractor(), splits=[
+                ('train', -0.5),
+                ('test', 1.5),
+            ])
