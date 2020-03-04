@@ -498,7 +498,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         };
 
         return (
-            <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges>
+            <>
+                <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
                 <ObjectsListComponent
                     {...this.props}
                     statesOrdering={statesOrdering}
@@ -514,7 +515,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     hideAllStates={this.onHideAllStates}
                     showAllStates={this.onShowAllStates}
                 />
-            </GlobalHotKeys>
+            </>
         );
     }
 }

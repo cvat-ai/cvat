@@ -23,7 +23,7 @@ interface Props {
     saving: boolean;
     savingStatuses: string[];
     frameNumber: number;
-    inputFrameRef: React.Ref<InputNumber>;
+    inputFrameRef: React.RefObject<InputNumber>;
     startFrame: number;
     stopFrame: number;
     undoAction?: string;

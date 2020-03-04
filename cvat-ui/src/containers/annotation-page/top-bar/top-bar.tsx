@@ -135,8 +135,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps & RouteComponentProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
+    private inputFrameRef: React.RefObject<InputNumber>;
     private autoSaveInterval: number | undefined;
     private unblock: any;
+
+    constructor(props: Props) {
+        super(props);
+        this.inputFrameRef = React.createRef<InputNumber>();
+    }
 
     public componentDidMount(): void {
         const {
@@ -439,7 +445,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             searchAnnotations,
         } = this.props;
 
-        const inputFrameRef = React.createRef<InputNumber>();
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
                 event.preventDefault();
@@ -566,14 +571,15 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             },
             FOCUS_INPUT_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                if (inputFrameRef.current) {
-                    inputFrameRef.current.focus();
+                if (this.inputFrameRef.current) {
+                    this.inputFrameRef.current.focus();
                 }
             },
         };
 
         return (
-            <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges>
+            <>
+                <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
                 <AnnotationTopBarComponent
                     showStatistics={this.showStatistics}
                     onSwitchPlay={this.onSwitchPlay}
@@ -593,13 +599,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                     startFrame={startFrame}
                     stopFrame={stopFrame}
                     frameNumber={frameNumber}
-                    inputFrameRef={inputFrameRef}
+                    inputFrameRef={this.inputFrameRef}
                     undoAction={undoAction}
                     redoAction={redoAction}
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
                 />
-            </GlobalHotKeys>
+            </>
         );
     }
 }

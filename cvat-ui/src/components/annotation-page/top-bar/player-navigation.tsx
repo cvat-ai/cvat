@@ -20,7 +20,7 @@ interface Props {
     startFrame: number;
     stopFrame: number;
     frameNumber: number;
-    inputFrameRef: React.Ref<InputNumber>;
+    inputFrameRef: React.RefObject<InputNumber>;
     onSliderChange(value: SliderValue): void;
     onInputChange(value: number | undefined): void;
     onURLIconClick(): void;
