@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { connect } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas';
@@ -72,13 +71,7 @@ function dispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function ControlsSideBarContainer(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <ControlsSideBarComponent {...props} />
-    );
-}
-
 export default connect(
     mapStateToProps,
     dispatchToProps,
-)(ControlsSideBarContainer);
+)(ControlsSideBarComponent);

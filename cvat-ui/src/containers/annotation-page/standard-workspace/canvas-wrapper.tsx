@@ -2,11 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { connect } from 'react-redux';
 
 import CanvasWrapperComponent from 'components/annotation-page/standard-workspace/canvas-wrapper';
-
 import {
     confirmCanvasReady,
     dragCanvas,
@@ -236,13 +234,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function CanvasWrapperContainer(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <CanvasWrapperComponent {...props} />
-    );
-}
-
 export default connect(
     mapStateToProps,
     mapDispatchToProps,
-)(CanvasWrapperContainer);
+)(CanvasWrapperComponent);
