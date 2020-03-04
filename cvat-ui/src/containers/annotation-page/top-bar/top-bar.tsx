@@ -456,7 +456,48 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 sequences: ['ctrl+shift+z', 'ctrl+y'],
                 action: 'keydown',
             },
-
+            NEXT_FRAME: {
+                name: 'Next frame',
+                description: 'Go to the next frame',
+                sequence: 'f',
+                action: 'keydown',
+            },
+            PREV_FRAME: {
+                name: 'Previous frame',
+                description: 'Go to the previous frame',
+                sequence: 'd',
+                action: 'keydown',
+            },
+            FORWARD_FRAME: {
+                name: 'Forward frame',
+                description: 'Go forward with a step',
+                sequence: 'v',
+                action: 'keydown',
+            },
+            BACKWARD_FRAME: {
+                name: 'Backward frame',
+                description: 'Go backward with a step',
+                sequence: 'c',
+                action: 'keydown',
+            },
+            SEARCH_FORWARD: {
+                name: 'Search forward',
+                description: 'Search the next frame that satisfies to the filters',
+                sequence: 'right',
+                action: 'keydown',
+            },
+            SEARCH_BACKWARD: {
+                name: 'Search backward',
+                description: 'Search the previous frame that satisfies to the filters',
+                sequence: 'left',
+                action: 'keydown',
+            },
+            PLAY_PAUSE: {
+                name: 'Play/pause',
+                description: 'Start/stop automatic changing frames',
+                sequence: 'space',
+                action: 'keydown',
+            },
         };
 
         const handlers = {
@@ -475,6 +516,34 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             SAVE_JOB: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 this.onSaveAnnotation();
+            },
+            NEXT_FRAME: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                this.onNextFrame();
+            },
+            PREV_FRAME: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                this.onPrevFrame();
+            },
+            FORWARD_FRAME: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                this.onForward();
+            },
+            BACKWARD_FRAME: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                this.onBackward();
+            },
+            SEARCH_FORWARD: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                // todo
+            },
+            SEARCH_BACKWARD: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                // todo
+            },
+            PLAY_PAUSE: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                this.onSwitchPlay();
             },
         };
 
