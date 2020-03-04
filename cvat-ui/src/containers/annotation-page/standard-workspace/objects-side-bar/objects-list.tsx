@@ -13,6 +13,7 @@ import {
     updateAnnotationsAsync,
     fetchAnnotationsAsync,
     removeObjectAsync,
+    changeFrameAsync,
     changeAnnotationsFilters as changeAnnotationsFiltersAction,
     collapseObjectItems,
     copyShape as copyShapeAction,
@@ -47,6 +48,7 @@ interface DispatchToProps {
     removeObject: (sessionInstance: any, objectState: any, force: boolean) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
+    changeFrame(frame: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -128,6 +130,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         propagateObject(objectState: any): void {
             dispatch(propagateObjectAction(objectState));
+        },
+        changeFrame(frame: number): void {
+            dispatch(changeFrameAsync(frame));
         },
     };
 }
@@ -266,6 +271,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             removeObject,
             copyShape,
             propagateObject,
+            changeFrame,
             maxZLayer,
             minZLayer,
             annotationsFiltersHistory,
@@ -346,6 +352,18 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 name: 'Propagate object',
                 description: 'Make a copy of the object on the following frames',
                 sequence: 'ctrl+b',
+                action: 'keydown',
+            },
+            NEXT_KEY_FRAME: {
+                name: 'Next keyframe',
+                description: 'Go to the next keyframe of an active track',
+                sequence: 'r',
+                action: 'keydown',
+            },
+            PREV_KEY_FRAME: {
+                name: 'Previous keyframe',
+                description: 'Go to the previous keyframe of an active track',
+                sequence: 'e',
                 action: 'keydown',
             },
         };
@@ -453,6 +471,28 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state && state.objectType !== ObjectType.TAG) {
                     propagateObject(state);
+                }
+            },
+            NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state && state.objectType === ObjectType.TRACK) {
+                    const frame = typeof (state.keyframes.next) === 'number'
+                        ? state.keyframes.next : null;
+                    if (frame !== null) {
+                        changeFrame(frame);
+                    }
+                }
+            },
+            PREV_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state && state.objectType === ObjectType.TRACK) {
+                    const frame = typeof (state.keyframes.prev) === 'number'
+                        ? state.keyframes.prev : null;
+                    if (frame !== null) {
+                        changeFrame(frame);
+                    }
                 }
             },
         };

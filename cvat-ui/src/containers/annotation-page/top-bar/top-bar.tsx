@@ -456,6 +456,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 sequences: ['ctrl+shift+z', 'ctrl+y'],
                 action: 'keydown',
             },
+
         };
 
         const handlers = {
