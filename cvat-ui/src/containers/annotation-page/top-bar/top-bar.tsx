@@ -443,6 +443,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             undoAction,
             redoAction,
             searchAnnotations,
+            canvasIsReady,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -539,29 +540,37 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             },
             NEXT_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                this.onNextFrame();
+                if (canvasIsReady) {
+                    this.onNextFrame();
+                }
             },
             PREV_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                this.onPrevFrame();
+                if (canvasIsReady) {
+                    this.onPrevFrame();
+                }
             },
             FORWARD_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                this.onForward();
+                if (canvasIsReady) {
+                    this.onForward();
+                }
             },
             BACKWARD_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                this.onBackward();
+                if (canvasIsReady) {
+                    this.onBackward();
+                }
             },
             SEARCH_FORWARD: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                if (frameNumber + 1 <= stopFrame) {
+                if (frameNumber + 1 <= stopFrame && canvasIsReady) {
                     searchAnnotations(jobInstance, frameNumber + 1, stopFrame);
                 }
             },
             SEARCH_BACKWARD: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                if (frameNumber - 1 >= startFrame) {
+                if (frameNumber - 1 >= startFrame && canvasIsReady) {
                     searchAnnotations(jobInstance, frameNumber - 1, startFrame);
                 }
             },
