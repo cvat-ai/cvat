@@ -24,7 +24,6 @@ import {
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { GlobalHotKeys } from 'react-hotkeys';
 
 interface OwnProps {
     clientID: number;
@@ -457,67 +456,65 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
 
         return (
-            <GlobalHotKeys allowChanges>
-                <ObjectStateItemComponent
-                    activated={activated}
-                    objectType={objectState.objectType}
-                    shapeType={objectState.shapeType}
-                    clientID={objectState.clientID}
-                    serverID={objectState.serverID}
-                    occluded={objectState.occluded}
-                    outside={objectState.outside}
-                    locked={objectState.lock}
-                    pinned={objectState.pinned}
-                    hidden={objectState.hidden}
-                    keyframe={objectState.keyframe}
-                    attrValues={{ ...objectState.attributes }}
-                    labelID={objectState.label.id}
-                    color={stateColor}
-                    colors={colors}
-                    attributes={attributes}
-                    labels={labels}
-                    collapsed={collapsed}
-                    navigateFirstKeyframe={
-                        first >= frameNumber || first === null
-                            ? null : this.navigateFirstKeyframe
-                    }
-                    navigatePrevKeyframe={
-                        prev === frameNumber || prev === null
-                            ? null : this.navigatePrevKeyframe
-                    }
-                    navigateNextKeyframe={
-                        next === frameNumber || next === null
-                            ? null : this.navigateNextKeyframe
-                    }
-                    navigateLastKeyframe={
-                        last <= frameNumber || last === null
-                            ? null : this.navigateLastKeyframe
-                    }
-                    activate={this.activate}
-                    remove={this.remove}
-                    copy={this.copy}
-                    propagate={this.propagate}
-                    createURL={this.createURL}
-                    toBackground={this.toBackground}
-                    toForeground={this.toForeground}
-                    setOccluded={this.setOccluded}
-                    unsetOccluded={this.unsetOccluded}
-                    setOutside={this.setOutside}
-                    unsetOutside={this.unsetOutside}
-                    setKeyframe={this.setKeyframe}
-                    unsetKeyframe={this.unsetKeyframe}
-                    lock={this.lock}
-                    unlock={this.unlock}
-                    pin={this.pin}
-                    unpin={this.unpin}
-                    hide={this.hide}
-                    show={this.show}
-                    changeColor={this.changeColor}
-                    changeLabel={this.changeLabel}
-                    changeAttribute={this.changeAttribute}
-                    collapse={this.collapse}
-                />
-            </GlobalHotKeys>
+            <ObjectStateItemComponent
+                activated={activated}
+                objectType={objectState.objectType}
+                shapeType={objectState.shapeType}
+                clientID={objectState.clientID}
+                serverID={objectState.serverID}
+                occluded={objectState.occluded}
+                outside={objectState.outside}
+                locked={objectState.lock}
+                pinned={objectState.pinned}
+                hidden={objectState.hidden}
+                keyframe={objectState.keyframe}
+                attrValues={{ ...objectState.attributes }}
+                labelID={objectState.label.id}
+                color={stateColor}
+                colors={colors}
+                attributes={attributes}
+                labels={labels}
+                collapsed={collapsed}
+                navigateFirstKeyframe={
+                    first >= frameNumber || first === null
+                        ? null : this.navigateFirstKeyframe
+                }
+                navigatePrevKeyframe={
+                    prev === frameNumber || prev === null
+                        ? null : this.navigatePrevKeyframe
+                }
+                navigateNextKeyframe={
+                    next === frameNumber || next === null
+                        ? null : this.navigateNextKeyframe
+                }
+                navigateLastKeyframe={
+                    last <= frameNumber || last === null
+                        ? null : this.navigateLastKeyframe
+                }
+                activate={this.activate}
+                remove={this.remove}
+                copy={this.copy}
+                propagate={this.propagate}
+                createURL={this.createURL}
+                toBackground={this.toBackground}
+                toForeground={this.toForeground}
+                setOccluded={this.setOccluded}
+                unsetOccluded={this.unsetOccluded}
+                setOutside={this.setOutside}
+                unsetOutside={this.unsetOutside}
+                setKeyframe={this.setKeyframe}
+                unsetKeyframe={this.unsetKeyframe}
+                lock={this.lock}
+                unlock={this.unlock}
+                pin={this.pin}
+                unpin={this.unpin}
+                hide={this.hide}
+                show={this.show}
+                changeColor={this.changeColor}
+                changeLabel={this.changeLabel}
+                changeAttribute={this.changeAttribute}
+                collapse={this.collapse}
+            />
         );
     }
 }

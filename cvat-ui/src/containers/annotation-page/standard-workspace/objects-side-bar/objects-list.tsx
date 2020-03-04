@@ -16,6 +16,7 @@ import {
     changeAnnotationsFilters as changeAnnotationsFiltersAction,
     collapseObjectItems,
     copyShape as copyShapeAction,
+    propagateObject as propagateObjectAction,
 } from 'actions/annotation-actions';
 
 import {
@@ -45,6 +46,7 @@ interface DispatchToProps {
     collapseStates(states: any[], value: boolean): void;
     removeObject: (sessionInstance: any, objectState: any, force: boolean) => void;
     copyShape: (objectState: any) => void;
+    propagateObject: (objectState: any) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -123,6 +125,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         copyShape(objectState: any): void {
             dispatch(copyShapeAction(objectState));
+        },
+        propagateObject(objectState: any): void {
+            dispatch(propagateObjectAction(objectState));
         },
     };
 }
@@ -260,6 +265,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             updateAnnotations,
             removeObject,
             copyShape,
+            propagateObject,
             maxZLayer,
             minZLayer,
             annotationsFiltersHistory,
@@ -334,6 +340,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 name: 'Copy shape',
                 description: 'Copy shape to CVAT internal clipboard',
                 sequence: 'ctrl+c',
+                action: 'keydown',
+            },
+            PROPAGATE_OBJECT: {
+                name: 'Propagate object',
+                description: 'Make a copy of the object on the following frames',
+                sequence: 'ctrl+b',
                 action: 'keydown',
             },
         };
@@ -434,6 +446,13 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state && state.objectType !== ObjectType.TAG) {
                     copyShape(state);
+                }
+            },
+            PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state && state.objectType !== ObjectType.TAG) {
+                    propagateObject(state);
                 }
             },
         };
