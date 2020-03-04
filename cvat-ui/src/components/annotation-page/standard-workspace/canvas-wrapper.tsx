@@ -634,14 +634,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             },
             INCREASE_SATURATION: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const maxLevel = 200;
+                const maxLevel = 300;
                 if (saturationLevel < maxLevel) {
                     onChangeSaturationLevel(Math.min(saturationLevel + step, maxLevel));
                 }
             },
             DECREASE_SATURATION: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const minLevel = 50;
+                const minLevel = 0;
                 if (saturationLevel > minLevel) {
                     onChangeSaturationLevel(Math.max(saturationLevel - step, minLevel));
                 }
