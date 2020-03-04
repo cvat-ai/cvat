@@ -4,16 +4,14 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import logging as log
 import os.path as osp
 
 from datumaro.components.extractor import (SourceExtractor,
     DEFAULT_SUBSET_NAME, DatasetItem,
-    AnnotationType, Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
+    AnnotationType, Label, RleMask, Points, Polygon, PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.util.image import Image
-from datumaro.util.mask_tools import lazy_mask
 
 from .format import DatumaroPath
 
@@ -127,19 +125,9 @@ class DatumaroExtractor(SourceExtractor):
 
             elif ann_type == AnnotationType.mask:
                 label_id = ann.get('label_id')
-                mask_id = str(ann.get('mask_id'))
-
-                mask_path = osp.join(self._path, DatumaroPath.ANNOTATIONS_DIR,
-                    DatumaroPath.MASKS_DIR, mask_id + DatumaroPath.MASK_EXT)
-                mask = None
-
-                if osp.isfile(mask_path):
-                    mask = lazy_mask(mask_path)
-                else:
-                    log.warn("Not found mask image file '%s', skipped." % \
-                        mask_path)
-
-                loaded.append(Mask(label=label_id, image=mask,
+                rle = ann['rle']
+                rle['counts'] = rle['counts'].encode('ascii')
+                loaded.append(RleMask(rle=rle, label=label_id,
                     id=ann_id, attributes=attributes, group=group))
 
             elif ann_type == AnnotationType.polyline:
