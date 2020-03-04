@@ -272,7 +272,7 @@ def find_mask_bbox(mask):
 
 def merge_masks(masks):
     """
-        Merges masks into one, mask order is resposible for z order.
+        Merges masks into one, mask order is responsible for z order.
     """
     if not masks:
         return None
