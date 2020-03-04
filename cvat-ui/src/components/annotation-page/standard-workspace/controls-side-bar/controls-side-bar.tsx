@@ -99,7 +99,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             name: 'Reset group',
             description: 'Reset group for selected shapes (in group mode)',
             sequence: 'shift+g',
-            action: 'keydown',
+            action: 'keyup',
         },
         CANCEL: {
             name: 'Cancel',

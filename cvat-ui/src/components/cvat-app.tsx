@@ -7,7 +7,7 @@ import '../styles.scss';
 import React from 'react';
 import { Switch, Route, Redirect } from 'react-router';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import { GlobalHotKeys, KeyMap, configure } from 'react-hotkeys';
 
 import {
     Spin,
@@ -57,6 +57,7 @@ interface CVATAppProps {
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
         const { verifyAuthorized } = this.props;
+        configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
         verifyAuthorized();
     }
 

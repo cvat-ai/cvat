@@ -27,6 +27,14 @@ import {
     switchZLayer,
 } from 'actions/annotation-actions';
 import {
+    switchGrid,
+    changeGridColor,
+    changeGridOpacity,
+    changeBrightnessLevel,
+    changeContrastLevel,
+    changeSaturationLevel,
+} from 'actions/settings-actions';
+import {
     ColorBy,
     GridColor,
     ObjectType,
@@ -84,6 +92,12 @@ interface DispatchToProps {
     onUpdateContextMenu(visible: boolean, left: number, top: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
+    onChangeBrightnessLevel(level: number): void;
+    onChangeContrastLevel(level: number): void;
+    onChangeSaturationLevel(level: number): void;
+    onChangeGridOpacity(opacity: number): void;
+    onChangeGridColor(color: GridColor): void;
+    onSwitchGrid(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -230,6 +244,24 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSwitchZLayer(cur: number): void {
             dispatch(switchZLayer(cur));
+        },
+        onChangeBrightnessLevel(level: number): void {
+            dispatch(changeBrightnessLevel(level));
+        },
+        onChangeContrastLevel(level: number): void {
+            dispatch(changeContrastLevel(level));
+        },
+        onChangeSaturationLevel(level: number): void {
+            dispatch(changeSaturationLevel(level));
+        },
+        onChangeGridOpacity(opacity: number): void {
+            dispatch(changeGridOpacity(opacity));
+        },
+        onChangeGridColor(color: GridColor): void {
+            dispatch(changeGridColor(color));
+        },
+        onSwitchGrid(enabled: boolean): void {
+            dispatch(switchGrid(enabled));
         },
     };
 }
