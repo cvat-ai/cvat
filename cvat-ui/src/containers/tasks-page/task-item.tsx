@@ -13,9 +13,8 @@ import {
 
 import TaskItemComponent from 'components/tasks-page/task-item';
 
-import {
-    getTasksAsync,
-} from 'actions/tasks-actions';
+import { getTasksAsync } from 'actions/tasks-actions';
+import { cancelInferenceAsync } from 'actions/models-actions';
 
 interface StateToProps {
     deleted: boolean;
@@ -26,7 +25,8 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    getTasks: (query: TasksQuery) => void;
+    getTasks(query: TasksQuery): void;
+    cancelAutoAnnotation(): void;
 }
 
 interface OwnProps {
@@ -48,23 +48,18 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: any): DispatchToProps {
+function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     return {
-        getTasks: (query: TasksQuery): void => {
+        getTasks(query: TasksQuery): void {
             dispatch(getTasksAsync(query));
         },
+        cancelAutoAnnotation(): void {
+            dispatch(cancelInferenceAsync(own.taskID));
+        },
     };
-}
-
-type TasksItemContainerProps = StateToProps & DispatchToProps & OwnProps;
-
-function TaskItemContainer(props: TasksItemContainerProps): JSX.Element {
-    return (
-        <TaskItemComponent {...props} />
-    );
 }
 
 export default connect(
     mapStateToProps,
     mapDispatchToProps,
-)(TaskItemContainer);
+)(TaskItemComponent);

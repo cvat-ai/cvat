@@ -534,15 +534,10 @@ class DatasetTest(TestCase):
 
 class DatasetItemTest(TestCase):
     def test_ctor_requires_id(self):
-        has_error = False
-        try:
+        with self.assertRaises(Exception):
             # pylint: disable=no-value-for-parameter
             DatasetItem()
             # pylint: enable=no-value-for-parameter
-        except AssertionError:
-            has_error = True
-
-        self.assertTrue(has_error)
 
     @staticmethod
     def test_ctors_with_image():

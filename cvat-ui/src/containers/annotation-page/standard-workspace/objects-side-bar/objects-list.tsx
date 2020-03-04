@@ -36,6 +36,7 @@ interface StateToProps {
     activatedStateID: number | null;
     minZLayer: number;
     maxZLayer: number;
+    annotationsFiltersHistory: string[];
 }
 
 interface DispatchToProps {
@@ -52,6 +53,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 states: objectStates,
                 filters: annotationsFilters,
+                filtersHistory: annotationsFiltersHistory,
                 collapsed,
                 activatedStateID,
                 zLayer: {
@@ -97,6 +99,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedStateID,
         minZLayer,
         maxZLayer,
+        annotationsFiltersHistory,
     };
 }
 
@@ -259,6 +262,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             copyShape,
             maxZLayer,
             minZLayer,
+            annotationsFiltersHistory,
         } = this.props;
         const {
             sortedStatesID,
@@ -443,6 +447,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     annotationsFilters={annotationsFilters}
                     changeStatesOrdering={this.onChangeStatesOrdering}
                     changeAnnotationsFilters={this.onChangeAnnotationsFilters}
+                    annotationsFiltersHistory={annotationsFiltersHistory}
                     lockAllStates={this.onLockAllStates}
                     unlockAllStates={this.onUnlockAllStates}
                     collapseAllStates={this.onCollapseAllStates}

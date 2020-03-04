@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
+    Mode,
     DrawData,
     MergeData,
     SplitData,
@@ -51,6 +52,7 @@ interface Canvas {
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
+    mode(): void;
     cancel(): void;
 }
 
@@ -132,6 +134,10 @@ class CanvasImpl implements Canvas {
         this.model.select(objectState);
     }
 
+    public mode(): Mode {
+        return this.model.mode;
+    }
+
     public cancel(): void {
         this.model.cancel();
     }
@@ -141,4 +147,5 @@ export {
     CanvasImpl as Canvas,
     CanvasVersion,
     RectDrawingMethod,
+    Mode as CanvasMode,
 };
