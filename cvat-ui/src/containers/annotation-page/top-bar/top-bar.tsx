@@ -8,6 +8,7 @@ import { connect } from 'react-redux';
 
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
+import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 
 import { SliderValue } from 'antd/lib/slider';
 
@@ -430,31 +431,69 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             redoAction,
         } = this.props;
 
+        const preventDefault = (event: KeyboardEvent | undefined): void => {
+            if (event) {
+                event.preventDefault();
+            }
+        };
+
+        const keyMap = {
+            UNDO: {
+                name: 'Undo action',
+                description: 'Cancel the latest action related with objects',
+                sequence: 'ctrl+z',
+                action: 'keydown',
+            },
+            REDO: {
+                name: 'Redo action',
+                description: 'Cancel undo action',
+                sequences: ['ctrl+shift+z', 'ctrl+y'],
+                action: 'keydown',
+            },
+        };
+
+        const handlers = {
+            UNDO: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                if (undoAction) {
+                    this.undo();
+                }
+            },
+            REDO: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                if (redoAction) {
+                    this.redo();
+                }
+            },
+        };
+
         return (
-            <AnnotationTopBarComponent
-                showStatistics={this.showStatistics}
-                onSwitchPlay={this.onSwitchPlay}
-                onSaveAnnotation={this.onSaveAnnotation}
-                onPrevFrame={this.onPrevFrame}
-                onNextFrame={this.onNextFrame}
-                onForward={this.onForward}
-                onBackward={this.onBackward}
-                onFirstFrame={this.onFirstFrame}
-                onLastFrame={this.onLastFrame}
-                onSliderChange={this.onChangePlayerSliderValue}
-                onInputChange={this.onChangePlayerInputValue}
-                onURLIconClick={this.onURLIconClick}
-                playing={playing}
-                saving={saving}
-                savingStatuses={savingStatuses}
-                startFrame={startFrame}
-                stopFrame={stopFrame}
-                frameNumber={frameNumber}
-                undoAction={undoAction}
-                redoAction={redoAction}
-                onUndoClick={this.undo}
-                onRedoClick={this.redo}
-            />
+            <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges>
+                <AnnotationTopBarComponent
+                    showStatistics={this.showStatistics}
+                    onSwitchPlay={this.onSwitchPlay}
+                    onSaveAnnotation={this.onSaveAnnotation}
+                    onPrevFrame={this.onPrevFrame}
+                    onNextFrame={this.onNextFrame}
+                    onForward={this.onForward}
+                    onBackward={this.onBackward}
+                    onFirstFrame={this.onFirstFrame}
+                    onLastFrame={this.onLastFrame}
+                    onSliderChange={this.onChangePlayerSliderValue}
+                    onInputChange={this.onChangePlayerInputValue}
+                    onURLIconClick={this.onURLIconClick}
+                    playing={playing}
+                    saving={saving}
+                    savingStatuses={savingStatuses}
+                    startFrame={startFrame}
+                    stopFrame={stopFrame}
+                    frameNumber={frameNumber}
+                    undoAction={undoAction}
+                    redoAction={redoAction}
+                    onUndoClick={this.undo}
+                    onRedoClick={this.redo}
+                />
+            </GlobalHotKeys>
         );
     }
 }
