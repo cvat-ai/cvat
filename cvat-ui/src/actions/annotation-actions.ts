@@ -137,6 +137,7 @@ export enum AnnotationActionTypes {
     ROTATE_FRAME = 'ROTATE_FRAME',
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
     ADD_Z_LAYER = 'ADD_Z_LAYER',
+    SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
 }
 
 export function addZLayer(): AnyAction {
@@ -1137,6 +1138,29 @@ export function changeGroupColorAsync(
             dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, groupStates));
         } else {
             dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, []));
+        }
+    };
+}
+
+export function searchAnnotationsAsync(
+    sessionInstance: any,
+    frameFrom: number,
+    frameTo: number,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const { filters } = receiveAnnotationsParameters();
+            const frame = await sessionInstance.annotations.search(filters, frameFrom, frameTo);
+            if (frame !== null) {
+                dispatch(changeFrameAsync(frame));
+            }
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.SEARCH_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
         }
     };
 }

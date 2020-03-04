@@ -21,6 +21,7 @@ import {
     showStatistics as showStatisticsAction,
     undoActionAsync,
     redoActionAsync,
+    searchAnnotationsAsync,
 } from 'actions/annotation-actions';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
@@ -49,6 +50,7 @@ interface DispatchToProps {
     showStatistics(sessionInstance: any): void;
     undo(sessionInstance: any, frameNumber: any): void;
     redo(sessionInstance: any, frameNumber: any): void;
+    searchAnnotations(sessionInstance: any, frameFrom: any, frameTo: any): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -124,6 +126,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         redo(sessionInstance: any, frameNumber: any): void {
             dispatch(redoActionAsync(sessionInstance, frameNumber));
+        },
+        searchAnnotations(sessionInstance: any, frameFrom: any, frameTo: any): void {
+            dispatch(searchAnnotationsAsync(sessionInstance, frameFrom, frameTo));
         },
     };
 }
@@ -423,6 +428,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             playing,
             saving,
             savingStatuses,
+            jobInstance,
             jobInstance: {
                 startFrame,
                 stopFrame,
@@ -430,6 +436,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             frameNumber,
             undoAction,
             redoAction,
+            searchAnnotations,
         } = this.props;
 
         const inputFrameRef = React.createRef<InputNumber>();
@@ -543,11 +550,15 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             },
             SEARCH_FORWARD: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                // todo
+                if (frameNumber + 1 <= stopFrame) {
+                    searchAnnotations(jobInstance, frameNumber + 1, stopFrame);
+                }
             },
             SEARCH_BACKWARD: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                // todo
+                if (frameNumber - 1 >= startFrame) {
+                    searchAnnotations(jobInstance, frameNumber - 1, startFrame);
+                }
             },
             PLAY_PAUSE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);

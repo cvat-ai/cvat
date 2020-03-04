@@ -229,6 +229,7 @@ export interface NotificationsState {
             fetchingAnnotations: null | ErrorState;
             undo: null | ErrorState;
             redo: null | ErrorState;
+            search: null | ErrorState;
         };
 
         [index: string]: any;
