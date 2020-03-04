@@ -2,10 +2,16 @@ import React from 'react';
 import { getApplicationKeyMap } from 'react-hotkeys';
 import { Modal, Table } from 'antd';
 import { connect } from 'react-redux';
+
+import { shortcutsActions } from 'actions/shortcuts-actions';
 import { CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
     visible: boolean;
+}
+
+interface DispatchToProps {
+    switchShortcutsDialog(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -20,8 +26,16 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function ShorcutsDialog(props: StateToProps): JSX.Element | null {
-    const { visible } = props;
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+    return {
+        switchShortcutsDialog(): void {
+            dispatch(shortcutsActions.switchShortcutsDialog());
+        },
+    };
+}
+
+function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | null {
+    const { visible, switchShortcutsDialog } = props;
     const keyMap = getApplicationKeyMap();
 
     const splitToRows = (data: string[]): JSX.Element[] => (
@@ -68,7 +82,7 @@ function ShorcutsDialog(props: StateToProps): JSX.Element | null {
             visible={visible}
             closable={false}
             width={800}
-            okButtonProps={{ style: { display: 'none' } }}
+            onOk={switchShortcutsDialog}
             cancelButtonProps={{ style: { display: 'none' } }}
             zIndex={1001} /* default antd is 1000 */
         >
@@ -79,4 +93,5 @@ function ShorcutsDialog(props: StateToProps): JSX.Element | null {
 
 export default connect(
     mapStateToProps,
+    mapDispatchToProps,
 )(ShorcutsDialog);
