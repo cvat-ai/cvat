@@ -11,8 +11,8 @@ import {
     groupObjects,
     splitTrack,
     rotateCurrentFrame,
-    repeatDrawShape,
-    pasteShape,
+    repeatDrawShapeAsync,
+    pasteShapeAsync,
     resetAnnotationsGroup,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
@@ -75,10 +75,10 @@ function dispatchToProps(dispatch: any): DispatchToProps {
             dispatch(rotateCurrentFrame(rotation));
         },
         repeatDrawShape(): void {
-            dispatch(repeatDrawShape());
+            dispatch(repeatDrawShapeAsync());
         },
         pasteShape(): void {
-            dispatch(pasteShape());
+            dispatch(pasteShapeAsync());
         },
         resetGroup(): void {
             dispatch(resetAnnotationsGroup());

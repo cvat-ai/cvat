@@ -423,29 +423,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.REPEAT_DRAW_SHAPE: {
-            const {
-                activeShapeType,
-                activeNumOfPoints,
-                activeRectDrawingMethod,
-            } = state.drawing;
-
-            let activeControl = ActiveControl.DRAW_RECTANGLE;
-            if (activeShapeType === ShapeType.POLYGON) {
-                activeControl = ActiveControl.DRAW_POLYGON;
-            } else if (activeShapeType === ShapeType.POLYLINE) {
-                activeControl = ActiveControl.DRAW_POLYLINE;
-            } else if (activeShapeType === ShapeType.POINTS) {
-                activeControl = ActiveControl.DRAW_POINTS;
-            }
-
-            const { instance: canvasInstance } = state.canvas;
-            canvasInstance.draw({
-                enabled: true,
-                rectDrawingMethod: activeRectDrawingMethod,
-                numberOfPoints: activeNumOfPoints,
-                shapeType: activeShapeType,
-                crosshair: activeShapeType === ShapeType.RECTANGLE,
-            });
+            const { activeControl } = action.payload;
 
             return {
                 ...state,
@@ -721,36 +699,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.PASTE_SHAPE: {
-            const initialState = state.drawing.activeInitialState;
-            if (initialState) {
-                state.canvas.instance.draw({
-                    enabled: true,
-                    initialState,
-                });
+            const { activeControl } = action.payload;
 
-                let activeControl = ActiveControl.DRAW_RECTANGLE;
-                if (initialState.shapeType === ShapeType.POINTS) {
-                    activeControl = ActiveControl.DRAW_POINTS;
-                } else if (initialState.shapeType === ShapeType.POLYGON) {
-                    activeControl = ActiveControl.DRAW_POLYGON;
-                } else if (initialState.shapeType === ShapeType.POLYLINE) {
-                    activeControl = ActiveControl.DRAW_POLYLINE;
-                }
-
-                return {
-                    ...state,
-                    canvas: {
-                        ...state.canvas,
-                        activeControl,
-                    },
-                    annotations: {
-                        ...state.annotations,
-                        activatedStateID: null,
-                    },
-                };
-            }
-
-            return state;
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
+            };
         }
         case AnnotationActionTypes.COPY_SHAPE: {
             const {
