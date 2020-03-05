@@ -17,7 +17,9 @@ interface Props {
     labels: any[];
     selectedLabeID: number;
     onChangeLabel(value: string): void;
-    onSetup(): void;
+    onSetup(
+        labelID: number,
+    ): void;
 }
 
 function setupTagPopover(props: Props): JSX.Element {
@@ -61,7 +63,7 @@ function setupTagPopover(props: Props): JSX.Element {
             </Row>
             <Row type='flex' justify='space-around'>
                 <Col span={24}>
-                    <Button onClick={onSetup}>
+                    <Button onClick={() => onSetup(selectedLabeID)}>
                         Tag
                     </Button>
                 </Col>

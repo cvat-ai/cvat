@@ -85,6 +85,7 @@ export enum AnnotationActionTypes {
     EDIT_SHAPE = 'EDIT_SHAPE',
     DRAW_SHAPE = 'DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
+    SETUP_TAG = 'SETUP_TAG',
     RESET_CANVAS = 'RESET_CANVAS',
     UPDATE_ANNOTATIONS_SUCCESS = 'UPDATE_ANNOTATIONS_SUCCESS',
     UPDATE_ANNOTATIONS_FAILED = 'UPDATE_ANNOTATIONS_FAILED',
@@ -851,6 +852,20 @@ export function drawShape(
             points,
             activeControl,
             rectDrawingMethod,
+        },
+    };
+}
+
+export function setupTag(
+    labelID: number,
+    objectType: ObjectType,
+): AnyAction {
+    return {
+        type: AnnotationActionTypes.SETUP_TAG,
+        payload: {
+            labelID,
+            objectType,
+            activeControl: ActiveControl.SETUP_TAG,
         },
     };
 }

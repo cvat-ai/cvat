@@ -7,13 +7,19 @@ import { connect } from 'react-redux';
 
 import {
     CombinedState,
+    ObjectType,
 } from 'reducers/interfaces';
 
+import {
+    setupTag
+} from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas';
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 interface DispatchToProps {
-    onTagSetup(): void;
+    onTagSetup(
+        labelID: number,
+    ): void;
 }
 
 interface StateToProps {
@@ -23,8 +29,10 @@ interface StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onTagSetup(): void {
-            dispatch();
+        onTagSetup(
+            labelID: number,
+        ): void {
+            dispatch(setupTag(labelID, ObjectType.TAG));
         },
     };
 }
@@ -47,7 +55,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-type Props = StateToProps;
+type Props = StateToProps & DispatchToProps;
 
 interface State {
     selectedLabelID: number;
@@ -69,10 +77,11 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         });
     };
 
-    private onSetup(): void {
-        const { canvasInstance } = this.props;
+    private onSetup(labelID: number): void {
+        const { canvasInstance, onTagSetup } = this.props;
 
         canvasInstance.cancel();
+        onTagSetup(labelID);
     }
 
     public render(): JSX.Element {
@@ -83,6 +92,8 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         const {
             labels,
         } = this.props;
+
+        this.onSetup = this.onSetup.bind(this);
 
         return (
             <SetupTagPopoverComponent
