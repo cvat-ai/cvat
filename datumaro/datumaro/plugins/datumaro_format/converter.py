@@ -6,16 +6,18 @@
 # pylint: disable=no-self-use
 
 import json
+import numpy as np
 import os
 import os.path as osp
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
     DEFAULT_SUBSET_NAME, Annotation,
-    Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
+    Label, Mask, RleMask, Points, Polygon, PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.util.image import save_image
+import pycocotools.mask as mask_utils
 from datumaro.components.cli_plugin import CliPlugin
 
 from .format import DatumaroPath
@@ -39,8 +41,6 @@ class _SubsetWriter:
             'categories': {},
             'items': [],
         }
-
-        self._next_mask_id = 1
 
     @property
     def categories(self):
@@ -123,33 +123,22 @@ class _SubsetWriter:
         })
         return converted
 
-    def _save_mask(self, mask):
-        mask_id = None
-        if mask is None:
-            return mask_id
-
-        mask_id = self._next_mask_id
-        self._next_mask_id += 1
-
-        filename = '%d%s' % (mask_id, DatumaroPath.MASK_EXT)
-        masks_dir = osp.join(self._context._annotations_dir,
-            DatumaroPath.MASKS_DIR)
-        os.makedirs(masks_dir, exist_ok=True)
-        path = osp.join(masks_dir, filename)
-        save_image(path, mask)
-        return mask_id
-
     def _convert_mask_object(self, obj):
         converted = self._convert_annotation(obj)
 
-        mask = obj.image
-        mask_id = None
-        if mask is not None:
-            mask_id = self._save_mask(mask)
+        if isinstance(obj, RleMask):
+            rle = obj.rle
+        else:
+            rle = mask_utils.encode(
+                np.require(obj.image, dtype=np.uint8, requirements='F'))
 
         converted.update({
             'label_id': _cast(obj.label, int),
-            'mask_id': _cast(mask_id, int),
+            'rle': {
+                # serialize as compressed COCO mask
+                'counts': rle['counts'].decode('ascii'),
+                'size': list(int(c) for c in rle['size']),
+            }
         })
         return converted
 
@@ -289,6 +278,7 @@ class _Converter:
 class DatumaroConverter(Converter, CliPlugin):
     @classmethod
     def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")
         return parser

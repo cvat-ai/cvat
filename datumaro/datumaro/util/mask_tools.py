@@ -111,15 +111,20 @@ def load_mask(path, inverse_colormap=None):
 def lazy_mask(path, inverse_colormap=None):
     return lazy_image(path, lambda path: load_mask(path, inverse_colormap))
 
-
 def mask_to_rle(binary_mask):
-    counts = []
-    for i, (value, elements) in enumerate(
-            groupby(binary_mask.ravel(order='F'))):
-        # decoding starts from 0
-        if i == 0 and value == 1:
-            counts.append(0)
-        counts.append(len(list(elements)))
+    # walk in row-major order as COCO format specifies
+    bounded = binary_mask.ravel(order='F')
+
+    # add borders to sequence
+    # find boundary positions for sequences and compute their lengths
+    difs = np.diff(bounded, prepend=[1 - bounded[0]], append=[1 - bounded[-1]])
+    counts, = np.where(difs != 0)
+
+    # start RLE encoding from 0 as COCO format specifies
+    if bounded[0] != 0:
+        counts = np.diff(counts, prepend=[0])
+    else:
+        counts = np.diff(counts)
 
     return {
         'counts': counts,
@@ -267,7 +272,7 @@ def find_mask_bbox(mask):
 
 def merge_masks(masks):
     """
-        Merges masks into one, mask order is resposible for z order.
+        Merges masks into one, mask order is responsible for z order.
     """
     if not masks:
         return None
