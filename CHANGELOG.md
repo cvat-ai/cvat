@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] - 2020-02-15
+## [0.6.0] - 2020-03-15
 ### Added
 - Server only support for projects. Extend REST API v1 (/api/v1/projects*)
 - Ability to get basic information about users without admin permissions ([#750](https://github.com/opencv/cvat/issues/750))
