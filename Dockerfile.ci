@@ -8,8 +8,11 @@ RUN curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - &
     curl https://deb.nodesource.com/setup_9.x | bash - && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
+        apt-utils \
+        build-essential \
         google-chrome-stable \
-        nodejs && \
+        nodejs \
+        python3-dev && \
     rm -rf /var/lib/apt/lists/*;
 
 RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
