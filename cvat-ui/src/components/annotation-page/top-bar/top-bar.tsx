@@ -8,6 +8,7 @@ import {
     Row,
     Col,
     Layout,
+    InputNumber,
 } from 'antd';
 
 import { SliderValue } from 'antd/lib/slider';
@@ -22,6 +23,7 @@ interface Props {
     saving: boolean;
     savingStatuses: string[];
     frameNumber: number;
+    inputFrameRef: React.RefObject<InputNumber>;
     startFrame: number;
     stopFrame: number;
     undoAction?: string;
@@ -42,7 +44,7 @@ interface Props {
     onRedoClick(): void;
 }
 
-function AnnotationTopBarComponent(props: Props): JSX.Element {
+export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     const {
         saving,
         savingStatuses,
@@ -50,6 +52,7 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
         redoAction,
         playing,
         frameNumber,
+        inputFrameRef,
         startFrame,
         stopFrame,
         showStatistics,
@@ -96,6 +99,7 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
                             startFrame={startFrame}
                             stopFrame={stopFrame}
                             frameNumber={frameNumber}
+                            inputFrameRef={inputFrameRef}
                             onSliderChange={onSliderChange}
                             onInputChange={onInputChange}
                             onURLIconClick={onURLIconClick}
@@ -107,5 +111,3 @@ function AnnotationTopBarComponent(props: Props): JSX.Element {
         </Layout.Header>
     );
 }
-
-export default React.memo(AnnotationTopBarComponent);

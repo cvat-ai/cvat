@@ -115,8 +115,11 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         let statesLocked = true;
 
         ownObjectStates.forEach((objectState: any) => {
-            statesHidden = statesHidden && objectState.hidden;
-            statesLocked = statesLocked && objectState.lock;
+            const { lock } = objectState;
+            if (!lock) {
+                statesHidden = statesHidden && objectState.hidden;
+                statesLocked = statesLocked && objectState.lock;
+            }
         });
 
         return {

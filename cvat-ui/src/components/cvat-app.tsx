@@ -5,18 +5,17 @@
 import 'antd/dist/antd.less';
 import '../styles.scss';
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import {
-    Switch,
-    Route,
-    Redirect,
-} from 'react-router';
+import { Switch, Route, Redirect } from 'react-router';
+import { withRouter, RouteComponentProps } from 'react-router-dom';
+import { GlobalHotKeys, KeyMap, configure } from 'react-hotkeys';
+
 import {
     Spin,
     Layout,
     notification,
 } from 'antd';
 
+import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
 import SettingsPageContainer from 'containers/settings-page/settings-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
@@ -30,7 +29,7 @@ import HeaderContainer from 'containers/header/header';
 
 import { NotificationsState } from 'reducers/interfaces';
 
-type CVATAppProps = {
+interface CVATAppProps {
     loadFormats: () => void;
     loadUsers: () => void;
     loadAbout: () => void;
@@ -38,6 +37,7 @@ type CVATAppProps = {
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
+    switchShortcutsDialog: () => void;
     userInitialized: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
@@ -52,11 +52,12 @@ type CVATAppProps = {
     installedTFSegmentation: boolean;
     notifications: NotificationsState;
     user: any;
-};
+}
 
-export default class CVATApplication extends React.PureComponent<CVATAppProps> {
+class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
         const { verifyAuthorized } = this.props;
+        configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
         verifyAuthorized();
     }
 
@@ -190,7 +191,9 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             installedAutoAnnotation,
             installedTFSegmentation,
             installedTFAnnotation,
+            switchShortcutsDialog,
             user,
+            history,
         } = this.props;
 
         const readyForRender = (userInitialized && user == null)
@@ -200,13 +203,50 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const withModels = installedAutoAnnotation
             || installedTFAnnotation || installedTFSegmentation;
 
+        const keyMap = {
+            SWITCH_SHORTCUTS: {
+                name: 'Show shortcuts',
+                description: 'Open/hide the list of available shortcuts',
+                sequence: 'f1',
+                action: 'keydown',
+            },
+            OPEN_SETTINGS: {
+                name: 'Open settings',
+                description: 'Go to the settings page or go back',
+                sequence: 'f2',
+                action: 'keydown',
+            },
+        };
+
+        const handlers = {
+            SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
+                if (event) {
+                    event.preventDefault();
+                }
+
+                switchShortcutsDialog();
+            },
+            OPEN_SETTINGS: (event: KeyboardEvent | undefined) => {
+                if (event) {
+                    event.preventDefault();
+                }
+
+                if (history.location.pathname.endsWith('settings')) {
+                    history.goBack();
+                } else {
+                    history.push('/settings');
+                }
+            },
+        };
+
         if (readyForRender) {
             if (user) {
                 return (
-                    <BrowserRouter>
-                        <Layout>
-                            <HeaderContainer> </HeaderContainer>
-                            <Layout.Content>
+                    <Layout>
+                        <HeaderContainer> </HeaderContainer>
+                        <Layout.Content>
+                            <ShorcutsDialog />
+                            <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers}>
                                 <Switch>
                                     <Route exact path='/settings' component={SettingsPageContainer} />
                                     <Route exact path='/tasks' component={TasksPageContainer} />
@@ -219,22 +259,20 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                                         && <Route exact path='/models/create' component={CreateModelPageContainer} /> }
                                     <Redirect push to='/tasks' />
                                 </Switch>
-                                {/* eslint-disable-next-line */}
-                                <a id='downloadAnchor' style={{ display: 'none' }} download/>
-                            </Layout.Content>
-                        </Layout>
-                    </BrowserRouter>
+                            </GlobalHotKeys>
+                            {/* eslint-disable-next-line */}
+                            <a id='downloadAnchor' style={{ display: 'none' }} download/>
+                        </Layout.Content>
+                    </Layout>
                 );
             }
 
             return (
-                <BrowserRouter>
-                    <Switch>
-                        <Route exact path='/auth/register' component={RegisterPageContainer} />
-                        <Route exact path='/auth/login' component={LoginPageContainer} />
-                        <Redirect to='/auth/login' />
-                    </Switch>
-                </BrowserRouter>
+                <Switch>
+                    <Route exact path='/auth/register' component={RegisterPageContainer} />
+                    <Route exact path='/auth/login' component={LoginPageContainer} />
+                    <Redirect to='/auth/login' />
+                </Switch>
             );
         }
 
@@ -243,3 +281,5 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         );
     }
 }
+
+export default withRouter(CVATApplication);

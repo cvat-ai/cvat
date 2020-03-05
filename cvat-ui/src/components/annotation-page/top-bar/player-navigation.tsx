@@ -20,6 +20,7 @@ interface Props {
     startFrame: number;
     stopFrame: number;
     frameNumber: number;
+    inputFrameRef: React.RefObject<InputNumber>;
     onSliderChange(value: SliderValue): void;
     onInputChange(value: number | undefined): void;
     onURLIconClick(): void;
@@ -30,6 +31,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         startFrame,
         stopFrame,
         frameNumber,
+        inputFrameRef,
         onSliderChange,
         onInputChange,
         onURLIconClick,
@@ -69,6 +71,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                     value={frameNumber || 0}
                     // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
                     onChange={onInputChange}
+                    ref={inputFrameRef}
                 />
             </Col>
         </>

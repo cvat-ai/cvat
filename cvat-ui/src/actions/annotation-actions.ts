@@ -82,8 +82,10 @@ export enum AnnotationActionTypes {
     GROUP_OBJECTS = 'GROUP_OBJECTS',
     SPLIT_TRACK = 'SPLIT_TRACK',
     COPY_SHAPE = 'COPY_SHAPE',
+    PASTE_SHAPE = 'PASTE_SHAPE',
     EDIT_SHAPE = 'EDIT_SHAPE',
     DRAW_SHAPE = 'DRAW_SHAPE',
+    REPEAT_DRAW_SHAPE = 'REPEAT_DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
     RESET_CANVAS = 'RESET_CANVAS',
     UPDATE_ANNOTATIONS_SUCCESS = 'UPDATE_ANNOTATIONS_SUCCESS',
@@ -92,6 +94,8 @@ export enum AnnotationActionTypes {
     CREATE_ANNOTATIONS_FAILED = 'CREATE_ANNOTATIONS_FAILED',
     MERGE_ANNOTATIONS_SUCCESS = 'MERGE_ANNOTATIONS_SUCCESS',
     MERGE_ANNOTATIONS_FAILED = 'MERGE_ANNOTATIONS_FAILED',
+    RESET_ANNOTATIONS_GROUP = 'RESET_ANNOTATIONS_GROUP',
+    GROUP_ANNOTATIONS = 'GROUP_ANNOTATIONS',
     GROUP_ANNOTATIONS_SUCCESS = 'GROUP_ANNOTATIONS_SUCCESS',
     GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
@@ -133,6 +137,7 @@ export enum AnnotationActionTypes {
     ROTATE_FRAME = 'ROTATE_FRAME',
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
     ADD_Z_LAYER = 'ADD_Z_LAYER',
+    SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
 }
 
 export function addZLayer(): AnyAction {
@@ -905,6 +910,11 @@ export function updateAnnotationsAsync(sessionInstance: any, frame: number, stat
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
+            if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {
+                // deactivate object to visualize changes immediately (UX)
+                dispatch(activateObject(null));
+            }
+
             const promises = statesToUpdate
                 .map((objectState: any): Promise<any> => objectState.save());
             const states = await Promise.all(promises);
@@ -991,12 +1001,30 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
-export function groupAnnotationsAsync(sessionInstance: any, frame: number, statesToGroup: any[]):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function resetAnnotationsGroup(): AnyAction {
+    return {
+        type: AnnotationActionTypes.RESET_ANNOTATIONS_GROUP,
+        payload: {},
+    };
+}
+
+export function groupAnnotationsAsync(
+    sessionInstance: any,
+    frame: number,
+    statesToGroup: any[],
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
-            await sessionInstance.annotations.group(statesToGroup);
+            const reset = getStore().getState().annotation.annotations.resetGroupFlag;
+
+            // The action below set resetFlag to false
+            dispatch({
+                type: AnnotationActionTypes.GROUP_ANNOTATIONS,
+                payload: {},
+            });
+
+            await sessionInstance.annotations.group(statesToGroup, reset);
             const states = await sessionInstance.annotations
                 .get(frame, showAllInterpolationTracks, filters);
             const history = await sessionInstance.actions.get();
@@ -1097,5 +1125,96 @@ export function changeGroupColorAsync(
         } else {
             dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, []));
         }
+    };
+}
+
+export function searchAnnotationsAsync(
+    sessionInstance: any,
+    frameFrom: number,
+    frameTo: number,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const { filters } = receiveAnnotationsParameters();
+            const frame = await sessionInstance.annotations.search(filters, frameFrom, frameTo);
+            if (frame !== null) {
+                dispatch(changeFrameAsync(frame));
+            }
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.SEARCH_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const initialState = getStore().getState().annotation.drawing.activeInitialState;
+        const { instance: canvasInstance } = getStore().getState().annotation.canvas;
+
+        if (initialState) {
+            let activeControl = ActiveControl.DRAW_RECTANGLE;
+            if (initialState.shapeType === ShapeType.POINTS) {
+                activeControl = ActiveControl.DRAW_POINTS;
+            } else if (initialState.shapeType === ShapeType.POLYGON) {
+                activeControl = ActiveControl.DRAW_POLYGON;
+            } else if (initialState.shapeType === ShapeType.POLYLINE) {
+                activeControl = ActiveControl.DRAW_POLYLINE;
+            }
+
+            dispatch({
+                type: AnnotationActionTypes.PASTE_SHAPE,
+                payload: {
+                    activeControl,
+                },
+            });
+
+            canvasInstance.cancel();
+            canvasInstance.draw({
+                enabled: true,
+                initialState,
+            });
+        }
+    };
+}
+
+export function repeatDrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const {
+            activeShapeType,
+            activeNumOfPoints,
+            activeRectDrawingMethod,
+        } = getStore().getState().annotation.drawing;
+
+        const { instance: canvasInstance } = getStore().getState().annotation.canvas;
+
+        let activeControl = ActiveControl.DRAW_RECTANGLE;
+        if (activeShapeType === ShapeType.POLYGON) {
+            activeControl = ActiveControl.DRAW_POLYGON;
+        } else if (activeShapeType === ShapeType.POLYLINE) {
+            activeControl = ActiveControl.DRAW_POLYLINE;
+        } else if (activeShapeType === ShapeType.POINTS) {
+            activeControl = ActiveControl.DRAW_POINTS;
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
+            payload: {
+                activeControl,
+            },
+        });
+
+        canvasInstance.cancel();
+        canvasInstance.draw({
+            enabled: true,
+            rectDrawingMethod: activeRectDrawingMethod,
+            numberOfPoints: activeNumOfPoints,
+            shapeType: activeShapeType,
+            crosshair: activeShapeType === ShapeType.RECTANGLE,
+        });
     };
 }

@@ -61,7 +61,10 @@ const defaultState: AnnotationState = {
         collapsed: {},
         states: [],
         filters: [],
-        filtersHistory: JSON.parse(window.localStorage.getItem('filtersHistory') as string) || [],
+        filtersHistory: JSON.parse(
+            window.localStorage.getItem('filtersHistory') || '[]',
+        ),
+        resetGroupFlag: false,
         history: {
             undo: [],
             redo: [],
@@ -419,6 +422,21 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.REPEAT_DRAW_SHAPE: {
+            const { activeControl } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
+            };
+        }
         case AnnotationActionTypes.MERGE_OBJECTS: {
             const { enabled } = action.payload;
             const activeControl = enabled
@@ -554,6 +572,24 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.RESET_ANNOTATIONS_GROUP: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    resetGroupFlag: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.GROUP_ANNOTATIONS: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    resetGroupFlag: false,
+                },
+            };
+        }
         case AnnotationActionTypes.GROUP_ANNOTATIONS_SUCCESS: {
             const {
                 states,
@@ -662,25 +698,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.COPY_SHAPE: {
-            const {
-                objectState,
-            } = action.payload;
-
-            state.canvas.instance.cancel();
-            state.canvas.instance.draw({
-                enabled: true,
-                initialState: objectState,
-            });
-
-            let activeControl = ActiveControl.DRAW_RECTANGLE;
-            if (objectState.shapeType === ShapeType.POINTS) {
-                activeControl = ActiveControl.DRAW_POINTS;
-            } else if (objectState.shapeType === ShapeType.POLYGON) {
-                activeControl = ActiveControl.DRAW_POLYGON;
-            } else if (objectState.shapeType === ShapeType.POLYLINE) {
-                activeControl = ActiveControl.DRAW_POLYLINE;
-            }
+        case AnnotationActionTypes.PASTE_SHAPE: {
+            const { activeControl } = action.payload;
 
             return {
                 ...state,
@@ -691,6 +710,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID: null,
+                },
+            };
+        }
+        case AnnotationActionTypes.COPY_SHAPE: {
+            const {
+                objectState,
+            } = action.payload;
+
+            return {
+                ...state,
+                drawing: {
+                    ...state.drawing,
+                    activeInitialState: objectState,
                 },
             };
         }

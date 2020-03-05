@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 
 import {
     Layout,
@@ -12,17 +13,8 @@ import {
 } from 'antd';
 
 import { SliderValue } from 'antd/lib//slider';
-
-import {
-    ColorBy,
-    GridColor,
-    ObjectType,
-} from 'reducers/interfaces';
-
-import {
-    Canvas,
-} from 'cvat-canvas';
-
+import { ColorBy, GridColor, ObjectType } from 'reducers/interfaces';
+import { Canvas } from 'cvat-canvas';
 import getCore from 'cvat-core';
 
 const cvat = getCore();
@@ -75,6 +67,12 @@ interface Props {
     onUpdateContextMenu(visible: boolean, left: number, top: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
+    onChangeBrightnessLevel(level: number): void;
+    onChangeContrastLevel(level: number): void;
+    onChangeSaturationLevel(level: number): void;
+    onChangeGridOpacity(opacity: number): void;
+    onChangeGridColor(color: GridColor): void;
+    onSwitchGrid(enabled: boolean): void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -109,6 +107,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             activatedStateID,
             curZLayer,
             resetZoom,
+            grid,
+            gridOpacity,
+            gridColor,
+            brightnessLevel,
+            contrastLevel,
+            saturationLevel,
         } = this.props;
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -129,6 +133,31 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
             if (el) {
                 (el as any).instance.fill({ opacity: opacity / 100 });
+            }
+        }
+
+        if (gridOpacity !== prevProps.gridOpacity
+            || gridColor !== prevProps.gridColor
+            || grid !== prevProps.grid) {
+            const gridElement = window.document.getElementById('cvat_canvas_grid');
+            const gridPattern = window.document.getElementById('cvat_canvas_grid_pattern');
+            if (gridElement) {
+                gridElement.style.display = grid ? 'block' : 'none';
+            }
+            if (gridPattern) {
+                gridPattern.style.stroke = gridColor.toLowerCase();
+                gridPattern.style.opacity = `${gridOpacity / 100}`;
+            }
+        }
+
+        if (brightnessLevel !== prevProps.brightnessLevel
+            || contrastLevel !== prevProps.contrastLevel
+            || saturationLevel !== prevProps.saturationLevel) {
+            const backgroundElement = window.document.getElementById('cvat_canvas_background');
+            if (backgroundElement) {
+                backgroundElement.style.filter = `brightness(${brightnessLevel / 100})`
+                    + `contrast(${contrastLevel / 100})`
+                    + `saturate(${saturationLevel / 100})`;
             }
         }
 
@@ -360,7 +389,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         // Filters
         const backgroundElement = window.document.getElementById('cvat_canvas_background');
         if (backgroundElement) {
-            backgroundElement.style.filter = `brightness(${brightnessLevel / 100}) contrast(${contrastLevel / 100}) saturate(${saturationLevel / 100})`;
+            backgroundElement.style.filter = `brightness(${brightnessLevel / 100})`
+                + `contrast(${contrastLevel / 100})`
+                + `saturate(${saturationLevel / 100})`;
         }
 
         // Events
@@ -371,6 +402,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
             if ((e.target as HTMLElement).tagName === 'svg' && activatedStateID !== null) {
                 onActivateObject(null);
+            }
+        });
+
+        canvasInstance.html().addEventListener('click', (): void => {
+            if (document.activeElement) {
+                (document.activeElement as HTMLElement).blur();
             }
         });
 
@@ -488,10 +525,162 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             minZLayer,
             onSwitchZLayer,
             onAddZLayer,
+            brightnessLevel,
+            contrastLevel,
+            saturationLevel,
+            grid,
+            gridColor,
+            gridOpacity,
+            onChangeBrightnessLevel,
+            onChangeSaturationLevel,
+            onChangeContrastLevel,
+            onChangeGridColor,
+            onChangeGridOpacity,
+            onSwitchGrid,
         } = this.props;
+
+        const preventDefault = (event: KeyboardEvent | undefined): void => {
+            if (event) {
+                event.preventDefault();
+            }
+        };
+
+        const keyMap = {
+            INCREASE_BRIGHTNESS: {
+                name: 'Brightness+',
+                description: 'Increase brightness level for the image',
+                sequence: 'shift+b+=',
+                action: 'keypress',
+            },
+            DECREASE_BRIGHTNESS: {
+                name: 'Brightness-',
+                description: 'Decrease brightness level for the image',
+                sequence: 'shift+b+-',
+                action: 'keydown',
+            },
+            INCREASE_CONTRAST: {
+                name: 'Contrast+',
+                description: 'Increase contrast level for the image',
+                sequence: 'shift+c+=',
+                action: 'keydown',
+            },
+            DECREASE_CONTRAST: {
+                name: 'Contrast-',
+                description: 'Decrease contrast level for the image',
+                sequence: 'shift+c+-',
+                action: 'keydown',
+            },
+            INCREASE_SATURATION: {
+                name: 'Saturation+',
+                description: 'Increase saturation level for the image',
+                sequence: 'shift+s+=',
+                action: 'keydown',
+            },
+            DECREASE_SATURATION: {
+                name: 'Saturation-',
+                description: 'Increase contrast level for the image',
+                sequence: 'shift+s+-',
+                action: 'keydown',
+            },
+            INCREASE_GRID_OPACITY: {
+                name: 'Grid opacity+',
+                description: 'Make the grid more visible',
+                sequence: 'shift+g+=',
+                action: 'keydown',
+            },
+            DECREASE_GRID_OPACITY: {
+                name: 'Grid opacity-',
+                description: 'Make the grid less visible',
+                sequences: 'shift+g+-',
+                action: 'keydown',
+            },
+            CHANGE_GRID_COLOR: {
+                name: 'Grid color',
+                description: 'Set another color for the image grid',
+                sequence: 'shift+g+enter',
+                action: 'keydown',
+            },
+        };
+
+        const step = 10;
+        const handlers = {
+            INCREASE_BRIGHTNESS: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const maxLevel = 200;
+                if (brightnessLevel < maxLevel) {
+                    onChangeBrightnessLevel(Math.min(brightnessLevel + step, maxLevel));
+                }
+            },
+            DECREASE_BRIGHTNESS: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const minLevel = 50;
+                if (brightnessLevel > minLevel) {
+                    onChangeBrightnessLevel(Math.max(brightnessLevel - step, minLevel));
+                }
+            },
+            INCREASE_CONTRAST: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const maxLevel = 200;
+                if (contrastLevel < maxLevel) {
+                    onChangeContrastLevel(Math.min(contrastLevel + step, maxLevel));
+                }
+            },
+            DECREASE_CONTRAST: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const minLevel = 50;
+                if (contrastLevel > minLevel) {
+                    onChangeContrastLevel(Math.max(contrastLevel - step, minLevel));
+                }
+            },
+            INCREASE_SATURATION: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const maxLevel = 300;
+                if (saturationLevel < maxLevel) {
+                    onChangeSaturationLevel(Math.min(saturationLevel + step, maxLevel));
+                }
+            },
+            DECREASE_SATURATION: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const minLevel = 0;
+                if (saturationLevel > minLevel) {
+                    onChangeSaturationLevel(Math.max(saturationLevel - step, minLevel));
+                }
+            },
+            INCREASE_GRID_OPACITY: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const maxLevel = 100;
+                if (!grid) {
+                    onSwitchGrid(true);
+                }
+
+                if (gridOpacity < maxLevel) {
+                    onChangeGridOpacity(Math.min(gridOpacity + step, maxLevel));
+                }
+            },
+            DECREASE_GRID_OPACITY: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const minLevel = 0;
+                if (gridOpacity - step <= minLevel) {
+                    onSwitchGrid(false);
+                }
+
+                if (gridOpacity > minLevel) {
+                    onChangeGridOpacity(Math.max(gridOpacity - step, minLevel));
+                }
+            },
+            CHANGE_GRID_COLOR: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const colors = [GridColor.Black, GridColor.Blue,
+                    GridColor.Green, GridColor.Red, GridColor.White];
+                const indexOf = colors.indexOf(gridColor) + 1;
+                const color = colors[indexOf >= colors.length ? 0 : indexOf];
+                onChangeGridColor(color);
+            },
+        };
 
         return (
             <Layout.Content style={{ position: 'relative' }}>
+                <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
                 {/*
                     This element doesn't have any props
                     So, React isn't going to rerender it
