@@ -27,8 +27,10 @@ RUN apt-get update && \
     add-apt-repository ppa:mc3man/gstffmpeg-keep -y && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
-        apache2 \
+        apache2 \   
         apache2-dev \
+        apt-utils \
+        build-essential \
         libapache2-mod-xsendfile \
         supervisor \
         ffmpeg \
