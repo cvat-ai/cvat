@@ -53,5 +53,5 @@ class CvatImporter(Importer):
 
             if osp.basename(osp.normpath(path)) != CvatPath.ANNOTATIONS_DIR:
                 path = osp.join(path, CvatPath.ANNOTATIONS_DIR)
-            subset_paths += glob(osp.join(path, '*.xml'))
+                subset_paths += glob(osp.join(path, '*.xml'))
         return subset_paths

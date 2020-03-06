@@ -59,7 +59,7 @@ class CocoImporter(Importer):
 
             if osp.basename(osp.normpath(path)) != CocoPath.ANNOTATIONS_DIR:
                 path = osp.join(path, CocoPath.ANNOTATIONS_DIR)
-            subset_paths += glob(osp.join(path, '*_*.json'))
+                subset_paths += glob(osp.join(path, '*_*.json'))
 
         subsets = defaultdict(dict)
         for subset_path in subset_paths:

@@ -52,5 +52,5 @@ class DatumaroImporter(Importer):
 
             if osp.basename(osp.normpath(path)) != DatumaroPath.ANNOTATIONS_DIR:
                 path = osp.join(path, DatumaroPath.ANNOTATIONS_DIR)
-            subset_paths += glob(osp.join(path, '*.json'))
+                subset_paths += glob(osp.join(path, '*.json'))
         return subset_paths
