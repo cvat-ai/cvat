@@ -422,30 +422,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.SETUP_TAG: {
-            const {
-                labelID,
-                objectType,
-                activeControl,
-            } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    activatedStateID: null,
-                },
-                canvas: {
-                    ...state.canvas,
-                    activeControl,
-                },
-                drawing: {
-                    ...defaultState.drawing,
-                    activeLabelID: labelID,
-                    activeObjectType: objectType,
-                },
-            };
-        }
         case AnnotationActionTypes.REPEAT_DRAW_SHAPE: {
             const { activeControl } = action.payload;
 
