@@ -745,6 +745,10 @@ class SourceExtractor(Extractor):
     pass
 
 class Importer:
+    @classmethod
+    def detect(cls, path):
+        raise NotImplementedError()
+
     def __call__(self, path, **extra_params):
         raise NotImplementedError()
 

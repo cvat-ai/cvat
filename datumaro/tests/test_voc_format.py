@@ -763,6 +763,14 @@ class VocImportTest(TestCase):
                 sum([len(s) for _, s in subsets.items()]),
                 len(dataset))
 
+    def test_can_detect_voc(self):
+        with TestDir() as test_dir:
+            generate_dummy_voc(test_dir)
+
+            dataset_found = VocImporter.detect(test_dir)
+
+            self.assertTrue(dataset_found)
+
 class VocFormatTest(TestCase):
     def test_can_write_and_parse_labelmap(self):
         src_label_map = VOC.make_voc_label_map()

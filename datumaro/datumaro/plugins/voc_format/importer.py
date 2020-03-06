@@ -21,25 +21,35 @@ class VocImporter(Importer):
         (VocTask.action_classification, 'voc_action', 'Action'),
     ]
 
+    @classmethod
+    def detect(cls, path):
+        return len(cls.find_tasks(path)) != 0
+
     def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
         project = Project()
 
-        for task, extractor_type, task_dir in self._TASKS:
-            task_dir = osp.join(path, VocPath.SUBSETS_DIR, task_dir)
-            if not osp.isdir(task_dir):
-                continue
+        task_paths = self.find_tasks(path)
+        if len(task_paths) == 0:
+            raise Exception("Failed to find 'voc' dataset at '%s'" % path)
 
+        for task, extractor_type, _ in task_paths:
             project.add_source(task.name, {
                 'url': path,
                 'format': extractor_type,
                 'options': dict(extra_params),
             })
 
-        if len(project.config.sources) == 0:
-            raise Exception("Failed to find 'voc' dataset at '%s'" % path)
-
         return project
+
+    @staticmethod
+    def find_tasks(path):
+        task_paths = []
+        for task, extractor_type, task_dir in __class__._TASKS:
+            task_dir = osp.join(path, VocPath.SUBSETS_DIR, task_dir)
+            if osp.isdir(task_dir):
+                task_paths.append((task, extractor_type, task_dir))
+        return task_paths
 
 
 class VocResultsImporter:

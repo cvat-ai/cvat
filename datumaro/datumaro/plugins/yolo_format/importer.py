@@ -11,16 +11,16 @@ from datumaro.components.extractor import Importer
 
 
 class YoloImporter(Importer):
+    @classmethod
+    def detect(cls, path):
+        return len(cls.find_configs(path)) != 0
+
     def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
         project = Project()
 
-        if path.endswith('.data') and osp.isfile(path):
-            config_paths = [path]
-        else:
-            config_paths = glob(osp.join(path, '*.data'))
-
-        if not osp.exists(path) or not config_paths:
+        config_paths = self.find_configs(path)
+        if len(config_paths) == 0:
             raise Exception("Failed to find 'yolo' dataset at '%s'" % path)
 
         for config_path in config_paths:
@@ -36,3 +36,11 @@ class YoloImporter(Importer):
             })
 
         return project
+
+    @staticmethod
+    def find_configs(path):
+        if path.endswith('.data') and osp.isfile(path):
+            config_paths = [path]
+        else:
+            config_paths = glob(osp.join(path, '*.data'))
+        return config_paths

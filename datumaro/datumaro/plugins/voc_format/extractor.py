@@ -88,8 +88,7 @@ class VocExtractor(SourceExtractor):
         det_annotations = dict()
         for ann_item in det_anno_items:
             with open(osp.join(det_anno_dir, ann_item + '.xml'), 'r') as f:
-                ann_file_data = f.read()
-                det_annotations[ann_item] = ann_file_data
+                det_annotations[ann_item] = f.read()
 
         self._annotations[VocTask.detection] = det_annotations
 
