@@ -42,7 +42,7 @@ const nodeConfig = {
     plugins: [
         new DtsBundleWebpack({
             name: 'cvat-canvas.node',
-            main: 'dist/declaration/canvas.d.ts',
+            main: 'dist/declaration/src/typescript/canvas.d.ts',
             out: '../cvat-canvas.node.d.ts',
         }),
     ]
@@ -97,7 +97,7 @@ const webConfig = {
     plugins: [
         new DtsBundleWebpack({
             name: 'cvat-canvas',
-            main: 'dist/declaration/canvas.d.ts',
+            main: 'dist/declaration/src/typescript/canvas.d.ts',
             out: '../cvat-canvas.d.ts',
         }),
     ]
