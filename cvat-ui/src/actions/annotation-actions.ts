@@ -85,7 +85,6 @@ export enum AnnotationActionTypes {
     EDIT_SHAPE = 'EDIT_SHAPE',
     DRAW_SHAPE = 'DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
-    SETUP_TAG = 'SETUP_TAG',
     RESET_CANVAS = 'RESET_CANVAS',
     UPDATE_ANNOTATIONS_SUCCESS = 'UPDATE_ANNOTATIONS_SUCCESS',
     UPDATE_ANNOTATIONS_FAILED = 'UPDATE_ANNOTATIONS_FAILED',
@@ -526,10 +525,31 @@ export function editShape(enabled: boolean): AnyAction {
 }
 
 export function copyShape(objectState: any): AnyAction {
+    const state = getStore().getState();
+
+    state.annotation.canvas.instance.cancel();
+    if (objectState.objectType !== ObjectType.TAG) {
+        state.annotation.canvas.instance.draw({
+            enabled: true,
+            initialState: objectState,
+        });
+    }
+
+    let activeControl = ActiveControl.CURSOR;
+    if (objectState.shapeType === ShapeType.RECTANGLE) {
+        activeControl = ActiveControl.DRAW_RECTANGLE;
+    } else if (objectState.shapeType === ShapeType.POINTS) {
+        activeControl = ActiveControl.DRAW_POINTS;
+    } else if (objectState.shapeType === ShapeType.POLYGON) {
+        activeControl = ActiveControl.DRAW_POLYGON;
+    } else if (objectState.shapeType === ShapeType.POLYLINE) {
+        activeControl = ActiveControl.DRAW_POLYLINE;
+    }
+
     return {
         type: AnnotationActionTypes.COPY_SHAPE,
         payload: {
-            objectState,
+            activeControl,
         },
     };
 }
@@ -852,20 +872,6 @@ export function drawShape(
             points,
             activeControl,
             rectDrawingMethod,
-        },
-    };
-}
-
-export function setupTag(
-    labelID: number,
-    objectType: ObjectType,
-): AnyAction {
-    return {
-        type: AnnotationActionTypes.SETUP_TAG,
-        payload: {
-            labelID,
-            objectType,
-            activeControl: ActiveControl.SETUP_TAG,
         },
     };
 }

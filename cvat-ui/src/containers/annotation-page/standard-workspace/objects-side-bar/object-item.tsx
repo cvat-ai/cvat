@@ -9,10 +9,12 @@ import {
     ActiveControl,
     CombinedState,
     ColorBy,
+    ObjectType,
 } from 'reducers/interfaces';
 import {
     collapseObjectItems,
     changeLabelColorAsync,
+    createAnnotationsAsync,
     updateAnnotationsAsync,
     changeFrameAsync,
     removeObjectAsync,
@@ -23,6 +25,9 @@ import {
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
+import getCore from 'cvat-core';
+
+const cvat = getCore();
 
 interface OwnProps {
     clientID: number;
@@ -47,6 +52,7 @@ interface StateToProps {
 interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(sessionInstance: any, frameNumber: number, objectState: any): void;
+    createAnnotations(sessionInstance: any, frameNumber: number, state: any): void
     collapseOrExpand(objectStates: any[], collapsed: boolean): void;
     activateObject: (activatedStateID: number | null) => void;
     removeObject: (sessionInstance: any, objectState: any) => void;
@@ -122,6 +128,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         updateState(sessionInstance: any, frameNumber: number, state: any): void {
             dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, [state]));
+        },
+        createAnnotations(sessionInstance: any, frameNumber: number, state: any): void {
+            dispatch(createAnnotationsAsync(sessionInstance, frameNumber, state));
         },
         collapseOrExpand(objectStates: any[], collapsed: boolean): void {
             dispatch(collapseObjectItems(objectStates, collapsed));
@@ -215,9 +224,21 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const {
             objectState,
             copyShape,
+            jobInstance,
+            frameNumber,
+            createAnnotations,
         } = this.props;
 
         copyShape(objectState);
+        if (objectState.objectType === ObjectType.TAG) {
+            const state = new cvat.classes.ObjectState({
+                objectType: objectState.objectType,
+                label: objectState.label,
+                frame: frameNumber,
+
+            });
+            createAnnotations(jobInstance, frameNumber, [state]);
+        }
     };
 
     private propagate = (): void => {

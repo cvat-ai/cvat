@@ -399,8 +399,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.svgTexts[state.clientID].remove();
             }
 
-            this.svgShapes[state.clientID].off('click.canvas');
-            this.svgShapes[state.clientID].remove();
+            const shape = this.svgShapes[state.clientID];
+            if (shape) {
+                shape.off('click.canvas');
+                shape.remove();
+            }
             delete this.drawnStates[state.clientID];
         }
 
@@ -847,7 +850,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             hidden: state.hidden,
             lock: state.lock,
             shapeType: state.shapeType,
-            points: [...state.points],
+            points: Array.isArray(state.points) ? [...state.points] : [],
             attributes: { ...state.attributes },
             zOrder: state.zOrder,
             pinned: state.pinned,
@@ -892,7 +895,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.activate(activeElement);
             }
 
-            if (state.points
+            if (state.points && state.points
                 .some((p: number, id: number): boolean => p !== drawnState.points[id])
             ) {
                 const translatedPoints: number[] = translate(state.points);
@@ -1021,22 +1024,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const drawnState = this.drawnStates[clientID];
             const shape = this.svgShapes[clientID];
 
-            shape.removeClass('cvat_canvas_shape_activated');
+            if (shape) {
+                shape.removeClass('cvat_canvas_shape_activated');
 
-            if (!drawnState.pinned) {
-                (shape as any).off('dragstart');
-                (shape as any).off('dragend');
-                (shape as any).draggable(false);
+                if (!drawnState.pinned) {
+                    (shape as any).off('dragstart');
+                    (shape as any).off('dragend');
+                    (shape as any).draggable(false);
+                }
+
+                if (drawnState.shapeType !== 'points') {
+                    this.selectize(false, shape);
+                }
+
+                (shape as any).off('resizestart');
+                (shape as any).off('resizing');
+                (shape as any).off('resizedone');
+                (shape as any).resize(false);
             }
-
-            if (drawnState.shapeType !== 'points') {
-                this.selectize(false, shape);
-            }
-
-            (shape as any).off('resizestart');
-            (shape as any).off('resizing');
-            (shape as any).off('resizedone');
-            (shape as any).resize(false);
 
             // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[clientID];
@@ -1085,6 +1090,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.activeElement = { ...activeElement };
         const shape = this.svgShapes[clientID];
+
+        if (!shape) {
+            return;
+        }
+
         let text = this.svgTexts[clientID];
         if (!text) {
             text = this.addText(state);

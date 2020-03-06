@@ -429,6 +429,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
+                    activatedStateID: null,
                 },
                 canvas: {
                     ...state.canvas,
@@ -678,23 +679,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.COPY_SHAPE: {
             const {
-                objectState,
+                activeControl,
             } = action.payload;
-
-            state.canvas.instance.cancel();
-            state.canvas.instance.draw({
-                enabled: true,
-                initialState: objectState,
-            });
-
-            let activeControl = ActiveControl.DRAW_RECTANGLE;
-            if (objectState.shapeType === ShapeType.POINTS) {
-                activeControl = ActiveControl.DRAW_POINTS;
-            } else if (objectState.shapeType === ShapeType.POLYGON) {
-                activeControl = ActiveControl.DRAW_POLYGON;
-            } else if (objectState.shapeType === ShapeType.POLYLINE) {
-                activeControl = ActiveControl.DRAW_POLYLINE;
-            }
 
             return {
                 ...state,
