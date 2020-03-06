@@ -4,7 +4,7 @@
 
 import { AnyAction } from 'redux';
 
-import { Canvas } from 'cvat-canvas';
+import { Canvas, CanvasMode } from 'cvat-canvas';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import {
@@ -61,6 +61,10 @@ const defaultState: AnnotationState = {
         collapsed: {},
         states: [],
         filters: [],
+        filtersHistory: JSON.parse(
+            window.localStorage.getItem('filtersHistory') || '[]',
+        ),
+        resetGroupFlag: false,
         history: {
             undo: [],
             redo: [],
@@ -442,6 +446,21 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.REPEAT_DRAW_SHAPE: {
+            const { activeControl } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
+            };
+        }
         case AnnotationActionTypes.MERGE_OBJECTS: {
             const { enabled } = action.payload;
             const activeControl = enabled
@@ -577,6 +596,24 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.RESET_ANNOTATIONS_GROUP: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    resetGroupFlag: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.GROUP_ANNOTATIONS: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    resetGroupFlag: false,
+                },
+            };
+        }
         case AnnotationActionTypes.GROUP_ANNOTATIONS_SUCCESS: {
             const {
                 states,
@@ -633,9 +670,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.ACTIVATE_OBJECT: {
+            const { activatedStateID } = action.payload;
             const {
-                activatedStateID,
-            } = action.payload;
+                canvas: {
+                    activeControl,
+                    instance,
+                },
+            } = state;
+
+            if (activeControl !== ActiveControl.CURSOR || instance.mode() !== CanvasMode.IDLE) {
+                return state;
+            }
 
             return {
                 ...state,
@@ -677,10 +722,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.COPY_SHAPE: {
-            const {
-                activeControl,
-            } = action.payload;
+        case AnnotationActionTypes.PASTE_SHAPE: {
+            const { activeControl } = action.payload;
 
             return {
                 ...state,
@@ -691,6 +734,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID: null,
+                },
+            };
+        }
+        case AnnotationActionTypes.COPY_SHAPE: {
+            const {
+                objectState,
+            } = action.payload;
+
+            return {
+                ...state,
+                drawing: {
+                    ...state.drawing,
+                    activeInitialState: objectState,
                 },
             };
         }
@@ -955,11 +1011,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS: {
-            const { filters } = action.payload;
+            const { filters, filtersHistory } = action.payload;
+
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
+                    filtersHistory,
                     filters,
                 },
             };

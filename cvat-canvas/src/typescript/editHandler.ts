@@ -84,7 +84,7 @@ export class EditHandlerImpl implements EditHandler {
         }).draw(dummyEvent, { snapToGrid: 0.1 });
 
         if (this.editData.state.shapeType === 'points') {
-            this.editLine.style('stroke-width', 0);
+            this.editLine.attr('stroke-width', 0);
             (this.editLine as any).draw('undo');
         }
 
@@ -168,7 +168,7 @@ export class EditHandlerImpl implements EditHandler {
             for (const points of [firstPart, secondPart]) {
                 this.clones.push(this.canvas.polygon(points.join(' '))
                     .attr('fill', this.editedShape.attr('fill'))
-                    .style('fill-opacity', '0.5')
+                    .attr('fill-opacity', '0.5')
                     .addClass('cvat_canvas_shape'));
             }
 
@@ -340,10 +340,16 @@ export class EditHandlerImpl implements EditHandler {
     public transform(geometry: Geometry): void {
         this.geometry = geometry;
 
+        if (this.editedShape) {
+            this.editedShape.attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
+            });
+        }
+
         if (this.editLine) {
             (this.editLine as any).draw('transform');
             if (this.editData.state.shapeType !== 'points') {
-                this.editLine.style({
+                this.editLine.attr({
                     'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
                 });
             }
@@ -351,7 +357,7 @@ export class EditHandlerImpl implements EditHandler {
             const paintHandler = this.editLine.remember('_paintHandler');
 
             for (const point of (paintHandler as any).set.members) {
-                point.style(
+                point.attr(
                     'stroke-width',
                     `${consts.POINTS_STROKE_WIDTH / geometry.scale}`,
                 );

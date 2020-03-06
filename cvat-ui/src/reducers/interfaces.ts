@@ -134,10 +134,17 @@ export enum RQStatus {
     failed = 'failed',
 }
 
+export enum ModelType {
+    OPENVINO = 'openvino',
+    RCNN = 'rcnn',
+    MASK_RCNN = 'mask_rcnn',
+}
+
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
     error: string;
+    modelType: ModelType;
 }
 
 export interface ModelsState {
@@ -199,6 +206,7 @@ export interface NotificationsState {
             starting: null | ErrorState;
             deleting: null | ErrorState;
             fetching: null | ErrorState;
+            canceling: null | ErrorState;
             metaFetching: null | ErrorState;
             inferenceStatusFetching: null | ErrorState;
         };
@@ -221,6 +229,7 @@ export interface NotificationsState {
             fetchingAnnotations: null | ErrorState;
             undo: null | ErrorState;
             redo: null | ErrorState;
+            search: null | ErrorState;
         };
 
         [index: string]: any;
@@ -321,6 +330,7 @@ export interface AnnotationState {
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;
+        activeInitialState?: any;
     };
     annotations: {
         selectedStatesID: number[];
@@ -328,6 +338,8 @@ export interface AnnotationState {
         collapsed: Record<number, boolean>;
         states: any[];
         filters: string[];
+        filtersHistory: string[];
+        resetGroupFlag: boolean;
         history: {
             undo: string[];
             redo: string[];
@@ -414,6 +426,10 @@ export interface SettingsState {
     player: PlayerSettingsState;
 }
 
+export interface ShortcutsState {
+    visibleShortcutsHelp: boolean;
+}
+
 export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
@@ -426,4 +442,5 @@ export interface CombinedState {
     notifications: NotificationsState;
     annotation: AnnotationState;
     settings: SettingsState;
+    shortcuts: ShortcutsState;
 }

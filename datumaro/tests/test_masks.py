@@ -68,15 +68,7 @@ class PolygonConversionsTest(TestCase):
             self.assertTrue(np.array_equal(e_mask, c_mask),
                 '#%s: %s\n%s\n' % (i, e_mask, c_mask))
 
-    def test_mask_to_rle(self):
-        source_mask = np.array([
-            [0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
-            [0, 0, 1, 1, 0, 1, 0, 1, 0, 0],
-            [0, 0, 0, 1, 0, 1, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ])
-
+    def _test_mask_to_rle(self, source_mask):
         rle_uncompressed = mask_tools.mask_to_rle(source_mask)
 
         from pycocotools import mask as mask_utils
@@ -86,6 +78,43 @@ class PolygonConversionsTest(TestCase):
 
         self.assertTrue(np.array_equal(source_mask, resulting_mask),
             '%s\n%s\n' % (source_mask, resulting_mask))
+
+    def test_mask_to_rle_multi(self):
+        cases = [
+            np.array([
+                [0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
+                [0, 0, 1, 1, 0, 1, 0, 1, 0, 0],
+                [0, 0, 0, 1, 0, 1, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ]),
+
+            np.array([
+                [0]
+            ]),
+            np.array([
+                [1]
+            ]),
+
+            np.array([
+                [1, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 0, 1, 1, 1, 0, 0, 0],
+                [1, 1, 0, 1, 0, 1, 1, 1, 1, 0],
+                [1, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+                [1, 1, 0, 0, 1, 1, 0, 0, 0, 1],
+                [0, 0, 1, 0, 0, 0, 1, 1, 1, 1],
+                [1, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                [1, 1, 1, 1, 1, 0, 1, 0, 1, 0],
+                [0, 1, 0, 1, 1, 1, 1, 1, 0, 0],
+                [0, 1, 0, 0, 0, 1, 0, 0, 1, 0],
+                [1, 1, 0, 1, 0, 0, 1, 1, 1, 1],
+            ])
+        ]
+
+        for case in cases:
+            self._test_mask_to_rle(case)
 
 class ColormapOperationsTest(TestCase):
     def test_can_paint_mask(self):

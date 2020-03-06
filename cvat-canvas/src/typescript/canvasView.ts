@@ -472,21 +472,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             'stroke-width': consts.POINTS_STROKE_WIDTH / self.geometry.scale,
                         });
 
-                    circle.node.addEventListener('mouseenter', (): void => {
+                    circle.on('mouseenter', (): void => {
                         circle.attr({
                             'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / self.geometry.scale,
                         });
 
-                        circle.node.addEventListener('dblclick', dblClickHandler);
+                        circle.on('dblclick', dblClickHandler);
                         circle.addClass('cvat_canvas_selected_point');
                     });
 
-                    circle.node.addEventListener('mouseleave', (): void => {
+                    circle.on('mouseleave', (): void => {
                         circle.attr({
                             'stroke-width': consts.POINTS_STROKE_WIDTH / self.geometry.scale,
                         });
 
-                        circle.node.removeEventListener('dblclick', dblClickHandler);
+                        circle.off('dblclick', dblClickHandler);
                         circle.removeClass('cvat_canvas_selected_point');
                     });
 
@@ -632,7 +632,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (![Mode.ZOOM_CANVAS, Mode.GROUP].includes(this.mode) || event.which === 2) {
                     self.controller.enableDrag(event.clientX, event.clientY);
                 }
-                event.preventDefault();
             }
         });
 
@@ -1340,12 +1339,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private setupPoints(basicPolyline: SVG.PolyLine, state: any): any {
         this.selectize(true, basicPolyline);
 
-        const group = basicPolyline.remember('_selectHandler').nested
+        const group: SVG.G = basicPolyline.remember('_selectHandler').nested
             .addClass('cvat_canvas_shape').attr({
                 clientID: state.clientID,
                 id: `cvat_canvas_shape_${state.clientID}`,
                 'data-z-order': state.zOrder,
             });
+
+        group.on('click.canvas', (event: MouseEvent): void => {
+            // Need to redispatch the event on another element
+            basicPolyline.fire(new MouseEvent('click', event));
+        });
 
         group.bbox = basicPolyline.bbox.bind(basicPolyline);
         group.clone = basicPolyline.clone.bind(basicPolyline);

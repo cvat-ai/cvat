@@ -864,7 +864,7 @@
                 : (frame) => frame - 1;
             for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
                 // First prepare all data for the frame
-                // Consider all shapes, tags, and tracks that have keyframe here
+                // Consider all shapes, tags, and not outside tracks that have keyframe here
                 // In particular consider first and last frame as keyframes for all frames
                 const statesData = [].concat(
                     (frame in this.shapes ? this.shapes[frame] : [])
@@ -878,7 +878,10 @@
                         || frame === frameFrom
                         || frame === frameTo
                     ));
-                statesData.push(...tracks.map((track) => track.get(frame)));
+                statesData.push(
+                    ...tracks.map((track) => track.get(frame))
+                        .filter((state) => !state.outside),
+                );
 
                 // Nothing to filtering, go to the next iteration
                 if (!statesData.length) {

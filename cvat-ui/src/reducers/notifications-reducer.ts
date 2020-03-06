@@ -50,6 +50,7 @@ const defaultState: NotificationsState = {
             starting: null,
             deleting: null,
             fetching: null,
+            canceling: null,
             metaFetching: null,
             inferenceStatusFetching: null,
         },
@@ -72,6 +73,7 @@ const defaultState: NotificationsState = {
             fetchingAnnotations: null,
             undo: null,
             redo: null,
+            search: null,
         },
     },
     messages: {
@@ -432,7 +434,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ModelsActionTypes.INFER_MODEL_FAILED: {
+        case ModelsActionTypes.START_INFERENCE_FAILED: {
             const { taskID } = action.payload;
             return {
                 ...state,
@@ -442,6 +444,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.models,
                         starting: {
                             message: 'Could not infer model for the '
+                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ModelsActionTypes.CANCEL_INFERENCE_FAILED: {
+            const { taskID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    models: {
+                        ...state.errors.models,
+                        canceling: {
+                            message: 'Could not cancel model inference for the '
                                 + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
@@ -726,6 +745,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         undo: {
                             message: 'Could not undo',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SEARCH_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        search: {
+                            message: 'Could not execute search annotations',
                             reason: action.payload.error.toString(),
                         },
                     },

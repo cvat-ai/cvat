@@ -339,6 +339,11 @@
 
             if (updated.keyframe) {
                 checkObjectType('keyframe', data.keyframe, 'boolean', null);
+                if (!this.shapes || (Object.keys(this.shapes).length === 1 && !data.keyframe)) {
+                    throw new ArgumentError(
+                        'Can not remove the latest keyframe of an object. Consider removing the object instead',
+                    );
+                }
             }
 
             return fittedPoints;
@@ -964,7 +969,8 @@
             const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
 
-            if ((keyframe && wasKeyframe) || (!keyframe && !wasKeyframe)) {
+            if ((keyframe && wasKeyframe)
+                || (!keyframe && !wasKeyframe)) {
                 return;
             }
 
@@ -1088,7 +1094,7 @@
 
             throw new DataError(
                 'No one left position or right position was found. '
-                + `Interpolation impossible. Client ID: ${this.id}`,
+                + `Interpolation impossible. Client ID: ${this.clientID}`,
             );
         }
     }

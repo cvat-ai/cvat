@@ -415,7 +415,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 outside=True,
                 keyframe=True,
                 z_order=shape.z_order,
-                frame=shape.frame + 1,
+                frame=shape.frame + annotations.frame_step,
                 attributes=shape.attributes,
             ),
             ],
@@ -466,7 +466,7 @@ def load(file_object, annotations):
             if el.tag == 'attribute' and attributes is not None:
                 attributes.append(annotations.Attribute(
                     name=el.attrib['name'],
-                    value=el.text,
+                    value=el.text or "",
                 ))
             if el.tag in supported_shapes:
                 if track is not None:
