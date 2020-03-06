@@ -622,7 +622,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     def data_info(request, pk):
         db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
 
-        if db_task.mode == 'interpolation':
+        if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
         else:
             media = list(db_task.data.images.order_by('frame'))

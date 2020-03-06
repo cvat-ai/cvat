@@ -187,13 +187,12 @@
                 provider.frame(this.number).then((frame) => {
                     if (frame === null) {
                         onServerRequest();
+                        const activeRequest = frameDataCache[this.tid].activeChunkRequest;
                         if (!provider.isChunkCached(start, stop)) {
-                            if (!frameDataCache[this.tid].activeChunkRequest
-                                || (frameDataCache[this.tid].activeChunkRequest
-                                && frameDataCache[this.tid].activeChunkRequest.completed
-                                && frameDataCache[this.tid].activeChunkRequest.chunkNumber
-                                    !== chunkNumber)) {
-                                const activeRequest = frameDataCache[this.tid].activeChunkRequest;
+                            if (!activeRequest
+                                || (activeRequest
+                                && activeRequest.completed
+                                && activeRequest.chunkNumber !== chunkNumber)) {
                                 if (activeRequest && activeRequest.rejectRequestAll) {
                                     activeRequest.rejectRequestAll();
                                 }
@@ -212,9 +211,13 @@
                                     }],
                                 };
                                 makeActiveRequest();
-                            } else if (frameDataCache[this.tid].activeChunkRequest.chunkNumber
-                                        === chunkNumber) {
-                                frameDataCache[this.tid].activeChunkRequest.callbacks.push({
+                            } else if (activeRequest.chunkNumber === chunkNumber) {
+                                if (!activeRequest.onDecodeAll
+                                    && !activeRequest.rejectRequestAll) {
+                                    activeRequest.onDecodeAll = onDecodeAll;
+                                    activeRequest.rejectRequestAll = rejectRequestAll;
+                                }
+                                activeRequest.callbacks.push({
                                     resolve: resolveWrapper,
                                     reject,
                                     frameNumber: this.number,
@@ -242,7 +245,7 @@
                                 };
                             }
                         } else {
-                            frameDataCache[this.tid].activeChunkRequest.callbacks.push({
+                            activeRequest.callbacks.push({
                                 resolve: resolveWrapper,
                                 reject,
                                 frameNumber: this.number,
