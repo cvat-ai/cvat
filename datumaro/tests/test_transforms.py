@@ -3,10 +3,12 @@ import numpy as np
 from unittest import TestCase
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    Mask, Polygon, PolyLine, Points, Bbox
+    Mask, Polygon, PolyLine, Points, Bbox, Label,
+    LabelCategories, MaskCategories, AnnotationType
 )
-from datumaro.util.test_utils import compare_datasets
+import datumaro.util.mask_tools as mask_tools
 import datumaro.plugins.transforms as transforms
+from datumaro.util.test_utils import compare_datasets
 
 
 class TransformsTest(TestCase):
@@ -361,3 +363,95 @@ class TransformsTest(TestCase):
                 ('train', -0.5),
                 ('test', 1.5),
             ])
+
+    def test_remap_labels(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, annotations=[
+                        # Should be remapped
+                        Label(1),
+                        Bbox(1, 2, 3, 4, label=2),
+                        Mask(image=np.array([1]), label=3),
+
+                        # Should be kept
+                        Polygon([1, 1, 2, 2, 3, 4], label=4),
+                        PolyLine([1, 3, 4, 2, 5, 6], label=None)
+                    ]),
+                ])
+
+            def categories(self):
+                label_cat = LabelCategories()
+                label_cat.add('label0')
+                label_cat.add('label1')
+                label_cat.add('label2')
+                label_cat.add('label3')
+                label_cat.add('label4')
+
+                mask_cat = MaskCategories(
+                    colormap=mask_tools.generate_colormap(5))
+
+                return {
+                    AnnotationType.label: label_cat,
+                    AnnotationType.mask: mask_cat,
+                }
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, annotations=[
+                        Label(1),
+                        Bbox(1, 2, 3, 4, label=0),
+                        Mask(image=np.array([1]), label=1),
+
+                        Polygon([1, 1, 2, 2, 3, 4], label=2),
+                        PolyLine([1, 3, 4, 2, 5, 6], label=None)
+                    ]),
+                ])
+
+            def categories(self):
+                label_cat = LabelCategories()
+                label_cat.add('label0')
+                label_cat.add('label9')
+                label_cat.add('label4')
+
+                mask_cat = MaskCategories(colormap={
+                    k: v for k, v in mask_tools.generate_colormap(5).items()
+                    if k in { 0, 1, 3, 4 }
+                })
+
+                return {
+                    AnnotationType.label: label_cat,
+                    AnnotationType.mask: mask_cat,
+                }
+
+        actual = transforms.RemapLabels(SrcExtractor(), mapping={
+            'label1': 'label9',
+            'label2': 'label0',
+            'label3': 'label9',
+        }, default='keep')
+
+        compare_datasets(self, DstExtractor(), actual)
+
+    def test_remap_labels_delete_unspecified(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([ DatasetItem(id=1, annotations=[ Label(0) ]) ])
+
+            def categories(self):
+                label_cat = LabelCategories()
+                label_cat.add('label0')
+
+                return { AnnotationType.label: label_cat }
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([ DatasetItem(id=1, annotations=[]) ])
+
+            def categories(self):
+                return { AnnotationType.label: LabelCategories() }
+
+        actual = transforms.RemapLabels(SrcExtractor(),
+            mapping={}, default='delete')
+
+        compare_datasets(self, DstExtractor(), actual)

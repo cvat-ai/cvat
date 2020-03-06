@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
@@ -80,15 +79,10 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     };
 }
 
-function AnnotationPageContainer(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <AnnotationPageComponent {...props} />
-    );
-}
 
 export default withRouter(
     connect(
         mapStateToProps,
         mapDispatchToProps,
-    )(AnnotationPageContainer),
+    )(AnnotationPageComponent),
 );

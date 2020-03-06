@@ -278,7 +278,10 @@ class _InstancesConverter(_TaskConverter):
 
         is_crowd = mask is not None
         if is_crowd:
-            segmentation = mask
+            segmentation = {
+                'counts': list(int(c) for c in mask['counts']),
+                'size': list(int(c) for c in mask['size'])
+            }
         else:
             segmentation = [list(map(float, p)) for p in polygons]
 

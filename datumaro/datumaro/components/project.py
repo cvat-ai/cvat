@@ -634,6 +634,8 @@ class ProjectDataset(Dataset):
         return self._sources
 
     def _save_branch_project(self, extractor, save_dir=None):
+        extractor = Dataset.from_extractors(extractor) # apply lazy transforms
+
         # NOTE: probably this function should be in the ViewModel layer
         save_dir = osp.abspath(save_dir)
         if save_dir:

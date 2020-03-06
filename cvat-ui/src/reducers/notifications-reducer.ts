@@ -73,6 +73,7 @@ const defaultState: NotificationsState = {
             fetchingAnnotations: null,
             undo: null,
             redo: null,
+            search: null,
         },
     },
     messages: {
@@ -744,6 +745,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         undo: {
                             message: 'Could not undo',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SEARCH_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        search: {
+                            message: 'Could not execute search annotations',
                             reason: action.payload.error.toString(),
                         },
                     },
