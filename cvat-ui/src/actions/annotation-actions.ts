@@ -542,31 +542,10 @@ export function editShape(enabled: boolean): AnyAction {
 }
 
 export function copyShape(objectState: any): AnyAction {
-    const state = getStore().getState();
-
-    state.annotation.canvas.instance.cancel();
-    if (objectState.objectType !== ObjectType.TAG) {
-        state.annotation.canvas.instance.draw({
-            enabled: true,
-            initialState: objectState,
-        });
-    }
-
-    let activeControl = ActiveControl.CURSOR;
-    if (objectState.shapeType === ShapeType.RECTANGLE) {
-        activeControl = ActiveControl.DRAW_RECTANGLE;
-    } else if (objectState.shapeType === ShapeType.POINTS) {
-        activeControl = ActiveControl.DRAW_POINTS;
-    } else if (objectState.shapeType === ShapeType.POLYGON) {
-        activeControl = ActiveControl.DRAW_POLYGON;
-    } else if (objectState.shapeType === ShapeType.POLYLINE) {
-        activeControl = ActiveControl.DRAW_POLYLINE;
-    }
-
     return {
         type: AnnotationActionTypes.COPY_SHAPE,
         payload: {
-            activeControl,
+            objectState,
         },
     };
 }
@@ -1175,11 +1154,25 @@ export function searchAnnotationsAsync(
 export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const initialState = getStore().getState().annotation.drawing.activeInitialState;
-        const { instance: canvasInstance } = getStore().getState().annotation.canvas;
+        const {
+            canvas: {
+                instance: canvasInstance,
+            },
+            job: {
+                instance: jobInstance,
+            },
+            player: {
+                frame: {
+                    number: frameNumber,
+                },
+            },
+        } = getStore().getState().annotation;
 
         if (initialState) {
-            let activeControl = ActiveControl.DRAW_RECTANGLE;
-            if (initialState.shapeType === ShapeType.POINTS) {
+            let activeControl = ActiveControl.CURSOR;
+            if (initialState.shapeType === ShapeType.RECTANGLE) {
+                activeControl = ActiveControl.DRAW_RECTANGLE;
+            } else if (initialState.shapeType === ShapeType.POINTS) {
                 activeControl = ActiveControl.DRAW_POINTS;
             } else if (initialState.shapeType === ShapeType.POLYGON) {
                 activeControl = ActiveControl.DRAW_POLYGON;
@@ -1195,10 +1188,20 @@ export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction>
             });
 
             canvasInstance.cancel();
-            canvasInstance.draw({
-                enabled: true,
-                initialState,
-            });
+            if (initialState.objectType === ObjectType.TAG) {
+                const state = new cvat.classes.ObjectState({
+                    objectType: initialState.objectType,
+                    label: initialState.label,
+                    frame: frameNumber,
+
+                });
+                dispatch(createAnnotationsAsync(jobInstance, frameNumber, [state]));
+            } else {
+                canvasInstance.draw({
+                    enabled: true,
+                    initialState,
+                });
+            }
         }
     };
 }

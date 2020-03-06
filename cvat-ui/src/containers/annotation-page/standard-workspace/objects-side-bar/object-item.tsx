@@ -226,21 +226,9 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const {
             objectState,
             copyShape,
-            jobInstance,
-            frameNumber,
-            createAnnotations,
         } = this.props;
 
         copyShape(objectState);
-        if (objectState.objectType === ObjectType.TAG) {
-            const state = new cvat.classes.ObjectState({
-                objectType: objectState.objectType,
-                label: objectState.label,
-                frame: frameNumber,
-
-            });
-            createAnnotations(jobInstance, frameNumber, [state]);
-        }
     };
 
     private propagate = (): void => {
