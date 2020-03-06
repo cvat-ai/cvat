@@ -318,6 +318,9 @@ class _Converter:
                     self.save_segm_lists(subset_name, segm_list)
 
     def save_action_lists(self, subset_name, action_list):
+        if not action_list:
+            return
+
         os.makedirs(self._action_subsets_dir, exist_ok=True)
 
         ann_file = osp.join(self._action_subsets_dir, subset_name + '.txt')
@@ -343,10 +346,10 @@ class _Converter:
                             (item, 1 + obj_id, 1 if presented else -1))
 
     def save_class_lists(self, subset_name, class_lists):
-        os.makedirs(self._cls_subsets_dir, exist_ok=True)
-
-        if len(class_lists) == 0:
+        if not class_lists:
             return
+
+        os.makedirs(self._cls_subsets_dir, exist_ok=True)
 
         for label in self._label_map:
             ann_file = osp.join(self._cls_subsets_dir,
@@ -361,6 +364,9 @@ class _Converter:
                     f.write('%s % d\n' % (item, 1 if presented else -1))
 
     def save_clsdet_lists(self, subset_name, clsdet_list):
+        if not clsdet_list:
+            return
+
         os.makedirs(self._cls_subsets_dir, exist_ok=True)
 
         ann_file = osp.join(self._cls_subsets_dir, subset_name + '.txt')
@@ -369,6 +375,9 @@ class _Converter:
                 f.write('%s\n' % item)
 
     def save_segm_lists(self, subset_name, segm_list):
+        if not segm_list:
+            return
+
         os.makedirs(self._segm_subsets_dir, exist_ok=True)
 
         ann_file = osp.join(self._segm_subsets_dir, subset_name + '.txt')
@@ -377,6 +386,9 @@ class _Converter:
                 f.write('%s\n' % item)
 
     def save_layout_lists(self, subset_name, layout_list):
+        if not layout_list:
+            return
+
         os.makedirs(self._layout_subsets_dir, exist_ok=True)
 
         ann_file = osp.join(self._layout_subsets_dir, subset_name + '.txt')
