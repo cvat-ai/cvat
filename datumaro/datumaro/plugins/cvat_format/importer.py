@@ -15,18 +15,15 @@ from .format import CvatPath
 class CvatImporter(Importer):
     EXTRACTOR_NAME = 'cvat'
 
+    @classmethod
+    def detect(cls, path):
+        return len(cls.find_subsets(path)) != 0
+
     def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
         project = Project()
 
-        if path.endswith('.xml') and osp.isfile(path):
-            subset_paths = [path]
-        else:
-            subset_paths = glob(osp.join(path, '*.xml'))
-
-            if osp.basename(osp.normpath(path)) != CvatPath.ANNOTATIONS_DIR:
-                path = osp.join(path, CvatPath.ANNOTATIONS_DIR)
-            subset_paths += glob(osp.join(path, '*.xml'))
+        subset_paths = self.find_subsets(path)
 
         if len(subset_paths) == 0:
             raise Exception("Failed to find 'cvat' dataset at '%s'" % path)
@@ -46,3 +43,15 @@ class CvatImporter(Importer):
             })
 
         return project
+
+    @staticmethod
+    def find_subsets(path):
+        if path.endswith('.xml') and osp.isfile(path):
+            subset_paths = [path]
+        else:
+            subset_paths = glob(osp.join(path, '*.xml'))
+
+            if osp.basename(osp.normpath(path)) != CvatPath.ANNOTATIONS_DIR:
+                path = osp.join(path, CvatPath.ANNOTATIONS_DIR)
+                subset_paths += glob(osp.join(path, '*.xml'))
+        return subset_paths

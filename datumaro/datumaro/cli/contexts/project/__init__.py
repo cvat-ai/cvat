@@ -132,8 +132,8 @@ def build_import_parser(parser_ctor=argparse.ArgumentParser):
         help="Overwrite existing files in the save directory")
     parser.add_argument('-i', '--input-path', required=True, dest='source',
         help="Path to import project from")
-    parser.add_argument('-f', '--format', required=True,
-        help="Source project format")
+    parser.add_argument('-f', '--format',
+        help="Source project format. Will try to detect, if not specified.")
     parser.add_argument('extra_args', nargs=argparse.REMAINDER,
         help="Additional arguments for importer (pass '-- -h' for help)")
     parser.set_defaults(command=import_command)
@@ -164,22 +164,53 @@ def import_command(args):
     if project_name is None:
         project_name = osp.basename(project_dir)
 
-    try:
-        env = Environment()
-        importer = env.make_importer(args.format)
-    except KeyError:
-        raise CliException("Importer for format '%s' is not found" % \
-            args.format)
+    env = Environment()
+    log.info("Importing project from '%s'" % args.source)
 
-    extra_args = {}
-    if hasattr(importer, 'from_cmdline'):
-        extra_args = importer.from_cmdline(args.extra_args)
+    if not args.format:
+        if args.extra_args:
+            raise CliException("Extra args can not be used without format")
 
-    log.info("Importing project from '%s' as '%s'" % \
-        (args.source, args.format))
+        log.info("Trying to detect dataset format...")
+
+        matches = []
+        for format_name in env.importers.items:
+            log.debug("Checking '%s' format...", format_name)
+            importer = env.make_importer(format_name)
+            try:
+                match = importer.detect(args.source)
+                if match:
+                    log.debug("format matched")
+                    matches.append((format_name, importer))
+            except NotImplementedError:
+                log.debug("Format '%s' does not support auto detection.",
+                    format_name)
+
+        if len(matches) == 0:
+            log.error("Failed to detect dataset format automatically. "
+                "Try to specify format with '-f/--format' parameter.")
+            return 1
+        elif len(matches) != 1:
+            log.error("Multiple formats match the dataset: %s. "
+                "Try to specify format with '-f/--format' parameter.",
+                ', '.join(m[0] for m in matches))
+            return 2
+
+        format_name, importer = matches[0]
+        args.format = format_name
+    else:
+        try:
+            importer = env.make_importer(args.format)
+            if hasattr(importer, 'from_cmdline'):
+                extra_args = importer.from_cmdline(args.extra_args)
+        except KeyError:
+            raise CliException("Importer for format '%s' is not found" % \
+                args.format)
+
+    log.info("Importing project as '%s'" % args.format)
 
     source = osp.abspath(args.source)
-    project = importer(source, **extra_args)
+    project = importer(source, **locals().get('extra_args', {}))
     project.config.project_name = project_name
     project.config.project_dir = project_dir
 

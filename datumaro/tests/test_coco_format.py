@@ -136,6 +136,12 @@ class CocoImporterTest(TestCase):
 
             compare_datasets(self, DstExtractor(), dataset)
 
+    def test_can_detect(self):
+        with TestDir() as test_dir:
+            self.COCO_dataset_generate(test_dir)
+
+            self.assertTrue(CocoImporter.detect(test_dir))
+
 class CocoConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
             target_dataset=None, importer_args=None):
