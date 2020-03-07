@@ -23,7 +23,7 @@ class InterpreterScript:
             script = f.read()
 
         context = {}
-        exec(script, context, context)
+        exec(script, context, context) # nosec
 
         process_outputs = context['process_outputs']
         assert callable(process_outputs)
@@ -49,8 +49,8 @@ class OpenVinoLauncher(Launcher):
     def _check_instruction_set(instruction):
         return instruction == str.strip(
             subprocess.check_output(
-                'lscpu | grep -o "{}" | head -1'.format(instruction), shell=True
-            ).decode('utf-8')
+                'lscpu | grep -o "{}" | head -1'.format(instruction),
+                shell=True).decode('utf-8') # nosec
         )
 
     @staticmethod

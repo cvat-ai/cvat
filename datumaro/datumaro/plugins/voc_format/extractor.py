@@ -7,7 +7,7 @@ from collections import defaultdict
 import logging as log
 import os
 import os.path as osp
-from xml.etree import ElementTree as ET
+from defusedxml import ElementTree
 
 from datumaro.components.extractor import (SourceExtractor, Extractor,
     DEFAULT_SUBSET_NAME, DatasetItem,
@@ -138,7 +138,7 @@ class VocExtractor(SourceExtractor):
         if det_annotations is not None:
             det_annotations = det_annotations.get(item_id)
         if det_annotations is not None:
-            root_elem = ET.fromstring(det_annotations)
+            root_elem = ElementTree.fromstring(det_annotations)
             height = root_elem.find('size/height')
             if height is not None:
                 height = int(height.text)
@@ -230,7 +230,7 @@ class VocExtractor(SourceExtractor):
         if det_annotations is not None:
             det_annotations = det_annotations.get(item_id)
         if det_annotations is not None:
-            root_elem = ET.fromstring(det_annotations)
+            root_elem = ElementTree.fromstring(det_annotations)
 
             for obj_id, object_elem in enumerate(root_elem.findall('object')):
                 obj_id += 1
@@ -657,7 +657,7 @@ class VocComp_7_8_Extractor(VocResultsExtractor):
                 continue
 
             layouts = {}
-            root = ET.parse(osp.join(task_dir, ann_file + ann_ext))
+            root = ElementTree.parse(osp.join(task_dir, ann_file + ann_ext))
             root_elem = root.getroot()
             for layout_elem in root_elem.findall('layout'):
                 item = layout_elem.find('image').text

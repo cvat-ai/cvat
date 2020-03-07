@@ -58,6 +58,7 @@ setuptools.setup(
         'pycocotools',
         'scikit-image',
         'tensorboardX',
+        'defusedxml',
     ],
     extras_require={
         'tf': ['tensorflow'],
