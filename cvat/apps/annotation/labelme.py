@@ -29,7 +29,7 @@ _MASKS_DIR = 'Masks'
 
 def dump_frame_anno(frame_annotation):
     from collections import defaultdict
-    from lxml import etree as ET
+    from lxml import etree as ET # nosec (we generate xml)
 
     root_elem = ET.Element('annotation')
 
@@ -119,7 +119,7 @@ def dump_as_labelme_annotation(file_object, annotations):
 def parse_xml_annotations(xml_data, annotations, input_zip):
     from cvat.apps.annotation.coco import mask_to_polygon
     from io import BytesIO
-    from lxml import etree as ET
+    from defusedxml import ElementTree
     import numpy as np
     import os.path as osp
     from PIL import Image
@@ -141,7 +141,7 @@ def parse_xml_annotations(xml_data, annotations, input_zip):
         return parsed
 
 
-    root_elem = ET.fromstring(xml_data)
+    root_elem = ElementTree.fromstring(xml_data)
 
     frame_number = annotations.match_frame(root_elem.find('filename').text)
 

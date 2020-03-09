@@ -425,8 +425,8 @@ def dump_as_cvat_interpolation(file_object, annotations):
     dumper.close_root()
 
 def load(file_object, annotations):
-    import xml.etree.ElementTree as et
-    context = et.iterparse(file_object, events=("start", "end"))
+    from defusedxml import ElementTree
+    context = ElementTree.iterparse(file_object, events=("start", "end"))
     context = iter(context)
     ev, _ = next(context)
 

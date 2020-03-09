@@ -28,7 +28,7 @@ import re
 
 def _have_no_access_exception(ex):
     if 'Permission denied' in ex.stderr or 'Could not read from remote repository' in ex.stderr:
-        keys = subprocess.run(['ssh-add -L'], shell = True,
+        keys = subprocess.run(['ssh-add -L'],
             stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
         keys = list(filter(len, list(map(lambda x: x.strip(), keys))))
         raise Exception(
@@ -283,7 +283,7 @@ class Git:
 
         ext = os.path.splitext(self._path)[1]
         if ext == '.zip':
-            subprocess.call('zip -j -r "{}" "{}"'.format(self._annotation_file, dump_name), shell=True)
+            subprocess.call('zip -j -r "{}" "{}"'.format(self._annotation_file, dump_name))
         elif ext == '.xml':
             shutil.copyfile(dump_name, self._annotation_file)
         else:

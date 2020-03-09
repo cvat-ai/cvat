@@ -16,7 +16,7 @@ def register_format(format_file):
     global_vars = {
         "__builtins__": {},
     }
-    exec(source_code, global_vars)
+    exec(source_code, global_vars) # nosec
     if "format_spec" not in global_vars or not isinstance(global_vars["format_spec"], dict):
         raise Exception("Could not find \'format_spec\' definition in format file specification")
 

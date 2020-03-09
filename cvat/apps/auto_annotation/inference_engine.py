@@ -14,8 +14,8 @@ _IE_PLUGINS_PATH = os.getenv("IE_PLUGINS_PATH", None)
 def _check_instruction(instruction):
     return instruction == str.strip(
         subprocess.check_output(
-            'lscpu | grep -o "{}" | head -1'.format(instruction), shell=True
-        ).decode('utf-8')
+            'lscpu | grep -o "{}" | head -1'.format(instruction),
+            shell=True).decode('utf-8') # nosec
     )
 
 

@@ -212,18 +212,22 @@ def _download_data(urls, upload_dir):
         name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
         if name in local_files:
             raise Exception("filename collision: {}".format(name))
+        if not url.lower().startswith("http"):
+            raise ValueError("Remote URLs should have http(s) scheme")
+
         slogger.glob.info("Downloading: {}".format(url))
         job.meta['status'] = '{} is being downloaded..'.format(url)
         job.save_meta()
 
         req = urlrequest.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         try:
-            with urlrequest.urlopen(req) as fp, open(os.path.join(upload_dir, name), 'wb') as tfp:
-                while True:
-                    block = fp.read(8192)
-                    if not block:
-                        break
-                    tfp.write(block)
+            with urlrequest.urlopen(req) as remote_file: # nosec
+                with open(os.path.join(upload_dir, name), 'wb') as local_file:
+                    while True:
+                        block = remote_file.read(8192)
+                        if not block:
+                            break
+                        local_file.write(block)
         except urlerror.HTTPError as err:
             raise Exception("Failed to download " + url + ". " + str(err.code) + ' - ' + err.reason)
         except urlerror.URLError as err:
