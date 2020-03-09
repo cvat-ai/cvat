@@ -27,7 +27,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
     ```sh
     sudo apt-get update
-    sudo apt-get install -y \
+    sudo apt-get --no-install-recommends install -y \
       apt-transport-https \
       ca-certificates \
       curl \
@@ -39,7 +39,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
       $(lsb_release -cs) \
       stable"
     sudo apt-get update
-    sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+    sudo apt-get --no-install-recommends install -y docker-ce docker-ce-cli containerd.io
     ```
 
 -   Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
@@ -57,7 +57,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     defining and running multi-container docker applications.
 
     ```bash
-    sudo apt-get install -y python3-pip
+    sudo apt-get --no-install-recommends install -y python3-pip
     sudo python3 -m pip install docker-compose
     ```
 
@@ -65,7 +65,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     [GitHub repository](https://github.com/opencv/cvat).
 
     ```bash
-    sudo apt-get install -y git
+    sudo apt-get --no-install-recommends install -y git
     git clone https://github.com/opencv/cvat
     cd cvat
     ```
@@ -103,7 +103,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
     sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
     sudo apt-get update
-    sudo apt-get install -y google-chrome-stable
+    sudo apt-get --no-install-recommends install -y google-chrome-stable
     ```
 
 -   Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
