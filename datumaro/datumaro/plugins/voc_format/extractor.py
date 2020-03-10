@@ -7,7 +7,7 @@ from collections import defaultdict
 import logging as log
 import numpy as np
 import os.path as osp
-from xml.etree import ElementTree as ET
+from defusedxml import ElementTree
 
 from datumaro.components.extractor import (SourceExtractor,
     DEFAULT_SUBSET_NAME, DatasetItem,
@@ -121,7 +121,7 @@ class _VocXmlExtractor(_VocExtractor):
             anns = []
             ann_file = osp.join(anno_dir, item_id + '.xml')
             if osp.isfile(ann_file):
-                root_elem = ET.parse(ann_file)
+                root_elem = ElementTree.parse(ann_file)
                 height = root_elem.find('size/height')
                 if height is not None:
                     height = int(height.text)
