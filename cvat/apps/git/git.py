@@ -283,7 +283,7 @@ class Git:
 
         ext = os.path.splitext(self._path)[1]
         if ext == '.zip':
-            subprocess.call('7z a "{}" "{}"'.format(self._annotation_file, dump_name), shell=True)
+            subprocess.run(args=['7z', 'a', self._annotation_file, dump_name])
         elif ext == '.xml':
             shutil.copyfile(dump_name, self._annotation_file)
         else:
