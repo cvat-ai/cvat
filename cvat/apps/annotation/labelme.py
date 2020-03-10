@@ -29,7 +29,10 @@ _MASKS_DIR = 'Masks'
 
 def dump_frame_anno(frame_annotation):
     from collections import defaultdict
-    from lxml import etree as ET # nosec (we generate xml)
+    # Let's ignore a warning from bandit about using lxml in the function.
+    # It isn't a security issue because we generate xml here and don't
+    # accept a user input.
+    from lxml import etree as ET # nosec
 
     root_elem = ET.Element('annotation')
 
