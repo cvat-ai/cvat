@@ -308,13 +308,14 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         input_w = images[0][0].width
         input_h = images[0][0].height
+        pix_format = images[0][0].format.name
 
         output_container, output_v_stream = self._create_av_container(
             path=chunk_path,
             w=input_w,
             h=input_h,
             rate=self._output_fps,
-            pix_format='yuv420p',
+            pix_format=pix_format,
             options={
                 "crf": str(self._image_quality),
                 "preset": "ultrafast",
@@ -359,6 +360,12 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
 
         output_h = input_h // downscale_factor
         output_w = input_w // downscale_factor
+
+        # width and height must be divisible by 2
+        if output_h % 2:
+            output_h += 1
+        if output_w % 2:
+            output_w +=1
 
         output_container, output_v_stream = self._create_av_container(
             path=chunk_path,

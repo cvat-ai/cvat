@@ -177,7 +177,7 @@ class Annotation:
         return self._get_attribute_id(label_id, attribute_name, 'immutable')
 
     def _init_frame_info(self):
-        if self._db_task.mode == "interpolation":
+        if hasattr(self._db_task, 'video'):
             self._frame_info = {
                 frame: {
                     "path": "frame_{:06d}".format(frame),
@@ -250,7 +250,7 @@ class Annotation:
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
 
-        if self._db_task.mode == "interpolation":
+        if hasattr(self._db_task.data, "video"):
             self._meta["task"]["original_size"] = OrderedDict([
                 ("width", str(self._db_task.data.video.width)),
                 ("height", str(self._db_task.data.video.height))
