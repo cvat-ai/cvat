@@ -1016,6 +1016,13 @@
                         data.image_quality = quality;
                     },
                 },
+                /**
+                    * @name useZipChunks
+                    * @type {boolean}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
                 useZipChunks: {
                     get: () => data.use_zip_chunks,
                     set: (useZipChunks) => {
@@ -1557,6 +1564,9 @@
         }
         if (typeof (this.frameFilter) !== 'undefined') {
             taskDataSpec.frame_filter = this.frameFilter;
+        }
+        if (typeof (this.dataChunkSize) !== 'undefined') {
+            taskDataSpec.chunk_size = this.dataChunkSize;
         }
 
         const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);

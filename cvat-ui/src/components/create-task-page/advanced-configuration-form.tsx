@@ -30,6 +30,7 @@ export interface AdvancedConfiguration {
     lfs: boolean;
     repository?: string;
     useZipChunks: boolean;
+    dataChunkSize: number;
 }
 
 type Props = FormComponentProps & {
@@ -308,6 +309,20 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderChunkSize(): JSX.Element {
+        const { form } = this.props;
+
+        return (
+            <Form.Item label={<span>Chunk size</span>}>
+                <Tooltip title='Defines a number of frames in one chunk'>
+                    {form.getFieldDecorator('dataChunkSize')(
+                        <Input size='large' type='number' />,
+                    )}
+                </Tooltip>
+            </Form.Item>
+        );
+    }
+
     public render(): JSX.Element {
         const { installedGit } = this.props;
 
@@ -346,6 +361,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     </Col>
                     <Col span={7} offset={1}>
                         {this.renderFrameStep()}
+                    </Col>
+                </Row>
+
+                <Row type='flex' justify='start'>
+                    <Col span={7}>
+                        {this.renderChunkSize()}
                     </Col>
                 </Row>
 

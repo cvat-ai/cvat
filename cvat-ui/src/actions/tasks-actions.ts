@@ -413,6 +413,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         if (data.advanced.imageQuality) {
             description.image_quality = data.advanced.imageQuality;
         }
+        if (data.advanced.dataChunkSize) {
+            description.data_chunk_size = data.advanced.dataChunkSize;
+        }
 
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
