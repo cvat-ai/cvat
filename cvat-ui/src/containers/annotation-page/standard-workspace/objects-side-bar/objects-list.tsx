@@ -462,14 +462,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             COPY_SHAPE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedStated();
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state) {
                     copyShape(state);
                 }
             },
             PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedStated();
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state) {
                     propagateObject(state);
                 }
             },

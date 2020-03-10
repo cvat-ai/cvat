@@ -7,32 +7,26 @@ import { connect } from 'react-redux';
 
 import {
     CombinedState,
-    ObjectType,
 } from 'reducers/interfaces';
 
 import {
-    createAnnotationsAsync,
+    addTagAsync,
 } from 'actions/annotation-actions';
-import { Canvas } from 'cvat-canvas';
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
-import getCore from 'cvat-core';
 
-const cvat = getCore();
 interface DispatchToProps {
-    onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onAddTag(labelID: number, frame: number): void;
 }
 
 interface StateToProps {
-    canvasInstance: Canvas;
-    jobInstance: any;
     labels: any[];
     frame: number;
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
-            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
+        onAddTag(labelID: number, frame: number): void {
+            dispatch(addTagAsync(labelID, frame));
         },
     };
 }
@@ -40,12 +34,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            canvas: {
-                instance: canvasInstance,
-            },
             job: {
                 labels,
-                instance: jobInstance,
             },
             player: {
                 frame: {
@@ -56,8 +46,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     } = state;
 
     return {
-        canvasInstance,
-        jobInstance,
         labels,
         frame,
     };
@@ -87,25 +75,13 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
 
     private onSetup(): void {
         const {
-            canvasInstance,
-            onCreateAnnotations,
-            jobInstance,
             frame,
+            onAddTag,
         } = this.props;
 
         const { selectedLabelID } = this.state;
 
-        canvasInstance.cancel();
-
-        const state = {
-            objectType: ObjectType.TAG,
-            label: jobInstance.task.labels
-                .filter((label: any) => label.id === selectedLabelID)[0],
-            frame,
-
-        };
-        const objectState = new cvat.classes.ObjectState(state);
-        onCreateAnnotations(jobInstance, frame, [objectState]);
+        onAddTag(selectedLabelID, frame);
     }
 
     public render(): JSX.Element {
