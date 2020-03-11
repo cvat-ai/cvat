@@ -21,14 +21,16 @@ ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
 
 # Install necessary apt packages
 RUN apt-get update && \
-    apt-get install -yq \
+    apt-get --no-install-recommends install -yq \
         software-properties-common && \
     add-apt-repository ppa:mc3man/xerus-media -y && \
     add-apt-repository ppa:mc3man/gstffmpeg-keep -y && \
     apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -yq \
+    DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
         apache2 \
         apache2-dev \
+        apt-utils \
+        build-essential \
         libapache2-mod-xsendfile \
         supervisor \
         ffmpeg \
@@ -44,7 +46,7 @@ RUN apt-get update && \
         poppler-utils \
         curl && \
     curl https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \
-    apt-get install -y git-lfs && git lfs install && \
+    apt-get --no-install-recommends install -y git-lfs && git lfs install && \
     if [ -z ${socks_proxy} ]; then \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30\"" >> ${HOME}/.bashrc; \
     else \

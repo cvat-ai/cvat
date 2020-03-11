@@ -5,7 +5,7 @@
 
 from collections import OrderedDict
 import os.path as osp
-import xml.etree as ET
+from defusedxml import ElementTree
 
 from datumaro.components.extractor import (SourceExtractor,
     DEFAULT_SUBSET_NAME, DatasetItem,
@@ -64,7 +64,7 @@ class CvatExtractor(SourceExtractor):
 
     @classmethod
     def _parse(cls, path):
-        context = ET.ElementTree.iterparse(path, events=("start", "end"))
+        context = ElementTree.iterparse(path, events=("start", "end"))
         context = iter(context)
 
         categories, frame_size = cls._parse_meta(context)

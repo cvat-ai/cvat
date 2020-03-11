@@ -25,7 +25,15 @@ There are two different formats for annotation and interpolation modes at the mo
         <label>
           <name>String: name of the label (e.g. car, person)</name>
           <attributes>
-            <attribute>String: attributes for the label (e.g. @select=quality:good,bad)</attribute>
+            <attribute>
+              <name>String: attribute name</name>
+              <mutable>Boolean: mutable (allow different values between frames)</mutable>
+              <input_type>String: select, checkbox, radio, number, text</input_type>
+              <default_value>String: default value</default_value>
+              <values>String: possible values, separated by newlines
+ex. value 2
+ex. value 3</values>
+            </attribute>
           </attributes>
         </label>
       </labels>
