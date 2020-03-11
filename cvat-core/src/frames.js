@@ -111,10 +111,7 @@
 
             const { provider } = frameDataCache[this.tid];
             const { chunkSize } = frameDataCache[this.tid];
-            const start = Math.max(
-                this.startFrame,
-                parseInt(this.number / chunkSize, 10) * chunkSize,
-            );
+            const start = parseInt(this.number / chunkSize, 10) * chunkSize;
             const stop = Math.min(
                 this.stopFrame,
                 (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1,
