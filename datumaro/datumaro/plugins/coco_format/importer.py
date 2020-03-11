@@ -9,6 +9,7 @@ import logging as log
 import os.path as osp
 
 from datumaro.components.extractor import Importer
+from datumaro.util.log_utils import logging_disabled
 
 from .format import CocoTask, CocoPath
 
@@ -21,6 +22,11 @@ class CocoImporter(Importer):
         CocoTask.labels: 'coco_labels',
         CocoTask.image_info: 'coco_image_info',
     }
+
+    @classmethod
+    def detect(cls, path):
+        with logging_disabled(log.WARN):
+            return len(cls.find_subsets(path)) != 0
 
     def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
@@ -53,7 +59,7 @@ class CocoImporter(Importer):
 
             if osp.basename(osp.normpath(path)) != CocoPath.ANNOTATIONS_DIR:
                 path = osp.join(path, CocoPath.ANNOTATIONS_DIR)
-            subset_paths += glob(osp.join(path, '*_*.json'))
+                subset_paths += glob(osp.join(path, '*_*.json'))
 
         subsets = defaultdict(dict)
         for subset_path in subset_paths:

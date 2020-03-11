@@ -14,7 +14,8 @@ Next steps should work on clear Ubuntu 18.04.
 
 -   Install necessary dependencies:
     ```sh
-    $ sudo apt update && apt install -y nodejs npm curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
+    $ sudo apt update && apt-get --no-install-recommends install -y nodejs npm curl redis-server \
+        python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
     ```
     Also please make sure that you have installed ffmpeg with all necessary libav* libraries and pkg-config package.
     ```sh
