@@ -68,18 +68,22 @@ function ItemMenu(
                     Propagate
                 </Button>
             </Menu.Item>
-            <Menu.Item>
-                <Button disabled={objectType === ObjectType.TAG} type='link' onClick={toBackground}>
-                    <Icon component={BackgroundIcon} />
-                    To background
-                </Button>
-            </Menu.Item>
-            <Menu.Item>
-                <Button disabled={objectType === ObjectType.TAG} type='link' onClick={toForeground}>
-                    <Icon component={ForegroundIcon} />
-                    To foreground
-                </Button>
-            </Menu.Item>
+            { objectType !== ObjectType.TAG && (
+                <>
+                    <Menu.Item>
+                        <Button type='link' onClick={toBackground}>
+                            <Icon component={BackgroundIcon} />
+                            To background
+                        </Button>
+                    </Menu.Item>
+                    <Menu.Item>
+                        <Button type='link' onClick={toForeground}>
+                            <Icon component={ForegroundIcon} />
+                            To foreground
+                        </Button>
+                    </Menu.Item>
+                </>
+            )}
             <Menu.Item>
                 <Button
                     type='link'
