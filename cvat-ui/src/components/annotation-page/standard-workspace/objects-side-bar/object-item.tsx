@@ -719,30 +719,21 @@ function ObjectItemComponent(props: Props): JSX.Element {
 
     return (
         <div style={{ display: 'flex' }}>
-            {
-                objectType !== ObjectType.TAG ? (
-                    <Popover
-                        placement='left'
-                        trigger='click'
-                        content={(
-                            <ColorChanger
-                                onChange={changeColor}
-                                colors={colors}
-                            />
-                        )}
-                    >
-                        <div
-                            className='cvat-objects-sidebar-state-item-color'
-                            style={{ background: ` ${color}` }}
-                        />
-                    </Popover>
-                ) : (
-                    <div
-                        className='cvat-objects-sidebar-state-item-color'
+            <Popover
+                placement='left'
+                trigger='click'
+                content={(
+                    <ColorChanger
+                        onChange={changeColor}
+                        colors={colors}
                     />
-                )
-            }
-
+                )}
+            >
+                <div
+                    className='cvat-objects-sidebar-state-item-color'
+                    style={{ background: ` ${color}` }}
+                />
+            </Popover>
             <div
                 onMouseEnter={activate}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
