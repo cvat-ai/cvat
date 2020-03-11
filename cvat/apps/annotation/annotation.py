@@ -177,7 +177,7 @@ class Annotation:
         return self._get_attribute_id(label_id, attribute_name, 'immutable')
 
     def _init_frame_info(self):
-        if hasattr(self._db_task, 'video'):
+        if hasattr(self._db_task.data, 'video'):
             self._frame_info = {
                 frame: {
                     "path": "frame_{:06d}".format(frame),
