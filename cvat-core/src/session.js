@@ -1407,7 +1407,7 @@
         return annotationsData;
     };
 
-    Job.prototype.annotations.search.implementation = async function (filters, frameFrom, frameTo) {
+    Job.prototype.annotations.search.implementation = function (filters, frameFrom, frameTo) {
         if (!Array.isArray(filters) || filters.some((filter) => typeof (filter) !== 'string')) {
             throw new ArgumentError(
                 'The filters argument must be an array of strings',
@@ -1646,7 +1646,7 @@
         return result;
     };
 
-    Job.prototype.annotations.search.implementation = async function (filters, frameFrom, frameTo) {
+    Task.prototype.annotations.search.implementation = function (filters, frameFrom, frameTo) {
         if (!Array.isArray(filters) || filters.some((filter) => typeof (filter) !== 'string')) {
             throw new ArgumentError(
                 'The filters argument must be an array of strings',

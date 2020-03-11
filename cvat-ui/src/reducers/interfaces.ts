@@ -229,6 +229,7 @@ export interface NotificationsState {
             fetchingAnnotations: null | ErrorState;
             undo: null | ErrorState;
             redo: null | ErrorState;
+            search: null | ErrorState;
         };
 
         [index: string]: any;
@@ -329,6 +330,7 @@ export interface AnnotationState {
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;
+        activeInitialState?: any;
     };
     annotations: {
         selectedStatesID: number[];
@@ -337,6 +339,7 @@ export interface AnnotationState {
         states: any[];
         filters: string[];
         filtersHistory: string[];
+        resetGroupFlag: boolean;
         history: {
             undo: string[];
             redo: string[];
@@ -423,6 +426,10 @@ export interface SettingsState {
     player: PlayerSettingsState;
 }
 
+export interface ShortcutsState {
+    visibleShortcutsHelp: boolean;
+}
+
 export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
@@ -435,4 +442,5 @@ export interface CombinedState {
     notifications: NotificationsState;
     annotation: AnnotationState;
     settings: SettingsState;
+    shortcuts: ShortcutsState;
 }

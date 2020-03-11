@@ -53,14 +53,13 @@ LabelmapType = Enum('LabelmapType', ['voc', 'source', 'guess'])
 class _Converter:
     def __init__(self, extractor, save_dir,
             tasks=None, apply_colormap=True, save_images=False, label_map=None):
-        assert tasks is None or isinstance(tasks, (VocTask, list))
+        assert tasks is None or isinstance(tasks, (VocTask, list, set))
         if tasks is None:
-            tasks = list(VocTask)
+            tasks = set(VocTask)
         elif isinstance(tasks, VocTask):
-            tasks = [tasks]
+            tasks = {tasks}
         else:
-            tasks = [t if t in VocTask else VocTask[t] for t in tasks]
-
+            tasks = set(t if t in VocTask else VocTask[t] for t in tasks)
         self._tasks = tasks
 
         self._extractor = extractor
@@ -259,10 +258,10 @@ class _Converter:
                         if len(actions_elem) != 0:
                             obj_elem.append(actions_elem)
 
-                    if set(self._tasks) & set([None,
+                    if self._tasks & {None,
                             VocTask.detection,
                             VocTask.person_layout,
-                            VocTask.action_classification]):
+                            VocTask.action_classification}:
                         with open(osp.join(self._ann_dir, item.id + '.xml'), 'w') as f:
                             f.write(ET.tostring(root_elem,
                                 encoding='unicode', pretty_print=True))
@@ -302,19 +301,19 @@ class _Converter:
                     action_list[item.id] = None
                     segm_list[item.id] = None
 
-                if set(self._tasks) & set([None,
+                if self._tasks & {None,
                         VocTask.classification,
                         VocTask.detection,
                         VocTask.action_classification,
-                        VocTask.person_layout]):
+                        VocTask.person_layout}:
                     self.save_clsdet_lists(subset_name, clsdet_list)
-                    if set(self._tasks) & set([None, VocTask.classification]):
+                    if self._tasks & {None, VocTask.classification}:
                         self.save_class_lists(subset_name, class_lists)
-                if set(self._tasks) & set([None, VocTask.action_classification]):
+                if self._tasks & {None, VocTask.action_classification}:
                     self.save_action_lists(subset_name, action_list)
-                if set(self._tasks) & set([None, VocTask.person_layout]):
+                if self._tasks & {None, VocTask.person_layout}:
                     self.save_layout_lists(subset_name, layout_list)
-                if set(self._tasks) & set([None, VocTask.segmentation]):
+                if self._tasks & {None, VocTask.segmentation}:
                     self.save_segm_lists(subset_name, segm_list)
 
     def save_action_lists(self, subset_name, action_list):

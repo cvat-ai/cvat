@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { connect } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas';
@@ -12,6 +11,9 @@ import {
     groupObjects,
     splitTrack,
     rotateCurrentFrame,
+    repeatDrawShapeAsync,
+    pasteShapeAsync,
+    resetAnnotationsGroup,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import {
@@ -31,6 +33,9 @@ interface DispatchToProps {
     groupObjects(enabled: boolean): void;
     splitTrack(enabled: boolean): void;
     rotateFrame(angle: Rotation): void;
+    resetGroup(): void;
+    repeatDrawShape(): void;
+    pasteShape(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -69,16 +74,19 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         rotateFrame(rotation: Rotation): void {
             dispatch(rotateCurrentFrame(rotation));
         },
+        repeatDrawShape(): void {
+            dispatch(repeatDrawShapeAsync());
+        },
+        pasteShape(): void {
+            dispatch(pasteShapeAsync());
+        },
+        resetGroup(): void {
+            dispatch(resetAnnotationsGroup());
+        },
     };
-}
-
-function ControlsSideBarContainer(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <ControlsSideBarComponent {...props} />
-    );
 }
 
 export default connect(
     mapStateToProps,
     dispatchToProps,
-)(ControlsSideBarContainer);
+)(ControlsSideBarComponent);

@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { connect } from 'react-redux';
 
 import LabelsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/labels-list';
@@ -29,12 +28,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function LabelsListContainer(props: StateToProps): JSX.Element {
-    return (
-        <LabelsListComponent {...props} />
-    );
-}
-
 export default connect(
     mapStateToProps,
-)(LabelsListContainer);
+)(LabelsListComponent);

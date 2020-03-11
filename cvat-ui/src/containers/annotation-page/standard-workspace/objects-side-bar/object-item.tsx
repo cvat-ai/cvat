@@ -20,6 +20,7 @@ import {
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
     propagateObject as propagateObjectAction,
+    pasteShapeAsync,
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
@@ -134,6 +135,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         copyShape(objectState: any): void {
             dispatch(copyShapeAction(objectState));
+            dispatch(pasteShapeAsync());
         },
         propagateObject(objectState: any): void {
             dispatch(propagateObjectAction(objectState));

@@ -34,6 +34,10 @@ export class DrawHandlerImpl implements DrawHandler {
     private onDrawDone: (data: object, continueDraw?: boolean) => void;
     private canvas: SVG.Container;
     private text: SVG.Container;
+    private cursorPosition: {
+        x: number;
+        y: number;
+    };
     private crosshair: {
         x: SVG.Line;
         y: SVG.Line;
@@ -96,12 +100,13 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private addCrosshair(): void {
+        const { x, y } = this.cursorPosition;
         this.crosshair = {
-            x: this.canvas.line(0, 0, this.canvas.node.clientWidth, 0).attr({
+            x: this.canvas.line(0, y, this.canvas.node.clientWidth, y).attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / (2 * this.geometry.scale),
                 zOrder: Number.MAX_SAFE_INTEGER,
             }).addClass('cvat_canvas_crosshair'),
-            y: this.canvas.line(0, 0, 0, this.canvas.node.clientHeight).attr({
+            y: this.canvas.line(x, 0, x, this.canvas.node.clientHeight).attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / (2 * this.geometry.scale),
                 zOrder: Number.MAX_SAFE_INTEGER,
             }).addClass('cvat_canvas_crosshair'),
@@ -181,7 +186,6 @@ export class DrawHandlerImpl implements DrawHandler {
             this.shapeSizeElement.update(this.drawInstance);
         }).addClass('cvat_canvas_shape_drawing').attr({
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-            z_order: Number.MAX_SAFE_INTEGER,
         });
     }
 
@@ -222,10 +226,6 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private drawPolyshape(): void {
-        this.drawInstance.attr({
-            z_order: Number.MAX_SAFE_INTEGER,
-        });
-
         let size = this.drawData.numberOfPoints;
         const sizeDecrement = function sizeDecrement(): void {
             if (!--size) {
@@ -371,18 +371,17 @@ export class DrawHandlerImpl implements DrawHandler {
 
     // Common settings for rectangle and polyshapes
     private pasteShape(): void {
-        this.drawInstance.attr({
-            z_order: Number.MAX_SAFE_INTEGER,
-        });
+        function moveShape(shape: SVG.Shape, x: number, y: number): void {
+            const bbox = shape.bbox();
+            shape.move(x - bbox.width / 2, y - bbox.height / 2);
+        }
 
-        this.canvas.on('mousemove.draw', (e: MouseEvent): void => {
-            const [x, y] = translateToSVG(
-                this.canvas.node as any as SVGSVGElement,
-                [e.clientX, e.clientY],
-            );
+        const { x: initialX, y: initialY } = this.cursorPosition;
+        moveShape(this.drawInstance, initialX, initialY);
 
-            const bbox = this.drawInstance.bbox();
-            this.drawInstance.move(x - bbox.width / 2, y - bbox.height / 2);
+        this.canvas.on('mousemove.draw', (): void => {
+            const { x, y } = this.cursorPosition; // was computer in another callback
+            moveShape(this.drawInstance, x, y);
         });
     }
 
@@ -429,45 +428,53 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pastePolyshape();
     }
 
-    private pastePoints(points: string): void {
-        this.drawInstance = (this.canvas as any).polyline(points)
+    private pastePoints(initialPoints: string): void {
+        function moveShape(
+            shape: SVG.PolyLine,
+            group: SVG.G,
+            x: number,
+            y: number,
+            scale: number,
+        ): void {
+            const bbox = shape.bbox();
+            shape.move(x - bbox.width / 2, y - bbox.height / 2);
+
+            const points = shape.attr('points').split(' ');
+            const radius = consts.BASE_POINT_SIZE / scale;
+
+            group.children().forEach((child: SVG.Element, idx: number): void => {
+                const [px, py] = points[idx].split(',');
+                child.move(px - radius / 2, py - radius / 2);
+            });
+        }
+
+        const { x: initialX, y: initialY } = this.cursorPosition;
+        this.pointsGroup = this.canvas.group();
+        this.drawInstance = (this.canvas as any).polyline(initialPoints)
             .addClass('cvat_canvas_shape_drawing').style({
                 'stroke-width': 0,
             });
 
-        this.pointsGroup = this.canvas.group();
-        for (const point of points.split(' ')) {
+        let numOfPoints = initialPoints.split(' ').length;
+        while (numOfPoints) {
+            numOfPoints--;
             const radius = consts.BASE_POINT_SIZE / this.geometry.scale;
             const stroke = consts.POINTS_STROKE_WIDTH / this.geometry.scale;
-            const [x, y] = point.split(',').map((coord: string): number => +coord);
-            this.pointsGroup.circle().move(x - radius / 2, y - radius / 2)
-                .fill('white').stroke('black').attr({
-                    r: radius,
-                    'stroke-width': stroke,
-                });
+            this.pointsGroup.circle().fill('white').stroke('black').attr({
+                r: radius,
+                'stroke-width': stroke,
+            });
         }
 
-        this.pointsGroup.attr({
-            z_order: Number.MAX_SAFE_INTEGER,
-        });
+        moveShape(
+            this.drawInstance, this.pointsGroup, initialX, initialY, this.geometry.scale,
+        );
 
-        this.canvas.on('mousemove.draw', (e: MouseEvent): void => {
-            const [x, y] = translateToSVG(
-                this.canvas.node as any as SVGSVGElement,
-                [e.clientX, e.clientY],
+        this.canvas.on('mousemove.draw', (): void => {
+            const { x, y } = this.cursorPosition; // was computer in another callback
+            moveShape(
+                this.drawInstance, this.pointsGroup, x, y, this.geometry.scale,
             );
-
-            const bbox = this.drawInstance.bbox();
-            this.drawInstance.move(x - bbox.width / 2, y - bbox.height / 2);
-            const radius = consts.BASE_POINT_SIZE / this.geometry.scale;
-            const newPoints = this.drawInstance.attr('points').split(' ');
-            if (this.pointsGroup) {
-                this.pointsGroup.children()
-                    .forEach((child: SVG.Element, idx: number): void => {
-                        const [px, py] = newPoints[idx].split(',');
-                        child.move(px - radius / 2, py - radius / 2);
-                    });
-            }
         });
 
         this.pastePolyshape();
@@ -593,23 +600,20 @@ export class DrawHandlerImpl implements DrawHandler {
         this.crosshair = null;
         this.drawInstance = null;
         this.pointsGroup = null;
+        this.cursorPosition = {
+            x: 0,
+            y: 0,
+        };
 
         this.canvas.on('mousemove.crosshair', (e: MouseEvent): void => {
+            const [x, y] = translateToSVG(
+                this.canvas.node as any as SVGSVGElement,
+                [e.clientX, e.clientY],
+            );
+            this.cursorPosition = { x, y };
             if (this.crosshair) {
-                const [x, y] = translateToSVG(
-                    this.canvas.node as any as SVGSVGElement,
-                    [e.clientX, e.clientY],
-                );
-
-                this.crosshair.x.attr({
-                    y1: y,
-                    y2: y,
-                });
-
-                this.crosshair.y.attr({
-                    x1: x,
-                    x2: x,
-                });
+                this.crosshair.x.attr({ y1: y, y2: y });
+                this.crosshair.y.attr({ x1: x, x2: x });
             }
         });
     }

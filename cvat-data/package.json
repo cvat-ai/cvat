@@ -7,8 +7,6 @@
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
-    "babel": "^5.8.23",
-    "babel-core": "^6.26.3",
     "babel-loader": "^8.0.6",
     "copy-webpack-plugin": "^5.0.5",
     "eslint": "^6.4.0",
