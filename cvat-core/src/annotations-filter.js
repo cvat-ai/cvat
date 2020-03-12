@@ -8,7 +8,10 @@
 */
 
 const jsonpath = require('jsonpath');
-const { AttributeType } = require('./enums');
+const {
+    AttributeType,
+    ObjectType,
+} = require('./enums');
 const { ArgumentError } = require('./exceptions');
 
 
@@ -167,7 +170,7 @@ class AnnotationsFilter {
             let ybr = Number.MIN_SAFE_INTEGER;
             let [width, height] = [null, null];
 
-            if (state.objectType !== 'tag') {
+            if (state.objectType !== ObjectType.TAG) {
                 state.points.forEach((coord, idx) => {
                     if (idx % 2) { // y
                         ytl = Math.min(ytl, coord);

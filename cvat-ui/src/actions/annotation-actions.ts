@@ -84,10 +84,10 @@ export enum AnnotationActionTypes {
     COPY_SHAPE = 'COPY_SHAPE',
     PASTE_SHAPE = 'PASTE_SHAPE',
     EDIT_SHAPE = 'EDIT_SHAPE',
-    DRAW_SHAPE = 'DRAW_SHAPE',
     REPEAT_DRAW_SHAPE = 'REPEAT_DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
     RESET_CANVAS = 'RESET_CANVAS',
+    REMEMBER_CREATED_OBJECT = 'REMEMBER_CREATED_OBJECT',
     UPDATE_ANNOTATIONS_SUCCESS = 'UPDATE_ANNOTATIONS_SUCCESS',
     UPDATE_ANNOTATIONS_FAILED = 'UPDATE_ANNOTATIONS_FAILED',
     CREATE_ANNOTATIONS_SUCCESS = 'CREATE_ANNOTATIONS_SUCCESS',
@@ -844,15 +844,17 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
-export function drawShape(
-    shapeType: ShapeType,
-    labelID: number,
+export function rememberObject(
     objectType: ObjectType,
+    labelID: number,
+    shapeType?: ShapeType,
     points?: number,
     rectDrawingMethod?: RectDrawingMethod,
 ): AnyAction {
-    let activeControl = ActiveControl.DRAW_RECTANGLE;
-    if (shapeType === ShapeType.POLYGON) {
+    let activeControl = ActiveControl.CURSOR;
+    if (shapeType === ShapeType.RECTANGLE) {
+        activeControl = ActiveControl.DRAW_RECTANGLE;
+    } else if (shapeType === ShapeType.POLYGON) {
         activeControl = ActiveControl.DRAW_POLYGON;
     } else if (shapeType === ShapeType.POLYLINE) {
         activeControl = ActiveControl.DRAW_POLYLINE;
@@ -861,7 +863,7 @@ export function drawShape(
     }
 
     return {
-        type: AnnotationActionTypes.DRAW_SHAPE,
+        type: AnnotationActionTypes.REMEMBER_CREATED_OBJECT,
         payload: {
             shapeType,
             labelID,
@@ -1152,10 +1154,7 @@ export function searchAnnotationsAsync(
     };
 }
 
-export function addTagAsync(
-    labelID: number,
-    frame: number,
-): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const {
             canvas: {
@@ -1164,39 +1163,13 @@ export function addTagAsync(
             job: {
                 instance: jobInstance,
             },
-        } = getStore().getState().annotation;
-
-        dispatch({
-            type: AnnotationActionTypes.ADD_TAG,
-            payload: {
-                labelID,
-                objectType: ObjectType.TAG,
-                activeControl: ActiveControl.CURSOR,
-            },
-        });
-
-        canvasInstance.cancel();
-        const objectState = new cvat.classes.ObjectState({
-            objectType: ObjectType.TAG,
-            label: jobInstance.task.labels
-                .filter((label: any) => label.id === labelID)[0],
-            frame,
-        });
-        dispatch(createAnnotationsAsync(jobInstance, frame, [objectState]));
-    };
-}
-
-export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const initialState = getStore().getState().annotation.drawing.activeInitialState;
-        const {
-            canvas: {
-                instance: canvasInstance,
-            },
             player: {
                 frame: {
                     number: frameNumber,
                 },
+            },
+            drawing: {
+                activeInitialState: initialState,
             },
         } = getStore().getState().annotation;
 
@@ -1221,7 +1194,13 @@ export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction>
 
             canvasInstance.cancel();
             if (initialState.objectType === ObjectType.TAG) {
-                dispatch(addTagAsync(initialState.label.id, frameNumber));
+                const objectState = new cvat.classes.ObjectState({
+                    objectType: ObjectType.TAG,
+                    label: initialState.label,
+                    attributes: initialState.attributes,
+                    frame: frameNumber,
+                });
+                dispatch(createAnnotationsAsync(jobInstance, frameNumber, [objectState]));
             } else {
                 canvasInstance.draw({
                     enabled: true,
@@ -1237,6 +1216,10 @@ export function repeatDrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAc
         const {
             canvas: {
                 instance: canvasInstance,
+            },
+            job: {
+                labels,
+                instance: jobInstance,
             },
             player: {
                 frame: {
@@ -1272,7 +1255,12 @@ export function repeatDrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAc
 
         canvasInstance.cancel();
         if (activeObjectType === ObjectType.TAG) {
-            dispatch(addTagAsync(activeLabelID, frameNumber));
+            const objectState = new cvat.classes.ObjectState({
+                objectType: ObjectType.TAG,
+                label: labels.filter((label: any) => label.id === activeLabelID)[0],
+                frame: frameNumber,
+            });
+            dispatch(createAnnotationsAsync(jobInstance, frameNumber, [objectState]));
         } else {
             canvasInstance.draw({
                 enabled: true,

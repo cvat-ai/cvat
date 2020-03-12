@@ -393,7 +393,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.DRAW_SHAPE: {
+        case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
             const {
                 shapeType,
                 labelID,
@@ -434,30 +434,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     activeControl,
-                },
-            };
-        }
-        case AnnotationActionTypes.ADD_TAG: {
-            const {
-                labelID,
-                objectType,
-                activeControl,
-            } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    activatedStateID: null,
-                },
-                canvas: {
-                    ...state.canvas,
-                    activeControl,
-                },
-                drawing: {
-                    ...defaultState.drawing,
-                    activeLabelID: labelID,
-                    activeObjectType: objectType,
                 },
             };
         }
