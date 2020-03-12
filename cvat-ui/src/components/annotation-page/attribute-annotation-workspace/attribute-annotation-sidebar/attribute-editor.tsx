@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 import Text from 'antd/lib/typography/Text';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
@@ -303,14 +303,6 @@ function AttributeEditor(props: Props): JSX.Element {
     const { inputType, values } = attribute;
     const ref = inputType === 'number' ? React.createRef<InputNumber>()
         : React.createRef<Input>();
-
-    useEffect(() => {
-        // if (ref.current) {
-        //     ref.current.focus();
-        // } else if (document.activeElement) {
-        //     (document.activeElement as HTMLElement).blur();
-        // }
-    });
 
     return (
         <div>
