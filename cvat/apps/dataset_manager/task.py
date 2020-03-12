@@ -94,8 +94,10 @@ class TaskProject:
             CvatImagesDirExtractor)
 
     def _import_from_task(self, user):
-        self._project = Project.generate(self._project_dir,
-            config={'project_name': self._db_task.name})
+        self._project = Project.generate(self._project_dir, config={
+            'project_name': self._db_task.name,
+            'plugins_dir': osp.join(osp.dirname(__file__), 'formats'),
+        })
 
         self._project.add_source('task_%s_images' % self._db_task.id, {
             'url': self._db_task.get_data_dirname(),
@@ -314,22 +316,22 @@ EXPORT_FORMATS = [
     },
     {
         'name': 'PASCAL VOC 2012',
-        'tag': 'voc',
+        'tag': 'cvat_voc',
         'is_default': False,
     },
     {
         'name': 'MS COCO',
-        'tag': 'coco',
+        'tag': 'cvat_coco',
         'is_default': False,
     },
     {
         'name': 'YOLO',
-        'tag': 'yolo',
+        'tag': 'cvat_yolo',
         'is_default': False,
     },
     {
-        'name': 'TF Detection API TFrecord',
-        'tag': 'tf_detection_api',
+        'name': 'TF Detection API',
+        'tag': 'cvat_tfrecord',
         'is_default': False,
     },
 ]
