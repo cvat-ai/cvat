@@ -47,14 +47,14 @@ interface StateToProps {
 
 interface DispatchToProps {
     changeFrame(frame: number): void;
-    updateState(sessionInstance: any, frameNumber: number, objectState: any): void;
+    updateState(objectState: any): void;
     collapseOrExpand(objectStates: any[], collapsed: boolean): void;
     activateObject: (activatedStateID: number | null) => void;
     removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
-    changeGroupColor(sessionInstance: any, frameNumber: number, group: number, color: string): void;
+    changeGroupColor(group: number, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -121,14 +121,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeFrame(frame: number): void {
             dispatch(changeFrameAsync(frame));
         },
-        updateState(sessionInstance: any, frameNumber: number, state: any): void {
-            dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, [state]));
+        updateState(state: any): void {
+            dispatch(updateAnnotationsAsync([state]));
         },
         collapseOrExpand(objectStates: any[], collapsed: boolean): void {
             dispatch(collapseObjectItems(objectStates, collapsed));
         },
         activateObject(activatedStateID: number | null): void {
-            dispatch(activateObjectAction(activatedStateID));
+            dispatch(activateObjectAction(activatedStateID, null));
         },
         removeObject(sessionInstance: any, objectState: any): void {
             dispatch(removeObjectAsync(sessionInstance, objectState, true));
@@ -148,13 +148,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         ): void {
             dispatch(changeLabelColorAsync(sessionInstance, frameNumber, label, color));
         },
-        changeGroupColor(
-            sessionInstance: any,
-            frameNumber: number,
-            group: number,
-            color: string,
-        ): void {
-            dispatch(changeGroupColorAsync(sessionInstance, frameNumber, group, color));
+        changeGroupColor(group: number, color: string): void {
+            dispatch(changeGroupColorAsync(group, color));
         },
     };
 }
@@ -386,7 +381,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             objectState.color = color;
             this.commit();
         } else if (colorBy === ColorBy.GROUP) {
-            changeGroupColor(jobInstance, frameNumber, objectState.group.id, color);
+            changeGroupColor(objectState.group.id, color);
         } else if (colorBy === ColorBy.LABEL) {
             changeLabelColor(jobInstance, frameNumber, objectState.label, color);
         }
@@ -415,11 +410,9 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const {
             objectState,
             updateState,
-            jobInstance,
-            frameNumber,
         } = this.props;
 
-        updateState(jobInstance, frameNumber, objectState);
+        updateState(objectState);
     }
 
     public render(): JSX.Element {

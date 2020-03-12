@@ -22,10 +22,11 @@ import {
     undoActionAsync,
     redoActionAsync,
     searchAnnotationsAsync,
+    changeWorkspace as changeWorkspaceAction,
 } from 'actions/annotation-actions';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
-import { CombinedState, FrameSpeed } from 'reducers/interfaces';
+import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
 
 interface StateToProps {
     jobInstance: any;
@@ -41,6 +42,7 @@ interface StateToProps {
     redoAction?: string;
     autoSave: boolean;
     autoSaveInterval: number;
+    workspace: Workspace;
 }
 
 interface DispatchToProps {
@@ -51,6 +53,7 @@ interface DispatchToProps {
     undo(sessionInstance: any, frameNumber: any): void;
     redo(sessionInstance: any, frameNumber: any): void;
     searchAnnotations(sessionInstance: any, frameFrom: any, frameTo: any): void;
+    changeWorkspace(workspace: Workspace): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -76,6 +79,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             canvas: {
                 ready: canvasIsReady,
             },
+            workspace,
         },
         settings: {
             player: {
@@ -103,6 +107,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         redoAction: history.redo[history.redo.length - 1],
         autoSave,
         autoSaveInterval,
+        workspace,
     };
 }
 
@@ -129,6 +134,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         searchAnnotations(sessionInstance: any, frameFrom: any, frameTo: any): void {
             dispatch(searchAnnotationsAsync(sessionInstance, frameFrom, frameTo));
+        },
+        changeWorkspace(workspace: Workspace): void {
+            dispatch(changeWorkspaceAction(workspace));
         },
     };
 }
@@ -442,8 +450,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             frameNumber,
             undoAction,
             redoAction,
-            searchAnnotations,
+            workspace,
             canvasIsReady,
+            searchAnnotations,
+            changeWorkspace,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -602,6 +612,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                     onSliderChange={this.onChangePlayerSliderValue}
                     onInputChange={this.onChangePlayerInputValue}
                     onURLIconClick={this.onURLIconClick}
+                    changeWorkspace={changeWorkspace}
+                    workspace={workspace}
                     playing={playing}
                     saving={saving}
                     savingStatuses={savingStatuses}

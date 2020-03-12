@@ -4,18 +4,19 @@
 
 import React from 'react';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import Slider, { SliderValue } from 'antd/lib/slider';
+import Layout from 'antd/lib/layout';
+import Icon from 'antd/lib/icon';
+import Tooltip from 'antd/lib/tooltip';
 
-import {
-    Layout,
-    Slider,
-    Icon,
-    Tooltip,
-} from 'antd';
-
-import { SliderValue } from 'antd/lib//slider';
-import { ColorBy, GridColor, ObjectType } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas';
 import getCore from 'cvat-core';
+import {
+    ColorBy,
+    GridColor,
+    ObjectType,
+    Workspace,
+} from 'reducers/interfaces';
 
 const cvat = getCore();
 
@@ -26,6 +27,7 @@ interface Props {
     canvasInstance: Canvas;
     jobInstance: any;
     activatedStateID: number | null;
+    activatedAttributeID: number | null;
     selectedStatesID: number[];
     annotations: any[];
     frameData: any;
@@ -48,6 +50,8 @@ interface Props {
     contrastLevel: number;
     saturationLevel: number;
     resetZoom: boolean;
+    aamZoomMargin: number;
+    workspace: Workspace;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -57,7 +61,7 @@ interface Props {
     onEditShape: (enabled: boolean) => void;
     onShapeDrawn: () => void;
     onResetCanvas: () => void;
-    onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onUpdateAnnotations(states: any[]): void;
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
@@ -226,8 +230,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onShapeEdited(event: any): void {
         const {
-            jobInstance,
-            frame,
             onEditShape,
             onUpdateAnnotations,
         } = this.props;
@@ -239,7 +241,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             points,
         } = event.detail;
         state.points = points;
-        onUpdateAnnotations(jobInstance, frame, [state]);
+        onUpdateAnnotations([state]);
     }
 
     private onObjectsMerged(event: any): void {
@@ -292,12 +294,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     private activateOnCanvas(): void {
         const {
             activatedStateID,
+            activatedAttributeID,
             canvasInstance,
             selectedOpacity,
+            aamZoomMargin,
+            workspace,
         } = this.props;
 
         if (activatedStateID !== null) {
-            canvasInstance.activate(activatedStateID);
+            if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+                canvasInstance.focus(activatedStateID, aamZoomMargin);
+            }
+            canvasInstance.activate(activatedStateID, activatedAttributeID);
             const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
             if (el) {
                 (el as any as SVGElement).setAttribute('fill-opacity', `${selectedOpacity / 100}`);
@@ -397,11 +405,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         // Events
         canvasInstance.html().addEventListener('mousedown', (e: MouseEvent): void => {
             const {
+                workspace,
                 activatedStateID,
             } = this.props;
 
-            if ((e.target as HTMLElement).tagName === 'svg' && activatedStateID !== null) {
-                onActivateObject(null);
+            if ((e.target as HTMLElement).tagName === 'svg') {
+                if (activatedStateID !== null && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
+                    onActivateObject(null);
+                }
             }
         });
 
@@ -424,15 +435,16 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onEditShape(true);
         });
 
+        // it is important to be called before the following listener
+        canvasInstance.html().addEventListener('canvas.setup', () => {
+            canvasInstance.fit();
+        }, { once: true });
+
         canvasInstance.html().addEventListener('canvas.setup', (): void => {
             onSetupCanvas();
             this.updateShapesView();
             this.activateOnCanvas();
         });
-
-        canvasInstance.html().addEventListener('canvas.setup', () => {
-            canvasInstance.fit();
-        }, { once: true });
 
         canvasInstance.html().addEventListener('canvas.canceled', () => {
             onResetCanvas();
@@ -476,7 +488,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         });
 
         canvasInstance.html().addEventListener('canvas.moved', async (event: any): Promise<void> => {
-            const { activatedStateID } = this.props;
+            const { activatedStateID, workspace } = this.props;
+            if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+                return;
+            }
+
             const result = await jobInstance.annotations.select(
                 event.detail.states,
                 event.detail.x,
