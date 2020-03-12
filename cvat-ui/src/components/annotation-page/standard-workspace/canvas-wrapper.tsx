@@ -516,6 +516,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.merged', this.onObjectsMerged.bind(this));
         canvasInstance.html().addEventListener('canvas.groupped', this.onObjectsGroupped.bind(this));
         canvasInstance.html().addEventListener('canvas.splitted', this.onTrackSplitted.bind(this));
+
+        canvasInstance.html().addEventListener('point.contextmenu', (event: any) => {
+            console.log(event);
+        });
     }
 
     public render(): JSX.Element {
