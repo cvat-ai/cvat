@@ -8,6 +8,7 @@ import { connect } from 'react-redux';
 import Layout, { SiderProps } from 'antd/lib/layout';
 import { SelectValue } from 'antd/lib/select';
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
 import {
@@ -15,6 +16,7 @@ import {
     updateAnnotationsAsync,
 } from 'actions/annotation-actions';
 import { CombinedState } from 'reducers/interfaces';
+import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
 import ObjectSwitcher from './object-switcher';
 import AttributeSwitcher from './attribute-switcher';
 import ObjectBasicsEditor from './object-basics-edtior';
@@ -214,6 +216,11 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         return (
             <Layout.Sider {...siderProps}>
                 <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
+                <Row>
+                    <Col>
+                        <AnnotationsFiltersInput />
+                    </Col>
+                </Row>
                 <ObjectSwitcher
                     currentLabel={activeObjectState.label.name}
                     clientID={activeObjectState.clientID}

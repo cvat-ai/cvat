@@ -193,12 +193,17 @@ export function switchZLayer(cur: number): AnyAction {
     };
 }
 
-export function fetchAnnotationsAsync(sessionInstance: any):
+export function fetchAnnotationsAsync():
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
-            const states = await sessionInstance.annotations
+            const {
+                filters,
+                frame,
+                showAllInterpolationTracks,
+                jobInstance,
+            } = receiveAnnotationsParameters();
+            const states = await jobInstance.annotations
                 .get(frame, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);
 

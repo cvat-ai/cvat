@@ -90,7 +90,7 @@ const defaultState: AnnotationState = {
     sidebarCollapsed: false,
     appearanceCollapsed: false,
     tabContentHeight: 0,
-    workspace: Workspace.ATTRIBUTE_ANNOTATION,
+    workspace: Workspace.STANDARD,
 };
 
 export default (state = defaultState, action: AnyAction): AnnotationState => {

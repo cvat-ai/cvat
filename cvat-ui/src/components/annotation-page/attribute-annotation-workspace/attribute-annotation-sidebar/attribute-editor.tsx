@@ -106,29 +106,42 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         }
     };
 
-    const renderNumber = (): JSX.Element => (
-        <>
-            <Text strong>Number: </Text>
-            <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
-                <InputNumber
-                    ref={ref as React.RefObject<InputNumber>}
-                    autoFocus
-                    min={+values[0]}
-                    max={+values[1]}
-                    step={+values[2]}
-                    value={+currentValue}
-                    onChange={(value: number | undefined) => {
-                        setTimeout(() => {
-                            if (typeof (value) !== 'undefined' && !lockedChange) {
-                                onChange(`${value}`);
-                            }
-                        });
-                    }}
-                    onKeyDown={handleKeydown}
-                />
-            </div>
-        </>
-    );
+    const renderNumber = (): JSX.Element => {
+        const numberProps = {
+            min: +values[0],
+            max: +values[1],
+            step: +values[2],
+            value: +currentValue,
+            autoFocus: true,
+            ref: ref as React.RefObject<InputNumber>,
+        };
+
+        return (
+            <>
+                <Text strong>Number: </Text>
+                <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
+                    <InputNumber
+                        {...numberProps}
+                        onChange={(value: number | undefined) => {
+                            setTimeout(() => {
+                                if (typeof (value) !== 'undefined') {
+                                    const isValid = typeof (+value) === 'number'
+                                        && value >= numberProps.min
+                                        && value <= numberProps.max
+                                        && !(value % numberProps.step);
+
+                                    if (isValid && !lockedChange) {
+                                        onChange(`${+value}`);
+                                    }
+                                }
+                            });
+                        }}
+                        onKeyDown={handleKeydown}
+                    />
+                </div>
+            </>
+        );
+    };
 
     const renderText = (): JSX.Element => (
         <>

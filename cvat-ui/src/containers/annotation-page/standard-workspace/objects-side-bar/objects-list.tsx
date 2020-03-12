@@ -6,15 +6,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 
-import { SelectValue } from 'antd/lib/select';
-
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
     updateAnnotationsAsync,
-    fetchAnnotationsAsync,
     removeObjectAsync,
     changeFrameAsync,
-    changeAnnotationsFilters as changeAnnotationsFiltersAction,
     collapseObjectItems,
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
@@ -43,7 +39,6 @@ interface StateToProps {
 
 interface DispatchToProps {
     updateAnnotations(states: any[]): void;
-    changeAnnotationsFilters(sessionInstance: any, filters: string[]): void;
     collapseStates(states: any[], value: boolean): void;
     removeObject: (sessionInstance: any, objectState: any, force: boolean) => void;
     copyShape: (objectState: any) => void;
@@ -115,13 +110,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         collapseStates(states: any[], collapsed: boolean): void {
             dispatch(collapseObjectItems(states, collapsed));
         },
-        changeAnnotationsFilters(
-            sessionInstance: any,
-            filters: string[],
-        ): void {
-            dispatch(changeAnnotationsFiltersAction(filters));
-            dispatch(fetchAnnotationsAsync(sessionInstance));
-        },
         removeObject(sessionInstance: any, objectState: any, force: boolean): void {
             dispatch(removeObjectAsync(sessionInstance, objectState, force));
         },
@@ -188,15 +176,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         });
     };
 
-    private onChangeAnnotationsFilters = (value: SelectValue): void => {
-        const {
-            jobInstance,
-            changeAnnotationsFilters,
-        } = this.props;
-        const filters = value as string[];
-        changeAnnotationsFilters(jobInstance, filters);
-    };
-
     private onLockAllStates = (): void => {
         this.lockAllStates(true);
     };
@@ -256,7 +235,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const {
-            annotationsFilters,
             statesHidden,
             statesLocked,
             activatedStateID,
@@ -269,7 +247,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             changeFrame,
             maxZLayer,
             minZLayer,
-            annotationsFiltersHistory,
         } = this.props;
         const {
             sortedStatesID,
@@ -499,10 +476,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     {...this.props}
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
-                    annotationsFilters={annotationsFilters}
                     changeStatesOrdering={this.onChangeStatesOrdering}
-                    changeAnnotationsFilters={this.onChangeAnnotationsFilters}
-                    annotationsFiltersHistory={annotationsFiltersHistory}
                     lockAllStates={this.onLockAllStates}
                     unlockAllStates={this.onUnlockAllStates}
                     collapseAllStates={this.onCollapseAllStates}
