@@ -22,13 +22,18 @@ format_spec = {
     ],
 }
 
+from datumaro.plugins.tf_detection_api_format.converter import \
+    TfDetectionApiConverter as _TfDetectionApiConverter
+class CvatTfrecordConverter(_TfDetectionApiConverter):
+    NAME = 'cvat_tfrecord'
+
 def dump(file_object, annotations):
     from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor
     from cvat.apps.dataset_manager.util import make_zip_archive
-    from datumaro.components.project import Environment
     from tempfile import TemporaryDirectory
+
     extractor = CvatAnnotationsExtractor('', annotations)
-    converter = Environment().make_converter('tf_detection_api')
+    converter = CvatTfrecordConverter()
     with TemporaryDirectory() as temp_dir:
         converter(extractor, save_dir=temp_dir)
         make_zip_archive(temp_dir, file_object)
