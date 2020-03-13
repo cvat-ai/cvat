@@ -138,7 +138,6 @@ export enum AnnotationActionTypes {
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
     ADD_Z_LAYER = 'ADD_Z_LAYER',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
-    ADD_TAG = 'ADD_TAG',
 }
 
 export function addZLayer(): AnyAction {
