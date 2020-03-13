@@ -79,18 +79,6 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         </>
     );
 
-    // Hardly ever good solution with lockedChange is a workaround
-    // Antd InputNumber changes current value when press ArrowUp, ArrowDown
-    // And only after that it calls onKeyDown callback
-    // There aren't any API to prevent such behavour (call onKeyDown first or cancel changing value)
-    // This trick works as following:
-    // 1. User presses ArrowUp/ArrowDown. InputNumber changes it's internal state and calls onChange
-    // 2. onChange setups a setTimeout that work after current callstack is done
-    // 3. InputNumber next calls onKeyDown callback where we lock any changes by the flag
-    // callback also setups a setTimeout to unlock this flag and put it to event loop
-    // 4. then the first setTimeout callback works and do not change value because of locked flag
-    // 5. finally the second setTimeout callback works and reset the locked flag
-    let lockedChange = false;
     const handleKeydown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
         if (['ArrowDown', 'ArrowUp', 'ArrowLeft',
             'ArrowRight', 'Tab', 'Shift', 'Control']
@@ -99,48 +87,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
             event.preventDefault();
             const copyEvent = new KeyboardEvent('keydown', event);
             window.document.dispatchEvent(copyEvent);
-            lockedChange = true;
-            setTimeout(() => {
-                lockedChange = false;
-            });
         }
-    };
-
-    const renderNumber = (): JSX.Element => {
-        const numberProps = {
-            min: +values[0],
-            max: +values[1],
-            step: +values[2],
-            value: +currentValue,
-            autoFocus: true,
-            ref: ref as React.RefObject<InputNumber>,
-        };
-
-        return (
-            <>
-                <Text strong>Number: </Text>
-                <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
-                    <InputNumber
-                        {...numberProps}
-                        onChange={(value: number | undefined) => {
-                            setTimeout(() => {
-                                if (typeof (value) !== 'undefined') {
-                                    const isValid = typeof (+value) === 'number'
-                                        && value >= numberProps.min
-                                        && value <= numberProps.max
-                                        && !(value % numberProps.step);
-
-                                    if (isValid && !lockedChange) {
-                                        onChange(`${+value}`);
-                                    }
-                                }
-                            });
-                        }}
-                        onKeyDown={handleKeydown}
-                    />
-                </div>
-            </>
-        );
     };
 
     const renderText = (): JSX.Element => (
@@ -151,7 +98,23 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                     autoFocus
                     value={currentValue}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                        onChange(event.target.value);
+                        const { value } = event.target;
+                        if (inputType === 'number') {
+                            const numberValue = +value;
+                            if (!Number.isNaN(numberValue)) {
+                                const isValid = numberValue >= +values[0]
+                                    && numberValue <= +values[1]
+                                    && !(numberValue % +values[2]);
+                                if (isValid) {
+                                    onChange(value);
+                                }
+                            }
+                            if (!Number.isNaN(+event.target.value)) {
+                                onChange(value);
+                            }
+                        } else {
+                            onChange(value);
+                        }
                     }}
                     onKeyDown={handleKeydown}
                     ref={ref as React.RefObject<Input>}
@@ -167,8 +130,6 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         element = renderSelect();
     } else if (inputType === 'radio') {
         element = renderRadio();
-    } else if (inputType === 'number') {
-        element = renderNumber();
     } else {
         element = renderText();
     }
@@ -239,7 +200,7 @@ function renderList(parameters: ListParameters): JSX.Element | null {
             [key: string]: (keyEvent?: KeyboardEvent) => void;
         } = {};
 
-        values.forEach((value: string, index: number): void => {
+        values.slice(0, 9).forEach((value: string, index: number): void => {
             const key = `SET_${index}_VALUE`;
             keyMap[key] = {
                 name: `Set value "${value}"`,
