@@ -9,7 +9,7 @@ import Layout from 'antd/lib/layout';
 import CanvasWrapperContainer from 'containers/annotation-page/standard-workspace/canvas-wrapper';
 import AttributeAnnotationSidebar from './attribute-annotation-sidebar/attribute-annotation-sidebar';
 
-export default function StandardWorkspaceComponent(): JSX.Element {
+export default function AttributeAnnotationWorkspace(): JSX.Element {
     return (
         <Layout hasSider className='attribute-annotation-workspace'>
             <CanvasWrapperContainer />
