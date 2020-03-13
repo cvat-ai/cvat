@@ -2711,7 +2711,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "MOT CSV 1.0":
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
-            elif annotation_format == "LabelMe ZIP 1.0":
+            elif annotation_format == "LabelMe ZIP 3.0 for images":
                 annotations["shapes"] = rectangle_shapes_with_attrs + \
                                         rectangle_shapes_wo_attrs + \
                                         polygon_shapes_with_attrs + \
