@@ -104,7 +104,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                             if (!Number.isNaN(numberValue)) {
                                 const isValid = numberValue >= +values[0]
                                     && numberValue <= +values[1]
-                                    && !(numberValue % +values[2]);
+                                    && !((numberValue - +values[0]) % +values[2]);
                                 if (isValid) {
                                     onChange(value);
                                 }
