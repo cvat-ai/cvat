@@ -310,8 +310,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasClicked = (): void => {
-        if (document.activeElement) {
-            (document.activeElement as HTMLElement).blur();
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
         }
     };
 

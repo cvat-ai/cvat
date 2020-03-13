@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 import { connect } from 'react-redux';
 import Layout, { SiderProps } from 'antd/lib/layout';
@@ -143,6 +143,12 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             }
         }
     };
+
+    useEffect(() => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }, []);
 
     const siderProps: SiderProps = {
         className: 'attribute-annotation-sidebar',
