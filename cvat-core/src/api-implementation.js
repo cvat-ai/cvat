@@ -9,7 +9,6 @@
     require:false
 */
 
-
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
@@ -31,6 +30,26 @@
     const { ArgumentError } = require('./exceptions');
     const { Task } = require('./session');
 
+    function attachUsers(task, users) {
+        if (task.assignee !== null) {
+            [task.assignee] = users.filter((user) => user.id === task.assignee);
+        }
+
+        for (const segment of task.segments) {
+            for (const job of segment.jobs) {
+                if (job.assignee !== null) {
+                    [job.assignee] = users.filter((user) => user.id === job.assignee);
+                }
+            }
+        }
+
+        if (task.owner !== null) {
+            [task.owner] = users.filter((user) => user.id === task.owner);
+        }
+
+        return task;
+    }
+
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
         cvat.plugins.register.implementation = PluginRegistry.register.bind(cvat);
@@ -47,7 +66,12 @@
 
         cvat.server.formats.implementation = async () => {
             const result = await serverProxy.server.formats();
-            return result.map(el => new AnnotationFormat(el));
+            return result.map((el) => new AnnotationFormat(el));
+        };
+
+        cvat.server.datasetFormats.implementation = async () => {
+            const result = await serverProxy.server.datasetFormats();
+            return result;
         };
 
         cvat.server.register.implementation = async (username, firstName, lastName,
@@ -69,6 +93,11 @@
             return result;
         };
 
+        cvat.server.request.implementation = async (url, data) => {
+            const result = await serverProxy.server.request(url, data);
+            return result;
+        };
+
         cvat.users.get.implementation = async (filter) => {
             checkFilter(filter, {
                 self: isBoolean,
@@ -82,7 +111,7 @@
                 users = await serverProxy.users.getUsers();
             }
 
-            users = users.map(user => new User(user));
+            users = users.map((user) => new User(user));
             return users;
         };
 
@@ -116,8 +145,12 @@
 
             // If task was found by its id, then create task instance and get Job instance from it
             if (tasks !== null && tasks.length) {
-                const task = new Task(tasks[0]);
-                return filter.jobID ? task.jobs.filter(job => job.id === filter.jobID) : task.jobs;
+                const users = (await serverProxy.users.getUsers())
+                    .map((userData) => new User(userData));
+                const task = new Task(attachUsers(tasks[0], users));
+
+                return filter.jobID ? task.jobs
+                    .filter((job) => job.id === filter.jobID) : task.jobs;
             }
 
             return [];
@@ -158,8 +191,14 @@
                 }
             }
 
+            const users = (await serverProxy.users.getUsers())
+                .map((userData) => new User(userData));
             const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
-            const tasks = tasksData.map(task => new Task(task));
+            const tasks = tasksData
+                .map((task) => attachUsers(task, users))
+                .map((task) => new Task(task));
+
+
             tasks.count = tasksData.count;
 
             return tasks;

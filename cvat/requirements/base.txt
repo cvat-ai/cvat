@@ -1,5 +1,5 @@
 click==6.7
-Django==2.2.4
+Django==2.2.10
 django-appconf==1.0.2
 django-auth-ldap==1.4.0
 django-cacheops==4.0.6
@@ -7,9 +7,8 @@ django-compressor==2.2
 django-rq==2.0.0
 EasyProcess==0.2.3
 ffmpy==0.2.2
-Pillow==5.1.0
+Pillow==6.2.0
 numpy==1.16.2
-patool==1.12
 python-ldap==3.0.0
 pytz==2018.3
 pyunpack==0.1.2
@@ -18,6 +17,7 @@ redis==3.2.0
 requests==2.20.0
 rjsmin==1.0.12
 rq==1.0.0
+rq-scheduler==0.9.1
 scipy==1.2.1
 sqlparse==0.2.4
 django-sendfile==0.3.11
@@ -25,13 +25,13 @@ dj-pagination==2.4.0
 python-logstash==0.4.6
 django-revproxy==0.9.15
 rules==2.0
-GitPython==2.1.11
+GitPython==3.0.8
 coreapi==2.3.3
 django-filter==2.0.0
 Markdown==3.0.1
-djangorestframework==3.9.1
+djangorestframework==3.9.3
 Pygments==2.3.1
-drf-yasg==1.16.0
+drf-yasg==1.17.0
 Shapely==1.6.4.post2
 pdf2image==1.6.0
 pascal_voc_writer==0.1.4
@@ -39,6 +39,13 @@ django-rest-auth[with_social]==0.9.5
 cython==0.29.13
 matplotlib==3.0.3
 scikit-image==0.15.0
-tensorflow==1.12.3
-django-cors-headers==3.0.2
+tensorflow==1.15.2
+keras==2.2.5
+opencv-python==4.1.0.25
+h5py==2.9.0
+imgaug==0.2.9
+django-cors-headers==3.2.0
 furl==2.0.0
+# The package is used by pyunpack as a command line tool to support multiple
+# archives. Don't use as a python module because it has GPL license.
+patool==1.12

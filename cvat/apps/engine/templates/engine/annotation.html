@@ -1,5 +1,5 @@
 <!--
-    Copyright (C) 2018 Intel Corporation
+    Copyright (C) 2018-2019 Intel Corporation
 
     SPDX-License-Identifier: MIT
 -->
@@ -34,10 +34,15 @@
 
 {% block head_js_cvat %}
     {{ block.super }}
+        <script type="text/javascript" src="{% static 'engine/js/utils.js' %}"></script>
+        <script type="text/javascript">
+            window.UI_URL = "{{ ui_url }}";
+        </script>
         <script type="text/javascript" src="{% static 'engine/js/logger.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/server.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/listener.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/history.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/borderSticker.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/coordinateTranslator.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/labelsInfo.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/annotationParser.js' %}"></script>
@@ -49,6 +54,7 @@
         <script type="text/javascript" src="{% static 'engine/js/bootstrap.js' %}"></script>
 
         <script type="text/javascript" src="{% static 'engine/js/shapes.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/cuboidShape.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/shapeCollection.js' %}"></script>
 
         <script type="text/javascript" src="{% static 'engine/js/player.js' %}"></script>
@@ -92,6 +98,9 @@
                     <li action="switch_lock"> Switch Lock </li>
                     <li class="interpolationItem" action="split_track"> Split </li>
                     <li class="polygonItem" action="drag_polygon"> Enable Dragging </li>
+                    <li class="cuboidItem" action="reset_perspective"> Reset Perspective </li>
+                    <li class="cuboidItem" action="switch_orientation"> Switch Perspective Orientation </li>
+
                 </ul>
 
                 <ul id="playerContextMenu" class='custom-menu' oncontextmenu="return false;">
@@ -160,7 +169,7 @@
                 <input class="regular h2" style="width: 3.5em;" type="number" id="frameNumber">
             </div>
             <hr>
-            <table class="regular" cellpadding="20">
+            <table id="annotationSettingsTable" class="regular">
                 <tr>
                 <td style="width: auto;">
                         <div style="float: left;"> <label class="semiBold"> Fill Opacity: </label> </div>
@@ -187,6 +196,12 @@
                         <div style="float: left; margin-left: 10px;">
                             <label style="margin-right: 10px;"> Label </label>
                             <input type="radio" name="colorByRadio" id="colorByLabelRadio" class="settingsBox"/>
+                        </div>
+                        <div style="float: left; margin-left: 50px;" title="Press Ctrl to switch">
+                            <label style="display: none;">
+                                Common borders
+                                <input type="checkbox" id="commonBordersCheckbox" class="settingsBox" style="margin-left: 10px; display: none;"/>
+                            </label>
                         </div>
                     </td>
                 </tr>
@@ -216,10 +231,10 @@
                         *[type="polygon"] - only polygon objects <br>
                         car[occluded="true"] - only occluded cars <br>
                         *[lock!="true"] - only unlocked tracks <br>
-                        person[attr/age>="25" and attr/age<="35"] - persons with age (number) beetween [25,40] years <br>
+                        person[attr/age>="25" and attr/age<="35"] - persons with age (number) between [25,40] years <br>
                         car[attr/parked="true"] - only parked cars <br>
                         person[attr/race="asian"] | car[attr/model="bmw"] - asians and BMW cars <br>
-                        face[attr/glass="sunglass" or attr/glass="no"] - faces with sunglass or without glass <br>
+                        face[attr/glass="sunglasses" or attr/glass="no"] - faces with sunglasses or without glass <br>
                         *[attr/*="__undefined__"] - any tracks with any unlabeled attributes <br>
                         *[width<300 or height<300] - shapes with height or width less than 300px <br>
                         person[width>300 and height<200] - person shapes with width > 300px and height < 200px <br>
@@ -319,6 +334,10 @@
                         <td> <label> Rotate All Images </label> </td>
                         <td> <input type = "checkbox"  id="rotateAllImages" class="settingsBox"/> </td>
                     </tr>
+                    <tr>
+                        <td> <label> Cuboid Projection Lines: </label> </td>
+                        <td><input type="checkbox" id="projectionLineEnable" class="settingsBox"/></td>
+                    </tr>
                 </table>
             </div>
 
@@ -338,6 +357,7 @@
                     <option selected disabled> Upload Annotation </option>
             </select>
 
+            <button id="openTaskButton" class="menuButton semiBold h2"> Open Task </button>
             <button id="removeAnnotationButton" class="menuButton semiBold h2"> Remove Annotation </button>
             <button id="settingsButton" class="menuButton semiBold h2"> Settings </button>
             <button id="fullScreenButton" class="menuButton semiBold h2"> Fullscreen Player </button>
@@ -377,19 +397,22 @@
             </center>
             <center> <label class="semiBold h2"> Segment Statistic </label> </center>
             <div style="text-align: center; max-height: 250px; overflow: auto; display: block;">
-                <table id="annotationStatisticTable" cellspacing="3" cellpadding="3">
+                <table id="annotationStatisticTable">
                     <tr class="semiBold">
                         <td> Label </td>
                         <td colspan="2"> Boxes </td>
                         <td colspan="2"> Polygons </td>
                         <td colspan="2"> Polylines </td>
                         <td colspan="2"> Points </td>
+                        <td colspan="2"> Cuboids </td>
                         <td> Manually </td>
                         <td> Interpolated </td>
                         <td> Total </td>
                     </tr>
                     <tr>
                         <td> </td> <!-- Empty -->
+                        <td> S </td>
+                        <td> T </td>
                         <td> S </td>
                         <td> T </td>
                         <td> S </td>
@@ -425,10 +448,12 @@
             <option value="interpolation" class="regular"> Interpolation </option>
         </select>
         <select id="shapeTypeSelector" class="regular h2">
-            <option value="box" class="regular"> Box </option>
+            <option value="box" class="regular" selected> Box </option>
+            <option value="box_by_4_points" class="regular" selected> Box by 4 points </option>
             <option value="polygon" class="regular"> Polygon </option>
             <option value="polyline" class="regular"> Polyline </option>
             <option value="points" class="regular"> Points </option>
+            <option value="cuboid" class="regular"> Cuboid </option>
         </select>
         <div id="polyShapeSizeWrapper">
             <label for="polyShapeSize" class="regular h2"> Poly Shape Size: </label>

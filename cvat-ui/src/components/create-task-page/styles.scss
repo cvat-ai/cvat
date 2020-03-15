@@ -1,0 +1,36 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-create-task-form-wrapper {
+    text-align: center;
+    margin-top: 40px;
+    overflow-y: auto;
+    height: 90%;
+
+    > div > span {
+        font-size: 36px;
+    }
+
+    .cvat-create-task-content {
+        margin-top: 20px;
+        width: 100%;
+        height: auto;
+        border: 1px solid $border-color-1;
+        border-radius: 3px;
+        padding: 20px;
+        background: $background-color-1;
+        text-align: initial;
+
+        > div:not(first-child) {
+            margin-top: 10px;
+        }
+
+        > div:nth-child(7) > button {
+            float: right;
+            width: 120px;
+        }
+    }
+}

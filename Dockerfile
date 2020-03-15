@@ -22,9 +22,7 @@ ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
 # Install necessary apt packages
 RUN apt-get update && \
     apt-get install -yq \
-        python-software-properties \
-        software-properties-common \
-        wget && \
+        software-properties-common && \
     add-apt-repository ppa:mc3man/xerus-media -y && \
     add-apt-repository ppa:mc3man/gstffmpeg-keep -y && \
     apt-get update && \
@@ -40,11 +38,19 @@ RUN apt-get update && \
         python3-dev \
         python3-pip \
         tzdata \
-        unzip \
-        unrar \
         p7zip-full \
-        vim && \
-    pip3 install -U setuptools && \
+        git \
+        ssh \
+        poppler-utils \
+        curl && \
+    curl https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \
+    apt-get install -y git-lfs && git lfs install && \
+    if [ -z ${socks_proxy} ]; then \
+        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30\"" >> ${HOME}/.bashrc; \
+    else \
+        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
+    fi && \
+    python3 -m pip install --no-cache-dir -U pip==20.0.1 setuptools && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \
@@ -66,8 +72,8 @@ ENV REID_MODEL_DIR=${HOME}/reid
 RUN if [ "$OPENVINO_TOOLKIT" = "yes" ]; then \
         /tmp/components/openvino/install.sh && \
         mkdir ${REID_MODEL_DIR} && \
-        wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -O reid/reid.xml && \
-        wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -O reid/reid.bin; \
+        curl https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -o reid/reid.xml && \
+        curl https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -o reid/reid.bin; \
     fi
 
 # Tensorflow annotation support
@@ -78,48 +84,21 @@ RUN if [ "$TF_ANNOTATION" = "yes" ]; then \
         bash -i /tmp/components/tf_annotation/install.sh; \
     fi
 
-ARG WITH_TESTS
-RUN if [ "$WITH_TESTS" = "yes" ]; then \
-        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-        echo 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' | tee /etc/apt/sources.list.d/google-chrome.list && \
-        wget -qO- https://deb.nodesource.com/setup_9.x | bash - && \
-        apt-get update && \
-        DEBIAN_FRONTEND=noninteractive apt-get install -yq \
-            google-chrome-stable \
-            nodejs && \
-        rm -rf /var/lib/apt/lists/*; \
-        mkdir tests && cd tests && npm install \
-            eslint \
-            eslint-detailed-reporter \
-            karma \
-            karma-chrome-launcher \
-            karma-coveralls \
-            karma-coverage \
-            karma-junit-reporter \
-            karma-qunit \
-            qunit; \
-        echo "export PATH=~/tests/node_modules/.bin:${PATH}" >> ~/.bashrc; \
+# Auto segmentation support. by Mohammad
+ARG AUTO_SEGMENTATION
+ENV AUTO_SEGMENTATION=${AUTO_SEGMENTATION}
+ENV AUTO_SEGMENTATION_PATH=${HOME}/Mask_RCNN
+RUN if [ "$AUTO_SEGMENTATION" = "yes" ]; then \
+    bash -i /tmp/components/auto_segmentation/install.sh; \
     fi
 
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
-RUN pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
+RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 # pycocotools package is impossible to install with its dependencies by one pip install command
-RUN pip3 install --no-cache-dir pycocotools==2.0.0
+RUN python3 -m pip install --no-cache-dir pycocotools==2.0.0
 
-# Install git application dependencies
-RUN apt-get update && \
-    apt-get install -y ssh netcat-openbsd git curl zip  && \
-    wget -qO /dev/stdout https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \
-    apt-get install -y git-lfs && \
-    git lfs install && \
-    rm -rf /var/lib/apt/lists/* && \
-    if [ -z ${socks_proxy} ]; then \
-        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30\"" >> ${HOME}/.bashrc; \
-    else \
-        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
-    fi
 
 # CUDA support
 ARG CUDA_SUPPORT
@@ -134,14 +113,19 @@ ENV WITH_DEXTR=${WITH_DEXTR}
 ENV DEXTR_MODEL_DIR=${HOME}/dextr
 RUN if [ "$WITH_DEXTR" = "yes" ]; then \
         mkdir ${DEXTR_MODEL_DIR} -p && \
-        wget https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip -O ${DEXTR_MODEL_DIR}/dextr.zip && \
-        unzip ${DEXTR_MODEL_DIR}/dextr.zip -d ${DEXTR_MODEL_DIR} && rm ${DEXTR_MODEL_DIR}/dextr.zip; \
+        curl https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip -o ${DEXTR_MODEL_DIR}/dextr.zip && \
+        7z e ${DEXTR_MODEL_DIR}/dextr.zip -o${DEXTR_MODEL_DIR} && rm ${DEXTR_MODEL_DIR}/dextr.zip; \
     fi
 
 COPY ssh ${HOME}/.ssh
+COPY utils ${HOME}/utils
 COPY cvat/ ${HOME}/cvat
 COPY cvat-core/ ${HOME}/cvat-core
 COPY tests ${HOME}/tests
+COPY datumaro/ ${HOME}/datumaro
+
+RUN python3 -m pip install --no-cache-dir -r ${HOME}/datumaro/requirements.txt
+
 # Binary option is necessary to correctly apply the patch on Windows platform.
 # https://unix.stackexchange.com/questions/239364/how-to-fix-hunk-1-failed-at-1-different-line-endings-message
 RUN patch --binary -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch

@@ -1,0 +1,86 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-models-page {
+    padding-top: 30px;
+    height: 100%;
+    overflow: auto;
+
+    > div:nth-child(1) {
+        margin-bottom: 10px;
+
+        > div:nth-child(1) {
+            display: flex;
+        }
+
+        > div:nth-child(2) {
+            display: flex;
+            justify-content: flex-end;
+        }
+    }
+}
+
+.cvat-empty-models-list {
+    /* empty-models icon */
+    > div:nth-child(1) {
+        margin-top: 50px;
+    }
+
+    /* No models uploaded yet */
+    > div:nth-child(2) > div {
+        margin-top: 20px;
+
+        > span {
+            font-size: 20px;
+            color: $text-color;
+        }
+    }
+
+    /* To annotate your task automatically */
+    > div:nth-child(3) {
+        margin-top: 10px;
+    }
+}
+
+.cvat-models-list {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.cvat-models-list-item {
+    width: 100%;
+    height: 60px;
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: $background-color-1;
+
+    &:hover {
+        border: 1px solid $border-color-hover;
+    }
+
+    > div {
+        display: flex;
+        align-items: center;
+    }
+
+    > div:nth-child(2) > span {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    > div:nth-child(3) > span {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+}
+
+#cvat-create-model-button {
+    padding: 0 30px;
+}

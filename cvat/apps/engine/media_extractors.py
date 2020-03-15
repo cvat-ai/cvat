@@ -225,7 +225,9 @@ def _is_video(path):
 
 def _is_image(path):
     mime = mimetypes.guess_type(path)
-    return mime[0] is not None and mime[0].startswith('image')
+    # Exclude vector graphic images because Pillow cannot work with them
+    return mime[0] is not None and mime[0].startswith('image') and \
+        not mime[0].startswith('image/svg')
 
 def _is_dir(path):
     return os.path.isdir(path)

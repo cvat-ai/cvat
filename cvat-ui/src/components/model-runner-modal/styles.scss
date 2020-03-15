@@ -1,0 +1,13 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-run-model-dialog > div:not(first-child) {
+    margin-top: 10px;
+}
+
+.cvat-run-model-dialog-remove-mapping-icon {
+    color: $danger-icon-color;
+}

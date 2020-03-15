@@ -1,6 +1,6 @@
 {
   "name": "cvat-canvas",
-  "version": "0.1.0",
+  "version": "0.5.2",
   "description": "Part of Computer Vision Annotation Tool which presents its canvas library",
   "main": "src/canvas.ts",
   "scripts": {
@@ -31,7 +31,11 @@
     "eslint-config-airbnb-typescript": "^4.0.1",
     "eslint-config-typescript-recommended": "^1.4.17",
     "eslint-plugin-import": "^2.18.2",
+    "node-sass": "^4.13.0",
     "nodemon": "^1.19.1",
+    "postcss-loader": "^3.0.0",
+    "postcss-preset-env": "^6.7.0",
+    "sass-loader": "^8.0.0",
     "style-loader": "^1.0.0",
     "typescript": "^3.5.3",
     "webpack": "^4.36.1",

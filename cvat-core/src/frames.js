@@ -52,6 +52,13 @@
                     value: tid,
                     writable: false,
                 },
+                /**
+                    * @name number
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.FrameData
+                    * @readonly
+                    * @instance
+                */
                 number: {
                     value: number,
                     writable: false,
@@ -93,9 +100,14 @@
                     } else if (isBrowser) {
                         const reader = new FileReader();
                         reader.onload = () => {
-                            frameCache[this.tid][this.number] = reader.result;
-                            resolve(frameCache[this.tid][this.number]);
+                            const image = new Image(frame.width, frame.height);
+                            image.onload = () => {
+                                frameCache[this.tid][this.number] = image;
+                                resolve(frameCache[this.tid][this.number]);
+                            };
+                            image.src = reader.result;
                         };
+
                         reader.readAsDataURL(frame);
                     }
                 }
@@ -105,10 +117,31 @@
         });
     };
 
+    async function getPreview(taskID) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Just go to server and get preview (no any cache)
+                const result = await serverProxy.frames.getPreview(taskID);
+                if (isNode) {
+                    resolve(global.Buffer.from(result, 'binary').toString('base64'));
+                } else if (isBrowser) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        resolve(reader.result);
+                    };
+                    reader.readAsDataURL(result);
+                }
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
     async function getFrame(taskID, mode, frame) {
         if (!(taskID in frameDataCache)) {
-            frameDataCache[taskID] = {};
-            frameDataCache[taskID].meta = await serverProxy.frames.getMeta(taskID);
+            frameDataCache[taskID] = {
+                meta: await serverProxy.frames.getMeta(taskID),
+            };
 
             frameCache[taskID] = {};
         }
@@ -140,5 +173,6 @@
     module.exports = {
         FrameData,
         getFrame,
+        getPreview,
     };
 })();

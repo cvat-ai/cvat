@@ -1,0 +1,215 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-annotation-page.ant-layout {
+    height: 100%
+}
+
+.ant-layout-header.cvat-annotation-header {
+    background-color: $background-color-2;
+    border-bottom: 1px solid $border-color-1;
+    height: 54px;
+    padding: 0px;
+}
+
+.cvat-annotation-header-left-group {
+    > button:first-child {
+        filter: invert(0.9);
+        background: $background-color-1;
+        border-radius: 0px;
+        width: 70px;
+    }
+}
+
+.ant-btn.cvat-annotation-header-button {
+    padding: 0px;
+    width: 54px;
+    height: 54px;
+    float: left;
+    text-align: center;
+    user-select: none;
+    color: $text-color;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0px 3px;
+
+    > span {
+        margin-left: 0px;
+        font-size: 10px;
+    }
+
+    > i {
+        transform: scale(0.8);
+        padding: 3px;
+    }
+
+    &:hover > i {
+        transform: scale(0.85);
+    }
+
+    &:active > i {
+        transform: scale(0.8);
+    }
+
+    > * {
+        display: block;
+        line-height: 0px;
+    }
+}
+
+.cvat-annotation-disabled-header-button {
+    @extend .cvat-annotation-header-button;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.cvat-annotation-header-player-group > div {
+    height: 54px;
+    line-height: 0px;
+}
+
+.cvat-player-buttons {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 100%;
+    margin-right: 10px;
+
+    > i {
+        font-size: 25px;
+        margin: 0px 7px;
+        color: $player-buttons-color;
+
+        &:hover {
+            transform: scale(1.1);
+        }
+
+        &:active {
+            transform: scale(1);
+        }
+    }
+}
+
+.cvat-player-controls {
+    position: relative;
+    height: 100%;
+    line-height: 27px;
+
+    > div {
+        position: relative;
+        height: 50%;
+    }
+}
+
+.cvat-player-slider {
+    width: 350px;
+
+    > .ant-slider-rail {
+        background-color: $player-slider-color;
+    }
+
+}
+
+.cvat-player-filename-wrapper {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}
+
+.cvat-player-frame-url-icon {
+    opacity: 0.7;
+    color: $objects-bar-icons-color;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    &:active {
+        opacity: 0.7;
+    }
+}
+
+.cvat-player-frame-selector {
+    width: 5em;
+    padding-right: 5px;
+    margin-left: 5px;
+}
+
+.cvat-annotation-header-right-group {
+    > div {
+        float: left;
+        display: block;
+        height: 54px;
+        margin-right: 15px;
+    }
+}
+
+.cvat-workspace-selector {
+    width: 150px;
+}
+
+.cvat-job-info-modal-window {
+    > div {
+        margin-top: 10px;
+    }
+
+    > div:nth-child(1) {
+        > div {
+            > .ant-select, i {
+                margin-left: 10px;
+            }
+        }
+    }
+
+    > div:nth-child(2) {
+        > div {
+            > span {
+                font-size: 20px;
+            }
+        }
+    }
+
+    > div:nth-child(3) {
+        > div {
+            display: grid;
+        }
+    }
+
+    > .cvat-job-info-bug-tracker {
+        > div {
+            display: grid;
+        }
+    }
+
+    > .cvat-job-info-statistics {
+        > div {
+            > span {
+                font-size: 20px;
+            }
+
+            .ant-table-thead {
+                > tr > th {
+                    padding: 5px 5px;
+                }
+            }
+        }
+    }
+}
+
+.ant-menu.cvat-annotation-menu {
+    box-shadow: 0 0 17px rgba(0,0,0,0.2);
+
+    > li:hover {
+        background-color: $hover-menu-color;
+    }
+
+    .ant-menu-submenu-title {
+        margin: 0px;
+        width: 15em;
+    }
+}

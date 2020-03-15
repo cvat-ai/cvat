@@ -1,21 +1,18 @@
 
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, QueryDict
-from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from rest_framework.decorators import api_view
 from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.models import Task as TaskModel
-from cvat.apps.engine import annotation, task
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data
 
 import django_rq
 import fnmatch
-import logging
 import json
 import os
 import rq
@@ -223,14 +220,15 @@ def create_thread(tid, labels_mapping, user):
         try:
             slogger.task[tid].exception('exception was occured during tf annotation of the task', exc_info=True)
         except:
-            slogger.glob.exception('exception was occured during tf annotation of the task {}'.format(tid), exc_into=True)
+            slogger.glob.exception('exception was occured during tf annotation of the task {}'.format(tid), exc_info=True)
         raise ex
 
+@api_view(['POST'])
 @login_required
 def get_meta_info(request):
     try:
         queue = django_rq.get_queue('low')
-        tids = json.loads(request.body.decode('utf-8'))
+        tids = request.data
         result = {}
         for tid in tids:
             job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
@@ -242,7 +240,7 @@ def get_meta_info(request):
 
         return JsonResponse(result)
     except Exception as ex:
-        slogger.glob.exception('exception was occured during tf meta request', exc_into=True)
+        slogger.glob.exception('exception was occured during tf meta request', exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
 

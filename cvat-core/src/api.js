@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2019 Intel Corporation
+* Copyright (C) 2019-2020 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -27,8 +27,9 @@ function build() {
         AttributeType,
         ObjectType,
         ObjectShape,
-        VisibleState,
         LogType,
+        HistoryActions,
+        colors,
     } = require('./enums');
 
     const {
@@ -116,6 +117,20 @@ function build() {
                 return result;
             },
             /**
+                * Method returns available dataset export formats
+                * @method exportFormats
+                * @async
+                * @memberof module:API.cvat.server
+                * @returns {module:String[]}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async datasetFormats() {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.server.datasetFormats);
+                return result;
+            },
+            /**
                 * Method allows to register on a server
                 * @method register
                 * @async
@@ -175,6 +190,22 @@ function build() {
             async authorized() {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.server.authorized);
+                return result;
+            },
+            /**
+                * Method allows to do requests via cvat-core with authorization headers
+                * @method request
+                * @async
+                * @memberof module:API.cvat.server
+                * @param {string} url
+                * @param {Object} data request parameters: method, headers, data, etc.
+                * @returns {Object | undefined} response data if exist
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async request(url, data) {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.server.request, url, data);
                 return result;
             },
         },
@@ -467,8 +498,9 @@ function build() {
             AttributeType,
             ObjectType,
             ObjectShape,
-            VisibleState,
             LogType,
+            HistoryActions,
+            colors,
         },
         /**
             * Namespace is used for access to exceptions

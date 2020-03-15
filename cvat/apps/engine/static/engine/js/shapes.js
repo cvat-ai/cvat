@@ -50,6 +50,7 @@ class ShapeModel extends Listener {
         this._hiddenShape = false;
         this._hiddenText = true;
         this._updateReason = null;
+        this._clipToFrame = true;
         this._importAttributes(data.attributes, positions);
     }
 
@@ -197,7 +198,8 @@ class ShapeModel extends Listener {
         }
 
         if (visibleFrame != null) {
-            if (this._type === 'interpolation_box') {
+            if (this._type === 'interpolation_box'
+                || this._type === 'interpolation_points') {
                 counter += window.cvat.player.frames.stop - visibleFrame + 1;
             }
             else {
@@ -607,6 +609,10 @@ class ShapeModel extends Listener {
     get selected() {
         return this._selected;
     }
+
+    get clipToFrame() {
+        return this._clipToFrame;
+    }
 }
 
 
@@ -930,8 +936,10 @@ class PolyShapeModel extends ShapeModel {
 
         let points = PolyShapeModel.convertStringToNumberArray(position.points);
         for (let point of points) {
-            point.x = Math.clamp(point.x, 0, window.cvat.player.geometry.frameWidth);
-            point.y = Math.clamp(point.y, 0, window.cvat.player.geometry.frameHeight);
+            if (this.clipToFrame) {
+                point.x = Math.clamp(point.x, 0, window.cvat.player.geometry.frameWidth);
+                point.y = Math.clamp(point.y, 0, window.cvat.player.geometry.frameHeight);
+            }
 
             box.xtl = Math.min(box.xtl, point.x);
             box.ytl = Math.min(box.ytl, point.y);
@@ -1670,6 +1678,16 @@ class ShapeView extends Listener {
                 }
                 else {
                     dragPolyItem.addClass('hidden');
+                }
+
+                let resetPerpectiveItem =  this._shapeContextMenu.find('.cuboidItem[action="reset_perspective"]');
+                let switchOrientationItem = this._shapeContextMenu.find('.cuboidItem[action="switch_orientation"]');
+                if(type[1] === 'cuboid'){
+                    resetPerpectiveItem.removeClass('hidden');
+                    switchOrientationItem.removeClass('hidden');
+                }else{
+                    resetPerpectiveItem.addClass('hidden');
+                    switchOrientationItem.addClass('hidden');
                 }
 
                 this._shapeContextMenu.finish().show(100);
@@ -3007,7 +3025,8 @@ class PolyShapeView extends ShapeView {
 
                             // Run edit mode
                             PolyShapeView.editor.edit(this._controller.type.split('_')[1],
-                                this._uis.shape.attr('points'), this._color, index, e,
+                                this._uis.shape.attr('points'), this._color, index,
+                                this._uis.shape.attr('points').split(/\s/)[index], e,
                                 (points) => {
                                     this._uis.shape.removeClass('hidden');
                                     if (this._uis.points) {
@@ -3017,7 +3036,8 @@ class PolyShapeView extends ShapeView {
                                         this._uis.shape.attr('points', points);
                                         this._controller.updatePosition(window.cvat.player.frames.current, this._buildPosition());
                                     }
-                                }
+                                },
+                                this._controller.id
                             );
                         }
                     }
@@ -3310,6 +3330,10 @@ function buildShapeModel(data, type, clientID, color) {
     switch (type) {
     case 'interpolation_box':
     case 'annotation_box':
+    case 'interpolation_box_by_4_points':
+    case 'annotation_box_by_4_points':
+        // convert type into 'box' if 'box_by_4_points'
+        type = type.replace('_by_4_points', '');
         return new BoxModel(data, type, clientID, color);
     case 'interpolation_points':
     case 'annotation_points':
@@ -3320,25 +3344,30 @@ function buildShapeModel(data, type, clientID, color) {
     case 'interpolation_polygon':
     case 'annotation_polygon':
         return new PolygonModel(data, type, clientID, color);
+    case 'interpolation_cuboid':
+    case 'annotation_cuboid':
+        return new CuboidModel(data, type, clientID, color);
     }
     throw Error('Unreacheable code was reached.');
 }
 
-
 function buildShapeController(shapeModel) {
     switch (shapeModel.type) {
-    case 'interpolation_box':
-    case 'annotation_box':
-        return new BoxController(shapeModel);
-    case 'interpolation_points':
-    case 'annotation_points':
-        return new PointsController(shapeModel);
-    case 'interpolation_polyline':
-    case 'annotation_polyline':
-        return new PolylineController(shapeModel);
-    case 'interpolation_polygon':
-    case 'annotation_polygon':
-        return new PolygonController(shapeModel);
+        case 'interpolation_box':
+        case 'annotation_box':
+            return new BoxController(shapeModel);
+        case 'interpolation_points':
+        case 'annotation_points':
+            return new PointsController(shapeModel);
+        case 'interpolation_polyline':
+        case 'annotation_polyline':
+            return new PolylineController(shapeModel);
+        case 'interpolation_polygon':
+        case 'annotation_polygon':
+            return new PolygonController(shapeModel);
+        case 'interpolation_cuboid':
+        case 'annotation_cuboid':
+            return new CuboidController(shapeModel);
     }
     throw Error('Unreacheable code was reached.');
 }
@@ -3346,18 +3375,21 @@ function buildShapeController(shapeModel) {
 
 function buildShapeView(shapeModel, shapeController, svgContent, UIContent, textsContent) {
     switch (shapeModel.type) {
-    case 'interpolation_box':
-    case 'annotation_box':
-        return new BoxView(shapeModel, shapeController, svgContent, UIContent, textsContent);
-    case 'interpolation_points':
-    case 'annotation_points':
-        return new PointsView(shapeModel, shapeController, svgContent, UIContent, textsContent);
-    case 'interpolation_polyline':
-    case 'annotation_polyline':
-        return new PolylineView(shapeModel, shapeController, svgContent, UIContent, textsContent);
-    case 'interpolation_polygon':
-    case 'annotation_polygon':
-        return new PolygonView(shapeModel, shapeController, svgContent, UIContent, textsContent);
+        case 'interpolation_box':
+        case 'annotation_box':
+            return new BoxView(shapeModel, shapeController, svgContent, UIContent, textsContent);
+        case 'interpolation_points':
+        case 'annotation_points':
+            return new PointsView(shapeModel, shapeController, svgContent, UIContent, textsContent);
+        case 'interpolation_polyline':
+        case 'annotation_polyline':
+            return new PolylineView(shapeModel, shapeController, svgContent, UIContent, textsContent);
+        case 'interpolation_polygon':
+        case 'annotation_polygon':
+            return new PolygonView(shapeModel, shapeController, svgContent, UIContent, textsContent);
+        case 'interpolation_cuboid':
+        case 'annotation_cuboid':
+            return new CuboidView(shapeModel, shapeController, svgContent, UIContent, textsContent);
     }
     throw Error('Unreacheable code was reached.');
 }

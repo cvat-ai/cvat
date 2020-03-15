@@ -1,16 +1,16 @@
-/*
-* Copyright (C) 2019 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 import {
-    Rotation,
+    Mode,
     DrawData,
     MergeData,
     SplitData,
     GroupData,
     CanvasModel,
     CanvasModelImpl,
+    RectDrawingMethod,
 } from './canvasModel';
 
 import {
@@ -27,15 +27,17 @@ import {
     CanvasViewImpl,
 } from './canvasView';
 
+import '../scss/canvas.scss';
+import pjson from '../../package.json';
 
-import '../css/canvas.css';
-
+const CanvasVersion = pjson.version;
 
 interface Canvas {
     html(): HTMLDivElement;
+    setZLayer(zLayer: number | null): void;
     setup(frameData: any, objectStates: any[]): void;
-    activate(clientID: number, attributeID?: number): void;
-    rotate(rotation: Rotation, remember?: boolean): void;
+    activate(clientID: number | null, attributeID?: number): void;
+    rotate(rotationAngle: number): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -46,6 +48,11 @@ interface Canvas {
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
 
+    fitCanvas(): void;
+    dragCanvas(enable: boolean): void;
+    zoomCanvas(enable: boolean): void;
+
+    mode(): void;
     cancel(): void;
 }
 
@@ -64,16 +71,35 @@ class CanvasImpl implements Canvas {
         return this.view.html();
     }
 
+    public setZLayer(zLayer: number | null): void {
+        this.model.setZLayer(zLayer);
+    }
+
     public setup(frameData: any, objectStates: any[]): void {
         this.model.setup(frameData, objectStates);
     }
 
-    public activate(clientID: number, attributeID: number = null): void {
+    public fitCanvas(): void {
+        this.model.fitCanvas(
+            this.view.html().clientWidth,
+            this.view.html().clientHeight,
+        );
+    }
+
+    public dragCanvas(enable: boolean): void {
+        this.model.dragCanvas(enable);
+    }
+
+    public zoomCanvas(enable: boolean): void {
+        this.model.zoomCanvas(enable);
+    }
+
+    public activate(clientID: number | null, attributeID: number | null = null): void {
         this.model.activate(clientID, attributeID);
     }
 
-    public rotate(rotation: Rotation, remember: boolean = false): void {
-        this.model.rotate(rotation, remember);
+    public rotate(rotationAngle: number): void {
+        this.model.rotate(rotationAngle);
     }
 
     public focus(clientID: number, padding: number = 0): void {
@@ -108,13 +134,18 @@ class CanvasImpl implements Canvas {
         this.model.select(objectState);
     }
 
+    public mode(): Mode {
+        return this.model.mode;
+    }
+
     public cancel(): void {
         this.model.cancel();
     }
 }
 
-
 export {
     CanvasImpl as Canvas,
-    Rotation,
+    CanvasVersion,
+    RectDrawingMethod,
+    Mode as CanvasMode,
 };

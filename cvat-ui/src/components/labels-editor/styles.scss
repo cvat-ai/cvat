@@ -1,0 +1,90 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+textarea.ant-input.cvat-raw-labels-viewer {
+    border-color: $border-color-2;
+    box-shadow: none;
+    border-top: none;
+    border-radius: 0px 0px 5px 5px;
+    min-height: 9em;
+    font-family: $monospaced-fonts-stack;
+
+    &:focus {
+        border-color: $border-color-2;
+        box-shadow: none;
+    }
+
+    &:hover {
+        border-color: $border-color-2;
+        box-shadow: none;
+    }
+}
+
+.cvat-constructor-viewer {
+    border: 1px solid $border-color-2;
+    box-shadow: none;
+    border-top: none;
+    border-radius: 0px 0px 5px 5px;
+    padding: 5px;
+    display: flex;
+    overflow-y: auto;
+    min-height: 9em;
+    flex-wrap: wrap;
+}
+
+.cvat-constructor-viewer-item {
+    height: fit-content;
+    display: flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 2px;
+    margin: 2px;
+    margin-left: 8px;
+    user-select: none;
+    border: 1px solid $transparent-color;
+    opacity: 0.6;
+
+    > span {
+        margin-left: 5px;
+        color: white;
+
+        > i:hover {
+            filter: invert(1);
+        }
+    }
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.cvat-constructor-viewer-new-item {
+    height: fit-content;
+    display: flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 2px;
+    margin: 2px;
+    margin-left: 8px;
+    user-select: none;
+    opacity: 1;
+}
+
+.cvat-label-constructor-creator,
+.cvat-label-constructor-updater
+{
+    > form:first-child {
+        margin-top: 10px;
+    }
+}
+
+.cvat-attribute-constructor-form > div:first-child > div:nth-child(4) {
+    display: contents;
+}
+
+.cvat-delete-attribute-button:hover > i {
+    color: $danger-icon-color;
+}

@@ -1,211 +1,72 @@
-import React, { PureComponent } from 'react';
-import { Link } from 'react-router-dom';
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
-import { connect } from 'react-redux';
-import { registerAsync, isAuthenticatedAsync } from '../../actions/auth.actions';
+import React from 'react';
 
-import { Button, Icon, Input, Form, Col, Row, Spin } from 'antd';
+import { RouteComponentProps } from 'react-router';
+import { Link, withRouter } from 'react-router-dom';
+
 import Title from 'antd/lib/typography/Title';
+import Text from 'antd/lib/typography/Text';
+import {
+    Col,
+    Row,
+} from 'antd';
 
-import './register-page.scss';
+import RegisterForm, { RegisterData } from './register-form';
 
-
-class RegisterForm extends PureComponent<any, any> {
-  constructor(props: any) {
-    super(props);
-
-    this.state = { confirmDirty: false, loading: false };
-  }
-
-  componentDidMount() {
-    this.setState({ loading: true });
-
-    this.props.dispatch(isAuthenticatedAsync()).then(
-      (isAuthenticated: boolean) => {
-        this.setState({ loading: false });
-
-        if (this.props.isAuthenticated) {
-          this.props.history.replace('/tasks');
-        }
-      }
-    );
-  }
-
-  render() {
-    const { getFieldDecorator } = this.props.form;
-
-    return (
-      <Spin wrapperClassName="spinner" size="large" spinning={ this.state.loading }>
-        <Row type="flex" justify="center" align="middle">
-          <Col xs={12} md={10} lg={8} xl={6}>
-            <Form className="register-form" onSubmit={ this.onSubmit }>
-              <Title className="register-form__title">Register</Title>
-
-              <Form.Item>
-                {getFieldDecorator('username', {
-                  rules: [{ required: true, message: 'Please enter your username!' }],
-                })(
-                  <Input
-                    prefix={ <Icon type="user" /> }
-                    type="text"
-                    name="username"
-                    placeholder="Username"
-                  />,
-                )}
-              </Form.Item>
-
-              <Form.Item>
-                {getFieldDecorator('firstName', {
-                  rules: [],
-                })(
-                  <Input
-                    prefix={ <Icon type="idcard" /> }
-                    type="text"
-                    name="first-name"
-                    placeholder="First name"
-                  />,
-                )}
-              </Form.Item>
-
-              <Form.Item>
-                {getFieldDecorator('lastName', {
-                  rules: [],
-                })(
-                  <Input
-                    prefix={ <Icon type="idcard" /> }
-                    type="text"
-                    name="last-name"
-                    placeholder="Last name"
-                  />,
-                )}
-              </Form.Item>
-
-              <Form.Item hasFeedback>
-                {getFieldDecorator('email', {
-                  rules: [
-                    {
-                      type: 'email',
-                      message: 'The input is not valid email!',
-                    },
-                    {
-                      required: true,
-                      message: 'Please input your email!',
-                    },
-                  ],
-                })(
-                  <Input
-                    prefix={ <Icon type="mail" /> }
-                    type="text"
-                    name="email"
-                    placeholder="Email"
-                  />,
-                )}
-              </Form.Item>
-
-              <Form.Item hasFeedback>
-                {getFieldDecorator('password', {
-                  rules: [
-                    {
-                      required: true,
-                      message: 'Please input your password!',
-                    },
-                    {
-                      validator: this.validateToNextPassword,
-                    },
-                  ],
-                })(
-                  <Input.Password
-                    prefix={ <Icon type="lock" /> }
-                    name="password"
-                    placeholder="Password"
-                  />,
-                )}
-              </Form.Item>
-
-              <Form.Item hasFeedback>
-                {getFieldDecorator('passwordConfirmation', {
-                  rules: [
-                    {
-                      required: true,
-                      message: 'Please confirm your password!',
-                    },
-                    {
-                      validator: this.compareToFirstPassword,
-                    },
-                  ],
-                })(
-                  <Input.Password
-                    onBlur={ this.handleConfirmBlur }
-                    prefix={ <Icon type="lock" /> }
-                    name="password-confirmation"
-                    placeholder="Password confirmation"
-                  />,
-                )}
-              </Form.Item>
-
-              <Form.Item>
-                <Button type="primary" htmlType="submit" loading={ this.props.isFetching }>
-                  Register
-                </Button>
-              </Form.Item>
-
-              Already have an account? <Link to="/login">Login here.</Link>
-            </Form>
-          </Col>
-        </Row>
-      </Spin>
-    );
-  }
-
-  private handleConfirmBlur = (event: any) => {
-    const { value } = event.target;
-
-    this.setState({ confirmDirty: this.state.confirmDirty || !!value });
-  };
-
-  private compareToFirstPassword = (rule: any, value: string, callback: Function) => {
-    const { form } = this.props;
-
-    if (value && value !== form.getFieldValue('password')) {
-      callback('Two passwords that you enter are inconsistent!');
-    } else {
-      callback();
-    }
-  };
-
-  private validateToNextPassword = (rule: any, value: string, callback: Function) => {
-    const { form } = this.props;
-
-    if (value && this.state.confirmDirty) {
-      form.validateFields(['passwordConfirmation'], { force: true });
-    }
-
-    callback();
-  };
-
-  private onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    this.props.form.validateFields((error: any, values: any) => {
-      if (!error) {
-        this.props.dispatch(
-          registerAsync(
-            values.username,
-            values.firstName,
-            values.lastName,
-            values.email,
-            values.password,
-            values.passwordConfirmation,
-            this.props.history,
-          ),
-        );
-      }
-    });
-  }
+interface RegisterPageComponentProps {
+    fetching: boolean;
+    onRegister: (username: string, firstName: string,
+        lastName: string, email: string,
+        password1: string, password2: string) => void;
 }
 
-const mapStateToProps = (state: any) => {
-  return state.authContext;
-};
+function RegisterPageComponent(
+    props: RegisterPageComponentProps & RouteComponentProps,
+): JSX.Element {
+    const sizes = {
+        xs: { span: 14 },
+        sm: { span: 14 },
+        md: { span: 10 },
+        lg: { span: 4 },
+        xl: { span: 4 },
+    };
 
-export default Form.create()(connect(mapStateToProps)(RegisterForm));
+    const {
+        fetching,
+        onRegister,
+    } = props;
+
+    return (
+        <Row type='flex' justify='center' align='middle'>
+            <Col {...sizes}>
+                <Title level={2}> Create an account </Title>
+                <RegisterForm
+                    fetching={fetching}
+                    onSubmit={(registerData: RegisterData): void => {
+                        onRegister(
+                            registerData.username,
+                            registerData.firstName,
+                            registerData.lastName,
+                            registerData.email,
+                            registerData.password1,
+                            registerData.password2,
+                        );
+                    }}
+                />
+                <Row type='flex' justify='start' align='top'>
+                    <Col>
+                        <Text strong>
+                            Already have an account?
+                            <Link to='/auth/login'> Login </Link>
+                        </Text>
+                    </Col>
+                </Row>
+            </Col>
+        </Row>
+    );
+}
+
+export default withRouter(RegisterPageComponent);

@@ -33,7 +33,26 @@ class StatusChoice(str, Enum):
     def __str__(self):
         return self.value
 
+class Project(models.Model):
+    name = SafeCharField(max_length=256)
+    owner = models.ForeignKey(User, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="+")
+    assignee = models.ForeignKey(User, null=True,  blank=True,
+        on_delete=models.SET_NULL, related_name="+")
+    bug_tracker = models.CharField(max_length=2000, blank=True, default="")
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=32, choices=StatusChoice.choices(),
+        default=StatusChoice.ANNOTATION)
+
+    # Extend default permission model
+    class Meta:
+        default_permissions = ()
+
 class Task(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE,
+        null=True, blank=True, related_name="tasks",
+        related_query_name="task")
     name = SafeCharField(max_length=256)
     size = models.PositiveIntegerField()
     mode = models.CharField(max_length=32)
@@ -66,6 +85,12 @@ class Task(models.Model):
             str(frame) + '.jpg')
 
         return path
+
+    @staticmethod
+    def get_image_frame(image_path):
+        assert image_path.endswith('.jpg')
+        index = os.path.splitext(os.path.basename(image_path))[0]
+        return int(index)
 
     def get_frame_step(self):
         match = re.search("step\s*=\s*([1-9]\d*)", self.frame_filter)
@@ -213,7 +238,7 @@ class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
     id = models.BigAutoField(primary_key=True)
     spec = models.ForeignKey(AttributeSpec, on_delete=models.CASCADE)
-    value = SafeCharField(max_length=64)
+    value = SafeCharField(max_length=4096)
 
     class Meta:
         abstract = True
@@ -224,6 +249,7 @@ class ShapeType(str, Enum):
     POLYGON = 'polygon'     # (x0, y0, ..., xn, yn)
     POLYLINE = 'polyline'   # (x0, y0, ..., xn, yn)
     POINTS = 'points'       # (x0, y0, ..., xn, yn)
+    CUBOID = 'cuboid'
 
     @classmethod
     def choices(self):
@@ -261,9 +287,9 @@ class FloatArrayField(models.TextField):
     separator = ","
 
     def from_db_value(self, value, expression, connection):
-            if value is None:
-                return value
-            return [float(v) for v in value.split(self.separator)]
+        if not value:
+            return value
+        return [float(v) for v in value.split(self.separator)]
 
     def to_python(self, value):
         if isinstance(value, list):

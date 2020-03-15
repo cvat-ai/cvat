@@ -14,24 +14,25 @@ echo "$NVIDIA_GPGKEY_SUM  cudasign.pub" | sha256sum -c --strict - && rm cudasign
 echo "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/cuda.list && \
 echo "deb http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/nvidia-ml.list
 
-CUDA_VERSION=9.0.176
-NCCL_VERSION=2.1.15
-CUDNN_VERSION=7.6.2.24
-CUDA_PKG_VERSION="9-0=${CUDA_VERSION}-1"
+CUDA_VERSION=10.0.130
+NCCL_VERSION=2.5.6
+CUDNN_VERSION=7.6.5.32
+CUDA_PKG_VERSION="10-0=$CUDA_VERSION-1"
 echo 'export PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}' >> ${HOME}/.bashrc
 echo 'export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}' >> ${HOME}/.bashrc
 
 apt-get update && apt-get install -y --no-install-recommends --allow-unauthenticated \
-    libprotobuf-dev \
-    libprotoc-dev \
-    protobuf-compiler \
     cuda-cudart-$CUDA_PKG_VERSION \
+    cuda-compat-10-0 \
     cuda-libraries-$CUDA_PKG_VERSION \
-    libnccl2=$NCCL_VERSION-1+cuda9.0 \
-    libcudnn7=$CUDNN_VERSION-1+cuda9.0 && \
-    ln -s cuda-9.0 /usr/local/cuda && \
-rm -rf /var/lib/apt/lists/* \
+    cuda-nvtx-$CUDA_PKG_VERSION \
+    libnccl2=$NCCL_VERSION-1+cuda10.0 \
+    libcudnn7=$CUDNN_VERSION-1+cuda10.0 && \
+    ln -s cuda-10.0 /usr/local/cuda && \
+    apt-mark hold libnccl2 libcudnn7  && \
+    rm -rf /var/lib/apt/lists/* \
     /etc/apt/sources.list.d/nvidia-ml.list /etc/apt/sources.list.d/cuda.list
 
-pip3 uninstall -y tensorflow
-pip3 install --no-cache-dir tensorflow-gpu==1.12.3
+python3 -m pip uninstall -y tensorflow
+python3 -m pip install --no-cache-dir tensorflow-gpu==1.15.2
+

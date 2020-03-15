@@ -1,7 +1,6 @@
-/*
-* Copyright (C) 2019 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
 import consts from './consts';
@@ -26,11 +25,11 @@ export interface BBox {
     y: number;
 }
 
-// Translate point array from the client coordinate system
-// to a coordinate system of a canvas
+// Translate point array from the canvas coordinate system
+// to the coordinate system of a client
 export function translateFromSVG(svg: SVGSVGElement, points: number[]): number[] {
     const output = [];
-    const transformationMatrix = svg.getScreenCTM();
+    const transformationMatrix = svg.getScreenCTM() as DOMMatrix;
     let pt = svg.createSVGPoint();
     for (let i = 0; i < points.length - 1; i += 2) {
         pt.x = points[i];
@@ -42,11 +41,11 @@ export function translateFromSVG(svg: SVGSVGElement, points: number[]): number[]
     return output;
 }
 
-// Translate point array from a coordinate system of a canvas
-// to the client coordinate system
+// Translate point array from the coordinate system of a client
+// to the canvas coordinate system
 export function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
     const output = [];
-    const transformationMatrix = svg.getScreenCTM().inverse();
+    const transformationMatrix = (svg.getScreenCTM() as DOMMatrix).inverse();
     let pt = svg.createSVGPoint();
     for (let i = 0; i < points.length; i += 2) {
         pt.x = points[i];
@@ -58,23 +57,13 @@ export function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
     return output;
 }
 
-// Translate point array from the first canvas coordinate system
-// to another
-export function translateBetweenSVG(
-    from: SVGSVGElement,
-    to: SVGSVGElement,
-    points: number[],
-): number[] {
-    return translateToSVG(to, translateFromSVG(from, points));
-}
-
 export function pointsToString(points: number[]): string {
     return points.reduce((acc, val, idx): string => {
         if (idx % 2) {
             return `${acc},${val}`;
         }
 
-        return `${acc} ${val}`;
+        return `${acc} ${val}`.trim();
     }, '');
 }
 

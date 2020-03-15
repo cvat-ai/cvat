@@ -1,0 +1,176 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base.scss';
+
+.cvat-canvas-container {
+    background-color: $background-color-1;
+}
+
+.cvat-objects-sidebar-sider {
+    top: 0px;
+    right: 0px;
+    left: auto;
+    background-color: $background-color-2;
+    border-left: 1px solid $border-color-1;
+    z-index: 2;
+}
+
+.cvat-objects-sidebar {
+    height: 100%;
+}
+
+.cvat-canvas-controls-sidebar {
+    background-color: $background-color-2;
+    border-right: 1px solid $border-color-1;
+
+    > div {
+        > i {
+            border-radius: 3.3px;
+            transform: scale(0.65);
+            padding: 2px;
+
+            &:hover {
+                background: $header-color;
+                transform: scale(0.75);
+            }
+
+            &:active {
+                transform: scale(0.65);
+            }
+
+            > svg {
+                transform: scale(0.8);
+            }
+        }
+    }
+}
+
+.cvat-active-canvas-control {
+    background: $header-color;
+    transform: scale(0.75);
+}
+
+.cvat-rotate-canvas-controls-left,
+.cvat-rotate-canvas-controls-right {
+    transform: scale(0.65);
+    border-radius: 5px;
+
+    &:hover {
+        transform: scale(0.75);
+    }
+    &:active {
+        transform: scale(0.65);
+    }
+}
+
+.cvat-rotate-canvas-controls >
+.ant-popover-content >
+.ant-popover-inner > div >
+.ant-popover-inner-content {
+	padding: 0px;
+}
+
+.cvat-rotate-canvas-controls-right > svg {
+    transform: scaleX(-1);
+}
+
+.cvat-draw-shape-popover >
+.ant-popover-content >
+.ant-popover-inner > div >
+.ant-popover-inner-content {
+	padding: 0px;
+}
+
+.cvat-draw-shape-popover-points-selector {
+    width: 100%;
+}
+
+.cvat-draw-shape-popover-content {
+    padding: 10px;
+    border-radius: 5px;
+    background: $background-color-2;
+    width: 250px;
+    > div {
+        margin-top: 5px;
+    }
+    > div:nth-child(3) > div > div {
+        width: 100%;
+    }
+    div:last-child > div > button {
+        width: 100%;
+        &:nth-child(1) {
+            border-radius: 3px 0px 0px 3px;
+        }
+        &:nth-child(2) {
+            border-radius: 0px 3px 3px 0px;
+        }
+    }
+}
+
+.cvat-propagate-confirm {
+    > .ant-input-number {
+        width: 70px;
+        margin: 0px 5px;
+    }
+}
+
+.cvat-canvas-context-menu {
+    opacity: 0.6;
+    position: fixed;
+    width: 300px;
+    z-index: 10;
+    max-height: 50%;
+    overflow-y: auto;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.cvat-canvas-z-axis-wrapper {
+    position: absolute;
+    background: $background-color-2;
+    bottom: 10px;
+    right: 10px;
+    height: 150px;
+    z-index: 100;
+    border-radius: 6px;
+    opacity: 0.5;
+    border: 1px solid $border-color-3;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3px;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    > .ant-slider {
+        height: 75%;
+        margin: 5px 3px;
+
+        > .ant-slider-rail {
+            background-color: #979797;
+        }
+
+        > .ant-slider-handle {
+            transform: none !important;
+        }
+    }
+
+    > i {
+        opacity: 0.7;
+        color: $objects-bar-icons-color;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        &:active {
+            opacity: 0.7;
+        }
+    }
+}

@@ -8,73 +8,58 @@ format_spec = {
         {
             "display_name": "{name} {format} {version}",
             "format": "ZIP",
-            "version": "1.0",
-            "handler": "dump"
+            "version": "1.1",
+            "handler": "dump",
         },
     ],
     "loaders": [
+        {
+            "display_name": "{name} {format} {version}",
+            "format": "ZIP",
+            "version": "1.1",
+            "handler": "load",
+        },
     ],
 }
 
+
 def dump(file_object, annotations):
-    from zipfile import ZipFile
-    import numpy as np
-    import os
-    from pycocotools import mask as maskUtils
-    import matplotlib.image
-    import io
-    from collections import OrderedDict
+    from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor
+    from cvat.apps.dataset_manager.util import make_zip_archive
+    from datumaro.components.project import Environment, Dataset
+    from tempfile import TemporaryDirectory
 
-    # RGB format, (0, 0, 0) used for background
-    def genearte_pascal_colormap(size=256):
-        colormap = np.zeros((size, 3), dtype=int)
-        ind = np.arange(size, dtype=int)
+    env = Environment()
+    polygons_to_masks = env.transforms.get('polygons_to_masks')
+    boxes_to_masks = env.transforms.get('boxes_to_masks')
+    merge_instance_segments = env.transforms.get('merge_instance_segments')
+    id_from_image = env.transforms.get('id_from_image_name')
 
-        for shift in reversed(range(8)):
-            for channel in range(3):
-                colormap[:, channel] |= ((ind >> channel) & 1) << shift
-            ind >>= 3
+    extractor = CvatAnnotationsExtractor('', annotations)
+    extractor = extractor.transform(polygons_to_masks)
+    extractor = extractor.transform(boxes_to_masks)
+    extractor = extractor.transform(merge_instance_segments)
+    extractor = extractor.transform(id_from_image)
+    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
+    converter = env.make_converter('voc_segmentation',
+        apply_colormap=True, label_map='source')
+    with TemporaryDirectory() as temp_dir:
+        converter(extractor, save_dir=temp_dir)
+        make_zip_archive(temp_dir, file_object)
 
-        return colormap
+def load(file_object, annotations):
+    from pyunpack import Archive
+    from tempfile import TemporaryDirectory
+    from datumaro.plugins.voc_format.importer import VocImporter
+    from datumaro.components.project import Environment
+    from cvat.apps.dataset_manager.bindings import import_dm_annotations
 
-    def convert_box_to_polygon(points):
-        xtl = shape.points[0]
-        ytl = shape.points[1]
-        xbr = shape.points[2]
-        ybr = shape.points[3]
+    archive_file = file_object if isinstance(file_object, str) else getattr(file_object, "name")
+    with TemporaryDirectory() as tmp_dir:
+        Archive(archive_file).extractall(tmp_dir)
 
-        return [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr]
-
-    colormap = genearte_pascal_colormap()
-    labels = [label[1]["name"] for label in annotations.meta["task"]["labels"] if label[1]["name"] != 'background']
-    labels.insert(0, 'background')
-    label_colors = OrderedDict((label, colormap[idx]) for idx, label in enumerate(labels))
-
-    with ZipFile(file_object, "w") as output_zip:
-        for frame_annotation in annotations.group_by_frame():
-            image_name = frame_annotation.name
-            annotation_name = "{}.png".format(os.path.splitext(os.path.basename(image_name))[0])
-            width = frame_annotation.width
-            height = frame_annotation.height
-
-            shapes = frame_annotation.labeled_shapes
-            # convert to mask only rectangles and polygons
-            shapes = [shape for shape in shapes if shape.type == 'rectangle' or shape.type == 'polygon']
-            if not shapes:
-                continue
-            shapes = sorted(shapes, key=lambda x: int(x.z_order))
-            img = np.zeros((height, width, 3))
-            buf = io.BytesIO()
-            for shape in shapes:
-                points = shape.points if shape.type != 'rectangle' else convert_box_to_polygon(shape.points)
-                rles = maskUtils.frPyObjects([points], height, width)
-                rle = maskUtils.merge(rles)
-                mask = maskUtils.decode(rle)
-                color = label_colors[shape.label] / 255
-                idx = (mask > 0)
-                img[idx] = color
-
-            matplotlib.image.imsave(buf, img, format='png')
-            output_zip.writestr(annotation_name, buf.getvalue())
-        labels = '\n'.join('{}:{}'.format(label, ','.join(str(i) for i in color)) for label, color in label_colors.items())
-        output_zip.writestr('colormap.txt', labels)
+        dm_project = VocImporter()(tmp_dir)
+        dm_dataset = dm_project.make_dataset()
+        masks_to_polygons = Environment().transforms.get('masks_to_polygons')
+        dm_dataset = dm_dataset.transform(masks_to_polygons)
+        import_dm_annotations(dm_dataset, annotations)

@@ -1,0 +1,124 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-task-details-wrapper {
+    overflow-y: auto;
+    height: 100%;
+
+    .cvat-task-details {
+        width: 100%;
+        height: auto;
+        border: 1px solid $border-color-1;
+        border-radius: 3px;
+        padding: 20px;
+        background: $background-color-1;
+
+        > div:nth-child(2) {
+            > div:nth-child(2) {
+                padding-left: 20px;
+
+                > div:not(:first-child) {
+                    margin-top: 20px;
+                }
+            }
+        }
+    }
+
+    > div > div > div > button {
+        display: flex;
+        align-items: center;
+    }
+}
+
+.cvat-dataset-repository-url {
+    > a {
+        margin-right: 10px;
+    }
+
+    > .ant-tag-red {
+        user-select: none;
+        opacity: 0.4;
+
+        &:hover {
+            opacity: 0.8;
+        }
+
+        &:active {
+            opacity: 1;
+        }
+    }
+
+    > .ant-tag > i {
+        margin-right: 5px;
+    }
+}
+
+.cvat-task-job-list {
+    width: 100%;
+    height: auto;
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    margin-top: 20px;
+    padding: 20px;
+    background: $background-color-1;
+
+    > div:nth-child(1) > div:nth-child(1) {
+        display: flex;
+    }
+}
+
+.cvat-task-top-bar {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.cvat-task-preview-wrapper {
+    display: flex;
+    justify-content: flex-start;
+    overflow: hidden;
+    margin-bottom: 20px;
+
+    > .cvat-task-preview {
+        max-width: 252px;
+        max-height: 144px;
+    }
+}
+
+.cvat-user-selector {
+    margin-left: 10px;
+    width: 150px;
+}
+
+.cvat-open-bug-tracker-button {
+    margin-left: 15px;
+}
+
+.ant-typography.cvat-jobs-header {
+    margin-bottom: 0px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* Pagination in center */
+.cvat-task-jobs-table > div > div {
+    text-align: center;
+
+    > .ant-table-pagination.ant-pagination {
+        float: none;
+    }
+}
+
+.cvat-job-completed-color {
+    color: $completed-progress-color;
+}
+
+.cvat-job-validation-color {
+    color: $inprogress-progress-color;
+}
+
+.cvat-job-annotation-color {
+    color: $pending-progress-color;
+}

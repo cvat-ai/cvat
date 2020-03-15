@@ -7,13 +7,12 @@ const path = require('path');
 
 const nodeConfig = {
     target: 'node',
-    mode: 'production',
+    mode: 'development',
     devtool: 'source-map',
     entry: './src/api.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'cvat-core.node.js',
-        library: 'cvat',
         libraryTarget: 'commonjs',
     },
     module: {
@@ -21,9 +20,6 @@ const nodeConfig = {
             test: /.js?$/,
             exclude: /node_modules/,
         }],
-    },
-    externals: {
-        canvas: 'commonjs canvas',
     },
     stats: {
         warnings: false,
@@ -50,16 +46,7 @@ const webConfig = {
                 options: {
                     presets: [
                         ['@babel/preset-env', {
-                            targets: {
-                                chrome: 58,
-                            },
-                            useBuiltIns: 'usage',
-                            corejs: 3,
-                            loose: false,
-                            spec: false,
-                            debug: false,
-                            include: [],
-                            exclude: [],
+                            targets: '> 2.5%', // https://github.com/browserslist/browserslist
                         }],
                     ],
                     sourceType: 'unambiguous',

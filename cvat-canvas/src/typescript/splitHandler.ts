@@ -1,3 +1,7 @@
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import * as SVG from 'svg.js';
 import { SplitData } from './canvasModel';
 
@@ -27,13 +31,13 @@ export class SplitHandlerImpl implements SplitHandler {
     private release(): void {
         if (this.initialized) {
             this.resetShape();
-            this.canvas.node.removeEventListener('mousemove', this.onFindObject);
+            this.canvas.node.removeEventListener('mousemove', this.findObject);
             this.initialized = false;
         }
     }
 
     private initSplitting(): void {
-        this.canvas.node.addEventListener('mousemove', this.onFindObject);
+        this.canvas.node.addEventListener('mousemove', this.findObject);
         this.initialized = true;
         this.splitDone = false;
     }
@@ -46,6 +50,11 @@ export class SplitHandlerImpl implements SplitHandler {
         }
         this.release();
     }
+
+    private findObject = (e: MouseEvent): void => {
+        this.resetShape();
+        this.onFindObject(e);
+    };
 
     public constructor(
         onSplitDone: (object: any) => void,
@@ -83,8 +92,6 @@ export class SplitHandlerImpl implements SplitHandler {
                     once: true,
                 });
             }
-        } else {
-            this.resetShape();
         }
     }
 

@@ -7,10 +7,11 @@ python:
 
 services:
   - docker
-  
+
 before_script:
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml up --build -d
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml build
 
 script:
-  - docker exec -it cvat /bin/bash -c 'python3 manage.py test cvat/apps/engine'
-  - docker exec -it cvat /bin/bash -c 'cd cvat-core && npm install && npm run test && npm run coveralls'
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'python3 manage.py test cvat/apps utils/cli'
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'python3 manage.py test datumaro/'
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-core && npm install && npm run test && npm run coveralls'

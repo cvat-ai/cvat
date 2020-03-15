@@ -1,0 +1,164 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-tasks-page {
+    padding-top: 15px;
+    height: 100%;
+
+    > div:nth-child(1) {
+        margin-bottom: 10px;
+
+        div > {
+            span {
+                color: $text-color;
+            }
+        }
+    }
+
+    > div:nth-child(2) {
+        > div:nth-child(1) {
+            display: flex;
+
+            > span:nth-child(2) {
+                width: 200px;
+                margin-left: 10px;
+            }
+        }
+
+        > div:nth-child(2) {
+            display: flex;
+            justify-content: flex-end;
+        }
+    }
+
+    > div:nth-child(3) {
+        height: 83%;
+        margin-top: 10px;
+    }
+
+    > div:nth-child(4) {
+        margin-top: 10px;
+    }
+}
+
+/* empty-tasks icon */
+.cvat-empty-tasks-list {
+    > div:nth-child(1) {
+        margin-top: 50px;
+    }
+
+    > div:nth-child(2) {
+        > div {
+            margin-top: 20px;
+
+            /* No tasks created yet */
+            > span {
+                font-size: 20px;
+                color: $text-color;
+            }
+        }
+    }
+
+    /* To get started with your annotation project .. */
+    > div:nth-child(3) {
+        margin-top: 10px;
+    }
+}
+
+.cvat-tasks-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.cvat-tasks-list {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.cvat-tasks-list-item {
+    width: 100%;
+    height: 120px;
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    margin-bottom: 15px;
+    padding-top: 20px;
+    background: $background-color-1;
+
+    &:hover {
+        border: 1px solid $border-color-hover;
+    }
+}
+
+.cvat-task-item-preview-wrapper {
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    margin: 20px;
+    margin-top: 0px;
+
+    > .cvat-task-item-preview {
+        max-width: 140px;
+        max-height: 80px;
+    }
+}
+
+.cvat-task-item-description {
+    word-break: break-all;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.cvat-task-progress {
+    width: 100%;
+}
+
+.cvat-task-completed-progress {
+    color: $completed-progress-color;
+    fill: $completed-progress-color;
+    margin-right: 5px;
+}
+
+.cvat-task-completed-progress {
+    div.ant-progress-bg {
+        background: $completed-progress-color !important; /* csslint allow: important */
+    }
+}
+
+.cvat-task-progress-progress {
+    color: $inprogress-progress-color;
+    fill: $inprogress-progress-color;
+    margin-right: 5px;
+}
+
+.cvat-task-pending-progress {
+    color: $pending-progress-color;
+    fill: $pending-progress-color;
+    margin-right: 5px;
+}
+
+.close-auto-annotation-icon {
+    color: $danger-icon-color;
+    opacity: 0.7;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.cvat-item-open-task-actions {
+    margin-right: 5px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.cvat-item-open-task-button {
+    margin-right: 20px;
+}
+
+#cvat-create-task-button {
+    padding: 0 30px;
+}

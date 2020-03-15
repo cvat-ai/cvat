@@ -1,5 +1,5 @@
 
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,17 +18,14 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path, include
-from django.conf import settings
-from django.conf.urls.static import static
 from django.apps import apps
-import os
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('cvat.apps.engine.urls')),
-    path('dashboard/', include('cvat.apps.dashboard.urls')),
     path('django-rq/', include('django_rq.urls')),
     path('auth/', include('cvat.apps.authentication.urls')),
     path('documentation/', include('cvat.apps.documentation.urls')),
@@ -54,3 +51,7 @@ if apps.is_installed('cvat.apps.log_viewer'):
 
 if apps.is_installed('silk'):
     urlpatterns.append(path('profiler/', include('silk.urls')))
+
+# new feature by Mohammad
+if apps.is_installed('cvat.apps.auto_segmentation'):
+    urlpatterns.append(path('tensorflow/segmentation/', include('cvat.apps.auto_segmentation.urls')))

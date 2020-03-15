@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 #
@@ -8,7 +8,7 @@ version: "2.3"
 services:
   cvat_db:
     container_name: cvat_db
-    image: postgres:10.3-alpine
+    image: postgres:10-alpine
     networks:
       default:
         aliases:
@@ -17,12 +17,13 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_DB: cvat
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - cvat_db:/var/lib/postgresql/data
 
   cvat_redis:
     container_name: cvat_redis
-    image: redis:4.0.5-alpine
+    image: redis:4.0-alpine
     networks:
       default:
         aliases:
@@ -36,8 +37,6 @@ services:
     depends_on:
       - cvat_redis
       - cvat_db
-    ports:
-      - "8080:8080"
     build:
       context: .
       args:
@@ -46,15 +45,14 @@ services:
         no_proxy:
         socks_proxy:
         TF_ANNOTATION: "no"
+        AUTO_SEGMENTATION: "no"
         USER: "django"
         DJANGO_CONFIGURATION: "production"
-        WITH_TESTS: "no"
         TZ: "Etc/UTC"
         OPENVINO_TOOLKIT: "no"
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
-      UI_PORT: 9080
-
+      ALLOWED_HOSTS: '*'
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -63,23 +61,38 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: nginx
+    restart: always
     build:
-      context: cvat-ui
+      context: .
       args:
         http_proxy:
         https_proxy:
         no_proxy:
         socks_proxy:
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.ui
+
     networks:
       default:
         aliases:
           - ui
     depends_on:
       - cvat
+
+  cvat_proxy:
+    container_name: cvat_proxy
+    image: nginx:stable-alpine
+    restart: always
+    depends_on:
+      - cvat
+      - cvat_ui
+    environment:
+      CVAT_HOST: localhost
     ports:
-      - "9080:80"
+      - "8080:80"
+    volumes:
+      - ./cvat_proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./cvat_proxy/conf.d/cvat.conf.template:/etc/nginx/conf.d/cvat.conf.template:ro
+    command: /bin/sh -c "envsubst '$$CVAT_HOST' < /etc/nginx/conf.d/cvat.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
 
 volumes:
   cvat_db:

@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2019 Intel Corporation
+* Copyright (C) 2019-2020 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -103,22 +103,6 @@
     });
 
     /**
-        * Object visibility states
-        * @enum {string}
-        * @name ObjectShape
-        * @memberof module:API.cvat.enums
-        * @property {string} ALL 'all'
-        * @property {string} SHAPE 'shape'
-        * @property {string} NONE 'none'
-        * @readonly
-    */
-    const VisibleState = Object.freeze({
-        ALL: 'all',
-        SHAPE: 'shape',
-        NONE: 'none',
-    });
-
-    /**
         * Event types
         * @enum {number}
         * @name LogType
@@ -182,6 +166,61 @@
         rotateImage: 26,
     };
 
+    /**
+        * Types of actions with annotations
+        * @enum {string}
+        * @name HistoryActions
+        * @memberof module:API.cvat.enums
+        * @property {string} CHANGED_LABEL Changed label
+        * @property {string} CHANGED_ATTRIBUTES Changed attributes
+        * @property {string} CHANGED_POINTS Changed points
+        * @property {string} CHANGED_OUTSIDE Changed outside
+        * @property {string} CHANGED_OCCLUDED Changed occluded
+        * @property {string} CHANGED_ZORDER Changed z-order
+        * @property {string} CHANGED_LOCK Changed lock
+        * @property {string} CHANGED_COLOR Changed color
+        * @property {string} CHANGED_HIDDEN Changed hidden
+        * @property {string} MERGED_OBJECTS Merged objects
+        * @property {string} SPLITTED_TRACK Splitted track
+        * @property {string} GROUPED_OBJECTS Grouped objects
+        * @property {string} CREATED_OBJECTS Created objects
+        * @property {string} REMOVED_OBJECT Removed object
+        * @readonly
+    */
+    const HistoryActions = Object.freeze({
+        CHANGED_LABEL: 'Changed label',
+        CHANGED_ATTRIBUTES: 'Changed attributes',
+        CHANGED_POINTS: 'Changed points',
+        CHANGED_OUTSIDE: 'Changed outside',
+        CHANGED_OCCLUDED: 'Changed occluded',
+        CHANGED_ZORDER: 'Changed z-order',
+        CHANGED_KEYFRAME: 'Changed keyframe',
+        CHANGED_LOCK: 'Changed lock',
+        CHANGED_PINNED: 'Changed pinned',
+        CHANGED_COLOR: 'Changed color',
+        CHANGED_HIDDEN: 'Changed hidden',
+        MERGED_OBJECTS: 'Merged objects',
+        SPLITTED_TRACK: 'Splitted track',
+        GROUPED_OBJECTS: 'Grouped objects',
+        CREATED_OBJECTS: 'Created objects',
+        REMOVED_OBJECT: 'Removed object',
+    });
+
+    /**
+        * Array of hex colors
+        * @type {module:API.cvat.classes.Loader[]} values
+        * @name colors
+        * @memberof module:API.cvat.enums
+        * @type {string[]}
+        * @readonly
+    */
+    const colors = [
+        '#FF355E', '#E936A7', '#FD5B78', '#FF007C', '#FF00CC', '#66FF66',
+        '#50BFE6', '#CCFF00', '#FFFF66', '#FF9966', '#FF6037', '#FFCC33',
+        '#AAF0D1', '#FF3855', '#FFF700', '#A7F432', '#FF5470', '#FAFA37',
+        '#FF7A00', '#FF9933', '#AFE313', '#00CC99', '#FF5050', '#733380',
+    ];
+
     module.exports = {
         ShareFileType,
         TaskStatus,
@@ -189,7 +228,8 @@
         AttributeType,
         ObjectType,
         ObjectShape,
-        VisibleState,
         LogType,
+        HistoryActions,
+        colors,
     };
 })();

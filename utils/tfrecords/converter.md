@@ -23,7 +23,7 @@ sudo apt-get install -y --no-install-recommends python3-pip python3-dev
 ```
 
 ``` bash
-pip3 install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 ### 2. Install the tensorflow object detection API
@@ -38,12 +38,12 @@ git clone https://github.com/tensorflow/models.git
 ```
 ```bash
 # install some dependencies
-pip3 install --user Cython
-pip3 install --user contextlib2
-pip3 install --user pillow
-pip3 install --user lxml
-pip3 install --user jupyter
-pip3 install --user matplotlib
+python3 -m pip install --user Cython
+python3 -m pip install --user contextlib2
+python3 -m pip install --user pillow
+python3 -m pip install --user lxml
+python3 -m pip install --user jupyter
+python3 -m pip install --user matplotlib
 ```
 ```bash
 # clone and compile the cocoapi

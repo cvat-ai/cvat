@@ -1,12 +1,11 @@
 
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
 import cv2
 import os
-import subprocess
 import numpy as np
 
 from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
@@ -31,14 +30,19 @@ class ModelLoader():
 
         iter_inputs = iter(network.inputs)
         self._input_blob_name = next(iter_inputs)
+        self._input_info_name = ''
         self._output_blob_name = next(iter(network.outputs))
 
         self._require_image_info = False
 
+        info_names = ('image_info', 'im_info')
+
         # NOTE: handeling for the inclusion of `image_info` in OpenVino2019
-        if 'image_info' in network.inputs:
+        if any(s in network.inputs for s in info_names):
             self._require_image_info = True
-        if self._input_blob_name == 'image_info':
+            self._input_info_name = set(network.inputs).intersection(info_names)
+            self._input_info_name = self._input_info_name.pop()
+        if self._input_blob_name in info_names:
             self._input_blob_name = next(iter_inputs)
 
         self._net = plugin.load(network=network, num_requests=2)
@@ -56,7 +60,7 @@ class ModelLoader():
             info[0, 1] = w
             # frame number
             info[0, 2] = 1
-            inputs['image_info'] = info
+            inputs[self._input_info_name] = info
 
         results = self._net.infer(inputs)
         if len(results) == 1:

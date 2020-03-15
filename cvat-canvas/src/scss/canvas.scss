@@ -1,0 +1,182 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat_canvas_hidden {
+    display: none;
+}
+
+.cvat_canvas_shape {
+    stroke-opacity: 1;
+}
+
+polyline.cvat_canvas_shape {
+    fill-opacity: 0;
+}
+
+.cvat_shape_action_opacity {
+    fill-opacity: 0.5;
+    stroke-opacity: 1;
+}
+
+polyline.cvat_shape_action_opacity {
+    fill-opacity: 0;
+}
+
+.cvat_shape_drawing_opacity {
+    fill-opacity: 0.2;
+    stroke-opacity: 1;
+}
+
+polyline.cvat_shape_drawing_opacity {
+    fill-opacity: 0;
+}
+
+.cvat_shape_action_dasharray {
+    stroke-dasharray: 4 1 2 3;
+}
+
+.cvat_canvas_text {
+    font-weight: bold;
+    font-size: 1.2em;
+    fill: white;
+    cursor: default;
+    font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+    text-shadow: 0px 0px 4px black;
+    user-select: none;
+    pointer-events: none;
+}
+
+.cvat_canvas_crosshair {
+    stroke: red;
+}
+
+.cvat_canvas_shape_grouping {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+    fill: darkmagenta;
+}
+
+polyline.cvat_canvas_shape_grouping {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+    stroke: darkmagenta;
+}
+
+.cvat_canvas_shape_merging {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+    fill: blue;
+}
+
+polyline.cvat_canvas_shape_merging {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+    stroke: blue;
+}
+
+polyline.cvat_canvas_shape_splitting {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+    stroke: dodgerblue;
+}
+
+.cvat_canvas_shape_splitting {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+    fill: dodgerblue;
+}
+
+.cvat_canvas_shape_drawing {
+    @extend .cvat_shape_drawing_opacity;
+    fill: white;
+    stroke: black;
+}
+
+.cvat_canvas_zoom_selection {
+    @extend .cvat_shape_action_dasharray;
+    stroke: #096dd9;
+    fill-opacity: 0;
+}
+
+.cvat_canvas_shape_occluded {
+    stroke-dasharray: 5;
+}
+
+.svg_select_boundingRect {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#cvat_canvas_wrapper {
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+    margin: 5px;
+    border-radius: 5px;
+    background-color: white;
+    overflow: hidden;
+    position: relative;
+}
+
+#cvat_canvas_loading_animation {
+    z-index: 1;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+#cvat_canvas_loading_circle {
+    fill-opacity: 0;
+    stroke: #09c;
+    stroke-width: 3px;
+    stroke-dasharray: 50;
+    animation: loadingAnimation 1s linear infinite;
+}
+
+#cvat_canvas_text_content {
+    text-rendering: optimizeSpeed;
+    position: absolute;
+    z-index: 3;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#cvat_canvas_background {
+    position: absolute;
+    z-index: 0;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 100%;
+    box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.75);
+}
+
+#cvat_canvas_grid {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#cvat_canvas_grid_pattern {
+    opacity: 1;
+    stroke: white;
+}
+
+#cvat_canvas_content {
+    filter: contrast(120%) saturate(150%);
+    position: absolute;
+    z-index: 2;
+    outline: 10px solid black;
+    width: 100%;
+    height: 100%;
+}
+
+@keyframes loadingAnimation {
+    0%   {stroke-dashoffset: 1; stroke: #09c;}
+    50%  {stroke-dashoffset: 100; stroke: #f44;}
+    100% {stroke-dashoffset: 300; stroke: #09c;}
+}

@@ -8,7 +8,10 @@
 */
 
 (() => {
-    const { AttributeType } = require('./enums');
+    const {
+        AttributeType,
+        colors,
+    } = require('./enums');
     const { ArgumentError } = require('./exceptions');
 
     /**
@@ -136,6 +139,7 @@
             const data = {
                 id: undefined,
                 name: undefined,
+                color: undefined,
             };
 
             for (const key in data) {
@@ -146,6 +150,9 @@
                 }
             }
 
+            if (typeof (data.id) !== 'undefined') {
+                data.color = colors[data.id % colors.length];
+            }
             data.attributes = [];
 
             if (Object.prototype.hasOwnProperty.call(initialData, 'attributes')
@@ -177,6 +184,23 @@
                     get: () => data.name,
                 },
                 /**
+                    * @name color
+                    * @type {string}
+                    * @memberof module:API.cvat.classes.Label
+                    * @readonly
+                    * @instance
+                */
+                color: {
+                    get: () => data.color,
+                    set: (color) => {
+                        if (colors.includes(color)) {
+                            data.color = color;
+                        } else {
+                            throw new ArgumentError('Trying to set unknown color');
+                        }
+                    },
+                },
+                /**
                     * @name attributes
                     * @type {module:API.cvat.classes.Attribute[]}
                     * @memberof module:API.cvat.classes.Label
@@ -192,7 +216,7 @@
         toJSON() {
             const object = {
                 name: this.name,
-                attributes: [...this.attributes.map(el => el.toJSON())],
+                attributes: [...this.attributes.map((el) => el.toJSON())],
             };
 
             if (typeof (this.id) !== 'undefined') {

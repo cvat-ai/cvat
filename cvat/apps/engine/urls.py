@@ -1,5 +1,5 @@
 
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -24,6 +24,7 @@ schema_view = get_schema_view(
 )
 
 router = routers.DefaultRouter(trailing_slash=False)
+router.register('projects', views.ProjectViewSet)
 router.register('tasks', views.TaskViewSet)
 router.register('jobs', views.JobViewSet)
 router.register('users', views.UserViewSet)
@@ -33,11 +34,15 @@ router.register('plugins', views.PluginViewSet)
 urlpatterns = [
     # Entry point for a client
     path('', views.dispatch_request),
+    path('dashboard/', views.dispatch_request),
 
     # documentation for API
-    path('api/swagger.<slug:format>$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('api/swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('api/docs/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    path('api/swagger<str:scheme>', views.wrap_swagger(
+       schema_view.without_ui(cache_timeout=0)), name='schema-json'),
+    path('api/swagger/', views.wrap_swagger(
+       schema_view.with_ui('swagger', cache_timeout=0)), name='schema-swagger-ui'),
+    path('api/docs/', views.wrap_swagger(
+       schema_view.with_ui('redoc', cache_timeout=0)), name='schema-redoc'),
 
     # entry point for API
     path('api/v1/auth/', include('cvat.apps.authentication.api_urls')),

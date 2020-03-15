@@ -224,6 +224,32 @@
     cursor: w-resize;
 }
 
+.svg_select_points_ns{
+    cursor: ns-resize;
+}
+
+.svg_select_points_ew{
+    cursor: ew-resize;
+}
+
+.shape-creator-border-point {
+    opacity: 0.55;
+}
+
+.shape-creator-border-point:hover {
+    opacity: 1;
+    fill: red;
+}
+
+.shape-creator-border-point:active {
+    opacity: 0.55;
+    fill: red;
+}
+
+.shape-creator-border-point-direction {
+    fill: blueviolet;
+}
+
 .shapeText {
     font-size: 0.12em;
     fill: white;
@@ -475,9 +501,16 @@
     margin: 0px auto;
     border: 1px solid dimgrey;
     border-radius: 6px;
-    text-align: left;
     width: 100%;
     text-align: center;
+    border-collapse: separate;
+    border-spacing: 3px;
+}
+
+#annotationStatisticTable th, #annotationStatisticTable td { padding: 3px; }
+
+#annotationSettingsTable th, #annotationSettingsTable td {
+    padding: 20px;
 }
 
 #playerPanel {
