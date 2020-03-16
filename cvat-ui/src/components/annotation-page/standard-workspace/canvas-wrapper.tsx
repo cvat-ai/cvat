@@ -166,6 +166,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
+        if (prevProps.curZLayer !== curZLayer) {
+            canvasInstance.setZLayer(curZLayer);
+        }
+
         if (prevProps.annotations !== annotations || prevProps.frameData !== frameData) {
             this.updateCanvas();
         }
@@ -182,10 +186,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
             || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
             this.updateShapesView();
-        }
-
-        if (prevProps.curZLayer !== curZLayer) {
-            canvasInstance.setZLayer(curZLayer);
         }
 
         if (prevProps.frameAngle !== frameAngle) {
