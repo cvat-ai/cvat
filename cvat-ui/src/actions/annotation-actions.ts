@@ -84,10 +84,10 @@ export enum AnnotationActionTypes {
     COPY_SHAPE = 'COPY_SHAPE',
     PASTE_SHAPE = 'PASTE_SHAPE',
     EDIT_SHAPE = 'EDIT_SHAPE',
-    DRAW_SHAPE = 'DRAW_SHAPE',
     REPEAT_DRAW_SHAPE = 'REPEAT_DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
     RESET_CANVAS = 'RESET_CANVAS',
+    REMEMBER_CREATED_OBJECT = 'REMEMBER_CREATED_OBJECT',
     UPDATE_ANNOTATIONS_SUCCESS = 'UPDATE_ANNOTATIONS_SUCCESS',
     UPDATE_ANNOTATIONS_FAILED = 'UPDATE_ANNOTATIONS_FAILED',
     CREATE_ANNOTATIONS_SUCCESS = 'CREATE_ANNOTATIONS_SUCCESS',
@@ -843,15 +843,17 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
-export function drawShape(
-    shapeType: ShapeType,
-    labelID: number,
+export function rememberObject(
     objectType: ObjectType,
+    labelID: number,
+    shapeType?: ShapeType,
     points?: number,
     rectDrawingMethod?: RectDrawingMethod,
 ): AnyAction {
-    let activeControl = ActiveControl.DRAW_RECTANGLE;
-    if (shapeType === ShapeType.POLYGON) {
+    let activeControl = ActiveControl.CURSOR;
+    if (shapeType === ShapeType.RECTANGLE) {
+        activeControl = ActiveControl.DRAW_RECTANGLE;
+    } else if (shapeType === ShapeType.POLYGON) {
         activeControl = ActiveControl.DRAW_POLYGON;
     } else if (shapeType === ShapeType.POLYLINE) {
         activeControl = ActiveControl.DRAW_POLYLINE;
@@ -860,7 +862,7 @@ export function drawShape(
     }
 
     return {
-        type: AnnotationActionTypes.DRAW_SHAPE,
+        type: AnnotationActionTypes.REMEMBER_CREATED_OBJECT,
         payload: {
             shapeType,
             labelID,
@@ -1153,12 +1155,28 @@ export function searchAnnotationsAsync(
 
 export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const initialState = getStore().getState().annotation.drawing.activeInitialState;
-        const { instance: canvasInstance } = getStore().getState().annotation.canvas;
+        const {
+            canvas: {
+                instance: canvasInstance,
+            },
+            job: {
+                instance: jobInstance,
+            },
+            player: {
+                frame: {
+                    number: frameNumber,
+                },
+            },
+            drawing: {
+                activeInitialState: initialState,
+            },
+        } = getStore().getState().annotation;
 
         if (initialState) {
-            let activeControl = ActiveControl.DRAW_RECTANGLE;
-            if (initialState.shapeType === ShapeType.POINTS) {
+            let activeControl = ActiveControl.CURSOR;
+            if (initialState.shapeType === ShapeType.RECTANGLE) {
+                activeControl = ActiveControl.DRAW_RECTANGLE;
+            } else if (initialState.shapeType === ShapeType.POINTS) {
                 activeControl = ActiveControl.DRAW_POINTS;
             } else if (initialState.shapeType === ShapeType.POLYGON) {
                 activeControl = ActiveControl.DRAW_POLYGON;
@@ -1174,10 +1192,20 @@ export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction>
             });
 
             canvasInstance.cancel();
-            canvasInstance.draw({
-                enabled: true,
-                initialState,
-            });
+            if (initialState.objectType === ObjectType.TAG) {
+                const objectState = new cvat.classes.ObjectState({
+                    objectType: ObjectType.TAG,
+                    label: initialState.label,
+                    attributes: initialState.attributes,
+                    frame: frameNumber,
+                });
+                dispatch(createAnnotationsAsync(jobInstance, frameNumber, [objectState]));
+            } else {
+                canvasInstance.draw({
+                    enabled: true,
+                    initialState,
+                });
+            }
         }
     };
 }
@@ -1185,20 +1213,36 @@ export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction>
 export function repeatDrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const {
-            activeShapeType,
-            activeNumOfPoints,
-            activeRectDrawingMethod,
-        } = getStore().getState().annotation.drawing;
+            canvas: {
+                instance: canvasInstance,
+            },
+            job: {
+                labels,
+                instance: jobInstance,
+            },
+            player: {
+                frame: {
+                    number: frameNumber,
+                },
+            },
+            drawing: {
+                activeObjectType,
+                activeLabelID,
+                activeShapeType,
+                activeNumOfPoints,
+                activeRectDrawingMethod,
+            },
+        } = getStore().getState().annotation;
 
-        const { instance: canvasInstance } = getStore().getState().annotation.canvas;
-
-        let activeControl = ActiveControl.DRAW_RECTANGLE;
-        if (activeShapeType === ShapeType.POLYGON) {
+        let activeControl = ActiveControl.CURSOR;
+        if (activeShapeType === ShapeType.RECTANGLE) {
+            activeControl = ActiveControl.DRAW_RECTANGLE;
+        } else if (activeShapeType === ShapeType.POINTS) {
+            activeControl = ActiveControl.DRAW_POINTS;
+        } else if (activeShapeType === ShapeType.POLYGON) {
             activeControl = ActiveControl.DRAW_POLYGON;
         } else if (activeShapeType === ShapeType.POLYLINE) {
             activeControl = ActiveControl.DRAW_POLYLINE;
-        } else if (activeShapeType === ShapeType.POINTS) {
-            activeControl = ActiveControl.DRAW_POINTS;
         }
 
         dispatch({
@@ -1209,12 +1253,21 @@ export function repeatDrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAc
         });
 
         canvasInstance.cancel();
-        canvasInstance.draw({
-            enabled: true,
-            rectDrawingMethod: activeRectDrawingMethod,
-            numberOfPoints: activeNumOfPoints,
-            shapeType: activeShapeType,
-            crosshair: activeShapeType === ShapeType.RECTANGLE,
-        });
+        if (activeObjectType === ObjectType.TAG) {
+            const objectState = new cvat.classes.ObjectState({
+                objectType: ObjectType.TAG,
+                label: labels.filter((label: any) => label.id === activeLabelID)[0],
+                frame: frameNumber,
+            });
+            dispatch(createAnnotationsAsync(jobInstance, frameNumber, [objectState]));
+        } else {
+            canvasInstance.draw({
+                enabled: true,
+                rectDrawingMethod: activeRectDrawingMethod,
+                numberOfPoints: activeNumOfPoints,
+                shapeType: activeShapeType,
+                crosshair: activeShapeType === ShapeType.RECTANGLE,
+            });
+        }
     };
 }

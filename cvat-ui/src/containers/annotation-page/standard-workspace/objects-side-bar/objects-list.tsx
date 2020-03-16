@@ -84,7 +84,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
     objectStates.forEach((objectState: any) => {
         const { clientID, lock } = objectState;
         if (!lock) {
-            statesHidden = statesHidden && objectState.hidden;
+            if (objectState.objectType !== ObjectType.TAG) {
+                statesHidden = statesHidden && objectState.hidden;
+            }
             statesLocked = statesLocked && objectState.lock;
         }
         const stateCollapsed = clientID in collapsed ? collapsed[clientID] : true;
@@ -462,14 +464,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             COPY_SHAPE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedStated();
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state) {
                     copyShape(state);
                 }
             },
             PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedStated();
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state) {
                     propagateObject(state);
                 }
             },

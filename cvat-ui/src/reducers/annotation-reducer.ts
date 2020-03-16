@@ -393,7 +393,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.DRAW_SHAPE: {
+        case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
             const {
                 shapeType,
                 labelID,

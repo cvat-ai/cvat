@@ -1084,6 +1084,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.activeElement = { ...activeElement };
         const shape = this.svgShapes[clientID];
+
         let text = this.svgTexts[clientID];
         if (!text) {
             text = this.addText(state);

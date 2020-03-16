@@ -13,6 +13,7 @@ import {
 import {
     collapseObjectItems,
     changeLabelColorAsync,
+    createAnnotationsAsync,
     updateAnnotationsAsync,
     changeFrameAsync,
     removeObjectAsync,
@@ -24,6 +25,7 @@ import {
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
+
 
 interface OwnProps {
     clientID: number;
@@ -48,6 +50,7 @@ interface StateToProps {
 interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(sessionInstance: any, frameNumber: number, objectState: any): void;
+    createAnnotations(sessionInstance: any, frameNumber: number, state: any): void;
     collapseOrExpand(objectStates: any[], collapsed: boolean): void;
     activateObject: (activatedStateID: number | null) => void;
     removeObject: (sessionInstance: any, objectState: any) => void;
@@ -123,6 +126,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         updateState(sessionInstance: any, frameNumber: number, state: any): void {
             dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, [state]));
+        },
+        createAnnotations(sessionInstance: any, frameNumber: number, state: any): void {
+            dispatch(createAnnotationsAsync(sessionInstance, frameNumber, state));
         },
         collapseOrExpand(objectStates: any[], collapsed: boolean): void {
             dispatch(collapseObjectItems(objectStates, collapsed));
