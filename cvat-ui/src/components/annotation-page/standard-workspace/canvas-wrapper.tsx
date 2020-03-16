@@ -117,6 +117,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             brightnessLevel,
             contrastLevel,
             saturationLevel,
+            workspace,
         } = this.props;
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -169,7 +170,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             this.updateCanvas();
         }
 
-        if (prevProps.frame !== frameData.number && resetZoom) {
+        if (prevProps.frame !== frameData.number
+            && resetZoom
+            && workspace !== Workspace.ATTRIBUTE_ANNOTATION
+        ) {
             canvasInstance.html().addEventListener('canvas.setup', () => {
                 canvasInstance.fit();
             }, { once: true });
@@ -549,7 +553,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         // Events
         canvasInstance.html().addEventListener('canvas.setup', () => {
+            const { activatedStateID, activatedAttributeID } = this.props;
             canvasInstance.fit();
+            canvasInstance.activate(activatedStateID, activatedAttributeID);
         }, { once: true });
 
         canvasInstance.html().addEventListener('mousedown', this.onCanvasMouseDown);

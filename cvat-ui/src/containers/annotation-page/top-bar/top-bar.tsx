@@ -23,6 +23,7 @@ import {
     redoActionAsync,
     searchAnnotationsAsync,
     changeWorkspace as changeWorkspaceAction,
+    activateObject,
 } from 'actions/annotation-actions';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
@@ -136,6 +137,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(searchAnnotationsAsync(sessionInstance, frameFrom, frameTo));
         },
         changeWorkspace(workspace: Workspace): void {
+            dispatch(activateObject(null, null));
             dispatch(changeWorkspaceAction(workspace));
         },
     };

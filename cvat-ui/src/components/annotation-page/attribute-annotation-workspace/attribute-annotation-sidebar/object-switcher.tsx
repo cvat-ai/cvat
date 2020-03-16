@@ -30,7 +30,7 @@ function ObjectSwitcher(props: Props): JSX.Element {
     const title = `${currentLabel} ${clientID} [${currentIndex + 1}/${objectsCount}]`;
     return (
         <div className='attribute-annotation-sidebar-switcher'>
-            <Button disabled={objectsCount <= 1} onClick={() => nextObject(1)}>
+            <Button disabled={objectsCount <= 1} onClick={() => nextObject(-1)}>
                 <Icon type='left' />
             </Button>
             <Tooltip title={title}>
@@ -38,7 +38,7 @@ function ObjectSwitcher(props: Props): JSX.Element {
                 <Text className='cvat-text'>{` ${clientID} `}</Text>
                 <Text strong>{`[${currentIndex + 1}/${objectsCount}]`}</Text>
             </Tooltip>
-            <Button disabled={objectsCount <= 1} onClick={() => nextObject(-1)}>
+            <Button disabled={objectsCount <= 1} onClick={() => nextObject(1)}>
                 <Icon type='right' />
             </Button>
         </div>

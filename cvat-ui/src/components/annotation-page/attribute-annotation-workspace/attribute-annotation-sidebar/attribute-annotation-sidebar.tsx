@@ -163,26 +163,26 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
     const keyMap = {
         NEXT_ATTRIBUTE: {
             name: 'Next object',
-            description: 'Go to the next object. Use Ctrl when inside an input field',
-            sequences: ['ArrowDown', 'Ctrl+ArrowDown'],
+            description: 'Go to the next attribute',
+            sequence: 'ArrowDown',
             action: 'keydown',
         },
         PREVIOUS_ATTRIBUTE: {
             name: 'Previous object',
-            description: 'Go to the previous object. Use Ctrl when inside an input field',
-            sequences: ['ArrowUp', 'Ctrl+ArrowUp'],
+            description: 'Go to the previous attribute',
+            sequences: 'ArrowUp',
             action: 'keydown',
         },
         NEXT_OBJECT: {
             name: 'Next object',
-            description: 'Go to the next object. Use Ctrl when inside an input field',
-            sequences: ['Tab', 'Ctrl+Tab'],
+            description: 'Go to the next object',
+            sequence: 'Tab',
             action: 'keydown',
         },
         PREVIOUS_OBJECT: {
             name: 'Previous object',
-            description: 'Go to the previous object. Use Ctrl when inside an input field',
-            sequences: ['Shift+Tab', 'Ctrl+Shift+Tab'],
+            description: 'Go to the previous object',
+            sequence: 'Shift+Tab',
             action: 'keydown',
         },
     };
