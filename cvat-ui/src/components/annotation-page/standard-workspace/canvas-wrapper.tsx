@@ -13,7 +13,12 @@ import {
 } from 'antd';
 
 import { SliderValue } from 'antd/lib//slider';
-import { ColorBy, GridColor, ObjectType } from 'reducers/interfaces';
+import {
+    ColorBy,
+    GridColor,
+    ObjectType,
+    ContextMenuType,
+} from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas';
 import getCore from 'cvat-core';
 
@@ -48,6 +53,8 @@ interface Props {
     contrastLevel: number;
     saturationLevel: number;
     resetZoom: boolean;
+    contextVisible: boolean;
+    contextType: ContextMenuType;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -64,7 +71,7 @@ interface Props {
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject(activatedStateID: number | null): void;
     onSelectObjects(selectedStatesID: number[]): void;
-    onUpdateContextMenu(visible: boolean, left: number, top: number): void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
     onChangeBrightnessLevel(level: number): void;
@@ -414,9 +421,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('contextmenu', (e: MouseEvent): void => {
             const {
                 activatedStateID,
+                contextType,
+                contextVisible,
             } = this.props;
 
-            onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY);
+            if (!(contextVisible && contextType === ContextMenuType.CANVAS_SHAPE_POINT)) {
+                onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY,
+                    ContextMenuType.CANVAS_SHAPE);
+            }
         });
 
         canvasInstance.html().addEventListener('canvas.editstart', (): void => {
@@ -518,7 +530,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.splitted', this.onTrackSplitted.bind(this));
 
         canvasInstance.html().addEventListener('point.contextmenu', (event: any) => {
-            console.log(event);
+            // const {
+            //     activatedStateID,
+            // } = this.props;
+
+            // console.log(event);
+
+            // onUpdateContextMenu(activatedStateID !== null, event.detail.mouseEvent.clientX,
+            //     event.detail.mouseEvent.clientY, ContextMenuType.CANVAS_SHAPE_POINT);
         });
     }
 

@@ -12,6 +12,7 @@ import {
     ActiveControl,
     ShapeType,
     ObjectType,
+    ContextMenuType,
 } from './interfaces';
 
 const defaultState: AnnotationState = {
@@ -23,6 +24,7 @@ const defaultState: AnnotationState = {
             visible: false,
             left: 0,
             top: 0,
+            type: ContextMenuType.CANVAS_SHAPE,
         },
         instance: new Canvas(),
         ready: false,
@@ -923,6 +925,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 visible,
                 left,
                 top,
+                type,
             } = action.payload;
 
             return {
@@ -934,6 +937,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         visible,
                         left,
                         top,
+                        type,
                     },
                 },
             };

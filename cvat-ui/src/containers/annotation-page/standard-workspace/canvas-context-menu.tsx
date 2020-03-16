@@ -5,15 +5,17 @@
 import React from 'react';
 
 import { connect } from 'react-redux';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, ContextMenuType } from 'reducers/interfaces';
 
 import CanvasContextMenuComponent from 'components/annotation-page/standard-workspace/canvas-context-menu';
+import CanvasPointContextMenuComponent from 'components/annotation-page/standard-workspace/canvas-point-context-menu';
 
 interface StateToProps {
     activatedStateID: number | null;
     visible: boolean;
     top: number;
     left: number;
+    type: ContextMenuType;
     collapsed: boolean | undefined;
 }
 
@@ -29,6 +31,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                     visible,
                     top,
                     left,
+                    type,
                 },
             },
         },
@@ -40,6 +43,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         visible,
         left,
         top,
+        type,
     };
 }
 
@@ -175,6 +179,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         const {
             visible,
             activatedStateID,
+            type,
         } = this.props;
 
         return (

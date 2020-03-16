@@ -129,6 +129,19 @@
     }
 }
 
+.cvat-canvas-point-context-menu {
+    opacity: 0.6;
+    position: fixed;
+    width: 100px;
+    z-index: 10;
+    max-height: 50%;
+    overflow-y: auto;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
 .cvat-canvas-z-axis-wrapper {
     position: absolute;
     background: $background-color-2;

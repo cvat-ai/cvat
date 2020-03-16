@@ -39,6 +39,7 @@ import {
     GridColor,
     ObjectType,
     CombinedState,
+    ContextMenuType,
 } from 'reducers/interfaces';
 
 import { Canvas } from 'cvat-canvas';
@@ -70,6 +71,8 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     curZLayer: number;
+    contextVisible: boolean;
+    contextType: ContextMenuType;
 }
 
 interface DispatchToProps {
@@ -89,7 +92,7 @@ interface DispatchToProps {
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject: (activatedStateID: number | null) => void;
     onSelectObjects: (selectedStatesID: number[]) => void;
-    onUpdateContextMenu(visible: boolean, left: number, top: number): void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
     onChangeBrightnessLevel(level: number): void;
@@ -104,6 +107,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: {
+                contextMenu: {
+                    visible: contextVisible,
+                    type: contextType,
+                },
                 instance: canvasInstance,
             },
             drawing: {
@@ -179,6 +186,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         curZLayer,
         minZLayer,
         maxZLayer,
+        contextVisible,
+        contextType,
     };
 }
 
@@ -236,8 +245,13 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjects(selectedStatesID));
         },
-        onUpdateContextMenu(visible: boolean, left: number, top: number): void {
-            dispatch(updateCanvasContextMenu(visible, left, top));
+        onUpdateContextMenu(
+            visible: boolean,
+            left: number,
+            top: number,
+            type: ContextMenuType,
+        ): void {
+            dispatch(updateCanvasContextMenu(visible, left, top, type));
         },
         onAddZLayer(): void {
             dispatch(addZLayer());

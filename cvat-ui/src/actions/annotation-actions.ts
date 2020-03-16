@@ -18,6 +18,7 @@ import {
     Task,
     FrameSpeed,
     Rotation,
+    ContextMenuType,
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core';
@@ -270,13 +271,19 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
-export function updateCanvasContextMenu(visible: boolean, left: number, top: number): AnyAction {
+export function updateCanvasContextMenu(
+    visible: boolean,
+    left: number,
+    top: number,
+    type?: ContextMenuType,
+): AnyAction {
     return {
         type: AnnotationActionTypes.UPDATE_CANVAS_CONTEXT_MENU,
         payload: {
             visible,
             left,
             top,
+            type,
         },
     };
 }
