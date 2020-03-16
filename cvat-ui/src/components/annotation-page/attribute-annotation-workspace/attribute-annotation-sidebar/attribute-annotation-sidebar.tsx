@@ -170,7 +170,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         PREVIOUS_ATTRIBUTE: {
             name: 'Previous object',
             description: 'Go to the previous attribute',
-            sequences: 'ArrowUp',
+            sequence: 'ArrowUp',
             action: 'keydown',
         },
         NEXT_OBJECT: {
