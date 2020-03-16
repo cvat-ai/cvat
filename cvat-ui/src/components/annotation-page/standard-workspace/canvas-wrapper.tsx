@@ -455,11 +455,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             selectedOpacity,
             aamZoomMargin,
             workspace,
+            annotations,
         } = this.props;
 
         if (activatedStateID !== null) {
             if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
-                canvasInstance.focus(activatedStateID, aamZoomMargin);
+                const [activatedState] = annotations
+                    .filter((state: any): boolean => state.clientID === activatedStateID);
+                if (activatedState.objectType !== ObjectType.TAG) {
+                    canvasInstance.focus(activatedStateID, aamZoomMargin);
+                } else {
+                    canvasInstance.fit();
+                }
             }
             canvasInstance.activate(activatedStateID, activatedAttributeID);
             const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
