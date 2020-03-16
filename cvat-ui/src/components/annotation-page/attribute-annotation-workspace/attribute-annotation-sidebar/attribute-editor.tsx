@@ -12,6 +12,7 @@ import Input from 'antd/lib/input';
 import InputNumber from 'antd/lib/input-number';
 
 interface InputElementParameters {
+    attrID: number;
     inputType: string;
     values: string[];
     currentValue: string;
@@ -22,6 +23,7 @@ interface InputElementParameters {
 function renderInputElement(parameters: InputElementParameters): JSX.Element {
     const {
         inputType,
+        attrID,
         values,
         currentValue,
         onChange,
@@ -92,25 +94,20 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
 
     const renderText = (): JSX.Element => (
         <>
-            <Text strong>Text: </Text>
+            {inputType === 'number' ? <Text strong>Number: </Text> : <Text strong>Text: </Text>}
             <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
                 <Input
                     autoFocus
-                    value={currentValue}
+                    key={attrID}
+                    defaultValue={currentValue}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                         const { value } = event.target;
                         if (inputType === 'number') {
-                            const numberValue = +value;
-                            if (!Number.isNaN(numberValue)) {
-                                const isValid = numberValue >= +values[0]
-                                    && numberValue <= +values[1]
-                                    && !((numberValue - +values[0]) % +values[2]);
-                                if (isValid) {
-                                    onChange(value);
+                            if (value !== '') {
+                                const numberValue = +value;
+                                if (!Number.isNaN(numberValue)) {
+                                    onChange(`${numberValue}`);
                                 }
-                            }
-                            if (!Number.isNaN(+event.target.value)) {
-                                onChange(value);
                             }
                         } else {
                             onChange(value);
@@ -261,7 +258,7 @@ interface Props {
 
 function AttributeEditor(props: Props): JSX.Element {
     const { attribute, currentValue, onChange } = props;
-    const { inputType, values } = attribute;
+    const { inputType, values, id: attrID } = attribute;
     const ref = inputType === 'number' ? React.createRef<InputNumber>()
         : React.createRef<Input>();
 
@@ -270,6 +267,7 @@ function AttributeEditor(props: Props): JSX.Element {
             {renderList({ values, inputType, onChange })}
             <hr />
             {renderInputElement({
+                attrID,
                 ref,
                 inputType,
                 currentValue,
