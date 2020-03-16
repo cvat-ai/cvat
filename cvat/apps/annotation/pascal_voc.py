@@ -74,7 +74,7 @@ def dump(file_object, annotations):
     extractor = CvatAnnotationsExtractor('', annotations)
     extractor = extractor.transform(id_from_image)
     extractor = Dataset.from_extractors(extractor) # apply lazy transforms
-    converter = env.make_converter('voc')
+    converter = env.make_converter('voc', label_map='source')
     with TemporaryDirectory() as temp_dir:
         converter(extractor, save_dir=temp_dir)
         make_zip_archive(temp_dir, file_object)
