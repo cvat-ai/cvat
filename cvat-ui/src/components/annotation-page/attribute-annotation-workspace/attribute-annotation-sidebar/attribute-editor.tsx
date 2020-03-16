@@ -197,7 +197,7 @@ function renderList(parameters: ListParameters): JSX.Element | null {
             [key: string]: (keyEvent?: KeyboardEvent) => void;
         } = {};
 
-        values.slice(0, 9).forEach((value: string, index: number): void => {
+        values.slice(0, 10).forEach((value: string, index: number): void => {
             const key = `SET_${index}_VALUE`;
             keyMap[key] = {
                 name: `Set value "${value}"`,

@@ -162,13 +162,13 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
 
     const keyMap = {
         NEXT_ATTRIBUTE: {
-            name: 'Next object',
+            name: 'Next attribute',
             description: 'Go to the next attribute',
             sequence: 'ArrowDown',
             action: 'keydown',
         },
         PREVIOUS_ATTRIBUTE: {
-            name: 'Previous object',
+            name: 'Previous attribute',
             description: 'Go to the previous attribute',
             sequence: 'ArrowUp',
             action: 'keydown',
