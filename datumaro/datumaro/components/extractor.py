@@ -200,14 +200,12 @@ class Mask(Annotation):
         return self._z_order
 
     def as_class_mask(self, label_id=None):
-        from datumaro.util.mask_tools import make_index_mask
         if label_id is None:
             label_id = self.label
-        return make_index_mask(self.image, label_id)
+        return self.image * label_id
 
     def as_instance_mask(self, instance_id):
-        from datumaro.util.mask_tools import make_index_mask
-        return make_index_mask(self.image, instance_id)
+        return self.image * instance_id
 
     def get_area(self):
         return np.count_nonzero(self.image)
@@ -745,6 +743,10 @@ class SourceExtractor(Extractor):
     pass
 
 class Importer:
+    @classmethod
+    def detect(cls, path):
+        raise NotImplementedError()
+
     def __call__(self, path, **extra_params):
         raise NotImplementedError()
 

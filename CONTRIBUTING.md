@@ -15,7 +15,7 @@ Next steps should work on clear Ubuntu 18.04.
 - Install necessary dependencies:
 
 ```sh
-$ sudo apt update && apt install -y nodejs npm curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
+$ sudo apt-get update && apt-get --no-install-recommends install -y nodejs npm curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
 ```
 
 -   Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
