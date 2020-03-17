@@ -18,11 +18,19 @@ import {
     Task,
     FrameSpeed,
     Rotation,
+    Workspace,
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core';
 import { RectDrawingMethod } from 'cvat-canvas';
 import { getCVATStore } from 'cvat-store';
+
+interface AnnotationsParameters {
+    filters: string[];
+    frame: number;
+    showAllInterpolationTracks: boolean;
+    jobInstance: any;
+}
 
 const cvat = getCore();
 let store: null | Store<CombinedState> = null;
@@ -34,19 +42,37 @@ function getStore(): Store<CombinedState> {
     return store;
 }
 
-function receiveAnnotationsParameters():
-{ filters: string[]; frame: number; showAllInterpolationTracks: boolean } {
+function receiveAnnotationsParameters(): AnnotationsParameters {
     if (store === null) {
         store = getCVATStore();
     }
 
     const state: CombinedState = getStore().getState();
-    const { filters } = state.annotation.annotations;
-    const frame = state.annotation.player.frame.number;
-    const { showAllInterpolationTracks } = state.settings.workspace;
+    const {
+        annotation: {
+            annotations: {
+                filters,
+            },
+            player: {
+                frame: {
+                    number: frame,
+                },
+            },
+            job: {
+                instance: jobInstance,
+            },
+        },
+        settings: {
+            workspace: {
+                showAllInterpolationTracks,
+            },
+        },
+    } = state;
+
     return {
         filters,
         frame,
+        jobInstance,
         showAllInterpolationTracks,
     };
 }
@@ -138,11 +164,22 @@ export enum AnnotationActionTypes {
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
     ADD_Z_LAYER = 'ADD_Z_LAYER',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
+    CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
+}
+
+export function changeWorkspace(workspace: Workspace): AnyAction {
+    return {
+        type: AnnotationActionTypes.CHANGE_WORKSPACE,
+        payload: {
+            workspace,
+        },
+    };
 }
 
 export function addZLayer(): AnyAction {
     return {
         type: AnnotationActionTypes.ADD_Z_LAYER,
+        payload: {},
     };
 }
 
@@ -155,12 +192,17 @@ export function switchZLayer(cur: number): AnyAction {
     };
 }
 
-export function fetchAnnotationsAsync(sessionInstance: any):
+export function fetchAnnotationsAsync():
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
-            const states = await sessionInstance.annotations
+            const {
+                filters,
+                frame,
+                showAllInterpolationTracks,
+                jobInstance,
+            } = receiveAnnotationsParameters();
+            const states = await jobInstance.annotations
                 .get(frame, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);
 
@@ -559,11 +601,15 @@ export function selectObjects(selectedStatesID: number[]): AnyAction {
     };
 }
 
-export function activateObject(activatedStateID: number | null): AnyAction {
+export function activateObject(
+    activatedStateID: number | null,
+    activatedAttributeID: number | null,
+): AnyAction {
     return {
         type: AnnotationActionTypes.ACTIVATE_OBJECT,
         payload: {
             activatedStateID,
+            activatedAttributeID,
         },
     };
 }
@@ -908,19 +954,26 @@ export function splitTrack(enabled: boolean): AnyAction {
     };
 }
 
-export function updateAnnotationsAsync(sessionInstance: any, frame: number, statesToUpdate: any[]):
+export function updateAnnotationsAsync(statesToUpdate: any[]):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const {
+            jobInstance,
+            filters,
+            frame,
+            showAllInterpolationTracks,
+        } = receiveAnnotationsParameters();
+
         try {
             if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {
                 // deactivate object to visualize changes immediately (UX)
-                dispatch(activateObject(null));
+                dispatch(activateObject(null, null));
             }
 
             const promises = statesToUpdate
                 .map((objectState: any): Promise<any> => objectState.save());
             const states = await Promise.all(promises);
-            const history = await sessionInstance.actions.get();
+            const history = await jobInstance.actions.get();
             const [minZ, maxZ] = computeZRange(states);
 
             dispatch({
@@ -933,8 +986,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 },
             });
         } catch (error) {
-            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
-            const states = await sessionInstance.annotations
+            const states = await jobInstance.annotations
                 .get(frame, showAllInterpolationTracks, filters);
             dispatch({
                 type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
@@ -1112,8 +1164,6 @@ export function changeLabelColorAsync(
 }
 
 export function changeGroupColorAsync(
-    sessionInstance: any,
-    frameNumber: number,
     group: number,
     color: string,
 ): ThunkAction<Promise<void>, {}, {}, AnyAction> {
@@ -1123,9 +1173,9 @@ export function changeGroupColorAsync(
             .filter((_state: any): boolean => _state.group.id === group);
         if (groupStates.length) {
             groupStates[0].group.color = color;
-            dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, groupStates));
+            dispatch(updateAnnotationsAsync(groupStates));
         } else {
-            dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, []));
+            dispatch(updateAnnotationsAsync([]));
         }
     };
 }
