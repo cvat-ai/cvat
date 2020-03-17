@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Changed
-- 
+- VOC task export now does not use official label map by default, but takes one
+  from the source task to avoid primary-class and class part name
+  clashing ([#1275](https://github.com/opencv/cvat/issues/1275))
 
 ### Deprecated
 -
