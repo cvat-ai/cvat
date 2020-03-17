@@ -11,17 +11,17 @@ import {
     Button,
 } from 'antd';
 
-import {
-    InfoIcon,
-    FullscreenIcon,
-} from '../../../icons';
+import { Workspace } from 'reducers/interfaces';
+import { InfoIcon, FullscreenIcon } from '../../../icons';
 
 interface Props {
+    workspace: Workspace;
     showStatistics(): void;
+    changeWorkspace(workspace: Workspace): void;
 }
 
 function RightGroup(props: Props): JSX.Element {
-    const { showStatistics } = props;
+    const { showStatistics, changeWorkspace, workspace } = props;
 
     return (
         <Col className='cvat-annotation-header-right-group'>
@@ -46,9 +46,23 @@ function RightGroup(props: Props): JSX.Element {
                 Info
             </Button>
             <div>
-                <Select disabled className='cvat-workspace-selector' defaultValue='standard'>
-                    <Select.Option key='standard' value='standard'>Standard</Select.Option>
-                    <Select.Option key='aam' value='aam'>Attribute annotation</Select.Option>
+                <Select
+                    className='cvat-workspace-selector'
+                    onChange={changeWorkspace}
+                    value={workspace}
+                >
+                    <Select.Option
+                        key={Workspace.STANDARD}
+                        value={Workspace.STANDARD}
+                    >
+                        {Workspace.STANDARD}
+                    </Select.Option>
+                    <Select.Option
+                        key={Workspace.ATTRIBUTE_ANNOTATION}
+                        value={Workspace.ATTRIBUTE_ANNOTATION}
+                    >
+                        {Workspace.ATTRIBUTE_ANNOTATION}
+                    </Select.Option>
                 </Select>
             </div>
         </Col>
