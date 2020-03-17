@@ -15,7 +15,7 @@ Next steps should work on clear Ubuntu 18.04.
 - Install necessary dependencies:
 
 ```sh
-$ sudo apt-get update && apt-get --no-install-recommends install -y nodejs npm curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
+$ sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential nodejs npm curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
 ```
 
 -   Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
@@ -28,7 +28,7 @@ git clone https://github.com/opencv/cvat
 cd cvat && mkdir logs keys
 python3 -m venv .env
 . .env/bin/activate
-pip install -U pip wheel
+pip install -U pip wheel setuptools
 pip install -r cvat/requirements/development.txt
 pip install -r datumaro/requirements.txt
 python manage.py migrate
