@@ -6,26 +6,6 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
-const moduleConf = {
-    rules: [
-        {
-            test: /.js?$/,
-            exclude: /node_modules/,
-            use: {
-                loader: 'babel-loader',
-                options: {
-                    presets: [
-                        ['@babel/preset-env', {
-                            targets: '> 2.5%',
-                        }],
-                    ],
-                    sourceType: 'unambiguous',
-                },
-            },
-        },
-    ],
-};
-
 const cvatData = {
     target: 'web',
     mode: 'production',
@@ -36,35 +16,44 @@ const cvatData = {
         library: 'cvatData',
         libraryTarget: 'window',
     },
-    devServer: {
-        contentBase: path.join(__dirname, 'dist'),
-        compress: false,
-        inline: true,
-        port: 3001,
+    module: {
+        rules: [
+            {
+                test: /.js?$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: [
+                            ['@babel/preset-env', {
+                                targets: '> 2.5%',
+                            }],
+                        ],
+                        sourceType: 'unambiguous',
+                    },
+                },
+            }, {
+                test: /\.worker\.js$/,
+                exclude: /3rdparty/,
+                use: {
+                    loader: 'worker-loader',
+                    options: {
+                        publicPath: '/',
+                        name: '[name].js',
+                    },
+                },
+            }, {
+                test: /3rdparty\/.*\.worker\.js$/,
+                use: {
+                    loader: 'worker-loader',
+                    options: {
+                        publicPath: '/3rdparty/',
+                        name: '3rdparty/[name].js',
+                    },
+                },
+            },
+        ],
     },
-    module: moduleConf,
-};
-
-const workerImg = {
-    target: 'web',
-    mode: 'production',
-    entry: './src/js/unzip_imgs.js',
-    output: {
-        path: path.resolve(__dirname, 'dist'),
-        filename: 'unzip_imgs.js',
-    },
-    module: moduleConf,
-};
-
-const workerVideo = {
-    target: 'web',
-    mode: 'production',
-    entry: './src/js/3rdparty/Decoder.js',
-    output: {
-        path: path.resolve(__dirname, 'dist'),
-        filename: 'Decoder.js',
-    },
-    module: moduleConf,
     plugins: [
         new CopyPlugin([
             './src/js/3rdparty/avc.wasm',
@@ -72,4 +61,4 @@ const workerVideo = {
     ],
 };
 
-module.exports = [cvatData, workerImg, workerVideo];
+module.exports = cvatData;

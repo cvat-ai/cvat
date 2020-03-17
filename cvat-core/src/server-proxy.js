@@ -14,6 +14,7 @@
     } = require('./exceptions');
     const store = require('store');
     const config = require('./config');
+    const DownloadWorker = require('./download.worker');
 
     function generateError(errorData) {
         if (errorData.response) {
@@ -26,12 +27,66 @@
         return new ServerError(message, 0);
     }
 
+    class WorkerWrappedAxios {
+        constructor() {
+            const worker = new DownloadWorker();
+            const requests = {};
+            let requestId = 0;
+
+            worker.onmessage = (e) => {
+                if (e.data.id in requests) {
+                    if (e.data.isSuccess) {
+                        requests[e.data.id].resolve(e.data.responseData);
+                    } else {
+                        requests[e.data.id].reject(e.data.error);
+                    }
+
+                    delete requests[e.data.id];
+                }
+            };
+
+            worker.onerror = (e) => {
+                if (e.data.id in requests) {
+                    requests[e.data.id].reject(e);
+                    delete requests[e.data.id];
+                }
+            };
+
+            function getRequestId() {
+                return requestId++;
+            }
+
+            async function get(url, requestConfig) {
+                return new Promise((resolve, reject) => {
+                    const newRequestId = getRequestId();
+                    requests[newRequestId] = {
+                        resolve,
+                        reject,
+                    };
+                    worker.postMessage({
+                        url,
+                        config: requestConfig,
+                        id: newRequestId,
+                    });
+                });
+            }
+
+            Object.defineProperties(this, Object.freeze({
+                get: {
+                    value: get,
+                    writable: false,
+                },
+            }));
+        }
+    }
+
     class ServerProxy {
         constructor() {
             const Axios = require('axios');
             Axios.defaults.withCredentials = true;
             Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
             Axios.defaults.xsrfCookieName = 'csrftoken';
+            const workerAxios = new WorkerWrappedAxios();
 
             let token = store.get('token');
             if (token) {
@@ -457,15 +512,18 @@
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/data?type=chunk&number=${chunk}&quality=compressed`, {
-                        proxy: config.proxy,
-                        responseType: 'arraybuffer',
-                    });
+                    response = await workerAxios.get(
+                        `${backendAPI}/tasks/${tid}/data?type=chunk&number=${chunk}&quality=compressed`,
+                        {
+                            proxy: config.proxy,
+                            responseType: 'arraybuffer',
+                        },
+                    );
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
 
-                return response.data;
+                return response;
             }
 
             async function getMeta(tid) {

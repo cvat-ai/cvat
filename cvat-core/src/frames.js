@@ -100,7 +100,11 @@
     FrameData.prototype.data.implementation = async function (onServerRequest) {
         return new Promise((resolve, reject) => {
             const resolveWrapper = (data) => {
-                this._data = data;
+                this._data = {
+                    imageData: data,
+                    renderWidth: this.width,
+                    renderHeight: this.height,
+                };
                 return resolve(this._data);
             };
 
@@ -458,7 +462,7 @@
                 const cachedFrames = this.cachedFrames();
                 if (fillBuffer && !this._activeFillBufferRequest
                     && this._size > this._chunkSize
-                    && cachedFrames.length < this._size / 2) {
+                    && cachedFrames.length < (this._size * 3) / 4) {
                     const maxFrame = cachedFrames ? Math.max(...cachedFrames) : frameNumber;
                     if (maxFrame < this._stopFrame) {
                         this.makeFillRequest(maxFrame + 1, frameStep);

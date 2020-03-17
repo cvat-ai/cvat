@@ -32,12 +32,7 @@ class FrameProviderWrapper extends Listener {
         const loadFrame = (frameData) => {
             frameData.data().then((data) => {
                 this._loaded = frameNumber;
-                this._result = {
-                    data,
-                    renderWidth: frameData.width,
-                    renderHeight: frameData.height,
-                };
-
+                this._result = data;
                 this.notify();
             }).catch(() => {
                 this._loaded = { frameNumber };
@@ -972,18 +967,14 @@ class PlayerView {
         if (this._latestDrawnImage !== image) {
             this._latestDrawnImage = image;
             const ctx = this._playerCanvasBackground[0].getContext('2d');
-            const imageData = image.data;
+            this._playerCanvasBackground.attr('width', image.renderWidth);
+            this._playerCanvasBackground.attr('height', image.renderHeight);
             if (window.cvatTask.dataChunkType === 'video') {
-                this._playerCanvasBackground.attr('width', image.renderWidth);
-                this._playerCanvasBackground.attr('height', image.renderHeight);
-                ctx.scale(image.renderWidth / image.data.width,
-                    image.renderHeight / image.data.height);
-                ctx.putImageData(imageData, 0, 0);
-                ctx.drawImage(this._playerCanvasBackground[0], 0, 0);
+                ctx.scale(image.renderWidth / image.imageData.width,
+                    image.renderHeight / image.imageData.height);
+                ctx.putImageData(image.imageData, 0, 0);
             } else {
-                this._playerCanvasBackground.attr('width', imageData.width);
-                this._playerCanvasBackground.attr('height', imageData.height);
-                ctx.drawImage(imageData, 0, 0);
+                ctx.drawImage(image.imageData, 0, 0);
             }
         }
 

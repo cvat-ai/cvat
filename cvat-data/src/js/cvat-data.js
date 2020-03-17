@@ -10,6 +10,8 @@
 const { Mutex } = require('async-mutex');
 // eslint-disable-next-line max-classes-per-file
 const { MP4Reader, Bytestream } = require('./3rdparty/mp4');
+const ZipDecoder = require('./unzip_imgs.worker');
+const H264Decoder = require('./3rdparty/Decoder.worker');
 
 const BlockType = Object.freeze({
     MP4VIDEO: 'mp4video',
@@ -201,7 +203,7 @@ class FrameProvider {
             }
             this._cleanup();
             if (this._blockType === BlockType.MP4VIDEO) {
-                const worker = new Worker('/static/engine/js/3rdparty/Decoder.js');
+                const worker = new H264Decoder();
                 let index = start;
 
                 worker.onmessage = (e) => {
@@ -276,7 +278,8 @@ class FrameProvider {
                 }
                 this._decodeThreadCount++;
             } else {
-                const worker = new Worker('/static/engine/js/unzip_imgs.js');
+                const worker = new ZipDecoder();
+                let index = start;
 
                 worker.onerror = (e) => {
                     for (let i = start; i <= end; i++) {
@@ -306,11 +309,12 @@ class FrameProvider {
                         delete this._promisedFrames[event.data.index];
                     }
 
-                    if (event.data.isEnd) {
+                    if (index === end) {
                         worker.terminate();
                         delete this._decodingBlocks[`${start}:${end}`];
                         this._decodeThreadCount--;
                     }
+                    index++;
                 };
 
                 worker.postMessage({ block, start, end });

@@ -9,6 +9,12 @@ export interface Size {
     height: number;
 }
 
+export interface Image {
+    renderWidth: number;
+    renderHeight: number;
+    imageData: ImageData | CanvasImageSource;
+}
+
 export interface Position {
     x: number;
     y: number;
@@ -110,7 +116,7 @@ export enum Mode {
 }
 
 export interface CanvasModel {
-    readonly image: HTMLImageElement | null;
+    readonly image: Image | null;
     readonly objects: any[];
     readonly zLayer: number | null;
     readonly gridSize: Size;
@@ -153,7 +159,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         activeElement: ActiveElement;
         angle: number;
         canvasSize: Size;
-        image: HTMLImageElement | null;
+        image: Image | null;
         imageID: number | null;
         imageOffset: number;
         imageSize: Size;
@@ -310,7 +316,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.data.image = null;
                 this.notify(UpdateReasons.IMAGE_CHANGED);
             },
-        ).then((data: HTMLImageElement): void => {
+        ).then((data: Image): void => {
             if (frameData.number !== this.data.imageID) {
                 // already another image
                 return;
@@ -516,7 +522,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return this.data.zLayer;
     }
 
-    public get image(): HTMLImageElement | null {
+    public get image(): Image | null {
         return this.data.image;
     }
 

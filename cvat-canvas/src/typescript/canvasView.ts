@@ -683,10 +683,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else {
                 this.loadingAnimation.classList.add('cvat_canvas_hidden');
                 const ctx = this.background.getContext('2d');
-                this.background.setAttribute('width', `${image.width}px`);
-                this.background.setAttribute('height', `${image.height}px`);
+                this.background.setAttribute('width', `${image.renderWidth}px`);
+                this.background.setAttribute('height', `${image.renderHeight}px`);
+
                 if (ctx) {
-                    ctx.drawImage(image, 0, 0);
+                    if (image.imageData instanceof ImageData) {
+                        ctx.scale(image.renderWidth / image.imageData.width,
+                            image.renderHeight / image.imageData.height);
+                        ctx.putImageData(image.imageData, 0, 0);
+                    } else {
+                        ctx.drawImage(image.imageData, 0, 0);
+                    }
                 }
                 this.moveCanvas();
                 this.resizeCanvas();
