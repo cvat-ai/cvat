@@ -9,9 +9,7 @@ import { RouteComponentProps } from 'react-router';
 import AnnotationPageComponent from 'components/annotation-page/annotation-page';
 import { getJobAsync } from 'actions/annotation-actions';
 
-import {
-    CombinedState,
-} from 'reducers/interfaces';
+import { CombinedState, Workspace } from 'reducers/interfaces';
 
 type OwnProps = RouteComponentProps<{
     tid: string;
@@ -21,6 +19,7 @@ type OwnProps = RouteComponentProps<{
 interface StateToProps {
     job: any | null | undefined;
     fetching: boolean;
+    workspace: Workspace;
 }
 
 interface DispatchToProps {
@@ -36,12 +35,14 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 instance: job,
                 fetching,
             },
+            workspace,
         },
     } = state;
 
     return {
         job: !job || jobID === job.id ? job : null,
         fetching,
+        workspace,
     };
 }
 
