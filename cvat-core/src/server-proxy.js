@@ -584,6 +584,10 @@
                 });
             }
 
+            async function saveLogs(logs) {
+                console.log(logs);
+            }
+
             Object.defineProperties(this, Object.freeze({
                 server: {
                     value: Object.freeze({
@@ -643,6 +647,13 @@
                         getAnnotations,
                         dumpAnnotations,
                         uploadAnnotations,
+                    }),
+                    writable: false,
+                },
+
+                logs: {
+                    value: Object.freeze({
+                        save: saveLogs,
                     }),
                     writable: false,
                 },

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import {
     Layout,
@@ -21,17 +21,23 @@ interface Props {
     job: any | null | undefined;
     fetching: boolean;
     getJob(): void;
+    saveLogs(): void;
     workspace: Workspace;
 }
-
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
         job,
         fetching,
         getJob,
+        saveLogs,
         workspace,
     } = props;
+
+    useEffect(() => {
+        saveLogs();
+        return saveLogs;
+    }, []);
 
     if (job === null) {
         if (!fetching) {
