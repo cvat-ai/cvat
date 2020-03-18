@@ -69,16 +69,6 @@
 
     > div:nth-child(1) > div:nth-child(1) {
         height: 32px;
-        > .ant-select > div {
-            height: 32px;
-            > div {
-                height: 32px;
-
-                ul {
-                    display: flex;
-                }
-            }
-        }
     }
 
     > div:nth-child(2) {

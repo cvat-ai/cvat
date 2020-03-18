@@ -90,7 +90,9 @@ class YoloExtractor(SourceExtractor):
             subset = YoloExtractor.Subset(subset_name, self)
             with open(list_path, 'r') as f:
                 subset.items = OrderedDict(
-                    (osp.splitext(osp.basename(p))[0], p.strip()) for p in f)
+                    (osp.splitext(osp.basename(p.strip()))[0], p.strip())
+                    for p in f
+                )
 
             for item_id, image_path in subset.items.items():
                 image_path = self._make_local_path(image_path)

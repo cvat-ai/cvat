@@ -632,10 +632,13 @@ class CocoConverterTest(TestCase):
 
             def categories(self):
                 label_cat = LabelCategories()
+                point_cat = PointsCategories()
                 for label in range(10):
                     label_cat.add('label_' + str(label))
+                    point_cat.add(label)
                 return {
                     AnnotationType.label: label_cat,
+                    AnnotationType.points: point_cat,
                 }
 
         with TestDir() as test_dir:
@@ -651,4 +654,4 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoConverter(), test_dir)
+                CocoConverter(tasks='image_info'), test_dir)
