@@ -209,26 +209,26 @@ function setupShortkeys(shortkeys, models) {
 
     const cancelModeHandler = Logger.shortkeyLogDecorator(() => {
         switch (window.cvat.mode) {
-            case 'aam':
-                models.aam.switchAAMMode();
-                break;
-            case 'creation':
-                models.shapeCreator.switchCreateMode(true);
-                break;
-            case 'merge':
-                models.shapeMerger.cancel();
-                break;
-            case 'groupping':
-                models.shapeGrouper.cancel();
-                break;
-            case 'paste':
-                models.shapeBuffer.switchPaste();
-                break;
-            case 'poly_editing':
-                models.shapeEditor.finish();
-                break;
-            default:
-                break;
+        case 'aam':
+            models.aam.switchAAMMode();
+            break;
+        case 'creation':
+            models.shapeCreator.switchCreateMode(true);
+            break;
+        case 'merge':
+            models.shapeMerger.cancel();
+            break;
+        case 'groupping':
+            models.shapeGrouper.cancel();
+            break;
+        case 'paste':
+            models.shapeBuffer.switchPaste();
+            break;
+        case 'poly_editing':
+            models.shapeEditor.finish();
+            break;
+        default:
+            break;
         }
         return false;
     });
