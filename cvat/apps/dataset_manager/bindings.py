@@ -177,6 +177,8 @@ class CvatTaskExtractor(CvatAnnotationsExtractor):
 
 
 def match_frame(item, cvat_task_anno):
+    is_video = cvat_task_anno.meta['task']['mode'] == 'interpolation'
+
     frame_number = None
     if frame_number is None:
         try:
@@ -193,6 +195,8 @@ def match_frame(item, cvat_task_anno):
             frame_number = int(item.id)
         except Exception:
             pass
+    if frame_number is None and is_video and item.id.startswith('frame_'):
+        frame_number = int(item.id[len('frame_'):])
     if not frame_number in cvat_task_anno.frame_info:
         raise Exception("Could not match item id: '%s' with any task frame" %
             item.id)
