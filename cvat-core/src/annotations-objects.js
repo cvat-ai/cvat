@@ -1139,6 +1139,7 @@
                 attributes: { ...this.attributes },
                 label: this.label,
                 group: this.groupObject,
+                color: this.color,
                 updated: this.updated,
                 frame,
             };
@@ -1169,6 +1170,10 @@
 
             if (updated.lock) {
                 this._saveLock(data.lock);
+            }
+
+            if (updated.color) {
+                this._saveColor(data.color);
             }
 
             this.updateTimestamp(updated);

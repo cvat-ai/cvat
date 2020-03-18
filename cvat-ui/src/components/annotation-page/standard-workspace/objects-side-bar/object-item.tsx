@@ -43,6 +43,7 @@ import {
 function ItemMenu(
     serverID: number | undefined,
     locked: boolean,
+    objectType: ObjectType,
     copy: (() => void),
     remove: (() => void),
     propagate: (() => void),
@@ -67,18 +68,22 @@ function ItemMenu(
                     Propagate
                 </Button>
             </Menu.Item>
-            <Menu.Item>
-                <Button type='link' onClick={toBackground}>
-                    <Icon component={BackgroundIcon} />
-                    To background
-                </Button>
-            </Menu.Item>
-            <Menu.Item>
-                <Button type='link' onClick={toForeground}>
-                    <Icon component={ForegroundIcon} />
-                    To foreground
-                </Button>
-            </Menu.Item>
+            { objectType !== ObjectType.TAG && (
+                <>
+                    <Menu.Item>
+                        <Button type='link' onClick={toBackground}>
+                            <Icon component={BackgroundIcon} />
+                            To background
+                        </Button>
+                    </Menu.Item>
+                    <Menu.Item>
+                        <Button type='link' onClick={toForeground}>
+                            <Icon component={ForegroundIcon} />
+                            To foreground
+                        </Button>
+                    </Menu.Item>
+                </>
+            )}
             <Menu.Item>
                 <Button
                     type='link'
@@ -109,6 +114,7 @@ interface ItemTopComponentProps {
     serverID: number | undefined;
     labelID: number;
     labels: any[];
+    objectType: ObjectType;
     type: string;
     locked: boolean;
     changeLabel(labelID: string): void;
@@ -126,6 +132,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         serverID,
         labelID,
         labels,
+        objectType,
         type,
         locked,
         changeLabel,
@@ -159,6 +166,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                     overlay={ItemMenu(
                         serverID,
                         locked,
+                        objectType,
                         copy,
                         remove,
                         propagate,
@@ -296,6 +304,22 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                                 </Col>
                             )
                         }
+                    </Row>
+                </Col>
+            </Row>
+        );
+    }
+
+    if (objectType === ObjectType.TAG) {
+        return (
+            <Row type='flex' align='middle' justify='space-around'>
+                <Col span={20} style={{ textAlign: 'center' }}>
+                    <Row type='flex' justify='space-around'>
+                        <Col>
+                            { locked
+                                ? <Icon type='lock' onClick={unlock} />
+                                : <Icon type='unlock' onClick={lock} />}
+                        </Col>
                     </Row>
                 </Col>
             </Row>
@@ -714,7 +738,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     style={{ background: ` ${color}` }}
                 />
             </Popover>
-
             <div
                 onMouseEnter={activate}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
@@ -726,6 +749,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     clientID={clientID}
                     labelID={labelID}
                     labels={labels}
+                    objectType={objectType}
                     type={type}
                     locked={locked}
                     changeLabel={changeLabel}

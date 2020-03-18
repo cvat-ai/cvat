@@ -18,9 +18,16 @@ import {
     GridColor,
     ObjectType,
     ContextMenuType,
+    Workspace
 } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas';
 import getCore from 'cvat-core';
+import {
+    ColorBy,
+    GridColor,
+    ObjectType,
+    Workspace,
+} from 'reducers/interfaces';
 
 const cvat = getCore();
 
@@ -31,6 +38,7 @@ interface Props {
     canvasInstance: Canvas;
     jobInstance: any;
     activatedStateID: number | null;
+    activatedAttributeID: number | null;
     selectedStatesID: number[];
     annotations: any[];
     frameData: any;
@@ -55,6 +63,8 @@ interface Props {
     resetZoom: boolean;
     contextVisible: boolean;
     contextType: ContextMenuType;
+    aamZoomMargin: number;
+    workspace: Workspace;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -64,7 +74,7 @@ interface Props {
     onEditShape: (enabled: boolean) => void;
     onShapeDrawn: () => void;
     onResetCanvas: () => void;
-    onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onUpdateAnnotations(states: any[]): void;
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
@@ -120,6 +130,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             brightnessLevel,
             contrastLevel,
             saturationLevel,
+            workspace,
         } = this.props;
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -168,11 +179,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
+        if (prevProps.curZLayer !== curZLayer) {
+            canvasInstance.setZLayer(curZLayer);
+        }
+
         if (prevProps.annotations !== annotations || prevProps.frameData !== frameData) {
             this.updateCanvas();
         }
 
-        if (prevProps.frame !== frameData.number && resetZoom) {
+        if (prevProps.frame !== frameData.number
+            && resetZoom
+            && workspace !== Workspace.ATTRIBUTE_ANNOTATION
+        ) {
             canvasInstance.html().addEventListener('canvas.setup', () => {
                 canvasInstance.fit();
             }, { once: true });
@@ -183,10 +201,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             this.updateShapesView();
         }
 
-        if (prevProps.curZLayer !== curZLayer) {
-            canvasInstance.setZLayer(curZLayer);
-        }
-
         if (prevProps.frameAngle !== frameAngle) {
             canvasInstance.rotate(frameAngle);
         }
@@ -195,10 +209,34 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     }
 
     public componentWillUnmount(): void {
+        const { canvasInstance } = this.props;
+
+        canvasInstance.html().removeEventListener('mousedown', this.onCanvasMouseDown);
+        canvasInstance.html().removeEventListener('click', this.onCanvasClicked);
+        canvasInstance.html().removeEventListener('contextmenu', this.onCanvasContextMenu);
+        canvasInstance.html().removeEventListener('canvas.editstart', this.onCanvasEditStart);
+        canvasInstance.html().removeEventListener('canvas.edited', this.onCanvasEditDone);
+        canvasInstance.html().removeEventListener('canvas.dragstart', this.onCanvasDragStart);
+        canvasInstance.html().removeEventListener('canvas.dragstop', this.onCanvasDragDone);
+        canvasInstance.html().removeEventListener('canvas.zoomstart', this.onCanvasZoomStart);
+        canvasInstance.html().removeEventListener('canvas.zoomstop', this.onCanvasZoomDone);
+
+        canvasInstance.html().removeEventListener('canvas.setup', this.onCanvasSetup);
+        canvasInstance.html().removeEventListener('canvas.canceled', this.onCanvasCancel);
+        canvasInstance.html().removeEventListener('canvas.find', this.onCanvasFindObject);
+        canvasInstance.html().removeEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
+        canvasInstance.html().removeEventListener('canvas.moved', this.onCanvasCursorMoved);
+
+        canvasInstance.html().removeEventListener('canvas.clicked', this.onCanvasShapeClicked);
+        canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
+        canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
+        canvasInstance.html().removeEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
+
         window.removeEventListener('resize', this.fitCanvas);
     }
 
-    private onShapeDrawn(event: any): void {
+    private onCanvasShapeDrawn = (event: any): void => {
         const {
             jobInstance,
             activeLabelID,
@@ -229,27 +267,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.frame = frame;
         const objectState = new cvat.classes.ObjectState(state);
         onCreateAnnotations(jobInstance, frame, [objectState]);
-    }
+    };
 
-    private onShapeEdited(event: any): void {
-        const {
-            jobInstance,
-            frame,
-            onEditShape,
-            onUpdateAnnotations,
-        } = this.props;
-
-        onEditShape(false);
-
-        const {
-            state,
-            points,
-        } = event.detail;
-        state.points = points;
-        onUpdateAnnotations(jobInstance, frame, [state]);
-    }
-
-    private onObjectsMerged(event: any): void {
+    private onCanvasObjectsMerged = (event: any): void => {
         const {
             jobInstance,
             frame,
@@ -261,9 +281,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const { states } = event.detail;
         onMergeAnnotations(jobInstance, frame, states);
-    }
+    };
 
-    private onObjectsGroupped(event: any): void {
+    private onCanvasObjectsGroupped = (event: any): void => {
         const {
             jobInstance,
             frame,
@@ -275,9 +295,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const { states } = event.detail;
         onGroupAnnotations(jobInstance, frame, states);
-    }
+    };
 
-    private onTrackSplitted(event: any): void {
+    private onCanvasTrackSplitted = (event: any): void => {
         const {
             jobInstance,
             frame,
@@ -289,22 +309,179 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const { state } = event.detail;
         onSplitAnnotations(jobInstance, frame, state);
-    }
+    };
 
     private fitCanvas = (): void => {
         const { canvasInstance } = this.props;
         canvasInstance.fitCanvas();
     };
 
+    private onCanvasMouseDown = (e: MouseEvent): void => {
+        const { workspace, activatedStateID, onActivateObject } = this.props;
+
+        if ((e.target as HTMLElement).tagName === 'svg') {
+            if (activatedStateID !== null && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
+                onActivateObject(null);
+            }
+        }
+    };
+
+    private onCanvasClicked = (): void => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    };
+
+    private onCanvasContextMenu = (e: MouseEvent): void => {
+        const { activatedStateID, onUpdateContextMenu } = this.props;
+        onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY);
+    };
+
+    private onCanvasShapeClicked = (e: any): void => {
+        const { clientID } = e.detail.state;
+        const sidebarItem = window.document
+            .getElementById(`cvat-objects-sidebar-state-item-${clientID}`);
+        if (sidebarItem) {
+            sidebarItem.scrollIntoView();
+        }
+    };
+
+    private onCanvasShapeDeactivated = (e: any): void => {
+        const { onActivateObject, activatedStateID } = this.props;
+        const { state } = e.detail;
+
+        // when we activate element, canvas deactivates the previous
+        // and triggers this event
+        // in this case we do not need to update our state
+        if (state.clientID === activatedStateID) {
+            onActivateObject(null);
+        }
+    };
+
+    private onCanvasCursorMoved = async (event: any): Promise<void> => {
+        const {
+            jobInstance,
+            activatedStateID,
+            workspace,
+            onActivateObject,
+        } = this.props;
+
+        if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+            return;
+        }
+
+        const result = await jobInstance.annotations.select(
+            event.detail.states,
+            event.detail.x,
+            event.detail.y,
+        );
+
+        if (result && result.state) {
+            if (result.state.shapeType === 'polyline' || result.state.shapeType === 'points') {
+                if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
+                    return;
+                }
+            }
+
+            if (activatedStateID !== result.state.clientID) {
+                onActivateObject(result.state.clientID);
+            }
+        }
+    };
+
+    private onCanvasEditStart = (): void => {
+        const { onActivateObject, onEditShape } = this.props;
+        onActivateObject(null);
+        onEditShape(true);
+    };
+
+    private onCanvasEditDone = (event: any): void => {
+        const {
+            onEditShape,
+            onUpdateAnnotations,
+        } = this.props;
+
+        onEditShape(false);
+
+        const {
+            state,
+            points,
+        } = event.detail;
+        state.points = points;
+        onUpdateAnnotations([state]);
+    };
+
+    private onCanvasDragStart = (): void => {
+        const { onDragCanvas } = this.props;
+        onDragCanvas(true);
+    };
+
+    private onCanvasDragDone = (): void => {
+        const { onDragCanvas } = this.props;
+        onDragCanvas(false);
+    };
+
+    private onCanvasZoomStart = (): void => {
+        const { onZoomCanvas } = this.props;
+        onZoomCanvas(true);
+    };
+
+    private onCanvasZoomDone = (): void => {
+        const { onZoomCanvas } = this.props;
+        onZoomCanvas(false);
+    };
+
+    private onCanvasSetup = (): void => {
+        const { onSetupCanvas } = this.props;
+        onSetupCanvas();
+        this.updateShapesView();
+        this.activateOnCanvas();
+    };
+
+    private onCanvasCancel = (): void => {
+        const { onResetCanvas } = this.props;
+        onResetCanvas();
+    };
+
+    private onCanvasFindObject = async (e: any): Promise<void> => {
+        const { jobInstance, canvasInstance } = this.props;
+
+        const result = await jobInstance.annotations
+            .select(e.detail.states, e.detail.x, e.detail.y);
+
+        if (result && result.state) {
+            if (result.state.shapeType === 'polyline' || result.state.shapeType === 'points') {
+                if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
+                    return;
+                }
+            }
+
+            canvasInstance.select(result.state);
+        }
+    };
+
     private activateOnCanvas(): void {
         const {
             activatedStateID,
+            activatedAttributeID,
             canvasInstance,
             selectedOpacity,
+            aamZoomMargin,
+            workspace,
+            annotations,
         } = this.props;
 
         if (activatedStateID !== null) {
-            canvasInstance.activate(activatedStateID);
+            if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+                const [activatedState] = annotations
+                    .filter((state: any): boolean => state.clientID === activatedStateID);
+                if (activatedState.objectType !== ObjectType.TAG) {
+                    canvasInstance.focus(activatedStateID, aamZoomMargin);
+                } else {
+                    canvasInstance.fit();
+                }
+            }
+            canvasInstance.activate(activatedStateID, activatedAttributeID);
             const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
             if (el) {
                 (el as any as SVGElement).setAttribute('fill-opacity', `${selectedOpacity / 100}`);
@@ -352,7 +529,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         } = this.props;
 
         if (frameData !== null) {
-            canvasInstance.setup(frameData, annotations);
+            canvasInstance.setup(frameData, annotations
+                .filter((e) => e.objectType !== ObjectType.TAG));
             canvasInstance.rotate(frameAngle);
         }
     }
@@ -364,14 +542,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             gridColor,
             gridOpacity,
             canvasInstance,
-            jobInstance,
-            onSetupCanvas,
-            onDragCanvas,
-            onZoomCanvas,
-            onResetCanvas,
-            onActivateObject,
-            onUpdateContextMenu,
-            onEditShape,
             brightnessLevel,
             contrastLevel,
             saturationLevel,
@@ -402,143 +572,33 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         // Events
-        canvasInstance.html().addEventListener('mousedown', (e: MouseEvent): void => {
-            const {
-                activatedStateID,
-            } = this.props;
-
-            if ((e.target as HTMLElement).tagName === 'svg' && activatedStateID !== null) {
-                onActivateObject(null);
-            }
-        });
-
-        canvasInstance.html().addEventListener('click', (): void => {
-            if (document.activeElement) {
-                (document.activeElement as HTMLElement).blur();
-            }
-        });
-
-        canvasInstance.html().addEventListener('contextmenu', (e: MouseEvent): void => {
-            const {
-                activatedStateID,
-                contextType,
-                contextVisible,
-            } = this.props;
-
-            if (!(contextVisible && contextType === ContextMenuType.CANVAS_SHAPE_POINT)) {
-                onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY,
-                    ContextMenuType.CANVAS_SHAPE);
-            }
-        });
-
-        canvasInstance.html().addEventListener('canvas.editstart', (): void => {
-            onActivateObject(null);
-            onEditShape(true);
-        });
-
-        canvasInstance.html().addEventListener('canvas.setup', (): void => {
-            onSetupCanvas();
-            this.updateShapesView();
-            this.activateOnCanvas();
-        });
-
         canvasInstance.html().addEventListener('canvas.setup', () => {
+            const { activatedStateID, activatedAttributeID } = this.props;
             canvasInstance.fit();
+            canvasInstance.activate(activatedStateID, activatedAttributeID);
         }, { once: true });
 
-        canvasInstance.html().addEventListener('canvas.canceled', () => {
-            onResetCanvas();
-        });
+        canvasInstance.html().addEventListener('mousedown', this.onCanvasMouseDown);
+        canvasInstance.html().addEventListener('click', this.onCanvasClicked);
+        canvasInstance.html().addEventListener('contextmenu', this.onCanvasContextMenu);
+        canvasInstance.html().addEventListener('canvas.editstart', this.onCanvasEditStart);
+        canvasInstance.html().addEventListener('canvas.edited', this.onCanvasEditDone);
+        canvasInstance.html().addEventListener('canvas.dragstart', this.onCanvasDragStart);
+        canvasInstance.html().addEventListener('canvas.dragstop', this.onCanvasDragDone);
+        canvasInstance.html().addEventListener('canvas.zoomstart', this.onCanvasZoomStart);
+        canvasInstance.html().addEventListener('canvas.zoomstop', this.onCanvasZoomDone);
 
-        canvasInstance.html().addEventListener('canvas.dragstart', () => {
-            onDragCanvas(true);
-        });
+        canvasInstance.html().addEventListener('canvas.setup', this.onCanvasSetup);
+        canvasInstance.html().addEventListener('canvas.canceled', this.onCanvasCancel);
+        canvasInstance.html().addEventListener('canvas.find', this.onCanvasFindObject);
+        canvasInstance.html().addEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
+        canvasInstance.html().addEventListener('canvas.moved', this.onCanvasCursorMoved);
 
-        canvasInstance.html().addEventListener('canvas.dragstop', () => {
-            onDragCanvas(false);
-        });
-
-        canvasInstance.html().addEventListener('canvas.zoomstart', () => {
-            onZoomCanvas(true);
-        });
-
-        canvasInstance.html().addEventListener('canvas.zoomstop', () => {
-            onZoomCanvas(false);
-        });
-
-        canvasInstance.html().addEventListener('canvas.clicked', (e: any) => {
-            const { clientID } = e.detail.state;
-            const sidebarItem = window.document
-                .getElementById(`cvat-objects-sidebar-state-item-${clientID}`);
-            if (sidebarItem) {
-                sidebarItem.scrollIntoView();
-            }
-        });
-
-        canvasInstance.html().addEventListener('canvas.deactivated', (e: any): void => {
-            const { activatedStateID } = this.props;
-            const { state } = e.detail;
-
-            // when we activate element, canvas deactivates the previous
-            // and triggers this event
-            // in this case we do not need to update our state
-            if (state.clientID === activatedStateID) {
-                onActivateObject(null);
-            }
-        });
-
-        canvasInstance.html().addEventListener('canvas.moved', async (event: any): Promise<void> => {
-            const { activatedStateID } = this.props;
-            const result = await jobInstance.annotations.select(
-                event.detail.states,
-                event.detail.x,
-                event.detail.y,
-            );
-
-            if (result && result.state) {
-                if (result.state.shapeType === 'polyline' || result.state.shapeType === 'points') {
-                    if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
-                        return;
-                    }
-                }
-
-                if (activatedStateID !== result.state.clientID) {
-                    onActivateObject(result.state.clientID);
-                }
-            }
-        });
-
-        canvasInstance.html().addEventListener('canvas.find', async (e: any) => {
-            const result = await jobInstance.annotations
-                .select(e.detail.states, e.detail.x, e.detail.y);
-
-            if (result && result.state) {
-                if (result.state.shapeType === 'polyline' || result.state.shapeType === 'points') {
-                    if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
-                        return;
-                    }
-                }
-
-                canvasInstance.select(result.state);
-            }
-        });
-
-        canvasInstance.html().addEventListener('canvas.edited', this.onShapeEdited.bind(this));
-        canvasInstance.html().addEventListener('canvas.drawn', this.onShapeDrawn.bind(this));
-        canvasInstance.html().addEventListener('canvas.merged', this.onObjectsMerged.bind(this));
-        canvasInstance.html().addEventListener('canvas.groupped', this.onObjectsGroupped.bind(this));
-        canvasInstance.html().addEventListener('canvas.splitted', this.onTrackSplitted.bind(this));
-
-        canvasInstance.html().addEventListener('point.contextmenu', (event: any) => {
-            // const {
-            //     activatedStateID,
-            // } = this.props;
-
-            // console.log(event);
-
-            // onUpdateContextMenu(activatedStateID !== null, event.detail.mouseEvent.clientX,
-            //     event.detail.mouseEvent.clientY, ContextMenuType.CANVAS_SHAPE_POINT);
-        });
+        canvasInstance.html().addEventListener('canvas.clicked', this.onCanvasShapeClicked);
+        canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
+        canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
+        canvasInstance.html().addEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
     }
 
     public render(): JSX.Element {

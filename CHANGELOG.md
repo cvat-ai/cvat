@@ -4,7 +4,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0.alpha] - 2020-02-XX
+## [1.0.0-beta] - Unreleased
+### Added
+-
+
+### Changed
+- VOC task export now does not use official label map by default, but takes one
+  from the source task to avoid primary-class and class part name
+  clashing ([#1275](https://github.com/opencv/cvat/issues/1275))
+
+### Deprecated
+-
+
+### Removed
+-
+
+### Fixed
+-
+
+### Security
+- Bump acorn from 6.3.0 to 6.4.1 in /cvat-ui ([#1270](https://github.com/opencv/cvat/pull/1270))
+
+## [0.6.0] - 2020-03-15
 ### Added
 - Server only support for projects. Extend REST API v1 (/api/v1/projects*)
 - Ability to get basic information about users without admin permissions ([#750](https://github.com/opencv/cvat/issues/750))
@@ -28,12 +49,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Yolov3 interpretation script fix and changes to mapping.json
 - YOLO format support ([#1151](https://github.com/opencv/cvat/pull/1151))
 
-### Deprecated
--
-
-### Removed
--
-
 ### Fixed
 - Exception in Git plugin [#826](https://github.com/opencv/cvat/issues/826)
 - Label ids in TFrecord format now start from 1 [#866](https://github.com/opencv/cvat/issues/866)
@@ -42,8 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Output labels for VOC format can be specified with Datumaro [#942](https://github.com/opencv/cvat/issues/942)
 - Annotations can be filtered before dumping with Datumaro [#994](https://github.com/opencv/cvat/issues/994)
 
-### Security
--
+## [0.5.2] - 2019-12-15
+### Fixed
+- Frozen version of scikit-image==0.15 in requirements.txt because next releases don't support Python 3.5
 
 ## [0.5.1] - 2019-10-17
 ### Added

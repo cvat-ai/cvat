@@ -13,6 +13,7 @@ import {
     ShapeType,
     ObjectType,
     ContextMenuType,
+    Workspace,
 } from './interfaces';
 
 const defaultState: AnnotationState = {
@@ -56,6 +57,7 @@ const defaultState: AnnotationState = {
     annotations: {
         selectedStatesID: [],
         activatedStateID: null,
+        activatedAttributeID: null,
         saving: {
             uploading: false,
             statuses: [],
@@ -90,6 +92,7 @@ const defaultState: AnnotationState = {
     sidebarCollapsed: false,
     appearanceCollapsed: false,
     tabContentHeight: 0,
+    workspace: Workspace.STANDARD,
 };
 
 export default (state = defaultState, action: AnyAction): AnnotationState => {
@@ -395,7 +398,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.DRAW_SHAPE: {
+        case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
             const {
                 shapeType,
                 labelID,
@@ -648,7 +651,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.ACTIVATE_OBJECT: {
-            const { activatedStateID } = action.payload;
+            const {
+                activatedStateID,
+                activatedAttributeID,
+            } = action.payload;
+
             const {
                 canvas: {
                     activeControl,
@@ -665,6 +672,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID,
+                    activatedAttributeID,
                 },
             };
         }
@@ -1043,6 +1051,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         cur: max + 1,
                     },
                 },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_WORKSPACE: {
+            const { workspace } = action.payload;
+            return {
+                ...state,
+                workspace,
             };
         }
         case AnnotationActionTypes.RESET_CANVAS: {

@@ -3,19 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Icon,
-    Select,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
-import { SelectValue } from 'antd/lib/select';
 
+import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
 import { StatesOrdering } from 'reducers/interfaces';
-
 
 interface StatesOrderingSelectorComponentProps {
     statesOrdering: StatesOrdering;
@@ -62,10 +56,7 @@ interface Props {
     statesLocked: boolean;
     statesCollapsed: boolean;
     statesOrdering: StatesOrdering;
-    annotationsFilters: string[];
-    annotationsFiltersHistory: string[];
     changeStatesOrdering(value: StatesOrdering): void;
-    changeAnnotationsFilters(value: SelectValue): void;
     lockAllStates(): void;
     unlockAllStates(): void;
     collapseAllStates(): void;
@@ -76,8 +67,6 @@ interface Props {
 
 function ObjectListHeader(props: Props): JSX.Element {
     const {
-        annotationsFilters,
-        annotationsFiltersHistory,
         statesHidden,
         statesLocked,
         statesCollapsed,
@@ -89,30 +78,13 @@ function ObjectListHeader(props: Props): JSX.Element {
         expandAllStates,
         hideAllStates,
         showAllStates,
-        changeAnnotationsFilters,
     } = props;
 
     return (
         <div className='cvat-objects-sidebar-states-header'>
             <Row>
                 <Col>
-                    <Select
-                        allowClear
-                        value={annotationsFilters}
-                        mode='tags'
-                        style={{ width: '100%' }}
-                        placeholder={(
-                            <>
-                                <Icon type='filter' />
-                                <span style={{ marginLeft: 5 }}>Annotations filter</span>
-                            </>
-                        )}
-                        onChange={changeAnnotationsFilters}
-                    >
-                        {annotationsFiltersHistory.map((element: string): JSX.Element => (
-                            <Select.Option key={element} value={element}>{element}</Select.Option>
-                        ))}
-                    </Select>
+                    <AnnotationsFiltersInput />
                 </Col>
             </Row>
             <Row type='flex' justify='space-between' align='middle'>

@@ -4,6 +4,10 @@
 
 @import 'base.scss';
 
+.cvat-standard-workspace.ant-layout {
+    height: 100%
+}
+
 .cvat-canvas-container {
     background-color: $background-color-1;
 }

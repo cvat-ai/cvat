@@ -40,6 +40,7 @@ import {
     ObjectType,
     CombinedState,
     ContextMenuType,
+    Workspace,
 } from 'reducers/interfaces';
 
 import { Canvas } from 'cvat-canvas';
@@ -49,6 +50,7 @@ interface StateToProps {
     canvasInstance: Canvas;
     jobInstance: any;
     activatedStateID: number | null;
+    activatedAttributeID: number | null;
     selectedStatesID: number[];
     annotations: any[];
     frameData: any;
@@ -68,6 +70,8 @@ interface StateToProps {
     contrastLevel: number;
     saturationLevel: number;
     resetZoom: boolean;
+    aamZoomMargin: number;
+    workspace: Workspace;
     minZLayer: number;
     maxZLayer: number;
     curZLayer: number;
@@ -85,7 +89,7 @@ interface DispatchToProps {
     onGroupObjects: (enabled: boolean) => void;
     onSplitTrack: (enabled: boolean) => void;
     onEditShape: (enabled: boolean) => void;
-    onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onUpdateAnnotations(states: any[]): void;
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
@@ -130,6 +134,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 states: annotations,
                 activatedStateID,
+                activatedAttributeID,
                 selectedStatesID,
                 zLayer: {
                     cur: curZLayer,
@@ -138,6 +143,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 },
             },
             sidebarCollapsed,
+            workspace,
         },
         settings: {
             player: {
@@ -149,6 +155,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 contrastLevel,
                 saturationLevel,
                 resetZoom,
+            },
+            workspace: {
+                aamZoomMargin,
             },
             shapes: {
                 opacity,
@@ -167,6 +176,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameAngle: frameAngles[frame - jobInstance.startFrame],
         frame,
         activatedStateID,
+        activatedAttributeID,
         selectedStatesID,
         annotations,
         opacity,
@@ -183,11 +193,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
         contrastLevel,
         saturationLevel,
         resetZoom,
+        aamZoomMargin,
         curZLayer,
         minZLayer,
         maxZLayer,
         contextVisible,
         contextType,
+        workspace,
     };
 }
 
@@ -220,8 +232,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onEditShape(enabled: boolean): void {
             dispatch(editShape(enabled));
         },
-        onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
-            dispatch(updateAnnotationsAsync(sessionInstance, frame, states));
+        onUpdateAnnotations(states: any[]): void {
+            dispatch(updateAnnotationsAsync(states));
         },
         onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
             dispatch(createAnnotationsAsync(sessionInstance, frame, states));
@@ -240,7 +252,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
                 dispatch(updateCanvasContextMenu(false, 0, 0));
             }
 
-            dispatch(activateObject(activatedStateID));
+            dispatch(activateObject(activatedStateID, null));
         },
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjects(selectedStatesID));
