@@ -91,7 +91,9 @@ class CvatAnnotationsExtractor(datumaro.Extractor):
     @staticmethod
     def _load_categories(cvat_anno):
         categories = {}
-        label_categories = datumaro.LabelCategories()
+
+        label_categories = datumaro.LabelCategories(
+            attributes=['occluded', 'z_order'])
 
         for _, label in cvat_anno.meta['task']['labels']:
             label_categories.add(label['name'])
@@ -144,6 +146,8 @@ class CvatAnnotationsExtractor(datumaro.Extractor):
             anno_group = shape_obj.group
             anno_label = map_label(shape_obj.label)
             anno_attr = convert_attrs(shape_obj.label, shape_obj.attributes)
+            anno_attr['occluded'] = shape_obj.occluded
+            anno_attr['z_order'] = shape_obj.z_order
 
             anno_points = shape_obj.points
             if shape_obj.type == ShapeType.POINTS:
@@ -238,7 +242,7 @@ def import_dm_annotations(dm_dataset, cvat_task_anno):
                     frame=frame_number,
                     label=label_cat.items[ann.label].name,
                     points=ann.points,
-                    occluded=False,
+                    occluded=ann.attributes.get('occluded') == True,
                     group=group_map.get(ann.group, 0),
                     attributes=[cvat_task_anno.Attribute(name=n, value=str(v))
                         for n, v in ann.attributes.items()],
