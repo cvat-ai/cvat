@@ -329,20 +329,24 @@ class _KeypointsConverter(_InstancesConverter):
         label_categories = dataset.categories().get(AnnotationType.label)
         if label_categories is None:
             return
-        points_categories = dataset.categories().get(AnnotationType.points)
-        if points_categories is None:
-            return
+        point_categories = dataset.categories().get(AnnotationType.points)
 
-        for idx, kp_cat in points_categories.items.items():
-            label_cat = label_categories.items[idx]
-
+        for idx, label_cat in enumerate(label_categories.items):
             cat = {
                 'id': 1 + idx,
                 'name': _cast(label_cat.name, str, ''),
                 'supercategory': _cast(label_cat.parent, str, ''),
-                'keypoints': [str(l) for l in kp_cat.labels],
-                'skeleton': [int(i) for i in kp_cat.adjacent],
+                'keypoints': [],
+                'skeleton': [],
             }
+
+            if point_categories is not None:
+                kp_cat = point_categories.items.get(idx)
+                if kp_cat is not None:
+                    cat.update({
+                        'keypoints': [str(l) for l in kp_cat.labels],
+                        'skeleton': [int(i) for i in kp_cat.adjacent],
+                    })
             self.categories.append(cat)
 
     def save_annotations(self, item):
@@ -447,14 +451,19 @@ class _Converter:
     def __init__(self, extractor, save_dir,
             tasks=None, save_images=False, segmentation_mode=None,
             crop_covered=False):
-        assert tasks is None or isinstance(tasks, (CocoTask, list))
+        assert tasks is None or isinstance(tasks, (CocoTask, list, str))
         if tasks is None:
             tasks = list(self._TASK_CONVERTER)
         elif isinstance(tasks, CocoTask):
             tasks = [tasks]
+        elif isinstance(tasks, str):
+            tasks = [CocoTask[tasks]]
         else:
-            for t in tasks:
-                assert t in CocoTask
+            for i, t in enumerate(tasks):
+                if isinstance(t, str):
+                    tasks[i] = CocoTask[t]
+                else:
+                    assert t in CocoTask, t
         self._tasks = tasks
 
         self._extractor = extractor
@@ -546,9 +555,8 @@ class _Converter:
                     task_conv.save_annotations(item)
 
             for task, task_conv in task_converters.items():
-                if not task_conv.is_empty():
-                    task_conv.write(osp.join(self._ann_dir,
-                        '%s_%s.json' % (task.name, subset_name)))
+                task_conv.write(osp.join(self._ann_dir,
+                    '%s_%s.json' % (task.name, subset_name)))
 
 class CocoConverter(Converter, CliPlugin):
     @staticmethod
