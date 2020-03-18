@@ -49,11 +49,7 @@ class FrameProviderWrapper extends Listener {
                 if (frameNumber >= start && frameNumber <= stop) {
                     const data = await frameData.data();
                     this._loaded = frameNumber;
-                    this._result = {
-                        data,
-                        renderWidth: frameData.width,
-                        renderHeight: frameData.height,
-                    };
+                    this._result = data;
                     return this._result;
                 }
             }
@@ -65,11 +61,7 @@ class FrameProviderWrapper extends Listener {
             const frameData = await window.cvatTask.frames.get(frameNumber, isPlaying, step);
             const data = await frameData.data();
             this._loaded = frameNumber;
-            this._result = {
-                data,
-                renderWidth: frameData.width,
-                renderHeight: frameData.height,
-            };
+            this._result = data;
             return this._result;
         }
 

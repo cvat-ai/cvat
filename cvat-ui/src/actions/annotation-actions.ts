@@ -656,7 +656,7 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
-export function changeFrameAsync(toFrame: number):
+export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameStep?: number):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
@@ -687,7 +687,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 payload: {},
             });
 
-            const data = await job.frames.get(toFrame);
+            const data = await job.frames.get(toFrame, fillBuffer, frameStep);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);
             const currentTime = new Date().getTime();

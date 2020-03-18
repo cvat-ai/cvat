@@ -1351,7 +1351,7 @@
         );
     };
 
-    Job.prototype.frames.get.implementation = async function (frame) {
+    Job.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
         if (!Number.isInteger(frame) || frame < 0) {
             throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
@@ -1372,6 +1372,8 @@
             frame,
             this.startFrame,
             this.stopFrame,
+            isPlaying,
+            step,
         );
         return frameData;
     };
