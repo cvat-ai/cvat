@@ -96,7 +96,8 @@ interface DispatchToProps {
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject: (activatedStateID: number | null) => void;
     onSelectObjects: (selectedStatesID: number[]) => void;
-    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType): void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType,
+        pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
     onChangeBrightnessLevel(level: number): void;
@@ -257,13 +258,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjects(selectedStatesID));
         },
-        onUpdateContextMenu(
-            visible: boolean,
-            left: number,
-            top: number,
-            type: ContextMenuType,
-        ): void {
-            dispatch(updateCanvasContextMenu(visible, left, top, type));
+        onUpdateContextMenu(visible: boolean, left: number, top: number,
+            type: ContextMenuType, pointID?: number): void {
+            dispatch(updateCanvasContextMenu(visible, left, top, type, pointID));
         },
         onAddZLayer(): void {
             dispatch(addZLayer());

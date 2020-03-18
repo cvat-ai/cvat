@@ -18,16 +18,10 @@ import {
     GridColor,
     ObjectType,
     ContextMenuType,
-    Workspace
+    Workspace,
 } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas';
 import getCore from 'cvat-core';
-import {
-    ColorBy,
-    GridColor,
-    ObjectType,
-    Workspace,
-} from 'reducers/interfaces';
 
 const cvat = getCore();
 
@@ -81,7 +75,8 @@ interface Props {
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject(activatedStateID: number | null): void;
     onSelectObjects(selectedStatesID: number[]): void;
-    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType): void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType,
+        pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
     onChangeBrightnessLevel(level: number): void;
@@ -333,8 +328,17 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasContextMenu = (e: MouseEvent): void => {
-        const { activatedStateID, onUpdateContextMenu } = this.props;
-        onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY);
+        const {
+            activatedStateID,
+            onUpdateContextMenu,
+            contextVisible,
+            contextType,
+        } = this.props;
+
+        if (!contextVisible && contextType !== ContextMenuType.CANVAS_SHAPE_POINT) {
+            onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY,
+                ContextMenuType.CANVAS_SHAPE);
+        }
     };
 
     private onCanvasShapeClicked = (e: any): void => {
@@ -458,6 +462,16 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
             canvasInstance.select(result.state);
         }
+    };
+
+    private onCanvasPointContextMenu = (e: any): void => {
+        const {
+            activatedStateID,
+            onUpdateContextMenu,
+        } = this.props;
+
+        onUpdateContextMenu(activatedStateID !== null, e.detail.mouseEvent.clientX,
+            e.detail.mouseEvent.clientY, ContextMenuType.CANVAS_SHAPE_POINT, e.detail.pointID);
     };
 
     private activateOnCanvas(): void {
@@ -599,6 +613,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().addEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
+
+        canvasInstance.html().addEventListener('point.contextmenu', this.onCanvasPointContextMenu);
     }
 
     public render(): JSX.Element {

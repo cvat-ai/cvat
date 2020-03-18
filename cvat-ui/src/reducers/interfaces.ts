@@ -303,6 +303,7 @@ export interface AnnotationState {
             top: number;
             left: number;
             type: ContextMenuType;
+            pointID: number | null | undefined;
         };
         instance: Canvas;
         ready: boolean;

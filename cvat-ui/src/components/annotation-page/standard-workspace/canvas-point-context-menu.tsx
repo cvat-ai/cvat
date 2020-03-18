@@ -5,16 +5,21 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
+import {
+    Button,
+} from 'antd';
 
 interface Props {
     activatedStateID: number | null;
     visible: boolean;
     left: number;
     top: number;
+    onPointDelete(): void;
 }
 
 export default function CanvasPointContextMenu(props: Props): JSX.Element | null {
     const {
+        onPointDelete,
         activatedStateID,
         visible,
         left,
@@ -27,7 +32,9 @@ export default function CanvasPointContextMenu(props: Props): JSX.Element | null
 
     return ReactDOM.createPortal(
         <div className='cvat-canvas-point-context-menu' style={{ top, left }}>
-            <span>Haha</span>
+            <Button type='link' icon='delete' onClick={onPointDelete}>
+                Delete point
+            </Button>
         </div>,
         window.document.body,
     );

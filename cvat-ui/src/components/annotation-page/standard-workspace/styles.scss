@@ -136,10 +136,12 @@
 .cvat-canvas-point-context-menu {
     opacity: 0.6;
     position: fixed;
-    width: 100px;
+    width: 135px;
     z-index: 10;
     max-height: 50%;
     overflow-y: auto;
+    background-color: #ffffff;
+    border-radius: 4px;
 
     &:hover {
         opacity: 1;

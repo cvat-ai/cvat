@@ -7,23 +7,26 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { CombinedState, ContextMenuType } from 'reducers/interfaces';
 
-import CanvasContextMenuComponent from 'components/annotation-page/standard-workspace/canvas-context-menu';
+import { updateAnnotationsAsync, updateCanvasContextMenu } from 'actions/annotation-actions';
+
+import CanvasPointContextMenuComponent from 'components/annotation-page/standard-workspace/canvas-point-context-menu';
 
 interface StateToProps {
     activatedStateID: number | null;
+    activetedPointID: number | null | undefined;
+    states: any[];
     visible: boolean;
     top: number;
     left: number;
     type: ContextMenuType;
-    collapsed: boolean | undefined;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             annotations: {
+                states,
                 activatedStateID,
-                collapsed,
             },
             canvas: {
                 contextMenu: {
@@ -31,6 +34,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                     top,
                     left,
                     type,
+                    pointID: activetedPointID,
                 },
             },
         },
@@ -38,7 +42,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         activatedStateID,
-        collapsed: activatedStateID !== null ? collapsed[activatedStateID] : undefined,
+        activetedPointID,
+        states,
         visible,
         left,
         top,
@@ -46,7 +51,23 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-type Props = StateToProps;
+interface DispatchToProps {
+    onUpdateAnnotations(states: any[]): void;
+    onCloseContextMenu(): void;
+}
+
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+    return {
+        onUpdateAnnotations(states: any[]): void {
+            dispatch(updateAnnotationsAsync(states));
+        },
+        onCloseContextMenu(): void {
+            dispatch(updateCanvasContextMenu(false, 0, 0));
+        },
+    };
+}
+
+type Props = StateToProps & DispatchToProps;
 
 interface State {
     latestLeft: number;
@@ -56,17 +77,9 @@ interface State {
 }
 
 class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
-    private initialized: HTMLDivElement | null;
-    private dragging: boolean;
-    private dragInitPosX: number;
-    private dragInitPosY: number;
     public constructor(props: Props) {
         super(props);
 
-        this.initialized = null;
-        this.dragging = false;
-        this.dragInitPosX = 0;
-        this.dragInitPosY = 0;
         this.state = {
             latestLeft: 0,
             latestTop: 0,
@@ -90,61 +103,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         };
     }
 
-    public componentDidMount(): void {
-        this.updatePositionIfOutOfScreen();
-        window.addEventListener('mousemove', this.moveContextMenu);
-    }
-
-    public componentDidUpdate(prevProps: Props): void {
-        const { collapsed } = this.props;
-
-        const [element] = window.document.getElementsByClassName('cvat-canvas-context-menu');
-        if (collapsed !== prevProps.collapsed && element) {
-            element.addEventListener('transitionend', () => {
-                this.updatePositionIfOutOfScreen();
-            }, { once: true });
-        } else if (element) {
-            this.updatePositionIfOutOfScreen();
-        }
-
-        if (element && (!this.initialized || this.initialized !== element)) {
-            this.initialized = element as HTMLDivElement;
-
-            this.initialized.addEventListener('mousedown', (e: MouseEvent): any => {
-                this.dragging = true;
-                this.dragInitPosX = e.clientX;
-                this.dragInitPosY = e.clientY;
-            });
-
-            this.initialized.addEventListener('mouseup', () => {
-                this.dragging = false;
-            });
-        }
-    }
-
-    public componentWillUnmount(): void {
-        window.removeEventListener('mousemove', this.moveContextMenu);
-    }
-
-    private moveContextMenu = (e: MouseEvent): void => {
-        if (this.dragging) {
-            this.setState((state) => {
-                const value = {
-                    left: state.left + e.clientX - this.dragInitPosX,
-                    top: state.top + e.clientY - this.dragInitPosY,
-                };
-
-                this.dragInitPosX = e.clientX;
-                this.dragInitPosY = e.clientY;
-
-                return value;
-            });
-
-            e.preventDefault();
-        }
-    };
-
-    private updatePositionIfOutOfScreen(): void {
+    public componentDidUpdate(): void {
         const {
             top,
             left,
@@ -155,7 +114,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             innerHeight,
         } = window;
 
-        const [element] = window.document.getElementsByClassName('cvat-canvas-context-menu');
+        const [element] = window.document.getElementsByClassName('cvat-canvas-point-context-menu');
         if (element) {
             const height = element.clientHeight;
             const width = element.clientWidth;
@@ -169,26 +128,45 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         }
     }
 
-    public render(): JSX.Element {
+    private deletePoint(): void {
         const {
-            left,
-            top,
-        } = this.state;
+            activetedPointID,
+            activatedStateID,
+            states,
+            onUpdateAnnotations,
+            onCloseContextMenu,
+        } = this.props;
 
+        const [objectState] = states.filter((e) => (e.clientID === activatedStateID));
+        if (activetedPointID) {
+            objectState.points = objectState.points.slice(0, activetedPointID * 2)
+                .concat(objectState.points.slice(activetedPointID * 2 + 2));
+            onUpdateAnnotations([objectState]);
+            onCloseContextMenu();
+        }
+    }
+
+    public render(): JSX.Element {
         const {
             visible,
             activatedStateID,
             type,
         } = this.props;
 
+        const {
+            top,
+            left,
+        } = this.state;
+
         return (
             <>
-                { type === ContextMenuType.CANVAS_SHAPE && (
-                    <CanvasContextMenuComponent
+                {type === ContextMenuType.CANVAS_SHAPE_POINT && (
+                    <CanvasPointContextMenuComponent
                         left={left}
                         top={top}
                         visible={visible}
                         activatedStateID={activatedStateID}
+                        onPointDelete={() => this.deletePoint()}
                     />
                 )}
             </>
@@ -198,4 +176,5 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
 
 export default connect(
     mapStateToProps,
+    mapDispatchToProps,
 )(CanvasContextMenuContainer);
