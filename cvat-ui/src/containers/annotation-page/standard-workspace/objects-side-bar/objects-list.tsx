@@ -6,15 +6,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 
-import { SelectValue } from 'antd/lib/select';
-
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
     updateAnnotationsAsync,
-    fetchAnnotationsAsync,
     removeObjectAsync,
     changeFrameAsync,
-    changeAnnotationsFilters as changeAnnotationsFiltersAction,
     collapseObjectItems,
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
@@ -42,8 +38,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    updateAnnotations(sessionInstance: any, frameNumber: number, states: any[]): void;
-    changeAnnotationsFilters(sessionInstance: any, filters: string[]): void;
+    updateAnnotations(states: any[]): void;
     collapseStates(states: any[], value: boolean): void;
     removeObject: (sessionInstance: any, objectState: any, force: boolean) => void;
     copyShape: (objectState: any) => void;
@@ -84,7 +79,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
     objectStates.forEach((objectState: any) => {
         const { clientID, lock } = objectState;
         if (!lock) {
-            statesHidden = statesHidden && objectState.hidden;
+            if (objectState.objectType !== ObjectType.TAG) {
+                statesHidden = statesHidden && objectState.hidden;
+            }
             statesLocked = statesLocked && objectState.lock;
         }
         const stateCollapsed = clientID in collapsed ? collapsed[clientID] : true;
@@ -109,18 +106,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        updateAnnotations(sessionInstance: any, frameNumber: number, states: any[]): void {
-            dispatch(updateAnnotationsAsync(sessionInstance, frameNumber, states));
+        updateAnnotations(states: any[]): void {
+            dispatch(updateAnnotationsAsync(states));
         },
         collapseStates(states: any[], collapsed: boolean): void {
             dispatch(collapseObjectItems(states, collapsed));
-        },
-        changeAnnotationsFilters(
-            sessionInstance: any,
-            filters: string[],
-        ): void {
-            dispatch(changeAnnotationsFiltersAction(filters));
-            dispatch(fetchAnnotationsAsync(sessionInstance));
         },
         removeObject(sessionInstance: any, objectState: any, force: boolean): void {
             dispatch(removeObjectAsync(sessionInstance, objectState, force));
@@ -188,15 +178,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         });
     };
 
-    private onChangeAnnotationsFilters = (value: SelectValue): void => {
-        const {
-            jobInstance,
-            changeAnnotationsFilters,
-        } = this.props;
-        const filters = value as string[];
-        changeAnnotationsFilters(jobInstance, filters);
-    };
-
     private onLockAllStates = (): void => {
         this.lockAllStates(true);
     };
@@ -225,28 +206,24 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         const {
             objectStates,
             updateAnnotations,
-            jobInstance,
-            frameNumber,
         } = this.props;
         for (const objectState of objectStates) {
             objectState.lock = locked;
         }
 
-        updateAnnotations(jobInstance, frameNumber, objectStates);
+        updateAnnotations(objectStates);
     }
 
     private hideAllStates(hidden: boolean): void {
         const {
             objectStates,
             updateAnnotations,
-            jobInstance,
-            frameNumber,
         } = this.props;
         for (const objectState of objectStates) {
             objectState.hidden = hidden;
         }
 
-        updateAnnotations(jobInstance, frameNumber, objectStates);
+        updateAnnotations(objectStates);
     }
 
     private collapseAllStates(collapsed: boolean): void {
@@ -260,12 +237,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const {
-            annotationsFilters,
             statesHidden,
             statesLocked,
             activatedStateID,
             objectStates,
-            frameNumber,
             jobInstance,
             updateAnnotations,
             removeObject,
@@ -274,7 +249,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             changeFrame,
             maxZLayer,
             minZLayer,
-            annotationsFiltersHistory,
         } = this.props;
         const {
             sortedStatesID,
@@ -397,7 +371,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state) {
                     state.lock = !state.lock;
-                    updateAnnotations(jobInstance, frameNumber, [state]);
+                    updateAnnotations([state]);
                 }
             },
             SWITCH_ALL_HIDDEN: (event: KeyboardEvent | undefined) => {
@@ -409,7 +383,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state) {
                     state.hidden = !state.hidden;
-                    updateAnnotations(jobInstance, frameNumber, [state]);
+                    updateAnnotations([state]);
                 }
             },
             SWITCH_OCCLUDED: (event: KeyboardEvent | undefined) => {
@@ -417,7 +391,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state && state.objectType !== ObjectType.TAG) {
                     state.occluded = !state.occluded;
-                    updateAnnotations(jobInstance, frameNumber, [state]);
+                    updateAnnotations([state]);
                 }
             },
             SWITCH_KEYFRAME: (event: KeyboardEvent | undefined) => {
@@ -425,7 +399,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state && state.objectType === ObjectType.TRACK) {
                     state.keyframe = !state.keyframe;
-                    updateAnnotations(jobInstance, frameNumber, [state]);
+                    updateAnnotations([state]);
                 }
             },
             SWITCH_OUTSIDE: (event: KeyboardEvent | undefined) => {
@@ -433,7 +407,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state && state.objectType === ObjectType.TRACK) {
                     state.outside = !state.outside;
-                    updateAnnotations(jobInstance, frameNumber, [state]);
+                    updateAnnotations([state]);
                 }
             },
             DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
@@ -448,7 +422,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state && state.objectType !== ObjectType.TAG) {
                     state.zOrder = minZLayer - 1;
-                    updateAnnotations(jobInstance, frameNumber, [state]);
+                    updateAnnotations([state]);
                 }
             },
             TO_FOREGROUND: (event: KeyboardEvent | undefined) => {
@@ -456,20 +430,20 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state && state.objectType !== ObjectType.TAG) {
                     state.zOrder = maxZLayer + 1;
-                    updateAnnotations(jobInstance, frameNumber, [state]);
+                    updateAnnotations([state]);
                 }
             },
             COPY_SHAPE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedStated();
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state) {
                     copyShape(state);
                 }
             },
             PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedStated();
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state) {
                     propagateObject(state);
                 }
             },
@@ -504,10 +478,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     {...this.props}
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
-                    annotationsFilters={annotationsFilters}
                     changeStatesOrdering={this.onChangeStatesOrdering}
-                    changeAnnotationsFilters={this.onChangeAnnotationsFilters}
-                    annotationsFiltersHistory={annotationsFiltersHistory}
                     lockAllStates={this.onLockAllStates}
                     unlockAllStates={this.onUnlockAllStates}
                     collapseAllStates={this.onCollapseAllStates}

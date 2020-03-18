@@ -802,7 +802,9 @@
             let minimumState = null;
             for (const state of objectStates) {
                 checkObjectType('object state', state, null, ObjectState);
-                if (state.outside || state.hidden) continue;
+                if (state.outside || state.hidden || state.objectType === ObjectType.TAG) {
+                    continue;
+                }
 
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
@@ -810,9 +812,9 @@
                         'The object has not been saved yet. Call annotations.put([state]) before',
                     );
                 }
-
                 const distance = object.constructor.distance(state.points, x, y);
-                if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
+                if (distance !== null && (minimumDistance === null
+                    || distance < minimumDistance)) {
                     minimumDistance = distance;
                     minimumState = state;
                 }
