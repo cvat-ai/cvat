@@ -5,7 +5,6 @@
 
 from collections import OrderedDict
 
-import numpy as np
 from django.db import transaction
 
 from cvat.apps.annotation.annotation import Annotation
