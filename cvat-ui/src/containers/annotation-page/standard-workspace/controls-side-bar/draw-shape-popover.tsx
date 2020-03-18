@@ -13,7 +13,7 @@ import {
 } from 'reducers/interfaces';
 
 import {
-    drawShape,
+    rememberObject,
 } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
@@ -47,7 +47,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             points?: number,
             rectDrawingMethod?: RectDrawingMethod,
         ): void {
-            dispatch(drawShape(shapeType, labelID, objectType, points, rectDrawingMethod));
+            dispatch(rememberObject(objectType, labelID, shapeType, points, rectDrawingMethod));
         },
     };
 }

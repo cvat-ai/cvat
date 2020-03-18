@@ -14,13 +14,12 @@ Next steps should work on clear Ubuntu 18.04.
 
 -   Install necessary dependencies:
     ```sh
-    $ sudo apt update && apt-get --no-install-recommends install -y nodejs npm curl redis-server \
-        python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
+    $ sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential nodejs npm curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
     ```
     Also please make sure that you have installed ffmpeg with all necessary libav* libraries and pkg-config package.
     ```sh
     # General dependencies
-    sudo apt-get install -y python-dev pkg-config
+    sudo apt-get install -y pkg-config
 
     # Library components
     sudo apt-get install -y \
@@ -39,7 +38,7 @@ for development
     cd cvat && mkdir logs keys
     python3 -m venv .env
     . .env/bin/activate
-    pip install -U pip wheel
+    pip install -U pip wheel setuptools
     pip install -r cvat/requirements/development.txt
     pip install -r datumaro/requirements.txt
     python manage.py migrate
@@ -61,7 +60,6 @@ for development
     cd ../cvat-canvas && npm install && \
     cd ../cvat-data && npm install && \
     cd ../cvat-ui && npm install && npm start
-    npm start
     ```
 
 -   Open new terminal (Ctrl + Shift + T), run Visual Studio Code from the virtual environment
