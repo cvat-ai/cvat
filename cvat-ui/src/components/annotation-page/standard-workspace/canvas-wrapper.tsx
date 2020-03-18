@@ -243,7 +243,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         const { state, duration } = event.detail;
-        const isDrawnFromScratch = state.label;
+        const isDrawnFromScratch = !state.label;
         if (isDrawnFromScratch) {
             jobInstance.logger.log(LogType.drawObject, { count: 1, duration });
         } else {
