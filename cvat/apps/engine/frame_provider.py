@@ -6,6 +6,7 @@ import math
 from io import BytesIO
 from enum import Enum
 
+import numpy as np
 from PIL import Image
 
 from cvat.apps.engine.media_extractors import VideoReader, ZipReader
@@ -17,6 +18,11 @@ class FrameProvider():
     class Quality(Enum):
         COMPRESSED = 0
         ORIGINAL = 100
+
+    class Type(Enum):
+        BUFFER = 0
+        PIL = 1
+        NUMPY_ARRAY = 2
 
     def __init__(self, db_data):
         self._db_data = db_data
@@ -80,15 +86,25 @@ class FrameProvider():
 
         return (frame, mimetypes.guess_type(frame_name))
 
-    def _get_frames(self, chunk_path_getter, reader_class, convert_to_pil):
+    def _get_frames(self, chunk_path_getter, reader_class, out_type):
         for chunk_idx in range(math.ceil(self._db_data.size / self._db_data.chunk_size)):
             chunk_path = chunk_path_getter(chunk_idx)
             chunk_reader = reader_class([chunk_path])
             for frame, _ in chunk_reader:
-                if convert_to_pil:
-                    yield frame.to_image() if reader_class is VideoReader else Image.open(frame)
-                else:
+                if out_type == self.Type.BUFFER:
                     yield self._av_frame_to_png_bytes(frame) if reader_class is VideoReader else frame
+                elif out_type == self.Type.PIL:
+                    yield frame.to_image() if reader_class is VideoReader else Image.open(frame)
+                elif out_type == self.Type.NUMPY_ARRAY:
+                    if reader_class is VideoReader:
+                        image = np.array(frame.to_image())
+                    else:
+                        image = np.array(Image.open(frame))
+                    if len(image.shape) == 3 and image.shape[2] in {3, 4}:
+                        image[:, :, :3] = image[:, :, 2::-1] # RGB to BGR
+                    yield image
+                else:
+                    raise Exception('unsupported output type')
 
     def get_preview(self):
         return self._db_data.get_preview_path()
@@ -118,16 +134,16 @@ class FrameProvider():
                 reader_class=self._compressed_chunk_reader_class,
             )
 
-    def get_frames(self, quality=Quality.ORIGINAL, convert_to_pil=False):
+    def get_frames(self, quality=Quality.ORIGINAL, out_type=Type.BUFFER):
         if quality == self.Quality.ORIGINAL:
             return self._get_frames(
                 chunk_path_getter=self._db_data.get_original_chunk_path,
                 reader_class=self._original_chunk_reader_class,
-                convert_to_pil=convert_to_pil,
+                out_type=out_type,
             )
         elif quality == self.Quality.COMPRESSED:
             return self._get_frames(
                 chunk_path_getter=self._db_data.get_compressed_chunk_path,
                 reader_class=self._compressed_chunk_reader_class,
-                convert_to_pil=convert_to_pil,
+                out_type=out_type,
             )
