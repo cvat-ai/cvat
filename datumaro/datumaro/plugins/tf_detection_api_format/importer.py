@@ -47,5 +47,6 @@ class TfDetectionApiImporter(Importer):
         if path.endswith('.tfrecord') and osp.isfile(path):
             subset_paths = [path]
         else:
-            subset_paths = glob(osp.join(path, '*.tfrecord'))
+            subset_paths = glob(osp.join(path, '**', '*.tfrecord'),
+                recursive=True)
         return subset_paths
