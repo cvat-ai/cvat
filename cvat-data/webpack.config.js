@@ -26,7 +26,7 @@ const cvatData = {
                     options: {
                         presets: [
                             ['@babel/preset-env', {
-                                targets: '> 2.5%',
+                                targets: '> 2.5%', // https://github.com/browserslist/browserslist
                             }],
                         ],
                         sourceType: 'unambiguous',
