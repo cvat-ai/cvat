@@ -445,7 +445,7 @@
                 * Payload of ignored logs are shallowly combined to previous logs of the same type
                 * @method log
                 * @memberof Session.logger
-                * @param {module:API.cvat.enums.LogType} type - log type
+                * @param {module:API.cvat.enums.LogType | string} type - log type
                 * @param {Object} [payload = {}] - any other data that will be appended to the log
                 * @param {boolean} [wait = false] - specifies if log is durable
                 * @returns {module:API.cvat.classes.Log}

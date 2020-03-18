@@ -435,7 +435,6 @@ function build() {
              * @param {object} userActivityCallback - container for a callback <br>
              * Logger put here a callback to update user activity timer <br>
              * You can call it outside
-             * @returns {module:API.cvat.classes.Log}
              * @instance
              * @async
              * @throws {module:API.cvat.exceptions.PluginError}
@@ -449,7 +448,7 @@ function build() {
             * Payload of ignored logs are shallowly combined to previous logs of the same type
             * @method log
             * @memberof module:API.cvat.logger
-            * @param {module:API.cvat.enums.LogType} type - log type
+            * @param {module:API.cvat.enums.LogType | string} type - log type
             * @param {Object} [payload = {}] - any other data that will be appended to the log
             * @param {boolean} [wait = false] - specifies if log is durable
             * @returns {module:API.cvat.classes.Log}

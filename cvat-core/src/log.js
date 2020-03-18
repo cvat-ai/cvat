@@ -1,7 +1,6 @@
-/*
-* Copyright (C) 2019 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /* global
     require:false
@@ -69,7 +68,7 @@ class Log {
         * All payloads will be shallowly combined (all top level properties will exist)
         * @method close
         * @memberof module:API.cvat.classes.Log
-        * @param {string} [payload] part of payload can be added when close a log
+        * @param {object} [payload] part of payload can be added when close a log
         * @readonly
         * @instance
         * @async

@@ -426,10 +426,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             const frame = state.annotation.player.frame.number;
             await job.annotations.upload(file, loader);
 
-            await logger.log(
+            await job.logger.log(
                 LogType.uploadAnnotations, {
-                    task_id: job.task.id,
-                    job_id: job.id,
                     ...(await jobInfoGenerator(job)),
                 },
             );
