@@ -49,7 +49,7 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
     input_blob_name = next(iter(network.inputs))
     output_blob_name = next(iter(network.outputs))
     if getattr(core_or_plugin, 'load_network', False):
-        executable_network = core_or_plugin.load_network(network)
+        executable_network = core_or_plugin.load_network(network, 'CPU')
     else:
         executable_network = core_or_plugin.load(network=network)
     job = rq.get_current_job()

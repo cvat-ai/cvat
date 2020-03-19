@@ -38,7 +38,7 @@ class DEXTR_HANDLER:
             self._input_blob = next(iter(self._network.inputs))
             self._output_blob = next(iter(self._network.outputs))
             if getattr(self._plugin, 'load_network', False):
-                self._exec_network = self._plugin.load_network(self._network)
+                self._exec_network = self._plugin.load_network(self._network, 'CPU')
             else:
                 self._exec_network = self._plugin.load(network=self._network)
 
