@@ -234,7 +234,7 @@ class Environment:
             try:
                 exports = cls._import_module(module_dir, module_name, types,
                     package)
-            except ImportError as e:
+            except Exception as e:
                 log.debug("Failed to import module '%s': %s" % (module_name, e))
                 continue
 
