@@ -11,6 +11,7 @@ import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
+import { LogType } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
     updateAnnotationsAsync,
@@ -28,6 +29,7 @@ interface StateToProps {
     activatedAttributeID: number | null;
     states: any[];
     labels: any[];
+    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -48,12 +50,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 states,
             },
             job: {
+                instance: jobInstance,
                 labels,
             },
         },
     } = state;
 
     return {
+        jobInstance,
         labels,
         activatedStateID,
         activatedAttributeID,
@@ -78,6 +82,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         states,
         activatedStateID,
         activatedAttributeID,
+        jobInstance,
         updateAnnotations,
         activateObject,
     } = props;
@@ -267,6 +272,13 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                                     currentValue={activeObjectState.attributes[activeAttribute.id]}
                                     onChange={(value: string) => {
                                         const { attributes } = activeObjectState;
+                                        jobInstance.logger.log(
+                                            LogType.changeAttribute, {
+                                                id: activeAttribute.id,
+                                                object_id: activeObjectState.clientID,
+                                                value,
+                                            },
+                                        );
                                         attributes[activeAttribute.id] = value;
                                         activeObjectState.attributes = attributes;
                                         updateAnnotations([activeObjectState]);

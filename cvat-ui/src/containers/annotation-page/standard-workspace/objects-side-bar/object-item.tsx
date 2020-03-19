@@ -5,6 +5,8 @@
 import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
+
+import { LogType } from 'cvat-logger';
 import {
     ActiveControl,
     CombinedState,
@@ -292,13 +294,15 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     };
 
     private lock = (): void => {
-        const { objectState } = this.props;
+        const { objectState, jobInstance } = this.props;
+        jobInstance.logger.log(LogType.lockObject, { locked: true });
         objectState.lock = true;
         this.commit();
     };
 
     private unlock = (): void => {
-        const { objectState } = this.props;
+        const { objectState, jobInstance } = this.props;
+        jobInstance.logger.log(LogType.lockObject, { locked: false });
         objectState.lock = false;
         this.commit();
     };
@@ -405,7 +409,12 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     };
 
     private changeAttribute = (id: number, value: string): void => {
-        const { objectState } = this.props;
+        const { objectState, jobInstance } = this.props;
+        jobInstance.logger.log(LogType.changeAttribute, {
+            id, 
+            value,
+            object_id: objectState.clientID,
+        });
         const attr: Record<number, string> = {};
         attr[id] = value;
         objectState.attributes = attr;
