@@ -59,7 +59,9 @@ class LabelMeExtractor(SourceExtractor):
 
     def _parse(self, path):
         categories = {
-            AnnotationType.label: LabelCategories(attributes={'occluded'})
+            AnnotationType.label: LabelCategories(attributes={
+                'occluded', 'username'
+            })
         }
 
         items = []
@@ -136,10 +138,17 @@ class LabelMeExtractor(SourceExtractor):
             if deleted_elem is not None and deleted_elem.text:
                 deleted = bool(int(deleted_elem.text))
 
+            user = ''
+
             poly_elem = obj_elem.find('polygon')
             segm_elem = obj_elem.find('segm')
             type_elem = obj_elem.find('type') # the only value is 'bounding_box'
             if poly_elem is not None:
+                user_elem = poly_elem.find('username')
+                if user_elem is not None and user_elem.text:
+                    user = user_elem.text
+                attributes.append(('username', user))
+
                 points = []
                 for point_elem in poly_elem.iter('pt'):
                     x = float(point_elem.find('x').text)
@@ -153,20 +162,25 @@ class LabelMeExtractor(SourceExtractor):
                     ymin = min(points[1::2])
                     ymax = max(points[1::2])
                     ann_items.append(Bbox(xmin, ymin, xmax - xmin, ymax - ymin,
-                        label=label, attributes=attributes,
+                        label=label, attributes=attributes, id=obj_id,
                     ))
                 else:
                     ann_items.append(Polygon(points,
-                        label=label, attributes=attributes,
+                        label=label, attributes=attributes, id=obj_id,
                     ))
             elif segm_elem is not None:
+                user_elem = segm_elem.find('username')
+                if user_elem is not None and user_elem.text:
+                    user = user_elem.text
+                attributes.append(('username', user))
+
                 mask_path = osp.join(dataset_root, LabelMePath.MASKS_DIR,
                     segm_elem.find('mask').text)
                 if not osp.isfile(mask_path):
                     raise Exception("Can't find mask at '%s'" % mask_path)
                 mask = load_mask(mask_path)
                 mask = np.any(mask, axis=2)
-                ann_items.append(Mask(image=mask, label=label,
+                ann_items.append(Mask(image=mask, label=label, id=obj_id,
                     attributes=attributes))
 
             if not deleted:
@@ -368,7 +382,7 @@ class LabelMeConverter(Converter, CliPlugin):
             ET.SubElement(obj_elem, 'deleted').text = '0'
             ET.SubElement(obj_elem, 'verified').text = '0'
             ET.SubElement(obj_elem, 'occluded').text = \
-                'yes' if ann.attributes.get('occluded') == True else 'no'
+                'yes' if ann.attributes.pop('occluded', '') == True else 'no'
             ET.SubElement(obj_elem, 'date').text = ''
             ET.SubElement(obj_elem, 'id').text = str(obj_id)
 
@@ -390,7 +404,8 @@ class LabelMeConverter(Converter, CliPlugin):
                     ET.SubElement(point_elem, 'x').text = '%.2f' % x
                     ET.SubElement(point_elem, 'y').text = '%.2f' % y
 
-                ET.SubElement(poly_elem, 'username').text = ''
+                ET.SubElement(poly_elem, 'username').text = \
+                    str(ann.attributes.pop('username', ''))
             elif ann.type == AnnotationType.polygon:
                 poly_elem = ET.SubElement(obj_elem, 'polygon')
                 for x, y in zip(ann.points[::2], ann.points[1::2]):
@@ -398,7 +413,8 @@ class LabelMeConverter(Converter, CliPlugin):
                     ET.SubElement(point_elem, 'x').text = '%.2f' % x
                     ET.SubElement(point_elem, 'y').text = '%.2f' % y
 
-                ET.SubElement(poly_elem, 'username').text = ''
+                ET.SubElement(poly_elem, 'username').text = \
+                    str(ann.attributes.pop('username', ''))
             elif ann.type == AnnotationType.mask:
                 mask_filename = '%s_mask_%s.png' % (item.id, obj_id)
                 save_image(osp.join(subset_dir, LabelMePath.MASKS_DIR,
@@ -416,13 +432,14 @@ class LabelMeConverter(Converter, CliPlugin):
                     '%.2f' % (bbox[0] + bbox[2])
                 ET.SubElement(box_elem, 'ymax').text = \
                     '%.2f' % (bbox[1] + bbox[3])
+
+                ET.SubElement(segm_elem, 'username').text = \
+                    str(ann.attributes.pop('username', ''))
             else:
                 raise NotImplementedError("Unknown shape type '%s'" % ann.type)
 
             attrs = []
             for k, v in ann.attributes.items():
-                if k == 'occluded':
-                    continue
                 if isinstance(v, bool):
                     attrs.append(k)
                 else:
