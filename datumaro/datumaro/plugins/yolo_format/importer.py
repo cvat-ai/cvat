@@ -42,5 +42,5 @@ class YoloImporter(Importer):
         if path.endswith('.data') and osp.isfile(path):
             config_paths = [path]
         else:
-            config_paths = glob(osp.join(path, '*.data'))
+            config_paths = glob(osp.join(path, '**', '*.data'), recursive=True)
         return config_paths

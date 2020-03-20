@@ -11,7 +11,7 @@ import os.path as osp
 from datumaro.components.extractor import Importer
 from datumaro.util.log_utils import logging_disabled
 
-from .format import CocoTask, CocoPath
+from .format import CocoTask
 
 
 class CocoImporter(Importer):
@@ -55,11 +55,8 @@ class CocoImporter(Importer):
         if path.endswith('.json') and osp.isfile(path):
             subset_paths = [path]
         else:
-            subset_paths = glob(osp.join(path, '*_*.json'))
-
-            if osp.basename(osp.normpath(path)) != CocoPath.ANNOTATIONS_DIR:
-                path = osp.join(path, CocoPath.ANNOTATIONS_DIR)
-                subset_paths += glob(osp.join(path, '*_*.json'))
+            subset_paths = glob(osp.join(path, '**', '*_*.json'),
+                recursive=True)
 
         subsets = defaultdict(dict)
         for subset_path in subset_paths:
