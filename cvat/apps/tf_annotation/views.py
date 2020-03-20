@@ -30,7 +30,7 @@ def load_image_into_numpy(image):
 
 
 def run_inference_engine_annotation(image_list, labels_mapping, treshold):
-    from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
+    from cvat.apps.auto_annotation.inference_engine import make_plugin_or_core, make_network
 
     def _normalize_box(box, w, h, dw, dh):
         xmin = min(int(box[0] * dw * w), w)
@@ -44,11 +44,14 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
     if MODEL_PATH is None:
         raise OSError('Model path env not found in the system.')
 
-    plugin = make_plugin()
+    core_or_plugin = make_plugin_or_core()
     network = make_network('{}.xml'.format(MODEL_PATH), '{}.bin'.format(MODEL_PATH))
     input_blob_name = next(iter(network.inputs))
     output_blob_name = next(iter(network.outputs))
-    executable_network = plugin.load(network=network)
+    if getattr(core_or_plugin, 'load_network', False):
+        executable_network = core_or_plugin.load_network(network, 'CPU')
+    else:
+        executable_network = core_or_plugin.load(network=network)
     job = rq.get_current_job()
 
     del network

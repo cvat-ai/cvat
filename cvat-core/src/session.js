@@ -9,6 +9,7 @@
 
 (() => {
     const PluginRegistry = require('./plugins');
+    const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
     const { getFrame, getPreview } = require('./frames');
     const { ArgumentError } = require('./exceptions');
@@ -125,16 +126,11 @@
                 },
                 writable: true,
             }),
-            logs: Object.freeze({
+            logger: Object.freeze({
                 value: {
-                    async put(logType, details) {
+                    async log(logType, payload = {}, wait = false) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.logs.put, logType, details);
-                        return result;
-                    },
-                    async save(onUpdate) {
-                        const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.logs.save, onUpdate);
+                            .apiWrapper.call(this, prototype.logger.log, logType, payload, wait);
                         return result;
                     },
                 },
@@ -436,32 +432,27 @@
 
             /**
                 * Namespace is used for an interaction with logs
-                * @namespace logs
+                * @namespace logger
                 * @memberof Session
             */
 
             /**
-                * Append log to a log collection.
-                * Continue logs will have been added after "close" method is called
-                * @method put
-                * @memberof Session.logs
-                * @param {module:API.cvat.enums.LogType} type a type of a log
-                * @param {boolean} continuous log is a continuous log
-                * @param {Object} details any others data which will be append to log data
+                * Create a log and add it to a log collection <br>
+                * Durable logs will be added after "close" method is called for them <br>
+                * The fields "task_id" and "job_id" automatically added when add logs
+                * throught a task or a job <br>
+                * Ignore rules exist for some logs (e.g. zoomImage, changeAttribute) <br>
+                * Payload of ignored logs are shallowly combined to previous logs of the same type
+                * @method log
+                * @memberof Session.logger
+                * @param {module:API.cvat.enums.LogType | string} type - log type
+                * @param {Object} [payload = {}] - any other data that will be appended to the log
+                * @param {boolean} [wait = false] - specifies if log is durable
                 * @returns {module:API.cvat.classes.Log}
                 * @instance
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
-            */
-            /**
-                * Save accumulated logs on a server
-                * @method save
-                * @memberof Session.logs
-                * @throws {module:API.cvat.exceptions.PluginError}
-                * @throws {module:API.cvat.exceptions.ServerError}
-                * @instance
-                * @async
             */
 
             /**
@@ -701,6 +692,10 @@
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+            };
+
+            this.logger = {
+                log: Object.getPrototypeOf(this).logger.log.bind(this),
             };
         }
 
@@ -1212,6 +1207,10 @@
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             };
+
+            this.logger = {
+                log: Object.getPrototypeOf(this).logger.log.bind(this),
+            };
         }
 
         /**
@@ -1452,6 +1451,11 @@
         return result;
     };
 
+    Job.prototype.logger.log.implementation = async function (logType, payload, wait) {
+        const result = await this.task.logger.log(logType, { ...payload, job_id: this.id }, wait);
+        return result;
+    };
+
     Task.prototype.save.implementation = async function saveTaskImplementation(onUpdate) {
         // TODO: Add ability to change an owner and an assignee
         if (typeof (this.id) !== 'undefined') {
@@ -1661,6 +1665,11 @@
 
     Task.prototype.actions.get.implementation = function () {
         const result = getActions(this);
+        return result;
+    };
+
+    Task.prototype.logger.log.implementation = async function (logType, payload, wait) {
+        const result = await loggerStorage.log(logType, { ...payload, task_id: this.id }, wait);
         return result;
     };
 })();

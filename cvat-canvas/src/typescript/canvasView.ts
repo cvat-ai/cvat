@@ -74,7 +74,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.controller.mode;
     }
 
-    private onDrawDone(data: object, continueDraw?: boolean): void {
+    private onDrawDone(data: object | null, duration: number, continueDraw?: boolean): void {
         if (data) {
             const { zLayer } = this.controller;
             const event: CustomEvent = new CustomEvent('canvas.drawn', {
@@ -87,6 +87,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         zOrder: zLayer || 0,
                     },
                     continue: continueDraw,
+                    duration,
                 },
             });
 
@@ -137,12 +138,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onMergeDone(objects: any[]): void {
+    private onMergeDone(objects: any[]| null, duration?: number): void {
         if (objects) {
             const event: CustomEvent = new CustomEvent('canvas.merged', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
+                    duration,
                     states: objects,
                 },
             });
@@ -724,6 +726,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if ([UpdateReasons.IMAGE_ZOOMED, UpdateReasons.IMAGE_FITTED].includes(reason)) {
             this.moveCanvas();
             this.transformCanvas();
+            if (reason === UpdateReasons.IMAGE_FITTED) {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.fit', {
+                    bubbles: false,
+                    cancelable: true,
+                }));
+            }
         } else if (reason === UpdateReasons.IMAGE_MOVED) {
             this.moveCanvas();
         } else if ([UpdateReasons.OBJECTS_UPDATED, UpdateReasons.SET_Z_LAYER].includes(reason)) {
@@ -1182,6 +1190,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     ).map((x: number): number => x - offset);
 
                     this.drawnStates[state.clientID].points = points;
+                    this.canvas.dispatchEvent(new CustomEvent('canvas.dragshape', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            id: state.clientID,
+                        },
+                    }));
                     this.onEditDone(state, points);
                 }
             });
@@ -1232,6 +1247,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 ).map((x: number): number => x - offset);
 
                 this.drawnStates[state.clientID].points = points;
+                this.canvas.dispatchEvent(new CustomEvent('canvas.resizeshape', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        id: state.clientID,
+                    },
+                }));
                 this.onEditDone(state, points);
             }
         });

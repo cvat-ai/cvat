@@ -230,6 +230,7 @@ export interface NotificationsState {
             undo: null | ErrorState;
             redo: null | ErrorState;
             search: null | ErrorState;
+            savingLogs: null | ErrorState;
         };
 
         [index: string]: any;
