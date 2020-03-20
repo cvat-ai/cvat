@@ -105,6 +105,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
                 job,
@@ -154,6 +155,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activeLabelID: job.task.labels[0].id,
                     activeObjectType: job.task.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
                 },
+                canvas: {
+                    ...state.canvas,
+                    instance: new Canvas(),
+                },
                 colors,
             };
         }
@@ -164,15 +169,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.job,
                     instance: undefined,
                     fetching: false,
-                },
-            };
-        }
-        case AnnotationActionTypes.CLOSE_JOB: {
-            return {
-                ...defaultState,
-                canvas: {
-                    ...defaultState.canvas,
-                    instance: new Canvas(),
                 },
             };
         }
@@ -1066,18 +1062,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case BoundariesActionTypes.RESET_AFTER_ERROR: {
-            return {
-                ...defaultState,
-                player: {
-                    ...state.player,
-                },
-                canvas: {
-                    ...defaultState.canvas,
-                    instance: new Canvas(),
-                },
-            };
-        }
+        case AnnotationActionTypes.CLOSE_JOB:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
         }
