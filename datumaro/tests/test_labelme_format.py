@@ -35,7 +35,8 @@ class LabelMeConverterTest(TestCase):
                             Polygon([0, 4, 4, 4, 5, 6], label=3, attributes={
                                 'occluded': True
                             }),
-                            Mask(np.array([[0, 1], [1, 0], [1, 1]]), group=2),
+                            Mask(np.array([[0, 1], [1, 0], [1, 1]]), group=2,
+                                attributes={ 'username': 'test' }),
                             Bbox(1, 2, 3, 4, group=3),
                             Mask(np.array([[0, 0], [0, 0], [1, 1]]), group=3,
                                 attributes={ 'occluded': True }
@@ -58,20 +59,28 @@ class LabelMeConverterTest(TestCase):
                     DatasetItem(id=1, subset='train',
                         image=np.ones((16, 16, 3)),
                         annotations=[
-                            Bbox(0, 4, 4, 8, label=0, group=2, attributes={
-                                'occluded': False
-                            }),
-                            Polygon([0, 4, 4, 4, 5, 6], label=1, attributes={
-                                'occluded': True
-                            }),
-                            Mask(np.array([[0, 1], [1, 0], [1, 1]]), group=2,
-                                attributes={ 'occluded': False }
+                            Bbox(0, 4, 4, 8, label=0, group=2, id=0,
+                                attributes={
+                                    'occluded': False, 'username': '',
+                                }
                             ),
-                            Bbox(1, 2, 3, 4, group=1, attributes={
-                                'occluded': False
+                            Polygon([0, 4, 4, 4, 5, 6], label=1, id=1,
+                                attributes={
+                                    'occluded': True, 'username': '',
+                                }
+                            ),
+                            Mask(np.array([[0, 1], [1, 0], [1, 1]]), group=2,
+                                id=2, attributes={
+                                    'occluded': False, 'username': 'test'
+                                }
+                            ),
+                            Bbox(1, 2, 3, 4, group=1, id=3, attributes={
+                                'occluded': False, 'username': '',
                             }),
                             Mask(np.array([[0, 0], [0, 0], [1, 1]]), group=1,
-                                attributes={ 'occluded': True }
+                                id=4, attributes={
+                                    'occluded': True, 'username': ''
+                                }
                             ),
                         ]
                     ),
