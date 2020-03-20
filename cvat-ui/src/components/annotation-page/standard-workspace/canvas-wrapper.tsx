@@ -9,6 +9,7 @@ import Layout from 'antd/lib/layout';
 import Icon from 'antd/lib/icon';
 import Tooltip from 'antd/lib/tooltip';
 
+import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas';
 import getCore from 'cvat-core';
 import {
@@ -214,6 +215,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
         canvasInstance.html().removeEventListener('canvas.moved', this.onCanvasCursorMoved);
 
+        canvasInstance.html().removeEventListener('canvas.zoom', this.onCanvasZoomChanged);
+        canvasInstance.html().removeEventListener('canvas.fit', this.onCanvasImageFitted);
+        canvasInstance.html().removeEventListener('canvas.dragshape', this.onCanvasShapeDragged);
+        canvasInstance.html().removeEventListener('canvas.resizeshape', this.onCanvasShapeResized);
         canvasInstance.html().removeEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
@@ -237,20 +242,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onShapeDrawn();
         }
 
-        const { state } = event.detail;
-        if (!state.objectType) {
-            state.objectType = activeObjectType;
+        const { state, duration } = event.detail;
+        const isDrawnFromScratch = !state.label;
+        if (isDrawnFromScratch) {
+            jobInstance.logger.log(LogType.drawObject, { count: 1, duration });
+        } else {
+            jobInstance.logger.log(LogType.pasteObject, { count: 1, duration });
         }
 
-        if (!state.label) {
-            [state.label] = jobInstance.task.labels
-                .filter((label: any) => label.id === activeLabelID);
-        }
-
-        if (typeof (state.occluded) === 'undefined') {
-            state.occluded = false;
-        }
-
+        state.objectType = state.objectType || activeObjectType;
+        state.label = state.label || jobInstance.task.labels
+            .filter((label: any) => label.id === activeLabelID)[0];
+        state.occluded = state.occluded || false;
         state.frame = frame;
         const objectState = new cvat.classes.ObjectState(state);
         onCreateAnnotations(jobInstance, frame, [objectState]);
@@ -266,7 +269,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         onMergeObjects(false);
 
-        const { states } = event.detail;
+        const { states, duration } = event.detail;
+        jobInstance.logger.log(LogType.mergeObjects, {
+            duration,
+            count: states.length,
+        });
         onMergeAnnotations(jobInstance, frame, states);
     };
 
@@ -322,6 +329,28 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasContextMenu = (e: MouseEvent): void => {
         const { activatedStateID, onUpdateContextMenu } = this.props;
         onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY);
+    };
+
+    private onCanvasShapeDragged = (e: any): void => {
+        const { jobInstance } = this.props;
+        const { id } = e.detail;
+        jobInstance.logger.log(LogType.dragObject, { id });
+    };
+
+    private onCanvasShapeResized = (e: any): void => {
+        const { jobInstance } = this.props;
+        const { id } = e.detail;
+        jobInstance.logger.log(LogType.resizeObject, { id });
+    };
+
+    private onCanvasImageFitted = (): void => {
+        const { jobInstance } = this.props;
+        jobInstance.logger.log(LogType.fitImage);
+    };
+
+    private onCanvasZoomChanged = (): void => {
+        const { jobInstance } = this.props;
+        jobInstance.logger.log(LogType.zoomImage);
     };
 
     private onCanvasShapeClicked = (e: any): void => {
@@ -581,6 +610,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
         canvasInstance.html().addEventListener('canvas.moved', this.onCanvasCursorMoved);
 
+        canvasInstance.html().addEventListener('canvas.zoom', this.onCanvasZoomChanged);
+        canvasInstance.html().addEventListener('canvas.fit', this.onCanvasImageFitted);
+        canvasInstance.html().addEventListener('canvas.dragshape', this.onCanvasShapeDragged);
+        canvasInstance.html().addEventListener('canvas.resizeshape', this.onCanvasShapeResized);
         canvasInstance.html().addEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);

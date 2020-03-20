@@ -15,8 +15,9 @@ export interface MergeHandler {
 
 export class MergeHandlerImpl implements MergeHandler {
     // callback is used to notify about merging end
-    private onMergeDone: (objects: any[]) => void;
+    private onMergeDone: (objects: any[] | null, duration?: number) => void;
     private onFindObject: (event: MouseEvent) => void;
+    private startTimestamp: number;
     private canvas: SVG.Container;
     private initialized: boolean;
     private statesToBeMerged: any[]; // are being merged
@@ -57,6 +58,7 @@ export class MergeHandlerImpl implements MergeHandler {
 
     private initMerging(): void {
         this.canvas.node.addEventListener('click', this.onFindObject);
+        this.startTimestamp = Date.now();
         this.initialized = true;
     }
 
@@ -66,7 +68,7 @@ export class MergeHandlerImpl implements MergeHandler {
             this.release();
 
             if (statesToBeMerged.length > 1) {
-                this.onMergeDone(statesToBeMerged);
+                this.onMergeDone(statesToBeMerged, Date.now() - this.startTimestamp);
             } else {
                 this.onMergeDone(null);
                 // here is a cycle
@@ -77,12 +79,13 @@ export class MergeHandlerImpl implements MergeHandler {
     }
 
     public constructor(
-        onMergeDone: (objects: any[]) => void,
+        onMergeDone: (objects: any[] | null, duration?: number) => void,
         onFindObject: (event: MouseEvent) => void,
         canvas: SVG.Container,
     ) {
         this.onMergeDone = onMergeDone;
         this.onFindObject = onFindObject;
+        this.startTimestamp = Date.now();
         this.canvas = canvas;
         this.statesToBeMerged = [];
         this.highlightedShapes = {};

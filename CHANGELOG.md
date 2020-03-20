@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React & Redux & Antd based dashboard
 - Yolov3 interpretation script fix and changes to mapping.json
 - YOLO format support ([#1151](https://github.com/opencv/cvat/pull/1151))
+- Added support for OpenVINO 2020
 
 ### Fixed
 - Exception in Git plugin [#826](https://github.com/opencv/cvat/issues/826)
