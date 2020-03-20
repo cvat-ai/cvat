@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from itertools import groupby
 import numpy as np
 
 from datumaro.util.image import lazy_image, load_image

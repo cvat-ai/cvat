@@ -31,7 +31,8 @@ export interface DrawHandler {
 
 export class DrawHandlerImpl implements DrawHandler {
     // callback is used to notify about creating new shape
-    private onDrawDone: (data: object, continueDraw?: boolean) => void;
+    private onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean) => void;
+    private startTimestamp: number;
     private canvas: SVG.Container;
     private text: SVG.Container;
     private cursorPosition: {
@@ -180,7 +181,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.onDrawDone({
                     shapeType,
                     points: [xtl, ytl, xbr, ybr],
-                });
+                }, Date.now() - this.startTimestamp);
             }
         }).on('drawupdate', (): void => {
             this.shapeSizeElement.update(this.drawInstance);
@@ -213,7 +214,7 @@ export class DrawHandlerImpl implements DrawHandler {
                         this.onDrawDone({
                             shapeType,
                             points: [xtl, ytl, xbr, ybr],
-                        });
+                        }, Date.now() - this.startTimestamp);
                     }
                 }
             }).on('undopoint', (): void => {
@@ -300,7 +301,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.onDrawDone({
                     shapeType,
                     points,
-                });
+                }, Date.now() - this.startTimestamp);
             } else if (shapeType === 'polyline'
                 && ((box.xbr - box.xtl) >= consts.SIZE_THRESHOLD
                 || (box.ybr - box.ytl) >= consts.SIZE_THRESHOLD)
@@ -308,13 +309,13 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.onDrawDone({
                     shapeType,
                     points,
-                });
+                }, Date.now() - this.startTimestamp);
             } else if (shapeType === 'points'
                 && (e.target as any).getAttribute('points') !== '0,0') {
                 this.onDrawDone({
                     shapeType,
                     points,
-                });
+                }, Date.now() - this.startTimestamp);
             }
         });
     }
@@ -365,7 +366,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 attributes: { ...this.drawData.initialState.attributes },
                 label: this.drawData.initialState.label,
                 color: this.drawData.initialState.color,
-            }, e.detail.originalEvent.ctrlKey);
+            }, Date.now() - this.startTimestamp, e.detail.originalEvent.ctrlKey);
         });
     }
 
@@ -405,7 +406,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 attributes: { ...this.drawData.initialState.attributes },
                 label: this.drawData.initialState.label,
                 color: this.drawData.initialState.color,
-            }, e.detail.originalEvent.ctrlKey);
+            }, Date.now() - this.startTimestamp, e.detail.originalEvent.ctrlKey);
         });
     }
 
@@ -583,14 +584,16 @@ export class DrawHandlerImpl implements DrawHandler {
             this.setupDrawEvents();
         }
 
+        this.startTimestamp = Date.now();
         this.initialized = true;
     }
 
     public constructor(
-        onDrawDone: (data: object, continueDraw?: boolean) => void,
+        onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean) => void,
         canvas: SVG.Container,
         text: SVG.Container,
     ) {
+        this.startTimestamp = Date.now();
         this.onDrawDone = onDrawDone;
         this.canvas = canvas;
         this.text = text;

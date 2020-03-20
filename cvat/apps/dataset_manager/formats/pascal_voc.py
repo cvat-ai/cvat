@@ -74,7 +74,8 @@ class CvatVocConverter:
         extractor = extractor.transform(id_from_image)
         extractor = Dataset.from_extractors(extractor) # apply lazy transforms
 
-        converter = env.make_converter('voc', save_images=self._save_images)
+        converter = env.make_converter('voc', label_map='source',
+            save_images=self._save_images)
         converter(extractor, save_dir=temp_dir)
 
 def dump(file_object, annotations):

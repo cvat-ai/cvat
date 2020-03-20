@@ -234,7 +234,7 @@ class Environment:
             try:
                 exports = cls._import_module(module_dir, module_name, types,
                     package)
-            except ImportError as e:
+            except Exception as e:
                 log.debug("Failed to import module '%s': %s" % (module_name, e))
                 continue
 
@@ -367,6 +367,8 @@ class Dataset(Extractor):
     def get(self, item_id, subset=None, path=None):
         if path:
             raise KeyError("Requested dataset item path is not found")
+        if subset is None:
+            subset = ''
         return self._subsets[subset].items[item_id]
 
     def put(self, item, item_id=None, subset=None, path=None):

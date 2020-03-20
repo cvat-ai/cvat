@@ -230,6 +230,7 @@ export interface NotificationsState {
             undo: null | ErrorState;
             redo: null | ErrorState;
             search: null | ErrorState;
+            savingLogs: null | ErrorState;
         };
 
         [index: string]: any;
@@ -335,6 +336,7 @@ export interface AnnotationState {
     annotations: {
         selectedStatesID: number[];
         activatedStateID: number | null;
+        activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
         states: any[];
         filters: string[];
@@ -367,6 +369,12 @@ export interface AnnotationState {
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     tabContentHeight: number;
+    workspace: Workspace;
+}
+
+export enum Workspace {
+    STANDARD = 'Standard',
+    ATTRIBUTE_ANNOTATION = 'Attribute annotation',
 }
 
 export enum GridColor {

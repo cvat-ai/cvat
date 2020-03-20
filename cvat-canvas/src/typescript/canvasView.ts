@@ -74,7 +74,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.controller.mode;
     }
 
-    private onDrawDone(data: object, continueDraw?: boolean): void {
+    private onDrawDone(data: object | null, duration: number, continueDraw?: boolean): void {
         if (data) {
             const { zLayer } = this.controller;
             const event: CustomEvent = new CustomEvent('canvas.drawn', {
@@ -87,6 +87,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         zOrder: zLayer || 0,
                     },
                     continue: continueDraw,
+                    duration,
                 },
             });
 
@@ -137,12 +138,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onMergeDone(objects: any[]): void {
+    private onMergeDone(objects: any[]| null, duration?: number): void {
         if (objects) {
             const event: CustomEvent = new CustomEvent('canvas.merged', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
+                    duration,
                     states: objects,
                 },
             });
@@ -264,9 +266,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             y + height / 2,
         ]);
 
+        const canvasOffset = this.canvas.getBoundingClientRect();
         const [cx, cy] = [
-            this.canvas.clientWidth / 2 + this.canvas.offsetLeft,
-            this.canvas.clientHeight / 2 + this.canvas.offsetTop,
+            this.canvas.clientWidth / 2 + canvasOffset.left,
+            this.canvas.clientHeight / 2 + canvasOffset.top,
         ];
 
         const dragged = {
@@ -700,6 +703,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if ([UpdateReasons.IMAGE_ZOOMED, UpdateReasons.IMAGE_FITTED].includes(reason)) {
             this.moveCanvas();
             this.transformCanvas();
+            if (reason === UpdateReasons.IMAGE_FITTED) {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.fit', {
+                    bubbles: false,
+                    cancelable: true,
+                }));
+            }
         } else if (reason === UpdateReasons.IMAGE_MOVED) {
             this.moveCanvas();
         } else if ([UpdateReasons.OBJECTS_UPDATED, UpdateReasons.SET_Z_LAYER].includes(reason)) {
@@ -725,7 +734,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (object) {
                 const bbox: SVG.BBox = object.bbox();
                 this.onFocusRegion(bbox.x - padding, bbox.y - padding,
-                    bbox.width + padding, bbox.height + padding);
+                    bbox.width + padding * 2, bbox.height + padding * 2);
             }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.activate(this.controller.activeElement);
@@ -1014,7 +1023,26 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.content.prepend(...sorted.map((pair): SVGElement => pair[0]));
     }
 
-    private deactivate(): void {
+    private deactivateAttribute(): void {
+        const { clientID, attributeID } = this.activeElement;
+        if (clientID !== null && attributeID !== null) {
+            const text = this.svgTexts[clientID];
+            if (text) {
+                const [span] = text.node
+                    .querySelectorAll(`[attrID="${attributeID}"]`) as any as SVGTSpanElement[];
+                if (span) {
+                    span.style.fill = '';
+                }
+            }
+
+            this.activeElement = {
+                ...this.activeElement,
+                attributeID: null,
+            };
+        }
+    }
+
+    private deactivateShape(): void {
         if (this.activeElement.clientID !== null) {
             const { clientID } = this.activeElement;
             const drawnState = this.drawnStates[clientID];
@@ -1047,29 +1075,34 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.sortObjects();
 
             this.activeElement = {
+                ...this.activeElement,
                 clientID: null,
-                attributeID: null,
             };
         }
     }
 
-    private activate(activeElement: ActiveElement): void {
-        // Check if other element have been already activated
-        if (this.activeElement.clientID !== null) {
-            // Check if it is the same element
-            if (this.activeElement.clientID === activeElement.clientID) {
-                return;
+    private deactivate(): void {
+        this.deactivateAttribute();
+        this.deactivateShape();
+    }
+
+    private activateAttribute(clientID: number, attributeID: number): void {
+        const text = this.svgTexts[clientID];
+        if (text) {
+            const [span] = text.node
+                .querySelectorAll(`[attrID="${attributeID}"]`) as any as SVGTSpanElement[];
+            if (span) {
+                span.style.fill = 'red';
             }
 
-            // Deactivate previous element
-            this.deactivate();
+            this.activeElement = {
+                ...this.activeElement,
+                attributeID,
+            };
         }
+    }
 
-        const { clientID } = activeElement;
-        if (clientID === null) {
-            return;
-        }
-
+    private activateShape(clientID: number): void {
         const [state] = this.controller.objects
             .filter((_state: any): boolean => _state.clientID === clientID);
 
@@ -1082,8 +1115,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return;
         }
 
-        this.activeElement = { ...activeElement };
         const shape = this.svgShapes[clientID];
+
         let text = this.svgTexts[clientID];
         if (!text) {
             text = this.addText(state);
@@ -1134,6 +1167,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     ).map((x: number): number => x - offset);
 
                     this.drawnStates[state.clientID].points = points;
+                    this.canvas.dispatchEvent(new CustomEvent('canvas.dragshape', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            id: state.clientID,
+                        },
+                    }));
                     this.onEditDone(state, points);
                 }
             });
@@ -1184,9 +1224,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 ).map((x: number): number => x - offset);
 
                 this.drawnStates[state.clientID].points = points;
+                this.canvas.dispatchEvent(new CustomEvent('canvas.resizeshape', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        id: state.clientID,
+                    },
+                }));
                 this.onEditDone(state, points);
             }
         });
+
+        this.activeElement = {
+            ...this.activeElement,
+            clientID,
+        };
 
         this.canvas.dispatchEvent(new CustomEvent('canvas.activated', {
             bubbles: false,
@@ -1195,6 +1247,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 state,
             },
         }));
+    }
+
+    private activate(activeElement: ActiveElement): void {
+        // Check if another element have been already activated
+        if (this.activeElement.clientID !== null) {
+            if (this.activeElement.clientID !== activeElement.clientID) {
+                // Deactivate previous shape and attribute
+                this.deactivate();
+            } else if (this.activeElement.attributeID !== activeElement.attributeID) {
+                this.deactivateAttribute();
+            }
+        }
+
+        const { clientID, attributeID } = activeElement;
+        if (clientID !== null && this.activeElement.clientID !== clientID) {
+            this.activateShape(clientID);
+        }
+
+        if (clientID !== null
+            && attributeID !== null
+            && this.activeElement.attributeID !== attributeID
+        ) {
+            this.activateAttribute(clientID, attributeID);
+        }
     }
 
     // Update text position after corresponding box has been moved, resized, etc.

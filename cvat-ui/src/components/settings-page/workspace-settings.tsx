@@ -93,7 +93,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         max={1000}
                         value={aamZoomMargin}
                         onChange={(value: number | undefined): void => {
-                            if (value) {
+                            if (typeof (value) === 'number') {
                                 onChangeAAMZoomMargin(value);
                             }
                         }}

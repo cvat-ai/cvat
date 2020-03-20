@@ -74,6 +74,7 @@ const defaultState: NotificationsState = {
             undo: null,
             redo: null,
             search: null,
+            savingLogs: null,
         },
     },
     messages: {
@@ -760,6 +761,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         search: {
                             message: 'Could not execute search annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SAVE_LOGS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        savingLogs: {
+                            message: 'Could not send logs to the server',
                             reason: action.payload.error.toString(),
                         },
                     },

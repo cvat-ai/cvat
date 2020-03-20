@@ -17,7 +17,7 @@ import CanvasContextMenuContainer from 'containers/annotation-page/standard-work
 
 export default function StandardWorkspaceComponent(): JSX.Element {
     return (
-        <Layout hasSider>
+        <Layout hasSider className='cvat-standard-workspace'>
             <ControlsSideBarContainer />
             <CanvasWrapperContainer />
             <ObjectSideBarContainer />

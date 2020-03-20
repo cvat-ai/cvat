@@ -27,6 +27,7 @@ import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import HeaderContainer from 'containers/header/header';
 
+import getCore from 'cvat-core';
 import { NotificationsState } from 'reducers/interfaces';
 
 interface CVATAppProps {
@@ -56,8 +57,17 @@ interface CVATAppProps {
 
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
+        const core = getCore();
         const { verifyAuthorized } = this.props;
         configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
+
+        // Logger configuration
+        const userActivityCallback: (() => void)[] = [];
+        window.addEventListener('click', () => {
+            userActivityCallback.forEach((handler) => handler());
+        });
+        core.logger.configure(() => window.document.hasFocus, userActivityCallback);
+
         verifyAuthorized();
     }
 
@@ -198,7 +208,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const readyForRender = (userInitialized && user == null)
             || (userInitialized && formatsInitialized
-            && pluginsInitialized && usersInitialized && aboutInitialized);
+                && pluginsInitialized && usersInitialized && aboutInitialized);
 
         const withModels = installedAutoAnnotation
             || installedTFAnnotation || installedTFSegmentation;
@@ -253,15 +263,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                     <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                     <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                    { withModels
-                                        && <Route exact path='/models' component={ModelsPageContainer} /> }
-                                    { installedAutoAnnotation
-                                        && <Route exact path='/models/create' component={CreateModelPageContainer} /> }
+                                    {withModels
+                                        && <Route exact path='/models' component={ModelsPageContainer} />}
+                                    {installedAutoAnnotation
+                                        && <Route exact path='/models/create' component={CreateModelPageContainer} />}
                                     <Redirect push to='/tasks' />
                                 </Switch>
                             </GlobalHotKeys>
                             {/* eslint-disable-next-line */}
-                            <a id='downloadAnchor' style={{ display: 'none' }} download/>
+                            <a id='downloadAnchor' style={{ display: 'none' }} download />
                         </Layout.Content>
                     </Layout>
                 );
