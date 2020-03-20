@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
+from cvat.apps.auto_annotation.inference_engine import make_plugin_or_core, make_network
 
 import os
 import cv2
@@ -32,12 +32,15 @@ class DEXTR_HANDLER:
     def handle(self, im_path, points):
         # Lazy initialization
         if not self._plugin:
-            self._plugin = make_plugin()
+            self._plugin = make_plugin_or_core()
             self._network = make_network(os.path.join(_DEXTR_MODEL_DIR, 'dextr.xml'),
                 os.path.join(_DEXTR_MODEL_DIR, 'dextr.bin'))
             self._input_blob = next(iter(self._network.inputs))
             self._output_blob = next(iter(self._network.outputs))
-            self._exec_network = self._plugin.load(network=self._network)
+            if getattr(self._plugin, 'load_network', False):
+                self._exec_network = self._plugin.load_network(self._network, 'CPU')
+            else:
+                self._exec_network = self._plugin.load(network=self._network)
 
         image = PIL.Image.open(im_path)
         numpy_image = np.array(image)
