@@ -19,6 +19,7 @@ import {
     ObjectType,
     ContextMenuType,
     Workspace,
+    ShapeType,
 } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas';
 import getCore from 'cvat-core';
@@ -468,10 +469,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             activatedStateID,
             onUpdateContextMenu,
+            annotations,
         } = this.props;
 
-        onUpdateContextMenu(activatedStateID !== null, e.detail.mouseEvent.clientX,
-            e.detail.mouseEvent.clientY, ContextMenuType.CANVAS_SHAPE_POINT, e.detail.pointID);
+        const [state] = annotations.filter((el: any) => (el.clientID === activatedStateID));
+        if (state.shapeType !== ShapeType.RECTANGLE) {
+            onUpdateContextMenu(activatedStateID !== null, e.detail.mouseEvent.clientX,
+                e.detail.mouseEvent.clientY, ContextMenuType.CANVAS_SHAPE_POINT, e.detail.pointID);
+        }
     };
 
     private activateOnCanvas(): void {
