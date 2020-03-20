@@ -17,21 +17,12 @@ from datumaro.components.extractor import (DEFAULT_SUBSET_NAME,
     AnnotationType, Points
 )
 from datumaro.components.cli_plugin import CliPlugin
-from datumaro.util import find
+from datumaro.util import find, cast
 from datumaro.util.image import save_image
 import datumaro.util.mask_tools as mask_tools
 import datumaro.util.annotation_tools as anno_tools
 
 from .format import CocoTask, CocoPath
-
-
-def _cast(value, type_conv, default=None):
-    if value is None:
-        return default
-    try:
-        return type_conv(value)
-    except Exception:
-        return default
 
 
 SegmentationMode = Enum('SegmentationMode', ['guess', 'polygons', 'mask'])
@@ -82,7 +73,7 @@ class _TaskConverter:
             'id': self._get_image_id(item),
             'width': int(w),
             'height': int(h),
-            'file_name': _cast(filename, str, ''),
+            'file_name': cast(filename, str, ''),
             'license': 0,
             'flickr_url': '',
             'coco_url': '',
@@ -162,8 +153,8 @@ class _InstancesConverter(_TaskConverter):
         for idx, cat in enumerate(label_categories.items):
             self.categories.append({
                 'id': 1 + idx,
-                'name': _cast(cat.name, str, ''),
-                'supercategory': _cast(cat.parent, str, ''),
+                'name': cast(cat.name, str, ''),
+                'supercategory': cast(cat.parent, str, ''),
             })
 
     @classmethod
@@ -309,7 +300,7 @@ class _InstancesConverter(_TaskConverter):
         elem = {
             'id': self._get_ann_id(ann),
             'image_id': self._get_image_id(item),
-            'category_id': _cast(ann.label, int, -1) + 1,
+            'category_id': cast(ann.label, int, -1) + 1,
             'segmentation': segmentation,
             'area': float(area),
             'bbox': list(map(float, bbox)),
@@ -334,10 +325,11 @@ class _KeypointsConverter(_InstancesConverter):
         for idx, label_cat in enumerate(label_categories.items):
             cat = {
                 'id': 1 + idx,
-                'name': _cast(label_cat.name, str, ''),
-                'supercategory': _cast(label_cat.parent, str, ''),
+                'name': cast(label_cat.name, str, ''),
+                'supercategory': cast(label_cat.parent, str, ''),
                 'keypoints': [],
                 'skeleton': [],
+
             }
 
             if point_categories is not None:
@@ -416,8 +408,8 @@ class _LabelsConverter(_TaskConverter):
         for idx, cat in enumerate(label_categories.items):
             self.categories.append({
                 'id': 1 + idx,
-                'name': _cast(cat.name, str, ''),
-                'supercategory': _cast(cat.parent, str, ''),
+                'name': cast(cat.name, str, ''),
+                'supercategory': cast(cat.parent, str, ''),
             })
 
     def save_annotations(self, item):
@@ -504,7 +496,7 @@ class _Converter:
     def _get_image_id(self, item):
         image_id = self._image_ids.get(item.id)
         if image_id is None:
-            image_id = _cast(item.id, int, len(self._image_ids) + 1)
+            image_id = cast(item.id, int, len(self._image_ids) + 1)
             self._image_ids[item.id] = image_id
         return image_id
 
