@@ -367,6 +367,8 @@ class Dataset(Extractor):
     def get(self, item_id, subset=None, path=None):
         if path:
             raise KeyError("Requested dataset item path is not found")
+        if subset is None:
+            subset = ''
         return self._subsets[subset].items[item_id]
 
     def put(self, item, item_id=None, subset=None, path=None):
