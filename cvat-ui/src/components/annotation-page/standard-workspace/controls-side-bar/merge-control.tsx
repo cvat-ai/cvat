@@ -29,8 +29,6 @@ function MergeControl(props: Props): JSX.Element {
         canvasInstance,
         mergeObjects,
     } = props;
-    
-    throw Error('This is a test error');
 
     const dynamicIconProps = activeControl === ActiveControl.MERGE
         ? {
