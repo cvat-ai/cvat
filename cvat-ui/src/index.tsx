@@ -35,6 +35,7 @@ interface StateToProps {
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
     userInitialized: boolean;
+    userFetching: boolean;
     usersInitialized: boolean;
     usersFetching: boolean;
     aboutInitialized: boolean;
@@ -68,6 +69,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         userInitialized: auth.initialized,
+        userFetching: auth.fetching,
         pluginsInitialized: plugins.initialized,
         pluginsFetching: plugins.fetching,
         usersInitialized: users.initialized,

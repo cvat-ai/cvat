@@ -7,6 +7,7 @@ import { AnyAction } from 'redux';
 import { Canvas, CanvasMode } from 'cvat-canvas';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
+import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import {
     AnnotationState,
     ActiveControl,
@@ -1065,10 +1066,20 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AuthActionTypes.LOGOUT_SUCCESS: {
+        case BoundariesActionTypes.RESET_AFTER_ERROR: {
             return {
                 ...defaultState,
+                player: {
+                    ...state.player,
+                },
+                canvas: {
+                    ...defaultState.canvas,
+                    instance: new Canvas(),
+                },
             };
+        }
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return { ...defaultState };
         }
         default: {
             return state;

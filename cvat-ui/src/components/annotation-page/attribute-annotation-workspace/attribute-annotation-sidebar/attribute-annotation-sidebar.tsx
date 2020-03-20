@@ -5,6 +5,8 @@
 import React, { useState, useEffect } from 'react';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 import { connect } from 'react-redux';
+import { Action } from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 import Layout, { SiderProps } from 'antd/lib/layout';
 import { SelectValue } from 'antd/lib/select';
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
@@ -65,7 +67,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: any): DispatchToProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
     return {
         activateObject(clientID: number, attrID: number): void {
             dispatch(activateObjectAction(clientID, attrID));

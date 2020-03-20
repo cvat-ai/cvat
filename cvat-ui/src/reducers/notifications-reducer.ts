@@ -13,6 +13,7 @@ import { UsersActionTypes } from 'actions/users-actions';
 import { AboutActionTypes } from 'actions/about-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
+import { BoundariesActionTypes } from 'actions/boundaries-actions';
 
 import { NotificationsState } from './interfaces';
 
@@ -75,6 +76,9 @@ const defaultState: NotificationsState = {
             redo: null,
             search: null,
             savingLogs: null,
+        },
+        boundaries: {
+            resetError: null,
         },
     },
     messages: {
@@ -782,6 +786,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case BoundariesActionTypes.THROW_RESET_ERROR: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    boundaries: {
+                        ...state.errors.annotation,
+                        resetError: {
+                            message: 'Could not reset the state',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
         case NotificationsActionType.RESET_ERRORS: {
             return {
                 ...state,
@@ -798,10 +817,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
-            return {
-                ...defaultState,
-            };
+            return { ...defaultState };
         }
         default: {
             return state;
