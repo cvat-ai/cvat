@@ -4,20 +4,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0-beta] - Unreleased
+## [1.0.0-alpha] - Unreleased
 ### Added
 -
 
 ### Changed
-- VOC task export now does not use official label map by default, but takes one
-  from the source task to avoid primary-class and class part name
-  clashing ([#1275](https://github.com/opencv/cvat/issues/1275))
+-
 
 ### Deprecated
 -
 
 ### Removed
 -
+
+### Fixed
+-
+
+### Security
+-
+
+## [0.6.1] - 2020-03-21
+### Changed
+- VOC task export now does not use official label map by default, but takes one
+  from the source task to avoid primary-class and class part name
+  clashing ([#1275](https://github.com/opencv/cvat/issues/1275))
 
 ### Fixed
 - File names in LabelMe format export are no longer truncated ([#1259](https://github.com/opencv/cvat/issues/1259))
