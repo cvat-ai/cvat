@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2020-03-21
+### Changed
+- VOC task export now does not use official label map by default, but takes one
+  from the source task to avoid primary-class and class part name
+  clashing ([#1275](https://github.com/opencv/cvat/issues/1275))
+
+### Fixed
+- File names in LabelMe format export are no longer truncated ([#1259](https://github.com/opencv/cvat/issues/1259))
+- `occluded` and `z_order` annotation attributes are now correctly passed to Datumaro ([#1271](https://github.com/opencv/cvat/pull/1271))
+- Annotation-less tasks now can be exported as empty datasets in COCO ([#1277](https://github.com/opencv/cvat/issues/1277))
+- Frame name matching for video annotations import -
+  allowed `frame_XXXXXX[.ext]` format ([#1274](https://github.com/opencv/cvat/pull/1274))
+
+### Security
+- Bump acorn from 6.3.0 to 6.4.1 in /cvat-ui ([#1270](https://github.com/opencv/cvat/pull/1270))
+
 ## [0.6.0] - 2020-03-15
 ### Added
 - Server only support for projects. Extend REST API v1 (/api/v1/projects*)

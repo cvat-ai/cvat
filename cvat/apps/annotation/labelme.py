@@ -107,17 +107,17 @@ def dump_frame_anno(frame_annotation):
     return ET.tostring(root_elem, encoding='unicode', pretty_print=True)
 
 def dump_as_labelme_annotation(file_object, annotations):
+    import os.path as osp
     from zipfile import ZipFile, ZIP_DEFLATED
 
     with ZipFile(file_object, 'w', compression=ZIP_DEFLATED) as output_zip:
         for frame_annotation in annotations.group_by_frame():
             xml_data = dump_frame_anno(frame_annotation)
-            filename = frame_annotation.name
-            filename = filename[ : filename.rfind('.')] + '.xml'
+            filename = osp.splitext(frame_annotation.name)[0] + '.xml'
             output_zip.writestr(filename, xml_data)
 
 def parse_xml_annotations(xml_data, annotations, input_zip):
-    from cvat.apps.annotation.coco import mask_to_polygon
+    from datumaro.util.mask_tools import mask_to_polygons
     from io import BytesIO
     from lxml import etree as ET
     import numpy as np
@@ -229,7 +229,7 @@ def parse_xml_annotations(xml_data, annotations, input_zip):
             mask = input_zip.read(osp.join(_MASKS_DIR, mask_file))
             mask = np.asarray(Image.open(BytesIO(mask)).convert('L'))
             mask = (mask != 0)
-            polygons = mask_to_polygon(mask)
+            polygons = mask_to_polygons(mask)
 
             for polygon in polygons:
                 ann_items.append(annotations.LabeledShape(
