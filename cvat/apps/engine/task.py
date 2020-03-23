@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import itertools
 import os
 import sys
 import rq
@@ -262,43 +263,50 @@ def _create_thread(tid, data):
         else:
             db_data.chunk_size = 36
 
-    frame_counter = 0
-    total_len = len(extractor) or 100
-    image_names = []
-    image_sizes = []
-    for chunk_idx, chunk_images in enumerate(extractor.slice_by_size(db_data.chunk_size)):
-        for img in chunk_images:
-            image_names.append(img[1])
 
+    video_path = ""
+    video_size = (0, 0)
+
+    counter = itertools.count()
+    generator = itertools.groupby(extractor, lambda x: next(counter) // db_data.chunk_size)
+    for chunk_idx, chunk_data in generator:
+        chunk_data = list(chunk_data)
         original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
-        original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
+        original_chunk_writer.save_as_chunk(chunk_data, original_chunk_path)
 
         compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
-        img_sizes = compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
+        img_sizes = compressed_chunk_writer.save_as_chunk(chunk_data, compressed_chunk_path)
 
-        image_sizes.extend(img_sizes)
+        if db_task.mode == 'annotation':
+            db_images.extend([
+                models.Image(
+                    data=db_data,
+                    path=os.path.relpath(data[1], upload_dir),
+                    frame=data[2],
+                    width=size[0],
+                    height=size[1])
 
-        db_data.size += len(chunk_images)
-        update_progress(db_data.size / total_len)
+                for data, size in zip(chunk_data, img_sizes)
+            ])
+        else:
+            video_size = img_sizes[0]
+            video_path = chunk_data[0][1]
+
+        db_data.size += len(chunk_data)
+        progress = extractor.get_progress(chunk_data[-1][2])
+        update_progress(progress)
 
     if db_task.mode == 'annotation':
-        for image_name, image_size in zip(image_names, image_sizes):
-            db_images.append(models.Image(
-                data=db_data,
-                path=os.path.relpath(image_name, upload_dir),
-                frame=frame_counter,
-                width=image_size[0],
-                height=image_size[1],
-            ))
-            frame_counter += 1
         models.Image.objects.bulk_create(db_images)
+        db_images = []
     else:
         models.Video.objects.create(
             data=db_data,
-            path=os.path.relpath(image_names[0], upload_dir),
-            width=image_sizes[0][0], height=image_sizes[0][1])
-        if db_data.stop_frame == 0:
-            db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
+            path=os.path.relpath(video_path, upload_dir),
+            width=video_size[0], height=video_size[1])
+
+    if db_data.stop_frame == 0:
+        db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
 
     preview = extractor.get_preview()
     preview.save(db_data.get_preview_path())
