@@ -37,6 +37,7 @@ import {
     Mode,
     Size,
 } from './canvasModel';
+import { isNullOrUndefined } from 'util';
 
 export interface CanvasView {
     html(): HTMLDivElement;
@@ -114,14 +115,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private onEditDone(state: any, points: number[]): void {
-        if (state && points) {
+    private onEditDone(state: any, points: number[], annotation_type: string): void {
+        if (state && points && annotation_type)  {
             const event: CustomEvent = new CustomEvent('canvas.edited', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
                     state,
                     points,
+                    annotation_type,
                 },
             });
 
@@ -433,9 +435,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     ));
                 if (e.ctrlKey) {
                     const { points } = state;
+                    const annotation_type = 'Manual';
                     self.onEditDone(
                         state,
                         points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)),
+                        annotation_type,
                     );
                 } else if (e.shiftKey) {
                     self.canvas.dispatchEvent(new CustomEvent('canvas.editstart', {
@@ -859,6 +863,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             attributes: { ...state.attributes },
             zOrder: state.zOrder,
             pinned: state.pinned,
+            annotation_type: state.annotation_type,
         };
     }
 
@@ -1174,7 +1179,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             id: state.clientID,
                         },
                     }));
-                    this.onEditDone(state, points);
+                    const annotation_type = 'Manual';
+                    this.onEditDone(state, points, annotation_type);
                 }
             });
         }
@@ -1222,6 +1228,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         + `${shape.attr('x') + shape.attr('width')},`
                         + `${shape.attr('y') + shape.attr('height')}`,
                 ).map((x: number): number => x - offset);
+                const annotation_type = 'Manual';
 
                 this.drawnStates[state.clientID].points = points;
                 this.canvas.dispatchEvent(new CustomEvent('canvas.resizeshape', {
@@ -1231,7 +1238,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         id: state.clientID,
                     },
                 }));
-                this.onEditDone(state, points);
+                this.onEditDone(state, points, annotation_type);
             }
         });
 
@@ -1313,14 +1320,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private addText(state: any): SVG.Text {
-        const { label, clientID, attributes } = state;
+        const { label, clientID, attributes, annotation_type } = state;
         const attrNames = label.attributes.reduce((acc: any, val: any): void => {
             acc[val.id] = val.name;
             return acc;
         }, {});
 
         return this.adoptedText.text((block): void => {
-            block.tspan(`${label.name} ${clientID}`).style('text-transform', 'uppercase');
+            block.tspan(`${label.name} ${clientID} (${annotation_type})`).style('text-transform', 'uppercase');
             for (const attrID of Object.keys(attributes)) {
                 block.tspan(`${attrNames[attrID]}: ${attributes[attrID]}`).attr({
                     attrID,
@@ -1333,6 +1340,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addRect(points: number[], state: any): SVG.Rect {
         const [xtl, ytl, xbr, ybr] = points;
+        if (typeof (state.annotation_type) === 'undefined') {
+            state.annotation_type = 'Manual';
+        }
         const rect = this.adoptedContent.rect().size(xbr - xtl, ybr - ytl).attr({
             clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
@@ -1342,6 +1352,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             stroke: state.color,
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             'data-z-order': state.zOrder,
+            annotation_type: state.annotation_type,
         }).move(xtl, ytl)
             .addClass('cvat_canvas_shape');
 
@@ -1357,6 +1368,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private addPolygon(points: string, state: any): SVG.Polygon {
+        if (typeof (state.annotation_type) === 'undefined') {
+            state.annotation_type = 'Manual';
+        }
         const polygon = this.adoptedContent.polygon(points).attr({
             clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
@@ -1366,6 +1380,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             stroke: state.color,
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             'data-z-order': state.zOrder,
+            annotation_type: state.annotation_type,
         }).addClass('cvat_canvas_shape');
 
         if (state.occluded) {
@@ -1380,6 +1395,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private addPolyline(points: string, state: any): SVG.PolyLine {
+        if (typeof (state.annotation_type) === 'undefined') {
+            state.annotation_type = 'Manual';
+        }
         const polyline = this.adoptedContent.polyline(points).attr({
             clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
@@ -1389,6 +1407,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             stroke: state.color,
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             'data-z-order': state.zOrder,
+            annotation_type: state.annotation_type,
         }).addClass('cvat_canvas_shape');
 
         if (state.occluded) {
@@ -1424,12 +1443,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private addPoints(points: string, state: any): SVG.PolyLine {
+        state.annotation_type = 'Manual';
         const shape = this.adoptedContent.polyline(points).attr({
             'color-rendering': 'optimizeQuality',
             'pointer-events': 'none',
             'shape-rendering': 'geometricprecision',
             'stroke-width': 0,
-            fill: state.color, // to right fill property when call SVG.Shape::clone()
+            fill: state.color, // to right fill property when call SVG.Shape::clone(
+            annotation_type: state.annotation_type,
         }).style({
             opacity: 0,
         });

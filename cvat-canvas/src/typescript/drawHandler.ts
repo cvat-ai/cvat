@@ -178,9 +178,11 @@ export class DrawHandlerImpl implements DrawHandler {
             this.cancel();
 
             if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
+                this.drawData.annotation_type = 'Manual';
                 this.onDrawDone({
                     shapeType,
                     points: [xtl, ytl, xbr, ybr],
+                    annotation_type: this.drawData.annotation_type,
                 }, Date.now() - this.startTimestamp);
             }
         }).on('drawupdate', (): void => {
@@ -211,9 +213,11 @@ export class DrawHandlerImpl implements DrawHandler {
                     this.cancel();
 
                     if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
+                        this.drawData.annotation_type = 'Manual';
                         this.onDrawDone({
                             shapeType,
                             points: [xtl, ytl, xbr, ybr],
+                            annotation_type: this.drawData.annotation_type,
                         }, Date.now() - this.startTimestamp);
                     }
                 }
@@ -298,23 +302,29 @@ export class DrawHandlerImpl implements DrawHandler {
             if (shapeType === 'polygon'
                 && ((box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD)
                 && points.length >= 3 * 2) {
+                this.drawData.annotation_type = 'Manual';
                 this.onDrawDone({
                     shapeType,
                     points,
+                    annotation_type: this.drawData.annotation_type,
                 }, Date.now() - this.startTimestamp);
             } else if (shapeType === 'polyline'
                 && ((box.xbr - box.xtl) >= consts.SIZE_THRESHOLD
                 || (box.ybr - box.ytl) >= consts.SIZE_THRESHOLD)
                 && points.length >= 2 * 2) {
+                this.drawData.annotation_type = 'Manual';
                 this.onDrawDone({
                     shapeType,
                     points,
+                    annotation_type: this.drawData.annotation_type,
                 }, Date.now() - this.startTimestamp);
             } else if (shapeType === 'points'
                 && (e.target as any).getAttribute('points') !== '0,0') {
+                this.drawData.annotation_type = 'Manual';
                 this.onDrawDone({
                     shapeType,
                     points,
+                    annotation_type: this.drawData.annotation_type,
                 }, Date.now() - this.startTimestamp);
             }
         });
@@ -358,6 +368,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
             const { points } = this.getFinalPolyshapeCoordinates(targetPoints);
             this.release();
+            this.drawData.annotation_type = 'Manual';
             this.onDrawDone({
                 shapeType: this.drawData.initialState.shapeType,
                 objectType: this.drawData.initialState.objectType,
@@ -366,6 +377,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 attributes: { ...this.drawData.initialState.attributes },
                 label: this.drawData.initialState.label,
                 color: this.drawData.initialState.color,
+                annotation_type: this.drawData.annotation_type,
             }, Date.now() - this.startTimestamp, e.detail.originalEvent.ctrlKey);
         });
     }
@@ -398,6 +410,7 @@ export class DrawHandlerImpl implements DrawHandler {
             const bbox = this.drawInstance.node.getBBox();
             const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
             this.release();
+            this.drawData.annotation_type = 'Manual';
             this.onDrawDone({
                 shapeType: this.drawData.initialState.shapeType,
                 objectType: this.drawData.initialState.objectType,
@@ -406,6 +419,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 attributes: { ...this.drawData.initialState.attributes },
                 label: this.drawData.initialState.label,
                 color: this.drawData.initialState.color,
+                annotation_type: this.drawData.annotation_type,
             }, Date.now() - this.startTimestamp, e.detail.originalEvent.ctrlKey);
         });
     }
@@ -540,6 +554,7 @@ export class DrawHandlerImpl implements DrawHandler {
         if (this.drawData.initialState) {
             const { offset } = this.geometry;
             if (this.drawData.shapeType === 'rectangle') {
+                this.drawData.annotation_type = 'Manual';
                 const [xtl, ytl, xbr, ybr] = this.drawData.initialState.points
                     .map((coord: number): number => coord + offset);
 
@@ -566,6 +581,7 @@ export class DrawHandlerImpl implements DrawHandler {
         } else {
             if (this.drawData.shapeType === 'rectangle') {
                 if (this.drawData.rectDrawingMethod === RectDrawingMethod.EXTREME_POINTS) {
+                    this.drawData.annotation_type = 'Manual';
                     // draw box by extreme clicking
                     this.drawBoxBy4Points();
                 } else {

@@ -19,6 +19,7 @@
         ObjectType,
         AttributeType,
         HistoryActions,
+        AnnotationType,
     } = require('./enums');
 
     const {
@@ -149,6 +150,7 @@
             this.removed = false;
             this.lock = false;
             this.color = color;
+            this.annotation_type = data.annotation_type;
             this.updated = Date.now();
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
@@ -251,6 +253,19 @@
             }, [this.clientID]);
         }
 
+        _saveAnnotationType(annotation_type) {
+            const undoannotation_type = this.annotation_type;
+            const redoannotation_type = annotation_type;
+
+            this.history.do(HistoryActions.CHANGED_ANNOTATIONTYPE, () => {
+                this.annotation_type = undoannotation_type;
+            }, () => {
+                this.annotation_type = redoannotation_type;
+            }, [this.clientID]);
+
+            this.annotation_type = annotation_type;
+        }
+
         _validateStateBeforeSave(frame, data, updated) {
             let fittedPoints = [];
 
@@ -346,6 +361,10 @@
                 }
             }
 
+            if (updated.annotation_type) {
+                checkObjectType('annotation_type', data.annotation_type, 'string', null);
+            }
+
             return fittedPoints;
         }
 
@@ -430,6 +449,7 @@
             this.points = data.points;
             this.occluded = data.occluded;
             this.zOrder = data.z_order;
+            this.annotation_type = data.annotation_type;
         }
 
         // Method is used to export data to the server
@@ -452,6 +472,7 @@
                 frame: this.frame,
                 label_id: this.label.id,
                 group: this.group,
+                annotation_type: this.annotation_type,
             };
         }
 
@@ -480,6 +501,7 @@
                 updated: this.updated,
                 pinned: this.pinned,
                 frame,
+                annotation_type:this.annotation_type,
             };
         }
 
@@ -521,6 +543,22 @@
 
             this.zOrder = zOrder;
         }
+
+        _saveAnnotationType(annotation_type) {
+            const undoannotation_type = this.annotation_type;
+            const redoannotation_type = annotation_type;
+
+            this.history.do(HistoryActions.CHANGED_ANNOTATIONTYPE, () => {
+                this.annotation_type = undoannotation_type;
+            }, () => {
+                this.annotation_type = redoannotation_type;
+            }, [this.clientID]);
+
+            this.annotation_type = annotation_type;
+        }
+
+
+
 
         save(frame, data) {
             if (frame !== this.frame) {
@@ -573,6 +611,10 @@
                 this._saveHidden(data.hidden);
             }
 
+            if (updated.annotation_type) {
+                this._saveAnnotationType(data.annotation_type);
+            }
+
             this.updateTimestamp(updated);
             updated.reset();
 
@@ -590,6 +632,7 @@
                     zOrder: value.z_order,
                     points: value.points,
                     outside: value.outside,
+                    annotation_type: value.annotation_type,
                     attributes: value.attributes.reduce((attributeAccumulator, attr) => {
                         attributeAccumulator[attr.spec_id] = attr.value;
                         return attributeAccumulator;
@@ -643,6 +686,7 @@
                             }, []),
                         id: this.shapes[frame].serverID,
                         frame: +frame,
+                        annotation_type: this.annotation_type,
                     });
 
                     return shapesAccumulator;
@@ -680,6 +724,7 @@
                     last,
                 },
                 frame,
+                annotation_type: this.annotation_type,
             };
         }
 
@@ -830,6 +875,7 @@
                         outside: current.outside,
                         occluded: current.occluded,
                         attributes: {},
+                        annotation_type: current.annotation_type,
                     };
                 }
             }
@@ -888,6 +934,7 @@
                 outside: current.outside,
                 occluded: current.occluded,
                 attributes: {},
+                annotation_type: current.annotation_type,
             };
 
             this.shapes[frame] = redoShape;
@@ -910,6 +957,7 @@
                 points: current.points,
                 occluded: current.occluded,
                 attributes: {},
+                annotation_type: current.annotation_type,
             };
 
             this.shapes[frame] = redoShape;
@@ -932,6 +980,7 @@
                 points: current.points,
                 outside: current.outside,
                 attributes: {},
+                annotation_type: current.annotation_type,
             };
 
             this.shapes[frame] = redoShape;
@@ -954,11 +1003,35 @@
                 points: current.points,
                 outside: current.outside,
                 attributes: {},
+                annotation_type: current.annotation_type,
             };
 
             this.shapes[frame] = redoShape;
             this._appendShapeActionToHistory(
                 HistoryActions.CHANGED_ZORDER,
+                frame,
+                undoShape,
+                redoShape,
+            );
+        }
+
+        _saveAnnotationType(frame, annotation_type) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = wasKeyframe ? { ...this.shapes[frame], annotation_type } : {
+                frame,
+                annotation_type,
+                zOrder: current.zOrder,
+                points: current.points,
+                occluded: current.occluded,
+                outside: current.outside,
+                attributes: {},
+            };
+
+            this.shapes[frame] = redoShape;
+            this._appendShapeActionToHistory(
+                HistoryActions.CHANGED_ANNOTATIONTYPE,
                 frame,
                 undoShape,
                 redoShape,
@@ -982,6 +1055,7 @@
                 outside: current.outside,
                 occluded: current.occluded,
                 attributes: {},
+                annotation_type: current.annotation_type,
             } : undefined;
 
             if (redoShape) {
@@ -1046,6 +1120,10 @@
                 this._saveAttributes(frame, data.attributes);
             }
 
+            if (updated.annotation_type) {
+                this._saveAnnotationType(frame, data.annotation_type);
+            }
+
             if (updated.keyframe) {
                 this._saveKeyframe(frame, data.keyframe);
             }
@@ -1102,6 +1180,7 @@
     class Tag extends Annotation {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            this.annotation_type = data.annotation_type;
         }
 
         // Method is used to export data to the server
@@ -1112,6 +1191,7 @@
                 frame: this.frame,
                 label_id: this.label.id,
                 group: this.group,
+                annotation_type: this.annotation_type,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     attributeAccumulator.push({
                         spec_id: attrId,
@@ -1142,6 +1222,7 @@
                 color: this.color,
                 updated: this.updated,
                 frame,
+                annotation_type: this.annotation_type,
             };
         }
 
@@ -1176,6 +1257,10 @@
                 this._saveColor(data.color);
             }
 
+            if (updated.annotation_type) {
+                this._saveAnnotationType(data.annotation_type);
+            }
+
             this.updateTimestamp(updated);
             updated.reset();
 
@@ -1188,6 +1273,7 @@
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.RECTANGLE;
             this.pinned = false;
+            this.annotation_type = data.annotation_type;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -1214,6 +1300,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.POLYGON;
+            this.annotation_type = data.annotation_type;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -1289,6 +1376,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.POLYLINE;
+            this.annotation_type = data.annotation_type;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -1333,6 +1421,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.POINTS;
+            this.annotation_type = data.annotation_type;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -1356,6 +1445,7 @@
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.RECTANGLE;
             this.pinned = false;
+            this.annotation_type = AnnotationType.MANUAL;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
@@ -1774,6 +1864,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.POLYGON;
+            this.annotation_type = AnnotationType.MANUAL;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
@@ -1784,6 +1875,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.POLYLINE;
+            this.annotation_type = AnnotationType.MANUAL;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
@@ -1794,6 +1886,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.POINTS;
+            this.annotation_type = AnnotationType.MANUAL;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }

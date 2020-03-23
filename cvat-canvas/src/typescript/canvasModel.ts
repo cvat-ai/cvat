@@ -47,6 +47,7 @@ export interface DrawData {
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
+    annotation_type?: string;
 }
 
 export interface EditData {
