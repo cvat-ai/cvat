@@ -923,7 +923,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.activate(activeElement);
             }
 
-            if (state.points
+            if (state.points.length !== drawnState.points.length || state.points
                 .some((p: number, id: number): boolean => p !== drawnState.points[id])
             ) {
                 const translatedPoints: number[] = translate(state.points);
