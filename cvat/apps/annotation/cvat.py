@@ -202,6 +202,7 @@ def dump_as_cvat_annotation(file_object, annotations):
             dump_data = OrderedDict([
                 ("label", shape.label),
                 ("occluded", str(int(shape.occluded))),
+                ("annotation_type", shape.annotation_type),
             ])
 
             if shape.type == "rectangle":
@@ -281,6 +282,7 @@ def dump_as_cvat_annotation(file_object, annotations):
         for tag in frame_annotation.tags:
             tag_data = OrderedDict([
                 ("label", tag.label),
+                ("annotation_type", tag.annotation_type),
             ])
             if tag.group:
                 tag_data["group_id"] = str(tag.group)
@@ -407,6 +409,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame,
                 attributes=shape.attributes,
+                annotation_type=shape.annotation_type,
             ),
             annotations.TrackedShape(
                 type=shape.type,
@@ -417,6 +420,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame + annotations.frame_step,
                 attributes=shape.attributes,
+                annotation_type=shape.annotation_type,
             ),
             ],
         ))
@@ -461,6 +465,7 @@ def load(file_object, annotations):
                     'label': el.attrib['label'],
                     'group': int(el.attrib.get('group_id', 0)),
                     'attributes': attributes,
+                    'annotation_type': el.attrib["annotation_type"],
                 }
         elif ev == 'end':
             if el.tag == 'attribute' and attributes is not None:
@@ -481,6 +486,7 @@ def load(file_object, annotations):
                 shape['type'] = 'rectangle' if el.tag == 'box' else el.tag
                 shape['occluded'] = el.attrib['occluded'] == '1'
                 shape['z_order'] = int(el.attrib.get('z_order', 0))
+                shape['annotation_type'] = el.attrib.get('annotation_type', 'Manual')
 
                 if el.tag == 'box':
                     shape['points'].append(el.attrib['xtl'])

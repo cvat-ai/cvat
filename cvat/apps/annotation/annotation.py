@@ -102,12 +102,12 @@ class AnnotationIR:
 
 class Annotation:
     Attribute = namedtuple('Attribute', 'name, value')
-    LabeledShape = namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order')
+    LabeledShape = namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order, annotation_type')
     LabeledShape.__new__.__defaults__ = (0, 0)
-    TrackedShape = namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside, keyframe, z_order')
+    TrackedShape = namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside, keyframe, z_order, annotation_type')
     TrackedShape.__new__.__defaults__ = (0, )
     Track = namedtuple('Track', 'label, group, shapes')
-    Tag = namedtuple('Tag', 'frame, label, attributes, group')
+    Tag = namedtuple('Tag', 'frame, label, attributes, group, annotation_type')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple('Frame', 'frame, name, width, height, labeled_shapes, tags')
 
@@ -278,6 +278,7 @@ class Annotation:
             keyframe=shape.get("keyframe", True),
             z_order=shape["z_order"],
             attributes=self._export_attributes(shape["attributes"]),
+            annotation_type=shape.get("annotation_type", "Manual"),
         )
 
     def _export_labeled_shape(self, shape):
@@ -290,6 +291,7 @@ class Annotation:
             z_order=shape.get("z_order", 0),
             group=shape.get("group", 0),
             attributes=self._export_attributes(shape["attributes"]),
+            annotation_type=shape.get("annotation_type", "Manual"),
         )
 
     def _export_tag(self, tag):
@@ -298,6 +300,7 @@ class Annotation:
             label=self._get_label_name(tag["label_id"]),
             group=tag.get("group", 0),
             attributes=self._export_attributes(tag["attributes"]),
+            annotation_type=tag.get("annotation_type", "Manual"),
         )
 
     def group_by_frame(self):

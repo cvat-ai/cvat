@@ -258,12 +258,24 @@ class ShapeType(str, Enum):
     def __str__(self):
         return self.value
 
+class AnnotationType(str, Enum):
+    AUTO = 'Auto'
+    MANUAL = 'Manual'
+
+    @classmethod
+    def choices(self):
+        return tuple((x.value, x.name) for x in self)
+
+    def __str__(self):
+        return self.value
+
 class Annotation(models.Model):
     id = models.BigAutoField(primary_key=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     group = models.PositiveIntegerField(null=True)
+    annotation_type = models.CharField(max_length=16, choices=AnnotationType.choices(), default="Manual", null=True)
 
     class Meta:
         abstract = True

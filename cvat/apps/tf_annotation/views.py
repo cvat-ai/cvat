@@ -188,6 +188,7 @@ def convert_to_cvat_format(data):
                 "group": None,
                 "occluded": False,
                 "attributes": [],
+                "annotation_type": "Auto",
             })
 
     return result
