@@ -100,7 +100,7 @@ class ImageListReader(IMediaReader):
         return len(self._source_path)
 
     def get_preview(self):
-        fp = open(self._source_path[0])
+        fp = open(self._source_path[0], "rb")
         return self._get_preview(fp)
 
     @property
