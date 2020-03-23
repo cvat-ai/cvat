@@ -334,6 +334,16 @@ EXPORT_FORMATS = [
         'tag': 'cvat_tfrecord',
         'is_default': False,
     },
+    {
+        'name': 'MOT',
+        'tag': 'cvat_mot',
+        'is_default': False,
+    },
+    {
+        'name': 'LabelMe',
+        'tag': 'cvat_label_me',
+        'is_default': False,
+    },
 ]
 
 def get_export_formats():
