@@ -22,6 +22,10 @@ import logger, { LogType } from 'cvat-logger';
 
 interface StateToProps {
     job: any | null;
+    serverVersion: string;
+    coreVersion: string;
+    canvasVersion: string;
+    uiVersion: string;
 }
 
 interface DispatchToProps {
@@ -34,8 +38,24 @@ interface State {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
+    const {
+        annotation: {
+            job: {
+                instance: job,
+            },
+        },
+        about: {
+            server,
+            packageVersion,
+        },
+    } = state;
+
     return {
-        job: state.annotation.job.instance,
+        job,
+        serverVersion: server.version as string,
+        coreVersion: packageVersion.core,
+        canvasVersion: packageVersion.canvas,
+        uiVersion: packageVersion.ui,
     };
 }
 
@@ -86,7 +106,15 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
     }
 
     public render(): React.ReactNode {
-        const { restore, job } = this.props;
+        const {
+            restore,
+            job,
+            serverVersion,
+            coreVersion,
+            canvasVersion,
+            uiVersion,
+        } = this.props;
+
         const { hasError, error } = this.state;
 
         const restoreGlobalState = (): void => {
@@ -132,19 +160,49 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                                     the error message to clipboard
                                 </li>
                                 <li>
-                                    Notify your manager or submit the issue directly on
-                                    <a href='https://github.com/opencv/cvat'> GitHub</a>
+                                    Notify an administrator or submit the issue directly on
+                                    <a href='https://github.com/opencv/cvat'> GitHub. </a>
+                                    Please, provide also:
+                                    <ul>
+                                        <li>Steps to reproduce the issue</li>
+                                        <li>Your operating system and browser version</li>
+                                        <li>CVAT version</li>
+                                        <ul>
+                                            <li>
+                                                <Text strong>Server: </Text>
+                                                {serverVersion}
+                                            </li>
+                                            <li>
+                                                <Text strong>Core: </Text>
+                                                {coreVersion}
+                                            </li>
+                                            <li>
+                                                <Text strong>Canvas: </Text>
+                                                {canvasVersion}
+                                            </li>
+                                            <li>
+                                                <Text strong>UI: </Text>
+                                                {uiVersion}
+                                            </li>
+                                        </ul>
+                                    </ul>
                                 </li>
                                 {job ? (
                                     <li>
                                         Press
                                         {/* eslint-disable-next-line */}
                                         <a onClick={restoreGlobalState}> here </a>
-                                        if you wish CVAT tried to restore your annotation progress
+                                        if you wish CVAT tried to restore your
+                                        annotation progress or
+                                        {/* eslint-disable-next-line */}
+                                        <a onClick={() => window.location.reload()}> update </a>
+                                        the page
                                     </li>
                                 ) : (
                                     <li>
-                                        Update this page
+                                        {/* eslint-disable-next-line */}
+                                        <a onClick={() => window.location.reload()}>Update </a>
+                                        the page
                                     </li>
                                 )}
                             </ul>
