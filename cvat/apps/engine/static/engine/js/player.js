@@ -965,6 +965,7 @@ class PlayerView {
                 ctx.scale(image.renderWidth / image.imageData.width,
                     image.renderHeight / image.imageData.height);
                 ctx.putImageData(image.imageData, 0, 0);
+                ctx.drawImage(this._playerCanvasBackground[0], 0, 0);
             } else {
                 ctx.drawImage(image.imageData, 0, 0);
             }
