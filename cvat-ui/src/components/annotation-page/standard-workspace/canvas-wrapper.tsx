@@ -12,7 +12,7 @@ import {
     Tooltip,
 } from 'antd';
 
-import { SliderValue } from 'antd/lib//slider';
+import { SliderValue } from 'antd/lib/slider';
 import {
     ColorBy,
     GridColor,
@@ -232,7 +232,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().removeEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
-        canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
+        canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
+
+        canvasInstance.html().removeEventListener('point.contextmenu', this.onCanvasPointContextMenu);
 
         window.removeEventListener('resize', this.fitCanvas);
     }

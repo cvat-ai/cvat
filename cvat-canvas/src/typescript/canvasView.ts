@@ -1208,7 +1208,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         let shapeSizeElement: ShapeSizeElement | null = null;
         let resized = false;
-        (shape as any).resize().on('resizestart', (): void => {
+        (shape as any).resize().on('resizestart', (e: any): void => {
+            if (e.detail.event.detail.event.button === 2) {
+                e.preventDefault();
+                return;
+            }
             this.mode = Mode.RESIZE;
             if (state.shapeType === 'rectangle') {
                 shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
