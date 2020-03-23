@@ -13,7 +13,7 @@ import CanvasPointContextMenuComponent from 'components/annotation-page/standard
 
 interface StateToProps {
     activatedStateID: number | null;
-    activetedPointID: number | null | undefined;
+    activatedPointID: number | null | undefined;
     states: any[];
     visible: boolean;
     top: number;
@@ -34,7 +34,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                     top,
                     left,
                     type,
-                    pointID: activetedPointID,
+                    pointID: activatedPointID,
                 },
             },
         },
@@ -42,7 +42,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         activatedStateID,
-        activetedPointID,
+        activatedPointID,
         states,
         visible,
         left,
@@ -70,6 +70,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps;
 
 interface State {
+    activatedStateID: number | null | undefined;
+    activatedPointID: number | null | undefined;
     latestLeft: number;
     latestTop: number;
     left: number;
@@ -81,6 +83,8 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         super(props);
 
         this.state = {
+            activatedStateID: null,
+            activatedPointID: null,
             latestLeft: 0,
             latestTop: 0,
             left: 0,
@@ -88,19 +92,25 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         };
     }
 
-    static getDerivedStateFromProps(props: Props, state: State): State | null {
-        if (props.left === state.latestLeft
-            && props.top === state.latestTop) {
-            return null;
+    static getDerivedStateFromProps(props: Props, state: State): State {
+        const newState: State = { ...state };
+
+        if (props.left !== state.latestLeft
+            || props.top !== state.latestTop) {
+            newState.latestLeft = props.left;
+            newState.latestTop = props.top;
+            newState.top = props.top;
+            newState.left = props.left;
         }
 
-        return {
-            ...state,
-            latestLeft: props.left,
-            latestTop: props.top,
-            top: props.top,
-            left: props.left,
-        };
+        if (typeof state.activatedStateID !== typeof props.activatedStateID
+            || typeof state.activatedPointID !== typeof props.activatedPointID) {
+            newState.activatedStateID = props.activatedStateID;
+            newState.activatedPointID = props.activatedPointID;
+        }
+
+
+        return newState;
     }
 
     public componentDidUpdate(): void {
@@ -130,17 +140,20 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
 
     private deletePoint(): void {
         const {
-            activetedPointID,
-            activatedStateID,
             states,
             onUpdateAnnotations,
             onCloseContextMenu,
         } = this.props;
 
+        const {
+            activatedStateID,
+            activatedPointID,
+        } = this.state;
+
         const [objectState] = states.filter((e) => (e.clientID === activatedStateID));
-        if (activetedPointID) {
-            objectState.points = objectState.points.slice(0, activetedPointID * 2)
-                .concat(objectState.points.slice(activetedPointID * 2 + 2));
+        if (typeof activatedPointID === 'number') {
+            objectState.points = objectState.points.slice(0, activatedPointID * 2)
+                .concat(objectState.points.slice(activatedPointID * 2 + 2));
             onUpdateAnnotations([objectState]);
             onCloseContextMenu();
         }

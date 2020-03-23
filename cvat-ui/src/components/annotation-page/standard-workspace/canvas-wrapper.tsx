@@ -341,11 +341,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             activatedStateID,
             onUpdateContextMenu,
-            contextVisible,
             contextType,
         } = this.props;
 
-        if (!contextVisible && contextType !== ContextMenuType.CANVAS_SHAPE_POINT) {
+        if (contextType !== ContextMenuType.CANVAS_SHAPE_POINT) {
             onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY,
                 ContextMenuType.CANVAS_SHAPE);
         }
