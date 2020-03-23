@@ -6,7 +6,7 @@ import os
 import tempfile
 import shutil
 import zipfile
-from io import BytesIO
+import io
 import itertools
 from abc import ABC, abstractmethod
 
@@ -50,8 +50,17 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def save_preview(self, preview_path):
+    def get_preview(self):
         pass
+
+    def _get_preview(self, obj):
+        if isinstance(obj, io.IOBase):
+            preview = Image.open(obj)
+        else:
+            preview = obj
+        preview.thumbnail((128, 128))
+
+        return preview
 
     def slice_by_size(self, size):
         # stopFrame should be included
@@ -90,8 +99,9 @@ class ImageListReader(IMediaReader):
     def __len__(self):
         return len(self._source_path)
 
-    def save_preview(self, preview_path):
-        shutil.copyfile(self._source_path[0], preview_path)
+    def get_preview(self):
+        fp = open(self._source_path[0])
+        return self._get_preview(fp)
 
     @property
     def image_names(self):
@@ -176,20 +186,20 @@ class ZipReader(IMediaReader):
 
     def __iter__(self):
         for f in zip(self._source_path, self.image_names):
-            yield (BytesIO(self._zip_source.read(f[0])), f[1])
+            yield (io.BytesIO(self._zip_source.read(f[0])), f[1])
 
     def __len__(self):
         return len(self._source_path)
 
     def __getitem__(self, k):
-        return (BytesIO(self._zip_source.read(self._source_path[k])), self.image_names[k])
+        return (io.BytesIO(self._zip_source.read(self._source_path[k])), self.image_names[k])
 
     def __del__(self):
         self._zip_source.close()
 
-    def save_preview(self, preview_path):
-        with open(preview_path, 'wb') as f:
-            f.write(self._zip_source.read(self._source_path[0]))
+    def get_preview(self):
+        io_image = io.BytesIO(self._zip_source.read(self._source_path[0]))
+        return self._get_preview(io_image)
 
     def get_image_size(self):
         img = Image.open(BytesIO(self._zip_source.read(self._source_path[0])))
@@ -236,11 +246,11 @@ class VideoReader(IMediaReader):
     def _get_av_container(self):
         return av.open(av.datasets.curated(self._source_path[0]))
 
-    def save_preview(self, preview_path):
+    def get_preview(self):
         container = self._get_av_container()
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
-        preview.to_image().save(preview_path)
+        return self._get_preview(preview.to_image())
 
     @property
     def image_names(self):
@@ -266,7 +276,7 @@ class IChunkWriter(ABC):
             image = Image.fromarray(im_data.astype(np.int32))
         converted_image = image.convert('RGB')
         image.close()
-        buf = BytesIO()
+        buf = io.BytesIO()
         converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
         buf.seek(0)
         width, height = converted_image.size
@@ -282,7 +292,7 @@ class ZipChunkWriter(IChunkWriter):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, image_name) in enumerate(images):
                 arcname = '{:06d}{}'.format(idx, os.path.splitext(image_name)[1])
-                if isinstance(image, BytesIO):
+                if isinstance(image, io.BytesIO):
                     zip_chunk.writestr(arcname, image.getvalue())
                 else:
                     zip_chunk.write(filename=image, arcname=arcname)

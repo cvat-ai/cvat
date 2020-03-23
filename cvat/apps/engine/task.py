@@ -300,7 +300,8 @@ def _create_thread(tid, data):
         if db_data.stop_frame == 0:
             db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
 
-    extractor.save_preview(db_data.get_preview_path())
+    preview = extractor.get_preview()
+    preview.save(db_data.get_preview_path())
 
     slogger.glob.info("Founded frames {} for Data #{}".format(db_data.size, db_data.id))
     _save_task_to_db(db_task)
