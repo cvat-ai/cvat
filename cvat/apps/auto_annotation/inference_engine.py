@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from openvino.inference_engine import IENetwork, IEPlugin
+from openvino.inference_engine import IENetwork, IEPlugin, IECore, get_version
 
 import subprocess
 import os
@@ -19,7 +19,20 @@ def _check_instruction(instruction):
     )
 
 
-def make_plugin():
+def make_plugin_or_core():
+    version = get_version()
+    use_core_openvino = False
+    try:
+        major, minor, reference = [int(x) for x in version.split('.')]
+        if major >= 2 and minor >= 1 and reference >= 37988:
+            use_core_openvino = True
+    except Exception:
+        pass
+
+    if use_core_openvino:
+        ie = IECore()
+        return ie
+
     if _IE_PLUGINS_PATH is None:
         raise OSError('Inference engine plugin path env not found in the system.')
 

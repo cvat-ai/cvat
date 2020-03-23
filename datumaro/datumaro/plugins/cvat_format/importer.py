@@ -9,8 +9,6 @@ import os.path as osp
 
 from datumaro.components.extractor import Importer
 
-from .format import CvatPath
-
 
 class CvatImporter(Importer):
     EXTRACTOR_NAME = 'cvat'
@@ -49,9 +47,5 @@ class CvatImporter(Importer):
         if path.endswith('.xml') and osp.isfile(path):
             subset_paths = [path]
         else:
-            subset_paths = glob(osp.join(path, '*.xml'))
-
-            if osp.basename(osp.normpath(path)) != CvatPath.ANNOTATIONS_DIR:
-                path = osp.join(path, CvatPath.ANNOTATIONS_DIR)
-                subset_paths += glob(osp.join(path, '*.xml'))
+            subset_paths = glob(osp.join(path, '**', '*.xml'), recursive=True)
         return subset_paths

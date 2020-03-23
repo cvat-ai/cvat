@@ -5,12 +5,15 @@
 import React, { useState, useEffect } from 'react';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 import { connect } from 'react-redux';
+import { Action } from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 import Layout, { SiderProps } from 'antd/lib/layout';
 import { SelectValue } from 'antd/lib/select';
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
+import { LogType } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
     updateAnnotationsAsync,
@@ -28,6 +31,7 @@ interface StateToProps {
     activatedAttributeID: number | null;
     states: any[];
     labels: any[];
+    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -48,12 +52,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 states,
             },
             job: {
+                instance: jobInstance,
                 labels,
             },
         },
     } = state;
 
     return {
+        jobInstance,
         labels,
         activatedStateID,
         activatedAttributeID,
@@ -61,7 +67,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: any): DispatchToProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
     return {
         activateObject(clientID: number, attrID: number): void {
             dispatch(activateObjectAction(clientID, attrID));
@@ -78,6 +84,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         states,
         activatedStateID,
         activatedAttributeID,
+        jobInstance,
         updateAnnotations,
         activateObject,
     } = props;
@@ -267,6 +274,13 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                                     currentValue={activeObjectState.attributes[activeAttribute.id]}
                                     onChange={(value: string) => {
                                         const { attributes } = activeObjectState;
+                                        jobInstance.logger.log(
+                                            LogType.changeAttribute, {
+                                                id: activeAttribute.id,
+                                                object_id: activeObjectState.clientID,
+                                                value,
+                                            },
+                                        );
                                         attributes[activeAttribute.id] = value;
                                         activeObjectState.attributes = attributes;
                                         updateAnnotations([activeObjectState]);
