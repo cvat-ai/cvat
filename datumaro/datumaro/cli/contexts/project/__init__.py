@@ -167,6 +167,7 @@ def import_command(args):
     env = Environment()
     log.info("Importing project from '%s'" % args.source)
 
+    extra_args = {}
     if not args.format:
         if args.extra_args:
             raise CliException("Extra args can not be used without format")
@@ -210,7 +211,7 @@ def import_command(args):
     log.info("Importing project as '%s'" % args.format)
 
     source = osp.abspath(args.source)
-    project = importer(source, **locals().get('extra_args', {}))
+    project = importer(source, **extra_args)
     project.config.project_name = project_name
     project.config.project_dir = project_dir
 
