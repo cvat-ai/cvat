@@ -78,10 +78,14 @@ function receiveAnnotationsParameters(): AnnotationsParameters {
     };
 }
 
-function computeZRange(states: any[]): number[] {
+export function computeZRange(states: any[]): number[] {
     let minZ = states.length ? states[0].zOrder : 0;
     let maxZ = states.length ? states[0].zOrder : 0;
     states.forEach((state: any): void => {
+        if (state.objectType === ObjectType.TAG) {
+            return;
+        }
+
         minZ = Math.min(minZ, state.zOrder);
         maxZ = Math.max(maxZ, state.zOrder);
     });

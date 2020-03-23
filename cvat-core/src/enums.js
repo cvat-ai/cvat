@@ -109,6 +109,7 @@
         * @memberof module:API.cvat.enums
         * @property {string} loadJob Load job
         * @property {string} saveJob Save job
+        * @property {string} restoreJob Restore job
         * @property {string} uploadAnnotations Upload annotations
         * @property {string} sendUserActivity Send user activity
         * @property {string} sendException Send exception
@@ -142,6 +143,7 @@
     const LogType = Object.freeze({
         loadJob: 'Load job',
         saveJob: 'Save job',
+        restoreJob: 'Restore job',
         uploadAnnotations: 'Upload annotations',
         sendUserActivity: 'Send user activity',
         sendException: 'Send exception',

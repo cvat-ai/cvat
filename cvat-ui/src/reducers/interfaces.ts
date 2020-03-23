@@ -232,6 +232,9 @@ export interface NotificationsState {
             search: null | ErrorState;
             savingLogs: null | ErrorState;
         };
+        boundaries: {
+            resetError: null | ErrorState;
+        };
 
         [index: string]: any;
     };

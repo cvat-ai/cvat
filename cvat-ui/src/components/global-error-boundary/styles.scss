@@ -1,0 +1,17 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-global-boundary {
+    .ant-result > .ant-result-content {
+        background-color: $transparent-color;
+    }
+
+    .cvat-global-boundary-error-field {
+        color: red;
+    }
+}
+
+
