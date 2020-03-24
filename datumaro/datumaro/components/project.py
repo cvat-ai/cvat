@@ -411,6 +411,13 @@ class Dataset(Extractor):
 
     @classmethod
     def _merge_items(cls, existing_item, current_item, path=None):
+        return existing_item.wrap(path=path,
+        image=cls._merge_images(existing_item, current_item),
+            annotations=cls._merge_anno(
+                existing_item.annotations, current_item.annotations))
+
+    @staticmethod
+    def _merge_images(existing_item, current_item):
         image = None
         if existing_item.has_image and current_item.has_image:
             if existing_item.image.has_data:
@@ -433,9 +440,7 @@ class Dataset(Extractor):
         else:
             image = current_item.image
 
-        return existing_item.wrap(path=path,
-            image=image, annotations=cls._merge_anno(
-                existing_item.annotations, current_item.annotations))
+        return image
 
     @staticmethod
     def _merge_anno(a, b):
@@ -527,15 +532,11 @@ class ProjectDataset(Dataset):
         if own_source is not None:
             log.debug("Loading own dataset...")
             for item in own_source:
-                if not item.has_image:
-                    existing_item = subsets[item.subset].items.get(item.id)
-                    if existing_item is not None:
-                        image = None
-                        if existing_item.has_image:
-                            # TODO: think of image comparison
-                            image = self._lazy_image(existing_item)
-                        item = item.wrap(path=None,
-                            annotations=item.annotations, image=image)
+                existing_item = subsets[item.subset].items.get(item.id)
+                if existing_item is not None:
+                    item = item.wrap(path=None,
+                        image=self._merge_images(existing_item, item),
+                        annotations=item.annotations)
 
                 subsets[item.subset].items[item.id] = item
 
