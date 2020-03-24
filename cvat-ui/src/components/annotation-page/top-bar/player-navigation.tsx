@@ -68,13 +68,15 @@ function PlayerNavigation(props: Props): JSX.Element {
                     value={frameInputValue}
                     // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
                     onChange={(value: number | undefined) => {
-                        setFrameInputValue(
-                            Math.max(
-                                Math.min(
-                                    Number(value), stopFrame,
-                                ), startFrame,
-                            ),
-                        );
+                        if (typeof (value) === 'number') {
+                            setFrameInputValue(
+                                Math.max(
+                                    Math.min(
+                                        Number(value), stopFrame,
+                                    ), startFrame,
+                                ),
+                            );
+                        }
                     }}
                     onBlur={() => {
                         onInputChange(frameInputValue);
