@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
@@ -35,9 +35,12 @@ function PlayerNavigation(props: Props): JSX.Element {
     } = props;
 
     const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
-    if (frameNumber !== frameInputValue) {
-        setFrameInputValue(frameNumber);
-    }
+
+    useEffect(() => {
+        if (frameNumber !== frameInputValue) {
+            setFrameInputValue(frameNumber);
+        }
+    }, [frameNumber]);
 
     return (
         <>
@@ -75,7 +78,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                     onChange={(value: number | undefined) => {
                         if (typeof (value) === 'number') {
                             setFrameInputValue(Math.floor(
-                                clamp(value, stopFrame, startFrame),
+                                clamp(value, startFrame, stopFrame),
                             ));
                         }
                     }}
