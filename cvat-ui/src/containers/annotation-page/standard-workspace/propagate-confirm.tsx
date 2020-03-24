@@ -13,7 +13,6 @@ import {
 
 import { CombinedState } from 'reducers/interfaces';
 import PropagateConfirmComponent from 'components/annotation-page/standard-workspace/propagate-confirm';
-import { clamp } from 'utils/math';
 
 interface StateToProps {
     objectState: any | null;

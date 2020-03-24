@@ -17,8 +17,8 @@ interface Props {
     frameNumber: number;
     propagateObject(): void;
     cancel(): void;
-    changePropagateFrames(value: number | undefined): void;
-    changeUpToFrame(value: number | undefined): void;
+    changePropagateFrames(value: number): void;
+    changeUpToFrame(value: number): void;
 }
 
 export default function PropagateConfirmComponent(props: Props): JSX.Element {

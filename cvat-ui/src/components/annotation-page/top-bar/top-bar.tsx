@@ -36,7 +36,7 @@ interface Props {
     onFirstFrame(): void;
     onLastFrame(): void;
     onSliderChange(value: SliderValue): void;
-    onInputChange(value: number | undefined): void;
+    onInputChange(value: number): void;
     onURLIconClick(): void;
     onUndoClick(): void;
     onRedoClick(): void;

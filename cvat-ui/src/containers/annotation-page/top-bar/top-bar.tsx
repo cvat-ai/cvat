@@ -403,7 +403,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         onChangeFrame(value as number);
     };
 
-    private onChangePlayerInputValue = (value: number | undefined): void => {
+    private onChangePlayerInputValue = (value: number): void => {
         const {
             onSwitchPlay,
             onChangeFrame,

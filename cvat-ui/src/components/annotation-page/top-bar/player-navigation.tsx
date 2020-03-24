@@ -19,7 +19,7 @@ interface Props {
     frameNumber: number;
     inputFrameRef: React.RefObject<InputNumber>;
     onSliderChange(value: SliderValue): void;
-    onInputChange(value: number | undefined): void;
+    onInputChange(value: number): void;
     onURLIconClick(): void;
 }
 
@@ -34,7 +34,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         onURLIconClick,
     } = props;
 
-    const [frameInputValue, setFrameInputValue] = useState<number | undefined>(frameNumber);
+    const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
     if (frameNumber !== frameInputValue) {
         setFrameInputValue(frameNumber);
     }

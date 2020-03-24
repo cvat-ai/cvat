@@ -9,7 +9,6 @@ import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Select, { SelectValue } from 'antd/lib/select';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Input from 'antd/lib/input';
-import InputNumber from 'antd/lib/input-number';
 
 interface InputElementParameters {
     attrID: number;
@@ -17,7 +16,6 @@ interface InputElementParameters {
     values: string[];
     currentValue: string;
     onChange(value: string): void;
-    ref: React.RefObject<Input | InputNumber>;
 }
 
 function renderInputElement(parameters: InputElementParameters): JSX.Element {
@@ -27,7 +25,6 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         values,
         currentValue,
         onChange,
-        ref,
     } = parameters;
 
     const renderCheckbox = (): JSX.Element => (
@@ -114,7 +111,6 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                         }
                     }}
                     onKeyDown={handleKeydown}
-                    ref={ref as React.RefObject<Input>}
                 />
             </div>
         </>
@@ -259,8 +255,6 @@ interface Props {
 function AttributeEditor(props: Props): JSX.Element {
     const { attribute, currentValue, onChange } = props;
     const { inputType, values, id: attrID } = attribute;
-    const ref = inputType === 'number' ? React.createRef<InputNumber>()
-        : React.createRef<Input>();
 
     return (
         <div>
@@ -268,7 +262,6 @@ function AttributeEditor(props: Props): JSX.Element {
             <hr />
             {renderInputElement({
                 attrID,
-                ref,
                 inputType,
                 currentValue,
                 values,

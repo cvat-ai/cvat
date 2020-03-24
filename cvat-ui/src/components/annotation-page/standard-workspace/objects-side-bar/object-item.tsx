@@ -4,26 +4,21 @@
 
 import React from 'react';
 
-import {
-    Row,
-    Col,
-    Icon,
-    Select,
-    Radio,
-    Input,
-    Collapse,
-    Checkbox,
-    InputNumber,
-    Dropdown,
-    Menu,
-    Button,
-    Modal,
-    Popover,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Select from 'antd/lib/select';
+import Radio, { RadioChangeEvent } from 'antd/lib/radio';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import Input from 'antd/lib/input';
+import InputNumber from 'antd/lib/input-number';
+import Collapse from 'antd/lib/collapse';
+import Dropdown from 'antd/lib/dropdown';
+import Menu from 'antd/lib/menu';
+import Button from 'antd/lib/button';
+import Modal from 'antd/lib/modal';
+import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
-import { RadioChangeEvent } from 'antd/lib/radio';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+
 import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
 
 import {
@@ -36,9 +31,8 @@ import {
     ForegroundIcon,
 } from 'icons';
 
-import {
-    ObjectType, ShapeType,
-} from 'reducers/interfaces';
+import { ObjectType, ShapeType } from 'reducers/interfaces';
+import { clamp } from 'utils/math';
 
 function ItemMenu(
     serverID: number | undefined,
@@ -463,7 +457,7 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
     }
 
     if (attrInputType === 'number') {
-        const [min, max, step] = attrValues;
+        const [min, max, step] = attrValues.map((value: string): number => +value);
 
         return (
             <>
@@ -476,15 +470,17 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                     <InputNumber
                         size='small'
                         onChange={(value: number | undefined): void => {
-                            if (typeof (value) !== 'undefined') {
-                                changeAttribute(attrID, `${value}`);
+                            if (typeof (value) === 'number') {
+                                changeAttribute(
+                                    attrID, `${clamp(value, min, max)}`,
+                                );
                             }
                         }}
                         value={+attrValue}
                         className='cvat-object-item-number-attribute'
-                        min={+min}
-                        max={+max}
-                        step={+step}
+                        min={min}
+                        max={max}
+                        step={step}
                     />
                 </Col>
             </>

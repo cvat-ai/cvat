@@ -145,15 +145,9 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     };
 
     private onChangePoints = (value: number | undefined): void => {
-        if (typeof (value) === 'undefined') {
-            this.setState({
-                numberOfPoints: value,
-            });
-        } else if (typeof (value) === 'number') {
-            this.setState({
-                numberOfPoints: Math.max(value, this.minimumPoints),
-            });
-        }
+        this.setState({
+            numberOfPoints: value,
+        });
     };
 
     private onChangeLabel = (value: string): void => {
