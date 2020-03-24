@@ -10,7 +10,7 @@ import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 
-import { InputNumber } from 'antd';
+import InputNumber from 'antd/lib/input-number';
 import { SliderValue } from 'antd/lib/slider';
 
 import {

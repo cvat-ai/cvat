@@ -4,12 +4,8 @@
 
 import React from 'react';
 
-import {
-    Row,
-    Col,
-    InputNumber,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import InputNumber from 'antd/lib/input-number';
 import { SliderValue } from 'antd/lib/slider';
 
 import { Workspace } from 'reducers/interfaces';

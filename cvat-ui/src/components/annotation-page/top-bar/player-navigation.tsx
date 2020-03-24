@@ -2,18 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState } from 'react';
 
-import {
-    Row,
-    Col,
-    Icon,
-    Slider,
-    Tooltip,
-    InputNumber,
-} from 'antd';
-
-import { SliderValue } from 'antd/lib/slider';
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Slider, { SliderValue } from 'antd/lib/slider';
+import Tooltip from 'antd/lib/tooltip';
+import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 
 interface Props {
@@ -36,6 +31,8 @@ function PlayerNavigation(props: Props): JSX.Element {
         onInputChange,
         onURLIconClick,
     } = props;
+
+    const [frameInputValue, setFrameInputValue] = useState<number | undefined>(frameNumber);
 
     return (
         <>
@@ -68,9 +65,23 @@ function PlayerNavigation(props: Props): JSX.Element {
                 <InputNumber
                     className='cvat-player-frame-selector'
                     type='number'
-                    value={frameNumber || 0}
+                    value={frameInputValue}
                     // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
-                    onChange={onInputChange}
+                    onChange={(value: number | undefined) => {
+                        setFrameInputValue(
+                            Math.max(
+                                Math.min(
+                                    Number(value), stopFrame,
+                                ), startFrame,
+                            ),
+                        );
+                    }}
+                    onBlur={() => {
+                        onInputChange(frameInputValue);
+                    }}
+                    onPressEnter={() => {
+                        onInputChange(frameInputValue);
+                    }}
                     ref={inputFrameRef}
                 />
             </Col>
