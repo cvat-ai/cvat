@@ -173,11 +173,25 @@ class DataSerializer(serializers.ModelSerializer):
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks')
 
+    # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
         match = re.search("step\s*=\s*([1-9]\d*)", value)
         if not match:
             raise serializers.ValidationError("Invalid frame filter expression")
         return value
+
+    # pylint: disable=no-self-use
+    def validate_chunk_size(self, value):
+        if not value > 0:
+            raise serializers.ValidationError('Chunk size must be a positive integer')
+        return value
+
+    # pylint: disable=no-self-use
+    def validate(self, data):
+        if 'start_frame' in data and 'stop_frame' in data \
+            and data['start_frame'] > data['stop_frame']:
+            raise serializers.ValidationError('Stop frame must be more or equal start frame')
+        return data
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
