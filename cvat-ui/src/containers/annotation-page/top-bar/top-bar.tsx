@@ -408,9 +408,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             onSwitchPlay,
             onChangeFrame,
             playing,
+            frameNumber,
         } = this.props;
 
-        if (typeof (value) !== 'undefined') {
+        if (value !== frameNumber) {
             if (playing) {
                 onSwitchPlay(false);
             }
