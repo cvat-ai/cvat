@@ -273,8 +273,6 @@ class PlayerModel extends Listener {
         if (absolute) {
             this._frame.requested.clear();
         }
-        this._frame.requested.add(requestedFrame);
-
         if (!isLoadFrame) {
             this._image = null;
             this._continueAfterLoad = this.playing;
@@ -286,6 +284,8 @@ class PlayerModel extends Listener {
         if (requestedFrame === this._frame.current && this._image !== null) {
             return false;
         }
+
+        this._frame.requested.add(requestedFrame);
 
         try {
             const frame = await this._frameProvider.require(requestedFrame,
@@ -965,6 +965,10 @@ class PlayerView {
                 ctx.scale(image.renderWidth / image.imageData.width,
                     image.renderHeight / image.imageData.height);
                 ctx.putImageData(image.imageData, 0, 0);
+                // Transformation matrix must not affect the putImageData() method.
+                // By this reason need to redraw the image to apply scale.
+                // https://www.w3.org/TR/2dcontext/#dom-context-2d-putimagedata
+                ctx.drawImage(this._playerCanvasBackground[0], 0, 0);
             } else {
                 ctx.drawImage(image.imageData, 0, 0);
             }
