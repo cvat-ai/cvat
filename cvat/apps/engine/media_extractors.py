@@ -100,7 +100,7 @@ class ImageListReader(IMediaReader):
     def get_avg_image_size(self, percent_to_analize=10):
         widths = []
         heights = []
-        step = len(self._source_path) // percent_to_analize or 1
+        step = 100 // percent_to_analize or 1
         for img_path in itertools.islice(self._source_path, 0, None, step):
             img = Image.open(img_path)
             widths.append(img.width)
@@ -200,7 +200,7 @@ class ZipReader(IMediaReader):
     def get_avg_image_size(self, percent_to_analize=10):
         widths = []
         heights = []
-        step = len(self._source_path) // percent_to_analize or 1
+        step = 100 // percent_to_analize or 1
         for img_path in itertools.islice(self._source_path, 0, None, step):
             img = Image.open(BytesIO(self._zip_source.read(img_path)))
             widths.append(img.width)
