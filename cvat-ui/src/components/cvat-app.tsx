@@ -8,13 +8,11 @@ import React from 'react';
 import { Switch, Route, Redirect } from 'react-router';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { GlobalHotKeys, KeyMap, configure } from 'react-hotkeys';
+import Spin from 'antd/lib/spin';
+import Layout from 'antd/lib/layout';
+import notification from 'antd/lib/notification';
 
-import {
-    Spin,
-    Layout,
-    notification,
-} from 'antd';
-
+import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
 import SettingsPageContainer from 'containers/settings-page/settings-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
@@ -27,6 +25,7 @@ import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import HeaderContainer from 'containers/header/header';
 
+import getCore from 'cvat-core';
 import { NotificationsState } from 'reducers/interfaces';
 
 interface CVATAppProps {
@@ -39,6 +38,7 @@ interface CVATAppProps {
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
     userInitialized: boolean;
+    userFetching: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
     formatsInitialized: boolean;
@@ -56,18 +56,29 @@ interface CVATAppProps {
 
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
+        const core = getCore();
         const { verifyAuthorized } = this.props;
         configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
+
+        // Logger configuration
+        const userActivityCallback: (() => void)[] = [];
+        window.addEventListener('click', () => {
+            userActivityCallback.forEach((handler) => handler());
+        });
+        core.logger.configure(() => window.document.hasFocus, userActivityCallback);
+
         verifyAuthorized();
     }
 
     public componentDidUpdate(): void {
         const {
+            verifyAuthorized,
             loadFormats,
             loadUsers,
             loadAbout,
             initPlugins,
             userInitialized,
+            userFetching,
             formatsInitialized,
             formatsFetching,
             usersInitialized,
@@ -82,8 +93,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         this.showErrors();
         this.showMessages();
 
-        if (!userInitialized || user == null) {
-            // not authorized user
+        if (!userInitialized && !userFetching) {
+            verifyAuthorized();
+            return;
+        }
+
+        if (user == null) {
             return;
         }
 
@@ -198,7 +213,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const readyForRender = (userInitialized && user == null)
             || (userInitialized && formatsInitialized
-            && pluginsInitialized && usersInitialized && aboutInitialized);
+                && pluginsInitialized && usersInitialized && aboutInitialized);
 
         const withModels = installedAutoAnnotation
             || installedTFAnnotation || installedTFSegmentation;
@@ -242,37 +257,41 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         if (readyForRender) {
             if (user) {
                 return (
-                    <Layout>
-                        <HeaderContainer> </HeaderContainer>
-                        <Layout.Content>
-                            <ShorcutsDialog />
-                            <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers}>
-                                <Switch>
-                                    <Route exact path='/settings' component={SettingsPageContainer} />
-                                    <Route exact path='/tasks' component={TasksPageContainer} />
-                                    <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
-                                    <Route exact path='/tasks/:id' component={TaskPageContainer} />
-                                    <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                    { withModels
-                                        && <Route exact path='/models' component={ModelsPageContainer} /> }
-                                    { installedAutoAnnotation
-                                        && <Route exact path='/models/create' component={CreateModelPageContainer} /> }
-                                    <Redirect push to='/tasks' />
-                                </Switch>
-                            </GlobalHotKeys>
-                            {/* eslint-disable-next-line */}
-                            <a id='downloadAnchor' style={{ display: 'none' }} download/>
-                        </Layout.Content>
-                    </Layout>
+                    <GlobalErrorBoundary>
+                        <Layout>
+                            <HeaderContainer> </HeaderContainer>
+                            <Layout.Content>
+                                <ShorcutsDialog />
+                                <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers}>
+                                    <Switch>
+                                        <Route exact path='/settings' component={SettingsPageContainer} />
+                                        <Route exact path='/tasks' component={TasksPageContainer} />
+                                        <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
+                                        <Route exact path='/tasks/:id' component={TaskPageContainer} />
+                                        <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
+                                        {withModels
+                                            && <Route exact path='/models' component={ModelsPageContainer} />}
+                                        {installedAutoAnnotation
+                                            && <Route exact path='/models/create' component={CreateModelPageContainer} />}
+                                        <Redirect push to='/tasks' />
+                                    </Switch>
+                                </GlobalHotKeys>
+                                {/* eslint-disable-next-line */}
+                                <a id='downloadAnchor' style={{ display: 'none' }} download />
+                            </Layout.Content>
+                        </Layout>
+                    </GlobalErrorBoundary>
                 );
             }
 
             return (
-                <Switch>
-                    <Route exact path='/auth/register' component={RegisterPageContainer} />
-                    <Route exact path='/auth/login' component={LoginPageContainer} />
-                    <Redirect to='/auth/login' />
-                </Switch>
+                <GlobalErrorBoundary>
+                    <Switch>
+                        <Route exact path='/auth/register' component={RegisterPageContainer} />
+                        <Route exact path='/auth/login' component={LoginPageContainer} />
+                        <Redirect to='/auth/login' />
+                    </Switch>
+                </GlobalErrorBoundary>
             );
         }
 

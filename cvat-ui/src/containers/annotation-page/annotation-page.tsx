@@ -7,7 +7,7 @@ import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
 
 import AnnotationPageComponent from 'components/annotation-page/annotation-page';
-import { getJobAsync } from 'actions/annotation-actions';
+import { getJobAsync, saveLogsAsync } from 'actions/annotation-actions';
 
 import { CombinedState, Workspace } from 'reducers/interfaces';
 
@@ -24,6 +24,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     getJob(): void;
+    saveLogs(): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -76,6 +77,9 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     return {
         getJob(): void {
             dispatch(getJobAsync(taskID, jobID, initialFrame, initialFilters));
+        },
+        saveLogs(): void {
+            dispatch(saveLogsAsync());
         },
     };
 }

@@ -37,6 +37,19 @@ Canvas itself handles:
         EXTREME_POINTS = 'By 4 points'
     }
 
+    enum Mode {
+        IDLE = 'idle',
+        DRAG = 'drag',
+        RESIZE = 'resize',
+        DRAW = 'draw',
+        EDIT = 'edit',
+        MERGE = 'merge',
+        SPLIT = 'split',
+        GROUP = 'group',
+        DRAG_CANVAS = 'drag_canvas',
+        ZOOM_CANVAS = 'zoom_canvas',
+    }
+
     interface DrawData {
         enabled: boolean;
         shapeType?: string;
@@ -70,6 +83,7 @@ Canvas itself handles:
     }
 
     interface Canvas {
+        mode(): Mode;
         html(): HTMLDivElement;
         setZLayer(zLayer: number | null): void;
         setup(frameData: any, objectStates: any[]): void;
@@ -128,6 +142,10 @@ Standard JS events are used.
     - canvas.dragstop
     - canvas.zoomstart
     - canvas.zoomstop
+    - canvas.zoom
+    - canvas.fit
+    - canvas.dragshape => {id: number}
+    - canvas.resizeshape => {id: number}
 ```
 
 ### WEB
@@ -135,7 +153,8 @@ Standard JS events are used.
     // Create an instance of a canvas
     const canvas = new window.canvas.Canvas();
 
-    console.log('Version', window.canvas.CanvasVersion);
+    console.log('Version ', window.canvas.CanvasVersion);
+    console.log('Current mode is ', window.canvas.mode());
 
     // Put canvas to a html container
     htmlContainer.appendChild(canvas.html());

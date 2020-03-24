@@ -104,6 +104,7 @@ class LabelCategories(Categories):
         index = len(self.items)
         self.items.append(self.Category(name, parent, attributes))
         self._indices[name] = index
+        return index
 
     def find(self, name):
         index = self._indices.get(name)
