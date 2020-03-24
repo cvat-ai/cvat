@@ -227,17 +227,18 @@ def _create_thread(tid, data):
     job.save_meta()
 
     db_images = []
-    extractors = []
+    extractor = None
 
     for media_type, media_files in media.items():
-        if not media_files:
-            continue
-        extractors.append(MEDIA_TYPES[media_type]['extractor'](
-            source_path=[os.path.join(upload_dir, f) for f in media_files],
-            step=db_data.get_frame_step(),
-            start=db_data.start_frame,
-            stop=db_data.stop_frame,
-        ))
+        if media_files:
+            if extractor is not None:
+                raise Exception('Combined data types are not supported')
+            extractor = MEDIA_TYPES[media_type]['extractor'](
+                source_path=[os.path.join(upload_dir, f) for f in media_files],
+                step=db_data.get_frame_step(),
+                start=db_data.start_frame,
+                stop=db_data.stop_frame,
+            )
     db_task.mode = task_mode
     db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
@@ -252,25 +253,40 @@ def _create_thread(tid, data):
     compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality)
     original_chunk_writer = original_chunk_writer_class(100)
 
+    # calculate chunk size if it isn't specified
+    if db_data.chunk_size is None and isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
+        # lets collect size of 10% frames
+        avg_w, avg_h = extractor.get_avg_image_size()
+        avg_area = avg_h * avg_w
+        if avg_area <= 1920 * 1080:
+            db_data.chunk_size = 36
+        elif avg_area <= 2560 * 1440:
+            db_data.chunk_size = 18
+        elif avg_area <= 3840 * 2160:
+            db_data.chunk_size = 9
+        elif avg_area <= 5120 * 2880:
+            db_data.chunk_size = 4
+        else:
+            db_data.chunk_size = 2
+
     frame_counter = 0
-    total_len = sum(len(e) for e in extractors) or 100
+    total_len = len(extractor) or 100
     image_names = []
     image_sizes = []
-    for extractor in extractors:
-        for chunk_idx, chunk_images in enumerate(extractor.slice_by_size(db_data.chunk_size)):
-            for img in chunk_images:
-                image_names.append(img[1])
+    for chunk_idx, chunk_images in enumerate(extractor.slice_by_size(db_data.chunk_size)):
+        for img in chunk_images:
+            image_names.append(img[1])
 
-            original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
-            original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
+        original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
+        original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
 
-            compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
-            img_sizes = compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
+        compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
+        img_sizes = compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
 
-            image_sizes.extend(img_sizes)
+        image_sizes.extend(img_sizes)
 
-            db_data.size += len(chunk_images)
-            update_progress(db_data.size / total_len)
+        db_data.size += len(chunk_images)
+        update_progress(db_data.size / total_len)
 
     if db_task.mode == 'annotation':
         for image_name, image_size in zip(image_names, image_sizes):
@@ -291,7 +307,7 @@ def _create_thread(tid, data):
         if db_data.stop_frame == 0:
             db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
 
-    extractors[0].save_preview(db_data.get_preview_path())
+    extractor.save_preview(db_data.get_preview_path())
 
     slogger.glob.info("Founded frames {} for Data #{}".format(db_data.size, db_data.id))
     _save_task_to_db(db_task)

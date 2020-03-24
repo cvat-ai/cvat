@@ -65,6 +65,10 @@ class IMediaReader(ABC):
     def image_names(self):
         pass
 
+    @abstractmethod
+    def get_avg_image_size(self, percent_to_analize=10):
+        pass
+
 #Note step, start, stop have no affect
 class ImageListReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
@@ -92,6 +96,16 @@ class ImageListReader(IMediaReader):
     @property
     def image_names(self):
         return self._source_path
+
+    def get_avg_image_size(self, percent_to_analize=10):
+        widths = []
+        heights = []
+        step = len(self._source_path) // percent_to_analize or 1
+        for img_path in itertools.islice(self._source_path, 0, None, step):
+            img = Image.open(img_path)
+            widths.append(img.width)
+            heights.append(img.height)
+        return (sum(widths) // len(widths), sum(heights) // len(heights))
 
 #Note step, start, stop have no affect
 class DirectoryReader(ImageListReader):
@@ -183,6 +197,17 @@ class ZipReader(IMediaReader):
         with open(preview_path, 'wb') as f:
             f.write(self._zip_source.read(self._source_path[0]))
 
+    def get_avg_image_size(self, percent_to_analize=10):
+        widths = []
+        heights = []
+        step = len(self._source_path) // percent_to_analize or 1
+        for img_path in itertools.islice(self._source_path, 0, None, step):
+            img = Image.open(BytesIO(self._zip_source.read(img_path)))
+            widths.append(img.width)
+            heights.append(img.height)
+        return (sum(widths) // len(widths), sum(heights) // len(heights))
+    
+
     @property
     def image_names(self):
         return [os.path.join(os.path.dirname(self._zip_source.filename), p) for p in self._source_path]
@@ -233,6 +258,10 @@ class VideoReader(IMediaReader):
     @property
     def image_names(self):
         return self._source_path
+
+    def get_avg_image_size(self, percent_to_analize=10):
+        first_image = (next(iter(self)))[0]
+        return first_image.width, first_image.height
 
 class IChunkWriter(ABC):
     def __init__(self, quality):
