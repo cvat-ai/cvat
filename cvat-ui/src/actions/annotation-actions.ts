@@ -18,6 +18,7 @@ import {
     Task,
     FrameSpeed,
     Rotation,
+    ContextMenuType,
     Workspace,
 } from 'reducers/interfaces';
 
@@ -369,13 +370,21 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
-export function updateCanvasContextMenu(visible: boolean, left: number, top: number): AnyAction {
+export function updateCanvasContextMenu(
+    visible: boolean,
+    left: number,
+    top: number,
+    pointID: number | null = null,
+    type?: ContextMenuType,
+): AnyAction {
     return {
         type: AnnotationActionTypes.UPDATE_CANVAS_CONTEXT_MENU,
         payload: {
             visible,
             left,
             top,
+            type,
+            pointID,
         },
     };
 }
