@@ -273,8 +273,6 @@ class PlayerModel extends Listener {
         if (absolute) {
             this._frame.requested.clear();
         }
-        this._frame.requested.add(requestedFrame);
-
         if (!isLoadFrame) {
             this._image = null;
             this._continueAfterLoad = this.playing;
@@ -286,6 +284,8 @@ class PlayerModel extends Listener {
         if (requestedFrame === this._frame.current && this._image !== null) {
             return false;
         }
+
+        this._frame.requested.add(requestedFrame);
 
         try {
             const frame = await this._frameProvider.require(requestedFrame,
