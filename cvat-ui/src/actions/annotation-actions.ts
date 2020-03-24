@@ -688,7 +688,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             });
 
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
-            if (data === undefined) return;
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);
             const currentTime = new Date().getTime();
@@ -721,13 +720,15 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 },
             });
         } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.CHANGE_FRAME_FAILED,
-                payload: {
-                    number: toFrame,
-                    error,
-                },
-            });
+            if (error !== 'not needed') {
+                dispatch({
+                    type: AnnotationActionTypes.CHANGE_FRAME_FAILED,
+                    payload: {
+                        number: toFrame,
+                        error,
+                    },
+                });
+            }
         }
     };
 }

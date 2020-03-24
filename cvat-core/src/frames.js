@@ -437,8 +437,8 @@
                 } catch (error) {
                     if (typeof (error) === 'number' && error in this._requestedChunks) {
                         this._activeFillBufferRequest = false;
-                        throw error;
                     }
+                    throw error;
                 }
             }
         }
@@ -470,13 +470,7 @@
                 }
             } else if (fillBuffer) {
                 this.clear();
-                try {
-                    await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
-                } catch (error) {
-                    if (error !== 'not needed') {
-                        throw error;
-                    }
-                }
+                await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
 
                 frame = this._buffer[frameNumber];
             } else {
