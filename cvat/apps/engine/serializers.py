@@ -187,18 +187,6 @@ class DataSerializer(serializers.ModelSerializer):
         return value
 
     # pylint: disable=no-self-use
-    def validate_start_frame(self, value):
-        if not value > 0:
-            raise serializers.ValidationError('Start frame must be a non negative integer')
-        return value
-
-    # pylint: disable=no-self-use
-    def validate_stop_frame(self, value):
-        if not value > 0:
-            raise serializers.ValidationError('Stop frame must be a non negative integer')
-        return value
-
-    # pylint: disable=no-self-use
     def validate(self, data):
         if 'start_frame' in data and 'stop_frame' in data \
             and data['start_frame'] > data['stop_frame']:
