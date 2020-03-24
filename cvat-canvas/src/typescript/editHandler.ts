@@ -99,6 +99,12 @@ export class EditHandlerImpl implements EditHandler {
             if (e.which === 1) {
                 mouseX = e.clientX;
                 mouseY = e.clientY;
+            } else if (e.which === 3 && this.editLine) {
+                if (this.editData.state.shapeType === 'points'
+                    || this.editLine.attr('points').split(' ').length > 2
+                ) {
+                    (this.editLine as any).draw('undo');
+                }
             }
         });
 
