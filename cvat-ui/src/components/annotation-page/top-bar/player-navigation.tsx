@@ -11,6 +11,8 @@ import Tooltip from 'antd/lib/tooltip';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 
+import { clamp } from 'utils/math';
+
 interface Props {
     startFrame: number;
     stopFrame: number;
@@ -69,13 +71,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                     // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
                     onChange={(value: number | undefined) => {
                         if (typeof (value) === 'number') {
-                            setFrameInputValue(
-                                Math.max(
-                                    Math.min(
-                                        Number(value), stopFrame,
-                                    ), startFrame,
-                                ),
-                            );
+                            setFrameInputValue(clamp(value, stopFrame, startFrame));
                         }
                     }}
                     onBlur={() => {

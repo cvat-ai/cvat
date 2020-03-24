@@ -9,6 +9,8 @@ import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 
+import { clamp } from 'utils/math';
+
 interface Props {
     autoSave: boolean;
     autoSaveInterval: number;
@@ -63,10 +65,10 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         onChange={(value: number | undefined): void => {
                             if (typeof (value) === 'number') {
                                 onChangeAutoSaveInterval(
-                                    Math.max(
-                                        Math.min(
-                                            Number(value), maxAutoSaveInterval,
-                                        ), minAutoSaveInterval,
+                                    clamp(
+                                        value,
+                                        minAutoSaveInterval,
+                                        maxAutoSaveInterval,
                                     ) * 60 * 1000,
                                 );
                             }
@@ -100,13 +102,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         value={aamZoomMargin}
                         onChange={(value: number | undefined): void => {
                             if (typeof (value) === 'number') {
-                                onChangeAAMZoomMargin(
-                                    Math.max(
-                                        Math.min(
-                                            Number(value), maxAAMMargin,
-                                        ), minAAMMargin,
-                                    ),
-                                );
+                                onChangeAAMZoomMargin(clamp(value, minAAMMargin, maxAAMMargin));
                             }
                         }}
                     />
