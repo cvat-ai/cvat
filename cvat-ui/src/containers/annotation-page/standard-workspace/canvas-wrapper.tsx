@@ -260,7 +260,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onUpdateContextMenu(visible: boolean, left: number, top: number,
             type: ContextMenuType, pointID?: number): void {
-            dispatch(updateCanvasContextMenu(visible, left, top, type, pointID));
+            dispatch(updateCanvasContextMenu(visible, left, top, pointID, type));
         },
         onAddZLayer(): void {
             dispatch(addZLayer());

@@ -13,7 +13,7 @@ import CanvasPointContextMenuComponent from 'components/annotation-page/standard
 
 interface StateToProps {
     activatedStateID: number | null;
-    activatedPointID: number | null | undefined;
+    activatedPointID: number | null;
     states: any[];
     visible: boolean;
     top: number;
@@ -70,15 +70,15 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps;
 
 interface State {
-    activatedStateID: number | null | undefined;
-    activatedPointID: number | null | undefined;
+    activatedStateID: number | null;
+    activatedPointID: number | null;
     latestLeft: number;
     latestTop: number;
     left: number;
     top: number;
 }
 
-class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
+class CanvasPointContextMenuContainer extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
         super(props);
 
@@ -190,4 +190,4 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
 export default connect(
     mapStateToProps,
     mapDispatchToProps,
-)(CanvasContextMenuContainer);
+)(CanvasPointContextMenuContainer);

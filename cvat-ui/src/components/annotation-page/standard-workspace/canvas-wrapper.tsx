@@ -5,14 +5,11 @@
 import React from 'react';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 
-import {
-    Layout,
-    Slider,
-    Icon,
-    Tooltip,
-} from 'antd';
+import Tooltip from 'antd/lib/tooltip';
+import Icon from 'antd/lib/icon';
+import Layout from 'antd/lib/layout/layout';
+import Slider, { SliderValue } from 'antd/lib/slider';
 
-import { SliderValue } from 'antd/lib/slider';
 import {
     ColorBy,
     GridColor,

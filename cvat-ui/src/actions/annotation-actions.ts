@@ -370,8 +370,8 @@ export function updateCanvasContextMenu(
     visible: boolean,
     left: number,
     top: number,
+    pointID: number | null = null,
     type?: ContextMenuType,
-    pointID?: number,
 ): AnyAction {
     return {
         type: AnnotationActionTypes.UPDATE_CANVAS_CONTEXT_MENU,
