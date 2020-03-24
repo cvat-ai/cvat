@@ -64,13 +64,13 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         value={Math.round(autoSaveInterval / (60 * 1000))}
                         onChange={(value: number | undefined): void => {
                             if (typeof (value) === 'number') {
-                                onChangeAutoSaveInterval(
+                                onChangeAutoSaveInterval(Math.floor(
                                     clamp(
                                         value,
                                         minAutoSaveInterval,
                                         maxAutoSaveInterval,
-                                    ) * 60 * 1000,
-                                );
+                                    ),
+                                ) * 60 * 1000);
                             }
                         }}
                     />
@@ -102,7 +102,9 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         value={aamZoomMargin}
                         onChange={(value: number | undefined): void => {
                             if (typeof (value) === 'number') {
-                                onChangeAAMZoomMargin(clamp(value, minAAMMargin, maxAAMMargin));
+                                onChangeAAMZoomMargin(Math.floor(
+                                    clamp(value, minAAMMargin, maxAAMMargin),
+                                ));
                             }
                         }}
                     />

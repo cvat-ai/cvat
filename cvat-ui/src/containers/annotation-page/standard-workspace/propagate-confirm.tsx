@@ -13,6 +13,7 @@ import {
 
 import { CombinedState } from 'reducers/interfaces';
 import PropagateConfirmComponent from 'components/annotation-page/standard-workspace/propagate-confirm';
+import { clamp } from 'utils/math';
 
 interface StateToProps {
     objectState: any | null;
@@ -88,23 +89,20 @@ class PropagateConfirmContainer extends React.PureComponent<Props> {
         propagateObject(jobInstance, objectState, frameNumber + 1, propagateUpToFrame);
     };
 
-    private changePropagateFrames = (value: number | undefined): void => {
+    private changePropagateFrames = (value: number): void => {
         const { changePropagateFrames } = this.props;
-        if (typeof (value) !== 'undefined') {
-            changePropagateFrames(value);
-        }
+        changePropagateFrames(value);
     };
 
-    private changeUpToFrame = (value: number | undefined): void => {
+    private changeUpToFrame = (value: number): void => {
         const {
             stopFrame,
             frameNumber,
             changePropagateFrames,
         } = this.props;
-        if (typeof (value) !== 'undefined') {
-            const propagateFrames = Math.max(0, Math.min(stopFrame, value)) - frameNumber;
-            changePropagateFrames(propagateFrames);
-        }
+
+        const propagateFrames = Math.max(0, Math.min(stopFrame, value)) - frameNumber;
+        changePropagateFrames(propagateFrames);
     };
 
     public render(): JSX.Element {
@@ -122,6 +120,8 @@ class PropagateConfirmContainer extends React.PureComponent<Props> {
             <PropagateConfirmComponent
                 visible={objectState !== null}
                 propagateUpToFrame={propagateUpToFrame}
+                stopFrame={stopFrame}
+                frameNumber={frameNumber}
                 propagateFrames={propagateUpToFrame - frameNumber}
                 propagateObject={this.propagateObject}
                 changePropagateFrames={this.changePropagateFrames}

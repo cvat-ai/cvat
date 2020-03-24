@@ -4,17 +4,17 @@
 
 import React from 'react';
 
-import {
-    Modal,
-    InputNumber,
-} from 'antd';
-
+import Modal from 'antd/lib/modal';
+import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
+import { clamp } from 'utils/math';
 
 interface Props {
     visible: boolean;
     propagateFrames: number;
     propagateUpToFrame: number;
+    stopFrame: number;
+    frameNumber: number;
     propagateObject(): void;
     cancel(): void;
     changePropagateFrames(value: number | undefined): void;
@@ -26,11 +26,15 @@ export default function PropagateConfirmComponent(props: Props): JSX.Element {
         visible,
         propagateFrames,
         propagateUpToFrame,
+        stopFrame,
+        frameNumber,
         propagateObject,
         changePropagateFrames,
         changeUpToFrame,
         cancel,
     } = props;
+
+    const minPropagateFrames = 1;
 
     return (
         <Modal
@@ -44,14 +48,37 @@ export default function PropagateConfirmComponent(props: Props): JSX.Element {
         >
             <div className='cvat-propagate-confirm'>
                 <Text>Do you want to make a copy of the object on</Text>
-                <InputNumber size='small' min={1} value={propagateFrames} onChange={changePropagateFrames} />
+                <InputNumber
+                    size='small'
+                    min={minPropagateFrames}
+                    value={propagateFrames}
+                    onChange={(value: number | undefined) => {
+                        if (typeof (value) === 'number') {
+                            changePropagateFrames(Math.floor(
+                                clamp(value, minPropagateFrames, Number.MAX_SAFE_INTEGER),
+                            ));
+                        }
+                    }}
+                />
                 {
                     propagateFrames > 1
                         ? <Text> frames </Text>
                         : <Text> frame </Text>
                 }
                 <Text>up to the </Text>
-                <InputNumber size='small' value={propagateUpToFrame} onChange={changeUpToFrame} />
+                <InputNumber
+                    size='small'
+                    value={propagateUpToFrame}
+                    min={frameNumber + 1}
+                    max={stopFrame}
+                    onChange={(value: number | undefined) => {
+                        if (typeof (value) === 'number') {
+                            changeUpToFrame(Math.floor(
+                                clamp(value, frameNumber + 1, stopFrame),
+                            ));
+                        }
+                    }}
+                />
                 <Text>frame</Text>
             </div>
         </Modal>

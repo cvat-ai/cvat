@@ -35,6 +35,9 @@ function PlayerNavigation(props: Props): JSX.Element {
     } = props;
 
     const [frameInputValue, setFrameInputValue] = useState<number | undefined>(frameNumber);
+    if (frameNumber !== frameInputValue) {
+        setFrameInputValue(frameNumber);
+    }
 
     return (
         <>
@@ -71,7 +74,9 @@ function PlayerNavigation(props: Props): JSX.Element {
                     // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
                     onChange={(value: number | undefined) => {
                         if (typeof (value) === 'number') {
-                            setFrameInputValue(clamp(value, stopFrame, startFrame));
+                            setFrameInputValue(Math.floor(
+                                clamp(value, stopFrame, startFrame),
+                            ));
                         }
                     }}
                     onBlur={() => {
