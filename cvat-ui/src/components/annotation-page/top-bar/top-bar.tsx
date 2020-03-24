@@ -23,6 +23,7 @@ interface Props {
     saving: boolean;
     savingStatuses: string[];
     frameNumber: number;
+    frameFilename: string;
     inputFrameRef: React.RefObject<InputNumber>;
     startFrame: number;
     stopFrame: number;
@@ -54,6 +55,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         redoAction,
         playing,
         frameNumber,
+        frameFilename,
         inputFrameRef,
         startFrame,
         stopFrame,
@@ -102,6 +104,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         startFrame={startFrame}
                         stopFrame={stopFrame}
                         frameNumber={frameNumber}
+                        frameFilename={frameFilename}
                         inputFrameRef={inputFrameRef}
                         onSliderChange={onSliderChange}
                         onInputChange={onInputChange}

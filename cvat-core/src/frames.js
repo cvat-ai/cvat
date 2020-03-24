@@ -13,7 +13,7 @@
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const { isBrowser, isNode } = require('browser-or-node');
-    const { Exception, ArgumentError } = require('./exceptions');
+    const { Exception, ArgumentError, DataError } = require('./exceptions');
 
     // This is the frames storage
     const frameDataCache = {};
@@ -24,8 +24,28 @@
         * @hideconstructor
     */
     class FrameData {
-        constructor(width, height, tid, number, startFrame, stopFrame, decodeForward) {
+        constructor({
+            width,
+            height,
+            name,
+            taskID,
+            frameNumber,
+            startFrame,
+            stopFrame,
+            decodeForward,
+        }) {
             Object.defineProperties(this, Object.freeze({
+                /**
+                    * @name filename
+                    * @type {string}
+                    * @memberof module:API.cvat.classes.FrameData
+                    * @readonly
+                    * @instance
+                */
+                filename: {
+                    value: name,
+                    writable: false,
+                },
                 /**
                     * @name width
                     * @type {integer}
@@ -49,7 +69,7 @@
                     writable: false,
                 },
                 tid: {
-                    value: tid,
+                    value: taskID,
                     writable: false,
                 },
                 /**
@@ -60,7 +80,7 @@
                     * @instance
                 */
                 number: {
-                    value: number,
+                    value: frameNumber,
                     writable: false,
                 },
                 startFrame: {
@@ -297,7 +317,7 @@
         });
     };
 
-    const getFrameSize = (taskID, frame) => {
+    function getFrameMeta(taskID, frame) {
         const { meta, mode } = frameDataCache[taskID];
         let size = null;
         if (mode === 'interpolation') {
@@ -311,12 +331,12 @@
                 size = meta.frames[frame];
             }
         } else {
-            throw new ArgumentError(
+            throw new DataError(
                 `Invalid mode is specified ${mode}`,
             );
         }
         return size;
-    };
+    }
 
     class FrameBuffer {
         constructor(size, chunkSize, stopFrame, taskID) {
@@ -347,15 +367,15 @@
                 };
                 for (const frame of this._requestedChunks[chunkIdx].requestedFrames.entries()) {
                     const requestedFrame = frame[1];
-                    const size = getFrameSize(this._taskID, requestedFrame);
-                    const frameData = new FrameData(
-                        size.width,
-                        size.height,
-                        this._taskID,
-                        requestedFrame,
-                        frameDataCache[this._taskID].startFrame,
-                        frameDataCache[this._taskID].stopFrame,
-                    );
+                    const frameMeta = getFrameMeta(this._taskID, requestedFrame);
+                    const frameData = new FrameData({
+                        ...frameMeta,
+                        taskID: this._taskID,
+                        frameNumber: requestedFrame,
+                        startFrame: frameDataCache[this._taskID].startFrame,
+                        stopFrame: frameDataCache[this._taskID].stopFrame,
+                        decodeForward: false,
+                    });
 
                     frameData.data().then(() => {
                         if (!(chunkIdx in this._requestedChunks)
@@ -452,9 +472,15 @@
             }
 
             this._required = frameNumber;
-            const size = getFrameSize(taskID, frameNumber);
-            let frame = new FrameData(size.width, size.height, taskID, frameNumber,
-                frameDataCache[taskID].startFrame, frameDataCache[taskID].stopFrame, !fillBuffer);
+            const frameMeta = getFrameMeta(taskID, frameNumber);
+            let frame = new FrameData({
+                ...frameMeta,
+                taskID,
+                frameNumber,
+                startFrame: frameDataCache[taskID].startFrame,
+                stopFrame: frameDataCache[taskID].stopFrame,
+                decodeForward: !fillBuffer,
+            });
 
             if (frameNumber in this._buffer) {
                 frame = this._buffer[frameNumber];
@@ -559,9 +585,9 @@
                 activeChunkRequest: null,
                 nextChunkRequest: null,
             };
-            const size = getFrameSize(taskID, frame);
+            const frameMeta = getFrameMeta(taskID, frame);
             // actual only for video chunks
-            frameDataCache[taskID].provider.setRenderSize(size.width, size.height);
+            frameDataCache[taskID].provider.setRenderSize(frameMeta.width, frameMeta.height);
         }
 
         return frameDataCache[taskID].frameBuffer.require(frame, taskID, isPlaying, step);

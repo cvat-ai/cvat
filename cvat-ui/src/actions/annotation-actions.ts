@@ -744,7 +744,13 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                     payload: {
                         number: state.annotation.player.frame.number,
                         data: state.annotation.player.frame.data,
+                        filename: state.annotation.player.frame.filename,
+                        delay: state.annotation.player.frame.delay,
+                        changeTime: state.annotation.player.frame.changeTime,
                         states: state.annotation.annotations.states,
+                        minZ: state.annotation.annotations.zLayer.min,
+                        maxZ: state.annotation.annotations.zLayer.max,
+                        curZ: state.annotation.annotations.zLayer.cur,
                     },
                 });
 
@@ -789,9 +795,11 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 payload: {
                     number: toFrame,
                     data,
+                    filename: data.filename,
                     states,
                     minZ,
                     maxZ,
+                    curZ: maxZ,
                     changeTime: currentTime + delay,
                     delay,
                 },
@@ -936,13 +944,13 @@ export function getJobAsync(
             const colors = [...cvat.enums.colors];
 
             loadJobEvent.close(await jobInfoGenerator(job));
-
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_SUCCESS,
                 payload: {
                     job,
                     states,
                     frameNumber,
+                    frameFilename: frameData.filename,
                     frameData,
                     colors,
                     filters,
@@ -950,6 +958,7 @@ export function getJobAsync(
                     maxZ,
                 },
             });
+            dispatch(changeFrameAsync(frameNumber, false));
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_FAILED,

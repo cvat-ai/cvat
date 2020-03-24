@@ -40,6 +40,7 @@ const defaultState: AnnotationState = {
     player: {
         frame: {
             number: 0,
+            filename: '',
             data: null,
             fetching: false,
             delay: 0,
@@ -111,6 +112,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 job,
                 states,
                 frameNumber: number,
+                frameFilename: filename,
                 colors,
                 filters,
                 frameData: data,
@@ -145,6 +147,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.player,
                     frame: {
                         ...state.player.frame,
+                        filename,
                         number,
                         data,
                     },
@@ -192,9 +195,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const {
                 number,
                 data,
+                filename,
                 states,
                 minZ,
                 maxZ,
+                curZ,
                 delay,
                 changeTime,
             } = action.payload;
@@ -209,6 +214,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.player,
                     frame: {
                         data,
+                        filename,
                         number,
                         fetching: false,
                         changeTime,
@@ -222,7 +228,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     zLayer: {
                         min: minZ,
                         max: maxZ,
-                        cur: maxZ,
+                        cur: curZ,
                     },
                 },
             };
