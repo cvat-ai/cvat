@@ -290,86 +290,6 @@ export function changeAnnotationsFilters(filters: string[]): AnyAction {
     };
 }
 
-export function undoActionAsync(sessionInstance: any, frame: number):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            const state = getStore().getState();
-            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
-
-            // TODO: use affected IDs as an optimization
-            const [undoName] = state.annotation.annotations.history.undo.slice(-1);
-            const undoLog = await sessionInstance.logger.log(LogType.undoAction, {
-                name: undoName,
-                count: 1,
-            }, true);
-            await sessionInstance.actions.undo();
-            const history = await sessionInstance.actions.get();
-            const states = await sessionInstance.annotations
-                .get(frame, showAllInterpolationTracks, filters);
-            const [minZ, maxZ] = computeZRange(states);
-            await undoLog.close();
-
-            dispatch({
-                type: AnnotationActionTypes.UNDO_ACTION_SUCCESS,
-                payload: {
-                    history,
-                    states,
-                    minZ,
-                    maxZ,
-                },
-            });
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.UNDO_ACTION_FAILED,
-                payload: {
-                    error,
-                },
-            });
-        }
-    };
-}
-
-export function redoActionAsync(sessionInstance: any, frame: number):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            const state = getStore().getState();
-            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
-
-            // TODO: use affected IDs as an optimization
-            const [redoName] = state.annotation.annotations.history.redo.slice(-1);
-            const redoLog = await sessionInstance.logger.log(LogType.redoAction, {
-                name: redoName,
-                count: 1,
-            }, true);
-            await sessionInstance.actions.redo();
-            const history = await sessionInstance.actions.get();
-            const states = await sessionInstance.annotations
-                .get(frame, showAllInterpolationTracks, filters);
-            const [minZ, maxZ] = computeZRange(states);
-            await redoLog.close();
-
-            dispatch({
-                type: AnnotationActionTypes.REDO_ACTION_SUCCESS,
-                payload: {
-                    history,
-                    states,
-                    minZ,
-                    maxZ,
-                },
-            });
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.REDO_ACTION_FAILED,
-                payload: {
-                    error,
-                },
-            });
-        }
-    };
-}
-
 export function updateCanvasContextMenu(
     visible: boolean,
     left: number,
@@ -625,7 +545,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             await sessionInstance.logger.log(LogType.deleteObject, { count: 1 });
-            const removed = await objectState.delete(force);
+            const { frame } = receiveAnnotationsParameters();
+
+            const removed = await objectState.delete(frame, force);
             const history = await sessionInstance.actions.get();
 
             if (removed) {
@@ -817,6 +739,90 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
+export function undoActionAsync(sessionInstance: any, frame: number):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const state = getStore().getState();
+            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
+
+            // TODO: use affected IDs as an optimization
+            const [undo] = state.annotation.annotations.history.undo.slice(-1);
+            const undoLog = await sessionInstance.logger.log(LogType.undoAction, {
+                name: undo[0],
+                frame: undo[1],
+                count: 1,
+            }, true);
+
+            dispatch(changeFrameAsync(undo[1]));
+            await sessionInstance.actions.undo();
+            const history = await sessionInstance.actions.get();
+            const states = await sessionInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
+            const [minZ, maxZ] = computeZRange(states);
+            await undoLog.close();
+
+            dispatch({
+                type: AnnotationActionTypes.UNDO_ACTION_SUCCESS,
+                payload: {
+                    history,
+                    states,
+                    minZ,
+                    maxZ,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.UNDO_ACTION_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function redoActionAsync(sessionInstance: any, frame: number):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const state = getStore().getState();
+            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
+
+            // TODO: use affected IDs as an optimization
+            const [redo] = state.annotation.annotations.history.redo.slice(-1);
+            const redoLog = await sessionInstance.logger.log(LogType.redoAction, {
+                name: redo[0],
+                frame: redo[1],
+                count: 1,
+            }, true);
+            dispatch(changeFrameAsync(redo[1]));
+            await sessionInstance.actions.redo();
+            const history = await sessionInstance.actions.get();
+            const states = await sessionInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
+            const [minZ, maxZ] = computeZRange(states);
+            await redoLog.close();
+
+            dispatch({
+                type: AnnotationActionTypes.REDO_ACTION_SUCCESS,
+                payload: {
+                    history,
+                    states,
+                    minZ,
+                    maxZ,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.REDO_ACTION_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
 
 export function rotateCurrentFrame(rotation: Rotation): AnyAction {
     const state: CombinedState = getStore().getState();

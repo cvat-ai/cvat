@@ -427,7 +427,10 @@
                 for (const object of objectsForMerge) {
                     object.removed = true;
                 }
-            }, [...objectsForMerge.map((object) => object.clientID), trackModel.clientID]);
+            }, [
+                ...objectsForMerge
+                    .map((object) => object.clientID), trackModel.clientID,
+            ], objectStates[0].frame);
         }
 
         split(objectState, frame) {
@@ -522,7 +525,7 @@
                 object.removed = true;
                 prevTrack.removed = false;
                 nextTrack.removed = false;
-            }, [object.clientID, prevTrack.clientID, nextTrack.clientID]);
+            }, [object.clientID, prevTrack.clientID, nextTrack.clientID], frame);
         }
 
         group(objectStates, reset) {
@@ -554,7 +557,7 @@
                 objectsForGroup.forEach((object, idx) => {
                     object.group = redoGroups[idx];
                 });
-            }, objectsForGroup.map((object) => object.clientID));
+            }, objectsForGroup.map((object) => object.clientID), objectStates[0].frame);
 
             return groupIdx;
         }
@@ -790,7 +793,7 @@
                 importedArray.forEach((object) => {
                     object.removed = false;
                 });
-            }, importedArray.map((object) => object.clientID));
+            }, importedArray.map((object) => object.clientID), objectStates[0].frame);
         }
 
         select(objectStates, x, y) {

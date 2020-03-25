@@ -349,8 +349,8 @@ export interface AnnotationState {
         filtersHistory: string[];
         resetGroupFlag: boolean;
         history: {
-            undo: string[];
-            redo: string[];
+            undo: [string, number][];
+            redo: [string, number][];
         };
         saving: {
             uploading: boolean;
