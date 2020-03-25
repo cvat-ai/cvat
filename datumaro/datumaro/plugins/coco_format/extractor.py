@@ -23,17 +23,20 @@ from .format import CocoTask, CocoPath
 class _CocoExtractor(SourceExtractor):
     def __init__(self, path, task, merge_instance_polygons=False):
         assert osp.isfile(path), path
+
+        subset = osp.splitext(osp.basename(path))[0].rsplit('_', maxsplit=1)[1]
+        super().__init__(subset=subset)
+
         rootpath = ''
         if path.endswith(osp.join(CocoPath.ANNOTATIONS_DIR, osp.basename(path))):
             rootpath = path.rsplit(CocoPath.ANNOTATIONS_DIR, maxsplit=1)[0]
         images_dir = ''
         if rootpath and osp.isdir(osp.join(rootpath, CocoPath.IMAGES_DIR)):
             images_dir = osp.join(rootpath, CocoPath.IMAGES_DIR)
+            if osp.isdir(osp.join(images_dir, subset or DEFAULT_SUBSET_NAME)):
+                images_dir = osp.join(images_dir, subset or DEFAULT_SUBSET_NAME)
         self._images_dir = images_dir
         self._task = task
-
-        subset = osp.splitext(osp.basename(path))[0].rsplit('_', maxsplit=1)[1]
-        super().__init__(subset=subset)
 
         self._merge_instance_polygons = merge_instance_polygons
 
@@ -107,9 +110,7 @@ class _CocoExtractor(SourceExtractor):
 
         for img_id in loader.getImgIds():
             image_info = loader.loadImgs(img_id)[0]
-            image_path = self._find_image(image_info['file_name'])
-            if not image_path:
-                image_path = image_info['file_name']
+            image_path = osp.join(self._images_dir, image_info['file_name'])
             image_size = (image_info.get('height'), image_info.get('width'))
             if all(image_size):
                 image_size = (int(image_size[0]), int(image_size[1]))
@@ -221,20 +222,6 @@ class _CocoExtractor(SourceExtractor):
             raise NotImplementedError()
 
         return parsed_annotations
-
-    def _find_image(self, file_name):
-        if not self._images_dir:
-            return None
-
-        search_paths = [
-            osp.join(self._images_dir, file_name),
-            osp.join(self._images_dir, self._subset or DEFAULT_SUBSET_NAME,
-                file_name),
-        ]
-        for image_path in search_paths:
-            if osp.exists(image_path):
-                return image_path
-        return None
 
 class CocoImageInfoExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
