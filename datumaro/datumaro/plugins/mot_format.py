@@ -291,6 +291,8 @@ class MotSeqGtConverter(Converter, CliPlugin):
         anno_file = osp.join(anno_dir, MotPath.GT_FILENAME)
         with open(anno_file, 'w', encoding="utf-8") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=MotPath.FIELDS)
+
+            track_id_mapping = {-1: -1}
             for idx, item in enumerate(extractor):
                 log.debug("Converting item '%s'", item.id)
 
@@ -300,9 +302,13 @@ class MotSeqGtConverter(Converter, CliPlugin):
                     if anno.type != AnnotationType.bbox:
                         continue
 
+                    track_id = int(anno.attributes.get('track_id', -1))
+                    if track_id not in track_id_mapping:
+                        track_id_mapping[track_id] = len(track_id_mapping)
+                    track_id = track_id_mapping[track_id]
                     writer.writerow({
                         'frame_id': frame_id,
-                        'track_id': int(anno.attributes.get('track_id', -1)),
+                        'track_id': track_id,
                         'x': anno.x,
                         'y': anno.y,
                         'w': anno.w,
