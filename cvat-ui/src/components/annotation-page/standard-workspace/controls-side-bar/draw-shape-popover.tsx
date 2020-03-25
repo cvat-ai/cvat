@@ -4,20 +4,16 @@
 
 import React from 'react';
 
-import {
-    Row,
-    Col,
-    Select,
-    Button,
-    InputNumber,
-    Radio,
-} from 'antd';
-
-import { RadioChangeEvent } from 'antd/lib/radio';
+import { Row, Col } from 'antd/lib/grid';
+import Select from 'antd/lib/select';
+import Button from 'antd/lib/button';
+import InputNumber from 'antd/lib/input-number';
+import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Text from 'antd/lib/typography/Text';
 
 import { RectDrawingMethod } from 'cvat-canvas';
 import { ShapeType } from 'reducers/interfaces';
+import { clamp } from 'utils/math';
 
 interface Props {
     shapeType: ShapeType;
@@ -117,7 +113,15 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                         </Col>
                         <Col span={10}>
                             <InputNumber
-                                onChange={onChangePoints}
+                                onChange={(value: number | undefined) => {
+                                    if (typeof (value) === 'number') {
+                                        onChangePoints(Math.floor(
+                                            clamp(value, minimumPoints, Number.MAX_SAFE_INTEGER),
+                                        ));
+                                    } else if (!value) {
+                                        onChangePoints(undefined);
+                                    }
+                                }}
                                 className='cvat-draw-shape-popover-points-selector'
                                 min={minimumPoints}
                                 value={numberOfPoints}

@@ -317,7 +317,7 @@
 
                     // Push outside shape after each annotation shape
                     // Any not outside shape rewrites it
-                    if (!((object.frame + 1) in keyframes)) {
+                    if (!((object.frame + 1) in keyframes) && object.frame + 1 <= this.stopFrame) {
                         keyframes[object.frame + 1] = JSON
                             .parse(JSON.stringify(keyframes[object.frame]));
                         keyframes[object.frame + 1].outside = true;

@@ -10,7 +10,7 @@ import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 
-import { InputNumber } from 'antd';
+import InputNumber from 'antd/lib/input-number';
 import { SliderValue } from 'antd/lib/slider';
 
 import {
@@ -403,14 +403,15 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         onChangeFrame(value as number);
     };
 
-    private onChangePlayerInputValue = (value: number | undefined): void => {
+    private onChangePlayerInputValue = (value: number): void => {
         const {
             onSwitchPlay,
             onChangeFrame,
             playing,
+            frameNumber,
         } = this.props;
 
-        if (typeof (value) !== 'undefined') {
+        if (value !== frameNumber) {
             if (playing) {
                 onSwitchPlay(false);
             }
