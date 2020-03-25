@@ -12,8 +12,7 @@ ENV TERM=xterm \
     no_proxy=${no_proxy} \
     socks_proxy=${socks_proxy} \
     LANG='C.UTF-8'  \
-    LC_ALL='C.UTF-8' \
-    NODE_OPTIONS=${NODE_OPTIONS}
+    LC_ALL='C.UTF-8'
 
 # Install dependencies
 COPY cvat-core/package*.json /tmp/cvat-core/

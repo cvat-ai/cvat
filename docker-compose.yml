@@ -69,7 +69,6 @@ services:
         https_proxy:
         no_proxy:
         socks_proxy:
-        NODE_OPTIONS:
       dockerfile: Dockerfile.ui
 
     networks:
