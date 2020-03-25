@@ -62,7 +62,8 @@ def load(file_object, annotations):
         dm_dataset = dm_project.make_dataset()
         import_dm_annotations(dm_dataset, annotations)
 
-class CvatVocConverter:
+from datumaro.components.converter import Converter
+class CvatVocConverter(Converter):
     def __init__(self, save_images=False):
         self._save_images = save_images
 
@@ -76,7 +77,7 @@ class CvatVocConverter:
 
         converter = env.make_converter('voc', label_map='source',
             save_images=self._save_images)
-        converter(extractor, save_dir=temp_dir)
+        converter(extractor, save_dir=save_dir)
 
 def dump(file_object, annotations):
     from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor

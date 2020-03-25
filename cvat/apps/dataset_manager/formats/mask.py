@@ -22,7 +22,8 @@ format_spec = {
     ],
 }
 
-class CvatMaskConverter:
+from datumaro.components.converter import Converter
+class CvatMaskConverter(Converter):
     def __init__(self, save_images=False):
         self._save_images = save_images
 
@@ -44,7 +45,7 @@ class CvatMaskConverter:
         converter = env.make_converter('voc_segmentation',
             apply_colormap=True, label_map='source',
             save_images=self._save_images)
-        converter(extractor, save_dir=temp_dir)
+        converter(extractor, save_dir=save_dir)
 
 def dump(file_object, annotations):
     from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor

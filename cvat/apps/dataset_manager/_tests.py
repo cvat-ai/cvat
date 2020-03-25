@@ -284,22 +284,22 @@ class TaskExportTest(APITestCase):
         self._test_export(dm.EXPORT_FORMAT_DATUMARO_PROJECT, save_images=False)
 
     def test_coco(self):
-        self._test_export('coco', save_images=True)
+        self._test_export('cvat_coco', save_images=True)
 
     def test_voc(self):
-        self._test_export('voc', save_images=True)
+        self._test_export('cvat_voc', save_images=True)
 
     def test_tf_detection_api(self):
-        self._test_export('tf_detection_api', save_images=True)
+        self._test_export('cvat_tfrecord', save_images=True)
 
     def test_yolo(self):
-        self._test_export('yolo', save_images=True)
+        self._test_export('cvat_yolo', save_images=True)
 
     def test_mot(self):
-        self._test_export('mot', save_images=True)
+        self._test_export('cvat_mot', save_images=True)
 
     def test_labelme(self):
-        self._test_export('label_me', save_images=True)
+        self._test_export('cvat_label_me', save_images=True)
 
     def test_formats_query(self):
         formats = dm.get_export_formats()

@@ -23,7 +23,8 @@ format_spec = {
 }
 
 
-class CvatLabelMeConverter:
+from datumaro.components.converter import Converter
+class CvatLabelMeConverter(Converter):
     def __init__(self, save_images=False):
         self._save_images = save_images
 
@@ -37,7 +38,7 @@ class CvatLabelMeConverter:
         extractor = Dataset.from_extractors(extractor) # apply lazy transforms
 
         converter = env.make_converter('label_me', save_images=self._save_images)
-        converter(extractor, save_dir=temp_dir)
+        converter(extractor, save_dir=save_dir)
 
 def dump(file_object, annotations):
     from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor

@@ -18,13 +18,14 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task
 from .util import current_function_name, make_zip_archive
 
-_CVAT_ROOT_DIR = __file__[:__file__.rfind('cvat/')]
+_CVAT_ROOT_DIR = __file__[:__file__.rfind(osp.join('cvat', ''))]
 _DATUMARO_REPO_PATH = osp.join(_CVAT_ROOT_DIR, 'datumaro')
 sys.path.append(_DATUMARO_REPO_PATH)
 from datumaro.components.project import Project, Environment
 import datumaro.components.extractor as datumaro
 from .bindings import CvatImagesDirExtractor, CvatTaskExtractor
 
+_FORMATS_DIR = osp.join(osp.dirname(__file__), 'formats')
 
 _MODULE_NAME = __package__ + '.' + osp.splitext(osp.basename(__file__))[0]
 def log_exception(logger=None, exc_info=True):
@@ -96,7 +97,7 @@ class TaskProject:
     def _import_from_task(self, user):
         self._project = Project.generate(self._project_dir, config={
             'project_name': self._db_task.name,
-            'plugins_dir': osp.join(osp.dirname(__file__), 'formats'),
+            'plugins_dir': _FORMATS_DIR,
         })
 
         self._project.add_source('task_%s_images' % self._db_task.id, {
@@ -347,7 +348,9 @@ EXPORT_FORMATS = [
 ]
 
 def get_export_formats():
-    converters = Environment().converters
+    converters = Environment(config={
+        'plugins_dir': _FORMATS_DIR
+    }).converters
 
     available_formats = set(converters.items)
     available_formats.add(EXPORT_FORMAT_DATUMARO_PROJECT)

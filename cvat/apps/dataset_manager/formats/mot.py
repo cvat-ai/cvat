@@ -21,7 +21,7 @@ format_spec = {
 
 
 from datumaro.plugins.mot_format import \
-    MotConverter as _MotConverter
+    MotSeqGtConverter as _MotConverter
 class CvatMotConverter(_MotConverter):
     NAME = 'cvat_mot'
 
@@ -40,7 +40,7 @@ def dump(file_object, annotations):
 def load(file_object, annotations):
     from pyunpack import Archive
     from tempfile import TemporaryDirectory
-    from datumaro.plugins.mot_format import MotImporter
+    from datumaro.plugins.mot_format import MotSeqImporter
     import datumaro.components.extractor as datumaro
     from cvat.apps.dataset_manager.bindings import match_frame
 
@@ -50,7 +50,7 @@ def load(file_object, annotations):
 
         tracks = {}
 
-        dm_dataset = MotImporter()(tmp_dir).make_dataset()
+        dm_dataset = MotSeqImporter()(tmp_dir).make_dataset()
         label_cat = dm_dataset.categories()[datumaro.AnnotationType.label]
 
         for item in dm_dataset:
