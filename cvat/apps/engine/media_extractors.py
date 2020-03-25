@@ -66,7 +66,7 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def get_avg_image_size(self):
+    def get_image_size(self):
         pass
 
 #Note step, start, stop have no affect
@@ -97,7 +97,7 @@ class ImageListReader(IMediaReader):
     def image_names(self):
         return self._source_path
 
-    def get_avg_image_size(self):
+    def get_image_size(self):
         img = Image.open(self._source_path[0])
         return img.width, img.height
 
@@ -191,7 +191,7 @@ class ZipReader(IMediaReader):
         with open(preview_path, 'wb') as f:
             f.write(self._zip_source.read(self._source_path[0]))
 
-    def get_avg_image_size(self):
+    def get_image_size(self):
         img = Image.open(BytesIO(self._zip_source.read(self._source_path[0])))
         return img.width, img.height
 
@@ -246,7 +246,7 @@ class VideoReader(IMediaReader):
     def image_names(self):
         return self._source_path
 
-    def get_avg_image_size(self):
+    def get_image_size(self):
         image = (next(iter(self)))[0]
         return image.width, image.height
 
