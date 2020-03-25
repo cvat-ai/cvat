@@ -56,7 +56,7 @@ module.exports = {
                 options: {
                     importLoaders: 2,
                 },
-            }, 'postcss-loader', 'sass-loader']
+            }, 'postcss-loader']
         }, {
             test: /\.(css|scss)$/,
             exclude: /node_modules/,
