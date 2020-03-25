@@ -76,7 +76,6 @@ def load(file_object, annotations):
                 )
 
                 # build trajectories as lists of shapes in track dict
-                track_id = int(track_id)
                 if track_id not in tracks:
                     tracks[track_id] = annotations.Track(
                         label_cat.items[ann.label].name, 0, [])
