@@ -4,7 +4,7 @@ format_spec = {
     "dumpers": [
         {
             "display_name": "{name} {format} {version}",
-            "format": "CSV",
+            "format": "ZIP",
             "version": "1.1",
             "handler": "dump"
         },
@@ -12,7 +12,7 @@ format_spec = {
     "loaders": [
         {
             "display_name": "{name} {format} {version}",
-            "format": "CSV",
+            "format": "ZIP",
             "version": "1.1",
             "handler": "load",
         }

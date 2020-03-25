@@ -95,9 +95,16 @@ class LabelMeExtractor(SourceExtractor):
             for attr in [a.strip() for a in attr_str.split(',') if a.strip()]:
                 if '=' in attr:
                     name, value = attr.split('=', maxsplit=1)
+                    if value.lower() in {'true', 'false'}:
+                        value = value.lower() == 'true'
+                    else:
+                        try:
+                            value = float(value)
+                        except Exception:
+                            pass
                     parsed.append((name, value))
                 else:
-                    parsed.append((attr, '1'))
+                    parsed.append((attr, True))
 
             return parsed
 
@@ -440,10 +447,7 @@ class LabelMeConverter(Converter, CliPlugin):
 
             attrs = []
             for k, v in ann.attributes.items():
-                if isinstance(v, bool):
-                    attrs.append(k)
-                else:
-                    attrs.append('%s=%s' % (k, v))
+                attrs.append('%s=%s' % (k, v))
             ET.SubElement(obj_elem, 'attributes').text = ', '.join(attrs)
 
             obj_id += 1

@@ -46,7 +46,7 @@ def dump(file_object, annotations):
     from tempfile import TemporaryDirectory
 
     extractor = CvatAnnotationsExtractor('', annotations)
-    converter = CvatMotConverter()
+    converter = CvatLabelMeConverter()
     with TemporaryDirectory() as temp_dir:
         converter(extractor, save_dir=temp_dir)
         make_zip_archive(temp_dir, file_object)
