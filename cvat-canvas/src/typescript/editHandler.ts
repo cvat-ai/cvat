@@ -96,10 +96,10 @@ export class EditHandlerImpl implements EditHandler {
         let mouseY: number | null = null;
 
         this.canvas.on('mousedown.edit', (e: MouseEvent): void => {
-            if (e.which === 1) {
+            if (e.button === 0) {
                 mouseX = e.clientX;
                 mouseY = e.clientY;
-            } else if (e.which === 3 && this.editLine) {
+            } else if (e.button === 2 && this.editLine) {
                 if (this.editData.state.shapeType === 'points'
                     || this.editLine.attr('points').split(' ').length > 2
                 ) {
@@ -110,7 +110,7 @@ export class EditHandlerImpl implements EditHandler {
 
         this.canvas.on('mouseup.edit', (e: MouseEvent): void => {
             const threshold = 10; // px
-            if (e.which === 1) {
+            if (e.button === 0) {
                 if (Math.sqrt( // l2 distance < threshold
                     ((mouseX - e.clientX) ** 2)
                     + ((mouseY - e.clientY) ** 2),
