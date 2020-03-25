@@ -425,7 +425,7 @@
     ObjectState.prototype.delete.implementation = async function (frame, force) {
         if (this.__internal && this.__internal.delete) {
             if (!Number.isInteger(+frame) || +frame < 0) {
-                throw ArgumentError('Frame argument must be a non negative integer');
+                throw new ArgumentError('Frame argument must be a non negative integer');
             }
 
             return this.__internal.delete(frame, force);
