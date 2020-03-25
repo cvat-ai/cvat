@@ -421,6 +421,7 @@
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
+                * @throws {module:API.cvat.exceptions.DataError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
             */
 

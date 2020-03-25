@@ -32,6 +32,7 @@ import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
 interface StateToProps {
     jobInstance: any;
     frameNumber: number;
+    frameFilename: string;
     frameStep: number;
     frameSpeed: FrameSpeed;
     frameDelay: number;
@@ -63,6 +64,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             player: {
                 playing,
                 frame: {
+                    filename: frameFilename,
                     number: frameNumber,
                     delay: frameDelay,
                 },
@@ -103,6 +105,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         saving,
         savingStatuses,
         frameNumber,
+        frameFilename,
         jobInstance,
         undoAction: history.undo[history.undo.length - 1],
         redoAction: history.redo[history.redo.length - 1],
@@ -208,7 +211,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
-                        onChangeFrame(frameNumber + 1 + framesSkiped, stillPlaying, framesSkiped + 1);
+                        onChangeFrame(
+                            frameNumber + 1 + framesSkiped,
+                            stillPlaying, framesSkiped + 1,
+                        );
                     }
                 }, frameDelay);
             } else {
@@ -450,6 +456,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 stopFrame,
             },
             frameNumber,
+            frameFilename,
             undoAction,
             redoAction,
             workspace,
@@ -622,6 +629,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                     startFrame={startFrame}
                     stopFrame={stopFrame}
                     frameNumber={frameNumber}
+                    frameFilename={frameFilename}
                     inputFrameRef={this.inputFrameRef}
                     undoAction={undoAction}
                     redoAction={redoAction}
