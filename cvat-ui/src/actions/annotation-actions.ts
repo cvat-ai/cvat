@@ -938,6 +938,9 @@ export function getJobAsync(
 
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
             const frameData = await job.frames.get(frameNumber);
+            // call first getting of frame data before rendering interface
+            // to load and decode first chunk
+            await frameData.data();
             const states = await job.annotations
                 .get(frameNumber, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);

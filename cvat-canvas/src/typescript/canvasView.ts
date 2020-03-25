@@ -285,7 +285,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private moveCanvas(): void {
-        for (const obj of [this.background, this.grid, this.loadingAnimation]) {
+        for (const obj of [this.background, this.grid]) {
             obj.style.top = `${this.geometry.top}px`;
             obj.style.left = `${this.geometry.left}px`;
         }
@@ -303,7 +303,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private transformCanvas(): void {
         // Transform canvas
-        for (const obj of [this.background, this.grid, this.loadingAnimation, this.content]) {
+        for (const obj of [this.background, this.grid, this.content]) {
             obj.style.transform = `scale(${this.geometry.scale}) rotate(${this.geometry.angle}deg)`;
         }
 
@@ -358,7 +358,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private resizeCanvas(): void {
-        for (const obj of [this.background, this.grid, this.loadingAnimation]) {
+        for (const obj of [this.background, this.grid]) {
             obj.style.width = `${this.geometry.image.width}px`;
             obj.style.height = `${this.geometry.image.height}px`;
         }
