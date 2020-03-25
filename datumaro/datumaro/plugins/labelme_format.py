@@ -10,7 +10,7 @@ import numpy as np
 import os
 import os.path as osp
 
-from datumaro.components.extractor import (SourceExtractor,
+from datumaro.components.extractor import (SourceExtractor, DEFAULT_SUBSET_NAME,
     DatasetItem, AnnotationType, Mask, Bbox, Polygon, LabelCategories
 )
 from datumaro.components.extractor import Importer
