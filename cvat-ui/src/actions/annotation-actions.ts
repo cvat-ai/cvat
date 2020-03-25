@@ -973,6 +973,8 @@ export function getJobAsync(
 export function saveAnnotationsAsync(sessionInstance: any):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
+
         dispatch({
             type: AnnotationActionTypes.SAVE_ANNOTATIONS,
             payload: {},
@@ -992,6 +994,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 });
             });
 
+            const states = await sessionInstance
+                .annotations.get(frame, showAllInterpolationTracks, filters);
             await saveJobEvent.close();
             await sessionInstance.logger.log(
                 LogType.sendTaskInfo,
@@ -1001,7 +1005,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
             dispatch({
                 type: AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS,
-                payload: {},
+                payload: {
+                    states,
+                },
             });
         } catch (error) {
             dispatch({
