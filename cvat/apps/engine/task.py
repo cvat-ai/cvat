@@ -254,19 +254,22 @@ def _create_thread(tid, data):
     original_chunk_writer = original_chunk_writer_class(100)
 
     # calculate chunk size if it isn't specified
-    if db_data.chunk_size is None and isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-        avg_w, avg_h = extractor.get_avg_image_size()
-        avg_area = avg_h * avg_w
-        if avg_area <= 1920 * 1080:
-            db_data.chunk_size = 36
-        elif avg_area <= 2560 * 1440:
-            db_data.chunk_size = 18
-        elif avg_area <= 3840 * 2160:
-            db_data.chunk_size = 9
-        elif avg_area <= 5120 * 2880:
-            db_data.chunk_size = 4
+    if db_data.chunk_size is None:
+        if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
+            avg_w, avg_h = extractor.get_avg_image_size()
+            avg_area = avg_h * avg_w
+            if avg_area <= 1920 * 1080:
+                db_data.chunk_size = 36
+            elif avg_area <= 2560 * 1440:
+                db_data.chunk_size = 18
+            elif avg_area <= 3840 * 2160:
+                db_data.chunk_size = 9
+            elif avg_area <= 5120 * 2880:
+                db_data.chunk_size = 4
+            else:
+                db_data.chunk_size = 2
         else:
-            db_data.chunk_size = 2
+            db_data.chunk_size = 36
 
     frame_counter = 0
     total_len = len(extractor) or 100

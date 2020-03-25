@@ -66,7 +66,7 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def get_avg_image_size(self, percent_to_analize=10):
+    def get_avg_image_size(self):
         pass
 
 #Note step, start, stop have no affect
@@ -97,15 +97,9 @@ class ImageListReader(IMediaReader):
     def image_names(self):
         return self._source_path
 
-    def get_avg_image_size(self, percent_to_analize=10):
-        widths = []
-        heights = []
-        step = 100 // percent_to_analize or 1
-        for img_path in itertools.islice(self._source_path, 0, None, step):
-            img = Image.open(img_path)
-            widths.append(img.width)
-            heights.append(img.height)
-        return (sum(widths) // len(widths), sum(heights) // len(heights))
+    def get_avg_image_size(self):
+        img = Image.open(self._source_path[0])
+        return img.width, img.height
 
 #Note step, start, stop have no affect
 class DirectoryReader(ImageListReader):
@@ -197,16 +191,9 @@ class ZipReader(IMediaReader):
         with open(preview_path, 'wb') as f:
             f.write(self._zip_source.read(self._source_path[0]))
 
-    def get_avg_image_size(self, percent_to_analize=10):
-        widths = []
-        heights = []
-        step = 100 // percent_to_analize or 1
-        for img_path in itertools.islice(self._source_path, 0, None, step):
-            img = Image.open(BytesIO(self._zip_source.read(img_path)))
-            widths.append(img.width)
-            heights.append(img.height)
-        return (sum(widths) // len(widths), sum(heights) // len(heights))
-    
+    def get_avg_image_size(self):
+        img = Image.open(BytesIO(self._zip_source.read(self._source_path[0])))
+        return img.width, img.height
 
     @property
     def image_names(self):
@@ -259,9 +246,9 @@ class VideoReader(IMediaReader):
     def image_names(self):
         return self._source_path
 
-    def get_avg_image_size(self, percent_to_analize=10):
-        first_image = (next(iter(self)))[0]
-        return first_image.width, first_image.height
+    def get_avg_image_size(self):
+        image = (next(iter(self)))[0]
+        return image.width, image.height
 
 class IChunkWriter(ABC):
     def __init__(self, quality):
