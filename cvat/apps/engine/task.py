@@ -255,7 +255,6 @@ def _create_thread(tid, data):
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None and isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-        # lets collect size of 10% frames
         avg_w, avg_h = extractor.get_avg_image_size()
         avg_area = avg_h * avg_w
         if avg_area <= 1920 * 1080:
