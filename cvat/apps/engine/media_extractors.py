@@ -58,7 +58,7 @@ class IMediaReader(ABC):
             preview = obj
         preview.thumbnail((128, 128))
 
-        return preview
+        return preview.convert('RGB')
 
     @abstractmethod
     def get_image_size(self):
