@@ -1,4 +1,5 @@
 <!--lint disable list-item-indent-->
+<!--lint disable no-duplicate-headings-->
 ## Description
 
 The purpose of this application is to add support for multiple annotation formats for CVAT.
