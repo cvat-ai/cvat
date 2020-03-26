@@ -565,3 +565,36 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   ```
 - supported shapes: Polygons
 - additional comments: the CVAT task should be created with the full label set that may be in the annotation files
+
+### [MOT sequence](https://arxiv.org/pdf/1906.04567.pdf)
+#### Dumper
+- downloaded file: a zip archive of the following structure:
+  ```bash
+  taskname.zip/
+  └── gt/
+      ├── labels.txt
+      └── gt.txt
+
+  # labels.txt
+  cat
+  dog
+  person
+  ...
+
+  # gt.txt
+  # frame_id, track_id, x, y, w, h, not ignored, class_id, visibility, <ignored>
+  1,1,1363,569,103,241,1,1,0.86014
+  ...
+
+  ```
+- supported annotations: Rectangle shapes and tracks
+- supported attributes: `visibility` (number), `ignored` (checkbox)
+
+#### Loader
+- uploaded file: a zip archive of the structure above or:
+  ```bash
+  taskname.zip/
+  ├── labels.txt # for non-official labels
+  └── gt.txt
+  ```
+- supported annotations: Rectangle tracks
