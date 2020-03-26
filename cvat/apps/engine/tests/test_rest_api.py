@@ -13,7 +13,6 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group
 from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
     AttributeType, Project)
-from cvat.apps.annotation.models import AnnotationFormat
 from unittest import mock
 import io
 import xml.etree.ElementTree as ET
@@ -1546,10 +1545,15 @@ class TaskDataAPITestCase(APITestCase):
 def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001):
     if isinstance(obj1, dict):
         self.assertTrue(isinstance(obj2, dict), "{} != {}".format(obj1, obj2))
-        for k in obj1.keys():
+        for k, v1 in obj1.items():
             if k in ignore_keys:
                 continue
-            compare_objects(self, obj1[k], obj2.get(k), ignore_keys)
+            v2 = obj2[k]
+            if k == 'attributes':
+                key = lambda a: a['spec_id']
+                v1.sort(key=key)
+                v2.sort(key=key)
+            compare_objects(self, v1, v2, ignore_keys)
     elif isinstance(obj1, list):
         self.assertTrue(isinstance(obj2, list), "{} != {}".format(obj1, obj2))
         self.assertEqual(len(obj1), len(obj2), "{} != {}".format(obj1, obj2))
