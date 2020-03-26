@@ -258,16 +258,7 @@ def _create_thread(tid, data):
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
             w, h = extractor.get_image_size()
             area = h * w
-            if area <= 1920 * 1080:
-                db_data.chunk_size = 36
-            elif area <= 2560 * 1440:
-                db_data.chunk_size = 18
-            elif area <= 3840 * 2160:
-                db_data.chunk_size = 9
-            elif area <= 5120 * 2880:
-                db_data.chunk_size = 4
-            else:
-                db_data.chunk_size = 2
+            db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
             db_data.chunk_size = 36
 
