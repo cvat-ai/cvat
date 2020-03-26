@@ -22,18 +22,21 @@ from .format import CocoTask, CocoPath
 
 class _CocoExtractor(SourceExtractor):
     def __init__(self, path, task, merge_instance_polygons=False):
-        super().__init__()
+        assert osp.isfile(path), path
 
-        assert osp.isfile(path)
-        rootpath = path.rsplit(CocoPath.ANNOTATIONS_DIR, maxsplit=1)[0]
-        self._path = rootpath
+        subset = osp.splitext(osp.basename(path))[0].rsplit('_', maxsplit=1)[1]
+        super().__init__(subset=subset)
+
+        rootpath = ''
+        if path.endswith(osp.join(CocoPath.ANNOTATIONS_DIR, osp.basename(path))):
+            rootpath = path.rsplit(CocoPath.ANNOTATIONS_DIR, maxsplit=1)[0]
+        images_dir = ''
+        if rootpath and osp.isdir(osp.join(rootpath, CocoPath.IMAGES_DIR)):
+            images_dir = osp.join(rootpath, CocoPath.IMAGES_DIR)
+            if osp.isdir(osp.join(images_dir, subset or DEFAULT_SUBSET_NAME)):
+                images_dir = osp.join(images_dir, subset or DEFAULT_SUBSET_NAME)
+        self._images_dir = images_dir
         self._task = task
-
-        subset = osp.splitext(osp.basename(path))[0] \
-            .rsplit('_', maxsplit=1)[1]
-        if subset == DEFAULT_SUBSET_NAME:
-            subset = None
-        self._subset = subset
 
         self._merge_instance_polygons = merge_instance_polygons
 
@@ -50,16 +53,6 @@ class _CocoExtractor(SourceExtractor):
 
     def __len__(self):
         return len(self._items)
-
-    def subsets(self):
-        if self._subset:
-            return [self._subset]
-        return None
-
-    def get_subset(self, name):
-        if name != self._subset:
-            return None
-        return self
 
     @staticmethod
     def _make_subset_loader(path):
@@ -117,9 +110,7 @@ class _CocoExtractor(SourceExtractor):
 
         for img_id in loader.getImgIds():
             image_info = loader.loadImgs(img_id)[0]
-            image_path = self._find_image(image_info['file_name'])
-            if not image_path:
-                image_path = image_info['file_name']
+            image_path = osp.join(self._images_dir, image_info['file_name'])
             image_size = (image_info.get('height'), image_info.get('width'))
             if all(image_size):
                 image_size = (int(image_size[0]), int(image_size[1]))
@@ -232,33 +223,27 @@ class _CocoExtractor(SourceExtractor):
 
         return parsed_annotations
 
-    def _find_image(self, file_name):
-        images_dir = osp.join(self._path, CocoPath.IMAGES_DIR)
-        search_paths = [
-            osp.join(images_dir, file_name),
-            osp.join(images_dir, self._subset or DEFAULT_SUBSET_NAME, file_name),
-        ]
-        for image_path in search_paths:
-            if osp.exists(image_path):
-                return image_path
-        return None
-
 class CocoImageInfoExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
-        super().__init__(path, task=CocoTask.image_info, **kwargs)
+        kwargs['task'] = CocoTask.image_info
+        super().__init__(path, **kwargs)
 
 class CocoCaptionsExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
-        super().__init__(path, task=CocoTask.captions, **kwargs)
+        kwargs['task'] = CocoTask.captions
+        super().__init__(path, **kwargs)
 
 class CocoInstancesExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
-        super().__init__(path, task=CocoTask.instances, **kwargs)
+        kwargs['task'] = CocoTask.instances
+        super().__init__(path, **kwargs)
 
 class CocoPersonKeypointsExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
-        super().__init__(path, task=CocoTask.person_keypoints, **kwargs)
+        kwargs['task'] = CocoTask.person_keypoints
+        super().__init__(path, **kwargs)
 
 class CocoLabelsExtractor(_CocoExtractor):
     def __init__(self, path, **kwargs):
-        super().__init__(path, task=CocoTask.labels, **kwargs)
+        kwargs['task'] = CocoTask.labels
+        super().__init__(path, **kwargs)
