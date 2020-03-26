@@ -465,7 +465,7 @@
                     && cachedFrames.length < (this._size * 3) / 4) {
                     const maxFrame = cachedFrames ? Math.max(...cachedFrames) : frameNumber;
                     if (maxFrame < this._stopFrame) {
-                        this.makeFillRequest(maxFrame + 1, frameStep);
+                        await this.makeFillRequest(maxFrame + 1, frameStep);
                     }
                 }
             } else if (fillBuffer) {
