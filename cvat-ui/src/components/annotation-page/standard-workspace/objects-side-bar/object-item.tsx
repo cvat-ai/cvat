@@ -54,7 +54,7 @@ function ItemMenu(
     toForeground: (() => void),
 ): JSX.Element {
     return (
-        <Menu key='unique' className='cvat-object-item-menu'>
+        <Menu className='cvat-object-item-menu'>
             <Menu.Item>
                 <Button disabled={serverID === undefined} type='link' icon='link' onClick={createURL}>
                     Create object URL
@@ -75,24 +75,24 @@ function ItemMenu(
                 </Tooltip>
             </Menu.Item>
             { objectType !== ObjectType.TAG && (
-                <>
-                    <Menu.Item>
-                        <Tooltip title={`${toBackgroundShortcut}`}>
-                            <Button type='link' onClick={toBackground}>
-                                <Icon component={BackgroundIcon} />
-                                To background
-                            </Button>
-                        </Tooltip>
-                    </Menu.Item>
-                    <Menu.Item>
-                        <Tooltip title={`${toForegroundShortcut}`}>
-                            <Button type='link' onClick={toForeground}>
-                                <Icon component={ForegroundIcon} />
-                                To foreground
-                            </Button>
-                        </Tooltip>
-                    </Menu.Item>
-                </>
+                <Menu.Item>
+                    <Tooltip title={`${toBackgroundShortcut}`}>
+                        <Button type='link' onClick={toBackground}>
+                            <Icon component={BackgroundIcon} />
+                            To background
+                        </Button>
+                    </Tooltip>
+                </Menu.Item>
+            )}
+            { objectType !== ObjectType.TAG && (
+                <Menu.Item>
+                    <Tooltip title={`${toForegroundShortcut}`}>
+                        <Button type='link' onClick={toForeground}>
+                            <Icon component={ForegroundIcon} />
+                            To foreground
+                        </Button>
+                    </Tooltip>
+                </Menu.Item>
             )}
             <Menu.Item>
                 <Tooltip title={`${removeShortcut}`}>
