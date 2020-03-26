@@ -13,7 +13,8 @@ import tempfile
 from django.utils import timezone
 import django_rq
 
-from cvat.settings.base import DATUMARO_PATH as _DATUMARO_REPO_PATH
+from cvat.settings.base import DATUMARO_PATH as _DATUMARO_REPO_PATH, \
+    BASE_DIR as _CVAT_ROOT_DIR
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task
 from .util import current_function_name, make_zip_archive
