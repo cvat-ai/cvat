@@ -44,7 +44,7 @@ class DataChoice(str, Enum):
         return self.value
 
 class Data(models.Model):
-    chunk_size = models.PositiveIntegerField(default=36)
+    chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
     image_quality = models.PositiveSmallIntegerField(default=50)
     start_frame = models.PositiveIntegerField(default=0)

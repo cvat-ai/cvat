@@ -52,7 +52,27 @@ const webConfig = {
                     sourceType: 'unambiguous',
                 },
             },
-        }],
+        }, {
+            test: /3rdparty\/.*\.worker\.js$/,
+            use: {
+                loader: 'worker-loader',
+                options: {
+                    publicPath: '/static/engine/js/3rdparty/',
+                    name: '[name].js',
+                },
+            },
+        }, {
+            test: /\.worker\.js$/,
+            exclude: /3rdparty/,
+            use: {
+                loader: 'worker-loader',
+                options: {
+                    publicPath: '/static/engine/js/',
+                    name: '[name].js',
+                },
+            },
+        },
+        ],
     },
 };
 

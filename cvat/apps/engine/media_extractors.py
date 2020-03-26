@@ -65,6 +65,10 @@ class IMediaReader(ABC):
     def image_names(self):
         pass
 
+    @abstractmethod
+    def get_image_size(self):
+        pass
+
 #Note step, start, stop have no affect
 class ImageListReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
@@ -92,6 +96,10 @@ class ImageListReader(IMediaReader):
     @property
     def image_names(self):
         return self._source_path
+
+    def get_image_size(self):
+        img = Image.open(self._source_path[0])
+        return img.width, img.height
 
 #Note step, start, stop have no affect
 class DirectoryReader(ImageListReader):
@@ -183,6 +191,10 @@ class ZipReader(IMediaReader):
         with open(preview_path, 'wb') as f:
             f.write(self._zip_source.read(self._source_path[0]))
 
+    def get_image_size(self):
+        img = Image.open(BytesIO(self._zip_source.read(self._source_path[0])))
+        return img.width, img.height
+
     @property
     def image_names(self):
         return [os.path.join(os.path.dirname(self._zip_source.filename), p) for p in self._source_path]
@@ -233,6 +245,10 @@ class VideoReader(IMediaReader):
     @property
     def image_names(self):
         return self._source_path
+
+    def get_image_size(self):
+        image = (next(iter(self)))[0]
+        return image.width, image.height
 
 class IChunkWriter(ABC):
     def __init__(self, quality):
