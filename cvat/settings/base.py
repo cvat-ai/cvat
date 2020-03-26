@@ -52,14 +52,15 @@ def generate_ssh_keys():
         fcntl.flock(pid, fcntl.LOCK_EX)
         try:
             subprocess.run(['ssh-add {}/*'.format(ssh_dir)], shell = True, stderr = subprocess.PIPE)
-            keys = subprocess.run(['ssh-add -l'],
+            keys = subprocess.run(['ssh-add', '-l'],
                 stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
             if 'has no identities' in keys[0]:
                 print('SSH keys were not found')
                 volume_keys = os.listdir(keys_dir)
                 if not ('id_rsa' in volume_keys and 'id_rsa.pub' in volume_keys):
                     print('New pair of keys are being generated')
-                    subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)])
+                    subprocess.run(['ssh-keygen', '-b', '4096', '-t', 'rsa', '-f',
+                        '{}/id_rsa'.format(ssh_dir), '-q', '-N', ''])
                     shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
                     shutil.copymode('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
                     shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
