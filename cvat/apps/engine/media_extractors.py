@@ -7,7 +7,6 @@ import tempfile
 import shutil
 import zipfile
 import io
-import itertools
 from abc import ABC, abstractmethod
 
 import av
@@ -64,7 +63,6 @@ class IMediaReader(ABC):
     def get_image_size(self):
         pass
 
-#Note step, start, stop have no affect
 class ImageListReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
         if not source_path:
@@ -73,7 +71,7 @@ class ImageListReader(IMediaReader):
         if stop == 0:
             stop = len(source_path)
         else:
-            stop = min(len(source_path), stop)
+            stop = min(len(source_path), stop + 1)
         step = max(step, 1)
         assert stop > start
 
@@ -105,7 +103,6 @@ class ImageListReader(IMediaReader):
         img = Image.open(self._source_path[0])
         return img.width, img.height
 
-#Note step, start, stop have no affect
 class DirectoryReader(ImageListReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
         image_paths = []
@@ -121,7 +118,6 @@ class DirectoryReader(ImageListReader):
             stop=stop,
         )
 
-#Note step, start, stop have no affect
 class ArchiveReader(DirectoryReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
         self._tmp_dir = create_tmp_dir()
@@ -141,7 +137,6 @@ class ArchiveReader(DirectoryReader):
         base_dir = os.path.dirname(self._archive_source)
         return os.path.join(base_dir, os.path.relpath(self._source_path[i], self._tmp_dir))
 
-#Note step, start, stop have no affect
 class PdfReader(DirectoryReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
         if not source_path:
