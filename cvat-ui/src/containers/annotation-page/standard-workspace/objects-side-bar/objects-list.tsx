@@ -6,6 +6,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 
+import { formatShortcuts } from 'utils/shortcuts';
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
     updateAnnotationsAsync,
@@ -15,7 +16,6 @@ import {
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
 } from 'actions/annotation-actions';
-
 import { CombinedState, StatesOrdering, ObjectType } from 'reducers/interfaces';
 
 interface StateToProps {
@@ -410,6 +410,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     {...this.props}
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
+                    switchHiddenAllShortcut={formatShortcuts(keyMap.SWITCH_ALL_HIDDEN)}
+                    switchLockAllShortcut={formatShortcuts(keyMap.SWITCH_ALL_LOCK)}
                     changeStatesOrdering={this.onChangeStatesOrdering}
                     lockAllStates={this.onLockAllStates}
                     unlockAllStates={this.onUnlockAllStates}
