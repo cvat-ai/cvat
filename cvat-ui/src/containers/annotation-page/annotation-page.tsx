@@ -63,10 +63,11 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
         }
     }
 
-    if (searchParams.has('object')) {
-        const searchObject = +(searchParams.get('object') as string);
-        if (!Number.isNaN(searchObject)) {
-            initialFilters.push(`serverID==${searchObject}`);
+    if (searchParams.has('serverID') && searchParams.has('type')) {
+        const serverID = searchParams.get('serverID');
+        const type = searchParams.get('type');
+        if (serverID && !Number.isNaN(+serverID)) {
+            initialFilters.push(`serverID==${serverID} & type=="${type}"`);
         }
     }
 

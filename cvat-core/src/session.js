@@ -504,6 +504,7 @@
                 * @returns {HistoryActions}
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @returns {[string, number][]} array of pairs [action name, frame number]
                 * @instance
                 * @async
             */
