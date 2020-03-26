@@ -94,9 +94,8 @@ class MotSeqExtractor(SourceExtractor):
         self._subset = None
 
         if labels is None:
-            if osp.isfile(osp.join(seq_root, MotPath.LABELS_FILE)):
-                labels = osp.join(seq_root, MotPath.LABELS_FILE)
-            else:
+            labels = osp.join(osp.dirname(path), MotPath.LABELS_FILE)
+            if not osp.isfile(labels):
                 labels = [lbl.name for lbl in MotLabel]
         if isinstance(labels, str):
             labels = self._parse_labels(labels)
@@ -330,7 +329,7 @@ class MotSeqGtConverter(Converter, CliPlugin):
                     else:
                         log.debug("Item '%s' has no image" % item.id)
 
-        labels_file = osp.join(save_dir, MotPath.LABELS_FILE)
+        labels_file = osp.join(anno_dir, MotPath.LABELS_FILE)
         with open(labels_file, 'w', encoding='utf-8') as f:
             f.write('\n'.join(l.name
                 for l in extractor.categories()[AnnotationType.label].items)
