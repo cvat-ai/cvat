@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -32,7 +32,7 @@ interface StateToProps {
     states: any[];
     labels: any[];
     jobInstance: any;
-    keyMap: KeyMap;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
 }
 
 interface DispatchToProps {

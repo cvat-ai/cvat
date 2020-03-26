@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import {
     Layout,
@@ -35,7 +35,7 @@ import SplitControl from './split-control';
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
-    keyMap: KeyMap;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
 
     mergeObjects(enabled: boolean): void;
     groupObjects(enabled: boolean): void;

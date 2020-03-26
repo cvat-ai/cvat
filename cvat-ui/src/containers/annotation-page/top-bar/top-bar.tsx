@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import InputNumber from 'antd/lib/input-number';
 import { SliderValue } from 'antd/lib/slider';
@@ -45,7 +45,7 @@ interface StateToProps {
     autoSave: boolean;
     autoSaveInterval: number;
     workspace: Workspace;
-    keyMap: KeyMap;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
 }
 
 interface DispatchToProps {

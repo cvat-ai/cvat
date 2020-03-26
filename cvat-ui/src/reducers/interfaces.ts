@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { KeyMap } from 'react-hotkeys';
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas';
 
 export type StringObject = {
@@ -444,7 +444,7 @@ export interface SettingsState {
 
 export interface ShortcutsState {
     visibleShortcutsHelp: boolean;
-    keyMap: KeyMap;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
 }
 
 export interface CombinedState {

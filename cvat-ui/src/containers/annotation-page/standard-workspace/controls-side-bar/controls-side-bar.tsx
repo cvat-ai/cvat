@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { KeyMap } from 'react-hotkeys';
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas';
@@ -22,7 +22,7 @@ interface StateToProps {
     canvasInstance: Canvas;
     rotateAll: boolean;
     activeControl: ActiveControl;
-    keyMap: KeyMap;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
 }
 
 interface DispatchToProps {

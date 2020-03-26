@@ -5,7 +5,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { connect, Provider } from 'react-redux';
-import { KeyMap } from 'react-hotkeys';
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { BrowserRouter } from 'react-router-dom';
 
 import CVATApplication from 'components/cvat-app';
@@ -49,7 +49,7 @@ interface StateToProps {
     installedTFAnnotation: boolean;
     notifications: NotificationsState;
     user: any;
-    keyMap: keyMap;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
 }
 
 interface DispatchToProps {

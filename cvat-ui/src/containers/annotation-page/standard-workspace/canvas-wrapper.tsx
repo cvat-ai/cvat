@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { KeyMap } from 'react-hotkeys';
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 
 import CanvasWrapperComponent from 'components/annotation-page/standard-workspace/canvas-wrapper';
@@ -79,7 +79,7 @@ interface StateToProps {
     curZLayer: number;
     contextVisible: boolean;
     contextType: ContextMenuType;
-    keyMap: KeyMap;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
 }
 
 interface DispatchToProps {

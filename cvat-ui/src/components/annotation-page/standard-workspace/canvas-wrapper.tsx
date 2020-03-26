@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import Tooltip from 'antd/lib/tooltip';
 import Icon from 'antd/lib/icon';
@@ -59,7 +59,7 @@ interface Props {
     contextType: ContextMenuType;
     aamZoomMargin: number;
     workspace: Workspace;
-    keyMap: KeyMap;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;

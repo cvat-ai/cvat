@@ -7,7 +7,7 @@ import '../styles.scss';
 import React from 'react';
 import { Switch, Route, Redirect } from 'react-router';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
-import { GlobalHotKeys, KeyMap, configure } from 'react-hotkeys';
+import { GlobalHotKeys, ExtendedKeyMapOptions, configure } from 'react-hotkeys';
 import Spin from 'antd/lib/spin';
 import Layout from 'antd/lib/layout';
 import notification from 'antd/lib/notification';
@@ -37,7 +37,7 @@ interface CVATAppProps {
     resetErrors: () => void;
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
-    keyMap: KeyMap;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
     userInitialized: boolean;
     userFetching: boolean;
     pluginsInitialized: boolean;

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
 import Select from 'antd/lib/select';
@@ -18,6 +18,7 @@ import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
+import Tooltip from 'antd/lib/tooltip';
 
 import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
 
@@ -33,11 +34,18 @@ import {
 
 import { ObjectType, ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
+import { formatShortcuts } from 'utils/shortcuts';
 
 function ItemMenu(
     serverID: number | undefined,
     locked: boolean,
     objectType: ObjectType,
+    copyShortcut: string,
+    pasteShortcut: string,
+    propagateShortcut: string,
+    toBackgroundShortcut: string,
+    toForegroundShortcut: string,
+    removeShortcut: string,
     copy: (() => void),
     remove: (() => void),
     propagate: (() => void),
@@ -53,51 +61,61 @@ function ItemMenu(
                 </Button>
             </Menu.Item>
             <Menu.Item>
-                <Button type='link' icon='copy' onClick={copy}>
-                    Make a copy
-                </Button>
+                <Tooltip title={`${copyShortcut} and ${pasteShortcut}`}>
+                    <Button type='link' icon='copy' onClick={copy}>
+                        Make a copy
+                    </Button>
+                </Tooltip>
             </Menu.Item>
             <Menu.Item>
-                <Button type='link' icon='block' onClick={propagate}>
-                    Propagate
-                </Button>
+                <Tooltip title={`${propagateShortcut}`}>
+                    <Button type='link' icon='block' onClick={propagate}>
+                        Propagate
+                    </Button>
+                </Tooltip>
             </Menu.Item>
             { objectType !== ObjectType.TAG && (
                 <>
                     <Menu.Item>
-                        <Button type='link' onClick={toBackground}>
-                            <Icon component={BackgroundIcon} />
-                            To background
-                        </Button>
+                        <Tooltip title={`${toBackgroundShortcut}`}>
+                            <Button type='link' onClick={toBackground}>
+                                <Icon component={BackgroundIcon} />
+                                To background
+                            </Button>
+                        </Tooltip>
                     </Menu.Item>
                     <Menu.Item>
-                        <Button type='link' onClick={toForeground}>
-                            <Icon component={ForegroundIcon} />
-                            To foreground
-                        </Button>
+                        <Tooltip title={`${toForegroundShortcut}`}>
+                            <Button type='link' onClick={toForeground}>
+                                <Icon component={ForegroundIcon} />
+                                To foreground
+                            </Button>
+                        </Tooltip>
                     </Menu.Item>
                 </>
             )}
             <Menu.Item>
-                <Button
-                    type='link'
-                    icon='delete'
-                    onClick={(): void => {
-                        if (locked) {
-                            Modal.confirm({
-                                title: 'Object is locked',
-                                content: 'Are you sure you want to remove it?',
-                                onOk() {
-                                    remove();
-                                },
-                            });
-                        } else {
-                            remove();
-                        }
-                    }}
-                >
-                    Remove
-                </Button>
+                <Tooltip title={`${removeShortcut}`}>
+                    <Button
+                        type='link'
+                        icon='delete'
+                        onClick={(): void => {
+                            if (locked) {
+                                Modal.confirm({
+                                    title: 'Object is locked',
+                                    content: 'Are you sure you want to remove it?',
+                                    onOk() {
+                                        remove();
+                                    },
+                                });
+                            } else {
+                                remove();
+                            }
+                        }}
+                    >
+                        Remove
+                    </Button>
+                </Tooltip>
             </Menu.Item>
         </Menu>
     );
@@ -111,6 +129,12 @@ interface ItemTopComponentProps {
     objectType: ObjectType;
     type: string;
     locked: boolean;
+    copyShortcut: string;
+    pasteShortcut: string;
+    propagateShortcut: string;
+    toBackgroundShortcut: string;
+    toForegroundShortcut: string;
+    removeShortcut: string;
     changeLabel(labelID: string): void;
     copy(): void;
     remove(): void;
@@ -129,6 +153,12 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         objectType,
         type,
         locked,
+        copyShortcut,
+        pasteShortcut,
+        propagateShortcut,
+        toBackgroundShortcut,
+        toForegroundShortcut,
+        removeShortcut,
         changeLabel,
         copy,
         remove,
@@ -146,13 +176,15 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                 <Text type='secondary' style={{ fontSize: 10 }}>{type}</Text>
             </Col>
             <Col span={12}>
-                <Select size='small' value={`${labelID}`} onChange={changeLabel}>
-                    { labels.map((label: any): JSX.Element => (
-                        <Select.Option key={label.id} value={`${label.id}`}>
-                            {label.name}
-                        </Select.Option>
-                    ))}
-                </Select>
+                <Tooltip title='Change current label'>
+                    <Select size='small' value={`${labelID}`} onChange={changeLabel}>
+                        { labels.map((label: any): JSX.Element => (
+                            <Select.Option key={label.id} value={`${label.id}`}>
+                                {label.name}
+                            </Select.Option>
+                        ))}
+                    </Select>
+                </Tooltip>
             </Col>
             <Col span={2}>
                 <Dropdown
@@ -161,6 +193,12 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                         serverID,
                         locked,
                         objectType,
+                        copyShortcut,
+                        pasteShortcut,
+                        propagateShortcut,
+                        toBackgroundShortcut,
+                        toForegroundShortcut,
+                        removeShortcut,
                         copy,
                         remove,
                         propagate,
@@ -187,6 +225,13 @@ interface ItemButtonsComponentProps {
     pinned: boolean;
     hidden: boolean;
     keyframe: boolean | undefined;
+    switchOccludedShortcut: string;
+    switchOutsideShortcut: string;
+    switchLockShortcut: string;
+    switchHiddenShortcut: string;
+    switchKeyFrameShortcut: string;
+    nextKeyFrameShortcut: string;
+    prevKeyFrameShortcut: string;
 
     navigateFirstKeyframe: null | (() => void);
     navigatePrevKeyframe: null | (() => void);
@@ -217,6 +262,13 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
         pinned,
         hidden,
         keyframe,
+        switchOccludedShortcut,
+        switchOutsideShortcut,
+        switchLockShortcut,
+        switchHiddenShortcut,
+        switchKeyFrameShortcut,
+        nextKeyFrameShortcut,
+        prevKeyFrameShortcut,
 
         navigateFirstKeyframe,
         navigatePrevKeyframe,
@@ -249,12 +301,26 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                         </Col>
                         <Col>
                             { navigatePrevKeyframe
-                                ? <Icon component={PreviousIcon} onClick={navigatePrevKeyframe} />
+                                ? (
+                                    <Tooltip title={`Go to previous keyframe ${prevKeyFrameShortcut}`}>
+                                        <Icon
+                                            component={PreviousIcon}
+                                            onClick={navigatePrevKeyframe}
+                                        />
+                                    </Tooltip>
+                                )
                                 : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                         <Col>
                             { navigateNextKeyframe
-                                ? <Icon component={NextIcon} onClick={navigateNextKeyframe} />
+                                ? (
+                                    <Tooltip title={`Go to next keyframe ${nextKeyFrameShortcut}`}>
+                                        <Icon
+                                            component={NextIcon}
+                                            onClick={navigateNextKeyframe}
+                                        />
+                                    </Tooltip>
+                                )
                                 : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                         <Col>
@@ -265,29 +331,39 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                     </Row>
                     <Row type='flex' justify='space-around'>
                         <Col>
-                            { outside
-                                ? <Icon component={ObjectOutsideIcon} onClick={unsetOutside} />
-                                : <Icon type='select' onClick={setOutside} />}
+                            <Tooltip title={`Switch outside property ${switchOutsideShortcut}`}>
+                                { outside
+                                    ? <Icon component={ObjectOutsideIcon} onClick={unsetOutside} />
+                                    : <Icon type='select' onClick={setOutside} />}
+                            </Tooltip>
                         </Col>
                         <Col>
-                            { locked
-                                ? <Icon type='lock' onClick={unlock} />
-                                : <Icon type='unlock' onClick={lock} />}
+                            <Tooltip title={`Switch lock property ${switchLockShortcut}`}>
+                                { locked
+                                    ? <Icon type='lock' onClick={unlock} />
+                                    : <Icon type='unlock' onClick={lock} />}
+                            </Tooltip>
                         </Col>
                         <Col>
-                            { occluded
-                                ? <Icon type='team' onClick={unsetOccluded} />
-                                : <Icon type='user' onClick={setOccluded} />}
+                            <Tooltip title={`Switch occluded property ${switchOccludedShortcut}`}>
+                                { occluded
+                                    ? <Icon type='team' onClick={unsetOccluded} />
+                                    : <Icon type='user' onClick={setOccluded} />}
+                            </Tooltip>
                         </Col>
                         <Col>
-                            { hidden
-                                ? <Icon type='eye-invisible' onClick={show} />
-                                : <Icon type='eye' onClick={hide} />}
+                            <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`}>
+                                { hidden
+                                    ? <Icon type='eye-invisible' onClick={show} />
+                                    : <Icon type='eye' onClick={hide} />}
+                            </Tooltip>
                         </Col>
                         <Col>
-                            { keyframe
-                                ? <Icon type='star' theme='filled' onClick={unsetKeyframe} />
-                                : <Icon type='star' onClick={setKeyframe} />}
+                            <Tooltip title={`Switch keyframe property ${switchKeyFrameShortcut}`}>
+                                { keyframe
+                                    ? <Icon type='star' theme='filled' onClick={unsetKeyframe} />
+                                    : <Icon type='star' onClick={setKeyframe} />}
+                            </Tooltip>
                         </Col>
                         {
                             shapeType !== ShapeType.POINTS && (
@@ -310,9 +386,11 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                 <Col span={20} style={{ textAlign: 'center' }}>
                     <Row type='flex' justify='space-around'>
                         <Col>
-                            { locked
-                                ? <Icon type='lock' onClick={unlock} />
-                                : <Icon type='unlock' onClick={lock} />}
+                            <Tooltip title={`Switch lock property ${switchLockShortcut}`}>
+                                { locked
+                                    ? <Icon type='lock' onClick={unlock} />
+                                    : <Icon type='unlock' onClick={lock} />}
+                            </Tooltip>
                         </Col>
                     </Row>
                 </Col>
@@ -325,19 +403,25 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
             <Col span={20} style={{ textAlign: 'center' }}>
                 <Row type='flex' justify='space-around'>
                     <Col>
-                        { locked
-                            ? <Icon type='lock' onClick={unlock} />
-                            : <Icon type='unlock' onClick={lock} />}
+                        <Tooltip title={`Switch lock property ${switchLockShortcut}`}>
+                            { locked
+                                ? <Icon type='lock' onClick={unlock} />
+                                : <Icon type='unlock' onClick={lock} />}
+                        </Tooltip>
                     </Col>
                     <Col>
-                        { occluded
-                            ? <Icon type='team' onClick={unsetOccluded} />
-                            : <Icon type='user' onClick={setOccluded} />}
+                        <Tooltip title={`Switch occluded property ${switchOccludedShortcut}`}>
+                            { occluded
+                                ? <Icon type='team' onClick={unsetOccluded} />
+                                : <Icon type='user' onClick={setOccluded} />}
+                        </Tooltip>
                     </Col>
                     <Col>
-                        { hidden
-                            ? <Icon type='eye-invisible' onClick={show} />
-                            : <Icon type='eye' onClick={hide} />}
+                        <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`}>
+                            { hidden
+                                ? <Icon type='eye-invisible' onClick={show} />
+                                : <Icon type='eye' onClick={hide} />}
+                        </Tooltip>
                     </Col>
                     {
                         shapeType !== ShapeType.POINTS && (
@@ -587,6 +671,7 @@ function ItemAttributesComponent(props: ItemAttributesComponentProps): JSX.Eleme
 const ItemAttributes = React.memo(ItemAttributesComponent, attrAreTheSame);
 
 interface Props {
+    keyMap: Record<string, ExtendedKeyMapOptions>;
     activated: boolean;
     objectType: ObjectType;
     shapeType: ShapeType;
@@ -653,6 +738,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         && nextProps.collapsed === prevProps.collapsed
         && nextProps.labels === prevProps.labels
         && nextProps.attributes === prevProps.attributes
+        && nextProps.keyMap === prevProps.keyMap
         && nextProps.navigateFirstKeyframe === prevProps.navigateFirstKeyframe
         && nextProps.navigatePrevKeyframe === prevProps.navigatePrevKeyframe
         && nextProps.navigateNextKeyframe === prevProps.navigateNextKeyframe
@@ -681,6 +767,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         attributes,
         labels,
         collapsed,
+        keyMap,
         navigateFirstKeyframe,
         navigatePrevKeyframe,
         navigateNextKeyframe,
@@ -748,6 +835,12 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     objectType={objectType}
                     type={type}
                     locked={locked}
+                    copyShortcut={formatShortcuts(keyMap.COPY_SHAPE)}
+                    pasteShortcut={formatShortcuts(keyMap.PASTE_SHAPE)}
+                    propagateShortcut={formatShortcuts(keyMap.PROPAGATE_OBJECT)}
+                    toBackgroundShortcut={formatShortcuts(keyMap.TO_BACKGROUND)}
+                    toForegroundShortcut={formatShortcuts(keyMap.TO_FOREGROUND)}
+                    removeShortcut={formatShortcuts(keyMap.DELETE_OBJECT)}
                     changeLabel={changeLabel}
                     copy={copy}
                     remove={remove}
@@ -765,6 +858,13 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     pinned={pinned}
                     hidden={hidden}
                     keyframe={keyframe}
+                    switchOccludedShortcut={formatShortcuts(keyMap.SWITCH_OCCLUDED)}
+                    switchOutsideShortcut={formatShortcuts(keyMap.SWITCH_OUTSIDE)}
+                    switchLockShortcut={formatShortcuts(keyMap.SWITCH_LOCK)}
+                    switchHiddenShortcut={formatShortcuts(keyMap.SWITCH_HIDDEN)}
+                    switchKeyFrameShortcut={formatShortcuts(keyMap.SWITCH_KEYFRAME)}
+                    nextKeyFrameShortcut={formatShortcuts(keyMap.NEXT_KEY_FRAME)}
+                    prevKeyFrameShortcut={formatShortcuts(keyMap.PREV_KEY_FRAME)}
                     navigateFirstKeyframe={navigateFirstKeyframe}
                     navigatePrevKeyframe={navigatePrevKeyframe}
                     navigateNextKeyframe={navigateNextKeyframe}
