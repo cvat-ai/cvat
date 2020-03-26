@@ -13,7 +13,7 @@ import {
 } from 'reducers/interfaces';
 
 import {
-    drawShape,
+    rememberObject,
 } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
@@ -47,7 +47,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             points?: number,
             rectDrawingMethod?: RectDrawingMethod,
         ): void {
-            dispatch(drawShape(shapeType, labelID, objectType, points, rectDrawingMethod));
+            dispatch(rememberObject(objectType, labelID, shapeType, points, rectDrawingMethod));
         },
     };
 }
@@ -145,15 +145,9 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     };
 
     private onChangePoints = (value: number | undefined): void => {
-        if (typeof (value) === 'undefined') {
-            this.setState({
-                numberOfPoints: value,
-            });
-        } else if (typeof (value) === 'number') {
-            this.setState({
-                numberOfPoints: Math.max(value, this.minimumPoints),
-            });
-        }
+        this.setState({
+            numberOfPoints: value,
+        });
     };
 
     private onChangeLabel = (value: string): void => {

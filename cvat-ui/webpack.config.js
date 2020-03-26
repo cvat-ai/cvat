@@ -50,16 +50,7 @@ module.exports = {
                 },
             },
         }, {
-            test: /node_modules\/antd\/[\w\/]*.less$/,
-            use: ['style-loader', 'css-loader', {
-                loader: 'less-loader',
-                options: {
-                    javascriptEnabled: true,
-                },
-            }]
-        }, {
             test: /\.(css|scss)$/,
-            exclude: /node_modules/,
             use: ['style-loader', {
                 loader: 'css-loader',
                 options: {
@@ -86,8 +77,8 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-          template: "./src/index.html",
-          inject: false,
+            template: "./src/index.html",
+            inject: false,
         }),
         new Dotenv({
             systemvars: true,

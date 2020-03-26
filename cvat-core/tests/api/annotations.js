@@ -367,7 +367,7 @@ describe('Feature: save annotations', () => {
         const annotations = await task.annotations.get(0);
 
         expect(task.annotations.hasUnsavedChanges()).toBe(false);
-        await annotations[0].delete();
+        await annotations[0].delete(0);
         expect(task.annotations.hasUnsavedChanges()).toBe(true);
         await task.annotations.save();
         expect(task.annotations.hasUnsavedChanges()).toBe(false);
@@ -413,7 +413,7 @@ describe('Feature: save annotations', () => {
         const annotations = await job.annotations.get(0);
 
         expect(job.annotations.hasUnsavedChanges()).toBe(false);
-        await annotations[0].delete();
+        await annotations[0].delete(0);
         expect(job.annotations.hasUnsavedChanges()).toBe(true);
         await job.annotations.save();
         expect(job.annotations.hasUnsavedChanges()).toBe(false);
@@ -436,7 +436,7 @@ describe('Feature: save annotations', () => {
             return result;
         };
 
-        await annotations[0].delete();
+        await annotations[0].delete(0);
         await job.annotations.save();
 
         serverProxy.annotations.updateAnnotations = oldImplementation;

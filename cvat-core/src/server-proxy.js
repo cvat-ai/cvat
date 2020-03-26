@@ -584,6 +584,21 @@
                 });
             }
 
+            async function saveLogs(logs) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.post(`${backendAPI}/server/logs`, JSON.stringify(logs), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             Object.defineProperties(this, Object.freeze({
                 server: {
                     value: Object.freeze({
@@ -643,6 +658,13 @@
                         getAnnotations,
                         dumpAnnotations,
                         uploadAnnotations,
+                    }),
+                    writable: false,
+                },
+
+                logs: {
+                    value: Object.freeze({
+                        save: saveLogs,
                     }),
                     writable: false,
                 },

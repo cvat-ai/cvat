@@ -2,19 +2,16 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-import {
-    Row,
-    Col,
-    Icon,
-    Slider,
-    Tooltip,
-    InputNumber,
-} from 'antd';
-
-import { SliderValue } from 'antd/lib/slider';
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Slider, { SliderValue } from 'antd/lib/slider';
+import Tooltip from 'antd/lib/tooltip';
+import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
+
+import { clamp } from 'utils/math';
 
 interface Props {
     startFrame: number;
@@ -22,7 +19,7 @@ interface Props {
     frameNumber: number;
     inputFrameRef: React.RefObject<InputNumber>;
     onSliderChange(value: SliderValue): void;
-    onInputChange(value: number | undefined): void;
+    onInputChange(value: number): void;
     onURLIconClick(): void;
 }
 
@@ -36,6 +33,14 @@ function PlayerNavigation(props: Props): JSX.Element {
         onInputChange,
         onURLIconClick,
     } = props;
+
+    const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
+
+    useEffect(() => {
+        if (frameNumber !== frameInputValue) {
+            setFrameInputValue(frameNumber);
+        }
+    }, [frameNumber]);
 
     return (
         <>
@@ -68,9 +73,21 @@ function PlayerNavigation(props: Props): JSX.Element {
                 <InputNumber
                     className='cvat-player-frame-selector'
                     type='number'
-                    value={frameNumber || 0}
+                    value={frameInputValue}
                     // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
-                    onChange={onInputChange}
+                    onChange={(value: number | undefined) => {
+                        if (typeof (value) === 'number') {
+                            setFrameInputValue(Math.floor(
+                                clamp(value, startFrame, stopFrame),
+                            ));
+                        }
+                    }}
+                    onBlur={() => {
+                        onInputChange(frameInputValue);
+                    }}
+                    onPressEnter={() => {
+                        onInputChange(frameInputValue);
+                    }}
                     ref={inputFrameRef}
                 />
             </Col>

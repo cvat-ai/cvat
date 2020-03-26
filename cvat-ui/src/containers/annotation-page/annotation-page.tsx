@@ -7,11 +7,9 @@ import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
 
 import AnnotationPageComponent from 'components/annotation-page/annotation-page';
-import { getJobAsync } from 'actions/annotation-actions';
+import { getJobAsync, saveLogsAsync } from 'actions/annotation-actions';
 
-import {
-    CombinedState,
-} from 'reducers/interfaces';
+import { CombinedState, Workspace } from 'reducers/interfaces';
 
 type OwnProps = RouteComponentProps<{
     tid: string;
@@ -21,10 +19,12 @@ type OwnProps = RouteComponentProps<{
 interface StateToProps {
     job: any | null | undefined;
     fetching: boolean;
+    workspace: Workspace;
 }
 
 interface DispatchToProps {
     getJob(): void;
+    saveLogs(): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -36,12 +36,14 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 instance: job,
                 fetching,
             },
+            workspace,
         },
     } = state;
 
     return {
         job: !job || jobID === job.id ? job : null,
         fetching,
+        workspace,
     };
 }
 
@@ -61,10 +63,11 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
         }
     }
 
-    if (searchParams.has('object')) {
-        const searchObject = +(searchParams.get('object') as string);
-        if (!Number.isNaN(searchObject)) {
-            initialFilters.push(`serverID==${searchObject}`);
+    if (searchParams.has('serverID') && searchParams.has('type')) {
+        const serverID = searchParams.get('serverID');
+        const type = searchParams.get('type');
+        if (serverID && !Number.isNaN(+serverID)) {
+            initialFilters.push(`serverID==${serverID} & type=="${type}"`);
         }
     }
 
@@ -75,6 +78,9 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     return {
         getJob(): void {
             dispatch(getJobAsync(taskID, jobID, initialFrame, initialFilters));
+        },
+        saveLogs(): void {
+            dispatch(saveLogsAsync());
         },
     };
 }

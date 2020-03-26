@@ -4,26 +4,21 @@
 
 import React from 'react';
 
-import {
-    Row,
-    Col,
-    Icon,
-    Select,
-    Radio,
-    Input,
-    Collapse,
-    Checkbox,
-    InputNumber,
-    Dropdown,
-    Menu,
-    Button,
-    Modal,
-    Popover,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Select from 'antd/lib/select';
+import Radio, { RadioChangeEvent } from 'antd/lib/radio';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import Input from 'antd/lib/input';
+import InputNumber from 'antd/lib/input-number';
+import Collapse from 'antd/lib/collapse';
+import Dropdown from 'antd/lib/dropdown';
+import Menu from 'antd/lib/menu';
+import Button from 'antd/lib/button';
+import Modal from 'antd/lib/modal';
+import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
-import { RadioChangeEvent } from 'antd/lib/radio';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+
 import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
 
 import {
@@ -36,13 +31,13 @@ import {
     ForegroundIcon,
 } from 'icons';
 
-import {
-    ObjectType, ShapeType,
-} from 'reducers/interfaces';
+import { ObjectType, ShapeType } from 'reducers/interfaces';
+import { clamp } from 'utils/math';
 
 function ItemMenu(
     serverID: number | undefined,
     locked: boolean,
+    objectType: ObjectType,
     copy: (() => void),
     remove: (() => void),
     propagate: (() => void),
@@ -67,18 +62,22 @@ function ItemMenu(
                     Propagate
                 </Button>
             </Menu.Item>
-            <Menu.Item>
-                <Button type='link' onClick={toBackground}>
-                    <Icon component={BackgroundIcon} />
-                    To background
-                </Button>
-            </Menu.Item>
-            <Menu.Item>
-                <Button type='link' onClick={toForeground}>
-                    <Icon component={ForegroundIcon} />
-                    To foreground
-                </Button>
-            </Menu.Item>
+            { objectType !== ObjectType.TAG && (
+                <>
+                    <Menu.Item>
+                        <Button type='link' onClick={toBackground}>
+                            <Icon component={BackgroundIcon} />
+                            To background
+                        </Button>
+                    </Menu.Item>
+                    <Menu.Item>
+                        <Button type='link' onClick={toForeground}>
+                            <Icon component={ForegroundIcon} />
+                            To foreground
+                        </Button>
+                    </Menu.Item>
+                </>
+            )}
             <Menu.Item>
                 <Button
                     type='link'
@@ -109,6 +108,7 @@ interface ItemTopComponentProps {
     serverID: number | undefined;
     labelID: number;
     labels: any[];
+    objectType: ObjectType;
     type: string;
     locked: boolean;
     changeLabel(labelID: string): void;
@@ -126,6 +126,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         serverID,
         labelID,
         labels,
+        objectType,
         type,
         locked,
         changeLabel,
@@ -159,6 +160,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                     overlay={ItemMenu(
                         serverID,
                         locked,
+                        objectType,
                         copy,
                         remove,
                         propagate,
@@ -302,6 +304,22 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
         );
     }
 
+    if (objectType === ObjectType.TAG) {
+        return (
+            <Row type='flex' align='middle' justify='space-around'>
+                <Col span={20} style={{ textAlign: 'center' }}>
+                    <Row type='flex' justify='space-around'>
+                        <Col>
+                            { locked
+                                ? <Icon type='lock' onClick={unlock} />
+                                : <Icon type='unlock' onClick={lock} />}
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
+        );
+    }
+
     return (
         <Row type='flex' align='middle' justify='space-around'>
             <Col span={20} style={{ textAlign: 'center' }}>
@@ -439,7 +457,7 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
     }
 
     if (attrInputType === 'number') {
-        const [min, max, step] = attrValues;
+        const [min, max, step] = attrValues.map((value: string): number => +value);
 
         return (
             <>
@@ -452,15 +470,17 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                     <InputNumber
                         size='small'
                         onChange={(value: number | undefined): void => {
-                            if (typeof (value) !== 'undefined') {
-                                changeAttribute(attrID, `${value}`);
+                            if (typeof (value) === 'number') {
+                                changeAttribute(
+                                    attrID, `${clamp(value, min, max)}`,
+                                );
                             }
                         }}
                         value={+attrValue}
                         className='cvat-object-item-number-attribute'
-                        min={+min}
-                        max={+max}
-                        step={+step}
+                        min={min}
+                        max={max}
+                        step={step}
                     />
                 </Col>
             </>
@@ -714,7 +734,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     style={{ background: ` ${color}` }}
                 />
             </Popover>
-
             <div
                 onMouseEnter={activate}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
@@ -726,6 +745,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     clientID={clientID}
                     labelID={labelID}
                     labels={labels}
+                    objectType={objectType}
                     type={type}
                     locked={locked}
                     changeLabel={changeLabel}

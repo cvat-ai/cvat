@@ -230,6 +230,10 @@ export interface NotificationsState {
             undo: null | ErrorState;
             redo: null | ErrorState;
             search: null | ErrorState;
+            savingLogs: null | ErrorState;
+        };
+        boundaries: {
+            resetError: null | ErrorState;
         };
 
         [index: string]: any;
@@ -282,6 +286,7 @@ export enum StatesOrdering {
 export enum ContextMenuType {
     CANVAS = 'canvas',
     CANVAS_SHAPE = 'canvas_shape',
+    CANVAS_SHAPE_POINT = 'canvas_shape_point',
 }
 
 export enum Rotation {
@@ -301,6 +306,8 @@ export interface AnnotationState {
             visible: boolean;
             top: number;
             left: number;
+            type: ContextMenuType;
+            pointID: number | null;
         };
         instance: Canvas;
         ready: boolean;
@@ -335,14 +342,15 @@ export interface AnnotationState {
     annotations: {
         selectedStatesID: number[];
         activatedStateID: number | null;
+        activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
         states: any[];
         filters: string[];
         filtersHistory: string[];
         resetGroupFlag: boolean;
         history: {
-            undo: string[];
-            redo: string[];
+            undo: [string, number][];
+            redo: [string, number][];
         };
         saving: {
             uploading: boolean;
@@ -367,6 +375,12 @@ export interface AnnotationState {
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     tabContentHeight: number;
+    workspace: Workspace;
+}
+
+export enum Workspace {
+    STANDARD = 'Standard',
+    ATTRIBUTE_ANNOTATION = 'Attribute annotation',
 }
 
 export enum GridColor {

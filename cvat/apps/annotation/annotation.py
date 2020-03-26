@@ -322,7 +322,7 @@ class Annotation:
 
         annotations = {}
         data_manager = DataManager(self._annotation_ir)
-        for shape in data_manager.to_shapes(self._db_task.size):
+        for shape in sorted(data_manager.to_shapes(self._db_task.size), key=lambda s: s.get("z_order", 0)):
             _get_frame(annotations, shape).labeled_shapes.append(self._export_labeled_shape(shape))
 
         for tag in self._annotation_ir.tags:

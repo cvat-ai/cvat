@@ -189,14 +189,14 @@ class VocExtractorTest(TestCase):
                             for l in VOC.VocLabel if l.value % 2 == 1
                         ]
                     ),
-
-                    DatasetItem(id='2007_000002', subset='test')
                 ])
 
         with TestDir() as test_dir:
             generate_dummy_voc(test_dir)
-            parsed_dataset = VocClassificationExtractor(test_dir)
-            compare_datasets(self, DstExtractor(), parsed_dataset)
+
+            parsed_train = VocClassificationExtractor(
+                osp.join(test_dir, 'ImageSets', 'Main', 'train.txt'))
+            compare_datasets(self, DstExtractor(), parsed_train)
 
     def test_can_load_voc_det(self):
         class DstExtractor(TestExtractorBase):
@@ -229,14 +229,13 @@ class VocExtractorTest(TestCase):
                             ),
                         ]
                     ),
-
-                    DatasetItem(id='2007_000002', subset='test')
                 ])
 
         with TestDir() as test_dir:
             generate_dummy_voc(test_dir)
-            parsed_dataset = VocDetectionExtractor(test_dir)
-            compare_datasets(self, DstExtractor(), parsed_dataset)
+            parsed_train = VocDetectionExtractor(
+                osp.join(test_dir, 'ImageSets', 'Main', 'train.txt'))
+            compare_datasets(self, DstExtractor(), parsed_train)
 
     def test_can_load_voc_segm(self):
         class DstExtractor(TestExtractorBase):
@@ -250,14 +249,13 @@ class VocExtractorTest(TestCase):
                             ),
                         ]
                     ),
-
-                    DatasetItem(id='2007_000002', subset='test')
                 ])
 
         with TestDir() as test_dir:
             generate_dummy_voc(test_dir)
-            parsed_dataset = VocSegmentationExtractor(test_dir)
-            compare_datasets(self, DstExtractor(), parsed_dataset)
+            parsed_train = VocSegmentationExtractor(
+                osp.join(test_dir, 'ImageSets', 'Segmentation', 'train.txt'))
+            compare_datasets(self, DstExtractor(), parsed_train)
 
     def test_can_load_voc_layout(self):
         class DstExtractor(TestExtractorBase):
@@ -285,14 +283,13 @@ class VocExtractorTest(TestCase):
                             )
                         ]
                     ),
-
-                    DatasetItem(id='2007_000002', subset='test')
                 ])
 
         with TestDir() as test_dir:
             generate_dummy_voc(test_dir)
-            parsed_dataset = VocLayoutExtractor(test_dir)
-            compare_datasets(self, DstExtractor(), parsed_dataset)
+            parsed_train = VocLayoutExtractor(
+                osp.join(test_dir, 'ImageSets', 'Layout', 'train.txt'))
+            compare_datasets(self, DstExtractor(), parsed_train)
 
     def test_can_load_voc_action(self):
         class DstExtractor(TestExtractorBase):
@@ -316,14 +313,13 @@ class VocExtractorTest(TestCase):
                             ),
                         ]
                     ),
-
-                    DatasetItem(id='2007_000002', subset='test')
                 ])
 
         with TestDir() as test_dir:
             generate_dummy_voc(test_dir)
-            parsed_dataset = VocActionExtractor(test_dir)
-            compare_datasets(self, DstExtractor(), parsed_dataset)
+            parsed_train = VocActionExtractor(
+                osp.join(test_dir, 'ImageSets', 'Action', 'train.txt'))
+            compare_datasets(self, DstExtractor(), parsed_train)
 
 class VocConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
@@ -757,16 +753,26 @@ class VocImportTest(TestCase):
 
             dataset = Project.import_from(test_dir, 'voc').make_dataset()
 
-            self.assertEqual(len(VOC.VocTask), len(dataset.sources))
+            self.assertEqual(len(VOC.VocTask) * len(subsets),
+                len(dataset.sources))
             self.assertEqual(set(subsets), set(dataset.subsets()))
             self.assertEqual(
                 sum([len(s) for _, s in subsets.items()]),
                 len(dataset))
 
+    def test_can_detect_voc(self):
+        with TestDir() as test_dir:
+            generate_dummy_voc(test_dir)
+
+            dataset_found = VocImporter.detect(test_dir)
+
+            self.assertTrue(dataset_found)
+
 class VocFormatTest(TestCase):
     def test_can_write_and_parse_labelmap(self):
         src_label_map = VOC.make_voc_label_map()
         src_label_map['qq'] = [None, ['part1', 'part2'], ['act1', 'act2']]
+        src_label_map['ww'] = [(10, 20, 30), [], ['act3']]
 
         with TestDir() as test_dir:
             file_path = osp.join(test_dir, 'test.txt')

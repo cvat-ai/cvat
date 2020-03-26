@@ -73,7 +73,7 @@ export default class LabelsEditor
                     {
                         id: attr.id || idGenerator(),
                         name: attr.name,
-                        type: attr.input_type,
+                        input_type: attr.input_type,
                         mutable: attr.mutable,
                         values: [...attr.values],
                     }
@@ -207,7 +207,7 @@ export default class LabelsEditor
                     {
                         name: attr.name,
                         id: attr.id < 0 ? undefined : attr.id,
-                        input_type: attr.type.toLowerCase(),
+                        input_type: attr.input_type.toLowerCase(),
                         default_value: attr.values[0],
                         mutable: attr.mutable,
                         values: [...attr.values],

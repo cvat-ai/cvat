@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { Action, ActionCreatorsMapObject, AnyAction } from 'redux';
-import { ThunkAction as _ThunkAction } from 'redux-thunk';
+import { ThunkAction as _ThunkAction, ThunkDispatch as _ThunkDispatch } from 'redux-thunk';
 import { CombinedState } from '../reducers/interfaces';
 
 export interface ActionWithPayload<T, P> extends Action<T> {
@@ -22,3 +22,6 @@ export type ActionUnion<A extends ActionCreatorsMapObject> = ReturnType<A[keyof 
 
 export type ThunkAction<R = void, A extends Action = AnyAction>
     = _ThunkAction<R, CombinedState, {}, A>;
+
+export type ThunkDispatch<E = void, A extends Action = AnyAction>
+    = _ThunkDispatch<CombinedState, E, A>;

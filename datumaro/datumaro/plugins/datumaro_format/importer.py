@@ -15,19 +15,15 @@ from .format import DatumaroPath
 class DatumaroImporter(Importer):
     EXTRACTOR_NAME = 'datumaro'
 
+    @classmethod
+    def detect(cls, path):
+        return len(cls.find_subsets(path)) != 0
+
     def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
         project = Project()
 
-        if path.endswith('.json') and osp.isfile(path):
-            subset_paths = [path]
-        else:
-            subset_paths = glob(osp.join(path, '*.json'))
-
-            if osp.basename(osp.normpath(path)) != DatumaroPath.ANNOTATIONS_DIR:
-                path = osp.join(path, DatumaroPath.ANNOTATIONS_DIR)
-            subset_paths += glob(osp.join(path, '*.json'))
-
+        subset_paths = self.find_subsets(path)
         if len(subset_paths) == 0:
             raise Exception("Failed to find 'datumaro' dataset at '%s'" % path)
 
@@ -46,3 +42,15 @@ class DatumaroImporter(Importer):
             })
 
         return project
+
+    @staticmethod
+    def find_subsets(path):
+        if path.endswith('.json') and osp.isfile(path):
+            subset_paths = [path]
+        else:
+            subset_paths = glob(osp.join(path, '*.json'))
+
+            if osp.basename(osp.normpath(path)) != DatumaroPath.ANNOTATIONS_DIR:
+                path = osp.join(path, DatumaroPath.ANNOTATIONS_DIR)
+                subset_paths += glob(osp.join(path, '*.json'))
+        return subset_paths
