@@ -941,10 +941,16 @@ class PlayerView {
             $('.custom-menu').hide(100);
         });
 
+        window.document.body.style.pointerEvents = 'none';
         playerModel.subscribe(this);
     }
 
     onPlayerUpdate(model) {
+        if (!this._latestDrawnImage && model.image) {
+            window.document.body.style.pointerEvents = '';
+            window.cvat.frozen = false;
+        }
+
         const { image } = model;
         const { frames } = model;
         const { geometry } = model;
