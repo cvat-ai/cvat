@@ -8,19 +8,16 @@ import json
 import os
 import os.path as osp
 import shutil
-import sys
 import tempfile
 
 from django.utils import timezone
 import django_rq
 
+from cvat.settings.base import DATUMARO_PATH as _DATUMARO_REPO_PATH
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task
 from .util import current_function_name, make_zip_archive
 
-_CVAT_ROOT_DIR = __file__[:__file__.rfind(osp.join('cvat', ''))]
-_DATUMARO_REPO_PATH = osp.join(_CVAT_ROOT_DIR, 'datumaro')
-sys.path.append(_DATUMARO_REPO_PATH)
 from datumaro.components.project import Project, Environment
 import datumaro.components.extractor as datumaro
 from .bindings import CvatImagesDirExtractor, CvatTaskExtractor
