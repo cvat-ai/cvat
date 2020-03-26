@@ -488,12 +488,15 @@ function setupMenu(job, task, shapeCollectionModel,
 }
 
 
-function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, annotationFormats,
-    loadJobEvent) {
+function buildAnnotationUI(
+    jobData, taskData, imageMetaData,
+    annotationData, annotationFormats, loadJobEvent,
+) {
     // Setup some API
     window.cvat = {
         labelsInfo: new LabelsInfo(taskData.labels),
         translate: new CoordinateTranslator(),
+        frozen: true,
         player: {
             geometry: {
                 scale: 1,
@@ -647,7 +650,6 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
     playerModel.shift(window.cvat.search.get('frame') || 0, true);
 
     const { shortkeys } = window.cvat.config;
-
     setupHelpWindow(shortkeys);
     setupSettingsWindow();
     setupMenu(jobData, taskData, shapeCollectionModel,
