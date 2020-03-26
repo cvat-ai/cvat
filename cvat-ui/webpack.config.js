@@ -50,16 +50,7 @@ module.exports = {
                 },
             },
         }, {
-            test: /node_modules\/antd\/[\w\/]*.less$/,
-            use: ['style-loader', 'css-loader', {
-                loader: 'less-loader',
-                options: {
-                    javascriptEnabled: true,
-                },
-            }]
-        }, {
             test: /\.(css|scss)$/,
-            exclude: /node_modules/,
             use: ['style-loader', {
                 loader: 'css-loader',
                 options: {

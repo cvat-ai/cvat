@@ -32,8 +32,6 @@
     "eslint-plugin-react": "^7.17.0",
     "eslint-plugin-react-hooks": "^1.7.0",
     "html-webpack-plugin": "^3.2.0",
-    "less": "^3.10.3",
-    "less-loader": "^5.0.0",
     "node-sass": "^4.13.0",
     "postcss-loader": "^3.0.0",
     "postcss-preset-env": "^6.7.0",
@@ -42,7 +40,7 @@
     "style-loader": "^1.0.0",
     "tsconfig-paths-webpack-plugin": "^3.2.0",
     "typescript": "^3.7.3",
-    "webpack": "^4.41.2",
+    "webpack": "^4.42.1",
     "webpack-cli": "^3.3.8",
     "webpack-dev-server": "^3.8.0"
   },
