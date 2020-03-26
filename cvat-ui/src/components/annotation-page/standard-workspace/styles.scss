@@ -102,13 +102,19 @@
     > div:nth-child(3) > div > div {
         width: 100%;
     }
-    div:last-child > div > button {
-        width: 100%;
-        &:nth-child(1) {
-            border-radius: 3px 0px 0px 3px;
+    > div:last-child {
+        span {
+            width: 100%;
         }
-        &:nth-child(2) {
-            border-radius: 0px 3px 3px 0px;
+
+        button {
+            width: 100%;
+            &:nth-child(1) {
+                border-radius: 3px 0px 0px 3px;
+            }
+            &:nth-child(2) {
+                border-radius: 0px 3px 3px 0px;
+            }
         }
     }
 }

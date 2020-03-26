@@ -368,9 +368,11 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                         {
                             shapeType !== ShapeType.POINTS && (
                                 <Col>
-                                    { pinned
-                                        ? <Icon type='pushpin' theme='filled' onClick={unpin} />
-                                        : <Icon type='pushpin' onClick={pin} />}
+                                    <Tooltip title='Switch pinned property'>
+                                        { pinned
+                                            ? <Icon type='pushpin' theme='filled' onClick={unpin} />
+                                            : <Icon type='pushpin' onClick={pin} />}
+                                    </Tooltip>
                                 </Col>
                             )
                         }
@@ -426,9 +428,11 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                     {
                         shapeType !== ShapeType.POINTS && (
                             <Col>
-                                { pinned
-                                    ? <Icon type='pushpin' theme='filled' onClick={unpin} />
-                                    : <Icon type='pushpin' onClick={pin} />}
+                                <Tooltip title='Switch pinned property'>
+                                    { pinned
+                                        ? <Icon type='pushpin' theme='filled' onClick={unpin} />
+                                        : <Icon type='pushpin' onClick={pin} />}
+                                </Tooltip>
                             </Col>
                         )
                     }
