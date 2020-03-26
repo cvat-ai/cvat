@@ -37,6 +37,7 @@ interface CVATAppProps {
     resetErrors: () => void;
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
+    keyMap: KeyMap;
     userInitialized: boolean;
     userFetching: boolean;
     pluginsInitialized: boolean;
@@ -209,6 +210,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             switchShortcutsDialog,
             user,
             history,
+            keyMap,
         } = this.props;
 
         const readyForRender = (userInitialized && user == null)
@@ -218,19 +220,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const withModels = installedAutoAnnotation
             || installedTFAnnotation || installedTFSegmentation;
 
-        const keyMap = {
-            SWITCH_SHORTCUTS: {
-                name: 'Show shortcuts',
-                description: 'Open/hide the list of available shortcuts',
-                sequence: 'f1',
-                action: 'keydown',
-            },
-            OPEN_SETTINGS: {
-                name: 'Open settings',
-                description: 'Go to the settings page or go back',
-                sequence: 'f2',
-                action: 'keydown',
-            },
+        const subKeyMap = {
+            SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
+            OPEN_SETTINGS: keyMap.OPEN_SETTINGS,
         };
 
         const handlers = {
@@ -262,7 +254,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                             <HeaderContainer> </HeaderContainer>
                             <Layout.Content>
                                 <ShorcutsDialog />
-                                <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers}>
+                                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>
                                         <Route exact path='/settings' component={SettingsPageContainer} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />

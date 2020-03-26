@@ -7,11 +7,7 @@ import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
 import { LogType } from 'cvat-logger';
-import {
-    ActiveControl,
-    CombinedState,
-    ColorBy,
-} from 'reducers/interfaces';
+import { ActiveControl, CombinedState, ColorBy } from 'reducers/interfaces';
 import {
     collapseObjectItems,
     changeLabelColorAsync,
@@ -411,7 +407,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     private changeAttribute = (id: number, value: string): void => {
         const { objectState, jobInstance } = this.props;
         jobInstance.logger.log(LogType.changeAttribute, {
-            id, 
+            id,
             value,
             object_id: objectState.clientID,
         });

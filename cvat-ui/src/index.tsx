@@ -5,6 +5,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { connect, Provider } from 'react-redux';
+import { KeyMap } from 'react-hotkeys';
 import { BrowserRouter } from 'react-router-dom';
 
 import CVATApplication from 'components/cvat-app';
@@ -48,6 +49,7 @@ interface StateToProps {
     installedTFAnnotation: boolean;
     notifications: NotificationsState;
     user: any;
+    keyMap: keyMap;
 }
 
 interface DispatchToProps {
@@ -67,6 +69,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { formats } = state;
     const { users } = state;
     const { about } = state;
+    const { shortcuts } = state;
 
     return {
         userInitialized: auth.initialized,
@@ -84,6 +87,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         installedTFAnnotation: plugins.list.TF_ANNOTATION,
         notifications: state.notifications,
         user: auth.user,
+        keyMap: shortcuts.keyMap,
     };
 }
 

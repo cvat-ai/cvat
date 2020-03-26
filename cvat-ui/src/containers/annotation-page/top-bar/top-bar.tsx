@@ -45,6 +45,7 @@ interface StateToProps {
     autoSave: boolean;
     autoSaveInterval: number;
     workspace: Workspace;
+    keyMap: KeyMap;
 }
 
 interface DispatchToProps {
@@ -94,6 +95,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 autoSaveInterval,
             },
         },
+        shortcuts: {
+            keyMap,
+        },
     } = state;
 
     return {
@@ -112,6 +116,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         autoSave,
         autoSaveInterval,
         workspace,
+        keyMap,
     };
 }
 
@@ -464,6 +469,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             canvasIsReady,
             searchAnnotations,
             changeWorkspace,
+            keyMap,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -472,73 +478,18 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             }
         };
 
-        const keyMap = {
-            SAVE_JOB: {
-                name: 'Save the job',
-                description: 'Send all changes of annotations to the server',
-                sequence: 'ctrl+s',
-                action: 'keydown',
-            },
-            UNDO: {
-                name: 'Undo action',
-                description: 'Cancel the latest action related with objects',
-                sequence: 'ctrl+z',
-                action: 'keydown',
-            },
-            REDO: {
-                name: 'Redo action',
-                description: 'Cancel undo action',
-                sequences: ['ctrl+shift+z', 'ctrl+y'],
-                action: 'keydown',
-            },
-            NEXT_FRAME: {
-                name: 'Next frame',
-                description: 'Go to the next frame',
-                sequence: 'f',
-                action: 'keydown',
-            },
-            PREV_FRAME: {
-                name: 'Previous frame',
-                description: 'Go to the previous frame',
-                sequence: 'd',
-                action: 'keydown',
-            },
-            FORWARD_FRAME: {
-                name: 'Forward frame',
-                description: 'Go forward with a step',
-                sequence: 'v',
-                action: 'keydown',
-            },
-            BACKWARD_FRAME: {
-                name: 'Backward frame',
-                description: 'Go backward with a step',
-                sequence: 'c',
-                action: 'keydown',
-            },
-            SEARCH_FORWARD: {
-                name: 'Search forward',
-                description: 'Search the next frame that satisfies to the filters',
-                sequence: 'right',
-                action: 'keydown',
-            },
-            SEARCH_BACKWARD: {
-                name: 'Search backward',
-                description: 'Search the previous frame that satisfies to the filters',
-                sequence: 'left',
-                action: 'keydown',
-            },
-            PLAY_PAUSE: {
-                name: 'Play/pause',
-                description: 'Start/stop automatic changing frames',
-                sequence: 'space',
-                action: 'keydown',
-            },
-            FOCUS_INPUT_FRAME: {
-                name: 'Focus input frame',
-                description: 'Focus on the element to change the current frame',
-                sequences: ['`', '~'],
-                action: 'keydown',
-            },
+        const subKeyMap = {
+            SAVE_JOB: keyMap.SAVE_JOB,
+            UNDO: keyMap.UNDO,
+            REDO: keyMap.REDO,
+            NEXT_FRAME: keyMap.SAVE_JOB,
+            PREV_FRAME: keyMap.PREV_FRAME,
+            FORWARD_FRAME: keyMap.FORWARD_FRAME,
+            BACKWARD_FRAME: keyMap.BACKWARD_FRAME,
+            SEARCH_FORWARD: keyMap.SEARCH_FORWARD,
+            SEARCH_BACKWARD: keyMap.SEARCH_BACKWARD,
+            PLAY_PAUSE: keyMap.PLAY_PAUSE,
+            FOCUS_INPUT_FRAME: keyMap.FOCUS_INPUT_FRAME,
         };
 
         const handlers = {
@@ -608,7 +559,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
                 <AnnotationTopBarComponent
                     showStatistics={this.showStatistics}
                     onSwitchPlay={this.onSwitchPlay}

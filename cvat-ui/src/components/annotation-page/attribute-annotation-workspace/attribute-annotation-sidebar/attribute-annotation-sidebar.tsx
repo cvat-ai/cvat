@@ -32,6 +32,7 @@ interface StateToProps {
     states: any[];
     labels: any[];
     jobInstance: any;
+    keyMap: KeyMap;
 }
 
 interface DispatchToProps {
@@ -56,6 +57,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 labels,
             },
         },
+        shortcuts: {
+            keyMap,
+        },
     } = state;
 
     return {
@@ -64,6 +68,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedStateID,
         activatedAttributeID,
         states,
+        keyMap,
     };
 }
 
@@ -87,6 +92,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         jobInstance,
         updateAnnotations,
         activateObject,
+        keyMap,
     } = props;
 
     const [labelAttrMap, setLabelAttrMap] = useState(
@@ -167,31 +173,11 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         trigger: null,
     };
 
-    const keyMap = {
-        NEXT_ATTRIBUTE: {
-            name: 'Next attribute',
-            description: 'Go to the next attribute',
-            sequence: 'ArrowDown',
-            action: 'keydown',
-        },
-        PREVIOUS_ATTRIBUTE: {
-            name: 'Previous attribute',
-            description: 'Go to the previous attribute',
-            sequence: 'ArrowUp',
-            action: 'keydown',
-        },
-        NEXT_OBJECT: {
-            name: 'Next object',
-            description: 'Go to the next object',
-            sequence: 'Tab',
-            action: 'keydown',
-        },
-        PREVIOUS_OBJECT: {
-            name: 'Previous object',
-            description: 'Go to the previous object',
-            sequence: 'Shift+Tab',
-            action: 'keydown',
-        },
+    const subKeyMap = {
+        NEXT_ATTRIBUTE: keyMap.NEXT_ATTRIBUTE,
+        PREVIOUS_ATTRIBUTE: keyMap.PREVIOUS_ATTRIBUTE,
+        NEXT_OBJECT: keyMap.NEXT_OBJECT,
+        PREVIOUS_OBJECT: keyMap.PREVIOUS_OBJECT,
     };
 
     const handlers = {
@@ -228,7 +214,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
     if (activeObjectState) {
         return (
             <Layout.Sider {...siderProps}>
-                <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
                 <Row>
                     <Col>
                         <AnnotationsFiltersInput />
