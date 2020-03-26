@@ -34,7 +34,7 @@ class TfDetectionApiExtractor(SourceExtractor):
 
         super().__init__(subset=osp.splitext(osp.basename(path))[0])
 
-        items, labels = self._parse_tfrecord_file(path, subset, images_dir)
+        items, labels = self._parse_tfrecord_file(path, self._subset, images_dir)
         self._items = items
         self._categories = self._load_categories(labels)
 
