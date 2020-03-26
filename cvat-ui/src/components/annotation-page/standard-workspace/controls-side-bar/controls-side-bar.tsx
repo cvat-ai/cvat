@@ -4,19 +4,11 @@
 
 import React from 'react';
 import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
+import Layout from 'antd/lib/layout';
 
-import {
-    Layout,
-} from 'antd';
-
-import {
-    ActiveControl,
-    Rotation,
-} from 'reducers/interfaces';
-
-import {
-    Canvas,
-} from 'cvat-canvas';
+import { ActiveControl, Rotation } from 'reducers/interfaces';
+import { Canvas } from 'cvat-canvas';
+import { formatShortcuts } from 'utils/shortcuts';
 
 import RotateControl from './rotate-control';
 import CursorControl from './cursor-control';
@@ -149,10 +141,17 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             width={44}
         >
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
-
-            <CursorControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <CursorControl
+                cursorShortkey={formatShortcuts(keyMap.CANCEL)}
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+            />
             <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
-            <RotateControl rotateFrame={rotateFrame} />
+            <RotateControl
+                anticlockwiseShortcut={formatShortcuts(keyMap.ANTICLOCKWISE_ROTATION)}
+                clockwiseShortcut={formatShortcuts(keyMap.CLOCKWISE_ROTATION)}
+                rotateFrame={rotateFrame}
+            />
 
             <hr />
 
@@ -186,11 +185,14 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
 
             <MergeControl
+                switchMergeShortcut={formatShortcuts(keyMap.SWITCH_MERGE_MODE)}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 mergeObjects={mergeObjects}
             />
             <GroupControl
+                switchGroupShortcut={formatShortcuts(keyMap.SWITCH_GROUP_MODE)}
+                resetGroupShortcut={formatShortcuts(keyMap.RESET_GROUP)}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 groupObjects={groupObjects}

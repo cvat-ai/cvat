@@ -9,6 +9,7 @@ import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import InputNumber from 'antd/lib/input-number';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
+import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 
 import { RectDrawingMethod } from 'cvat-canvas';
@@ -22,6 +23,7 @@ interface Props {
     rectDrawingMethod?: RectDrawingMethod;
     numberOfPoints?: number;
     selectedLabeID: number;
+    repeatShapeShortcut: string;
     onChangeLabel(value: string): void;
     onChangePoints(value: number | undefined): void;
     onChangeRectDrawingMethod(event: RadioChangeEvent): void;
@@ -37,6 +39,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         selectedLabeID,
         numberOfPoints,
         rectDrawingMethod,
+        repeatShapeShortcut,
         onDrawTrack,
         onDrawShape,
         onChangeLabel,
@@ -133,19 +136,23 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             }
             <Row type='flex' justify='space-around'>
                 <Col span={12}>
-                    <Button
-                        onClick={onDrawShape}
-                    >
-                        Shape
-                    </Button>
+                    <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
+                        <Button
+                            onClick={onDrawShape}
+                        >
+                            Shape
+                        </Button>
+                    </Tooltip>
                 </Col>
                 <Col span={12}>
-                    <Button
-                        onClick={onDrawTrack}
-                        disabled={shapeType !== ShapeType.RECTANGLE}
-                    >
-                        Track
-                    </Button>
+                    <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
+                        <Button
+                            onClick={onDrawTrack}
+                            disabled={shapeType !== ShapeType.RECTANGLE}
+                        >
+                            Track
+                        </Button>
+                    </Tooltip>
                 </Col>
             </Row>
         </div>

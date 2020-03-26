@@ -3,20 +3,15 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 
-import {
-    CombinedState,
-    ObjectType,
-} from 'reducers/interfaces';
-
-import {
-    createAnnotationsAsync,
-    rememberObject,
-} from 'actions/annotation-actions';
+import { CombinedState, ObjectType } from 'reducers/interfaces';
+import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actions';
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 import { Canvas } from 'cvat-canvas';
+import { formatShortcuts } from 'utils/shortcuts';
 import getCore from 'cvat-core';
 
 const cvat = getCore();
@@ -26,6 +21,7 @@ interface DispatchToProps {
 }
 
 interface StateToProps {
+    keyMap: Record<string, ExtendedKeyMapOptions>;
     canvasInstance: Canvas;
     jobInstance: any;
     labels: any[];
@@ -59,6 +55,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 },
             },
         },
+        shortcuts: {
+            keyMap,
+        },
     } = state;
 
     return {
@@ -66,6 +65,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         labels,
         frame,
+        keyMap,
     };
 }
 
@@ -91,7 +91,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         });
     };
 
-    private onSetup(): void {
+    private onSetup = (): void => {
         const {
             frame,
             labels,
@@ -114,23 +114,17 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         });
 
         onAnnotationCreate(jobInstance, frame, [objectState]);
-    }
+    };
 
     public render(): JSX.Element {
-        const {
-            selectedLabelID,
-        } = this.state;
-
-        const {
-            labels,
-        } = this.props;
-
-        this.onSetup = this.onSetup.bind(this);
+        const { selectedLabelID } = this.state;
+        const { keyMap, labels } = this.props;
 
         return (
             <SetupTagPopoverComponent
                 labels={labels}
                 selectedLabeID={selectedLabelID}
+                repeatShapeShortcut={formatShortcuts(keyMap.SWITCH_DRAW_MODE)}
                 onChangeLabel={this.onChangeLabel}
                 onSetup={this.onSetup}
             />
