@@ -571,6 +571,8 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
 - downloaded file: a zip archive of the following structure:
   ```bash
   taskname.zip/
+  ├── images/
+  |   └── img1.jpg
   └── gt/
       ├── labels.txt
       └── gt.txt
@@ -598,3 +600,24 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   └── gt.txt
   ```
 - supported annotations: Rectangle tracks
+
+### [LabelMe](http://labelme.csail.mit.edu/Release3.0)
+#### Dumper
+- downloaded file: a zip archive of the following structure:
+  ```bash
+  taskname.zip/
+  ├── img1.jpg
+  └── img1.xml
+  ```
+- supported annotations: Rectangles, Polygons (with attributes)
+
+#### Loader
+- uploaded file: a zip archive of the following structure:
+  ```bash
+  taskname.zip/
+  ├── Masks/
+  |   └── img1_mask1.png
+  ├── img1.xml
+  └── img2.xml
+  ```
+- supported annotations: Rectangles, Polygons, Masks (as polygons)
