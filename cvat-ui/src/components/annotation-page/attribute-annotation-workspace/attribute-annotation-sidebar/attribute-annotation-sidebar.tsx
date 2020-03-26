@@ -226,6 +226,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     occluded={activeObjectState.occluded}
                     objectsCount={states.length}
                     currentIndex={states.indexOf(activeObjectState)}
+                    keyMap={keyMap}
                     nextObject={nextObject}
                 />
                 <ObjectBasicsEditor
@@ -253,6 +254,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                                     currentIndex={activeObjectState.label.attributes
                                         .indexOf(activeAttribute)}
                                     attributesCount={activeObjectState.label.attributes.length}
+                                    keyMap={keyMap}
                                     nextAttribute={nextAttribute}
                                 />
                                 <AttributeEditor
