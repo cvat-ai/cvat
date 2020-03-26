@@ -50,16 +50,7 @@ module.exports = {
                 },
             },
         }, {
-            test: /node_modules\/antd\/[\w\/]*.css$/,
-            use: ['style-loader', {
-                loader: 'css-loader',
-                options: {
-                    importLoaders: 2,
-                },
-            }, 'postcss-loader']
-        }, {
             test: /\.(css|scss)$/,
-            exclude: /node_modules/,
             use: ['style-loader', {
                 loader: 'css-loader',
                 options: {
