@@ -700,7 +700,11 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                     to: toFrame,
                 },
             );
+<<<<<<< HEAD
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
+=======
+            const data = await job.frames.get(toFrame);
+>>>>>>> origin/develop
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);
             const currentTime = new Date().getTime();
@@ -792,6 +796,52 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
+<<<<<<< HEAD
+=======
+export function undoActionAsync(sessionInstance: any, frame: number):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const state = getStore().getState();
+            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
+
+            // TODO: use affected IDs as an optimization
+            const [undo] = state.annotation.annotations.history.undo.slice(-1);
+            const undoLog = await sessionInstance.logger.log(LogType.undoAction, {
+                name: undo[0],
+                frame: undo[1],
+                count: 1,
+            }, true);
+
+            dispatch(changeFrameAsync(undo[1]));
+            await sessionInstance.actions.undo();
+            const history = await sessionInstance.actions.get();
+            const states = await sessionInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
+            const [minZ, maxZ] = computeZRange(states);
+            await undoLog.close();
+
+            dispatch({
+                type: AnnotationActionTypes.UNDO_ACTION_SUCCESS,
+                payload: {
+                    history,
+                    states,
+                    minZ,
+                    maxZ,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.UNDO_ACTION_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+>>>>>>> origin/develop
 export function redoActionAsync(sessionInstance: any, frame: number):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
