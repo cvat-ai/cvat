@@ -456,6 +456,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
             e.preventDefault();
         }
 
+        function contextmenuHandler(e: MouseEvent): void {
+            const pointID = Array.prototype.indexOf
+                .call(((e.target as HTMLElement).parentElement as HTMLElement).children, e.target);
+            if (self.activeElement.clientID !== null) {
+                const [state] = self.controller.objects
+                    .filter((_state: any): boolean => (
+                        _state.clientID === self.activeElement.clientID
+                    ));
+                self.canvas.dispatchEvent(new CustomEvent('point.contextmenu', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        mouseEvent: e,
+                        objectState: state,
+                        pointID,
+                    },
+                }));
+            }
+            e.preventDefault();
+        }
+
         if (value) {
             (shape as any).selectize(value, {
                 deepSelect: true,
@@ -478,6 +499,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         });
 
                         circle.on('dblclick', dblClickHandler);
+                        circle.on('contextmenu', contextmenuHandler);
                         circle.addClass('cvat_canvas_selected_point');
                     });
 
@@ -487,6 +509,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         });
 
                         circle.off('dblclick', dblClickHandler);
+                        circle.off('contextmenu', contextmenuHandler);
                         circle.removeClass('cvat_canvas_selected_point');
                     });
 
@@ -911,7 +934,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.activate(activeElement);
             }
 
-            if (state.points
+            if (state.points.length !== drawnState.points.length || state.points
                 .some((p: number, id: number): boolean => p !== drawnState.points[id])
             ) {
                 const translatedPoints: number[] = translate(state.points);

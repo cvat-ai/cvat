@@ -161,6 +161,11 @@ SVG.Element.prototype.resize = function constructor(...args: any): any {
     if (!handler) {
         originalResize.call(this, ...args);
         handler = this.remember('_resizeHandler');
+        handler.resize = function(e: any) {
+            if (e.detail.event.button === 0) {
+                return handler.constructor.prototype.resize.call(this, e);
+            }
+        }
         handler.update = function(e: any) {
             this.m = this.el.node.getScreenCTM().inverse();
             return handler.constructor.prototype.update.call(this, e);

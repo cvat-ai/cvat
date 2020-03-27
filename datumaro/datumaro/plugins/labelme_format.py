@@ -26,12 +26,8 @@ class LabelMePath:
 
 class LabelMeExtractor(SourceExtractor):
     def __init__(self, path, subset_name=None):
-        super().__init__()
-
-        assert osp.isdir(path)
-        self._rootdir = path
-
-        self._subset = subset_name
+        assert osp.isdir(path), path
+        super().__init__(subset=subset_name)
 
         items, categories = self._parse(path)
         self._categories = categories
@@ -46,16 +42,6 @@ class LabelMeExtractor(SourceExtractor):
 
     def __len__(self):
         return len(self._items)
-
-    def subsets(self):
-        if self._subset:
-            return [self._subset]
-        return None
-
-    def get_subset(self, name):
-        if name != self._subset:
-            return None
-        return self
 
     def _parse(self, path):
         categories = {

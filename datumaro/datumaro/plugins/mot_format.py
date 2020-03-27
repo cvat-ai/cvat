@@ -66,9 +66,7 @@ class MotSeqExtractor(SourceExtractor):
         super().__init__()
 
         assert osp.isfile(path)
-        self._path = path
         seq_root = osp.dirname(osp.dirname(path))
-
         self._image_dir = ''
         if osp.isdir(osp.join(seq_root, MotPath.IMAGE_DIR)):
             self._image_dir = osp.join(seq_root, MotPath.IMAGE_DIR)
@@ -90,8 +88,6 @@ class MotSeqExtractor(SourceExtractor):
             else:
                 is_gt = True
         self._is_gt = is_gt
-
-        self._subset = None
 
         if labels is None:
             if osp.isfile(osp.join(seq_root, MotPath.LABELS_FILE)):
@@ -116,16 +112,6 @@ class MotSeqExtractor(SourceExtractor):
 
     def __len__(self):
         return len(self._items)
-
-    def subsets(self):
-        if self._subset:
-            return [self._subset]
-        return None
-
-    def get_subset(self, name):
-        if name != self._subset:
-            return None
-        return self
 
     @staticmethod
     def _parse_labels(path):

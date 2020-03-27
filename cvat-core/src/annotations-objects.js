@@ -178,7 +178,7 @@
             injection.groups.max = Math.max(injection.groups.max, this.group);
         }
 
-        _saveLock(lock) {
+        _saveLock(lock, frame) {
             const undoLock = this.lock;
             const redoLock = lock;
 
@@ -186,12 +186,12 @@
                 this.lock = undoLock;
             }, () => {
                 this.lock = redoLock;
-            }, [this.clientID]);
+            }, [this.clientID], frame);
 
             this.lock = lock;
         }
 
-        _saveColor(color) {
+        _saveColor(color, frame) {
             const undoColor = this.color;
             const redoColor = color;
 
@@ -199,12 +199,12 @@
                 this.color = undoColor;
             }, () => {
                 this.color = redoColor;
-            }, [this.clientID]);
+            }, [this.clientID], frame);
 
             this.color = color;
         }
 
-        _saveHidden(hidden) {
+        _saveHidden(hidden, frame) {
             const undoHidden = this.hidden;
             const redoHidden = hidden;
 
@@ -212,12 +212,12 @@
                 this.hidden = undoHidden;
             }, () => {
                 this.hidden = redoHidden;
-            }, [this.clientID]);
+            }, [this.clientID], frame);
 
             this.hidden = hidden;
         }
 
-        _saveLabel(label) {
+        _saveLabel(label, frame) {
             const undoLabel = this.label;
             const redoLabel = label;
             const undoAttributes = { ...this.attributes };
@@ -232,10 +232,10 @@
             }, () => {
                 this.label = redoLabel;
                 this.attributes = redoAttributes;
-            }, [this.clientID]);
+            }, [this.clientID], frame);
         }
 
-        _saveAttributes(attributes) {
+        _saveAttributes(attributes, frame) {
             const undoAttributes = { ...this.attributes };
 
             for (const attrID of Object.keys(attributes)) {
@@ -248,7 +248,7 @@
                 this.attributes = undoAttributes;
             }, () => {
                 this.attributes = redoAttributes;
-            }, [this.clientID]);
+            }, [this.clientID], frame);
         }
 
         _validateStateBeforeSave(frame, data, updated) {
@@ -368,7 +368,7 @@
             }
         }
 
-        delete(force) {
+        delete(frame, force) {
             if (!this.lock || force) {
                 this.removed = true;
 
@@ -376,7 +376,7 @@
                     this.removed = false;
                 }, () => {
                     this.removed = true;
-                }, [this.clientID]);
+                }, [this.clientID], frame);
             }
 
             return this.removed;
@@ -392,7 +392,7 @@
             this.shapeType = null;
         }
 
-        _savePinned(pinned) {
+        _savePinned(pinned, frame) {
             const undoPinned = this.pinned;
             const redoPinned = pinned;
 
@@ -400,7 +400,7 @@
                 this.pinned = undoPinned;
             }, () => {
                 this.pinned = redoPinned;
-            }, [this.clientID]);
+            }, [this.clientID], frame);
 
             this.pinned = pinned;
         }
@@ -483,7 +483,7 @@
             };
         }
 
-        _savePoints(points) {
+        _savePoints(points, frame) {
             const undoPoints = this.points;
             const redoPoints = points;
 
@@ -491,12 +491,12 @@
                 this.points = undoPoints;
             }, () => {
                 this.points = redoPoints;
-            }, [this.clientID]);
+            }, [this.clientID], frame);
 
             this.points = points;
         }
 
-        _saveOccluded(occluded) {
+        _saveOccluded(occluded, frame) {
             const undoOccluded = this.occluded;
             const redoOccluded = occluded;
 
@@ -504,12 +504,12 @@
                 this.occluded = undoOccluded;
             }, () => {
                 this.occluded = redoOccluded;
-            }, [this.clientID]);
+            }, [this.clientID], frame);
 
             this.occluded = occluded;
         }
 
-        _saveZOrder(zOrder) {
+        _saveZOrder(zOrder, frame) {
             const undoZOrder = this.zOrder;
             const redoZOrder = zOrder;
 
@@ -517,7 +517,7 @@
                 this.zOrder = undoZOrder;
             }, () => {
                 this.zOrder = redoZOrder;
-            }, [this.clientID]);
+            }, [this.clientID], frame);
 
             this.zOrder = zOrder;
         }
@@ -538,39 +538,39 @@
 
             // Now when all fields are validated, we can apply them
             if (updated.label) {
-                this._saveLabel(data.label);
+                this._saveLabel(data.label, frame);
             }
 
             if (updated.attributes) {
-                this._saveAttributes(data.attributes);
+                this._saveAttributes(data.attributes, frame);
             }
 
             if (updated.points && fittedPoints.length) {
-                this._savePoints(fittedPoints);
+                this._savePoints(fittedPoints, frame);
             }
 
             if (updated.occluded) {
-                this._saveOccluded(data.occluded);
+                this._saveOccluded(data.occluded, frame);
             }
 
             if (updated.zOrder) {
-                this._saveZOrder(data.zOrder);
+                this._saveZOrder(data.zOrder, frame);
             }
 
             if (updated.lock) {
-                this._saveLock(data.lock);
+                this._saveLock(data.lock, frame);
             }
 
             if (updated.pinned) {
-                this._savePinned(data.pinned);
+                this._savePinned(data.pinned, frame);
             }
 
             if (updated.color) {
-                this._saveColor(data.color);
+                this._saveColor(data.color, frame);
             }
 
             if (updated.hidden) {
-                this._saveHidden(data.hidden);
+                this._saveHidden(data.hidden, frame);
             }
 
             this.updateTimestamp(updated);
@@ -745,7 +745,7 @@
             return result;
         }
 
-        _saveLabel(label) {
+        _saveLabel(label, frame) {
             const undoLabel = this.label;
             const redoLabel = label;
             const undoAttributes = {
@@ -783,10 +783,10 @@
                 for (const mutable of redoAttributes.mutable) {
                     this.shapes[mutable.frame].attributes = mutable.attributes;
                 }
-            }, [this.clientID]);
+            }, [this.clientID], frame);
         }
 
-        _saveAttributes(frame, attributes) {
+        _saveAttributes(attributes, frame) {
             const current = this.get(frame);
             const labelAttributes = this.label.attributes
                 .reduce((accumulator, value) => {
@@ -858,7 +858,7 @@
                 if (redoShape) {
                     this.shapes[frame] = redoShape;
                 }
-            }, [this.clientID]);
+            }, [this.clientID], frame);
         }
 
         _appendShapeActionToHistory(actionType, frame, undoShape, redoShape) {
@@ -874,10 +874,10 @@
                 } else {
                     this.shapes[frame] = redoShape;
                 }
-            }, [this.clientID]);
+            }, [this.clientID], frame);
         }
 
-        _savePoints(frame, points) {
+        _savePoints(points, frame) {
             const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
@@ -921,7 +921,7 @@
             );
         }
 
-        _saveOccluded(frame, occluded) {
+        _saveOccluded(occluded, frame) {
             const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
@@ -943,7 +943,7 @@
             );
         }
 
-        _saveZOrder(frame, zOrder) {
+        _saveZOrder(zOrder, frame) {
             const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
@@ -1007,27 +1007,27 @@
             const fittedPoints = this._validateStateBeforeSave(frame, data, updated);
 
             if (updated.label) {
-                this._saveLabel(data.label);
+                this._saveLabel(data.label, frame);
             }
 
             if (updated.lock) {
-                this._saveLock(data.lock);
+                this._saveLock(data.lock, frame);
             }
 
             if (updated.pinned) {
-                this._savePinned(data.pinned);
+                this._savePinned(data.pinned, frame);
             }
 
             if (updated.color) {
-                this._saveColor(data.color);
+                this._saveColor(data.color, frame);
             }
 
             if (updated.hidden) {
-                this._saveHidden(data.hidden);
+                this._saveHidden(data.hidden, frame);
             }
 
             if (updated.points && fittedPoints.length) {
-                this._savePoints(frame, fittedPoints);
+                this._savePoints(fittedPoints, frame);
             }
 
             if (updated.outside) {
@@ -1035,15 +1035,15 @@
             }
 
             if (updated.occluded) {
-                this._saveOccluded(frame, data.occluded);
+                this._saveOccluded(data.occluded, frame);
             }
 
             if (updated.zOrder) {
-                this._saveZOrder(frame, data.zOrder);
+                this._saveZOrder(data.zOrder, frame);
             }
 
             if (updated.attributes) {
-                this._saveAttributes(frame, data.attributes);
+                this._saveAttributes(data.attributes, frame);
             }
 
             if (updated.keyframe) {
@@ -1161,19 +1161,19 @@
 
             // Now when all fields are validated, we can apply them
             if (updated.label) {
-                this._saveLabel(data.label);
+                this._saveLabel(data.label, frame);
             }
 
             if (updated.attributes) {
-                this._saveAttributes(data.attributes);
+                this._saveAttributes(data.attributes, frame);
             }
 
             if (updated.lock) {
-                this._saveLock(data.lock);
+                this._saveLock(data.lock, frame);
             }
 
             if (updated.color) {
-                this._saveColor(data.color);
+                this._saveColor(data.color, frame);
             }
 
             this.updateTimestamp(updated);

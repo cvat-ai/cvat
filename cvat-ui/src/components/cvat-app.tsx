@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import 'antd/dist/antd.less';
+import 'antd/dist/antd.css';
 import '../styles.scss';
 import React from 'react';
 import { Switch, Route, Redirect } from 'react-router';

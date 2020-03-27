@@ -4,15 +4,12 @@
 
 import React from 'react';
 
-import {
-    Row,
-    Col,
-    Checkbox,
-    InputNumber,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+
+import { clamp } from 'utils/math';
 
 interface Props {
     autoSave: boolean;
@@ -37,6 +34,11 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchShowingInterpolatedTracks,
     } = props;
 
+    const minAutoSaveInterval = 5;
+    const maxAutoSaveInterval = 60;
+    const minAAMMargin = 0;
+    const maxAAMMargin = 1000;
+
     return (
         <div className='cvat-workspace-settings'>
             <Row type='flex'>
@@ -56,13 +58,19 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 <Col className='cvat-workspace-settings-auto-save-interval'>
                     <Text type='secondary'> Auto save every </Text>
                     <InputNumber
-                        min={5}
-                        max={60}
+                        min={minAutoSaveInterval}
+                        max={maxAutoSaveInterval}
                         step={1}
                         value={Math.round(autoSaveInterval / (60 * 1000))}
                         onChange={(value: number | undefined): void => {
-                            if (value) {
-                                onChangeAutoSaveInterval(value * 60 * 1000);
+                            if (typeof (value) === 'number') {
+                                onChangeAutoSaveInterval(Math.floor(
+                                    clamp(
+                                        value,
+                                        minAutoSaveInterval,
+                                        maxAutoSaveInterval,
+                                    ),
+                                ) * 60 * 1000);
                             }
                         }}
                     />
@@ -89,12 +97,14 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 <Col>
                     <Text className='cvat-text-color'> Attribute annotation mode (AAM) zoom margin </Text>
                     <InputNumber
-                        min={0}
-                        max={1000}
+                        min={minAAMMargin}
+                        max={maxAAMMargin}
                         value={aamZoomMargin}
                         onChange={(value: number | undefined): void => {
                             if (typeof (value) === 'number') {
-                                onChangeAAMZoomMargin(value);
+                                onChangeAAMZoomMargin(Math.floor(
+                                    clamp(value, minAAMMargin, maxAAMMargin),
+                                ));
                             }
                         }}
                     />

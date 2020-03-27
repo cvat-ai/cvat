@@ -5,7 +5,7 @@
 export interface Attribute {
     id: number;
     name: string;
-    type: string;
+    input_type: string;
     mutable: boolean;
     values: string[];
 }
