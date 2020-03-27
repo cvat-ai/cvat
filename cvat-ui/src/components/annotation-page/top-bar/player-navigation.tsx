@@ -18,6 +18,7 @@ interface Props {
     stopFrame: number;
     frameNumber: number;
     frameFilename: string;
+    focusFrameInputShortcut: string;
     inputFrameRef: React.RefObject<InputNumber>;
     onSliderChange(value: SliderValue): void;
     onInputChange(value: number): void;
@@ -30,6 +31,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         stopFrame,
         frameNumber,
         frameFilename,
+        focusFrameInputShortcut,
         inputFrameRef,
         onSliderChange,
         onInputChange,
@@ -72,26 +74,27 @@ function PlayerNavigation(props: Props): JSX.Element {
                 </Row>
             </Col>
             <Col>
-                <InputNumber
-                    className='cvat-player-frame-selector'
-                    type='number'
-                    value={frameInputValue}
-                    // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
-                    onChange={(value: number | undefined) => {
-                        if (typeof (value) === 'number') {
-                            setFrameInputValue(Math.floor(
-                                clamp(value, startFrame, stopFrame),
-                            ));
-                        }
-                    }}
-                    onBlur={() => {
-                        onInputChange(frameInputValue);
-                    }}
-                    onPressEnter={() => {
-                        onInputChange(frameInputValue);
-                    }}
-                    ref={inputFrameRef}
-                />
+                <Tooltip title={`Press ${focusFrameInputShortcut} to focus here`}>
+                    <InputNumber
+                        className='cvat-player-frame-selector'
+                        type='number'
+                        value={frameInputValue}
+                        onChange={(value: number | undefined) => {
+                            if (typeof (value) === 'number') {
+                                setFrameInputValue(Math.floor(
+                                    clamp(value, startFrame, stopFrame),
+                                ));
+                            }
+                        }}
+                        onBlur={() => {
+                            onInputChange(frameInputValue);
+                        }}
+                        onPressEnter={() => {
+                            onInputChange(frameInputValue);
+                        }}
+                        ref={inputFrameRef}
+                    />
+                </Tooltip>
             </Col>
         </>
     );

@@ -26,6 +26,15 @@ interface Props {
     undoAction?: string;
     redoAction?: string;
     workspace: Workspace;
+    saveShortcut: string;
+    undoShortcut: string;
+    redoShortcut: string;
+    playPauseShortcut: string;
+    nextFrameShortcut: string;
+    previousFrameShortcut: string;
+    forwardShortcut: string;
+    backwardShortcut: string;
+    focusFrameInputShortcut: string;
     changeWorkspace(workspace: Workspace): void;
     showStatistics(): void;
     onSwitchPlay(): void;
@@ -56,6 +65,15 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         startFrame,
         stopFrame,
         workspace,
+        saveShortcut,
+        undoShortcut,
+        redoShortcut,
+        playPauseShortcut,
+        nextFrameShortcut,
+        previousFrameShortcut,
+        forwardShortcut,
+        backwardShortcut,
+        focusFrameInputShortcut,
         showStatistics,
         changeWorkspace,
         onSwitchPlay,
@@ -78,9 +96,12 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             <LeftGroup
                 saving={saving}
                 savingStatuses={savingStatuses}
-                onSaveAnnotation={onSaveAnnotation}
                 undoAction={undoAction}
                 redoAction={redoAction}
+                saveShortcut={saveShortcut}
+                undoShortcut={undoShortcut}
+                redoShortcut={redoShortcut}
+                onSaveAnnotation={onSaveAnnotation}
                 onUndoClick={onUndoClick}
                 onRedoClick={onRedoClick}
             />
@@ -88,6 +109,11 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 <Row type='flex' align='middle'>
                     <PlayerButtons
                         playing={playing}
+                        playPauseShortcut={playPauseShortcut}
+                        nextFrameShortcut={nextFrameShortcut}
+                        previousFrameShortcut={previousFrameShortcut}
+                        forwardShortcut={forwardShortcut}
+                        backwardShortcut={backwardShortcut}
                         onPrevFrame={onPrevFrame}
                         onNextFrame={onNextFrame}
                         onForward={onForward}
@@ -101,6 +127,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         stopFrame={stopFrame}
                         frameNumber={frameNumber}
                         frameFilename={frameFilename}
+                        focusFrameInputShortcut={focusFrameInputShortcut}
                         inputFrameRef={inputFrameRef}
                         onSliderChange={onSliderChange}
                         onInputChange={onInputChange}

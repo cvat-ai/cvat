@@ -3,16 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Col,
-    Icon,
-    Select,
-    Button,
-} from 'antd';
+import { Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Select from 'antd/lib/select';
+import Button from 'antd/lib/button';
 
 import { Workspace } from 'reducers/interfaces';
-import { InfoIcon, FullscreenIcon } from '../../../icons';
+import { InfoIcon, FullscreenIcon } from 'icons';
 
 interface Props {
     workspace: Workspace;

@@ -5,11 +5,9 @@
 import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
-
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
 import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
-
 import InputNumber from 'antd/lib/input-number';
 import { SliderValue } from 'antd/lib/slider';
 
@@ -28,6 +26,7 @@ import {
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
+import { formatShortcuts } from 'utils/shortcuts';
 
 interface StateToProps {
     jobInstance: any;
@@ -482,7 +481,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             SAVE_JOB: keyMap.SAVE_JOB,
             UNDO: keyMap.UNDO,
             REDO: keyMap.REDO,
-            NEXT_FRAME: keyMap.SAVE_JOB,
+            NEXT_FRAME: keyMap.NEXT_FRAME,
             PREV_FRAME: keyMap.PREV_FRAME,
             FORWARD_FRAME: keyMap.FORWARD_FRAME,
             BACKWARD_FRAME: keyMap.BACKWARD_FRAME,
@@ -585,6 +584,15 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                     inputFrameRef={this.inputFrameRef}
                     undoAction={undoAction}
                     redoAction={redoAction}
+                    saveShortcut={formatShortcuts(keyMap.SAVE_JOB)}
+                    undoShortcut={formatShortcuts(keyMap.UNDO)}
+                    redoShortcut={formatShortcuts(keyMap.REDO)}
+                    playPauseShortcut={formatShortcuts(keyMap.PLAY_PAUSE)}
+                    nextFrameShortcut={formatShortcuts(keyMap.NEXT_FRAME)}
+                    previousFrameShortcut={formatShortcuts(keyMap.PREV_FRAME)}
+                    forwardShortcut={formatShortcuts(keyMap.FORWARD_FRAME)}
+                    backwardShortcut={formatShortcuts(keyMap.BACKWARD_FRAME)}
+                    focusFrameInputShortcut={formatShortcuts(keyMap.FOCUS_INPUT_FRAME)}
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
                 />

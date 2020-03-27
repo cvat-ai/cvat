@@ -3,12 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Menu, Modal,
-} from 'antd';
-
-import { ClickParam } from 'antd/lib/menu/index';
+import Menu, { ClickParam } from 'antd/lib/menu';
+import Modal from 'antd/lib/modal';
 
 import DumpSubmenu from 'components/actions-menu/dump-submenu';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
