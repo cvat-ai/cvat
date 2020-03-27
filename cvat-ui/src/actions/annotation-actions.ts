@@ -736,13 +736,15 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 },
             });
         } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.CHANGE_FRAME_FAILED,
-                payload: {
-                    number: toFrame,
-                    error,
-                },
-            });
+            if (error !== 'not needed') {
+                dispatch({
+                    type: AnnotationActionTypes.CHANGE_FRAME_FAILED,
+                    payload: {
+                        number: toFrame,
+                        error,
+                    },
+                });
+            }
         }
     };
 }

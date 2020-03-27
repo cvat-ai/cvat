@@ -457,8 +457,8 @@
                 } catch (error) {
                     if (typeof (error) === 'number' && error in this._requestedChunks) {
                         this._activeFillBufferRequest = false;
-                        throw error;
                     }
+                    throw error;
                 }
             }
         }
@@ -491,18 +491,16 @@
                     && cachedFrames.length < (this._size * 3) / 4) {
                     const maxFrame = cachedFrames ? Math.max(...cachedFrames) : frameNumber;
                     if (maxFrame < this._stopFrame) {
-                        this.makeFillRequest(maxFrame + 1, frameStep);
+                        this.makeFillRequest(maxFrame + 1, frameStep).catch((e) => {
+                            if (e !== 'not needed') {
+                                throw e;
+                            }
+                        });
                     }
                 }
             } else if (fillBuffer) {
                 this.clear();
-                try {
-                    await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
-                } catch (error) {
-                    if (error !== 'not needed') {
-                        throw error;
-                    }
-                }
+                await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
 
                 frame = this._buffer[frameNumber];
             } else {
