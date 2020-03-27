@@ -5,6 +5,7 @@
 import math
 from io import BytesIO
 from enum import Enum
+import itertools
 
 import numpy as np
 from PIL import Image
@@ -80,7 +81,7 @@ class FrameProvider():
             extracted_chunk = chunk_number
             chunk_reader = reader_class([chunk_path])
 
-        frame, frame_name  = chunk_reader[frame_offset]
+        frame, frame_name, _  = next(itertools.islice(chunk_reader, frame_offset, None))
         if reader_class is VideoReader:
             return (self._av_frame_to_png_bytes(frame), 'image/png')
 
