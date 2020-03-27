@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 import { RadioChangeEvent } from 'antd/lib/radio';
 
@@ -11,7 +10,6 @@ import { CombinedState, ShapeType, ObjectType } from 'reducers/interfaces';
 import { rememberObject } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
-import { formatShortcuts } from 'utils/shortcuts';
 
 interface OwnProps {
     shapeType: ShapeType;
@@ -28,7 +26,7 @@ interface DispatchToProps {
 }
 
 interface StateToProps {
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
     shapeType: ShapeType;
     labels: any[];
@@ -59,7 +57,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             },
         },
         shortcuts: {
-            keyMap,
+            normalizedKeyMap,
         },
     } = state;
 
@@ -67,7 +65,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         ...own,
         canvasInstance,
         labels,
-        keyMap,
+        normalizedKeyMap,
     };
 }
 
@@ -164,7 +162,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         } = this.state;
 
         const {
-            keyMap,
+            normalizedKeyMap,
             labels,
             shapeType,
         } = this.props;
@@ -177,7 +175,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
                 selectedLabeID={selectedLabelID}
                 numberOfPoints={numberOfPoints}
                 rectDrawingMethod={rectDrawingMethod}
-                repeatShapeShortcut={formatShortcuts(keyMap.SWITCH_DRAW_MODE)}
+                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
                 onChangeLabel={this.onChangeLabel}
                 onChangePoints={this.onChangePoints}
                 onChangeRectDrawingMethod={this.onChangeRectDrawingMethod}

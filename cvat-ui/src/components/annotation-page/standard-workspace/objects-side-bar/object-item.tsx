@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
 import Select from 'antd/lib/select';
@@ -34,7 +33,6 @@ import {
 
 import { ObjectType, ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
-import { formatShortcuts } from 'utils/shortcuts';
 
 function ItemMenu(
     serverID: number | undefined,
@@ -675,7 +673,7 @@ function ItemAttributesComponent(props: ItemAttributesComponentProps): JSX.Eleme
 const ItemAttributes = React.memo(ItemAttributesComponent, attrAreTheSame);
 
 interface Props {
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
     activated: boolean;
     objectType: ObjectType;
     shapeType: ShapeType;
@@ -742,7 +740,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         && nextProps.collapsed === prevProps.collapsed
         && nextProps.labels === prevProps.labels
         && nextProps.attributes === prevProps.attributes
-        && nextProps.keyMap === prevProps.keyMap
+        && nextProps.normalizedKeyMap === prevProps.normalizedKeyMap
         && nextProps.navigateFirstKeyframe === prevProps.navigateFirstKeyframe
         && nextProps.navigatePrevKeyframe === prevProps.navigatePrevKeyframe
         && nextProps.navigateNextKeyframe === prevProps.navigateNextKeyframe
@@ -771,7 +769,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         attributes,
         labels,
         collapsed,
-        keyMap,
+        normalizedKeyMap,
         navigateFirstKeyframe,
         navigatePrevKeyframe,
         navigateNextKeyframe,
@@ -839,12 +837,12 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     objectType={objectType}
                     type={type}
                     locked={locked}
-                    copyShortcut={formatShortcuts(keyMap.COPY_SHAPE)}
-                    pasteShortcut={formatShortcuts(keyMap.PASTE_SHAPE)}
-                    propagateShortcut={formatShortcuts(keyMap.PROPAGATE_OBJECT)}
-                    toBackgroundShortcut={formatShortcuts(keyMap.TO_BACKGROUND)}
-                    toForegroundShortcut={formatShortcuts(keyMap.TO_FOREGROUND)}
-                    removeShortcut={formatShortcuts(keyMap.DELETE_OBJECT)}
+                    copyShortcut={normalizedKeyMap.COPY_SHAPE}
+                    pasteShortcut={normalizedKeyMap.PASTE_SHAPE}
+                    propagateShortcut={normalizedKeyMap.PROPAGATE_OBJECT}
+                    toBackgroundShortcut={normalizedKeyMap.TO_BACKGROUND}
+                    toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
+                    removeShortcut={normalizedKeyMap.DELETE_OBJECT}
                     changeLabel={changeLabel}
                     copy={copy}
                     remove={remove}
@@ -862,13 +860,13 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     pinned={pinned}
                     hidden={hidden}
                     keyframe={keyframe}
-                    switchOccludedShortcut={formatShortcuts(keyMap.SWITCH_OCCLUDED)}
-                    switchOutsideShortcut={formatShortcuts(keyMap.SWITCH_OUTSIDE)}
-                    switchLockShortcut={formatShortcuts(keyMap.SWITCH_LOCK)}
-                    switchHiddenShortcut={formatShortcuts(keyMap.SWITCH_HIDDEN)}
-                    switchKeyFrameShortcut={formatShortcuts(keyMap.SWITCH_KEYFRAME)}
-                    nextKeyFrameShortcut={formatShortcuts(keyMap.NEXT_KEY_FRAME)}
-                    prevKeyFrameShortcut={formatShortcuts(keyMap.PREV_KEY_FRAME)}
+                    switchOccludedShortcut={normalizedKeyMap.SWITCH_OCCLUDED}
+                    switchOutsideShortcut={normalizedKeyMap.SWITCH_OUTSIDE}
+                    switchLockShortcut={normalizedKeyMap.SWITCH_LOCK}
+                    switchHiddenShortcut={normalizedKeyMap.SWITCH_HIDDEN}
+                    switchKeyFrameShortcut={normalizedKeyMap.SWITCH_KEYFRAME}
+                    nextKeyFrameShortcut={normalizedKeyMap.NEXT_KEY_FRAME}
+                    prevKeyFrameShortcut={normalizedKeyMap.PREV_KEY_FRAME}
                     navigateFirstKeyframe={navigateFirstKeyframe}
                     navigatePrevKeyframe={navigatePrevKeyframe}
                     navigateNextKeyframe={navigateNextKeyframe}

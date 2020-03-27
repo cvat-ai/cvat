@@ -5,7 +5,6 @@
 import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import { LogType } from 'cvat-logger';
 import { ActiveControl, CombinedState, ColorBy } from 'reducers/interfaces';
@@ -44,7 +43,7 @@ interface StateToProps {
     activeControl: ActiveControl;
     minZLayer: number;
     maxZLayer: number;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 }
 
 interface DispatchToProps {
@@ -94,7 +93,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             },
         },
         shortcuts: {
-            keyMap,
+            normalizedKeyMap,
         },
     } = state;
 
@@ -119,7 +118,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         activated: activatedStateID === own.clientID,
         minZLayer,
         maxZLayer,
-        keyMap,
+        normalizedKeyMap,
     };
 }
 
@@ -442,7 +441,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             activated,
             colorBy,
             colors,
-            keyMap,
+            normalizedKeyMap,
         } = this.props;
 
         const {
@@ -484,7 +483,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 color={stateColor}
                 colors={colors}
                 attributes={attributes}
-                keyMap={keyMap}
+                normalizedKeyMap={normalizedKeyMap}
                 labels={labels}
                 collapsed={collapsed}
                 navigateFirstKeyframe={

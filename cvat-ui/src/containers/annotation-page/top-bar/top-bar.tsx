@@ -26,7 +26,6 @@ import {
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
-import { formatShortcuts } from 'utils/shortcuts';
 
 interface StateToProps {
     jobInstance: any;
@@ -45,6 +44,7 @@ interface StateToProps {
     autoSaveInterval: number;
     workspace: Workspace;
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 }
 
 interface DispatchToProps {
@@ -96,6 +96,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         shortcuts: {
             keyMap,
+            normalizedKeyMap,
         },
     } = state;
 
@@ -116,6 +117,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         autoSaveInterval,
         workspace,
         keyMap,
+        normalizedKeyMap,
     };
 }
 
@@ -469,6 +471,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             searchAnnotations,
             changeWorkspace,
             keyMap,
+            normalizedKeyMap,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -584,15 +587,15 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                     inputFrameRef={this.inputFrameRef}
                     undoAction={undoAction}
                     redoAction={redoAction}
-                    saveShortcut={formatShortcuts(keyMap.SAVE_JOB)}
-                    undoShortcut={formatShortcuts(keyMap.UNDO)}
-                    redoShortcut={formatShortcuts(keyMap.REDO)}
-                    playPauseShortcut={formatShortcuts(keyMap.PLAY_PAUSE)}
-                    nextFrameShortcut={formatShortcuts(keyMap.NEXT_FRAME)}
-                    previousFrameShortcut={formatShortcuts(keyMap.PREV_FRAME)}
-                    forwardShortcut={formatShortcuts(keyMap.FORWARD_FRAME)}
-                    backwardShortcut={formatShortcuts(keyMap.BACKWARD_FRAME)}
-                    focusFrameInputShortcut={formatShortcuts(keyMap.FOCUS_INPUT_FRAME)}
+                    saveShortcut={normalizedKeyMap.SAVE_JOB}
+                    undoShortcut={normalizedKeyMap.UNDO}
+                    redoShortcut={normalizedKeyMap.REDO}
+                    playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
+                    nextFrameShortcut={normalizedKeyMap.NEXT_FRAME}
+                    previousFrameShortcut={normalizedKeyMap.PREV_FRAME}
+                    forwardShortcut={normalizedKeyMap.FORWARD_FRAME}
+                    backwardShortcut={normalizedKeyMap.BACKWARD_FRAME}
+                    focusFrameInputShortcut={normalizedKeyMap.FOCUS_INPUT_FRAME}
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
                 />

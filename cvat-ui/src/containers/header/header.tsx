@@ -8,7 +8,6 @@ import getCore from 'cvat-core';
 import HeaderComponent from 'components/header/header';
 import { SupportedPlugins, CombinedState } from 'reducers/interfaces';
 import { logoutAsync } from 'actions/auth-actions';
-import { formatShortcuts } from 'utils/shortcuts';
 
 const core = getCore();
 
@@ -49,7 +48,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             packageVersion,
         },
         shortcuts: {
-            keyMap,
+            normalizedKeyMap,
         },
     } = state;
 
@@ -67,7 +66,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         coreVersion: packageVersion.core,
         canvasVersion: packageVersion.canvas,
         uiVersion: packageVersion.ui,
-        switchSettingsShortcut: formatShortcuts(keyMap.OPEN_SETTINGS),
+        switchSettingsShortcut: normalizedKeyMap.OPEN_SETTINGS,
     };
 }
 

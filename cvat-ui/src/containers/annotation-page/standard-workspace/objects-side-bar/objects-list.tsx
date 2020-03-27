@@ -6,7 +6,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 
-import { formatShortcuts } from 'utils/shortcuts';
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
     updateAnnotationsAsync,
@@ -32,6 +31,7 @@ interface StateToProps {
     maxZLayer: number;
     annotationsFiltersHistory: string[];
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 }
 
 interface DispatchToProps {
@@ -69,6 +69,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         shortcuts: {
             keyMap,
+            normalizedKeyMap,
         },
     } = state;
 
@@ -102,6 +103,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         maxZLayer,
         annotationsFiltersHistory,
         keyMap,
+        normalizedKeyMap,
     };
 }
 
@@ -251,6 +253,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             maxZLayer,
             minZLayer,
             keyMap,
+            normalizedKeyMap,
         } = this.props;
         const {
             sortedStatesID,
@@ -410,8 +413,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     {...this.props}
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
-                    switchHiddenAllShortcut={formatShortcuts(keyMap.SWITCH_ALL_HIDDEN)}
-                    switchLockAllShortcut={formatShortcuts(keyMap.SWITCH_ALL_LOCK)}
+                    switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
+                    switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
                     lockAllStates={this.onLockAllStates}
                     unlockAllStates={this.onUnlockAllStates}

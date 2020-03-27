@@ -445,6 +445,7 @@ export interface SettingsState {
 export interface ShortcutsState {
     visibleShortcutsHelp: boolean;
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 }
 
 export interface CombinedState {

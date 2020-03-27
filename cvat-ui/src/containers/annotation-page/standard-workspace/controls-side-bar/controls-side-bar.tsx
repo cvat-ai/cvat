@@ -23,6 +23,7 @@ interface StateToProps {
     rotateAll: boolean;
     activeControl: ActiveControl;
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 }
 
 interface DispatchToProps {
@@ -50,6 +51,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         shortcuts: {
             keyMap,
+            normalizedKeyMap,
         },
     } = state;
 
@@ -57,6 +59,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         rotateAll,
         canvasInstance,
         activeControl,
+        normalizedKeyMap,
         keyMap,
     };
 }

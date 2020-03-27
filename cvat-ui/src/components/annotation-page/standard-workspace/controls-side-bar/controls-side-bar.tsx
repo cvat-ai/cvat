@@ -8,7 +8,6 @@ import Layout from 'antd/lib/layout';
 
 import { ActiveControl, Rotation } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas';
-import { formatShortcuts } from 'utils/shortcuts';
 
 import RotateControl from './rotate-control';
 import CursorControl from './cursor-control';
@@ -28,6 +27,7 @@ interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 
     mergeObjects(enabled: boolean): void;
     groupObjects(enabled: boolean): void;
@@ -50,6 +50,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         repeatDrawShape,
         pasteShape,
         resetGroup,
+        normalizedKeyMap,
         keyMap,
     } = props;
 
@@ -142,14 +143,14 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         >
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
             <CursorControl
-                cursorShortkey={formatShortcuts(keyMap.CANCEL)}
+                cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
             />
             <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <RotateControl
-                anticlockwiseShortcut={formatShortcuts(keyMap.ANTICLOCKWISE_ROTATION)}
-                clockwiseShortcut={formatShortcuts(keyMap.CLOCKWISE_ROTATION)}
+                anticlockwiseShortcut={normalizedKeyMap.ANTICLOCKWISE_ROTATION}
+                clockwiseShortcut={normalizedKeyMap.CLOCKWISE_ROTATION}
                 rotateFrame={rotateFrame}
             />
 
@@ -185,14 +186,14 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
 
             <MergeControl
-                switchMergeShortcut={formatShortcuts(keyMap.SWITCH_MERGE_MODE)}
+                switchMergeShortcut={normalizedKeyMap.SWITCH_MERGE_MODE}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 mergeObjects={mergeObjects}
             />
             <GroupControl
-                switchGroupShortcut={formatShortcuts(keyMap.SWITCH_GROUP_MODE)}
-                resetGroupShortcut={formatShortcuts(keyMap.RESET_GROUP)}
+                switchGroupShortcut={normalizedKeyMap.SWITCH_GROUP_MODE}
+                resetGroupShortcut={normalizedKeyMap.RESET_GROUP}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 groupObjects={groupObjects}

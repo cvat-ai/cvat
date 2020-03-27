@@ -33,6 +33,7 @@ interface StateToProps {
     labels: any[];
     jobInstance: any;
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 }
 
 interface DispatchToProps {
@@ -59,6 +60,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         shortcuts: {
             keyMap,
+            normalizedKeyMap,
         },
     } = state;
 
@@ -69,6 +71,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedAttributeID,
         states,
         keyMap,
+        normalizedKeyMap,
     };
 }
 
@@ -93,6 +96,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         updateAnnotations,
         activateObject,
         keyMap,
+        normalizedKeyMap,
     } = props;
 
     const [labelAttrMap, setLabelAttrMap] = useState(
@@ -226,7 +230,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     occluded={activeObjectState.occluded}
                     objectsCount={states.length}
                     currentIndex={states.indexOf(activeObjectState)}
-                    keyMap={keyMap}
+                    normalizedKeyMap={normalizedKeyMap}
                     nextObject={nextObject}
                 />
                 <ObjectBasicsEditor
@@ -254,7 +258,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                                     currentIndex={activeObjectState.label.attributes
                                         .indexOf(activeAttribute)}
                                     attributesCount={activeObjectState.label.attributes.length}
-                                    keyMap={keyMap}
+                                    normalizedKeyMap={normalizedKeyMap}
                                     nextAttribute={nextAttribute}
                                 />
                                 <AttributeEditor

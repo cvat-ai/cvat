@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 
 import { CombinedState, ObjectType } from 'reducers/interfaces';
@@ -11,7 +10,6 @@ import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actio
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 import { Canvas } from 'cvat-canvas';
-import { formatShortcuts } from 'utils/shortcuts';
 import getCore from 'cvat-core';
 
 const cvat = getCore();
@@ -21,7 +19,7 @@ interface DispatchToProps {
 }
 
 interface StateToProps {
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
     jobInstance: any;
     labels: any[];
@@ -56,7 +54,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
         },
         shortcuts: {
-            keyMap,
+            normalizedKeyMap,
         },
     } = state;
 
@@ -65,7 +63,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         labels,
         frame,
-        keyMap,
+        normalizedKeyMap,
     };
 }
 
@@ -118,13 +116,13 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const { selectedLabelID } = this.state;
-        const { keyMap, labels } = this.props;
+        const { normalizedKeyMap, labels } = this.props;
 
         return (
             <SetupTagPopoverComponent
                 labels={labels}
                 selectedLabeID={selectedLabelID}
-                repeatShapeShortcut={formatShortcuts(keyMap.SWITCH_DRAW_MODE)}
+                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
                 onChangeLabel={this.onChangeLabel}
                 onSetup={this.onSetup}
             />
