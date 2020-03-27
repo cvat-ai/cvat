@@ -964,6 +964,7 @@ export function getJobAsync(
             const colors = [...cvat.enums.colors];
 
             loadJobEvent.close(await jobInfoGenerator(job));
+
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_SUCCESS,
                 payload: {
