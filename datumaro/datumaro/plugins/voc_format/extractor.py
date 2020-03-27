@@ -9,8 +9,7 @@ import numpy as np
 import os.path as osp
 from defusedxml import ElementTree
 
-from datumaro.components.extractor import (SourceExtractor,
-    DEFAULT_SUBSET_NAME, DatasetItem,
+from datumaro.components.extractor import (SourceExtractor, DatasetItem,
     AnnotationType, Label, Mask, Bbox, CompiledMask
 )
 from datumaro.util import dir_items
@@ -26,16 +25,11 @@ _inverse_inst_colormap = invert_colormap(VocInstColormap)
 
 class _VocExtractor(SourceExtractor):
     def __init__(self, path):
-        super().__init__()
-
         assert osp.isfile(path), path
         self._path = path
         self._dataset_dir = osp.dirname(osp.dirname(osp.dirname(path)))
 
-        subset = osp.splitext(osp.basename(path))[0]
-        if subset == DEFAULT_SUBSET_NAME:
-            subset = None
-        self._subset = subset
+        super().__init__(subset=osp.splitext(osp.basename(path))[0])
 
         self._categories = self._load_categories(self._dataset_dir)
         log.debug("Loaded labels: %s", ', '.join("'%s'" % l.name
@@ -47,16 +41,6 @@ class _VocExtractor(SourceExtractor):
 
     def __len__(self):
         return len(self._items)
-
-    def subsets(self):
-        if self._subset:
-            return [self._subset]
-        return None
-
-    def get_subset(self, name):
-        if name != self._subset:
-            return None
-        return self
 
     def _get_label_id(self, label):
         label_id, _ = self._categories[AnnotationType.label].find(label)
