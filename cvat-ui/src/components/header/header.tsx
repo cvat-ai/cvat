@@ -4,26 +4,18 @@
 
 import './styles.scss';
 import React from 'react';
-
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
-import {
-    Layout,
-    Icon,
-    Button,
-    Menu,
-    Dropdown,
-    Modal,
-    Row,
-    Col,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Layout from 'antd/lib/layout';
+import Icon from 'antd/lib/icon';
+import Button from 'antd/lib/button';
+import Menu from 'antd/lib/menu';
+import Dropdown from 'antd/lib/dropdown';
+import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 
-import {
-    CVATLogo,
-    AccountIcon,
-} from 'icons';
+import { CVATLogo, AccountIcon } from 'icons';
 
 interface HeaderContainerProps {
     onLogout: () => void;
@@ -40,6 +32,7 @@ interface HeaderContainerProps {
     coreVersion: string;
     canvasVersion: string;
     uiVersion: string;
+    switchSettingsShortcut: string;
 }
 
 type Props = HeaderContainerProps & RouteComponentProps;
@@ -60,6 +53,7 @@ function HeaderContainer(props: Props): JSX.Element {
         uiVersion,
         onLogout,
         logoutFetching,
+        switchSettingsShortcut,
     } = props;
 
     const renderModels = installedAutoAnnotation
@@ -131,6 +125,7 @@ function HeaderContainer(props: Props): JSX.Element {
     const menu = (
         <Menu className='cvat-header-menu' mode='vertical'>
             <Menu.Item
+                title={`Press ${switchSettingsShortcut} to switch`}
                 onClick={
                     (): void => props.history.push('/settings')
                 }
