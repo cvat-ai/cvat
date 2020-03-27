@@ -527,10 +527,10 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   │   └── Segmentation/
   │       └── default.txt # list of image names without extension
   ├── SegmentationClass/ # merged class masks
-  │   └── image1.png
+  │   ├── image1.png
   │   └── image2.png
   └── SegmentationObject/ # merged instance masks
-      └── image1.png
+      ├── image1.png
       └── image2.png
   ```
   Mask is a png image with several (RGB) channels where each pixel has own color which corresponds to a label.
@@ -559,10 +559,10 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   │   └── Segmentation/
   │       └── <any_subset_name>.txt
   ├── SegmentationClass/
-  │   └── image1.png
+  │   ├── image1.png
   │   └── image2.png
   └── SegmentationObject/
-      └── image.png
+      ├── image1.png
       └── image2.png
   ```
 - supported shapes: Polygons
@@ -573,8 +573,9 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
 - downloaded file: a zip archive of the following structure:
   ```bash
   taskname.zip/
-  ├── images/
-  |   └── img1.jpg
+  ├── img1/
+  |   ├── imgage1.jpg
+  |   └── imgage2.jpg
   └── gt/
       ├── labels.txt
       └── gt.txt
@@ -586,7 +587,7 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   ...
 
   # gt.txt
-  # frame_id, track_id, x, y, w, h, not ignored, class_id, visibility, <ignored>
+  # frame_id, track_id, x, y, w, h, "not ignored", class_id, visibility, <skipped>
   1,1,1363,569,103,241,1,1,0.86014
   ...
 
@@ -598,7 +599,7 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
 - uploaded file: a zip archive of the structure above or:
   ```bash
   taskname.zip/
-  ├── labels.txt # for non-official labels
+  ├── labels.txt # optional, mandatory for non-official labels
   └── gt.txt
   ```
 - supported annotations: Rectangle tracks
@@ -618,8 +619,10 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   ```bash
   taskname.zip/
   ├── Masks/
-  |   └── img1_mask1.png
+  |   ├── img1_mask1.png
+  |   └── img1_mask2.png
   ├── img1.xml
-  └── img2.xml
+  ├── img2.xml
+  └── img3.xml
   ```
 - supported annotations: Rectangles, Polygons, Masks (as polygons)
