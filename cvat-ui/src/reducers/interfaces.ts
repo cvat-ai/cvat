@@ -323,6 +323,7 @@ export interface AnnotationState {
     player: {
         frame: {
             number: number;
+            filename: string;
             data: any | null;
             fetching: boolean;
             delay: number;

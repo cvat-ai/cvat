@@ -55,6 +55,7 @@ interface StateToProps {
     annotations: any[];
     frameData: any;
     frameAngle: number;
+    frameFetching: boolean;
     frame: number;
     opacity: number;
     colorBy: ColorBy;
@@ -129,6 +130,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 frame: {
                     data: frameData,
                     number: frame,
+                    fetching: frameFetching,
                 },
                 frameAngles,
             },
@@ -175,6 +177,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         frameData,
         frameAngle: frameAngles[frame - jobInstance.startFrame],
+        frameFetching,
         frame,
         activatedStateID,
         activatedAttributeID,

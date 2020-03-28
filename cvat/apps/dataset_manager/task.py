@@ -16,6 +16,7 @@ import django_rq
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task
+from cvat.apps.engine.frame_provider import FrameProvider
 from .util import current_function_name, make_zip_archive
 
 _CVAT_ROOT_DIR = __file__[:__file__.rfind('cvat/')]
@@ -23,7 +24,7 @@ _DATUMARO_REPO_PATH = osp.join(_CVAT_ROOT_DIR, 'datumaro')
 sys.path.append(_DATUMARO_REPO_PATH)
 from datumaro.components.project import Project, Environment
 import datumaro.components.extractor as datumaro
-from .bindings import CvatImagesDirExtractor, CvatTaskExtractor
+from .bindings import CvatImagesExtractor, CvatTaskExtractor
 
 
 _MODULE_NAME = __package__ + '.' + osp.splitext(osp.basename(__file__))[0]
@@ -77,11 +78,11 @@ class TaskProject:
     def _create(self):
         self._project = Project.generate(self._project_dir)
         self._project.add_source('task_%s' % self._db_task.id, {
-            'url': self._db_task.get_data_dirname(),
             'format': _TASK_IMAGES_EXTRACTOR,
         })
         self._project.env.extractors.register(_TASK_IMAGES_EXTRACTOR,
-            CvatImagesDirExtractor)
+            lambda url: CvatImagesExtractor(url,
+                FrameProvider(self._db_task.data)))
 
         self._init_dataset()
         self._dataset.define_categories(self._generate_categories())
@@ -91,18 +92,19 @@ class TaskProject:
     def _load(self):
         self._project = Project.load(self._project_dir)
         self._project.env.extractors.register(_TASK_IMAGES_EXTRACTOR,
-            CvatImagesDirExtractor)
+            lambda url: CvatImagesExtractor(url,
+                FrameProvider(self._db_task.data)))
 
     def _import_from_task(self, user):
         self._project = Project.generate(self._project_dir,
             config={'project_name': self._db_task.name})
 
         self._project.add_source('task_%s_images' % self._db_task.id, {
-            'url': self._db_task.get_data_dirname(),
             'format': _TASK_IMAGES_EXTRACTOR,
         })
         self._project.env.extractors.register(_TASK_IMAGES_EXTRACTOR,
-            CvatImagesDirExtractor)
+            lambda url: CvatImagesExtractor(url,
+                FrameProvider(self._db_task.data)))
 
         self._project.add_source('task_%s_anno' % self._db_task.id, {
             'format': _TASK_ANNO_EXTRACTOR,
@@ -173,9 +175,9 @@ class TaskProject:
         images_meta = {
             'images': items,
         }
-        db_video = getattr(self._db_task, 'video', None)
+        db_video = getattr(self._db_task.data, 'video', None)
         if db_video is not None:
-            for i in range(self._db_task.size):
+            for i in range(self._db_task.data.size):
                 frame_info = {
                     'id': i,
                     'width': db_video.width,
@@ -183,7 +185,7 @@ class TaskProject:
                 }
                 items.append(frame_info)
         else:
-            for db_image in self._db_task.image_set.all():
+            for db_image in self._db_task.data.images.all():
                 frame_info = {
                     'id': db_image.frame,
                     'name': osp.basename(db_image.path),

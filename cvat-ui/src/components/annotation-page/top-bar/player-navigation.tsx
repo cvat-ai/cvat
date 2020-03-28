@@ -17,6 +17,7 @@ interface Props {
     startFrame: number;
     stopFrame: number;
     frameNumber: number;
+    frameFilename: string;
     inputFrameRef: React.RefObject<InputNumber>;
     onSliderChange(value: SliderValue): void;
     onInputChange(value: number): void;
@@ -28,6 +29,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         startFrame,
         stopFrame,
         frameNumber,
+        frameFilename,
         inputFrameRef,
         onSliderChange,
         onInputChange,
@@ -58,8 +60,8 @@ function PlayerNavigation(props: Props): JSX.Element {
                 </Row>
                 <Row type='flex' justify='center'>
                     <Col className='cvat-player-filename-wrapper'>
-                        <Tooltip title='filename.png'>
-                            <Text type='secondary'>filename.png</Text>
+                        <Tooltip title={frameFilename}>
+                            <Text type='secondary'>{frameFilename}</Text>
                         </Tooltip>
                     </Col>
                     <Col offset={1}>

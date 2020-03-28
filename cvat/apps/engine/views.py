@@ -6,13 +6,12 @@ import os
 import os.path as osp
 import re
 import traceback
-from ast import literal_eval
 import shutil
 from datetime import datetime
 from tempfile import mkstemp
 
 from django.views.generic import RedirectView
-from django.http import HttpResponseBadRequest, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.conf import settings
 from sendfile import sendfile
@@ -24,6 +23,7 @@ from rest_framework import viewsets
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework import mixins
+from rest_framework.exceptions import APIException
 from django_filters import rest_framework as filters
 import django_rq
 from django.db import IntegrityError
@@ -36,8 +36,8 @@ from cvat.apps.authentication.decorators import login_required
 from .log import slogger, clogger
 from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
 from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
-   ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
-   RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
+   ExceptionSerializer, AboutSerializer, JobSerializer, DataMetaSerializer,
+   RqStatusSerializer, DataSerializer, LabeledDataSerializer,
    PluginSerializer, FileInfoSerializer, LogEventSerializer,
    ProjectSerializer, BasicUserSerializer)
 from cvat.apps.annotation.serializers import AnnotationFileSerializer, AnnotationFormatSerializer
@@ -47,6 +47,7 @@ from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
 from cvat.apps.annotation.models import AnnotationDumper, AnnotationLoader
 from cvat.apps.annotation.format import get_annotation_formats
+from cvat.apps.engine.frame_provider import FrameProvider
 import cvat.apps.dataset_manager.task as DatumaroTask
 
 from drf_yasg.utils import swagger_auto_schema
@@ -375,6 +376,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         task_dirname = instance.get_task_dirname()
         super().perform_destroy(instance)
         shutil.rmtree(task_dirname, ignore_errors=True)
+        if instance.data and not instance.data.tasks.all():
+            shutil.rmtree(instance.data.get_data_dirname(), ignore_errors=True)
+            instance.data.delete()
 
     @swagger_auto_schema(method='get', operation_summary='Returns a list of jobs for a specific task',
         responses={'200': JobSerializer(many=True)})
@@ -388,17 +392,79 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @swagger_auto_schema(method='post', operation_summary='Method permanently attaches images or video to a task')
-    @action(detail=True, methods=['POST'], serializer_class=TaskDataSerializer)
+    @swagger_auto_schema(method='get', operation_summary='Method returns data for a specific task',
+        manual_parameters=[
+            openapi.Parameter('type', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
+                enum=['chunk', 'frame', 'preview'],
+                description="Specifies the type of the requested data"),
+            openapi.Parameter('quality', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
+                enum=['compressed', 'original'],
+                description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
+            openapi.Parameter('number', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_NUMBER,
+                description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
+            ]
+    )
+    @action(detail=True, methods=['POST', 'GET'])
     def data(self, request, pk):
-        """
-        These data cannot be changed later
-        """
-        db_task = self.get_object() # call check_object_permissions as well
-        serializer = TaskDataSerializer(db_task, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            task.create(db_task.id, serializer.data)
+        if request.method == 'POST':
+            db_task = self.get_object() # call check_object_permissions as well
+            serializer = DataSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            db_data = serializer.save()
+            db_task.data = db_data
+            db_task.save()
+            data = {k:v for k, v in serializer.data.items()}
+            data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+            task.create(db_task.id, data)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        else:
+            data_type = request.query_params.get('type', None)
+            data_id = request.query_params.get('number', None)
+            data_quality = request.query_params.get('quality', 'compressed')
+
+            possible_data_type_values = ('chunk', 'frame', 'preview')
+            possible_quality_values = ('compressed', 'original')
+
+            if not data_type or data_type not in possible_data_type_values:
+                return Response(data='data type not specified or has wrong value', status=status.HTTP_400_BAD_REQUEST)
+            elif data_type == 'chunk' or data_type == 'frame':
+                if not data_id:
+                    return Response(data='number not specified', status=status.HTTP_400_BAD_REQUEST)
+                elif data_quality not in possible_quality_values:
+                    return Response(data='wrong quality value', status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                db_task = self.get_object()
+                frame_provider = FrameProvider(db_task.data)
+
+                if data_type == 'chunk':
+                    data_id = int(data_id)
+                    data_quality = FrameProvider.Quality.COMPRESSED \
+                        if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
+                    path = os.path.realpath(frame_provider.get_chunk(data_id, data_quality))
+
+                    # Follow symbol links if the chunk is a link on a real image otherwise
+                    # mimetype detection inside sendfile will work incorrectly.
+                    return sendfile(request, path)
+
+                elif data_type == 'frame':
+                    data_id = int(data_id)
+                    data_quality = FrameProvider.Quality.COMPRESSED \
+                        if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
+                    buf, mime = frame_provider.get_frame(data_id, data_quality)
+
+                    return HttpResponse(buf.getvalue(), content_type=mime)
+
+                elif data_type == 'preview':
+                    return sendfile(request, frame_provider.get_preview())
+                else:
+                    return Response(data='unknown data type {}.'.format(data_type), status=status.HTTP_400_BAD_REQUEST)
+            except APIException as e:
+                return Response(data=e.default_detail, status=e.status_code)
+            except Exception as e:
+                msg = 'cannot get requested data type: {}, number: {}, quality: {}'.format(data_type, data_id, data_quality)
+                slogger.task[pk].error(msg, exc_info=True)
+                return Response(data=msg + '\n' + str(e), status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(method='get', operation_summary='Method returns annotations for a specific task')
     @swagger_auto_schema(method='put', operation_summary='Method performs an update of all annotations in a specific task')
@@ -477,7 +543,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Please specify a correct 'format' parameter for the request")
 
-        file_path = os.path.join(db_task.get_task_dirname(),
+        file_path = os.path.join(db_task.get_task_artifacts_dirname(),
             "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.format.lower()))
 
         queue = django_rq.get_queue("default")
@@ -548,40 +614,30 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return response
 
-    @swagger_auto_schema(method='get', operation_summary='Method provides a list of sizes (width, height) of media files which are related with the task',
-        responses={'200': ImageMetaSerializer(many=True)})
-    @action(detail=True, methods=['GET'], serializer_class=ImageMetaSerializer,
-        url_path='frames/meta')
-    def data_info(self, request, pk):
-        try:
-            db_task = self.get_object() # call check_object_permissions as well
-            meta_cache_file = open(db_task.get_image_meta_cache_path())
-        except OSError:
-            task.make_image_meta_cache(db_task)
-            meta_cache_file = open(db_task.get_image_meta_cache_path())
+    @staticmethod
+    @swagger_auto_schema(method='get', operation_summary='Method provides a meta information about media files which are related with the task',
+        responses={'200': DataMetaSerializer()})
+    @action(detail=True, methods=['GET'], serializer_class=DataMetaSerializer,
+        url_path='data/meta')
+    def data_info(request, pk):
+        db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
 
-        data = literal_eval(meta_cache_file.read())
-        serializer = ImageMetaSerializer(many=True, data=data['original_size'])
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.data)
+        if hasattr(db_task.data, 'video'):
+            media = [db_task.data.video]
+        else:
+            media = list(db_task.data.images.order_by('frame'))
 
-    @swagger_auto_schema(method='get', manual_parameters=[openapi.Parameter('frame', openapi.IN_PATH, required=True,
-            description="A unique integer value identifying this frame", type=openapi.TYPE_INTEGER)],
-        operation_summary='Method returns a specific frame for a specific task',
-        responses={'200': openapi.Response(description='frame')})
-    @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='frames/(?P<frame>\d+)')
-    def frame(self, request, pk, frame):
-        try:
-            # Follow symbol links if the frame is a link on a real image otherwise
-            # mimetype detection inside sendfile will work incorrectly.
-            db_task = self.get_object()
-            path = os.path.realpath(db_task.get_frame_path(frame))
-            return sendfile(request, path)
-        except Exception as e:
-            slogger.task[pk].error(
-                "cannot get frame #{}".format(frame), exc_info=True)
-            return HttpResponseBadRequest(str(e))
+        frame_meta = [{
+            'width': item.width,
+            'height': item.height,
+            'name': item.path,
+        } for item in media]
+
+        db_data = db_task.data
+        db_data.frames = frame_meta
+
+        serializer = DataMetaSerializer(db_data)
+        return Response(serializer.data)
 
     @swagger_auto_schema(method='get', operation_summary='Export task as a dataset in a specific format',
         manual_parameters=[openapi.Parameter('action', in_=openapi.IN_QUERY,

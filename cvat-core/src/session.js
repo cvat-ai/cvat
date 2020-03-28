@@ -11,7 +11,7 @@
     const PluginRegistry = require('./plugins');
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
-    const { getFrame, getPreview } = require('./frames');
+    const { getFrame, getRanges, getPreview } = require('./frames');
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
@@ -113,9 +113,14 @@
             }),
             frames: Object.freeze({
                 value: {
-                    async get(frame) {
+                    async get(frame, isPlaying = false, step = 1) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.frames.get, frame);
+                            .apiWrapper.call(this, prototype.frames.get, frame, isPlaying, step);
+                        return result;
+                    },
+                    async ranges() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.frames.ranges);
                         return result;
                     },
                     async preview() {
@@ -416,8 +421,10 @@
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
+                * @throws {module:API.cvat.exceptions.DataError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
             */
+
             /**
                 * Get the first frame of a task for preview
                 * @method preview
@@ -428,6 +435,15 @@
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
+            */
+
+            /**
+                * Returns the ranges of cached frames
+                * @method ranges
+                * @memberof Session.frames
+                * @returns {Array{string}}
+                * @instance
+                * @async
             */
 
             /**
@@ -692,6 +708,7 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             };
 
@@ -755,6 +772,10 @@
                 start_frame: undefined,
                 stop_frame: undefined,
                 frame_filter: undefined,
+                data_chunk_size: undefined,
+                data_compressed_chunk_type: undefined,
+                data_original_chunk_type: undefined,
+                use_zip_chunks: undefined,
             };
 
             for (const property in data) {
@@ -993,6 +1014,24 @@
                     },
                 },
                 /**
+                    * @name useZipChunks
+                    * @type {boolean}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                useZipChunks: {
+                    get: () => data.use_zip_chunks,
+                    set: (useZipChunks) => {
+                        if (typeof (useZipChunks) !== 'boolean') {
+                            throw new ArgumentError(
+                                'Value must be a boolean',
+                            );
+                        }
+                        data.use_zip_chunks = useZipChunks;
+                    },
+                },
+                /**
                     * After task has been created value can be appended only.
                     * @name labels
                     * @type {module:API.cvat.classes.Label[]}
@@ -1173,6 +1212,21 @@
                         data.frame_filter = filter;
                     },
                 },
+                dataChunkSize: {
+                    get: () => data.data_chunk_size,
+                    set: (chunkSize) => {
+                        if (typeof (chunkSize) !== 'number' || chunkSize < 1) {
+                            throw new ArgumentError(
+                                `Chunk size value must be a positive number. But value ${chunkSize} has been got.`,
+                            );
+                        }
+
+                        data.data_chunk_size = chunkSize;
+                    },
+                },
+                dataChunkType: {
+                    get: () => data.data_compressed_chunk_type,
+                },
             }));
 
             // When we call a function, for example: task.annotations.get()
@@ -1206,6 +1260,7 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             };
 
@@ -1297,7 +1352,7 @@
         );
     };
 
-    Job.prototype.frames.get.implementation = async function (frame) {
+    Job.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
         if (!Number.isInteger(frame) || frame < 0) {
             throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
@@ -1310,13 +1365,25 @@
             );
         }
 
-        const frameData = await getFrame(this.task.id, this.task.mode, frame);
+        const frameData = await getFrame(
+            this.task.id,
+            this.task.dataChunkSize,
+            this.task.dataChunkType,
+            this.task.mode,
+            frame,
+            this.startFrame,
+            this.stopFrame,
+            isPlaying,
+            step,
+        );
         return frameData;
     };
 
-    Job.prototype.frames.preview.implementation = async function () {
-        const frameData = await getPreview(this.task.id);
-        return frameData;
+    Job.prototype.frames.ranges.implementation = async function () {
+        const rangesData = await getRanges(
+            this.task.id,
+        );
+        return rangesData;
     };
 
     // TODO: Check filter for annotations
@@ -1473,39 +1540,44 @@
             return this;
         }
 
-        const taskData = {
+        const taskSpec = {
             name: this.name,
             labels: this.labels.map((el) => el.toJSON()),
-            image_quality: this.imageQuality,
             z_order: Boolean(this.zOrder),
         };
 
         if (typeof (this.bugTracker) !== 'undefined') {
-            taskData.bug_tracker = this.bugTracker;
+            taskSpec.bug_tracker = this.bugTracker;
         }
         if (typeof (this.segmentSize) !== 'undefined') {
-            taskData.segment_size = this.segmentSize;
+            taskSpec.segment_size = this.segmentSize;
         }
         if (typeof (this.overlap) !== 'undefined') {
-            taskData.overlap = this.overlap;
-        }
-        if (typeof (this.startFrame) !== 'undefined') {
-            taskData.start_frame = this.startFrame;
-        }
-        if (typeof (this.stopFrame) !== 'undefined') {
-            taskData.stop_frame = this.stopFrame;
-        }
-        if (typeof (this.frameFilter) !== 'undefined') {
-            taskData.frame_filter = this.frameFilter;
+            taskSpec.overlap = this.overlap;
         }
 
-        const taskFiles = {
+        const taskDataSpec = {
             client_files: this.clientFiles,
             server_files: this.serverFiles,
             remote_files: this.remoteFiles,
+            image_quality: this.imageQuality,
+            use_zip_chunks: this.useZipChunks,
         };
 
-        const task = await serverProxy.tasks.createTask(taskData, taskFiles, onUpdate);
+        if (typeof (this.startFrame) !== 'undefined') {
+            taskDataSpec.start_frame = this.startFrame;
+        }
+        if (typeof (this.stopFrame) !== 'undefined') {
+            taskDataSpec.stop_frame = this.stopFrame;
+        }
+        if (typeof (this.frameFilter) !== 'undefined') {
+            taskDataSpec.frame_filter = this.frameFilter;
+        }
+        if (typeof (this.dataChunkSize) !== 'undefined') {
+            taskDataSpec.chunk_size = this.dataChunkSize;
+        }
+
+        const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);
         return new Task(task);
     };
 
@@ -1514,7 +1586,7 @@
         return result;
     };
 
-    Task.prototype.frames.get.implementation = async function (frame) {
+    Task.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
         if (!Number.isInteger(frame) || frame < 0) {
             throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
@@ -1527,8 +1599,30 @@
             );
         }
 
-        const result = await getFrame(this.id, this.mode, frame);
+        const result = await getFrame(
+            this.id,
+            this.dataChunkSize,
+            this.dataChunkType,
+            this.mode,
+            frame,
+            0,
+            this.size - 1,
+            isPlaying,
+            step,
+        );
         return result;
+    };
+
+    Job.prototype.frames.preview.implementation = async function () {
+        const frameData = await getPreview(this.task.id);
+        return frameData;
+    };
+
+    Task.prototype.frames.ranges.implementation = async function () {
+        const rangesData = await getRanges(
+            this.id,
+        );
+        return rangesData;
     };
 
     Task.prototype.frames.preview.implementation = async function () {

@@ -199,7 +199,7 @@ class ShapeBufferModel extends Listener  {
 
                 let imageSizes = window.cvat.job.images;
                 let startFrame = window.cvat.player.frames.start;
-                let originalImageSize = imageSizes[object.frame - startFrame] || imageSizes[0];
+                let originalImageSize = imageSizes.frames[object.frame - startFrame] || imageSizes.frames[0];
 
                 // Getting normalized coordinates [0..1]
                 let normalized = {};
@@ -225,7 +225,7 @@ class ShapeBufferModel extends Listener  {
                     numOfFrames --;
 
                     object.z_order = this._collection.zOrder(object.frame).max;
-                    let imageSize = imageSizes[object.frame - startFrame] || imageSizes[0];
+                    let imageSize = imageSizes.frames[object.frame - startFrame] || imageSizes.frames[0];
                     let position = {};
                     if (this._shape.type === 'box') {
                         position.xtl = normalized.xtl * imageSize.width;
@@ -310,9 +310,9 @@ class ShapeBufferController {
                         let imageSizes = window.cvat.job.images;
 
                         let message = `Propagate up to ${endFrame} frame. `;
-                        let refSize = imageSizes[curFrame - startFrame] || imageSizes[0];
+                        let refSize = imageSizes.frames[curFrame - startFrame] || imageSizes.frames[0];
                         for (let _frame = curFrame + 1; _frame <= endFrame; _frame ++) {
-                            let size = imageSizes[_frame - startFrame] || imageSizes[0];
+                            let size = imageSizes.frames[_frame - startFrame] || imageSizes.frames[0];
                             if ((size.width != refSize.width) || (size.height != refSize.height) ) {
                                 message += 'Some covered frames have another resolution. Shapes in them can differ from reference. ';
                                 break;

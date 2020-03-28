@@ -4,56 +4,47 @@
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict
-import os
-import os.path as osp
 
 from django.db import transaction
 
 from cvat.apps.annotation.annotation import Annotation
 from cvat.apps.engine.annotation import TaskAnnotation
-from cvat.apps.engine.models import Task, ShapeType, AttributeType
+from cvat.apps.engine.models import ShapeType, AttributeType
 
 import datumaro.components.extractor as datumaro
 from datumaro.util.image import Image
 
 
-class CvatImagesDirExtractor(datumaro.Extractor):
-    _SUPPORTED_FORMATS = ['.png', '.jpg']
-
-    def __init__(self, url):
+class CvatImagesExtractor(datumaro.Extractor):
+    def __init__(self, url, frame_provider):
         super().__init__()
 
-        items = []
-        for (dirpath, _, filenames) in os.walk(url):
-            for name in filenames:
-                path = osp.join(dirpath, name)
-                if self._is_image(path):
-                    item_id = Task.get_image_frame(path)
-                    item = datumaro.DatasetItem(id=item_id, image=path)
-                    items.append((item.id, item))
-
-        items = sorted(items, key=lambda e: int(e[0]))
-        items = OrderedDict(items)
-        self._items = items
-
+        self._frame_provider = frame_provider
         self._subsets = None
 
     def __iter__(self):
-        for item in self._items.values():
-            yield item
+        frames = self._frame_provider.get_frames(
+            self._frame_provider.Quality.ORIGINAL,
+            self._frame_provider.Type.NUMPY_ARRAY)
+        for item_id, image in enumerate(frames):
+            yield datumaro.DatasetItem(
+                id=item_id,
+                image=Image(image),
+            )
 
     def __len__(self):
-        return len(self._items)
+        return len(self._frame_provider)
 
     def subsets(self):
         return self._subsets
 
-    def _is_image(self, path):
-        for ext in self._SUPPORTED_FORMATS:
-            if osp.isfile(path) and path.endswith(ext):
-                return True
-        return False
-
+    def get(self, item_id, subset=None, path=None):
+        if path or subset:
+            raise KeyError()
+        return datumaro.DatasetItem(
+            id=item_id,
+            image=self._frame_provider[item_id].getvalue()
+        )
 
 class CvatAnnotationsExtractor(datumaro.Extractor):
     def __init__(self, url, cvat_annotations):
@@ -169,7 +160,6 @@ class CvatAnnotationsExtractor(datumaro.Extractor):
             item_anno.append(anno)
 
         return item_anno
-
 
 class CvatTaskExtractor(CvatAnnotationsExtractor):
     def __init__(self, url, db_task, user):

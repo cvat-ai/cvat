@@ -35,8 +35,17 @@ RUN apt-get update && \
         supervisor \
         ffmpeg \
         gstreamer0.10-ffmpeg \
+        libavcodec-dev \
+        libavdevice-dev \
+        libavfilter-dev \
+        libavformat-dev \
+        libavutil-dev \
+        libldap2-dev \
+        libswresample-dev \
+        libswscale-dev \
         libldap2-dev \
         libsasl2-dev \
+        pkg-config \
         python3-dev \
         python3-pip \
         tzdata \
@@ -57,7 +66,8 @@ RUN apt-get update && \
     dpkg-reconfigure -f noninteractive tzdata && \
     add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \
     add-apt-repository --remove ppa:mc3man/xerus-media -y && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    echo 'application/wasm wasm' >> /etc/mime.types
 
 # Add a non-root user
 ENV USER=${USER}
@@ -123,6 +133,7 @@ COPY ssh ${HOME}/.ssh
 COPY utils ${HOME}/utils
 COPY cvat/ ${HOME}/cvat
 COPY cvat-core/ ${HOME}/cvat-core
+COPY cvat-data/ ${HOME}/cvat-data
 COPY tests ${HOME}/tests
 COPY datumaro/ ${HOME}/datumaro
 

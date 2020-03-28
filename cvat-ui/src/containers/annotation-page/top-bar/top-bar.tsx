@@ -32,6 +32,7 @@ import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
 interface StateToProps {
     jobInstance: any;
     frameNumber: number;
+    frameFilename: string;
     frameStep: number;
     frameSpeed: FrameSpeed;
     frameDelay: number;
@@ -47,7 +48,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onChangeFrame(frame: number): void;
+    onChangeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void;
     onSwitchPlay(playing: boolean): void;
     onSaveAnnotation(sessionInstance: any): void;
     showStatistics(sessionInstance: any): void;
@@ -63,6 +64,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             player: {
                 playing,
                 frame: {
+                    filename: frameFilename,
                     number: frameNumber,
                     delay: frameDelay,
                 },
@@ -103,6 +105,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         saving,
         savingStatuses,
         frameNumber,
+        frameFilename,
         jobInstance,
         undoAction: history.undo.length ? history.undo[history.undo.length - 1][0] : undefined,
         redoAction: history.redo.length ? history.redo[history.redo.length - 1][0] : undefined,
@@ -114,8 +117,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onChangeFrame(frame: number): void {
-            dispatch(changeFrameAsync(frame));
+        onChangeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void {
+            dispatch(changeFrameAsync(frame, fillBuffer, frameStep));
         },
         onSwitchPlay(playing: boolean): void {
             dispatch(switchPlay(playing));
@@ -208,7 +211,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
-                        onChangeFrame(frameNumber + 1 + framesSkiped);
+                        onChangeFrame(
+                            frameNumber + 1 + framesSkiped,
+                            stillPlaying, framesSkiped + 1,
+                        );
                     }
                 }, frameDelay);
             } else {
@@ -451,6 +457,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 stopFrame,
             },
             frameNumber,
+            frameFilename,
             undoAction,
             redoAction,
             workspace,
@@ -623,6 +630,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                     startFrame={startFrame}
                     stopFrame={stopFrame}
                     frameNumber={frameNumber}
+                    frameFilename={frameFilename}
                     inputFrameRef={this.inputFrameRef}
                     undoAction={undoAction}
                     redoAction={redoAction}

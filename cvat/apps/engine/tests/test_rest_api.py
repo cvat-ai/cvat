@@ -6,14 +6,14 @@ import os
 import shutil
 from PIL import Image
 from io import BytesIO
+from enum import Enum
 import random
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
-    AttributeType, Project)
-from cvat.apps.annotation.models import AnnotationFormat
+    AttributeType, Project, Data)
 from unittest import mock
 import io
 import xml.etree.ElementTree as ET
@@ -21,6 +21,8 @@ from collections import defaultdict
 import zipfile
 from pycocotools import coco as coco_loader
 import tempfile
+import av
+import numpy as np
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -50,14 +52,27 @@ def create_db_users(cls):
     cls.user = cls.user5 = user_dummy
 
 def create_db_task(data):
+    data_settings = {
+        "size": data.pop("size"),
+        "image_quality": data.pop("image_quality"),
+    }
+
+    db_data = Data.objects.create(**data_settings)
+    shutil.rmtree(db_data.get_data_dirname(), ignore_errors=True)
+    os.makedirs(db_data.get_data_dirname())
+    os.makedirs(db_data.get_upload_dirname())
+
     db_task = Task.objects.create(**data)
     shutil.rmtree(db_task.get_task_dirname(), ignore_errors=True)
-    os.makedirs(db_task.get_upload_dirname())
-    os.makedirs(db_task.get_data_dirname())
+    os.makedirs(db_task.get_task_dirname())
+    os.makedirs(db_task.get_task_logs_dirname())
+    os.makedirs(db_task.get_task_artifacts_dirname())
+    db_task.data = db_data
+    db_task.save()
 
-    for x in range(0, db_task.size, db_task.segment_size):
+    for x in range(0, db_task.data.size, db_task.segment_size):
         start_frame = x
-        stop_frame = min(x + db_task.segment_size - 1, db_task.size - 1)
+        stop_frame = min(x + db_task.segment_size - 1, db_task.data.size - 1)
 
         db_segment = Segment()
         db_segment.task = db_task
@@ -1051,7 +1066,7 @@ class TaskGetAPITestCase(APITestCase):
     def _check_response(self, response, db_task):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], db_task.name)
-        self.assertEqual(response.data["size"], db_task.size)
+        self.assertEqual(response.data["size"], db_task.data.size)
         self.assertEqual(response.data["mode"], db_task.mode)
         owner = db_task.owner.id if db_task.owner else None
         self.assertEqual(response.data["owner"], owner)
@@ -1060,7 +1075,7 @@ class TaskGetAPITestCase(APITestCase):
         self.assertEqual(response.data["overlap"], db_task.overlap)
         self.assertEqual(response.data["segment_size"], db_task.segment_size)
         self.assertEqual(response.data["z_order"], db_task.z_order)
-        self.assertEqual(response.data["image_quality"], db_task.image_quality)
+        self.assertEqual(response.data["image_quality"], db_task.data.image_quality)
         self.assertEqual(response.data["status"], db_task.status)
         self.assertListEqual(
             [label.name for label in db_task.label_set.all()],
@@ -1146,7 +1161,7 @@ class TaskUpdateAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         name = data.get("name", db_task.name)
         self.assertEqual(response.data["name"], name)
-        self.assertEqual(response.data["size"], db_task.size)
+        self.assertEqual(response.data["size"], db_task.data.size)
         mode = data.get("mode", db_task.mode)
         self.assertEqual(response.data["mode"], mode)
         owner = db_task.owner.id if db_task.owner else None
@@ -1159,7 +1174,7 @@ class TaskUpdateAPITestCase(APITestCase):
         self.assertEqual(response.data["segment_size"], db_task.segment_size)
         z_order = data.get("z_order", db_task.z_order)
         self.assertEqual(response.data["z_order"], z_order)
-        image_quality = data.get("image_quality", db_task.image_quality)
+        image_quality = data.get("image_quality", db_task.data.image_quality)
         self.assertEqual(response.data["image_quality"], image_quality)
         self.assertEqual(response.data["status"], db_task.status)
         if data.get("labels"):
@@ -1187,7 +1202,6 @@ class TaskUpdateAPITestCase(APITestCase):
         data = {
             "name": "new name for the task",
             "owner": self.owner.id,
-            "image_quality": 60,
             "labels": [{
                 "name": "non-vehicle",
                 "attributes": [{
@@ -1204,7 +1218,6 @@ class TaskUpdateAPITestCase(APITestCase):
         data = {
             "name": "new name for the task",
             "owner": self.assignee.id,
-            "image_quality": 63,
             "labels": [{
                 "name": "car",
                 "attributes": [{
@@ -1221,7 +1234,6 @@ class TaskUpdateAPITestCase(APITestCase):
     def test_api_v1_tasks_id_observer(self):
         data = {
             "name": "new name for the task",
-            "image_quality": 61,
             "labels": [{
                 "name": "test",
             }]
@@ -1231,7 +1243,6 @@ class TaskUpdateAPITestCase(APITestCase):
     def test_api_v1_tasks_id_no_auth(self):
         data = {
             "name": "new name for the task",
-            "image_quality": 59,
             "labels": [{
                 "name": "test",
             }]
@@ -1315,7 +1326,6 @@ class TaskCreateAPITestCase(APITestCase):
     def _check_response(self, response, user, data):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["name"], data["name"])
-        self.assertEqual(response.data["size"], 0)
         self.assertEqual(response.data["mode"], "")
         self.assertEqual(response.data["owner"], data.get("owner", user.id))
         self.assertEqual(response.data["assignee"], data.get("assignee"))
@@ -1323,7 +1333,6 @@ class TaskCreateAPITestCase(APITestCase):
         self.assertEqual(response.data["overlap"], data.get("overlap", None))
         self.assertEqual(response.data["segment_size"], data.get("segment_size", 0))
         self.assertEqual(response.data["z_order"], data.get("z_order", False))
-        self.assertEqual(response.data["image_quality"], data.get("image_quality", 50))
         self.assertEqual(response.data["status"], StatusChoice.ANNOTATION)
         self.assertListEqual(
             [label["name"] for label in data.get("labels")],
@@ -1342,7 +1351,6 @@ class TaskCreateAPITestCase(APITestCase):
     def test_api_v1_tasks_admin(self):
         data = {
             "name": "new name for the task",
-            "image_quality": 60,
             "labels": [{
                 "name": "non-vehicle",
                 "attributes": [{
@@ -1359,7 +1367,6 @@ class TaskCreateAPITestCase(APITestCase):
         data = {
             "name": "new name for the task",
             "owner": self.assignee.id,
-            "image_quality": 63,
             "labels": [{
                 "name": "car",
                 "attributes": [{
@@ -1376,7 +1383,6 @@ class TaskCreateAPITestCase(APITestCase):
     def test_api_v1_tasks_observer(self):
         data = {
             "name": "new name for the task",
-            "image_quality": 61,
             "labels": [{
                 "name": "test",
             }]
@@ -1386,7 +1392,6 @@ class TaskCreateAPITestCase(APITestCase):
     def test_api_v1_tasks_no_auth(self):
         data = {
             "name": "new name for the task",
-            "image_quality": 59,
             "labels": [{
                 "name": "test",
             }]
@@ -1402,9 +1407,76 @@ def generate_image_file(filename):
     f.name = filename
     f.seek(0)
 
-    return f
+    return (width, height), f
+
+def generate_image_files(*args):
+    images = []
+    image_sizes = []
+    for image_name in args:
+        img_size, image = generate_image_file(image_name)
+        image_sizes.append(img_size)
+        images.append(image)
+
+    return image_sizes, images
+
+def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25):
+    f = BytesIO()
+    total_frames = duration * fps
+    container = av.open(f, mode='w', format='mp4')
+
+    stream = container.add_stream('mpeg4', rate=fps)
+    stream.width = width
+    stream.height = height
+    stream.pix_fmt = 'yuv420p'
+
+    for frame_i in range(total_frames):
+        img = np.empty((stream.width, stream.height, 3))
+        img[:, :, 0] = 0.5 + 0.5 * np.sin(2 * np.pi * (0 / 3 + frame_i / total_frames))
+        img[:, :, 1] = 0.5 + 0.5 * np.sin(2 * np.pi * (1 / 3 + frame_i / total_frames))
+        img[:, :, 2] = 0.5 + 0.5 * np.sin(2 * np.pi * (2 / 3 + frame_i / total_frames))
+
+        img = np.round(255 * img).astype(np.uint8)
+        img = np.clip(img, 0, 255)
+
+        frame = av.VideoFrame.from_ndarray(img, format='rgb24')
+        for packet in stream.encode(frame):
+            container.mux(packet)
+
+    # Flush stream
+    for packet in stream.encode():
+        container.mux(packet)
+
+    # Close the file
+    container.close()
+    f.name = filename
+    f.seek(0)
+
+    return [(width, height)] * total_frames, f
+
+def generate_zip_archive_file(filename, count):
+    image_sizes = []
+    zip_buf = BytesIO()
+    with zipfile.ZipFile(zip_buf, 'w') as zip_chunk:
+        for idx in range(count):
+            image_name = "image_{:6d}.jpg".format(idx)
+            size, image_buf = generate_image_file(image_name)
+            image_sizes.append(size)
+            zip_chunk.writestr(image_name, image_buf.getvalue())
+
+    zip_buf.name = filename
+    zip_buf.seek(0)
+    return image_sizes, zip_buf
 
 class TaskDataAPITestCase(APITestCase):
+    _image_sizes = {}
+
+    class ChunkType(str, Enum):
+        IMAGESET = 'imageset'
+        VIDEO = 'video'
+
+        def __str__(self):
+            return self.value
+
     def setUp(self):
         self.client = APIClient()
 
@@ -1415,27 +1487,56 @@ class TaskDataAPITestCase(APITestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        path = os.path.join(settings.SHARE_ROOT, "test_1.jpg")
-        data = generate_image_file("test_1.jpg")
-        with open(path, 'wb') as image:
+        filename = "test_1.jpg"
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        img_size, data = generate_image_file(filename)
+        with open(path, "wb") as image:
             image.write(data.read())
+        cls._image_sizes[filename] = img_size
 
-        path = os.path.join(settings.SHARE_ROOT, "test_2.jpg")
-        data = generate_image_file("test_2.jpg")
-        with open(path, 'wb') as image:
+        filename = "test_2.jpg"
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        img_size, data = generate_image_file(filename)
+        with open(path, "wb") as image:
             image.write(data.read())
+        cls._image_sizes[filename] = img_size
 
-        path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
-        data = generate_image_file("test_3.jpg")
-        with open(path, 'wb') as image:
+        filename = "test_3.jpg"
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        img_size, data = generate_image_file(filename)
+        with open(path, "wb") as image:
             image.write(data.read())
+        cls._image_sizes[filename] = img_size
 
-        path = os.path.join(settings.SHARE_ROOT, "data", "test_3.jpg")
+        filename = os.path.join("data", "test_3.jpg")
+        path = os.path.join(settings.SHARE_ROOT, filename)
         os.makedirs(os.path.dirname(path))
-        data = generate_image_file("test_3.jpg")
-        with open(path, 'wb') as image:
+        img_size, data = generate_image_file(filename)
+        with open(path, "wb") as image:
             image.write(data.read())
+        cls._image_sizes[filename] = img_size
 
+        filename = "test_video_1.mp4"
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        img_sizes, data = generate_video_file(filename, width=1280, height=720)
+        with open(path, "wb") as video:
+            video.write(data.read())
+        cls._image_sizes[filename] = img_sizes
+
+        filename = os.path.join("videos", "test_video_1.mp4")
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        os.makedirs(os.path.dirname(path))
+        img_sizes, data = generate_video_file(filename, width=1280, height=720)
+        with open(path, "wb") as video:
+            video.write(data.read())
+        cls._image_sizes[filename] = img_sizes
+
+        filename = os.path.join("test_archive_1.zip")
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        img_sizes, data = generate_zip_archive_file(filename, count=5)
+        with open(path, "wb") as zip_archive:
+            zip_archive.write(data.read())
+        cls._image_sizes[filename] = img_sizes
 
     @classmethod
     def tearDownClass(cls):
@@ -1452,8 +1553,14 @@ class TaskDataAPITestCase(APITestCase):
         path = os.path.join(settings.SHARE_ROOT, "data", "test_3.jpg")
         os.remove(path)
 
+        path = os.path.join(settings.SHARE_ROOT, "test_video_1.mp4")
+        os.remove(path)
 
-    def _run_api_v1_tasks_id_data(self, tid, user, data):
+        path = os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
+        os.remove(path)
+
+
+    def _run_api_v1_tasks_id_data_post(self, tid, user, data):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/v1/tasks/{}/data'.format(tid),
                 data=data)
@@ -1463,59 +1570,285 @@ class TaskDataAPITestCase(APITestCase):
     def _create_task(self, user, data):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/v1/tasks', data=data, format="json")
-
         return response
 
+    def _get_task(self, user, tid):
+        with ForceLogin(user, self.client):
+            return self.client.get("/api/v1/tasks/{}".format(tid))
+
+    def _run_api_v1_task_id_data_get(self, tid, user, data_type, data_quality=None, data_number=None):
+        url = '/api/v1/tasks/{}/data?type={}'.format(tid, data_type)
+        if data_quality is not None:
+            url += '&quality={}'.format(data_quality)
+        if data_number is not None:
+            url += '&number={}'.format(data_number)
+        with ForceLogin(user, self.client):
+            return self.client.get(url)
+
+    def _get_preview(self, tid, user):
+        return self._run_api_v1_task_id_data_get(tid, user, "preview")
+
+    def _get_compressed_chunk(self, tid, user, number):
+        return self._run_api_v1_task_id_data_get(tid, user, "chunk", "compressed", number)
+
+    def _get_original_chunk(self, tid, user, number):
+        return self._run_api_v1_task_id_data_get(tid, user, "chunk", "original", number)
+
+    def _get_compressed_frame(self, tid, user, number):
+        return self._run_api_v1_task_id_data_get(tid, user, "frame", "compressed", number)
+
+    def _get_original_frame(self, tid, user, number):
+        return self._run_api_v1_task_id_data_get(tid, user, "frame", "original", number)
+
+    @staticmethod
+    def _extract_zip_chunk(chunk_buffer):
+        chunk = zipfile.ZipFile(chunk_buffer, mode='r')
+        return [Image.open(BytesIO(chunk.read(f))) for f in sorted(chunk.namelist())]
+
+    @staticmethod
+    def _extract_video_chunk(chunk_buffer):
+        container = av.open(chunk_buffer)
+        stream = container.streams.video[0]
+        return [f.to_image() for f in container.decode(stream)]
+
+    def _test_api_v1_tasks_id_data_spec(self, user, spec, data, expected_compressed_type, expected_original_type, image_sizes):
+        # create task
+        response = self._create_task(user, spec)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        task_id = response.data["id"]
+
+        # post data for the task
+        response = self._run_api_v1_tasks_id_data_post(task_id, user, data)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._get_task(user, task_id)
+
+        expected_status_code = status.HTTP_200_OK
+        if user == self.user and "owner" in spec and spec["owner"] != user.id and \
+           "assignee" in spec and spec["assignee"] != user.id:
+            expected_status_code = status.HTTP_403_FORBIDDEN
+        self.assertEqual(response.status_code, expected_status_code)
+
+        if expected_status_code == status.HTTP_200_OK:
+            task = response.json()
+            self.assertEqual(expected_compressed_type, task["data_compressed_chunk_type"])
+            self.assertEqual(expected_original_type, task["data_original_chunk_type"])
+            self.assertEqual(len(image_sizes), task["size"])
+
+        # check preview
+        response = self._get_preview(task_id, user)
+        self.assertEqual(response.status_code, expected_status_code)
+        if expected_status_code == status.HTTP_200_OK:
+            preview = Image.open(io.BytesIO(b"".join(response.streaming_content)))
+            self.assertEqual(preview.size, image_sizes[0])
+
+        # check compressed chunk
+        response = self._get_compressed_chunk(task_id, user, 0)
+        self.assertEqual(response.status_code, expected_status_code)
+        if expected_status_code == status.HTTP_200_OK:
+            compressed_chunk = io.BytesIO(b"".join(response.streaming_content))
+            if task["data_compressed_chunk_type"] == self.ChunkType.IMAGESET:
+                images = self._extract_zip_chunk(compressed_chunk)
+            else:
+                images = self._extract_video_chunk(compressed_chunk)
+
+            self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
+
+            for image_idx, image in enumerate(images):
+                self.assertEqual(image.size, image_sizes[image_idx])
+
+        # check original chunk
+        response = self._get_original_chunk(task_id, user, 0)
+        self.assertEqual(response.status_code, expected_status_code)
+        if expected_status_code == status.HTTP_200_OK:
+            original_chunk  = io.BytesIO(b"".join(response.streaming_content))
+            if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
+                images = self._extract_zip_chunk(original_chunk)
+            else:
+                images = self._extract_video_chunk(original_chunk)
+
+            for image_idx, image in enumerate(images):
+                self.assertEqual(image.size, image_sizes[image_idx])
+
+            self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
+
+            if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
+                server_files = [img for key, img in data.items() if key.startswith("server_files")]
+                client_files = [img for key, img in data.items() if key.startswith("client_files")]
+
+                if server_files:
+                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sorted(server_files)]
+                else:
+                    source_files = [f for f in sorted(client_files, key=lambda e: e.name)]
+
+                source_images = []
+                for f in source_files:
+                    if zipfile.is_zipfile(f):
+                        source_images.extend(self._extract_zip_chunk(f))
+                    else:
+                        source_images.append(Image.open(f))
+
+                for img_idx, image in enumerate(images):
+                    server_image = np.array(image)
+                    source_image = np.array(source_images[img_idx])
+                    self.assertTrue(np.array_equal(source_image, server_image))
+
     def _test_api_v1_tasks_id_data(self, user):
-        data = {
+        task_spec = {
             "name": "my task #1",
             "owner": self.owner.id,
             "assignee": self.assignee.id,
             "overlap": 0,
             "segment_size": 100,
             "z_order": False,
-            "image_quality": 75,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
             ]
         }
-        response = self._create_task(user, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        task_id = response.data["id"]
-        data = {
-            "client_files[0]": generate_image_file("test_1.jpg"),
-            "client_files[1]": generate_image_file("test_2.jpg"),
-            "client_files[2]": generate_image_file("test_3.jpg"),
+        image_sizes, images = generate_image_files("test_1.jpg", "test_2.jpg", "test_3.jpg")
+        task_data = {
+            "client_files[0]": images[0],
+            "client_files[1]": images[1],
+            "client_files[2]": images[2],
+            "image_quality": 75,
         }
 
-        response = self._run_api_v1_tasks_id_data(task_id, user, data)
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
-        data = {
+        task_spec = {
             "name": "my task #2",
             "overlap": 0,
             "segment_size": 0,
-            "image_quality": 75,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
             ]
         }
-        response = self._create_task(user, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        task_id = response.data["id"]
-        data = {
+        task_data = {
             "server_files[0]": "test_1.jpg",
             "server_files[1]": "test_2.jpg",
             "server_files[2]": "test_3.jpg",
-            "server_files[3]": "data/test_3.jpg",
+            "server_files[3]": os.path.join("data", "test_3.jpg"),
+            "image_quality": 75,
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[3]"]],
+            self._image_sizes[task_data["server_files[0]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[2]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
+
+        task_spec = {
+            "name": "my video task #1",
+            "overlap": 0,
+            "segment_size": 100,
+            "z_order": False,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+        image_sizes, video = generate_video_file(filename="test_video_1.mp4", width=1280, height=720)
+        task_data = {
+            "client_files[0]": video,
+            "image_quality": 43,
         }
 
-        response = self._run_api_v1_tasks_id_data(task_id, user, data)
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
+
+        task_spec = {
+            "name": "my video task #2",
+            "overlap": 0,
+            "segment_size": 5,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "server_files[0]": "test_video_1.mp4",
+            "image_quality": 57,
+        }
+        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
+
+        task_spec = {
+            "name": "my video task #3",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+        task_data = {
+            "server_files[0]": os.path.join("videos", "test_video_1.mp4"),
+            "image_quality": 57,
+        }
+        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
+
+        task_spec = {
+            "name": "my video task #4",
+            "overlap": 0,
+            "segment_size": 5,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "server_files[0]": "test_video_1.mp4",
+            "image_quality": 12,
+            "use_zip_chunks": True,
+        }
+        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.VIDEO, image_sizes)
+
+        task_spec = {
+            "name": "my archive task #6",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+        task_data = {
+            "server_files[0]": "test_archive_1.zip",
+            "image_quality": 88,
+        }
+        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
+
+        task_spec = {
+            "name": "my archive task #7",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+        image_sizes, archive = generate_zip_archive_file("test_archive_2.zip", 7)
+        task_data = {
+            "client_files[0]": archive,
+            "image_quality": 100,
+        }
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)
@@ -1534,7 +1867,6 @@ class TaskDataAPITestCase(APITestCase):
             "overlap": 0,
             "segment_size": 100,
             "z_order": False,
-            "image_quality": 75,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
@@ -1577,7 +1909,6 @@ class JobAnnotationAPITestCase(APITestCase):
             "overlap": 0,
             "segment_size": 100,
             "z_order": False,
-            "image_quality": 75,
             "labels": [
                 {
                     "name": "car",
@@ -1607,9 +1938,10 @@ class JobAnnotationAPITestCase(APITestCase):
             tid = response.data["id"]
 
             images = {
-                "client_files[0]": generate_image_file("test_1.jpg"),
-                "client_files[1]": generate_image_file("test_2.jpg"),
-                "client_files[2]": generate_image_file("test_3.jpg"),
+                "client_files[0]": generate_image_file("test_1.jpg")[1],
+                "client_files[1]": generate_image_file("test_2.jpg")[1],
+                "client_files[2]": generate_image_file("test_3.jpg")[1],
+                "image_quality": 75,
             }
             response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=images)
             assert response.status_code == status.HTTP_202_ACCEPTED
@@ -2730,7 +3062,6 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         response = self._get_annotation_formats(annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
-
 
         if annotator is not None:
             supported_formats = response.data

@@ -3,12 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from cvat.apps.annotation import models
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.annotation.serializers import AnnotationFormatSerializer
 from django.core.files import File
 
-import os
 from copy import deepcopy
 
 def register_format(format_file):

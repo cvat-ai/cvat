@@ -44,6 +44,8 @@ interface State {
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
     private mounted: boolean;
+    private previewImageElement: HTMLImageElement;
+    private previewWrapperRef: React.RefObject<HTMLDivElement>;
 
     constructor(props: Props) {
         super(props);
@@ -51,6 +53,8 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         const { taskInstance } = props;
 
         this.mounted = false;
+        this.previewImageElement = new Image();
+        this.previewWrapperRef = React.createRef<HTMLDivElement>();
         this.state = {
             name: taskInstance.name,
             bugTracker: taskInstance.bugTracker,
@@ -60,8 +64,24 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     public componentDidMount(): void {
-        const { taskInstance } = this.props;
+        const { taskInstance, previewImage } = this.props;
+        const { previewImageElement, previewWrapperRef } = this;
         this.mounted = true;
+
+        previewImageElement.onload = () => {
+            const { height, width } = previewImageElement;
+            if (width > height) {
+                previewImageElement.style.width = '100%';
+            } else {
+                previewImageElement.style.height = '100%';
+            }
+        };
+
+        previewImageElement.src = previewImage;
+        previewImageElement.alt = 'Preview';
+        if (previewWrapperRef.current) {
+            previewWrapperRef.current.appendChild(previewImageElement);
+        }
 
         getReposData(taskInstance.id)
             .then((data): void => {
@@ -135,11 +155,11 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     private renderPreview(): JSX.Element {
-        const { previewImage } = this.props;
+        const { previewWrapperRef } = this;
+
+        // Add image on mount after get its width and height to fit it into wrapper
         return (
-            <div className='cvat-task-preview-wrapper'>
-                <img alt='Preview' className='cvat-task-preview' src={previewImage} />
-            </div>
+            <div ref={previewWrapperRef} className='cvat-task-preview-wrapper' />
         );
     }
 
