@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
@@ -15,12 +15,7 @@ import {
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
 } from 'actions/annotation-actions';
-
-import {
-    CombinedState,
-    StatesOrdering,
-    ObjectType,
-} from 'reducers/interfaces';
+import { CombinedState, StatesOrdering, ObjectType } from 'reducers/interfaces';
 
 interface StateToProps {
     jobInstance: any;
@@ -35,6 +30,8 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     annotationsFiltersHistory: string[];
+    keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 }
 
 interface DispatchToProps {
@@ -70,6 +67,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             tabContentHeight: listHeight,
         },
+        shortcuts: {
+            keyMap,
+            normalizedKeyMap,
+        },
     } = state;
 
     let statesHidden = true;
@@ -101,6 +102,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         minZLayer,
         maxZLayer,
         annotationsFiltersHistory,
+        keyMap,
+        normalizedKeyMap,
     };
 }
 
@@ -249,97 +252,29 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             changeFrame,
             maxZLayer,
             minZLayer,
+            keyMap,
+            normalizedKeyMap,
         } = this.props;
         const {
             sortedStatesID,
             statesOrdering,
         } = this.state;
 
-        const keyMap = {
-            SWITCH_ALL_LOCK: {
-                name: 'Lock/unlock all objects',
-                description: 'Change locked state for all objects in the side bar',
-                sequence: 't+l',
-                action: 'keydown',
-            },
-            SWITCH_LOCK: {
-                name: 'Lock/unlock an object',
-                description: 'Change locked state for an active object',
-                sequence: 'l',
-                action: 'keydown',
-            },
-            SWITCH_ALL_HIDDEN: {
-                name: 'Hide/show all objects',
-                description: 'Change hidden state for objects in the side bar',
-                sequence: 't+h',
-                action: 'keydown',
-            },
-            SWITCH_HIDDEN: {
-                name: 'Hide/show an object',
-                description: 'Change hidden state for an active object',
-                sequence: 'h',
-                action: 'keydown',
-            },
-            SWITCH_OCCLUDED: {
-                name: 'Switch occluded',
-                description: 'Change occluded property for an active object',
-                sequences: ['q', '/'],
-                action: 'keydown',
-            },
-            SWITCH_KEYFRAME: {
-                name: 'Switch keyframe',
-                description: 'Change keyframe property for an active track',
-                sequence: 'k',
-                action: 'keydown',
-            },
-            SWITCH_OUTSIDE: {
-                name: 'Switch outside',
-                description: 'Change outside property for an active track',
-                sequence: 'o',
-                action: 'keydown',
-            },
-            DELETE_OBJECT: {
-                name: 'Delete object',
-                description: 'Delete an active object. Use shift to force delete of locked objects',
-                sequences: ['del', 'shift+del'],
-                action: 'keydown',
-            },
-            TO_BACKGROUND: {
-                name: 'To background',
-                description: 'Put an active object "farther" from the user (decrease z axis value)',
-                sequences: ['-', '_'],
-                action: 'keydown',
-            },
-            TO_FOREGROUND: {
-                name: 'To foreground',
-                description: 'Put an active object "closer" to the user (increase z axis value)',
-                sequences: ['+', '='],
-                action: 'keydown',
-            },
-            COPY_SHAPE: {
-                name: 'Copy shape',
-                description: 'Copy shape to CVAT internal clipboard',
-                sequence: 'ctrl+c',
-                action: 'keydown',
-            },
-            PROPAGATE_OBJECT: {
-                name: 'Propagate object',
-                description: 'Make a copy of the object on the following frames',
-                sequence: 'ctrl+b',
-                action: 'keydown',
-            },
-            NEXT_KEY_FRAME: {
-                name: 'Next keyframe',
-                description: 'Go to the next keyframe of an active track',
-                sequence: 'r',
-                action: 'keydown',
-            },
-            PREV_KEY_FRAME: {
-                name: 'Previous keyframe',
-                description: 'Go to the previous keyframe of an active track',
-                sequence: 'e',
-                action: 'keydown',
-            },
+        const subKeyMap = {
+            SWITCH_ALL_LOCK: keyMap.SWITCH_ALL_LOCK,
+            SWITCH_LOCK: keyMap.SWITCH_LOCK,
+            SWITCH_ALL_HIDDEN: keyMap.SWITCH_ALL_HIDDEN,
+            SWITCH_HIDDEN: keyMap.SWITCH_HIDDEN,
+            SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
+            SWITCH_KEYFRAME: keyMap.SWITCH_KEYFRAME,
+            SWITCH_OUTSIDE: keyMap.SWITCH_OUTSIDE,
+            DELETE_OBJECT: keyMap.DELETE_OBJECT,
+            TO_BACKGROUND: keyMap.TO_BACKGROUND,
+            TO_FOREGROUND: keyMap.TO_FOREGROUND,
+            COPY_SHAPE: keyMap.COPY_SHAPE,
+            PROPAGATE_OBJECT: keyMap.PROPAGATE_OBJECT,
+            NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
+            PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
         };
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -473,11 +408,13 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
                 <ObjectsListComponent
                     {...this.props}
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
+                    switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
+                    switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
                     lockAllStates={this.onLockAllStates}
                     unlockAllStates={this.onUnlockAllStates}

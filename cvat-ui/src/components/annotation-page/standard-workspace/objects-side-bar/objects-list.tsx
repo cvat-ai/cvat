@@ -8,7 +8,6 @@ import { StatesOrdering } from 'reducers/interfaces';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import ObjectListHeader from './objects-list-header';
 
-
 interface Props {
     listHeight: number;
     statesHidden: boolean;
@@ -16,6 +15,8 @@ interface Props {
     statesCollapsed: boolean;
     statesOrdering: StatesOrdering;
     sortedStatesID: number[];
+    switchLockAllShortcut: string;
+    switchHiddenAllShortcut: string;
     changeStatesOrdering(value: StatesOrdering): void;
     lockAllStates(): void;
     unlockAllStates(): void;
@@ -33,6 +34,8 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesCollapsed,
         statesOrdering,
         sortedStatesID,
+        switchLockAllShortcut,
+        switchHiddenAllShortcut,
         changeStatesOrdering,
         lockAllStates,
         unlockAllStates,
@@ -49,6 +52,8 @@ function ObjectListComponent(props: Props): JSX.Element {
                 statesLocked={statesLocked}
                 statesCollapsed={statesCollapsed}
                 statesOrdering={statesOrdering}
+                switchLockAllShortcut={switchLockAllShortcut}
+                switchHiddenAllShortcut={switchHiddenAllShortcut}
                 changeStatesOrdering={changeStatesOrdering}
                 lockAllStates={lockAllStates}
                 unlockAllStates={unlockAllStates}

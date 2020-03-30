@@ -12,6 +12,7 @@ interface Props {
     currentAttribute: string;
     currentIndex: number;
     attributesCount: number;
+    normalizedKeyMap: Record<string, string>;
     nextAttribute(step: number): void;
 }
 
@@ -21,21 +22,26 @@ function AttributeSwitcher(props: Props): JSX.Element {
         currentIndex,
         attributesCount,
         nextAttribute,
+        normalizedKeyMap,
     } = props;
 
     const title = `${currentAttribute} [${currentIndex + 1}/${attributesCount}]`;
     return (
         <div className='attribute-annotation-sidebar-switcher'>
-            <Button disabled={attributesCount <= 1} onClick={() => nextAttribute(-1)}>
-                <Icon type='left' />
-            </Button>
+            <Tooltip title={`Previous attribute ${normalizedKeyMap.PREVIOUS_ATTRIBUTE}`}>
+                <Button disabled={attributesCount <= 1} onClick={() => nextAttribute(-1)}>
+                    <Icon type='left' />
+                </Button>
+            </Tooltip>
             <Tooltip title={title}>
                 <Text className='cvat-text'>{currentAttribute}</Text>
                 <Text strong>{` [${currentIndex + 1}/${attributesCount}]`}</Text>
             </Tooltip>
-            <Button disabled={attributesCount <= 1} onClick={() => nextAttribute(1)}>
-                <Icon type='right' />
-            </Button>
+            <Tooltip title={`Next attribute ${normalizedKeyMap.NEXT_ATTRIBUTE}`}>
+                <Button disabled={attributesCount <= 1} onClick={() => nextAttribute(1)}>
+                    <Icon type='right' />
+                </Button>
+            </Tooltip>
         </div>
     );
 }

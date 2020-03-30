@@ -6,15 +6,8 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { RadioChangeEvent } from 'antd/lib/radio';
 
-import {
-    CombinedState,
-    ShapeType,
-    ObjectType,
-} from 'reducers/interfaces';
-
-import {
-    rememberObject,
-} from 'actions/annotation-actions';
+import { CombinedState, ShapeType, ObjectType } from 'reducers/interfaces';
+import { rememberObject } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 
@@ -33,6 +26,7 @@ interface DispatchToProps {
 }
 
 interface StateToProps {
+    normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
     shapeType: ShapeType;
     labels: any[];
@@ -62,12 +56,16 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 labels,
             },
         },
+        shortcuts: {
+            normalizedKeyMap,
+        },
     } = state;
 
     return {
         ...own,
         canvasInstance,
         labels,
+        normalizedKeyMap,
     };
 }
 
@@ -164,6 +162,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         } = this.state;
 
         const {
+            normalizedKeyMap,
             labels,
             shapeType,
         } = this.props;
@@ -176,6 +175,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
                 selectedLabeID={selectedLabelID}
                 numberOfPoints={numberOfPoints}
                 rectDrawingMethod={rectDrawingMethod}
+                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
                 onChangeLabel={this.onChangeLabel}
                 onChangePoints={this.onChangePoints}
                 onChangeRectDrawingMethod={this.onChangeRectDrawingMethod}

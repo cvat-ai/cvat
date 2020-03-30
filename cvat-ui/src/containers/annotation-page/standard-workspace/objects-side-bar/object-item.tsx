@@ -7,11 +7,7 @@ import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
 import { LogType } from 'cvat-logger';
-import {
-    ActiveControl,
-    CombinedState,
-    ColorBy,
-} from 'reducers/interfaces';
+import { ActiveControl, CombinedState, ColorBy } from 'reducers/interfaces';
 import {
     collapseObjectItems,
     changeLabelColorAsync,
@@ -47,6 +43,7 @@ interface StateToProps {
     activeControl: ActiveControl;
     minZLayer: number;
     maxZLayer: number;
+    normalizedKeyMap: Record<string, string>;
 }
 
 interface DispatchToProps {
@@ -95,6 +92,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 colorBy,
             },
         },
+        shortcuts: {
+            normalizedKeyMap,
+        },
     } = state;
 
     const index = states
@@ -118,6 +118,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         activated: activatedStateID === own.clientID,
         minZLayer,
         maxZLayer,
+        normalizedKeyMap,
     };
 }
 
@@ -411,7 +412,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     private changeAttribute = (id: number, value: string): void => {
         const { objectState, jobInstance } = this.props;
         jobInstance.logger.log(LogType.changeAttribute, {
-            id, 
+            id,
             value,
             object_id: objectState.clientID,
         });
@@ -440,6 +441,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             activated,
             colorBy,
             colors,
+            normalizedKeyMap,
         } = this.props;
 
         const {
@@ -481,6 +483,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 color={stateColor}
                 colors={colors}
                 attributes={attributes}
+                normalizedKeyMap={normalizedKeyMap}
                 labels={labels}
                 collapsed={collapsed}
                 navigateFirstKeyframe={

@@ -3,10 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import {
-    Popover,
-    Icon,
-} from 'antd';
+import Popover from 'antd/lib/popover';
+import Icon from 'antd/lib/icon';
 
 import { Canvas } from 'cvat-canvas';
 import { RectangleIcon } from 'icons';
@@ -20,10 +18,7 @@ interface Props {
 }
 
 function DrawRectangleControl(props: Props): JSX.Element {
-    const {
-        canvasInstance,
-        isDrawing,
-    } = props;
+    const { canvasInstance, isDrawing } = props;
 
     const dynamcPopoverPros = isDrawing ? {
         overlayStyle: {
@@ -44,7 +39,9 @@ function DrawRectangleControl(props: Props): JSX.Element {
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
             content={(
-                <DrawShapePopoverContainer shapeType={ShapeType.RECTANGLE} />
+                <DrawShapePopoverContainer
+                    shapeType={ShapeType.RECTANGLE}
+                />
             )}
         >
             <Icon

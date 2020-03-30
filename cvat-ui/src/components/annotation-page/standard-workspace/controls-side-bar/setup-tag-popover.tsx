@@ -3,29 +3,27 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Select,
-    Button,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Select from 'antd/lib/select';
+import Button from 'antd/lib/button';
+import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 
 interface Props {
     labels: any[];
     selectedLabeID: number;
+    repeatShapeShortcut: string;
     onChangeLabel(value: string): void;
     onSetup(
         labelID: number,
     ): void;
 }
 
-function setupTagPopover(props: Props): JSX.Element {
+function SetupTagPopover(props: Props): JSX.Element {
     const {
         labels,
         selectedLabeID,
+        repeatShapeShortcut,
         onChangeLabel,
         onSetup,
     } = props;
@@ -63,13 +61,15 @@ function setupTagPopover(props: Props): JSX.Element {
             </Row>
             <Row type='flex' justify='space-around'>
                 <Col span={24}>
-                    <Button onClick={() => onSetup(selectedLabeID)}>
-                        Tag
-                    </Button>
+                    <Tooltip title={`Press ${repeatShapeShortcut} to add a tag again`}>
+                        <Button onClick={() => onSetup(selectedLabeID)}>
+                            Tag
+                        </Button>
+                    </Tooltip>
                 </Col>
             </Row>
         </div>
     );
 }
 
-export default React.memo(setupTagPopover);
+export default React.memo(SetupTagPopover);

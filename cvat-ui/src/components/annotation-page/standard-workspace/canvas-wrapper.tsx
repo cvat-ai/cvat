@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import Tooltip from 'antd/lib/tooltip';
 import Icon from 'antd/lib/icon';
@@ -59,6 +59,7 @@ interface Props {
     contextType: ContextMenuType;
     aamZoomMargin: number;
     workspace: Workspace;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -683,6 +684,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onChangeGridColor,
             onChangeGridOpacity,
             onSwitchGrid,
+            keyMap,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -691,61 +693,16 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         };
 
-        const keyMap = {
-            INCREASE_BRIGHTNESS: {
-                name: 'Brightness+',
-                description: 'Increase brightness level for the image',
-                sequence: 'shift+b+=',
-                action: 'keypress',
-            },
-            DECREASE_BRIGHTNESS: {
-                name: 'Brightness-',
-                description: 'Decrease brightness level for the image',
-                sequence: 'shift+b+-',
-                action: 'keydown',
-            },
-            INCREASE_CONTRAST: {
-                name: 'Contrast+',
-                description: 'Increase contrast level for the image',
-                sequence: 'shift+c+=',
-                action: 'keydown',
-            },
-            DECREASE_CONTRAST: {
-                name: 'Contrast-',
-                description: 'Decrease contrast level for the image',
-                sequence: 'shift+c+-',
-                action: 'keydown',
-            },
-            INCREASE_SATURATION: {
-                name: 'Saturation+',
-                description: 'Increase saturation level for the image',
-                sequence: 'shift+s+=',
-                action: 'keydown',
-            },
-            DECREASE_SATURATION: {
-                name: 'Saturation-',
-                description: 'Increase contrast level for the image',
-                sequence: 'shift+s+-',
-                action: 'keydown',
-            },
-            INCREASE_GRID_OPACITY: {
-                name: 'Grid opacity+',
-                description: 'Make the grid more visible',
-                sequence: 'shift+g+=',
-                action: 'keydown',
-            },
-            DECREASE_GRID_OPACITY: {
-                name: 'Grid opacity-',
-                description: 'Make the grid less visible',
-                sequences: 'shift+g+-',
-                action: 'keydown',
-            },
-            CHANGE_GRID_COLOR: {
-                name: 'Grid color',
-                description: 'Set another color for the image grid',
-                sequence: 'shift+g+enter',
-                action: 'keydown',
-            },
+        const subKeyMap = {
+            INCREASE_BRIGHTNESS: keyMap.INCREASE_BRIGHTNESS,
+            DECREASE_BRIGHTNESS: keyMap.DECREASE_BRIGHTNESS,
+            INCREASE_CONTRAST: keyMap.INCREASE_CONTRAST,
+            DECREASE_CONTRAST: keyMap.DECREASE_CONTRAST,
+            INCREASE_SATURATION: keyMap.INCREASE_SATURATION,
+            DECREASE_SATURATION: keyMap.DECREASE_SATURATION,
+            INCREASE_GRID_OPACITY: keyMap.INCREASE_GRID_OPACITY,
+            DECREASE_GRID_OPACITY: keyMap.DECREASE_GRID_OPACITY,
+            CHANGE_GRID_COLOR: keyMap.CHANGE_GRID_COLOR,
         };
 
         const step = 10;
@@ -826,7 +783,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         return (
             <Layout.Content style={{ position: 'relative' }}>
-                <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
                 {/*
                     This element doesn't have any props
                     So, React isn't going to rerender it
