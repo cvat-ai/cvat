@@ -140,6 +140,10 @@ class CvatAnnotationsExtractor(datumaro.Extractor):
             anno_attr['occluded'] = shape_obj.occluded
             anno_attr['z_order'] = shape_obj.z_order
 
+            if hasattr(shape_obj, 'track_id'):
+                anno_attr['track_id'] = shape_obj.track_id
+                anno_attr['keyframe'] = shape_obj.keyframe
+
             anno_points = shape_obj.points
             if shape_obj.type == ShapeType.POINTS:
                 anno = datumaro.Points(anno_points,

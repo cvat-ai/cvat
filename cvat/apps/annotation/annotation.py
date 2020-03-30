@@ -104,8 +104,8 @@ class Annotation:
     Attribute = namedtuple('Attribute', 'name, value')
     LabeledShape = namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order')
     LabeledShape.__new__.__defaults__ = (0, 0)
-    TrackedShape = namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside, keyframe, z_order')
-    TrackedShape.__new__.__defaults__ = (0, )
+    TrackedShape = namedtuple('TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, group, z_order, label, track_id')
+    TrackedShape.__new__.__defaults__ = (0, 0, None, 0)
     Track = namedtuple('Track', 'label, group, shapes')
     Tag = namedtuple('Tag', 'frame, label, attributes, group')
     Tag.__new__.__defaults__ = (0, )
@@ -272,11 +272,14 @@ class Annotation:
         return Annotation.TrackedShape(
             type=shape["type"],
             frame=self._db_task.data.start_frame + shape["frame"] * self._frame_step,
+            label=self._get_label_name(shape["label_id"]),
             points=shape["points"],
             occluded=shape["occluded"],
+            z_order=shape.get("z_order", 0),
+            group=shape.get("group", 0),
             outside=shape.get("outside", False),
             keyframe=shape.get("keyframe", True),
-            z_order=shape["z_order"],
+            track_id=shape["track_id"],
             attributes=self._export_attributes(shape["attributes"]),
         )
 
@@ -318,7 +321,11 @@ class Annotation:
         annotations = {}
         data_manager = DataManager(self._annotation_ir)
         for shape in sorted(data_manager.to_shapes(self._db_task.data.size), key=lambda shape: shape.get("z_order", 0)):
-            _get_frame(annotations, shape).labeled_shapes.append(self._export_labeled_shape(shape))
+            if 'track_id' in shape:
+                exported_shape = self._export_tracked_shape(shape)
+            else:
+                exported_shape = self._export_labeled_shape(shape)
+            _get_frame(annotations, shape).labeled_shapes.append(exported_shape)
 
         for tag in self._annotation_ir.tags:
             _get_frame(annotations, tag).tags.append(self._export_tag(tag))
@@ -332,14 +339,17 @@ class Annotation:
 
     @property
     def tracks(self):
-        for track in self._annotation_ir.tracks:
+        for idx, track in enumerate(self._annotation_ir.tracks):
             tracked_shapes = TrackManager.get_interpolated_shapes(track, 0, self._db_task.data.size)
             for tracked_shape in tracked_shapes:
                 tracked_shape["attributes"] += track["attributes"]
+                tracked_shape["track_id"] = idx
+                tracked_shape["group"] = track["group"]
+                tracked_shape["label_id"] = track["label_id"]
 
             yield Annotation.Track(
                 label=self._get_label_name(track["label_id"]),
-                group=track['group'],
+                group=track["group"],
                 shapes=[self._export_tracked_shape(shape) for shape in tracked_shapes],
             )
 

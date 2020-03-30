@@ -226,12 +226,11 @@ class TrackManager(ObjectManager):
         shapes = []
         for idx, track in enumerate(self.objects):
             for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame):
-                if not shape["outside"]:
-                    shape["label_id"] = track["label_id"]
-                    shape["group"] = track["group"]
-                    shape["track_id"] = idx
-                    shape["attributes"] += track["attributes"]
-                    shapes.append(shape)
+                shape["label_id"] = track["label_id"]
+                shape["group"] = track["group"]
+                shape["track_id"] = idx
+                shape["attributes"] += track["attributes"]
+                shapes.append(shape)
         return shapes
 
     @staticmethod

@@ -11,12 +11,10 @@ from copy import deepcopy
 
 def register_format(format_file):
     source_code = open(format_file, 'r').read()
-    global_vars = {
-        "__builtins__": {},
-    }
+    global_vars = {}
     exec(source_code, global_vars)
     if "format_spec" not in global_vars or not isinstance(global_vars["format_spec"], dict):
-        raise Exception("Could not find \'format_spec\' definition in format file specification")
+        raise Exception("Could not find 'format_spec' definition in format file specification")
 
     format_spec = deepcopy(global_vars["format_spec"])
     format_spec["handler_file"] = File(open(format_file))

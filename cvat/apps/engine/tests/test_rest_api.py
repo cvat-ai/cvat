@@ -1878,10 +1878,15 @@ class TaskDataAPITestCase(APITestCase):
 def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001):
     if isinstance(obj1, dict):
         self.assertTrue(isinstance(obj2, dict), "{} != {}".format(obj1, obj2))
-        for k in obj1.keys():
+        for k, v1 in obj1.items():
             if k in ignore_keys:
                 continue
-            compare_objects(self, obj1[k], obj2.get(k), ignore_keys)
+            v2 = obj2[k]
+            if k == 'attributes':
+                key = lambda a: a['spec_id']
+                v1.sort(key=key)
+                v2.sort(key=key)
+            compare_objects(self, v1, v2, ignore_keys)
     elif isinstance(obj1, list):
         self.assertTrue(isinstance(obj2, list), "{} != {}".format(obj1, obj2))
         self.assertEqual(len(obj1), len(obj2), "{} != {}".format(obj1, obj2))
@@ -2475,7 +2480,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
     def _check_response(self, response, data):
         if not response.status_code in [
             status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]:
-            compare_objects(self, data, response.data, ignore_keys=["id"])
+            try:
+                compare_objects(self, data, response.data, ignore_keys=["id"])
+            except AssertionError as e:
+                print("Objects are not equal: ", data, response.data)
+                print(e)
+                raise
 
     def _run_api_v1_tasks_id_annotations(self, owner, assignee, annotator):
         task, _ = self._create_task(owner, assignee)
@@ -3049,10 +3059,10 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_wo_attrs + polygon_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
-            elif annotation_format == "MOT CSV 1.0":
+            elif annotation_format == "MOT ZIP 1.1":
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
-            elif annotation_format == "LabelMe ZIP 3.0 for images":
+            elif annotation_format == "LabelMe ZIP 3.0":
                 annotations["shapes"] = rectangle_shapes_with_attrs + \
                                         rectangle_shapes_wo_attrs + \
                                         polygon_shapes_wo_attrs + \

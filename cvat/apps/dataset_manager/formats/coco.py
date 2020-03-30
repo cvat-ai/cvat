@@ -29,15 +29,19 @@ def load(file_object, annotations):
     dm_dataset = CocoInstancesExtractor(file_object.name)
     import_dm_annotations(dm_dataset, annotations)
 
+from datumaro.plugins.coco_format.converter import \
+    CocoInstancesConverter as _CocoInstancesConverter
+class CvatCocoConverter(_CocoInstancesConverter):
+    NAME = 'cvat_coco'
+
 def dump(file_object, annotations):
     import os.path as osp
     import shutil
     from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor
-    from datumaro.components.project import Environment
     from tempfile import TemporaryDirectory
+
     extractor = CvatAnnotationsExtractor('', annotations)
-    converter = Environment().make_converter('coco_instances',
-        crop_covered=True)
+    converter = CvatCocoConverter()
     with TemporaryDirectory() as temp_dir:
         converter(extractor, save_dir=temp_dir)
 
