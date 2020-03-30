@@ -5,56 +5,49 @@
 import os
 import os.path as osp
 import re
-import traceback
 import shutil
+import traceback
 from datetime import datetime
 from tempfile import mkstemp
 
-from django.views.generic import RedirectView
-from django.http import HttpResponse, HttpResponseNotFound
-from django.shortcuts import render
-from django.conf import settings
-from sendfile import sendfile
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer
-from rest_framework import status
-from rest_framework import viewsets
-from rest_framework import serializers
-from rest_framework.decorators import action
-from rest_framework import mixins
-from rest_framework.exceptions import APIException
-from django_filters import rest_framework as filters
 import django_rq
-from django.db import IntegrityError
-from django.utils import timezone
-
-
-from . import annotation, task, models
-from cvat.settings.base import JS_3RDPARTY, CSS_3RDPARTY
-from cvat.apps.authentication.decorators import login_required
-from .log import slogger, clogger
-from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
-from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
-   ExceptionSerializer, AboutSerializer, JobSerializer, DataMetaSerializer,
-   RqStatusSerializer, DataSerializer, LabeledDataSerializer,
-   PluginSerializer, FileInfoSerializer, LogEventSerializer,
-   ProjectSerializer, BasicUserSerializer)
-from cvat.apps.annotation.serializers import AnnotationFileSerializer, AnnotationFormatSerializer
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from cvat.apps.authentication import auth
-from rest_framework.permissions import SAFE_METHODS
-from cvat.apps.annotation.models import AnnotationDumper, AnnotationLoader
-from cvat.apps.annotation.format import get_annotation_formats
-from cvat.apps.engine.frame_provider import FrameProvider
-import cvat.apps.dataset_manager.task as DatumaroTask
-
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from django.db import IntegrityError
+from django.http import HttpResponse, HttpResponseNotFound
+from django.shortcuts import render
+from django.utils import timezone
 from django.utils.decorators import method_decorator
-from drf_yasg.inspectors import NotHandled, CoreAPICompatInspector
+from django.views.generic import RedirectView
+from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg import openapi
+from drf_yasg.inspectors import CoreAPICompatInspector, NotHandled
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import mixins, serializers, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
+from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
+from sendfile import sendfile
+
+import cvat.apps.dataset_manager as dataset_manager
+from cvat.apps.authentication import auth
+from cvat.apps.authentication.decorators import login_required
+from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.models import Job, Plugin, StatusChoice, Task
+from cvat.apps.engine.serializers import (
+    AboutSerializer, BasicUserSerializer, DataMetaSerializer, DataSerializer,
+    ExceptionSerializer, FileInfoSerializer, JobSerializer,
+    LabeledDataSerializer, LogEventSerializer, PluginSerializer,
+    ProjectSerializer, RqStatusSerializer, TaskSerializer, UserSerializer)
+from cvat.settings.base import CSS_3RDPARTY, JS_3RDPARTY
+
+from . import annotation, models, task
+from .log import clogger, slogger
+
 
 # drf-yasg component doesn't handle correctly URL_FORMAT_OVERRIDE and
 # send requests with ?format=openapi suffix instead of ?scheme=openapi.
@@ -211,13 +204,7 @@ class ServerViewSet(viewsets.ViewSet):
         responses={'200': AnnotationFormatSerializer(many=True)})
     @action(detail=False, methods=['GET'], url_path='annotation/formats')
     def annotation_formats(request):
-        data = get_annotation_formats()
-        return Response(data)
-
-    @staticmethod
-    @action(detail=False, methods=['GET'], url_path='dataset/formats')
-    def dataset_formats(request):
-        data = DatumaroTask.get_export_formats()
+        data = dataset_manager.get_export_formats()
         data = JSONRenderer().render(data)
         return Response(data)
 

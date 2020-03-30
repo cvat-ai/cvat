@@ -3,26 +3,25 @@
 # SPDX-License-Identifier: MIT
 
 import os
-from enum import Enum
 from collections import OrderedDict
-from django.utils import timezone
-from PIL import Image
+from enum import Enum
 
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 
-from cvat.apps.profiler import silk_profile
+from cvat.apps.dataset_manager.bindings import Annotation, AnnotationIR
 from cvat.apps.engine.plugins import plugin_decorator
-from cvat.apps.annotation.annotation import AnnotationIR, Annotation
 from cvat.apps.engine.utils import execute_python_code, import_modules
+from cvat.apps.profiler import silk_profile
 
-from . import models
-from .data_manager import DataManager
+from . import models, serializers
+from .data_manager import AnnotationManager
 from .log import slogger
-from . import serializers
 
-"""dot.notation access to dictionary attributes"""
+
 class dotdict(OrderedDict):
+    """dot.notation access to dictionary attributes"""
     __getattr__ = OrderedDict.get
     __setattr__ = OrderedDict.__setitem__
     __delattr__ = OrderedDict.__delitem__
@@ -687,7 +686,7 @@ class TaskAnnotation:
             self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
 
     def _merge_data(self, data, start_frame, overlap):
-        data_manager = DataManager(self.ir_data)
+        data_manager = AnnotationManager(self.ir_data)
         data_manager.merge(data, start_frame, overlap)
 
     def put(self, data):

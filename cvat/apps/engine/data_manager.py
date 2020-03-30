@@ -11,7 +11,7 @@ from shapely import geometry
 from . import models
 
 
-class DataManager:
+class AnnotationManager:
     def __init__(self, data):
         self.data = data
 
