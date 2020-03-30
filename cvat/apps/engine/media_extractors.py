@@ -179,7 +179,7 @@ class ZipReader(ImageListReader):
         return self._get_preview(io_image)
 
     def get_image_size(self):
-        img = Image.open(BytesIO(self._zip_source.read(self._source_path[0])))
+        img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[0])))
         return img.width, img.height
 
     def get_image(self, i):
@@ -225,7 +225,7 @@ class VideoReader(IMediaReader):
         container = self._get_av_container()
         # Not for all containers return real value
         stream = container.streams.video[0]
-        return pos / stream.duration
+        return pos / stream.duration if stream.duration else None
 
     def _get_av_container(self):
         return av.open(av.datasets.curated(self._source_path[0]))

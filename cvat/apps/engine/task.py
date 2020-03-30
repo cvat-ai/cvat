@@ -245,8 +245,18 @@ def _create_thread(tid, data):
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
 
     def update_progress(progress):
-        job.meta['status'] = 'Images are being compressed... {}%'.format(round(progress * 100))
+        progress_animation = '|/-\\'
+        if not hasattr(update_progress, 'call_counter'):
+            update_progress.call_counter = 0
+
+        status_template = 'Images are being compressed {}'
+        if progress:
+            current_progress = '{}%'.format(round(progress * 100))
+        else:
+            current_progress = '{}'.format(progress_animation[update_progress.call_counter])
+        job.meta['status'] = status_template.format(current_progress)
         job.save_meta()
+        update_progress.call_counter = (update_progress.call_counter + 1) % len(progress_animation)
 
     compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter
     original_chunk_writer_class = Mpeg4ChunkWriter if db_data.original_chunk_type == DataChoice.VIDEO else ZipChunkWriter
@@ -262,7 +272,6 @@ def _create_thread(tid, data):
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
             db_data.chunk_size = 36
-
 
     video_path = ""
     video_size = (0, 0)
