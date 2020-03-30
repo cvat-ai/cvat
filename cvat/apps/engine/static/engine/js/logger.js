@@ -451,6 +451,9 @@ var Logger = {
     shortkeyLogDecorator: function(decoredFunc) {
         let self = this;
         return function(e, combo) {
+            if (window.cvat.frozen) {
+                return;
+            }
             let pressKeyEvent = self.addContinuedEvent(self.EventType.pressShortcut, {key:  combo});
             let returnValue = decoredFunc(e, combo);
             pressKeyEvent.close();

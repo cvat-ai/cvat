@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
+
+import { BoundariesActionTypes } from 'actions/boundaries-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
 import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 
@@ -224,6 +227,10 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                     resetZoom: job && job.task.mode === 'annotation',
                 },
             };
+        }
+        case BoundariesActionTypes.RESET_AFTER_ERROR:
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return { ...defaultState };
         }
         default: {
             return state;

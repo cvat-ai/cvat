@@ -4,20 +4,23 @@
 
 import React from 'react';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
-import Slider, { SliderValue } from 'antd/lib/slider';
-import Layout from 'antd/lib/layout';
-import Icon from 'antd/lib/icon';
-import Tooltip from 'antd/lib/tooltip';
 
-import { LogType } from 'cvat-logger';
-import { Canvas } from 'cvat-canvas';
-import getCore from 'cvat-core';
+import Tooltip from 'antd/lib/tooltip';
+import Icon from 'antd/lib/icon';
+import Layout from 'antd/lib/layout/layout';
+import Slider, { SliderValue } from 'antd/lib/slider';
+
 import {
     ColorBy,
     GridColor,
     ObjectType,
+    ContextMenuType,
     Workspace,
+    ShapeType,
 } from 'reducers/interfaces';
+import { LogType } from 'cvat-logger';
+import { Canvas } from 'cvat-canvas';
+import getCore from 'cvat-core';
 
 const cvat = getCore();
 
@@ -33,6 +36,7 @@ interface Props {
     annotations: any[];
     frameData: any;
     frameAngle: number;
+    frameFetching: boolean;
     frame: number;
     opacity: number;
     colorBy: ColorBy;
@@ -51,6 +55,8 @@ interface Props {
     contrastLevel: number;
     saturationLevel: number;
     resetZoom: boolean;
+    contextVisible: boolean;
+    contextType: ContextMenuType;
     aamZoomMargin: number;
     workspace: Workspace;
     onSetupCanvas: () => void;
@@ -69,7 +75,8 @@ interface Props {
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject(activatedStateID: number | null): void;
     onSelectObjects(selectedStatesID: number[]): void;
-    onUpdateContextMenu(visible: boolean, left: number, top: number): void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType,
+        pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
     onChangeBrightnessLevel(level: number): void;
@@ -119,6 +126,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             contrastLevel,
             saturationLevel,
             workspace,
+            frameFetching,
         } = this.props;
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -193,6 +201,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             canvasInstance.rotate(frameAngle);
         }
 
+        const loadingAnimation = window.document.getElementById('cvat_canvas_loading_animation');
+        if (loadingAnimation && frameFetching !== prevProps.frameFetching) {
+            if (frameFetching) {
+                loadingAnimation.classList.remove('cvat_canvas_hidden');
+            } else {
+                loadingAnimation.classList.add('cvat_canvas_hidden');
+            }
+        }
+
         this.activateOnCanvas();
     }
 
@@ -223,7 +240,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().removeEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
-        canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
+        canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
+
+        canvasInstance.html().removeEventListener('point.contextmenu', this.onCanvasPointContextMenu);
 
         window.removeEventListener('resize', this.fitCanvas);
     }
@@ -327,8 +346,16 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasContextMenu = (e: MouseEvent): void => {
-        const { activatedStateID, onUpdateContextMenu } = this.props;
-        onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY);
+        const {
+            activatedStateID,
+            onUpdateContextMenu,
+            contextType,
+        } = this.props;
+
+        if (contextType !== ContextMenuType.CANVAS_SHAPE_POINT) {
+            onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY,
+                ContextMenuType.CANVAS_SHAPE);
+        }
     };
 
     private onCanvasShapeDragged = (e: any): void => {
@@ -476,6 +503,20 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
     };
 
+    private onCanvasPointContextMenu = (e: any): void => {
+        const {
+            activatedStateID,
+            onUpdateContextMenu,
+            annotations,
+        } = this.props;
+
+        const [state] = annotations.filter((el: any) => (el.clientID === activatedStateID));
+        if (state.shapeType !== ShapeType.RECTANGLE) {
+            onUpdateContextMenu(activatedStateID !== null, e.detail.mouseEvent.clientX,
+                e.detail.mouseEvent.clientY, ContextMenuType.CANVAS_SHAPE_POINT, e.detail.pointID);
+        }
+    };
+
     private activateOnCanvas(): void {
         const {
             activatedStateID,
@@ -619,6 +660,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().addEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
+
+        canvasInstance.html().addEventListener('point.contextmenu', this.onCanvasPointContextMenu);
     }
 
     public render(): JSX.Element {

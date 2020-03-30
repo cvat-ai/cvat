@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import django_rq
-import fnmatch
 import numpy as np
 import os
 import rq
@@ -19,6 +18,7 @@ from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.authentication.auth import has_admin_role
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data, patch_task_data
+from cvat.apps.engine.frame_provider import FrameProvider
 
 from .models import AnnotationModel, FrameworkChoice
 from .model_loader import load_labelmap
@@ -208,19 +208,6 @@ def delete(dl_model_id):
     else:
         raise Exception("Requested DL model {} doesn't exist".format(dl_model_id))
 
-def get_image_data(path_to_data):
-    def get_image_key(item):
-        return int(os.path.splitext(os.path.basename(item))[0])
-
-    image_list = []
-    for root, _, filenames in os.walk(path_to_data):
-        for filename in fnmatch.filter(filenames, "*.jpg"):
-            image_list.append(os.path.join(root, filename))
-
-    image_list.sort(key=get_image_key)
-    return ImageLoader(image_list)
-
-
 def run_inference_thread(tid, model_file, weights_file, labels_mapping, attributes, convertation_file, reset, user, restricted=True):
     def update_progress(job, progress):
         job.refresh()
@@ -241,7 +228,7 @@ def run_inference_thread(tid, model_file, weights_file, labels_mapping, attribut
         result = None
         slogger.glob.info("auto annotation with openvino toolkit for task {}".format(tid))
         result = run_inference_engine_annotation(
-            data=get_image_data(db_task.get_data_dirname()),
+            data=ImageLoader(FrameProvider(db_task.data)),
             model_file=model_file,
             weights_file=weights_file,
             labels_mapping=labels_mapping,

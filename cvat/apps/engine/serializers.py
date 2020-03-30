@@ -80,7 +80,7 @@ class ClientFileSerializer(serializers.ModelSerializer):
     # pylint: disable=no-self-use
     def to_representation(self, instance):
         if instance:
-            upload_dir = instance.task.get_upload_dirname()
+            upload_dir = instance.data.get_upload_dirname()
             return instance.file.path[len(upload_dir) + 1:]
         else:
             return instance
@@ -115,38 +115,6 @@ class RqStatusSerializer(serializers.Serializer):
     state = serializers.ChoiceField(choices=[
         "Queued", "Started", "Finished", "Failed"])
     message = serializers.CharField(allow_blank=True, default="")
-
-class TaskDataSerializer(serializers.ModelSerializer):
-    client_files = ClientFileSerializer(many=True, source='clientfile_set',
-        default=[])
-    server_files = ServerFileSerializer(many=True, source='serverfile_set',
-        default=[])
-    remote_files = RemoteFileSerializer(many=True, source='remotefile_set',
-        default=[])
-
-    class Meta:
-        model = models.Task
-        fields = ('client_files', 'server_files', 'remote_files')
-
-    # pylint: disable=no-self-use
-    def update(self, instance, validated_data):
-        client_files = validated_data.pop('clientfile_set')
-        server_files = validated_data.pop('serverfile_set')
-        remote_files = validated_data.pop('remotefile_set')
-
-        for file in client_files:
-            client_file = models.ClientFile(task=instance, **file)
-            client_file.save()
-
-        for file in server_files:
-            server_file = models.ServerFile(task=instance, **file)
-            server_file.save()
-
-        for file in remote_files:
-            remote_file = models.RemoteFile(task=instance, **file)
-            remote_file.save()
-
-        return instance
 
 class WriteOnceMixin:
     """Adds support for write once fields to serializers.
@@ -193,23 +161,19 @@ class WriteOnceMixin:
 
         return extra_kwargs
 
-class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True)
-    segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
+class DataSerializer(serializers.ModelSerializer):
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
+    use_zip_chunks = serializers.BooleanField(default=False)
+    client_files = ClientFileSerializer(many=True, default=[])
+    server_files = ServerFileSerializer(many=True, default=[])
+    remote_files = RemoteFileSerializer(many=True, default=[])
 
     class Meta:
-        model = models.Task
-        fields = ('url', 'id', 'name', 'size', 'mode', 'owner', 'assignee',
-            'bug_tracker', 'created_date', 'updated_date', 'overlap',
-            'segment_size', 'z_order', 'status', 'labels', 'segments',
-            'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'project')
-        read_only_fields = ('size', 'mode', 'created_date', 'updated_date',
-            'status')
-        write_once_fields = ('overlap', 'segment_size', 'image_quality')
-        ordering = ['-id']
+        model = models.Data
+        fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
+            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks')
 
+    # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
         match = re.search("step\s*=\s*([1-9]\d*)", value)
         if not match:
@@ -217,12 +181,73 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return value
 
     # pylint: disable=no-self-use
+    def validate_chunk_size(self, value):
+        if not value > 0:
+            raise serializers.ValidationError('Chunk size must be a positive integer')
+        return value
+
+    # pylint: disable=no-self-use
+    def validate(self, data):
+        if 'start_frame' in data and 'stop_frame' in data \
+            and data['start_frame'] > data['stop_frame']:
+            raise serializers.ValidationError('Stop frame must be more or equal start frame')
+        return data
+
+    # pylint: disable=no-self-use
+    def create(self, validated_data):
+        client_files = validated_data.pop('client_files')
+        server_files = validated_data.pop('server_files')
+        remote_files = validated_data.pop('remote_files')
+        validated_data.pop('use_zip_chunks')
+        db_data = models.Data.objects.create(**validated_data)
+
+        data_path = db_data.get_data_dirname()
+        if os.path.isdir(data_path):
+            shutil.rmtree(data_path)
+
+        os.makedirs(db_data.get_compressed_cache_dirname())
+        os.makedirs(db_data.get_original_cache_dirname())
+
+        for f in client_files:
+            client_file = models.ClientFile(data=db_data, **f)
+            client_file.save()
+
+        for f in server_files:
+            server_file = models.ServerFile(data=db_data, **f)
+            server_file.save()
+
+        for f in remote_files:
+            remote_file = models.RemoteFile(data=db_data, **f)
+            remote_file.save()
+
+        db_data.save()
+        return db_data
+
+class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    labels = LabelSerializer(many=True, source='label_set', partial=True)
+    segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
+    data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size')
+    data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type')
+    data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type')
+    size = serializers.ReadOnlyField(source='data.size')
+    image_quality = serializers.ReadOnlyField(source='data.image_quality')
+    data = serializers.ReadOnlyField(source='data.id')
+
+    class Meta:
+        model = models.Task
+        fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee',
+            'bug_tracker', 'created_date', 'updated_date', 'overlap',
+            'segment_size', 'z_order', 'status', 'labels', 'segments',
+            'project', 'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
+        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size',
+            'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
+        write_once_fields = ('overlap', 'segment_size')
+        ordering = ['-id']
+
+    # pylint: disable=no-self-use
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
-        db_task = models.Task.objects.create(size=0, **validated_data)
-        db_task.start_frame = validated_data.get('start_frame', 0)
-        db_task.stop_frame = validated_data.get('stop_frame', 0)
-        db_task.frame_filter = validated_data.get('frame_filter', '')
+        db_task = models.Task.objects.create(**validated_data)
         for label in labels:
             attributes = label.pop('attributespec_set')
             db_label = models.Label.objects.create(task=db_task, **label)
@@ -233,11 +258,10 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
-        upload_dir = db_task.get_upload_dirname()
-        os.makedirs(upload_dir)
-        output_dir = db_task.get_data_dirname()
-        os.makedirs(output_dir)
+        os.makedirs(db_task.get_task_logs_dirname())
+        os.makedirs(db_task.get_task_artifacts_dirname())
 
+        db_task.save()
         return db_task
 
     # pylint: disable=no-self-use
@@ -248,11 +272,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.bug_tracker = validated_data.get('bug_tracker',
             instance.bug_tracker)
         instance.z_order = validated_data.get('z_order', instance.z_order)
-        instance.image_quality = validated_data.get('image_quality',
-            instance.image_quality)
-        instance.start_frame = validated_data.get('start_frame', instance.start_frame)
-        instance.stop_frame = validated_data.get('stop_frame', instance.stop_frame)
-        instance.frame_filter = validated_data.get('frame_filter', instance.frame_filter)
         instance.project = validated_data.get('project', instance.project)
         labels = validated_data.get('label_set', [])
         for label in labels:
@@ -346,9 +365,35 @@ class AboutSerializer(serializers.Serializer):
     description = serializers.CharField(max_length=2048)
     version = serializers.CharField(max_length=64)
 
-class ImageMetaSerializer(serializers.Serializer):
+class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
+    name = serializers.CharField(max_length=1024)
+
+class DataMetaSerializer(serializers.ModelSerializer):
+    frames = FrameMetaSerializer(many=True, allow_null=True)
+    image_quality = serializers.IntegerField(min_value=0, max_value=100)
+
+    class Meta:
+        model = models.Data
+        fields = (
+            'chunk_size',
+            'size',
+            'image_quality',
+            'start_frame',
+            'stop_frame',
+            'frame_filter',
+            'frames',
+        )
+        read_only_fields = (
+            'chunk_size',
+            'size',
+            'image_quality',
+            'start_frame',
+            'stop_frame',
+            'frame_filter',
+            'frames',
+        )
 
 class AttributeValSerializer(serializers.Serializer):
     spec_id = serializers.IntegerField()

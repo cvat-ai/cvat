@@ -76,7 +76,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
                         return {
                             name: formValues.attrName[key],
-                            type: formValues.type[key],
+                            input_type: formValues.type[key],
                             mutable: formValues.mutable[key],
                             id: label && index < label.attributes.length
                                 ? label.attributes[index].id : key,
@@ -136,7 +136,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
     private renderAttributeTypeInput(key: number, attr: Attribute | null): JSX.Element {
         const locked = attr ? attr.id >= 0 : false;
-        const type = attr ? attr.type.toUpperCase() : AttributeType.SELECT;
+        const type = attr ? attr.input_type.toUpperCase() : AttributeType.SELECT;
         const { form } = this.props;
 
         return (

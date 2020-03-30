@@ -45,7 +45,7 @@ class cvat_rest_api_task_images(datumaro.SourceExtractor):
         self._connect()
         os.makedirs(self._cache_dir, exist_ok=True)
         self._cvat_cli.tasks_frame(task_id=self._config.task_id,
-            frame_ids=[item_id], outdir=self._cache_dir)
+            frame_ids=[item_id], outdir=self._cache_dir, quality='original')
 
     def _connect(self):
         if self._session is not None:
@@ -126,6 +126,7 @@ class cvat_rest_api_task_images(datumaro.SourceExtractor):
     def __len__(self):
         return len(self._items)
 
+    # pylint: disable=no-self-use
     def subsets(self):
         return None
 
