@@ -5,6 +5,7 @@
 import math
 from io import BytesIO
 from enum import Enum
+import itertools
 
 import numpy as np
 from PIL import Image
