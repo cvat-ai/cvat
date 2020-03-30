@@ -122,7 +122,6 @@ class TaskExportTest(APITestCase):
             "overlap": 0,
             "segment_size": 100,
             "z_order": False,
-            "image_quality": 75,
             "labels": [
                 {
                     "name": "car",
@@ -253,6 +252,7 @@ class TaskExportTest(APITestCase):
                 "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i)
                 for i in range(size)
             }
+            images["image_quality"] = 75
             response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=images)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
