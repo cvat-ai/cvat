@@ -1641,7 +1641,7 @@ class TaskDataAPITestCase(APITestCase):
         self.assertEqual(response.status_code, expected_status_code)
         if expected_status_code == status.HTTP_200_OK:
             preview = Image.open(io.BytesIO(b"".join(response.streaming_content)))
-            self.assertEqual(preview.size, image_sizes[0])
+            self.assertLessEqual(preview.size, image_sizes[0])
 
         # check compressed chunk
         response = self._get_compressed_chunk(task_id, user, 0)

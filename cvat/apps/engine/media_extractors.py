@@ -6,8 +6,7 @@ import os
 import tempfile
 import shutil
 import zipfile
-from io import BytesIO
-import itertools
+import io
 from abc import ABC, abstractmethod
 
 import av
@@ -25,6 +24,13 @@ def get_mime(name):
 
     return 'unknown'
 
+def create_tmp_dir():
+    return tempfile.mkdtemp(prefix='cvat-', suffix='.data')
+
+def delete_tmp_dir(tmp_dir):
+    if tmp_dir:
+        shutil.rmtree(tmp_dir)
+
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop):
         self._source_path = sorted(source_path)
@@ -32,176 +38,43 @@ class IMediaReader(ABC):
         self._start = start
         self._stop = stop
 
-    @staticmethod
-    def create_tmp_dir():
-        return tempfile.mkdtemp(prefix='cvat-', suffix='.data')
-
-    @staticmethod
-    def delete_tmp_dir(tmp_dir):
-        if tmp_dir:
-            shutil.rmtree(tmp_dir)
-
     @abstractmethod
     def __iter__(self):
         pass
 
     @abstractmethod
-    def __getitem__(self, k):
+    def get_preview(self):
         pass
 
     @abstractmethod
-    def save_preview(self, preview_path):
+    def get_progress(self, pos):
         pass
 
-    def slice_by_size(self, size):
-        # stopFrame should be included
-        it = itertools.islice(self, self._start, self._stop + 1 if self._stop else None)
-        frames = list(itertools.islice(it, 0, size * self._step, self._step))
-        while frames:
-            yield frames
-            frames = list(itertools.islice(it, 0, size * self._step, self._step))
-    @property
-    @abstractmethod
-    def image_names(self):
-        pass
+    @staticmethod
+    def _get_preview(obj):
+        if isinstance(obj, io.IOBase):
+            preview = Image.open(obj)
+        else:
+            preview = obj
+        preview.thumbnail((128, 128))
+
+        return preview.convert('RGB')
 
     @abstractmethod
     def get_image_size(self):
         pass
 
-#Note step, start, stop have no affect
 class ImageListReader(IMediaReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
+    def __init__(self, source_path, step=1, start=0, stop=None):
         if not source_path:
             raise Exception('No image found')
-        super().__init__(
-            source_path=source_path,
-            step=1,
-            start=0,
-            stop=0,
-        )
 
-    def __iter__(self):
-        return zip(self._source_path, self.image_names)
-
-    def __getitem__(self, k):
-        return (self._source_path[k], self.image_names[k])
-
-    def __len__(self):
-        return len(self._source_path)
-
-    def save_preview(self, preview_path):
-        shutil.copyfile(self._source_path[0], preview_path)
-
-    @property
-    def image_names(self):
-        return self._source_path
-
-    def get_image_size(self):
-        img = Image.open(self._source_path[0])
-        return img.width, img.height
-
-#Note step, start, stop have no affect
-class DirectoryReader(ImageListReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
-        image_paths = []
-        for source in source_path:
-            for root, _, files in os.walk(source):
-                paths = [os.path.join(root, f) for f in files]
-                paths = filter(lambda x: get_mime(x) == 'image', paths)
-                image_paths.extend(paths)
-        super().__init__(
-            source_path=image_paths,
-            step=1,
-            start=0,
-            stop=0,
-        )
-
-#Note step, start, stop have no affect
-class ArchiveReader(DirectoryReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
-        self._tmp_dir = self.create_tmp_dir()
-        self._archive_source = source_path[0]
-        Archive(self._archive_source).extractall(self._tmp_dir)
-        super().__init__(
-            source_path=[self._tmp_dir],
-            step=1,
-            start=0,
-            stop=0,
-        )
-
-    def __del__(self):
-        if (self._tmp_dir):
-            self.delete_tmp_dir(self._tmp_dir)
-
-    @property
-    def image_names(self):
-        return [os.path.join(os.path.dirname(self._archive_source), os.path.relpath(p, self._tmp_dir)) for p in super().image_names]
-
-#Note step, start, stop have no affect
-class PdfReader(DirectoryReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
-        if not source_path:
-            raise Exception('No PDF found')
-
-        from pdf2image import convert_from_path
-        self._pdf_source = source_path[0]
-        self._tmp_dir = self.create_tmp_dir()
-        file_ = convert_from_path(self._pdf_source)
-        basename = os.path.splitext(os.path.basename(self._pdf_source))[0]
-        for page_num, page in enumerate(file_):
-            output = os.path.join(self._tmp_dir, '{}{:09d}.jpeg'.format(basename, page_num))
-            page.save(output, 'JPEG')
-
-        super().__init__(
-            source_path=[self._tmp_dir],
-            step=1,
-            start=0,
-            stop=0,
-        )
-
-    def __del__(self):
-        if (self._tmp_dir):
-            self.delete_tmp_dir(self._tmp_dir)
-
-    @property
-    def image_names(self):
-        return  [os.path.join(os.path.dirname(self._pdf_source), os.path.relpath(p, self._tmp_dir)) for p in super().image_names]
-
-class ZipReader(IMediaReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
-        self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
-        file_list = [f for f in self._zip_source.namelist() if get_mime(f) == 'image']
-        super().__init__(file_list, step, start, stop)
-
-    def __iter__(self):
-        for f in zip(self._source_path, self.image_names):
-            yield (BytesIO(self._zip_source.read(f[0])), f[1])
-
-    def __len__(self):
-        return len(self._source_path)
-
-    def __getitem__(self, k):
-        return (BytesIO(self._zip_source.read(self._source_path[k])), self.image_names[k])
-
-    def __del__(self):
-        self._zip_source.close()
-
-    def save_preview(self, preview_path):
-        with open(preview_path, 'wb') as f:
-            f.write(self._zip_source.read(self._source_path[0]))
-
-    def get_image_size(self):
-        img = Image.open(BytesIO(self._zip_source.read(self._source_path[0])))
-        return img.width, img.height
-
-    @property
-    def image_names(self):
-        return [os.path.join(os.path.dirname(self._zip_source.filename), p) for p in self._source_path]
-
-class VideoReader(IMediaReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
-        self._output_fps = 25
+        if stop is None:
+            stop = len(source_path)
+        else:
+            stop = min(len(source_path), stop + 1)
+        step = max(step, 1)
+        assert stop > start
 
         super().__init__(
             source_path=source_path,
@@ -211,40 +84,158 @@ class VideoReader(IMediaReader):
         )
 
     def __iter__(self):
-        def decode_frames(container):
-            for packet in container.demux():
-                if packet.stream.type == 'video':
-                    for frame in packet.decode():
-                        yield frame
+        for i in range(self._start, self._stop, self._step):
+            yield (self.get_image(i), self.get_path(i), i)
 
+    def get_path(self, i):
+        return self._source_path[i]
+
+    def get_image(self, i):
+        return self._source_path[i]
+
+    def get_progress(self, pos):
+        return (pos - self._start + 1) / (self._stop - self._start)
+
+    def get_preview(self):
+        fp = open(self._source_path[0], "rb")
+        return self._get_preview(fp)
+
+    def get_image_size(self):
+        img = Image.open(self._source_path[0])
+        return img.width, img.height
+
+class DirectoryReader(ImageListReader):
+    def __init__(self, source_path, step=1, start=0, stop=None):
+        image_paths = []
+        for source in source_path:
+            for root, _, files in os.walk(source):
+                paths = [os.path.join(root, f) for f in files]
+                paths = filter(lambda x: get_mime(x) == 'image', paths)
+                image_paths.extend(paths)
+        super().__init__(
+            source_path=image_paths,
+            step=step,
+            start=start,
+            stop=stop,
+        )
+
+class ArchiveReader(DirectoryReader):
+    def __init__(self, source_path, step=1, start=0, stop=None):
+        self._tmp_dir = create_tmp_dir()
+        self._archive_source = source_path[0]
+        Archive(self._archive_source).extractall(self._tmp_dir)
+        super().__init__(
+            source_path=[self._tmp_dir],
+            step=step,
+            start=start,
+            stop=stop,
+        )
+
+    def __del__(self):
+        delete_tmp_dir(self._tmp_dir)
+
+    def get_path(self, i):
+        base_dir = os.path.dirname(self._archive_source)
+        return os.path.join(base_dir, os.path.relpath(self._source_path[i], self._tmp_dir))
+
+class PdfReader(DirectoryReader):
+    def __init__(self, source_path, step=1, start=0, stop=None):
+        if not source_path:
+            raise Exception('No PDF found')
+
+        from pdf2image import convert_from_path
+        self._pdf_source = source_path[0]
+        self._tmp_dir = create_tmp_dir()
+        file_ = convert_from_path(self._pdf_source)
+        basename = os.path.splitext(os.path.basename(self._pdf_source))[0]
+        for page_num, page in enumerate(file_):
+            output = os.path.join(self._tmp_dir, '{}{:09d}.jpeg'.format(basename, page_num))
+            page.save(output, 'JPEG')
+
+        super().__init__(
+            source_path=[self._tmp_dir],
+            step=step,
+            start=start,
+            stop=stop,
+        )
+
+    def __del__(self):
+        delete_tmp_dir(self._tmp_dir)
+
+    def get_path(self, i):
+        base_dir = os.path.dirname(self._pdf_source)
+        return os.path.join(base_dir, os.path.relpath(self._source_path[i], self._tmp_dir))
+
+class ZipReader(ImageListReader):
+    def __init__(self, source_path, step=1, start=0, stop=None):
+        self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
+        file_list = [f for f in self._zip_source.namelist() if get_mime(f) == 'image']
+        super().__init__(file_list, step, start, stop)
+
+    def __del__(self):
+        self._zip_source.close()
+
+    def get_preview(self):
+        io_image = io.BytesIO(self._zip_source.read(self._source_path[0]))
+        return self._get_preview(io_image)
+
+    def get_image_size(self):
+        img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[0])))
+        return img.width, img.height
+
+    def get_image(self, i):
+        return io.BytesIO(self._zip_source.read(self._source_path[i]))
+
+    def get_path(self, i):
+        return os.path.join(os.path.dirname(self._zip_source.filename), self._source_path[i])
+
+class VideoReader(IMediaReader):
+    def __init__(self, source_path, step=1, start=0, stop=None):
+        super().__init__(
+            source_path=source_path,
+            step=step,
+            start=start,
+            stop=stop + 1 if stop is not None else stop,
+        )
+
+    def _has_frame(self, i):
+        if i >= self._start:
+            if (i - self._start) % self._step == 0:
+                if self._stop is None or i < self._stop:
+                    return True
+
+        return False
+
+    def _decode(self, container):
+        frame_num = 0
+        for packet in container.demux():
+            if packet.stream.type == 'video':
+                for image in packet.decode():
+                    frame_num += 1
+                    if self._has_frame(frame_num - 1):
+                        yield (image, self._source_path[0], image.pts)
+
+    def __iter__(self):
         container = self._get_av_container()
         source_video_stream = container.streams.video[0]
         source_video_stream.thread_type = 'AUTO'
-        image_names = self.image_names
 
-        return itertools.zip_longest(decode_frames(container), image_names, fillvalue=image_names[0])
+        return self._decode(container)
 
-    def __len__(self):
+    def get_progress(self, pos):
         container = self._get_av_container()
         # Not for all containers return real value
-        length = container.streams.video[0].frames
-        return length
-
-    def __getitem__(self, k):
-        return next(itertools.islice(self, k, k + 1))
+        stream = container.streams.video[0]
+        return pos / stream.duration if stream.duration else None
 
     def _get_av_container(self):
         return av.open(av.datasets.curated(self._source_path[0]))
 
-    def save_preview(self, preview_path):
+    def get_preview(self):
         container = self._get_av_container()
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
-        preview.to_image().save(preview_path)
-
-    @property
-    def image_names(self):
-        return self._source_path
+        return self._get_preview(preview.to_image())
 
     def get_image_size(self):
         image = (next(iter(self)))[0]
@@ -266,7 +257,7 @@ class IChunkWriter(ABC):
             image = Image.fromarray(im_data.astype(np.int32))
         converted_image = image.convert('RGB')
         image.close()
-        buf = BytesIO()
+        buf = io.BytesIO()
         converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
         buf.seek(0)
         width, height = converted_image.size
@@ -280,9 +271,9 @@ class IChunkWriter(ABC):
 class ZipChunkWriter(IChunkWriter):
     def save_as_chunk(self, images, chunk_path):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
-            for idx, (image, image_name) in enumerate(images):
-                arcname = '{:06d}{}'.format(idx, os.path.splitext(image_name)[1])
-                if isinstance(image, BytesIO):
+            for idx, (image, path, _) in enumerate(images):
+                arcname = '{:06d}{}'.format(idx, os.path.splitext(path)[1])
+                if isinstance(image, io.BytesIO):
                     zip_chunk.writestr(arcname, image.getvalue())
                 else:
                     zip_chunk.write(filename=image, arcname=arcname)
@@ -294,7 +285,7 @@ class ZipCompressedChunkWriter(IChunkWriter):
     def save_as_chunk(self, images, chunk_path):
         image_sizes = []
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
-            for idx, (image, _) in enumerate(images):
+            for idx, (image, _ , _) in enumerate(images):
                 w, h, image_buf = self._compress_image(image, self._image_quality)
                 image_sizes.append((w, h))
                 arcname = '{:06d}.jpeg'.format(idx)
@@ -344,7 +335,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
     @staticmethod
     def _encode_images(images, container, stream):
-        for frame, _ in images:
+        for frame, _, _ in images:
             # let libav set the correct pts and time_base
             frame.pts = None
             frame.time_base = None
