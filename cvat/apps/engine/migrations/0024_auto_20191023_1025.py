@@ -134,7 +134,7 @@ def migrate_task_data(db_task_id, db_data_id, original_video, original_images, s
                 else:
                     original_chunk_writer = ZipChunkWriter(100)
                     compressed_chunk_writer = ZipCompressedChunkWriter(image_quality)
-                    
+
                     counter = itertools.count()
                     generator = itertools.groupby(reader, lambda x: next(counter) // chunk_size)
                     for chunk_idx, chunk_images in generator:

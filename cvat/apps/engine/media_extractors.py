@@ -50,7 +50,8 @@ class IMediaReader(ABC):
     def get_progress(self, pos):
         pass
 
-    def _get_preview(self, obj):
+    @staticmethod
+    def _get_preview(obj):
         if isinstance(obj, io.IOBase):
             preview = Image.open(obj)
         else:
