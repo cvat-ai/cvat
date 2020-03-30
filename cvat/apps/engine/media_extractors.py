@@ -65,11 +65,11 @@ class IMediaReader(ABC):
         pass
 
 class ImageListReader(IMediaReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
+    def __init__(self, source_path, step=1, start=0, stop=None):
         if not source_path:
             raise Exception('No image found')
 
-        if stop == 0:
+        if stop is None:
             stop = len(source_path)
         else:
             stop = min(len(source_path), stop + 1)
@@ -105,7 +105,7 @@ class ImageListReader(IMediaReader):
         return img.width, img.height
 
 class DirectoryReader(ImageListReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
+    def __init__(self, source_path, step=1, start=0, stop=None):
         image_paths = []
         for source in source_path:
             for root, _, files in os.walk(source):
@@ -120,7 +120,7 @@ class DirectoryReader(ImageListReader):
         )
 
 class ArchiveReader(DirectoryReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
+    def __init__(self, source_path, step=1, start=0, stop=None):
         self._tmp_dir = create_tmp_dir()
         self._archive_source = source_path[0]
         Archive(self._archive_source).extractall(self._tmp_dir)
@@ -139,7 +139,7 @@ class ArchiveReader(DirectoryReader):
         return os.path.join(base_dir, os.path.relpath(self._source_path[i], self._tmp_dir))
 
 class PdfReader(DirectoryReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
+    def __init__(self, source_path, step=1, start=0, stop=None):
         if not source_path:
             raise Exception('No PDF found')
 
@@ -167,7 +167,7 @@ class PdfReader(DirectoryReader):
         return os.path.join(base_dir, os.path.relpath(self._source_path[i], self._tmp_dir))
 
 class ZipReader(ImageListReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
+    def __init__(self, source_path, step=1, start=0, stop=None):
         self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
         file_list = [f for f in self._zip_source.namelist() if get_mime(f) == 'image']
         super().__init__(file_list, step, start, stop)
@@ -190,18 +190,18 @@ class ZipReader(ImageListReader):
         return os.path.join(os.path.dirname(self._zip_source.filename), self._source_path[i])
 
 class VideoReader(IMediaReader):
-    def __init__(self, source_path, step=1, start=0, stop=0):
+    def __init__(self, source_path, step=1, start=0, stop=None):
         super().__init__(
             source_path=source_path,
             step=step,
             start=start,
-            stop=stop,
+            stop=stop + 1 if stop is not None else stop,
         )
 
     def _has_frame(self, i):
         if i >= self._start:
             if (i - self._start) % self._step == 0:
-                if self._stop == 0 or i <= self._stop:
+                if self._stop is None or i < self._stop:
                     return True
 
         return False
