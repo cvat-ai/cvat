@@ -91,7 +91,7 @@ class FrameProvider():
         for chunk_idx in range(math.ceil(self._db_data.size / self._db_data.chunk_size)):
             chunk_path = chunk_path_getter(chunk_idx)
             chunk_reader = reader_class([chunk_path])
-            for frame, _ in chunk_reader:
+            for frame, _, _ in chunk_reader:
                 if out_type == self.Type.BUFFER:
                     yield self._av_frame_to_png_bytes(frame) if reader_class is VideoReader else frame
                 elif out_type == self.Type.PIL:

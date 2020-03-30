@@ -64,7 +64,8 @@ def migrate_task_data(db_task_id, db_data_id, original_video, original_images, s
         if os.path.exists(old_task_data_dir) and size != 0:
             if original_video:
                 if os.path.exists(original_video):
-                    reader = VideoReader([original_video], get_frame_step(frame_filter), start_frame, stop_frame)
+                    _stop_frame = stop_frame if stop_frame else None
+                    reader = VideoReader([original_video], get_frame_step(frame_filter), start_frame, _stop_frame)
                     original_chunk_writer = Mpeg4ChunkWriter(100)
                     compressed_chunk_writer = ZipCompressedChunkWriter(image_quality)
 
@@ -111,11 +112,11 @@ def migrate_task_data(db_task_id, db_data_id, original_video, original_images, s
                         elif mime_type == 'zip':
                             zips.append(p)
                     if archives:
-                        reader = ArchiveReader(archives, get_frame_step(frame_filter), start_frame, stop_frame)
+                        reader = ArchiveReader(archives)
                     elif zips:
-                        reader = ZipReader(archives, get_frame_step(frame_filter), start_frame, stop_frame)
+                        reader = ZipReader(archives)
                     elif pdfs:
-                        reader = PdfReader(pdfs, get_frame_step(frame_filter), start_frame, stop_frame)
+                        reader = PdfReader(pdfs)
 
                 if not reader:
                     original_chunk_writer = ZipChunkWriter(100)
