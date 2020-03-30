@@ -4,7 +4,7 @@
 
 import React from 'react';
 import Icon from 'antd/lib/icon';
-import Tooltop from 'antd/lib/tooltip';
+import Tooltip from 'antd/lib/tooltip';
 
 import { CursorIcon } from 'icons';
 import { ActiveControl } from 'reducers/interfaces';
@@ -24,7 +24,7 @@ function CursorControl(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Tooltop title={`Cursor ${cursorShortkey}`} placement='right'>
+        <Tooltip title={`Cursor ${cursorShortkey}`} placement='right'>
             <Icon
                 component={CursorIcon}
                 className={activeControl === ActiveControl.CURSOR
@@ -35,7 +35,7 @@ function CursorControl(props: Props): JSX.Element {
                         : undefined
                 }
             />
-        </Tooltop>
+        </Tooltip>
     );
 }
 
