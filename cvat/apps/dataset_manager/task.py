@@ -3,26 +3,28 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import timedelta
 import json
 import os
 import os.path as osp
 import shutil
 import tempfile
+from datetime import timedelta
 
-from django.utils import timezone
 import django_rq
+from django.utils import timezone
 
-from cvat.settings.base import DATUMARO_PATH as _DATUMARO_REPO_PATH, \
-    BASE_DIR as _CVAT_ROOT_DIR
+from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task
-from cvat.apps.engine.frame_provider import FrameProvider
-from .util import current_function_name, make_zip_archive
 
-from datumaro.components.project import Project, Environment
+from cvat.settings.base import BASE_DIR as _CVAT_ROOT_DIR, \
+    DATUMARO_PATH as _DATUMARO_REPO_PATH
 import datumaro.components.extractor as datumaro
+from datumaro.components.project import Project
+
 from .bindings import CvatImagesExtractor, CvatTaskExtractor
+from .formats import DEFAULT_FORMAT, FORMAT_DATUMARO
+from .util import current_function_name, make_zip_archive
 
 _FORMATS_DIR = osp.join(osp.dirname(__file__), 'formats')
 
@@ -40,8 +42,6 @@ _TASK_IMAGES_REMOTE_EXTRACTOR = 'cvat_rest_api_task_images'
 
 def get_export_cache_dir(db_task):
     return osp.join(db_task.get_task_dirname(), 'export_cache')
-
-EXPORT_FORMAT_DATUMARO_PROJECT = "datumaro_project"
 
 
 class TaskProject:
@@ -147,7 +147,7 @@ class TaskProject:
     def export(self, dst_format, save_dir, save_images=False, server_url=None):
         if self._dataset is None:
             self._init_dataset()
-        if dst_format == EXPORT_FORMAT_DATUMARO_PROJECT:
+        if dst_format == FORMAT_DATUMARO:
             self._remote_export(save_dir=save_dir, server_url=server_url)
         else:
             converter = self._dataset.env.make_converter(dst_format,
@@ -250,11 +250,10 @@ class TaskProject:
             osp.join(cvat_utils_dst_dir, 'cli'))
 
 
-DEFAULT_FORMAT = EXPORT_FORMAT_DATUMARO_PROJECT
 DEFAULT_CACHE_TTL = timedelta(hours=10)
 CACHE_TTL = DEFAULT_CACHE_TTL
 
-def export_project(task_id, user, dst_format=None, server_url=None):
+def export_task_as_dataset(task_id, user, dst_format=None, server_url=None):
     try:
         db_task = Task.objects.get(pk=task_id)
 
@@ -307,57 +306,3 @@ def clear_export_cache(task_id, file_path, file_ctime):
     except Exception:
         log_exception(slogger.task[task_id])
         raise
-
-
-EXPORT_FORMATS = [
-    {
-        'name': 'Datumaro',
-        'tag': EXPORT_FORMAT_DATUMARO_PROJECT,
-        'is_default': True,
-    },
-    {
-        'name': 'PASCAL VOC 2012',
-        'tag': 'cvat_voc',
-        'is_default': False,
-    },
-    {
-        'name': 'MS COCO',
-        'tag': 'cvat_coco',
-        'is_default': False,
-    },
-    {
-        'name': 'YOLO',
-        'tag': 'cvat_yolo',
-        'is_default': False,
-    },
-    {
-        'name': 'TF Detection API',
-        'tag': 'cvat_tfrecord',
-        'is_default': False,
-    },
-    {
-        'name': 'MOT',
-        'tag': 'cvat_mot',
-        'is_default': False,
-    },
-    {
-        'name': 'LabelMe',
-        'tag': 'cvat_label_me',
-        'is_default': False,
-    },
-]
-
-def get_export_formats():
-    converters = Environment(config={
-        'plugins_dir': _FORMATS_DIR
-    }).converters
-
-    available_formats = set(converters.items)
-    available_formats.add(EXPORT_FORMAT_DATUMARO_PROJECT)
-
-    public_formats = []
-    for fmt in EXPORT_FORMATS:
-        if fmt['tag'] in available_formats:
-            public_formats.append(fmt)
-
-    return public_formats

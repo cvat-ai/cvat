@@ -302,7 +302,7 @@ class TaskExportTest(APITestCase):
         self._test_export('cvat_label_me', save_images=True)
 
     def test_formats_query(self):
-        formats = dm.get_export_formats()
+        formats = dm.get_formats()
 
         expected = set(f['tag'] for f in dm.EXPORT_FORMATS)
         actual = set(f['tag'] for f in formats)

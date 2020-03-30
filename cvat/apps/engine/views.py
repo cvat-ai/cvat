@@ -204,7 +204,7 @@ class ServerViewSet(viewsets.ViewSet):
         responses={'200': AnnotationFormatSerializer(many=True)})
     @action(detail=False, methods=['GET'], url_path='annotation/formats')
     def annotation_formats(request):
-        data = dataset_manager.get_export_formats()
+        data = dataset_manager.get_formats()
         data = JSONRenderer().render(data)
         return Response(data)
 
@@ -650,10 +650,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         dst_format = request.query_params.get("format", "")
         if not dst_format:
-            dst_format = DatumaroTask.DEFAULT_FORMAT
+            dst_format = dataset_manager.DEFAULT_FORMAT
         dst_format = dst_format.lower()
-        if dst_format not in [f['tag']
-                for f in DatumaroTask.get_export_formats()]:
+        if dst_format not in [f['tag'] for f in dataset_manager.get_formats()]:
             raise serializers.ValidationError(
                 "Unexpected parameter 'format' specified for the request")
 
@@ -694,8 +693,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         except Exception:
             server_address = None
 
-        ttl = DatumaroTask.CACHE_TTL.total_seconds()
-        queue.enqueue_call(func=DatumaroTask.export_project,
+        ttl = dataset_manager.CACHE_TTL.total_seconds()
+        queue.enqueue_call(func=dataset_manager.export_task_as_dataset,
             args=(pk, request.user, dst_format, server_address), job_id=rq_id,
             meta={ 'request_time': timezone.localtime() },
             result_ttl=ttl, failure_ttl=ttl)

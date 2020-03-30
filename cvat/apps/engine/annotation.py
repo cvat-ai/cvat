@@ -16,7 +16,7 @@ from cvat.apps.engine.utils import execute_python_code, import_modules
 from cvat.apps.profiler import silk_profile
 
 from . import models, serializers
-from .data_manager import AnnotationManager
+from .annotation_manager import AnnotationManager
 from .log import slogger
 
 
@@ -686,8 +686,8 @@ class TaskAnnotation:
             self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
 
     def _merge_data(self, data, start_frame, overlap):
-        data_manager = AnnotationManager(self.ir_data)
-        data_manager.merge(data, start_frame, overlap)
+        annotation_manager = AnnotationManager(self.ir_data)
+        annotation_manager.merge(data, start_frame, overlap)
 
     def put(self, data):
         self._patch_data(data, None)

@@ -12,7 +12,7 @@ from django.utils import timezone
 
 import datumaro.components.extractor as datumaro
 from cvat.apps.engine.annotation import TaskAnnotation
-from cvat.apps.engine.data_manager import AnnotationManager, TrackManager
+from cvat.apps.engine.annotation_manager import AnnotationManager, TrackManager
 from cvat.apps.engine.models import AttributeType, ShapeType
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from datumaro.util.image import Image
@@ -209,7 +209,8 @@ class Annotation:
             } for db_image in self._db_task.data.images.all()}
 
         self._frame_mapping = {
-            self._get_filename(info["path"]): frame for frame, info in self._frame_info.items()
+            self._get_filename(info["path"]): frame
+            for frame, info in self._frame_info.items()
         }
 
     def _init_meta(self):
@@ -340,8 +341,8 @@ class Annotation:
             return annotations[frame]
 
         annotations = {}
-        data_manager = AnnotationManager(self._annotation_ir)
-        for shape in sorted(data_manager.to_shapes(self._db_task.data.size), key=lambda shape: shape.get("z_order", 0)):
+        annotation_manager = AnnotationManager(self._annotation_ir)
+        for shape in sorted(annotation_manager.to_shapes(self._db_task.data.size), key=lambda shape: shape.get("z_order", 0)):
             if 'track_id' in shape:
                 exported_shape = self._export_tracked_shape(shape)
             else:
@@ -390,10 +391,11 @@ class Annotation:
         _tag = tag._asdict()
         label_id = self._get_label_id(_tag.pop('label'))
         _tag['frame'] = (int(_tag['frame']) -
-                         self._db_task.data.start_frame) // self._frame_step
+            self._db_task.data.start_frame) // self._frame_step
         _tag['label_id'] = label_id
-        _tag['attributes'] = [self._import_attribute(label_id, attrib) for attrib in _tag['attributes']
-                              if self._get_attribute_id(label_id, attrib.name)]
+        _tag['attributes'] = [self._import_attribute(label_id, attrib)
+            for attrib in _tag['attributes']
+            if self._get_attribute_id(label_id, attrib.name)]
         return _tag
 
     def _import_attribute(self, label_id, attribute):
@@ -406,27 +408,30 @@ class Annotation:
         _shape = shape._asdict()
         label_id = self._get_label_id(_shape.pop('label'))
         _shape['frame'] = (int(_shape['frame']) -
-                           self._db_task.data.start_frame) // self._frame_step
+            self._db_task.data.start_frame) // self._frame_step
         _shape['label_id'] = label_id
-        _shape['attributes'] = [self._import_attribute(label_id, attrib) for attrib in _shape['attributes']
-                                if self._get_attribute_id(label_id, attrib.name)]
+        _shape['attributes'] = [self._import_attribute(label_id, attrib)
+            for attrib in _shape['attributes']
+            if self._get_attribute_id(label_id, attrib.name)]
         return _shape
 
     def _import_track(self, track):
         _track = track._asdict()
         label_id = self._get_label_id(_track.pop('label'))
         _track['frame'] = (min(int(shape.frame) for shape in _track['shapes']) -
-                           self._db_task.data.start_frame) // self._frame_step
+            self._db_task.data.start_frame) // self._frame_step
         _track['label_id'] = label_id
         _track['attributes'] = []
         _track['shapes'] = [shape._asdict() for shape in _track['shapes']]
         for shape in _track['shapes']:
-            shape['frame'] = (int(shape['frame']) -
-                              self._db_task.data.start_frame) // self._frame_step
-            _track['attributes'] = [self._import_attribute(label_id, attrib) for attrib in shape['attributes']
-                                    if self._get_immutable_attribute_id(label_id, attrib.name)]
-            shape['attributes'] = [self._import_attribute(label_id, attrib) for attrib in shape['attributes']
-                                   if self._get_mutable_attribute_id(label_id, attrib.name)]
+            shape['frame'] = (int(shape['frame']) - \
+                self._db_task.data.start_frame) // self._frame_step
+            _track['attributes'] = [self._import_attribute(label_id, attrib)
+                for attrib in shape['attributes']
+                if self._get_immutable_attribute_id(label_id, attrib.name)]
+            shape['attributes'] = [self._import_attribute(label_id, attrib)
+                for attrib in shape['attributes']
+                if self._get_mutable_attribute_id(label_id, attrib.name)]
 
         return _track
 
@@ -518,7 +523,7 @@ class CvatAnnotationsExtractor(datumaro.Extractor):
                 cvat_frame_anno.height, cvat_frame_anno.width)
             )
             dm_item = datumaro.DatasetItem(id=cvat_frame_anno.frame,
-                                           annotations=dm_anno, image=dm_image)
+                annotations=dm_anno, image=dm_image)
             dm_annotations.append((dm_item.id, dm_item))
 
         dm_annotations = sorted(dm_annotations, key=lambda e: int(e[0]))
@@ -585,7 +590,7 @@ class CvatAnnotationsExtractor(datumaro.Extractor):
             anno_attr = convert_attrs(tag_obj.label, tag_obj.attributes)
 
             anno = datumaro.Label(label=anno_label,
-                                  attributes=anno_attr, group=anno_group)
+                attributes=anno_attr, group=anno_group)
             item_anno.append(anno)
 
         for shape_obj in cvat_frame_anno.labeled_shapes:
@@ -602,17 +607,17 @@ class CvatAnnotationsExtractor(datumaro.Extractor):
             anno_points = shape_obj.points
             if shape_obj.type == ShapeType.POINTS:
                 anno = datumaro.Points(anno_points,
-                                       label=anno_label, attributes=anno_attr, group=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group)
             elif shape_obj.type == ShapeType.POLYLINE:
                 anno = datumaro.PolyLine(anno_points,
-                                         label=anno_label, attributes=anno_attr, group=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group)
             elif shape_obj.type == ShapeType.POLYGON:
                 anno = datumaro.Polygon(anno_points,
-                                        label=anno_label, attributes=anno_attr, group=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group)
             elif shape_obj.type == ShapeType.RECTANGLE:
                 x0, y0, x1, y1 = anno_points
                 anno = datumaro.Bbox(x0, y0, x1 - x0, y1 - y0,
-                                     label=anno_label, attributes=anno_attr, group=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group)
             else:
                 raise Exception("Unknown shape type '%s'" % shape_obj.type)
 
@@ -683,7 +688,7 @@ def import_dm_annotations(dm_dataset, cvat_task_anno):
                 else:
                     group_size[ann.group] += 1
         group_map = {g: s for g, s in group_size.items()
-                     if 1 < s and group_map[g]}
+            if 1 < s and group_map[g]}
         group_map = {g: i for i, g in enumerate([0] + sorted(group_map))}
 
         for ann in item.annotations:
@@ -696,7 +701,7 @@ def import_dm_annotations(dm_dataset, cvat_task_anno):
                     occluded=ann.attributes.get('occluded') == True,
                     group=group_map.get(ann.group, 0),
                     attributes=[cvat_task_anno.Attribute(name=n, value=str(v))
-                                for n, v in ann.attributes.items()],
+                        for n, v in ann.attributes.items()],
                 ))
             elif ann.type == datumaro.AnnotationType.label:
                 cvat_task_anno.add_tag(cvat_task_anno.Tag(
@@ -704,5 +709,5 @@ def import_dm_annotations(dm_dataset, cvat_task_anno):
                     label=label_cat.items[ann.label].name,
                     group=group_map.get(ann.group, 0),
                     attributes=[cvat_task_anno.Attribute(name=n, value=str(v))
-                                for n, v in ann.attributes.items()],
+                        for n, v in ann.attributes.items()],
                 ))
