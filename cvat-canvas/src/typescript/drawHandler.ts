@@ -163,7 +163,10 @@ export class DrawHandlerImpl implements DrawHandler {
         if (this.crosshair) {
             this.removeCrosshair();
         }
-        this.onDrawDone(null);
+
+        if (!this.drawData.initialState) {
+            this.onDrawDone(null);
+        }
     }
 
     private initDrawing(): void {
