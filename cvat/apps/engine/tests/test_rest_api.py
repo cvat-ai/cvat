@@ -2878,7 +2878,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         def _get_initial_annotation(annotation_format):
             rectangle_tracks_with_attrs = [{
-                "frame": 0,
+                "frame": 1,
                 "label_id": task["labels"][0]["id"],
                 "group": 0,
                 "attributes": [
@@ -2889,7 +2889,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 ],
                 "shapes": [
                     {
-                        "frame": 0,
+                        "frame": 1,
                         "points": [1.0, 2.1, 50.1, 30.22],
                         "type": "rectangle",
                         "occluded": False,
@@ -2902,7 +2902,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                         ]
                     },
                     {
-                        "frame": 1,
+                        "frame": 2,
                         "points": [2.0, 2.1, 77.2, 36.22],
                         "type": "rectangle",
                         "occluded": True,
@@ -2917,13 +2917,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 ]
             }]
             rectangle_tracks_wo_attrs = [{
-                "frame": 1,
+                "frame": 0,
                 "label_id": task["labels"][1]["id"],
                 "group": 0,
                 "attributes": [],
                 "shapes": [
                     {
-                        "frame": 1,
+                        "frame": 0,
                         "attributes": [],
                         "points": [1.0, 2.1, 50.2, 36.6],
                         "type": "rectangle",
@@ -2935,6 +2935,78 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                         "attributes": [],
                         "points": [1.0, 2.1, 51, 36.6],
                         "type": "rectangle",
+                        "occluded": False,
+                        "outside": True
+                    }
+                ]
+            }]
+            point_tracks_wo_attrs = [{
+                "frame": 0,
+                "label_id": task["labels"][0]["id"],
+                "group": 0,
+                "attributes": [],
+                "shapes": [
+                    {
+                        "frame": 0,
+                        "attributes": [],
+                        "points": [1.0, 2.1],
+                        "type": "points",
+                        "occluded": False,
+                        "outside": False
+                    },
+                    {
+                        "frame": 2,
+                        "attributes": [],
+                        "points": [51, 36.6],
+                        "type": "points",
+                        "occluded": False,
+                        "outside": True
+                    }
+                ]
+            },
+            {
+                "frame": 0,
+                "label_id": task["labels"][0]["id"],
+                "group": 0,
+                "attributes": [],
+                "shapes": [
+                    {
+                        "frame": 0,
+                        "attributes": [],
+                        "points": [1.0, 2.1, 4.0, 5.1, 1.0, 7.1],
+                        "type": "points",
+                        "occluded": False,
+                        "outside": False
+                    },
+                    {
+                        "frame": 2,
+                        "attributes": [],
+                        "points": [15.0, 20.1, 40.0, 50.1, 10.0, 47.1],
+                        "type": "points",
+                        "occluded": False,
+                        "outside": True
+                    }
+                ]
+            }]
+            polygon_tracks_wo_attrs = [{
+                "frame": 0,
+                "label_id": task["labels"][0]["id"],
+                "group": 0,
+                "attributes": [],
+                "shapes": [
+                    {
+                        "frame": 0,
+                        "attributes": [],
+                        "points": [10.0, 2.1, 40.0, 5.1, 10.5, 7.1],
+                        "type": "polygon",
+                        "occluded": False,
+                        "outside": False
+                    },
+                    {
+                        "frame": 2,
+                        "attributes": [],
+                        "points": [15.0, 2.1, 4.0, 50.1, 1.0, 47.1],
+                        "type": "polygon",
                         "occluded": False,
                         "outside": True
                     }
@@ -3037,7 +3109,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "tracks": [],
                 }
             if annotation_format == "CVAT XML 1.1 for videos":
-                annotations["tracks"] = rectangle_tracks_with_attrs + rectangle_tracks_wo_attrs
+                annotations["tracks"] = rectangle_tracks_with_attrs + rectangle_tracks_wo_attrs \
+                    + point_tracks_wo_attrs + polygon_tracks_wo_attrs
 
             elif annotation_format == "CVAT XML 1.1 for images":
                 annotations["shapes"] = rectangle_shapes_with_attrs + rectangle_shapes_wo_attrs \
