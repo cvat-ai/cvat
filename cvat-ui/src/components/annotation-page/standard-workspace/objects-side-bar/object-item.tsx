@@ -509,7 +509,8 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                     >
                         { attrValues.map((value: string): JSX.Element => (
                             <Radio key={value} value={value}>
-                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? '\u00a0' : value}
+                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE
+                                    ? consts.NO_BREAK_SPACE : value}
                             </Radio>
                         )) }
                     </Radio.Group>
@@ -537,7 +538,8 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                     >
                         { attrValues.map((value: string): JSX.Element => (
                             <Select.Option key={value} value={value}>
-                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? '\u00a0' : value}
+                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE
+                                    ? consts.NO_BREAK_SPACE : value}
                             </Select.Option>
                         )) }
                     </Select>

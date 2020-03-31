@@ -56,7 +56,8 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                 >
                     {values.map((value: string): JSX.Element => (
                         <Select.Option key={value} value={value}>
-                            {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? '\u00a0' : value}
+                            {value === consts.UNDEFINED_ATTRIBUTE_VALUE
+                                ? consts.NO_BREAK_SPACE : value}
                         </Select.Option>
                     ))}
                 </Select>
@@ -76,7 +77,8 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                 >
                     {values.map((value: string): JSX.Element => (
                         <Radio style={{ display: 'block' }} key={value} value={value}>
-                            {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? '\u00a0' : value}
+                            {value === consts.UNDEFINED_ATTRIBUTE_VALUE
+                                ? consts.NO_BREAK_SPACE : value}
                         </Radio>
                     ))}
                 </Radio.Group>
