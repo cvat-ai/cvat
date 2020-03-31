@@ -441,7 +441,7 @@
                 * Returns the ranges of cached frames
                 * @method ranges
                 * @memberof Session.frames
-                * @returns {Array{string}}
+                * @returns {Array.<string[]>}
                 * @instance
                 * @async
             */
@@ -520,7 +520,8 @@
                 * @returns {HistoryActions}
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                * @returns {[string, number][]} array of pairs [action name, frame number]
+                * @returns {Array.<Array.<string|number>>}
+                * array of pairs [action name, frame number]
                 * @instance
                 * @async
             */
