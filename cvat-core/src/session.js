@@ -441,7 +441,7 @@
                 * Returns the ranges of cached frames
                 * @method ranges
                 * @memberof Session.frames
-                * @returns {Array.<string[]>}
+                * @returns {Array.<string>}
                 * @instance
                 * @async
             */
