@@ -18,6 +18,7 @@ import DrawRectangleControl from './draw-rectangle-control';
 import DrawPolygonControl from './draw-polygon-control';
 import DrawPolylineControl from './draw-polyline-control';
 import DrawPointsControl from './draw-points-control';
+import DrawCuboidControl from './draw-cuboid-control';
 import SetupTagControl from './setup-tag-control';
 import MergeControl from './merge-control';
 import GroupControl from './group-control';
@@ -80,7 +81,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             const drawing = [ActiveControl.DRAW_POINTS, ActiveControl.DRAW_POLYGON,
-                ActiveControl.DRAW_POLYLINE, ActiveControl.DRAW_RECTANGLE].includes(activeControl);
+                ActiveControl.DRAW_POLYLINE, ActiveControl.DRAW_RECTANGLE,
+                ActiveControl.DRAW_CUBOID].includes(activeControl);
 
             if (!drawing) {
                 canvasInstance.cancel();
@@ -177,7 +179,10 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_POINTS}
             />
-
+            <DrawCuboidControl
+                canvasInstance={canvasInstance}
+                isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
+            />
             <SetupTagControl
                 canvasInstance={canvasInstance}
                 isDrawing={false}

@@ -1055,6 +1055,8 @@ export function rememberObject(
         activeControl = ActiveControl.DRAW_POLYLINE;
     } else if (shapeType === ShapeType.POINTS) {
         activeControl = ActiveControl.DRAW_POINTS;
+    } else if (shapeType === ShapeType.CUBOID) {
+        activeControl = ActiveControl.DRAW_CUBOID;
     }
 
     return {
@@ -1382,6 +1384,8 @@ export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction>
                 activeControl = ActiveControl.DRAW_POLYGON;
             } else if (initialState.shapeType === ShapeType.POLYLINE) {
                 activeControl = ActiveControl.DRAW_POLYLINE;
+            } else if (initialState.shapeType === ShapeType.CUBOID) {
+                activeControl = ActiveControl.DRAW_CUBOID;
             }
 
             dispatch({
@@ -1443,6 +1447,8 @@ export function repeatDrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAc
             activeControl = ActiveControl.DRAW_POLYGON;
         } else if (activeShapeType === ShapeType.POLYLINE) {
             activeControl = ActiveControl.DRAW_POLYLINE;
+        } else if (activeShapeType === ShapeType.CUBOID) {
+            activeControl = ActiveControl.DRAW_CUBOID;
         }
 
         dispatch({

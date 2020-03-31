@@ -79,7 +79,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                 </Col>
             </Row>
             {
-                shapeType === ShapeType.RECTANGLE ? (
+                shapeType === ShapeType.RECTANGLE && (
                     <>
                         <Row>
                             <Col>
@@ -109,7 +109,10 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                             </Col>
                         </Row>
                     </>
-                ) : (
+                )
+            }
+            {
+                shapeType !== ShapeType.RECTANGLE && shapeType !== ShapeType.CUBOID && (
                     <Row type='flex' justify='space-around' align='middle'>
                         <Col span={14}>
                             <Text className='cvat-text-color'> Number of points: </Text>

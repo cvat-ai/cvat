@@ -227,14 +227,25 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private drawPolyshape(): void {
-        let size = this.drawData.numberOfPoints;
-        const sizeDecrement = function sizeDecrement(): void {
+        let size = this.drawData.shapeType === 'cuboid' ? 0 : this.drawData.numberOfPoints;
+
+        const sizeDecrement = (): void => {
             if (!--size) {
                 this.drawInstance.draw('done');
             }
-        }.bind(this);
+        };
 
-        if (this.drawData.numberOfPoints) {
+        const sizeCuboidIncrement = (): void => {
+            if (++size === 4) {
+                this.drawInstance.draw('done');
+            }
+        };
+
+        if (this.drawData.shapeType === 'cuboid') {
+            this.drawInstance.on('drawstart', sizeCuboidIncrement);
+            this.drawInstance.on('drawpoint', sizeCuboidIncrement);
+            this.drawInstance.on('undopoint', (): number => size--);
+        } else if (this.drawData.numberOfPoints) {
             this.drawInstance.on('drawstart', sizeDecrement);
             this.drawInstance.on('drawpoint', sizeDecrement);
             this.drawInstance.on('undopoint', (): number => size++);
@@ -242,7 +253,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
         // Add ability to cancel the latest drawn point
         this.canvas.on('mousedown.draw', (e: MouseEvent): void => {
-            if (e.which === 3) {
+            if (e.button === 2) {
                 e.stopPropagation();
                 e.preventDefault();
                 this.drawInstance.draw('undo');
@@ -316,6 +327,13 @@ export class DrawHandlerImpl implements DrawHandler {
                     shapeType,
                     points,
                 }, Date.now() - this.startTimestamp);
+                // TODO: think about correct right condition for cuboids
+            } else if (shapeType === 'cuboid'
+                && points.length === 4 * 2) {
+                this.onDrawDone({
+                    shapeType,
+                    points,
+                }, Date.now() - this.startTimestamp);
             }
         });
     }
@@ -346,6 +364,14 @@ export class DrawHandlerImpl implements DrawHandler {
                 opacity: 0,
             });
 
+        this.drawPolyshape();
+    }
+
+    private drawCuboid(): void {
+        this.drawInstance = (this.canvas as any).polyline()
+            .addClass('cvat_canvas_shape_drawing').attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+            });
         this.drawPolyshape();
     }
 
@@ -580,6 +606,8 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.drawPolyline();
             } else if (this.drawData.shapeType === 'points') {
                 this.drawPoints();
+            } else if (this.drawData.shapeType === 'cuboid') {
+                this.drawCuboid();
             }
             this.setupDrawEvents();
         }
