@@ -1897,7 +1897,8 @@ def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001, ordered=Tr
                     v2_matches.append(v2)
                 except AssertionError:
                     pass
-            self.assertEqual(len(v2_matches), 1, "{} != {}".format(obj1, obj2))
+            if len(v1) != 0:
+                self.assertEqual(len(v2_matches), 1, "{} != {}".format(obj1, obj2))
     else:
         if isinstance(obj1, float) or isinstance(obj2, float):
             self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance)
