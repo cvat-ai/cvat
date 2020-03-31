@@ -14,6 +14,7 @@ import datumaro.components.extractor as datumaro
 from cvat.apps.engine.annotation import TaskAnnotation
 from cvat.apps.engine.annotation_manager import AnnotationManager, TrackManager
 from cvat.apps.engine.models import AttributeType, ShapeType
+from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from datumaro.util.image import Image
 
@@ -491,31 +492,22 @@ class Annotation:
             "Cannot match filename or determinate framenumber for {} filename".format(filename))
 
 
-class CvatImagesExtractor(datumaro.Extractor):
-    def __init__(self, url, frame_provider):
-        super().__init__()
+class CvatTaskExtractor(datumaro.Extractor):
+    def __init__(self, url, db_task, user, scheme=None, host=None):
+        cvat_annotations = TaskAnnotation(db_task.id, user)
+        with transaction.atomic():
+            cvat_annotations.init_from_db()
+        cvat_annotations = Annotation(cvat_annotations.ir_data, db_task,
+            scheme=scheme, host=host)
+        frame_provider = FrameProvider(db_task.data)
 
-        self._frame_provider = frame_provider
-
-    def __iter__(self):
-        frames = self._frame_provider.get_frames(
-            self._frame_provider.Quality.ORIGINAL,
-            self._frame_provider.Type.NUMPY_ARRAY)
-        for item_id, (image, _) in enumerate(frames):
-            yield datumaro.DatasetItem(
-                id=item_id,
-                image=Image(image),
-            )
-
-    def __len__(self):
-        return len(self._frame_provider)
-
-
-class CvatAnnotationsExtractor(datumaro.Extractor):
-    def __init__(self, url, cvat_annotations):
         self._categories = self._load_categories(cvat_annotations)
 
         dm_annotations = []
+
+        frame_provider.get_frames(
+            self._frame_provider.Quality.ORIGINAL,
+            self._frame_provider.Type.NUMPY_ARRAY)
 
         for cvat_frame_anno in cvat_annotations.group_by_frame():
             dm_anno = self._read_cvat_anno(cvat_frame_anno, cvat_annotations)
@@ -624,15 +616,6 @@ class CvatAnnotationsExtractor(datumaro.Extractor):
             item_anno.append(anno)
 
         return item_anno
-
-
-class CvatTaskExtractor(CvatAnnotationsExtractor):
-    def __init__(self, url, db_task, user):
-        cvat_annotations = TaskAnnotation(db_task.id, user)
-        with transaction.atomic():
-            cvat_annotations.init_from_db()
-        cvat_annotations = Annotation(cvat_annotations.ir_data, db_task)
-        super().__init__(url, cvat_annotations)
 
 
 def match_frame(item, cvat_task_anno):

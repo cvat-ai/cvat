@@ -718,47 +718,6 @@ class TaskAnnotation:
             overlap = self.db_task.overlap
             self._merge_data(annotation.ir_data, start_frame, overlap)
 
-    def dump(self, filename, dumper, scheme, host):
-        anno_exporter = Annotation(
-            annotation_ir=self.ir_data,
-            db_task=self.db_task,
-            scheme=scheme,
-            host=host,
-        )
-        db_format = dumper.annotation_format
-
-        with open(filename, 'wb') as dump_file:
-            source_code = open(os.path.join(settings.BASE_DIR, db_format.handler_file.name)).read()
-            global_vars = globals()
-            imports = import_modules(source_code)
-            global_vars.update(imports)
-            execute_python_code(source_code, global_vars)
-            global_vars["file_object"] = dump_file
-            global_vars["annotations"] = anno_exporter
-
-            execute_python_code("{}(file_object, annotations)".format(dumper.handler), global_vars)
-
-    def upload(self, annotation_file, loader):
-        annotation_importer = Annotation(
-            annotation_ir=AnnotationIR(),
-            db_task=self.db_task,
-            create_callback=self.create,
-            )
-        self.delete()
-        db_format = loader.annotation_format
-        with open(annotation_file, 'rb') as file_object:
-            source_code = open(os.path.join(settings.BASE_DIR, db_format.handler_file.name)).read()
-            global_vars = globals()
-            imports = import_modules(source_code)
-            global_vars.update(imports)
-            execute_python_code(source_code, global_vars)
-
-            global_vars["file_object"] = file_object
-            global_vars["annotations"] = annotation_importer
-
-            execute_python_code("{}(file_object, annotations)".format(loader.handler), global_vars)
-        self.create(annotation_importer.data.serialize())
-
     @property
     def data(self):
         return self.ir_data.data

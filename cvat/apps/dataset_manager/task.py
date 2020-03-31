@@ -13,7 +13,6 @@ from datetime import timedelta
 import django_rq
 from django.utils import timezone
 
-from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task
 
@@ -36,8 +35,6 @@ def log_exception(logger=None, exc_info=True):
             (_MODULE_NAME, current_function_name(2)),
         exc_info=exc_info)
 
-_TASK_IMAGES_EXTRACTOR = '_cvat_task_images'
-_TASK_ANNO_EXTRACTOR = '_cvat_task_anno'
 _TASK_IMAGES_REMOTE_EXTRACTOR = 'cvat_rest_api_task_images'
 
 def get_export_cache_dir(db_task):
@@ -90,9 +87,6 @@ class TaskProject:
 
     def _load(self):
         self._project = Project.load(self._project_dir)
-        self._project.env.extractors.register(_TASK_IMAGES_EXTRACTOR,
-            lambda url: CvatImagesExtractor(url,
-                FrameProvider(self._db_task.data)))
 
     def _import_from_task(self, user):
         self._project = Project.generate(self._project_dir, config={
@@ -100,17 +94,10 @@ class TaskProject:
             'plugins_dir': _FORMATS_DIR,
         })
 
-        self._project.add_source('task_%s_images' % self._db_task.id, {
-            'format': _TASK_IMAGES_EXTRACTOR,
+        self._project.add_source('task_%s' % self._db_task.id, {
+            'format': _TASK_EXTRACTOR,
         })
-        self._project.env.extractors.register(_TASK_IMAGES_EXTRACTOR,
-            lambda url: CvatImagesExtractor(url,
-                FrameProvider(self._db_task.data)))
-
-        self._project.add_source('task_%s_anno' % self._db_task.id, {
-            'format': _TASK_ANNO_EXTRACTOR,
-        })
-        self._project.env.extractors.register(_TASK_ANNO_EXTRACTOR,
+        self._project.env.extractors.register(_TASK_EXTRACTOR,
             lambda url: CvatTaskExtractor(url,
                 db_task=self._db_task, user=user))
 
@@ -248,6 +235,27 @@ class TaskProject:
         os.makedirs(cvat_utils_dst_dir)
         shutil.copytree(osp.join(_CVAT_ROOT_DIR, 'utils', 'cli'),
             osp.join(cvat_utils_dst_dir, 'cli'))
+
+    def upload(self, annotation_file, loader):
+        annotation_importer = Annotation(
+            annotation_ir=AnnotationIR(),
+            db_task=self.db_task,
+            create_callback=self.create,
+            )
+        self.delete()
+        db_format = loader.annotation_format
+        with open(annotation_file, 'rb') as file_object:
+            source_code = open(os.path.join(settings.BASE_DIR, db_format.handler_file.name)).read()
+            global_vars = globals()
+            imports = import_modules(source_code)
+            global_vars.update(imports)
+            execute_python_code(source_code, global_vars)
+
+            global_vars["file_object"] = file_object
+            global_vars["annotations"] = annotation_importer
+
+            execute_python_code("{}(file_object, annotations)".format(loader.handler), global_vars)
+        self.create(annotation_importer.data.serialize())
 
 
 DEFAULT_CACHE_TTL = timedelta(hours=10)
