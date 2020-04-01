@@ -26,7 +26,7 @@ class TrackManagerTest(TestCase):
                 {
                     "frame": 2,
                     "attributes": [],
-                    "points": [3.0, 4.0, 5.0],
+                    "points": [3.0, 4.0, 5.0, 6.0],
                     "type": "points",
                     "occluded": False,
                     "outside": True
@@ -34,4 +34,6 @@ class TrackManagerTest(TestCase):
             ]
         }
 
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 2)
+        interpolated = TrackManager.get_interpolated_shapes(track, 0, 2)
+
+        self.assertEqual(len(interpolated), 3)
