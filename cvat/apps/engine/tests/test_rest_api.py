@@ -2,31 +2,27 @@
 #
 # SPDX-License-Identifier: MIT
 
-import io
 import os
-import random
 import shutil
-import tempfile
-import xml.etree.ElementTree as ET
-import zipfile
-from collections import defaultdict
-from enum import Enum
+from PIL import Image
 from io import BytesIO
-from pprint import pformat
+from enum import Enum
+import random
+from rest_framework.test import APITestCase, APIClient
+from rest_framework import status
+from django.conf import settings
+from django.contrib.auth.models import User, Group
+from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
+    AttributeType, Project, Data)
 from unittest import mock
-
+import io
+import xml.etree.ElementTree as ET
+from collections import defaultdict
+import zipfile
+from pycocotools import coco as coco_loader
+import tempfile
 import av
 import numpy as np
-from django.conf import settings
-from django.contrib.auth.models import Group, User
-from PIL import Image
-from pycocotools import coco as coco_loader
-from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
-
-from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task)
-
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -1879,40 +1875,23 @@ class TaskDataAPITestCase(APITestCase):
         response = self._create_task(None, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001, ordered=True):
+def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001):
     if isinstance(obj1, dict):
         self.assertTrue(isinstance(obj2, dict), "{} != {}".format(obj1, obj2))
-        self.assertEqual(
-            len([k for k in obj1 if k not in ignore_keys]),
-            len([k for k in obj2 if k not in ignore_keys]),
-            "{} != {}".format(obj1, obj2))
         for k, v1 in obj1.items():
             if k in ignore_keys:
                 continue
-            ordered = k not in {'tags', 'shapes', 'tracks', 'attributes'}
-            compare_objects(self, v1, obj2[k], ignore_keys, ordered=ordered)
+            v2 = obj2[k]
+            if k == 'attributes':
+                key = lambda a: a['spec_id']
+                v1.sort(key=key)
+                v2.sort(key=key)
+            compare_objects(self, v1, v2, ignore_keys)
     elif isinstance(obj1, list):
         self.assertTrue(isinstance(obj2, list), "{} != {}".format(obj1, obj2))
         self.assertEqual(len(obj1), len(obj2), "{} != {}".format(obj1, obj2))
-        if ordered:
-            for v1, v2 in zip(obj1, obj2):
-                compare_objects(self, v1, v2, ignore_keys)
-        else:
-            obj2_unmatched = list(obj2)
-            for v1 in obj1:
-                v2_match = None
-                for v2 in obj2_unmatched:
-                    try:
-                        compare_objects(self, v1, v2, ignore_keys)
-                        v2_match = v2
-                        obj2_unmatched.remove(v2_match)
-                        break
-                    except AssertionError:
-                        pass
-                self.assertFalse(v2_match is None,
-                    "\n{} not found in \n{}".format(pformat(v1), pformat(obj2_unmatched)))
-            self.assertEqual(len(obj2_unmatched), 0,
-                "\n{} != \n{}".format(pformat(obj1), pformat(obj2)))
+        for v1, v2 in zip(obj1, obj2):
+            compare_objects(self, v1, v2, ignore_keys)
     else:
         if isinstance(obj1, float) or isinstance(obj2, float):
             self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance)
@@ -2030,15 +2009,9 @@ class JobAnnotationAPITestCase(APITestCase):
         return response
 
     def _check_response(self, response, data):
-        if not response.status_code in {
-                status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED}:
-            try:
-                compare_objects(self, data, response.data,
-                    ignore_keys=["id", "z_order"])
-            except AssertionError as e:
-                print("Objects are not equal: ", data, response.data)
-                print(e)
-                raise
+        if not response.status_code in [
+            status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED]:
+            compare_objects(self, data, response.data, ignore_keys=["id"])
 
     def _run_api_v1_jobs_id_annotations(self, owner, assignee, annotator):
         task, jobs = self._create_task(owner, assignee)
@@ -2504,6 +2477,16 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             )
         return response
 
+    def _check_response(self, response, data):
+        if not response.status_code in [
+            status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]:
+            try:
+                compare_objects(self, data, response.data, ignore_keys=["id"])
+            except AssertionError as e:
+                print("Objects are not equal: ", data, response.data)
+                print(e)
+                raise
+
     def _run_api_v1_tasks_id_annotations(self, owner, assignee, annotator):
         task, _ = self._create_task(owner, assignee)
         if annotator:
@@ -2895,7 +2878,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         def _get_initial_annotation(annotation_format):
             rectangle_tracks_with_attrs = [{
-                "frame": 1,
+                "frame": 0,
                 "label_id": task["labels"][0]["id"],
                 "group": 0,
                 "attributes": [
@@ -2906,7 +2889,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 ],
                 "shapes": [
                     {
-                        "frame": 1,
+                        "frame": 0,
                         "points": [1.0, 2.1, 50.1, 30.22],
                         "type": "rectangle",
                         "occluded": False,
@@ -2919,7 +2902,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                         ]
                     },
                     {
-                        "frame": 2,
+                        "frame": 1,
                         "points": [2.0, 2.1, 77.2, 36.22],
                         "type": "rectangle",
                         "occluded": True,
@@ -2934,13 +2917,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 ]
             }]
             rectangle_tracks_wo_attrs = [{
-                "frame": 0,
+                "frame": 1,
                 "label_id": task["labels"][1]["id"],
                 "group": 0,
                 "attributes": [],
                 "shapes": [
                     {
-                        "frame": 0,
+                        "frame": 1,
                         "attributes": [],
                         "points": [1.0, 2.1, 50.2, 36.6],
                         "type": "rectangle",
@@ -2948,90 +2931,10 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                         "outside": False
                     },
                     {
-                        "frame": 1,
+                        "frame": 2,
                         "attributes": [],
-                        "points": [1.0, 5.1, 40.1, 6.6],
+                        "points": [1.0, 2.1, 51, 36.6],
                         "type": "rectangle",
-                        "occluded": False,
-                        "outside": False
-                    },
-                    {
-                        "frame": 2,
-                        "attributes": [],
-                        "points": [1.0, 7.1, 51, 3.6],
-                        "type": "rectangle",
-                        "occluded": False,
-                        "outside": True
-                    }
-                ]
-            }]
-            point_tracks_wo_attrs = [{
-                "frame": 1,
-                "label_id": task["labels"][1]["id"],
-                "group": 0,
-                "attributes": [],
-                "shapes": [
-                    {
-                        "frame": 1,
-                        "attributes": [],
-                        "points": [1.0, 2.1, 4.0, 5.1, 1.0, 7.1],
-                        "type": "points",
-                        "occluded": False,
-                        "outside": False
-                    },
-                    {
-                        "frame": 2,
-                        "attributes": [],
-                        "points": [15.0, 20.1, 40.0, 50.1, 10.0, 47.1],
-                        "type": "points",
-                        "occluded": False,
-                        "outside": True
-                    }
-                ]
-            }]
-            polyline_tracks_wo_attrs = [{
-                "frame": 1,
-                "label_id": task["labels"][1]["id"],
-                "group": 0,
-                "attributes": [],
-                "shapes": [
-                    {
-                        "frame": 1,
-                        "attributes": [],
-                        "points": [1.0, 2.1, 1.0, 7.1, 8.0, 1.0],
-                        "type": "polyline",
-                        "occluded": False,
-                        "outside": False
-                    },
-                    {
-                        "frame": 2,
-                        "attributes": [],
-                        "points": [15.0, 20.1, 40.0, 50.1, 10.0, 47.1],
-                        "type": "polyline",
-                        "occluded": False,
-                        "outside": True
-                    }
-                ]
-            }]
-            polygon_tracks_wo_attrs = [{
-                "frame": 1,
-                "label_id": task["labels"][1]["id"],
-                "group": 0,
-                "attributes": [],
-                "shapes": [
-                    {
-                        "frame": 1,
-                        "attributes": [],
-                        "points": [10.0, 2.1, 40.0, 5.1, 10.5, 7.1],
-                        "type": "polygon",
-                        "occluded": False,
-                        "outside": False
-                    },
-                    {
-                        "frame": 2,
-                        "attributes": [],
-                        "points": [15.0, 2.1, 4.0, 50.1, 1.0, 47.1],
-                        "type": "polygon",
                         "occluded": False,
                         "outside": True
                     }
@@ -3134,9 +3037,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "tracks": [],
                 }
             if annotation_format == "CVAT XML 1.1 for videos":
-                annotations["tracks"] = rectangle_tracks_with_attrs + rectangle_tracks_wo_attrs \
-                    + point_tracks_wo_attrs + polygon_tracks_wo_attrs \
-                    + polyline_tracks_wo_attrs
+                annotations["tracks"] = rectangle_tracks_with_attrs + rectangle_tracks_wo_attrs
 
             elif annotation_format == "CVAT XML 1.1 for images":
                 annotations["shapes"] = rectangle_shapes_with_attrs + rectangle_shapes_wo_attrs \
