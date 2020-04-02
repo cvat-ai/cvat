@@ -98,8 +98,9 @@ export enum UpdateReasons {
     GROUP = 'group',
     SELECT = 'select',
     CANCEL = 'cancel',
+    BITMAP = 'bitmap',
     DRAG_CANVAS = 'drag_canvas',
-    ZOOM_CANVAS = 'ZOOM_CANVAS',
+    ZOOM_CANVAS = 'zoom_canvas',
 }
 
 export enum Mode {
@@ -116,6 +117,7 @@ export enum Mode {
 }
 
 export interface CanvasModel {
+    readonly imageBitmap: boolean;
     readonly image: Image | null;
     readonly objects: any[];
     readonly zLayer: number | null;
@@ -148,6 +150,7 @@ export interface CanvasModel {
     select(objectState: any): void;
 
     fitCanvas(width: number, height: number): void;
+    bitmap(enabled: boolean): void;
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
@@ -159,6 +162,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         activeElement: ActiveElement;
         angle: number;
         canvasSize: Size;
+        imageBitmap: boolean;
         image: Image | null;
         imageID: number | null;
         imageOffset: number;
@@ -191,6 +195,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 height: 0,
                 width: 0,
             },
+            imageBitmap: false,
             image: null,
             imageID: null,
             imageOffset: 0,
@@ -275,6 +280,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         this.notify(UpdateReasons.FITTED_CANVAS);
         this.notify(UpdateReasons.OBJECTS_UPDATED);
+    }
+
+    public bitmap(enabled: boolean): void {
+        this.data.imageBitmap = enabled;
+        this.notify(UpdateReasons.BITMAP);
     }
 
     public dragCanvas(enable: boolean): void {
@@ -520,6 +530,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get zLayer(): number | null {
         return this.data.zLayer;
+    }
+
+    public get imageBitmap(): boolean {
+        return this.data.imageBitmap;
     }
 
     public get image(): Image | null {

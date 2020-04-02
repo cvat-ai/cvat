@@ -22,6 +22,7 @@ const defaultState: SettingsState = {
         opacity: 3,
         selectedOpacity: 30,
         blackBorders: false,
+        showBitmap: false,
     },
     workspace: {
         autoSave: false,
@@ -124,6 +125,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 shapes: {
                     ...state.shapes,
                     blackBorders: action.payload.blackBorders,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SHOW_UNLABELED_REGIONS: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    showBitmap: action.payload.showBitmap,
                 },
             };
         }
