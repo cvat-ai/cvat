@@ -4,8 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0-alpha] - Unreleased
+## [1.0.0-beta] - Unreleased
 ### Added
+- Special behaviour for attribute value ``__undefined__`` (invisibility, no shortcuts to be set in AAM)
+- Dialog window with some helpful information about using filters
 - Ability to display a bitmap in the new UI
 
 ### Changed
@@ -18,10 +20,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- New shape is added when press ``esc`` when drawing instead of cancellation
 
 ### Security
 -
+
+## [1.0.0-alpha] - 2020-03-31
+### Added
+- Data streaming using chunks (https://github.com/opencv/cvat/pull/1007)
+- New UI: showing file names in UI (https://github.com/opencv/cvat/pull/1311)
+- New UI: delete a point from context menu (https://github.com/opencv/cvat/pull/1292)
+
+### Fixed
+- Git app cannot clone a repository (https://github.com/opencv/cvat/pull/1330)
+- New UI: preview position in task details (https://github.com/opencv/cvat/pull/1312)
+- AWS deployment (https://github.com/opencv/cvat/pull/1316)
 
 ## [0.6.1] - 2020-03-21
 ### Changed

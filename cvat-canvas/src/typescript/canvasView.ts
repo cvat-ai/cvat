@@ -1417,7 +1417,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.adoptedText.text((block): void => {
             block.tspan(`${label.name} ${clientID}`).style('text-transform', 'uppercase');
             for (const attrID of Object.keys(attributes)) {
-                block.tspan(`${attrNames[attrID]}: ${attributes[attrID]}`).attr({
+                const value = attributes[attrID] === consts.UNDEFINED_ATTRIBUTE_VALUE
+                    ? '' : attributes[attrID];
+                block.tspan(`${attrNames[attrID]}: ${value}`).attr({
                     attrID,
                     dy: '1em',
                     x: 0,
