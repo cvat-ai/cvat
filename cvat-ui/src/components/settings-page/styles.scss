@@ -73,10 +73,17 @@
     width: 90px;
 }
 
+.cvat-player-reset-color-settings,
 .cvat-player-settings-brightness,
 .cvat-player-settings-contrast,
 .cvat-player-settings-saturation {
     width: 40%;
+}
+
+.cvat-player-reset-color-settings {
+    > .ant-col {
+        text-align: center;
+    }
 }
 
 .cvat-settings-page-back-button {
