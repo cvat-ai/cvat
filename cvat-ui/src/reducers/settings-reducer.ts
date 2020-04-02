@@ -227,18 +227,18 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const { job } = action.payload;
 
             return {
-                ...state,
+                ...defaultState,
                 player: {
-                    ...state.player,
+                    ...defaultState.player,
                     resetZoom: job && job.task.mode === 'annotation',
                 },
             };
         }
-        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
         }
