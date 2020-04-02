@@ -50,6 +50,7 @@ export class DrawHandlerImpl implements DrawHandler {
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
     private drawInstance: any;
     private initialized: boolean;
+    private canceled: boolean;
     private pointsGroup: SVG.G | null;
     private shapeSizeElement: ShapeSizeElement;
 
@@ -149,6 +150,7 @@ export class DrawHandlerImpl implements DrawHandler {
             // Clear drawing
             this.drawInstance.draw('stop');
         }
+
         this.drawInstance.off();
         this.drawInstance.remove();
         this.drawInstance = null;
@@ -160,6 +162,10 @@ export class DrawHandlerImpl implements DrawHandler {
 
         if (this.crosshair) {
             this.removeCrosshair();
+        }
+
+        if (!this.drawData.initialState) {
+            this.onDrawDone(null);
         }
     }
 
@@ -175,8 +181,9 @@ export class DrawHandlerImpl implements DrawHandler {
             const bbox = (e.target as SVGRectElement).getBBox();
             const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
             const { shapeType } = this.drawData;
-            this.cancel();
+            this.release();
 
+            if (this.canceled) return;
             if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
                 this.onDrawDone({
                     shapeType,
@@ -290,11 +297,11 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
             const targetPoints = pointsToArray((e.target as SVGElement).getAttribute('points'));
-
             const { points, box } = this.getFinalPolyshapeCoordinates(targetPoints);
             const { shapeType } = this.drawData;
-            this.cancel();
+            this.release();
 
+            if (this.canceled) return;
             if (shapeType === 'polygon'
                 && ((box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD)
                 && points.length >= 3 * 2) {
@@ -598,6 +605,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.canvas = canvas;
         this.text = text;
         this.initialized = false;
+        this.canceled = false;
         this.drawData = null;
         this.geometry = null;
         this.crosshair = null;
@@ -671,17 +679,18 @@ export class DrawHandlerImpl implements DrawHandler {
         this.geometry = geometry;
 
         if (drawData.enabled) {
+            this.canceled = false;
             this.drawData = drawData;
             this.initDrawing();
             this.startDraw();
         } else {
-            this.cancel();
+            this.release();
             this.drawData = drawData;
         }
     }
 
     public cancel(): void {
+        this.canceled = true;
         this.release();
-        this.onDrawDone(null);
     }
 }
