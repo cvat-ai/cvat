@@ -21,6 +21,7 @@ import {
 import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas';
 import getCore from 'cvat-core';
+import consts from 'consts';
 
 const cvat = getCore();
 
@@ -58,6 +59,7 @@ interface Props {
     contextVisible: boolean;
     contextType: ContextMenuType;
     aamZoomMargin: number;
+    showObjectsTextAlways: boolean;
     workspace: Workspace;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     onSetupCanvas: () => void;
@@ -91,6 +93,7 @@ interface Props {
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
         const {
+            showObjectsTextAlways,
             canvasInstance,
             curZLayer,
         } = this.props;
@@ -101,7 +104,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             .getElementsByClassName('cvat-canvas-container');
         wrapper.appendChild(canvasInstance.html());
 
+        canvasInstance.configure({
+            undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
+            displayAllText: showObjectsTextAlways,
+        });
         canvasInstance.setZLayer(curZLayer);
+
         this.initialSetup();
         this.updateCanvas();
     }
@@ -128,7 +136,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             saturationLevel,
             workspace,
             frameFetching,
+            showObjectsTextAlways,
         } = this.props;
+
+        if (prevProps.showObjectsTextAlways !== showObjectsTextAlways) {
+            canvasInstance.configure({
+                undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
+                displayAllText: showObjectsTextAlways,
+            });
+        }
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
             const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');

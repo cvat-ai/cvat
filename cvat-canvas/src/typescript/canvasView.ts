@@ -36,6 +36,7 @@ import {
     GroupData,
     Mode,
     Size,
+    Configuration,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -65,6 +66,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private groupHandler: GroupHandler;
     private zoomHandler: ZoomHandler;
     private activeElement: ActiveElement;
+    private configuration: Configuration;
 
     private set mode(value: Mode) {
         this.controller.mode = value;
@@ -538,6 +540,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             clientID: null,
             attributeID: null,
         };
+        this.configuration = model.configuration;
         this.mode = Mode.IDLE;
 
         // Create HTML elements
@@ -702,7 +705,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
         this.geometry = this.controller.geometry;
-        if (reason === UpdateReasons.IMAGE_CHANGED) {
+        if (reason === UpdateReasons.CONFIG_UPDATED) {
+            this.configuration = model.configuration;
+            this.setupObjects([]);
+            this.setupObjects(model.objects);
+        } else if (reason === UpdateReasons.IMAGE_CHANGED) {
             const { image } = model;
             if (!image) {
                 this.loadingAnimation.classList.remove('cvat_canvas_hidden');
@@ -987,6 +994,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private addObjects(states: any[], translate: (points: number[]) => number[]): void {
+        const { displayAllText } = this.configuration;
+
         for (const state of states) {
             if (state.objectType === 'tag') {
                 this.addTag(state);
@@ -1030,6 +1039,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         },
                     }));
                 });
+
+                if (displayAllText) {
+                    this.svgTexts[state.clientID] = this.addText(state);
+                    this.updateTextPosition(
+                        this.svgTexts[state.clientID],
+                        this.svgShapes[state.clientID],
+                    );
+                }
             }
 
             this.saveState(state);
@@ -1078,6 +1095,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private deactivateShape(): void {
         if (this.activeElement.clientID !== null) {
+            const { displayAllText } = this.configuration;
             const { clientID } = this.activeElement;
             const drawnState = this.drawnStates[clientID];
             const shape = this.svgShapes[clientID];
@@ -1101,7 +1119,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[clientID];
-            if (text) {
+            if (text && !displayAllText) {
                 text.remove();
                 delete this.svgTexts[clientID];
             }
@@ -1347,6 +1365,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private addText(state: any): SVG.Text {
+        const { undefinedAttrValue } = this.configuration;
         const { label, clientID, attributes } = state;
         const attrNames = label.attributes.reduce((acc: any, val: any): void => {
             acc[val.id] = val.name;
@@ -1356,7 +1375,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.adoptedText.text((block): void => {
             block.tspan(`${label.name} ${clientID}`).style('text-transform', 'uppercase');
             for (const attrID of Object.keys(attributes)) {
-                const value = attributes[attrID] === consts.UNDEFINED_ATTRIBUTE_VALUE
+                const value = attributes[attrID] === undefinedAttrValue
                     ? '' : attributes[attrID];
                 block.tspan(`${attrNames[attrID]}: ${value}`).attr({
                     attrID,

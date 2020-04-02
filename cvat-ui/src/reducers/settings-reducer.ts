@@ -27,6 +27,7 @@ const defaultState: SettingsState = {
         autoSave: false,
         autoSaveInterval: 15 * 60 * 1000,
         aamZoomMargin: 100,
+        showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
     },
     player: {
@@ -214,6 +215,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     showAllInterpolationTracks: action.payload.showAllInterpolationTracks,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    showObjectsTextAlways: action.payload.showObjectsTextAlways,
                 },
             };
         }

@@ -50,6 +50,11 @@ Canvas itself handles:
         ZOOM_CANVAS = 'zoom_canvas',
     }
 
+    interface Configuration {
+        displayAllText?: boolean;
+        undefinedAttrValue?: string;
+    }
+
     interface DrawData {
         enabled: boolean;
         shapeType?: string;
@@ -83,7 +88,6 @@ Canvas itself handles:
     }
 
     interface Canvas {
-        mode(): Mode;
         html(): HTMLDivElement;
         setZLayer(zLayer: number | null): void;
         setup(frameData: any, objectStates: any[]): void;
@@ -103,7 +107,9 @@ Canvas itself handles:
         dragCanvas(enable: boolean): void;
         zoomCanvas(enable: boolean): void;
 
+        mode(): void;
         cancel(): void;
+        configure(configuration: Configuration): void;
     }
 ```
 
@@ -189,4 +195,5 @@ Standard JS events are used.
 | dragCanvas() | +    | -        | -         | -       | -       | -       | +    | -    |
 | zoomCanvas() | +    | -        | -         | -       | -       | -       | -    | +    |
 | cancel()     | -    | +        | +         | +       | +       | +       | +    | +    |
+| configure()  | +    | -        | -         | -       | -       | -       | -    | -    |
 | setZLayer()  | +    | +        | +         | +       | +       | +       | +    | +    |

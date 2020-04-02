@@ -46,6 +46,11 @@ export enum RectDrawingMethod {
     EXTREME_POINTS = 'By 4 points'
 }
 
+export interface Configuration {
+    displayAllText?: boolean;
+    undefinedAttrValue?: string;
+}
+
 export interface DrawData {
     enabled: boolean;
     shapeType?: string;
@@ -100,6 +105,7 @@ export enum UpdateReasons {
     CANCEL = 'cancel',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'ZOOM_CANVAS',
+    CONFIG_UPDATED = 'config_updated',
 }
 
 export enum Mode {
@@ -126,6 +132,7 @@ export interface CanvasModel {
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
     readonly groupData: GroupData;
+    readonly configuration: Configuration;
     readonly selected: any;
     geometry: Geometry;
     mode: Mode;
@@ -151,6 +158,7 @@ export interface CanvasModel {
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
+    configure(configuration: Configuration): void;
     cancel(): void;
 }
 
@@ -159,6 +167,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         activeElement: ActiveElement;
         angle: number;
         canvasSize: Size;
+        configuration: Configuration;
         image: Image | null;
         imageID: number | null;
         imageOffset: number;
@@ -190,6 +199,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             canvasSize: {
                 height: 0,
                 width: 0,
+            },
+            configuration: {
+                displayAllText: false,
+                undefinedAttrValue: '',
             },
             image: null,
             imageID: null,
@@ -485,8 +498,28 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.selected = null;
     }
 
+    public configure(configuration: Configuration): void {
+        if (this.data.mode !== Mode.IDLE) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (typeof (configuration.displayAllText) !== 'undefined') {
+            this.data.configuration.displayAllText = configuration.displayAllText;
+        }
+
+        if (typeof (configuration.undefinedAttrValue) !== 'undefined') {
+            this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
+        }
+
+        this.notify(UpdateReasons.CONFIG_UPDATED);
+    }
+
     public cancel(): void {
         this.notify(UpdateReasons.CANCEL);
+    }
+
+    public get configuration(): Configuration {
+        return { ...this.data.configuration };
     }
 
     public get geometry(): Geometry {
