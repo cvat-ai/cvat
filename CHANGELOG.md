@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - New shape is added when press ``esc`` when drawing instead of cancellation
+- Fixed dextr segmentation.
 
 ### Security
 -
