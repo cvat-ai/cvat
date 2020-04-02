@@ -29,7 +29,7 @@ def main():
     config_log(args.loglevel)
     with requests.Session() as session:
         session.auth = args.auth
-        api = CVAT_API_V1(args.server_host, args.server_port)
+        api = CVAT_API_V1('%s:%s' % (args.server_host, args.server_port))
         cli = CLI(session, api)
         try:
             actions[args.action](cli, **args.__dict__)

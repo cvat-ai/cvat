@@ -20,13 +20,8 @@ from cvat.utils.cli.core import CLI as CVAT_CLI, CVAT_API_V1
 
 CONFIG_SCHEMA = _SchemaBuilder() \
     .add('task_id', int) \
-    .add('server_host', str) \
-    .add('server_port', int) \
+    .add('server_url', str) \
     .build()
-
-DEFAULT_CONFIG = Config({
-    'server_port': 80
-}, schema=CONFIG_SCHEMA, mutable=False)
 
 class cvat_rest_api_task_images(datumaro.SourceExtractor):
     def _image_local_path(self, item_id):
@@ -53,16 +48,15 @@ class cvat_rest_api_task_images(datumaro.SourceExtractor):
 
         session = None
         try:
-            print("Enter credentials for '%s:%s' to read task data:" % \
-                (self._config.server_host, self._config.server_port))
+            print("Enter credentials for '%s' to read task data:" % \
+                (self._config.server_url))
             username = input('User: ')
             password = getpass.getpass()
 
             session = requests.Session()
             session.auth = (username, password)
 
-            api = CVAT_API_V1(self._config.server_host,
-                self._config.server_port)
+            api = CVAT_API_V1(self._config.server_url)
             cli = CVAT_CLI(session, api)
 
             self._session = session
@@ -92,8 +86,7 @@ class cvat_rest_api_task_images(datumaro.SourceExtractor):
 
         with open(osp.join(url, 'config.json'), 'r') as config_file:
             config = json.load(config_file)
-            config = Config(config,
-                fallback=DEFAULT_CONFIG, schema=CONFIG_SCHEMA)
+            config = Config(config, schema=CONFIG_SCHEMA)
         self._config = config
 
         with open(osp.join(url, 'images_meta.json'), 'r') as images_file:
