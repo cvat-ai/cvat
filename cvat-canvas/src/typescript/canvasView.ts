@@ -916,6 +916,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, width, height);
             for (const state of states) {
+                if (state.hidden || state.outside) continue;
                 ctx.fillStyle = 'white';
                 if (['rectangle', 'polygon'].includes(state.shapeType)) {
                     const points = state.shapeType === 'rectangle' ? [
