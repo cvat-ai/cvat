@@ -891,7 +891,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         if (model.imageBitmap
-            && [UpdateReasons.IMAGE_CHANGED, UpdateReasons.OBJECTS_UPDATED].includes(reason)
+            && [UpdateReasons.IMAGE_CHANGED,
+                UpdateReasons.OBJECTS_UPDATED,
+                UpdateReasons.SET_Z_LAYER,
+            ].includes(reason)
         ) {
             this.redrawBitmap();
         }
