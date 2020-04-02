@@ -100,6 +100,7 @@ Canvas itself handles:
         select(objectState: any): void;
 
         fitCanvas(): void;
+        bitmap(enabled: boolean): void;
         dragCanvas(enable: boolean): void;
         zoomCanvas(enable: boolean): void;
 
@@ -189,4 +190,5 @@ Standard JS events are used.
 | dragCanvas() | +    | -        | -         | -       | -       | -       | +    | -    |
 | zoomCanvas() | +    | -        | -         | -       | -       | -       | -    | +    |
 | cancel()     | -    | +        | +         | +       | +       | +       | +    | +    |
+| bitmap()     | +    | +        | +         | +       | +       | +       | +    | +    |
 | setZLayer()  | +    | +        | +         | +       | +       | +       | +    | +    |

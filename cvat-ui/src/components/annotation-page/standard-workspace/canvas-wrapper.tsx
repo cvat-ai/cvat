@@ -42,6 +42,7 @@ interface Props {
     colorBy: ColorBy;
     selectedOpacity: number;
     blackBorders: boolean;
+    showBitmap: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -112,6 +113,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             colorBy,
             selectedOpacity,
             blackBorders,
+            showBitmap,
             frameData,
             frameAngle,
             annotations,
@@ -196,6 +198,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
             || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
             this.updateShapesView();
+        }
+
+        if (prevProps.showBitmap !== showBitmap) {
+            canvasInstance.bitmap(showBitmap);
         }
 
         if (prevProps.frameAngle !== frameAngle) {
@@ -557,6 +563,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         for (const state of annotations) {
             let shapeColor = '';
+
             if (colorBy === ColorBy.INSTANCE) {
                 shapeColor = state.color;
             } else if (colorBy === ColorBy.GROUP) {
@@ -572,6 +579,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 if (handler && handler.nested) {
                     handler.nested.fill({ color: shapeColor });
                 }
+
                 (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
                 (shapeView as any).instance.stroke({ color: blackBorders ? 'black' : shapeColor });
             }
