@@ -13,6 +13,7 @@
         PolygonShape,
         PolylineShape,
         PointsShape,
+        CuboidShape,
         RectangleTrack,
         PolygonTrack,
         PolylineTrack,
@@ -57,6 +58,9 @@
             break;
         case 'points':
             shapeModel = new PointsShape(shapeData, clientID, color, injection);
+            break;
+        case 'cuboid':
+            shapeModel = new CuboidShape(shapeData, clientID, color, injection);
             break;
         default:
             throw new DataError(

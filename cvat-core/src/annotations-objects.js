@@ -1351,6 +1351,13 @@
         }
     }
 
+    class CuboidShape extends PolyShape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.CUBOID;
+        }
+    }
+
     class RectangleTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
@@ -1810,6 +1817,7 @@
         PolygonShape,
         PolylineShape,
         PointsShape,
+        CuboidShape,
         RectangleTrack,
         PolygonTrack,
         PolylineTrack,
