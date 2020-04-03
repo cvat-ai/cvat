@@ -12,15 +12,14 @@ from cvat.apps.dextr_segmentation.dextr import DEXTR_HANDLER
 
 import django_rq
 import json
-import os
 import rq
 
 __RQ_QUEUE_NAME = "default"
 __DEXTR_HANDLER = DEXTR_HANDLER()
 
-def _dextr_thread(im_path, points):
+def _dextr_thread(db_data, frame, points):
     job = rq.get_current_job()
-    job.meta["result"] = __DEXTR_HANDLER.handle(im_path, points)
+    job.meta["result"] = __DEXTR_HANDLER.handle(db_data, frame, points)
     job.save_meta()
 
 
@@ -38,8 +37,7 @@ def create(request, jid):
         slogger.job[jid].info("create dextr request for the JOB: {} ".format(jid)
             + "by the USER: {} on the FRAME: {}".format(username, frame))
 
-        db_task = Job.objects.select_related("segment__task").get(id=jid).segment.task
-        im_path = os.path.realpath(db_task.get_frame_path(frame))
+        db_data = Job.objects.select_related("segment__task__data").get(id=jid).segment.task.data
 
         queue = django_rq.get_queue(__RQ_QUEUE_NAME)
         rq_id = "dextr.create/{}/{}".format(jid, username)
@@ -53,7 +51,7 @@ def create(request, jid):
                 job.delete()
 
         queue.enqueue_call(func=_dextr_thread,
-            args=(im_path, points),
+            args=(db_data, frame, points),
             job_id=rq_id,
             timeout=15,
             ttl=30)
