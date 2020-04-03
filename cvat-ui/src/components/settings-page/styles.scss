@@ -5,6 +5,9 @@
 @import '../../base.scss';
 
 .cvat-settings-page {
+    height: 90%;
+    overflow-y: auto;
+
     > div:nth-child(1) {
         margin-top: 30px;
         margin-bottom: 10px;
