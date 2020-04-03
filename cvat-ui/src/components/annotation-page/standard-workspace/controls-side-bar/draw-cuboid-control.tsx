@@ -9,7 +9,7 @@ import Icon from 'antd/lib/icon';
 import { Canvas } from 'cvat-canvas';
 import { ShapeType } from 'reducers/interfaces';
 
-import { PolygonIcon } from 'icons';
+import { CubeIcon } from 'icons';
 
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 
@@ -48,7 +48,7 @@ function DrawPolygonControl(props: Props): JSX.Element {
         >
             <Icon
                 {...dynamicIconProps}
-                component={PolygonIcon}
+                component={CubeIcon}
             />
         </Popover>
     );
