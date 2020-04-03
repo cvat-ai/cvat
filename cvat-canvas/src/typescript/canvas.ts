@@ -11,6 +11,7 @@ import {
     CanvasModel,
     CanvasModelImpl,
     RectDrawingMethod,
+    Configuration,
 } from './canvasModel';
 
 import {
@@ -53,8 +54,9 @@ interface Canvas {
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
-    mode(): void;
+    mode(): Mode;
     cancel(): void;
+    configure(configuration: Configuration): void;
 }
 
 class CanvasImpl implements Canvas {
@@ -146,11 +148,16 @@ class CanvasImpl implements Canvas {
     public cancel(): void {
         this.model.cancel();
     }
+
+    public configure(configuration: Configuration): void {
+        this.model.configure(configuration);
+    }
 }
 
 export {
     CanvasImpl as Canvas,
     CanvasVersion,
+    Configuration,
     RectDrawingMethod,
     Mode as CanvasMode,
 };

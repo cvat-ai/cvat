@@ -29,6 +29,7 @@ export enum SettingsActionTypes {
     CHANGE_AUTO_SAVE_INTERVAL = 'CHANGE_AUTO_SAVE_INTERVAL',
     CHANGE_AAM_ZOOM_MARGIN = 'CHANGE_AAM_ZOOM_MARGIN',
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
+    SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS = 'SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -207,6 +208,15 @@ export function switchShowingInterpolatedTracks(showAllInterpolationTracks: bool
         type: SettingsActionTypes.SWITCH_SHOWNIG_INTERPOLATED_TRACKS,
         payload: {
             showAllInterpolationTracks,
+        },
+    };
+}
+
+export function switchShowingObjectsTextAlways(showObjectsTextAlways: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS,
+        payload: {
+            showObjectsTextAlways,
         },
     };
 }

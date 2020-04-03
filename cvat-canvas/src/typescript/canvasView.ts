@@ -36,6 +36,7 @@ import {
     GroupData,
     Mode,
     Size,
+    Configuration,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -66,6 +67,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private groupHandler: GroupHandler;
     private zoomHandler: ZoomHandler;
     private activeElement: ActiveElement;
+    private configuration: Configuration;
 
     private set mode(value: Mode) {
         this.controller.mode = value;
@@ -539,6 +541,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             clientID: null,
             attributeID: null,
         };
+        this.configuration = model.configuration;
         this.mode = Mode.IDLE;
 
         // Create HTML elements
@@ -707,8 +710,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
         this.geometry = this.controller.geometry;
-
-        if (reason === UpdateReasons.BITMAP) {
+        if (reason === UpdateReasons.CONFIG_UPDATED) {
+            this.configuration = model.configuration;
+            this.setupObjects([]);
+            this.setupObjects(model.objects);
+        } else if (reason === UpdateReasons.BITMAP) {
             const { imageBitmap } = model;
             if (imageBitmap) {
                 this.bitmap.style.display = '';
@@ -961,31 +967,44 @@ export class CanvasViewImpl implements CanvasView, Listener {
         for (const state of states) {
             const { clientID } = state;
             const drawnState = this.drawnStates[clientID];
+            const shape = this.svgShapes[state.clientID];
+            const text = this.svgTexts[state.clientID];
 
             if (drawnState.hidden !== state.hidden || drawnState.outside !== state.outside) {
-                const none = state.hidden || state.outside;
-                if (state.shapeType === 'points') {
-                    this.svgShapes[clientID].remember('_selectHandler').nested
-                        .style('display', none ? 'none' : '');
+                const isInvisible = state.hidden || state.outside;
+                if (isInvisible) {
+                    (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
+                        .style('display', 'none');
+                    if (text) {
+                        text.addClass('cvat_canvas_hidden');
+                    }
                 } else {
-                    this.svgShapes[clientID].style('display', none ? 'none' : '');
+                    (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
+                        .style('display', '');
+                    if (text) {
+                        text.removeClass('cvat_canvas_hidden');
+                        this.updateTextPosition(
+                            text,
+                            shape,
+                        );
+                    }
                 }
             }
 
             if (drawnState.zOrder !== state.zOrder) {
                 if (state.shapeType === 'points') {
-                    this.svgShapes[clientID].remember('_selectHandler').nested
+                    shape.remember('_selectHandler').nested
                         .attr('data-z-order', state.zOrder);
                 } else {
-                    this.svgShapes[clientID].attr('data-z-order', state.zOrder);
+                    shape.attr('data-z-order', state.zOrder);
                 }
             }
 
             if (drawnState.occluded !== state.occluded) {
                 if (state.occluded) {
-                    this.svgShapes[clientID].addClass('cvat_canvas_shape_occluded');
+                    shape.addClass('cvat_canvas_shape_occluded');
                 } else {
-                    this.svgShapes[clientID].removeClass('cvat_canvas_shape_occluded');
+                    shape.removeClass('cvat_canvas_shape_occluded');
                 }
             }
 
@@ -1003,7 +1022,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.shapeType === 'rectangle') {
                     const [xtl, ytl, xbr, ybr] = translatedPoints;
 
-                    this.svgShapes[clientID].attr({
+                    shape.attr({
                         x: xtl,
                         y: ytl,
                         width: xbr - xtl,
@@ -1019,21 +1038,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             return `${acc}${val},`;
                         }, '',
                     );
-                    (this.svgShapes[clientID] as any).clear();
-                    this.svgShapes[clientID].attr('points', stringified);
+                    (shape as any).clear();
+                    shape.attr('points', stringified);
 
                     if (state.shapeType === 'points') {
-                        this.selectize(false, this.svgShapes[clientID]);
-                        this.setupPoints(this.svgShapes[clientID] as SVG.PolyLine, state);
+                        this.selectize(false, shape);
+                        this.setupPoints(shape as SVG.PolyLine, state);
                     }
                 }
             }
 
             for (const attrID of Object.keys(state.attributes)) {
                 if (state.attributes[attrID] !== drawnState.attributes[attrID]) {
-                    const text = this.svgTexts[state.clientID];
                     if (text) {
-                        const [span] = this.svgTexts[state.clientID].node
+                        const [span] = text.node
                             .querySelectorAll(`[attrID="${attrID}"]`) as any as SVGTSpanElement[];
                         if (span && span.textContent) {
                             const prefix = span.textContent.split(':').slice(0, -1).join(':');
@@ -1048,6 +1066,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private addObjects(states: any[], translate: (points: number[]) => number[]): void {
+        const { displayAllText } = this.configuration;
+
         for (const state of states) {
             if (state.objectType === 'tag') {
                 this.addTag(state);
@@ -1091,6 +1111,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         },
                     }));
                 });
+
+                if (displayAllText) {
+                    this.svgTexts[state.clientID] = this.addText(state);
+                    this.updateTextPosition(
+                        this.svgTexts[state.clientID],
+                        this.svgShapes[state.clientID],
+                    );
+                }
             }
 
             this.saveState(state);
@@ -1139,6 +1167,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private deactivateShape(): void {
         if (this.activeElement.clientID !== null) {
+            const { displayAllText } = this.configuration;
             const { clientID } = this.activeElement;
             const drawnState = this.drawnStates[clientID];
             const shape = this.svgShapes[clientID];
@@ -1162,7 +1191,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[clientID];
-            if (text) {
+            if (text && !displayAllText) {
                 text.remove();
                 delete this.svgTexts[clientID];
             }
@@ -1370,6 +1399,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     // Update text position after corresponding box has been moved, resized, etc.
     private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
+        if (text.node.style.display === 'none') return; // wrong transformation matrix
         let box = (shape.node as any).getBBox();
 
         // Translate the whole box to the client coordinate system
@@ -1408,6 +1438,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private addText(state: any): SVG.Text {
+        const { undefinedAttrValue } = this.configuration;
         const { label, clientID, attributes } = state;
         const attrNames = label.attributes.reduce((acc: any, val: any): void => {
             acc[val.id] = val.name;
@@ -1417,7 +1448,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.adoptedText.text((block): void => {
             block.tspan(`${label.name} ${clientID}`).style('text-transform', 'uppercase');
             for (const attrID of Object.keys(attributes)) {
-                const value = attributes[attrID] === consts.UNDEFINED_ATTRIBUTE_VALUE
+                const value = attributes[attrID] === undefinedAttrValue
                     ? '' : attributes[attrID];
                 block.tspan(`${attrNames[attrID]}: ${value}`).attr({
                     attrID,
