@@ -81,3 +81,14 @@ def get_export_formats():
 
 def get_import_formats():
     return [_serialize_format(f) for f in IMPORT_FORMATS]
+
+
+import .coco
+import .cvat
+import .datumaro
+import .labelme
+import .mask
+import .mot
+import .pascal_voc
+import .tfrecord
+import .yolo

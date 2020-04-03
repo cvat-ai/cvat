@@ -58,10 +58,10 @@ class CvatYoloConverter(_YoloConverter):
     NAME = 'cvat_yolo'
 
 def dump(file_object, annotations):
-    from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor
+    from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor
     from cvat.apps.dataset_manager.util import make_zip_archive
     from tempfile import TemporaryDirectory
-    extractor = CvatAnnotationsExtractor('', annotations)
+    extractor = CvatTaskDataExtractor('', annotations)
     converter = CvatYoloConverter()
     with TemporaryDirectory() as temp_dir:
         converter(extractor, save_dir=temp_dir)

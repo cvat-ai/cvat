@@ -111,7 +111,7 @@ class AnnotationIR:
         self._tracks = []
 
 
-class Annotation:
+class TaskData:
     Attribute = namedtuple('Attribute', 'name, value')
     LabeledShape = namedtuple(
         'LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order')
@@ -195,13 +195,11 @@ class Annotation:
 
     def _init_frame_info(self):
         if hasattr(self._db_task.data, 'video'):
-            self._frame_info = {
-                frame: {
-                    "path": "frame_{:06d}".format(frame),
-                    "width": self._db_task.data.video.width,
-                    "height": self._db_task.data.video.height,
-                } for frame in range(self._db_task.data.size)
-            }
+            self._frame_info = {frame: {
+                "path": "frame_{:06d}".format(frame),
+                "width": self._db_task.data.video.width,
+                "height": self._db_task.data.video.height,
+            } for frame in range(self._db_task.data.size)}
         else:
             self._frame_info = {db_image.frame: {
                 "path": db_image.path,
@@ -478,6 +476,10 @@ class Annotation:
     def frame_step(self):
         return self._frame_step
 
+    @property
+    def db_task(self):
+        return self._db_task
+
     @staticmethod
     def _get_filename(path):
         return osp.splitext(osp.basename(path))[0]
@@ -491,26 +493,20 @@ class Annotation:
         raise Exception(
             "Cannot match filename or determinate framenumber for {} filename".format(filename))
 
-
-class CvatTaskExtractor(datumaro.Extractor):
-    def __init__(self, url, db_task, user, scheme=None, host=None):
-        cvat_annotations = TaskAnnotation(db_task.id, user)
-        with transaction.atomic():
-            cvat_annotations.init_from_db()
-        cvat_annotations = Annotation(cvat_annotations.ir_data, db_task,
-            scheme=scheme, host=host)
-        frame_provider = FrameProvider(db_task.data)
-
-        self._categories = self._load_categories(cvat_annotations)
+class CvatTaskDataExtractor(datumaro.Extractor):
+    def __init__(self, task_data, include_images=False):
+        self._categories = self._load_categories(task_data)
 
         dm_annotations = []
 
-        frame_provider.get_frames(
-            self._frame_provider.Quality.ORIGINAL,
-            self._frame_provider.Type.NUMPY_ARRAY)
+        if include_images:
+            frame_provider = FrameProvider(db_task.data)
+            frame_provider.get_frames(
+                self._frame_provider.Quality.ORIGINAL,
+                self._frame_provider.Type.NUMPY_ARRAY)
 
-        for cvat_frame_anno in cvat_annotations.group_by_frame():
-            dm_anno = self._read_cvat_anno(cvat_frame_anno, cvat_annotations)
+        for cvat_frame_anno in task_data.group_by_frame():
+            dm_anno = self._read_cvat_anno(cvat_frame_anno, task_data)
             dm_image = Image(path=cvat_frame_anno.name, size=(
                 cvat_frame_anno.height, cvat_frame_anno.width)
             )

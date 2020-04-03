@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor, \
+from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, \
     import_dm_annotations
 from cvat.apps.dataset_manager.formats import dm_env, exporter, importer
 from cvat.apps.dataset_manager.util import make_zip_archive
@@ -15,7 +15,7 @@ from datumaro.components.project import Dataset
 
 @exporter(name="MASK", ext="ZIP", version="1.1")
 def export_mask(dst_file, annotations, **options):
-    extractor = CvatAnnotationsExtractor(annotations)
+    extractor = CvatTaskDataExtractor(annotations)
     with TemporaryDirectory() as temp_dir:
         envt = dm_env.transforms
         extractor = extractor.transform(envt.get('polygons_to_masks'))
