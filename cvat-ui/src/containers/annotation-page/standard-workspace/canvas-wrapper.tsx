@@ -62,6 +62,7 @@ interface StateToProps {
     colorBy: ColorBy;
     selectedOpacity: number;
     blackBorders: boolean;
+    showBitmap: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -171,6 +172,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 colorBy,
                 selectedOpacity,
                 blackBorders,
+                showBitmap,
             },
         },
         shortcuts: {
@@ -194,6 +196,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         colorBy,
         selectedOpacity,
         blackBorders,
+        showBitmap,
         grid,
         gridSize,
         gridColor,

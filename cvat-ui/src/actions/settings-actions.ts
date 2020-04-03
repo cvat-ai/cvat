@@ -18,6 +18,7 @@ export enum SettingsActionTypes {
     CHANGE_SELECTED_SHAPES_OPACITY = 'CHANGE_SELECTED_SHAPES_OPACITY',
     CHANGE_SHAPES_COLOR_BY = 'CHANGE_SHAPES_COLOR_BY',
     CHANGE_SHAPES_BLACK_BORDERS = 'CHANGE_SHAPES_BLACK_BORDERS',
+    CHANGE_SHOW_UNLABELED_REGIONS = 'CHANGE_SHOW_UNLABELED_REGIONS',
     CHANGE_FRAME_STEP = 'CHANGE_FRAME_STEP',
     CHANGE_FRAME_SPEED = 'CHANGE_FRAME_SPEED',
     SWITCH_RESET_ZOOM = 'SWITCH_RESET_ZOOM',
@@ -63,6 +64,15 @@ export function changeShapesBlackBorders(blackBorders: boolean): AnyAction {
         type: SettingsActionTypes.CHANGE_SHAPES_BLACK_BORDERS,
         payload: {
             blackBorders,
+        },
+    };
+}
+
+export function changeShowBitmap(showBitmap: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_SHOW_UNLABELED_REGIONS,
+        payload: {
+            showBitmap,
         },
     };
 }

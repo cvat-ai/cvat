@@ -22,6 +22,7 @@ const defaultState: SettingsState = {
         opacity: 3,
         selectedOpacity: 30,
         blackBorders: false,
+        showBitmap: false,
     },
     workspace: {
         autoSave: false,
@@ -128,6 +129,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case SettingsActionTypes.CHANGE_SHOW_UNLABELED_REGIONS: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    showBitmap: action.payload.showBitmap,
+                },
+            };
+        }
         case SettingsActionTypes.CHANGE_FRAME_STEP: {
             return {
                 ...state,
@@ -227,18 +237,18 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const { job } = action.payload;
 
             return {
-                ...state,
+                ...defaultState,
                 player: {
-                    ...state.player,
+                    ...defaultState.player,
                     resetZoom: job && job.task.mode === 'annotation',
                 },
             };
         }
-        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
         }

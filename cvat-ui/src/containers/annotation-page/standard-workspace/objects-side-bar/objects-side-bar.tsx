@@ -27,6 +27,7 @@ import {
     changeShapesOpacity as changeShapesOpacityAction,
     changeSelectedShapesOpacity as changeSelectedShapesOpacityAction,
     changeShapesBlackBorders as changeShapesBlackBordersAction,
+    changeShowBitmap as changeShowUnlabeledRegionsAction,
 } from 'actions/settings-actions';
 
 
@@ -37,6 +38,7 @@ interface StateToProps {
     opacity: number;
     selectedOpacity: number;
     blackBorders: boolean;
+    showBitmap: boolean;
 }
 
 interface DispatchToProps {
@@ -47,6 +49,7 @@ interface DispatchToProps {
     changeShapesOpacity(shapesOpacity: number): void;
     changeSelectedShapesOpacity(selectedShapesOpacity: number): void;
     changeShapesBlackBorders(blackBorders: boolean): void;
+    changeShowBitmap(showBitmap: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -61,6 +64,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 opacity,
                 selectedOpacity,
                 blackBorders,
+                showBitmap,
             },
         },
     } = state;
@@ -72,6 +76,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         opacity,
         selectedOpacity,
         blackBorders,
+        showBitmap,
     };
 }
 
@@ -132,6 +137,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeShapesBlackBorders(blackBorders: boolean): void {
             dispatch(changeShapesBlackBordersAction(blackBorders));
         },
+        changeShowBitmap(showBitmap: boolean) {
+            dispatch(changeShowUnlabeledRegionsAction(showBitmap));
+        },
     };
 }
 
@@ -177,6 +185,11 @@ class ObjectsSideBarContainer extends React.PureComponent<Props> {
         changeShapesBlackBorders(event.target.checked);
     };
 
+    private changeShowBitmap = (event: CheckboxChangeEvent): void => {
+        const { changeShowBitmap } = this.props;
+        changeShowBitmap(event.target.checked);
+    };
+
     public render(): JSX.Element {
         const {
             sidebarCollapsed,
@@ -185,6 +198,7 @@ class ObjectsSideBarContainer extends React.PureComponent<Props> {
             opacity,
             selectedOpacity,
             blackBorders,
+            showBitmap,
             collapseSidebar,
             collapseAppearance,
         } = this.props;
@@ -197,12 +211,14 @@ class ObjectsSideBarContainer extends React.PureComponent<Props> {
                 opacity={opacity}
                 selectedOpacity={selectedOpacity}
                 blackBorders={blackBorders}
+                showBitmap={showBitmap}
                 collapseSidebar={collapseSidebar}
                 collapseAppearance={collapseAppearance}
                 changeShapesColorBy={this.changeShapesColorBy}
                 changeShapesOpacity={this.changeShapesOpacity}
                 changeSelectedShapesOpacity={this.changeSelectedShapesOpacity}
                 changeShapesBlackBorders={this.changeShapesBlackBorders}
+                changeShowBitmap={this.changeShowBitmap}
             />
         );
     }

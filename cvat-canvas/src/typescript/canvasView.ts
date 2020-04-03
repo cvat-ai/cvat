@@ -48,6 +48,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private text: SVGSVGElement;
     private adoptedText: SVG.Container;
     private background: HTMLCanvasElement;
+    private bitmap: HTMLCanvasElement;
     private grid: SVGSVGElement;
     private content: SVGSVGElement;
     private adoptedContent: SVG.Container;
@@ -287,7 +288,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private moveCanvas(): void {
-        for (const obj of [this.background, this.grid]) {
+        for (const obj of [this.background, this.grid, this.bitmap]) {
             obj.style.top = `${this.geometry.top}px`;
             obj.style.left = `${this.geometry.left}px`;
         }
@@ -305,7 +306,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private transformCanvas(): void {
         // Transform canvas
-        for (const obj of [this.background, this.grid, this.content]) {
+        for (const obj of [this.background, this.grid, this.content, this.bitmap]) {
             obj.style.transform = `scale(${this.geometry.scale}) rotate(${this.geometry.angle}deg)`;
         }
 
@@ -360,7 +361,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private resizeCanvas(): void {
-        for (const obj of [this.background, this.grid]) {
+        for (const obj of [this.background, this.grid, this.bitmap]) {
             obj.style.width = `${this.geometry.image.width}px`;
             obj.style.height = `${this.geometry.image.height}px`;
         }
@@ -549,6 +550,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.text = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedText = (SVG.adopt((this.text as any as HTMLElement)) as SVG.Container);
         this.background = window.document.createElement('canvas');
+        this.bitmap = window.document.createElement('canvas');
         // window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 
         this.grid = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -593,6 +595,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.text.setAttribute('id', 'cvat_canvas_text_content');
         this.background.setAttribute('id', 'cvat_canvas_background');
         this.content.setAttribute('id', 'cvat_canvas_content');
+        this.bitmap.setAttribute('id', 'cvat_canvas_bitmap');
+        this.bitmap.style.display = 'none';
 
         // Setup wrappers
         this.canvas.setAttribute('id', 'cvat_canvas_wrapper');
@@ -608,6 +612,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.appendChild(this.loadingAnimation);
         this.canvas.appendChild(this.text);
         this.canvas.appendChild(this.background);
+        this.canvas.appendChild(this.bitmap);
         this.canvas.appendChild(this.grid);
         this.canvas.appendChild(this.content);
 
@@ -709,6 +714,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.configuration = model.configuration;
             this.setupObjects([]);
             this.setupObjects(model.objects);
+        } else if (reason === UpdateReasons.BITMAP) {
+            const { imageBitmap } = model;
+            if (imageBitmap) {
+                this.bitmap.style.display = '';
+                this.redrawBitmap();
+            } else {
+                this.bitmap.style.display = 'none';
+            }
         } else if (reason === UpdateReasons.IMAGE_CHANGED) {
             const { image } = model;
             if (!image) {
@@ -882,10 +895,57 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.mode = Mode.IDLE;
             this.canvas.style.cursor = '';
         }
+
+        if (model.imageBitmap
+            && [UpdateReasons.IMAGE_CHANGED,
+                UpdateReasons.OBJECTS_UPDATED,
+                UpdateReasons.SET_Z_LAYER,
+            ].includes(reason)
+        ) {
+            this.redrawBitmap();
+        }
     }
 
     public html(): HTMLDivElement {
         return this.canvas;
+    }
+
+    private redrawBitmap(): void {
+        const width = +this.background.style.width.slice(0, -2);
+        const height = +this.background.style.height.slice(0, -2);
+        this.bitmap.setAttribute('width', `${width}px`);
+        this.bitmap.setAttribute('height', `${height}px`);
+        const states = this.controller.objects;
+
+        const ctx = this.bitmap.getContext('2d');
+        if (ctx) {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, width, height);
+            for (const state of states) {
+                if (state.hidden || state.outside) continue;
+                ctx.fillStyle = 'white';
+                if (['rectangle', 'polygon'].includes(state.shapeType)) {
+                    const points = state.shapeType === 'rectangle' ? [
+                        state.points[0], // xtl
+                        state.points[1], // ytl
+                        state.points[2], // xbr
+                        state.points[1], // ytl
+                        state.points[2], // xbr
+                        state.points[3], // ybr
+                        state.points[0], // xtl
+                        state.points[3], // ybr
+                    ] : state.points;
+                    ctx.beginPath();
+                    ctx.moveTo(points[0], points[1]);
+                    for (let i = 0; i < points.length; i += 2) {
+                        ctx.lineTo(points[i], points[i + 1]);
+                    }
+                    ctx.closePath();
+                }
+
+                ctx.fill();
+            }
+        }
     }
 
     private saveState(state: any): void {
