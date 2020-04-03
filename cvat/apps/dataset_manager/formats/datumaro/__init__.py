@@ -5,17 +5,13 @@
 from tempfile import TemporaryDirectory
 
 from cvat.apps.dataset_manager.bindings import import_dm_annotations, CvatAnnotationsExtractor
-from cvat.apps.dataset_manager.formats import dm_env, Exporter
+from cvat.apps.dataset_manager.formats import dm_env, exporter
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.settings.base import DATUMARO_PATH
 
 
-class DatumaroProjectExporter(Exporter):
-    NAME = "DatumaroProject"
-    EXT = "ZIP"
-    VERSION = "1.0"
-    DISPLAY_NAME = "{name} {ext} {version}"
-
+@exporter(name="DatumaroProject", ext="ZIP", version="1.0")
+class DatumaroProjectExporter:
     _REMOTE_IMAGES_EXTRACTOR = 'cvat_rest_api_task_images'
     _TEMPLATES_DIR = osp.join(osp.dirname(__file__), 'export_templates')
 
