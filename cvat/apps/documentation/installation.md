@@ -328,7 +328,7 @@ If this is not the case, please complete the steps in the installation manual fi
 We will go through the following sequence of steps to get CVAT over HTTPS:
 
   1. Move Docker Compose CVAT access port to 80/tcp.
-  2. Configure Nginx to serve the files to satisfy one of the [ACME challenges](https://letsencrypt.org/docs/challenge-types/).
+  2. Configure Nginx to pass one of the [ACME challenges](https://letsencrypt.org/docs/challenge-types/).
   3. Create the certificate files using [acme.sh](https://github.com/acmesh-official/acme.sh).
   4. Reconfigure Nginx to serve over HTTPS and map CVAT to Docker Compose port 443.
 
@@ -452,7 +452,7 @@ docker-compose down
 docker-compose up -d
 ```
 
-Your server should still be visible (and unsecured) at `http://my-cvat-server.org` but you won't notice much chenge.
+Your server should still be visible (and unsecured) at `http://my-cvat-server.org` but you won't any behavior changes.
 
 ##### 3. Create certificate files using an ACME challenge
 
@@ -591,7 +591,7 @@ Creating cvat_redis ... done
 Creating cvat       ... done
 Creating cvat_ui    ... done
 Creating cvat_proxy ... done
-super@tempVM:~/cvat$ docker ps
+admin@tempVM:~/cvat$ docker ps
 CONTAINER ID        IMAGE                 COMMAND                  CREATED              STATUS              PORTS                                        NAMES
 71464aeac87c        nginx:stable-alpine   "/bin/sh -c 'envsubs…"   About a minute ago   Up About a minute   0.0.0.0:443->443/tcp, 0.0.0.0:8080->80/tcp   cvat_proxy
 8428cfbb766e        cvat_cvat_ui          "nginx -g 'daemon of…"   About a minute ago   Up About a minute   80/tcp                                       cvat_ui
