@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from cvat.apps.auto_annotation.inference_engine import make_plugin_or_core, make_network
+from cvat.apps.engine.frame_provider import FrameProvider
 
 import os
 import cv2
@@ -29,7 +30,7 @@ class DEXTR_HANDLER:
             raise Exception("DEXTR_MODEL_DIR is not defined")
 
 
-    def handle(self, im_path, points):
+    def handle(self, db_data, frame, points):
         # Lazy initialization
         if not self._plugin:
             self._plugin = make_plugin_or_core()
@@ -42,7 +43,9 @@ class DEXTR_HANDLER:
             else:
                 self._exec_network = self._plugin.load(network=self._network)
 
-        image = PIL.Image.open(im_path)
+        frame_provider = FrameProvider(db_data)
+        image = frame_provider.get_frame(frame, frame_provider.Quality.ORIGINAL)
+        image = PIL.Image.open(image[0])
         numpy_image = np.array(image)
         points = np.asarray([[int(p["x"]), int(p["y"])] for p in points], dtype=int)
         bounding_box = (
