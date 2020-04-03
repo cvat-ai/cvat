@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Special behaviour for attribute value ``__undefined__`` (invisibility, no shortcuts to be set in AAM)
 - Dialog window with some helpful information about using filters
+- Ability to display a bitmap in the new UI
 
 ### Changed
 -
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - New shape is added when press ``esc`` when drawing instead of cancellation
 - Fixed dextr segmentation.
+- Fixed `FileNotFoundError` during dump after moving format files
 
 ### Security
 -

@@ -152,6 +152,16 @@ polyline.cvat_canvas_shape_splitting {
     box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.75);
 }
 
+#cvat_canvas_bitmap {
+    pointer-events: none;
+    position: absolute;
+    z-index: 4;
+    background: black;
+    width: 100%;
+    height: 100%;
+    box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.75);
+}
+
 #cvat_canvas_grid {
     position: absolute;
     z-index: 2;
