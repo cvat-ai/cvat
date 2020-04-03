@@ -35,7 +35,7 @@ class FrameProvider:
         def load(self, chunk_id):
             if self.chunk_id != chunk_id:
                 self.chunk_id = chunk_id
-                self.chunk_reader = self.reader_class(self.get_chunk_path(chunk_id))
+                self.chunk_reader = self.reader_class([self.get_chunk_path(chunk_id)])
             return self.chunk_reader
 
     def __init__(self, db_data):
@@ -109,7 +109,7 @@ class FrameProvider:
 
         chunk_reader = self._loaders[quality].load(chunk_number)
 
-        frame, frame_name = next(itertools.islice(chunk_reader, frame_offset, None))
+        frame, frame_name, _ = next(itertools.islice(chunk_reader, frame_offset, None))
         if self._loaders[quality].reader_class is VideoReader:
             return (self._av_frame_to_png_bytes(frame), 'image/png')
         return (frame, mimetypes.guess_type(frame_name))
@@ -117,5 +117,5 @@ class FrameProvider:
     def get_frames(self, quality=Quality.ORIGINAL, out_type=Type.BUFFER):
         loader = self._loaders[quality]
         for chunk_idx in range(math.ceil(self._db_data.size / self._db_data.chunk_size)):
-            for frame, _ in loader.load(chunk_idx):
+            for frame, _, _ in loader.load(chunk_idx):
                 yield self._convert_frame(frame, loader.reader_class, out_type)
