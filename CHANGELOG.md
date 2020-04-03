@@ -4,27 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0.alpha] - 2020-02-XX
+## [1.0.0-beta] - Unreleased
 ### Added
-- Server only support for projects. Extend REST API v1 (/api/v1/projects*).
-- Ability to [get basic information about users without admin permissions](
-https://github.com/opencv/cvat/issues/750).
-- Changed REST API: removed PUT and added DELETE methods for /api/v1/users/ID.
-- Mask-RCNN Auto Annotation Script in OpenVINO format
-- Yolo Auto Annotation Script
-- Auto segmentation using Mask_RCNN component (Keras+Tensorflow Mask R-CNN Segmentation)
-- Added MOT CSV format support
-- Ability to dump/load annotations in LabelMe format from UI
-- REST API to export an annotation task (images + annotations)
-- Datumaro is an experimental framework to build, analyze, debug and visualize datasets for DL algorithms
-- Text Detection Auto Annoation Script in OpenVINO format for version 4
-- Added in OpenVINO Semantic Segmentation for roads
-- Ability to visualize labels when using Auto Annotation runner
+- Special behaviour for attribute value ``__undefined__`` (invisibility, no shortcuts to be set in AAM)
+- Dialog window with some helpful information about using filters
+- Ability to display a bitmap in the new UI
 
 ### Changed
-- page_size parameter for all REST API methods
-- React & Redux & Antd based dashboard
-- Yolov3 interpretation script fix and changes to mapping.json
+-
 
 ### Deprecated
 -
@@ -33,11 +20,74 @@ https://github.com/opencv/cvat/issues/750).
 -
 
 ### Fixed
-- [Mask problem on coco json style](https://github.com/opencv/cvat/issues/718)
-- [Exception in Git plugin](https://github.com/opencv/cvat/issues/826)
+- New shape is added when press ``esc`` when drawing instead of cancellation
 
 ### Security
 -
+
+## [1.0.0-alpha] - 2020-03-31
+### Added
+- Data streaming using chunks (https://github.com/opencv/cvat/pull/1007)
+- New UI: showing file names in UI (https://github.com/opencv/cvat/pull/1311)
+- New UI: delete a point from context menu (https://github.com/opencv/cvat/pull/1292)
+
+### Fixed
+- Git app cannot clone a repository (https://github.com/opencv/cvat/pull/1330)
+- New UI: preview position in task details (https://github.com/opencv/cvat/pull/1312)
+- AWS deployment (https://github.com/opencv/cvat/pull/1316)
+
+## [0.6.1] - 2020-03-21
+### Changed
+- VOC task export now does not use official label map by default, but takes one
+  from the source task to avoid primary-class and class part name
+  clashing ([#1275](https://github.com/opencv/cvat/issues/1275))
+
+### Fixed
+- File names in LabelMe format export are no longer truncated ([#1259](https://github.com/opencv/cvat/issues/1259))
+- `occluded` and `z_order` annotation attributes are now correctly passed to Datumaro ([#1271](https://github.com/opencv/cvat/pull/1271))
+- Annotation-less tasks now can be exported as empty datasets in COCO ([#1277](https://github.com/opencv/cvat/issues/1277))
+- Frame name matching for video annotations import -
+  allowed `frame_XXXXXX[.ext]` format ([#1274](https://github.com/opencv/cvat/pull/1274))
+
+### Security
+- Bump acorn from 6.3.0 to 6.4.1 in /cvat-ui ([#1270](https://github.com/opencv/cvat/pull/1270))
+
+## [0.6.0] - 2020-03-15
+### Added
+- Server only support for projects. Extend REST API v1 (/api/v1/projects*)
+- Ability to get basic information about users without admin permissions ([#750](https://github.com/opencv/cvat/issues/750))
+- Changed REST API: removed PUT and added DELETE methods for /api/v1/users/ID
+- Mask-RCNN Auto Annotation Script in OpenVINO format
+- Yolo Auto Annotation Script
+- Auto segmentation using Mask_RCNN component (Keras+Tensorflow Mask R-CNN Segmentation)
+- REST API to export an annotation task (images + annotations)
+- [Datumaro](https://github.com/opencv/cvat/tree/develop/datumaro) - a framework to build, analyze, debug and visualize datasets
+- Text Detection Auto Annotation Script in OpenVINO format for version 4
+- Added in OpenVINO Semantic Segmentation for roads
+- Ability to visualize labels when using Auto Annotation runner
+- MOT CSV format support ([#830](https://github.com/opencv/cvat/pull/830))
+- LabelMe format support ([#844](https://github.com/opencv/cvat/pull/844))
+- Segmentation MASK format import (as polygons) ([#1163](https://github.com/opencv/cvat/pull/1163))
+- Git repositories can be specified with IPv4 address ([#827](https://github.com/opencv/cvat/pull/827))
+
+### Changed
+- page_size parameter for all REST API methods
+- React & Redux & Antd based dashboard
+- Yolov3 interpretation script fix and changes to mapping.json
+- YOLO format support ([#1151](https://github.com/opencv/cvat/pull/1151))
+- Added support for OpenVINO 2020
+
+### Fixed
+- Exception in Git plugin [#826](https://github.com/opencv/cvat/issues/826)
+- Label ids in TFrecord format now start from 1 [#866](https://github.com/opencv/cvat/issues/866)
+- Mask problem in COCO JSON style [#718](https://github.com/opencv/cvat/issues/718)
+- Datasets (or tasks) can be joined and split to subsets with Datumaro [#791](https://github.com/opencv/cvat/issues/791)
+- Output labels for VOC format can be specified with Datumaro [#942](https://github.com/opencv/cvat/issues/942)
+- Annotations can be filtered before dumping with Datumaro [#994](https://github.com/opencv/cvat/issues/994)
+
+## [0.5.2] - 2019-12-15
+### Fixed
+- Frozen version of scikit-image==0.15 in requirements.txt because next releases don't support Python 3.5
 
 ## [0.5.1] - 2019-10-17
 ### Added

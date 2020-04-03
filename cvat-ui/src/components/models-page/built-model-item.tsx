@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -9,7 +13,7 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
-import { Model } from '../../reducers/interfaces';
+import { Model } from 'reducers/interfaces';
 
 interface Props {
     model: Model;

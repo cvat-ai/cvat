@@ -1,3 +1,14 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
+import { Canvas, RectDrawingMethod } from 'cvat-canvas';
+
+export type StringObject = {
+    [index: string]: string;
+};
+
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
@@ -30,27 +41,19 @@ export interface TasksState {
     current: Task[];
     activities: {
         dumps: {
-            byTask: {
-                // dumps in different formats at the same time
-                [tid: number]: string[]; // dumper names
-            };
+            // dumps in different formats at the same time
+            [tid: number]: string[]; // dumper names
         };
         exports: {
-            byTask: {
-                // exports in different formats at the same time
-                [tid: number]: string[]; // dumper names
-            };
+            // exports in different formats at the same time
+            [tid: number]: string[]; // dumper names
         };
         loads: {
-            byTask: {
-                // only one loading simultaneously
-                [tid: number]: string; // loader name
-            };
+            // only one loading simultaneously
+            [tid: number]: string; // loader name
         };
         deletes: {
-            byTask: {
-                [tid: number]: boolean; // deleted (deleting if in dictionary)
-            };
+            [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
         creates: {
             status: string;
@@ -77,13 +80,24 @@ export enum SupportedPlugins {
 export interface PluginsState {
     fetching: boolean;
     initialized: boolean;
-    plugins: {
+    list: {
         [name in SupportedPlugins]: boolean;
     };
 }
 
 export interface UsersState {
     users: any[];
+    fetching: boolean;
+    initialized: boolean;
+}
+
+export interface AboutState {
+    server: any;
+    packageVersion: {
+        core: string;
+        canvas: string;
+        ui: string;
+    };
     fetching: boolean;
     initialized: boolean;
 }
@@ -121,10 +135,17 @@ export enum RQStatus {
     failed = 'failed',
 }
 
+export enum ModelType {
+    OPENVINO = 'openvino',
+    RCNN = 'rcnn',
+    MASK_RCNN = 'mask_rcnn',
+}
+
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
     error: string;
+    modelType: ModelType;
 }
 
 export interface ModelsState {
@@ -175,6 +196,9 @@ export interface NotificationsState {
         users: {
             fetching: null | ErrorState;
         };
+        about: {
+            fetching: null | ErrorState;
+        };
         share: {
             fetching: null | ErrorState;
         };
@@ -183,9 +207,37 @@ export interface NotificationsState {
             starting: null | ErrorState;
             deleting: null | ErrorState;
             fetching: null | ErrorState;
+            canceling: null | ErrorState;
             metaFetching: null | ErrorState;
             inferenceStatusFetching: null | ErrorState;
         };
+        annotation: {
+            saving: null | ErrorState;
+            jobFetching: null | ErrorState;
+            frameFetching: null | ErrorState;
+            changingLabelColor: null | ErrorState;
+            updating: null | ErrorState;
+            creating: null | ErrorState;
+            merging: null | ErrorState;
+            grouping: null | ErrorState;
+            splitting: null | ErrorState;
+            removing: null | ErrorState;
+            propagating: null | ErrorState;
+            collectingStatistics: null | ErrorState;
+            savingJob: null | ErrorState;
+            uploadAnnotations: null | ErrorState;
+            removeAnnotations: null | ErrorState;
+            fetchingAnnotations: null | ErrorState;
+            undo: null | ErrorState;
+            redo: null | ErrorState;
+            search: null | ErrorState;
+            savingLogs: null | ErrorState;
+        };
+        boundaries: {
+            resetError: null | ErrorState;
+        };
+
+        [index: string]: any;
     };
     messages: {
         tasks: {
@@ -194,16 +246,220 @@ export interface NotificationsState {
         models: {
             inferenceDone: string;
         };
+
+        [index: string]: any;
     };
+}
+
+export enum ActiveControl {
+    CURSOR = 'cursor',
+    DRAG_CANVAS = 'drag_canvas',
+    ZOOM_CANVAS = 'zoom_canvas',
+    DRAW_RECTANGLE = 'draw_rectangle',
+    DRAW_POLYGON = 'draw_polygon',
+    DRAW_POLYLINE = 'draw_polyline',
+    DRAW_POINTS = 'draw_points',
+    MERGE = 'merge',
+    GROUP = 'group',
+    SPLIT = 'split',
+    EDIT = 'edit',
+}
+
+export enum ShapeType {
+    RECTANGLE = 'rectangle',
+    POLYGON = 'polygon',
+    POLYLINE = 'polyline',
+    POINTS = 'points',
+}
+
+export enum ObjectType {
+    SHAPE = 'shape',
+    TRACK = 'track',
+    TAG = 'tag',
+}
+
+export enum StatesOrdering {
+    ID_DESCENT = 'ID - descent',
+    ID_ASCENT = 'ID - ascent',
+    UPDATED = 'Updated time',
+}
+
+export enum ContextMenuType {
+    CANVAS = 'canvas',
+    CANVAS_SHAPE = 'canvas_shape',
+    CANVAS_SHAPE_POINT = 'canvas_shape_point',
+}
+
+export enum Rotation {
+    ANTICLOCKWISE90,
+    CLOCKWISE90,
+}
+
+export interface AnnotationState {
+    activities: {
+        loads: {
+            // only one loading simultaneously
+            [jid: number]: string; // loader name
+        };
+    };
+    canvas: {
+        contextMenu: {
+            visible: boolean;
+            top: number;
+            left: number;
+            type: ContextMenuType;
+            pointID: number | null;
+        };
+        instance: Canvas;
+        ready: boolean;
+        activeControl: ActiveControl;
+    };
+    job: {
+        labels: any[];
+        instance: any | null | undefined;
+        attributes: Record<number, any[]>;
+        fetching: boolean;
+        saving: boolean;
+    };
+    player: {
+        frame: {
+            number: number;
+            filename: string;
+            data: any | null;
+            fetching: boolean;
+            delay: number;
+            changeTime: number | null;
+        };
+        playing: boolean;
+        frameAngles: number[];
+    };
+    drawing: {
+        activeShapeType: ShapeType;
+        activeRectDrawingMethod?: RectDrawingMethod;
+        activeNumOfPoints?: number;
+        activeLabelID: number;
+        activeObjectType: ObjectType;
+        activeInitialState?: any;
+    };
+    annotations: {
+        selectedStatesID: number[];
+        activatedStateID: number | null;
+        activatedAttributeID: number | null;
+        collapsed: Record<number, boolean>;
+        states: any[];
+        filters: string[];
+        filtersHistory: string[];
+        resetGroupFlag: boolean;
+        history: {
+            undo: [string, number][];
+            redo: [string, number][];
+        };
+        saving: {
+            uploading: boolean;
+            statuses: string[];
+        };
+        zLayer: {
+            min: number;
+            max: number;
+            cur: number;
+        };
+    };
+    propagate: {
+        objectState: any | null;
+        frames: number;
+    };
+    statistics: {
+        collecting: boolean;
+        visible: boolean;
+        data: any;
+    };
+    colors: any[];
+    sidebarCollapsed: boolean;
+    appearanceCollapsed: boolean;
+    tabContentHeight: number;
+    workspace: Workspace;
+}
+
+export enum Workspace {
+    STANDARD = 'Standard',
+    ATTRIBUTE_ANNOTATION = 'Attribute annotation',
+}
+
+export enum GridColor {
+    White = 'White',
+    Black = 'Black',
+    Red = 'Red',
+    Green = 'Green',
+    Blue = 'Blue',
+}
+
+export enum FrameSpeed {
+    Fastest = 100,
+    Fast = 50,
+    Usual = 25,
+    Slow = 15,
+    Slower = 12,
+    Slowest = 1,
+}
+
+export enum ColorBy {
+    INSTANCE = 'Instance',
+    GROUP = 'Group',
+    LABEL = 'Label',
+}
+
+export interface PlayerSettingsState {
+    frameStep: number;
+    frameSpeed: FrameSpeed;
+    resetZoom: boolean;
+    rotateAll: boolean;
+    grid: boolean;
+    gridSize: number;
+    gridColor: GridColor;
+    gridOpacity: number; // in %
+    brightnessLevel: number;
+    contrastLevel: number;
+    saturationLevel: number;
+}
+
+export interface WorkspaceSettingsState {
+    autoSave: boolean;
+    autoSaveInterval: number; // in ms
+    aamZoomMargin: number;
+    showAllInterpolationTracks: boolean;
+}
+
+export interface ShapesSettingsState {
+    colorBy: ColorBy;
+    opacity: number;
+    selectedOpacity: number;
+    blackBorders: boolean;
+    showBitmap: boolean;
+}
+
+export interface SettingsState {
+    shapes: ShapesSettingsState;
+    workspace: WorkspaceSettingsState;
+    player: PlayerSettingsState;
+}
+
+export interface ShortcutsState {
+    visibleShortcutsHelp: boolean;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 }
 
 export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
     users: UsersState;
+    about: AboutState;
     share: ShareState;
     formats: FormatsState;
     plugins: PluginsState;
     models: ModelsState;
     notifications: NotificationsState;
+    annotation: AnnotationState;
+    settings: SettingsState;
+    shortcuts: ShortcutsState;
 }

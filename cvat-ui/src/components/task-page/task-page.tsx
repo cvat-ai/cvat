@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
@@ -10,11 +14,11 @@ import {
     Result,
 } from 'antd';
 
+import DetailsContainer from 'containers/task-page/details';
+import JobListContainer from 'containers/task-page/job-list';
+import ModelRunnerModalContainer from 'containers/model-runner-dialog/model-runner-dialog';
+import { Task } from 'reducers/interfaces';
 import TopBarComponent from './top-bar';
-import DetailsContainer from '../../containers/task-page/details';
-import JobListContainer from '../../containers/task-page/job-list';
-import ModelRunnerModalContainer from '../../containers/model-runner-dialog/model-runner-dialog';
-import { Task } from '../../reducers/interfaces';
 
 interface TaskPageComponentProps {
     task: Task | null | undefined;
@@ -27,8 +31,6 @@ interface TaskPageComponentProps {
 type Props = TaskPageComponentProps & RouteComponentProps<{id: string}>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
-    private attempts = 0;
-
     public componentDidUpdate(): void {
         const {
             deleteActivity,

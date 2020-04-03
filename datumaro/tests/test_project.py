@@ -1,16 +1,21 @@
+import numpy as np
 import os
 import os.path as osp
 
 from unittest import TestCase
 
-from datumaro.components.project import Project, Environment
-from datumaro.components.project import Source, Model
+from datumaro.components.project import Project, Environment, Dataset
+from datumaro.components.config_model import Source, Model
 from datumaro.components.launcher import Launcher, InferenceWrapper
 from datumaro.components.converter import Converter
-from datumaro.components.extractor import Extractor, DatasetItem, LabelObject
+from datumaro.components.extractor import (Extractor, DatasetItem,
+    Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
+)
+from datumaro.util.image import Image
 from datumaro.components.config import Config, DefaultConfig, SchemaBuilder
-from datumaro.components.dataset_filter import XPathDatasetFilter
-from datumaro.util.test_utils import TestDir
+from datumaro.components.dataset_filter import \
+    XPathDatasetFilter, XPathAnnotationsFilter, DatasetItemEncoder
+from datumaro.util.test_utils import TestDir, compare_datasets
 
 
 class ProjectTest(TestCase):
@@ -21,7 +26,7 @@ class ProjectTest(TestCase):
         })
 
         with TestDir() as test_dir:
-            project_path = test_dir.path
+            project_path = test_dir
             Project.generate(project_path, src_config)
 
             self.assertTrue(osp.isdir(project_path))
@@ -75,9 +80,9 @@ class ProjectTest(TestCase):
         project.add_source(source_name, origin)
 
         with TestDir() as test_dir:
-            project.save(test_dir.path)
+            project.save(test_dir)
 
-            loaded = Project.load(test_dir.path)
+            loaded = Project.load(test_dir)
             loaded = loaded.get_source(source_name)
             self.assertEqual(origin, loaded)
 
@@ -109,19 +114,19 @@ class ProjectTest(TestCase):
         project.add_model(model_name, saved)
 
         with TestDir() as test_dir:
-            project.save(test_dir.path)
+            project.save(test_dir)
 
-            loaded = Project.load(test_dir.path)
+            loaded = Project.load(test_dir)
             loaded = loaded.get_model(model_name)
             self.assertEqual(saved, loaded)
 
     def test_can_have_project_source(self):
         with TestDir() as test_dir:
-            Project.generate(test_dir.path)
+            Project.generate(test_dir)
 
             project2 = Project()
             project2.add_source('project1', {
-                'url': test_dir.path,
+                'url': test_dir,
             })
             dataset = project2.make_dataset()
 
@@ -129,21 +134,14 @@ class ProjectTest(TestCase):
 
     def test_can_batch_launch_custom_model(self):
         class TestExtractor(Extractor):
-            def __init__(self, url, n=0):
-                super().__init__(length=n)
-                self.n = n
-
             def __iter__(self):
-                for i in range(self.n):
-                    yield DatasetItem(id=i, subset='train', image=i)
+                for i in range(5):
+                    yield DatasetItem(id=i, subset='train', image=np.array([i]))
 
         class TestLauncher(Launcher):
-            def __init__(self, **kwargs):
-                pass
-
             def launch(self, inputs):
                 for i, inp in enumerate(inputs):
-                    yield [ LabelObject(attributes={'idx': i, 'data': inp}) ]
+                    yield [ Label(attributes={'idx': i, 'data': inp.item()}) ]
 
         model_name = 'model'
         launcher_name = 'custom_launcher'
@@ -152,7 +150,7 @@ class ProjectTest(TestCase):
         project.env.launchers.register(launcher_name, TestLauncher)
         project.add_model(model_name, { 'launcher': launcher_name })
         model = project.make_executable_model(model_name)
-        extractor = TestExtractor('', n=5)
+        extractor = TestExtractor()
 
         batch_size = 3
         executor = InferenceWrapper(extractor, model, batch_size=batch_size)
@@ -166,28 +164,20 @@ class ProjectTest(TestCase):
 
     def test_can_do_transform_with_custom_model(self):
         class TestExtractorSrc(Extractor):
-            def __init__(self, url, n=2):
-                super().__init__(length=n)
-                self.n = n
-
             def __iter__(self):
-                for i in range(self.n):
-                    yield DatasetItem(id=i, subset='train', image=i,
-                        annotations=[ LabelObject(i) ])
+                for i in range(2):
+                    yield DatasetItem(id=i, image=np.ones([2, 2, 3]) * i,
+                        annotations=[Label(i)])
 
         class TestLauncher(Launcher):
-            def __init__(self, **kwargs):
-                pass
-
             def launch(self, inputs):
                 for inp in inputs:
-                    yield [ LabelObject(inp) ]
+                    yield [ Label(inp[0, 0, 0]) ]
 
         class TestConverter(Converter):
             def __call__(self, extractor, save_dir):
                 for item in extractor:
-                    with open(osp.join(save_dir, '%s.txt' % item.id), 'w+') as f:
-                        f.write(str(item.subset) + '\n')
+                    with open(osp.join(save_dir, '%s.txt' % item.id), 'w') as f:
                         f.write(str(item.annotations[0].label) + '\n')
 
         class TestExtractorDst(Extractor):
@@ -199,11 +189,8 @@ class ProjectTest(TestCase):
                 for path in self.items:
                     with open(path, 'r') as f:
                         index = osp.splitext(osp.basename(path))[0]
-                        subset = f.readline()[:-1]
-                        label = int(f.readline()[:-1])
-                        assert subset == 'train'
-                        yield DatasetItem(id=index, subset=subset,
-                            annotations=[ LabelObject(label) ])
+                        label = int(f.readline().strip())
+                        yield DatasetItem(id=index, annotations=[Label(label)])
 
         model_name = 'model'
         launcher_name = 'custom_launcher'
@@ -217,9 +204,10 @@ class ProjectTest(TestCase):
         project.add_source('source', { 'format': extractor_name })
 
         with TestDir() as test_dir:
-            project.make_dataset().transform(model_name, test_dir.path)
+            project.make_dataset().apply_model(model=model_name,
+                save_dir=test_dir)
 
-            result = Project.load(test_dir.path)
+            result = Project.load(test_dir)
             result.env.extractors.register(extractor_name, TestExtractorDst)
             it = iter(result.make_dataset())
             item1 = next(it)
@@ -255,23 +243,31 @@ class ProjectTest(TestCase):
 
     def test_project_filter_can_be_applied(self):
         class TestExtractor(Extractor):
-            def __init__(self, url, n=10):
-                super().__init__(length=n)
-                self.n = n
-
             def __iter__(self):
-                for i in range(self.n):
+                for i in range(10):
                     yield DatasetItem(id=i, subset='train')
 
         e_type = 'type'
         project = Project()
         project.env.extractors.register(e_type, TestExtractor)
         project.add_source('source', { 'format': e_type })
-        project.set_filter('/item[id < 5]')
 
-        dataset = project.make_dataset()
+        dataset = project.make_dataset().extract('/item[id < 5]')
 
         self.assertEqual(5, len(dataset))
+
+    def test_can_save_and_load_own_dataset(self):
+        with TestDir() as test_dir:
+            src_project = Project()
+            src_dataset = src_project.make_dataset()
+            item = DatasetItem(id=1)
+            src_dataset.put(item)
+            src_dataset.save(test_dir)
+
+            loaded_project = Project.load(test_dir)
+            loaded_dataset = loaded_project.make_dataset()
+
+            self.assertEqual(list(src_dataset), list(loaded_dataset))
 
     def test_project_own_dataset_can_be_modified(self):
         project = Project()
@@ -285,12 +281,12 @@ class ProjectTest(TestCase):
     def test_project_compound_child_can_be_modified_recursively(self):
         with TestDir() as test_dir:
             child1 = Project({
-                'project_dir': osp.join(test_dir.path, 'child1'),
+                'project_dir': osp.join(test_dir, 'child1'),
             })
             child1.save()
 
             child2 = Project({
-                'project_dir': osp.join(test_dir.path, 'child2'),
+                'project_dir': osp.join(test_dir, 'child2'),
             })
             child2.save()
 
@@ -313,30 +309,23 @@ class ProjectTest(TestCase):
             self.assertEqual(1, len(dataset.sources['child2']))
 
     def test_project_can_merge_item_annotations(self):
-        class TestExtractor(Extractor):
-            def __init__(self, url, v=None):
-                super().__init__()
-                self.v = v
-
+        class TestExtractor1(Extractor):
             def __iter__(self):
-                v1_item = DatasetItem(id=1, subset='train', annotations=[
-                    LabelObject(2, id=3),
-                    LabelObject(3, attributes={ 'x': 1 }),
+                yield DatasetItem(id=1, subset='train', annotations=[
+                    Label(2, id=3),
+                    Label(3, attributes={ 'x': 1 }),
                 ])
 
-                v2_item = DatasetItem(id=1, subset='train', annotations=[
-                    LabelObject(3, attributes={ 'x': 1 }),
-                    LabelObject(4, id=4),
+        class TestExtractor2(Extractor):
+            def __iter__(self):
+                yield DatasetItem(id=1, subset='train', annotations=[
+                    Label(3, attributes={ 'x': 1 }),
+                    Label(4, id=4),
                 ])
-
-                if self.v == 1:
-                    yield v1_item
-                else:
-                    yield v2_item
 
         project = Project()
-        project.env.extractors.register('t1', lambda p: TestExtractor(p, v=1))
-        project.env.extractors.register('t2', lambda p: TestExtractor(p, v=2))
+        project.env.extractors.register('t1', TestExtractor1)
+        project.env.extractors.register('t2', TestExtractor2)
         project.add_source('source1', { 'format': 't1' })
         project.add_source('source2', { 'format': 't2' })
 
@@ -348,22 +337,103 @@ class ProjectTest(TestCase):
         self.assertEqual(3, len(item.annotations))
 
 class DatasetFilterTest(TestCase):
-    class TestExtractor(Extractor):
-        def __init__(self, url, n=0):
-            super().__init__(length=n)
-            self.n = n
+    @staticmethod
+    def test_item_representations():
+        item = DatasetItem(id=1, subset='subset', path=['a', 'b'],
+            image=np.ones((5, 4, 3)),
+            annotations=[
+                Label(0, attributes={'a1': 1, 'a2': '2'}, id=1, group=2),
+                Caption('hello', id=1),
+                Caption('world', group=5),
+                Label(2, id=3, attributes={ 'x': 1, 'y': '2' }),
+                Bbox(1, 2, 3, 4, label=4, id=4, attributes={ 'a': 1.0 }),
+                Bbox(5, 6, 7, 8, id=5, group=5),
+                Points([1, 2, 2, 0, 1, 1], label=0, id=5),
+                Mask(id=5, image=np.ones((3, 2))),
+                Mask(label=3, id=5, image=np.ones((2, 3))),
+                PolyLine([1, 2, 3, 4, 5, 6, 7, 8], id=11),
+                Polygon([1, 2, 3, 4, 5, 6, 7, 8]),
+            ]
+        )
 
-        def __iter__(self):
-            for i in range(self.n):
-                yield DatasetItem(id=i, subset='train')
+        encoded = DatasetItemEncoder.encode(item)
+        DatasetItemEncoder.to_string(encoded)
 
-    def test_xpathfilter_can_be_applied(self):
-        extractor = self.TestExtractor('', n=4)
-        dataset_filter = XPathDatasetFilter('/item[id > 1]')
+    def test_item_filter_can_be_applied(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                for i in range(4):
+                    yield DatasetItem(id=i, subset='train')
 
-        filtered = extractor.select(dataset_filter)
+        extractor = TestExtractor()
+
+        filtered = XPathDatasetFilter(extractor, '/item[id > 1]')
 
         self.assertEqual(2, len(filtered))
+
+    def test_annotations_filter_can_be_applied(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=0),
+                    DatasetItem(id=1, annotations=[
+                        Label(0),
+                        Label(1),
+                    ]),
+                    DatasetItem(id=2, annotations=[
+                        Label(0),
+                        Label(2),
+                    ]),
+                ])
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=0),
+                    DatasetItem(id=1, annotations=[
+                        Label(0),
+                    ]),
+                    DatasetItem(id=2, annotations=[
+                        Label(0),
+                    ]),
+                ])
+
+        extractor = SrcExtractor()
+
+        filtered = XPathAnnotationsFilter(extractor,
+            '/item/annotation[label_id = 0]')
+
+        self.assertListEqual(list(filtered), list(DstExtractor()))
+
+    def test_annotations_filter_can_remove_empty_items(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=0),
+                    DatasetItem(id=1, annotations=[
+                        Label(0),
+                        Label(1),
+                    ]),
+                    DatasetItem(id=2, annotations=[
+                        Label(0),
+                        Label(2),
+                    ]),
+                ])
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=2, annotations=[
+                        Label(2),
+                    ]),
+                ])
+
+        extractor = SrcExtractor()
+
+        filtered = XPathAnnotationsFilter(extractor,
+            '/item/annotation[label_id = 2]', remove_empty=True)
+
+        self.assertListEqual(list(filtered), list(DstExtractor()))
 
 class ConfigTest(TestCase):
     def test_can_produce_multilayer_config_from_dict(self):
@@ -396,9 +466,6 @@ class ConfigTest(TestCase):
 class ExtractorTest(TestCase):
     def test_custom_extractor_can_be_created(self):
         class CustomExtractor(Extractor):
-            def __init__(self, url):
-                super().__init__()
-
             def __iter__(self):
                 return iter([
                     DatasetItem(id=0, subset='train'),
@@ -406,6 +473,11 @@ class ExtractorTest(TestCase):
                     DatasetItem(id=2, subset='train'),
 
                     DatasetItem(id=3, subset='test'),
+                    DatasetItem(id=4, subset='test'),
+
+                    DatasetItem(id=1),
+                    DatasetItem(id=2),
+                    DatasetItem(id=3),
                 ])
 
         extractor_name = 'ext1'
@@ -415,8 +487,65 @@ class ExtractorTest(TestCase):
             'url': 'path',
             'format': extractor_name,
         })
-        project.set_subsets(['train'])
 
         dataset = project.make_dataset()
 
-        self.assertEqual(3, len(dataset))
+        compare_datasets(self, CustomExtractor(), dataset)
+
+class DatasetTest(TestCase):
+    def test_create_from_extractors(self):
+        class SrcExtractor1(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='train', annotations=[
+                        Bbox(1, 2, 3, 4),
+                        Label(4),
+                    ]),
+                    DatasetItem(id=1, subset='val', annotations=[
+                        Label(4),
+                    ]),
+                ])
+
+        class SrcExtractor2(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='val', annotations=[
+                        Label(5),
+                    ]),
+                ])
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='train', annotations=[
+                        Bbox(1, 2, 3, 4),
+                        Label(4),
+                    ]),
+                    DatasetItem(id=1, subset='val', annotations=[
+                        Label(4),
+                        Label(5),
+                    ]),
+                ])
+
+        dataset = Dataset.from_extractors(SrcExtractor1(), SrcExtractor2())
+
+        compare_datasets(self, DstExtractor(), dataset)
+
+
+class DatasetItemTest(TestCase):
+    def test_ctor_requires_id(self):
+        with self.assertRaises(Exception):
+            # pylint: disable=no-value-for-parameter
+            DatasetItem()
+            # pylint: enable=no-value-for-parameter
+
+    @staticmethod
+    def test_ctors_with_image():
+        for args in [
+            { 'id': 0, 'image': None },
+            { 'id': 0, 'image': 'path.jpg' },
+            { 'id': 0, 'image': np.array([1, 2, 3]) },
+            { 'id': 0, 'image': lambda f: np.array([1, 2, 3]) },
+            { 'id': 0, 'image': Image(data=np.array([1, 2, 3])) },
+        ]:
+            DatasetItem(**args)

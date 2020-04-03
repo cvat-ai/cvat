@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import { Link } from 'react-router-dom';
@@ -8,7 +12,7 @@ import {
     Icon,
 } from 'antd';
 
-import { EmptyTasksIcon } from '../../icons';
+import { EmptyTasksIcon } from 'icons';
 
 export default function EmptyListComponent(): JSX.Element {
     return (

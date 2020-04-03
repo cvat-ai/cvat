@@ -7,6 +7,8 @@
         "noImplicitAny": true,
         "preserveConstEnums": true,
         "declaration": true,
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
         "moduleResolution": "node",
         "declarationDir": "dist/declaration",
         "paths": {

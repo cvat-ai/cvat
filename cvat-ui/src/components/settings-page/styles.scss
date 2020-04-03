@@ -1,0 +1,90 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-settings-page {
+    > div:nth-child(1) {
+        margin-top: 30px;
+        margin-bottom: 10px;
+    }
+}
+
+.cvat-workspace-settings, .cvat-player-settings {
+    width: 100%;
+    height: max-content;
+    background: $background-color-1;
+    padding: 50px;
+}
+
+.cvat-player-settings-grid,
+.cvat-workspace-settings-auto-save,
+.cvat-workspace-settings-show-interpolated-checkbox {
+    margin-bottom: 10px;
+}
+
+.cvat-player-settings-grid-size,
+.cvat-player-settings-grid-color,
+.cvat-player-settings-grid-opacity,
+.cvat-player-settings-step,
+.cvat-player-settings-speed,
+.cvat-player-settings-reset-zoom,
+.cvat-player-settings-rotate-all,
+.cvat-workspace-settings-show-interpolated,
+.cvat-workspace-settings-aam-zoom-margin,
+.cvat-workspace-settings-auto-save-interval {
+    margin-bottom: 25px;
+}
+
+.cvat-player-settings-grid-size,
+.cvat-player-settings-grid-color,
+.cvat-player-settings-grid-opacity {
+    display: grid;
+    justify-items: start;
+}
+
+.cvat-player-settings-grid-color {
+    > .ant-select {
+        width: 150px;
+    }
+}
+
+.cvat-player-settings-grid-opacity {
+    > .ant-slider {
+        width: 150px;
+    }
+}
+
+.cvat-player-settings-step,
+.cvat-player-settings-speed {
+    > div {
+        display: grid;
+        justify-items: start;
+    }
+}
+
+.cvat-player-settings-step > div > span > i {
+    margin: 0px 5px;
+    font-size: 10px;
+}
+
+.cvat-player-settings-speed > div > .ant-select {
+    width: 90px;
+}
+
+.cvat-player-settings-brightness,
+.cvat-player-settings-contrast,
+.cvat-player-settings-saturation {
+    width: 40%;
+}
+
+.cvat-settings-page-back-button {
+    width: 100px;
+    margin-top: 15px;
+}
+
+.cvat-settings-page-back-button-wrapper {
+    display: flex;
+    justify-content: flex-end;
+}

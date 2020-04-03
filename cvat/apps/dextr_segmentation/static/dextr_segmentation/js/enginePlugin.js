@@ -54,7 +54,8 @@ window.addEventListener('DOMContentLoaded', () => {
             Object.defineProperty(instance, 'defaultType', {
                 get: () => instance._defaultType,
                 set: (type) => {
-                    if (!['box', 'points', 'polygon', 'polyline', 'auto_segmentation'].includes(type)) {
+                    if (!['box', 'box_by_4_points', 'points', 'polygon',
+                        'polyline', 'auto_segmentation', 'cuboid'].includes(type)) {
                         throw Error(`Unknown shape type found ${type}`);
                     }
                     instance._defaultType = type;

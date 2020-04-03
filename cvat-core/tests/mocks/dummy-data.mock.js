@@ -2522,78 +2522,126 @@ const taskAnnotationsDummyData = {
 const jobAnnotationsDummyData = JSON.parse(JSON.stringify(taskAnnotationsDummyData));
 
 const frameMetaDummyData = {
-    1: [{
-          "width": 1920,
-          "height": 1080
-        }, {
-          "width": 1600,
-          "height": 1143
-        }, {
-          "width": 1600,
-          "height": 859
-        }, {
-          "width": 3840,
-          "height": 2160
-        }, {
-          "width": 2560,
-          "height": 1920
-        }, {
-          "width": 1920,
-          "height": 1080
-        }, {
-          "width": 1920,
-          "height": 1080
-        }, {
-          "width": 700,
-          "height": 453
-        }, {
-          "width": 1920,
-          "height": 1200
-    }],
-    2: [{
-          "width": 1920,
-          "height": 1080
-    }],
-    3: [{
-          "width": 1888,
-          "height": 1408
-    }],
-    100: [{
-          "width": 1920,
-          "height": 1080
-        }, {
-          "width": 1600,
-          "height": 1143
-        }, {
-          "width": 1600,
-          "height": 859
-        }, {
-          "width": 3840,
-          "height": 2160
-        }, {
-          "width": 2560,
-          "height": 1920
-        }, {
-          "width": 1920,
-          "height": 1080
-        }, {
-          "width": 1920,
-          "height": 1080
-        }, {
-          "width": 700,
-          "height": 453
-        }, {
-          "width": 1920,
-          "height": 1200
-    }],
-    101: [{
-          "width": 1888,
-          "height": 1408
-    }],
-    102: [{
-        "width":1920,
-        "height":1080
-    }],
+       1: {
+        "chunk_size": 36,
+        "size": 9,
+        "image_quality": 95,
+        "start_frame": 0,
+        "stop_frame": 8,
+        "frame_filter": "",
+        "frames":[{
+                "width": 1920,
+                "height": 1080
+            }, {
+                "width": 1600,
+                "height": 1143
+            }, {
+                "width": 1600,
+                "height": 859
+            }, {
+                "width": 3840,
+                "height": 2160
+            }, {
+                "width": 2560,
+                "height": 1920
+            }, {
+                "width": 1920,
+                "height": 1080
+            }, {
+                "width": 1920,
+                "height": 1080
+            }, {
+                "width": 700,
+                "height": 453
+            }, {
+                "width": 1920,
+                "height": 1200
+        }],
+    },
+    2: {
+        "chunk_size": 36,
+        "size": 75,
+        "image_quality": 50,
+        "start_frame": 0,
+        "stop_frame": 74,
+        "frame_filter": "",
+        "frames": [{
+            "width": 1920,
+            "height": 1080
+        }],
+    },
+    3: {
+        "chunk_size": 36,
+        "size": 5002,
+        "image_quality": 50,
+        "start_frame": 0,
+        "stop_frame": 5001,
+        "frame_filter": "",
+        "frames": [{
+            "width": 1888,
+            "height": 1408
+        }],
+    },
+    100: {
+        "chunk_size": 36,
+        "size": 9,
+        "image_quality": 50,
+        "start_frame": 0,
+        "stop_frame": 8,
+        "frame_filter": "",
+        "frames": [{
+            "width": 1920,
+            "height": 1080
+          }, {
+            "width": 1600,
+            "height": 1143
+          }, {
+            "width": 1600,
+            "height": 859
+          }, {
+            "width": 3840,
+            "height": 2160
+          }, {
+            "width": 2560,
+            "height": 1920
+          }, {
+            "width": 1920,
+            "height": 1080
+          }, {
+            "width": 1920,
+            "height": 1080
+          }, {
+            "width": 700,
+            "height": 453
+          }, {
+            "width": 1920,
+            "height": 1200
+        }],
+    },
+    101: {
+        "chunk_size": 36,
+        "size": 5002,
+        "image_quality": 50,
+        "start_frame": 0,
+        "stop_frame": 5001,
+        "frame_filter": "",
+        "frames": [{
+            "width": 1888,
+            "height": 1408
+        }],
+    },
+    102: {
+        "chunk_size": 36,
+        "size": 1,
+        "image_quality": 50,
+        "start_frame": 0,
+        "stop_frame": 0,
+        "frame_filter": "",
+        "frames": [{
+            "width":1920,
+            "height":1080
+        }],
+    },
 }
 
 module.exports = {
@@ -2606,3 +2654,4 @@ module.exports = {
     frameMetaDummyData,
     formatsDummyData,
 }
+

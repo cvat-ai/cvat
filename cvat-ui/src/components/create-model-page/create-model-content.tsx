@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -13,13 +17,14 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
+import ConnectedFileManager, {
+    FileManagerContainer,
+} from 'containers/file-manager/file-manager';
+import { ModelFiles } from 'reducers/interfaces';
+
 import CreateModelForm, {
     CreateModelForm as WrappedCreateModelForm,
 } from './create-model-form';
-import ConnectedFileManager, {
-    FileManagerContainer,
-} from '../../containers/file-manager/file-manager';
-import { ModelFiles } from '../../reducers/interfaces';
 
 interface Props {
     createModel(name: string, files: ModelFiles, global: boolean): void;
@@ -106,7 +111,7 @@ export default class CreateModelContent extends React.PureComponent<Props> {
         return (
             <Row type='flex' justify='start' align='middle' className='cvat-create-model-content'>
                 <Col span={24}>
-                    <Tooltip overlay='Click to open guide'>
+                    <Tooltip title='Click to open guide'>
                         <Icon
                             onClick={(): void => {
                                 // false positive

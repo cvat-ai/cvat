@@ -1,16 +1,20 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { connect } from 'react-redux';
 
-import ModelRunnerModalComponent from '../../components/model-runner-modal/model-runner-modal';
+import ModelRunnerModalComponent from 'components/model-runner-modal/model-runner-modal';
 import {
     Model,
     CombinedState,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 import {
     getModelsAsync,
-    inferModelAsync,
-    closeRunModelDialog,
-} from '../../actions/models-actions';
+    startInferenceAsync,
+    modelsActions,
+} from 'actions/models-actions';
 
 
 interface StateToProps {
@@ -60,13 +64,13 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             },
             cleanOut: boolean,
         ): void {
-            dispatch(inferModelAsync(taskInstance, model, mapping, cleanOut));
+            dispatch(startInferenceAsync(taskInstance, model, mapping, cleanOut));
         },
         getModels(): void {
             dispatch(getModelsAsync());
         },
         closeDialog(): void {
-            dispatch(closeRunModelDialog());
+            dispatch(modelsActions.closeRunModelDialog());
         },
     });
 }

@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import './styles.scss';
 import React from 'react';
 
@@ -119,8 +123,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                                 {`${files.local.length} files selected`}
                             </Text>
                         </>
-                    )
-                }
+                    )}
             </Tabs.TabPane>
         );
     }
@@ -182,12 +185,12 @@ export default class FileManager extends React.PureComponent<Props, State> {
                                             share: keys,
                                         },
                                     });
-                                }}
+                                }
+                            }
                         >
                             { renderTreeNodes(treeData) }
                         </Tree>
-                    ) : <Text className='cvat-text-color'>No data found</Text>
-                }
+                    ) : <Text className='cvat-text-color'>No data found</Text>}
             </Tabs.TabPane>
         );
     }
@@ -216,11 +219,13 @@ export default class FileManager extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const { withRemote } = this.props;
+        const { active } = this.state;
 
         return (
             <>
                 <Tabs
                     type='card'
+                    activeKey={active}
                     tabBarGutter={5}
                     onChange={
                         (activeKey: string): void => this.setState({

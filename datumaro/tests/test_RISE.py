@@ -1,10 +1,9 @@
 from collections import namedtuple
-import cv2
 import numpy as np
 
 from unittest import TestCase
 
-from datumaro.components.extractor import LabelObject, BboxObject
+from datumaro.components.extractor import Label, Bbox
 from datumaro.components.launcher import Launcher
 from datumaro.components.algorithms.rise import RISE
 
@@ -32,7 +31,7 @@ class RiseTest(TestCase):
                 other_conf = (1.0 - cls_conf) / (self.class_count - 1)
 
                 return [
-                    LabelObject(i, attributes={
+                    Label(i, attributes={
                         'score': cls_conf if cls == i else other_conf }) \
                     for i in range(self.class_count)
                 ]
@@ -94,7 +93,7 @@ class RiseTest(TestCase):
                     if roi.threshold < roi_sum / roi_base_sum:
                         cls = roi.label
                         detections.append(
-                            BboxObject(roi.x, roi.y, roi.w, roi.h,
+                            Bbox(roi.x, roi.y, roi.w, roi.h,
                                 label=cls, attributes={'score': cls_conf})
                         )
 
@@ -108,7 +107,7 @@ class RiseTest(TestCase):
                         box = [roi.x, roi.y, roi.w, roi.h]
                         offset = (np.random.rand(4) - 0.5) * self.pixel_jitter
                         detections.append(
-                            BboxObject(*(box + offset),
+                            Bbox(*(box + offset),
                                 label=cls, attributes={'score': cls_conf})
                         )
 
@@ -129,6 +128,7 @@ class RiseTest(TestCase):
         heatmaps_class_count = len(set([roi.label for roi in rois]))
         self.assertEqual(heatmaps_class_count + len(rois), len(heatmaps))
 
+        # import cv2
         # roi_image = image.copy()
         # for i, roi in enumerate(rois):
         #     cv2.rectangle(roi_image, (roi.x, roi.y), (roi.x + roi.w, roi.y + roi.h), (32 * i) * 3)
@@ -189,7 +189,7 @@ class RiseTest(TestCase):
         detections = []
         for i, roi in enumerate(rois):
             detections.append(
-                BboxObject(roi.x, roi.y, roi.w, roi.h,
+                Bbox(roi.x, roi.y, roi.w, roi.h,
                     label=roi.label, attributes={'score': roi.conf})
             )
 
@@ -199,10 +199,11 @@ class RiseTest(TestCase):
                 box = [roi.x, roi.y, roi.w, roi.h]
                 offset = (np.random.rand(4) - 0.5) * pixel_jitter
                 detections.append(
-                    BboxObject(*(box + offset),
+                    Bbox(*(box + offset),
                         label=cls, attributes={'score': cls_conf})
                 )
 
+        import cv2
         image = np.zeros((100, 100, 3))
         for i, det in enumerate(detections):
             roi = ROI(det.attributes['score'], *det.get_bbox(), det.label)

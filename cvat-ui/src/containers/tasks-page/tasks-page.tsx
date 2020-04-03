@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { connect } from 'react-redux';
 
@@ -5,14 +9,14 @@ import {
     Task,
     TasksQuery,
     CombinedState,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
-import TasksPageComponent from '../../components/tasks-page/tasks-page';
+import TasksPageComponent from 'components/tasks-page/tasks-page';
 
 import {
     getTasksAsync,
     hideEmptyTasks,
-} from '../../actions/tasks-actions';
+} from 'actions/tasks-actions';
 
 interface StateToProps {
     tasksFetching: boolean;

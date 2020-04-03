@@ -4,7 +4,10 @@ import logging
 import os
 import requests
 from io import BytesIO
+import mimetypes
+
 from PIL import Image
+
 from .definition import ResourceType
 log = logging.getLogger(__name__)
 
@@ -18,7 +21,7 @@ class CLI():
     def tasks_data(self, task_id, resource_type, resources):
         """ Add local, remote, or shared files to an existing task. """
         url = self.api.tasks_id_data(task_id)
-        data = None
+        data = {}
         files = None
         if resource_type == ResourceType.LOCAL:
             files = {'client_files[{}]'.format(i): open(f, 'rb') for i, f in enumerate(resources)}
@@ -26,6 +29,7 @@ class CLI():
             data = {'remote_files[{}]'.format(i): f for i, f in enumerate(resources)}
         elif resource_type == ResourceType.SHARE:
             data = {'server_files[{}]'.format(i): f for i, f in enumerate(resources)}
+        data['image_quality'] = 50
         response = self.session.post(url, data=data, files=files)
         response.raise_for_status()
 
@@ -56,7 +60,7 @@ class CLI():
         data = {'name': name,
                 'labels': labels,
                 'bug_tracker': bug,
-                'image_quality': 50}
+        }
         response = self.session.post(url, json=data)
         response.raise_for_status()
         response_json = response.json()
@@ -77,15 +81,23 @@ class CLI():
                 else:
                     raise e
 
-    def tasks_frame(self, task_id, frame_ids, outdir='', **kwargs):
+    def tasks_frame(self, task_id, frame_ids, outdir='', quality='original', **kwargs):
         """ Download the requested frame numbers for a task and save images as
         task_<ID>_frame_<FRAME>.jpg."""
         for frame_id in frame_ids:
-            url = self.api.tasks_id_frame_id(task_id, frame_id)
+            url = self.api.tasks_id_frame_id(task_id, frame_id, quality)
             response = self.session.get(url)
             response.raise_for_status()
             im = Image.open(BytesIO(response.content))
-            outfile = 'task_{}_frame_{:06d}.jpg'.format(task_id, frame_id)
+            mime_type = im.get_format_mimetype() or 'image/jpg'
+            im_ext = mimetypes.guess_extension(mime_type)
+            # FIXME It is better to use meta information from the server
+            # to determine the extension
+            # replace '.jpe' or '.jpeg' with a more used '.jpg'
+            if im_ext == '.jpe' or '.jpeg' or None:
+                im_ext = '.jpg'
+
+            outfile = 'task_{}_frame_{:06d}{}'.format(task_id, frame_id, im_ext)
             im.save(os.path.join(outdir, outfile))
 
     def tasks_dump(self, task_id, fileformat, filename, **kwargs):
@@ -149,8 +161,8 @@ class CVAT_API_V1():
     def tasks_id_data(self, task_id):
         return self.tasks_id(task_id) + '/data'
 
-    def tasks_id_frame_id(self, task_id, frame_id):
-        return self.tasks_id(task_id) + '/frames/{}'.format(frame_id)
+    def tasks_id_frame_id(self, task_id, frame_id, quality):
+        return self.tasks_id(task_id) + '/data?type=frame&number={}&quality={}'.format(frame_id, quality)
 
     def tasks_id_annotations_format(self, task_id, fileformat):
         return self.tasks_id(task_id) + '/annotations?format={}' \

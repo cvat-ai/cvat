@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { connect } from 'react-redux';
 
@@ -5,13 +9,13 @@ import {
     TasksState,
     TasksQuery,
     CombinedState,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
-import TasksListComponent from '../../components/tasks-page/task-list';
+import TasksListComponent from 'components/tasks-page/task-list';
 
 import {
     getTasksAsync,
-} from '../../actions/tasks-actions';
+} from 'actions/tasks-actions';
 
 interface StateToProps {
     tasks: TasksState;

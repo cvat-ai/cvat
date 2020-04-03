@@ -25,13 +25,15 @@
   - [Annotation mode (advanced)](#annotation-mode-advanced)
   - [Interpolation mode (advanced)](#interpolation-mode-advanced)
   - [Attribute annotation mode (advanced)](#attribute-annotation-mode-advanced)
+  - [Annotation with box by 4 points](#annotation-with-box-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
+  - [Annotation with cuboids](#annotation-with-cuboids)
   - [Annotation with points](#annotation-with-points)
     - [Points in annotation mode](#points-in-annotation-mode)
     - [Linear interpolation with one point](#linear-interpolation-with-one-point)
   - [Annotation with Auto Segmentation](#annotation-with-auto-segmentation)
-  - [Automatic annotation](#auto-annotation)
+  - [Automatic annotation](#automatic-annotation)
   - [Shape grouping](#shape-grouping)
   - [Filter](#filter)
   - [Analytics](#analytics)
@@ -213,8 +215,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       is highlighted if a task has the interpolation mode.
       - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
       is highlighted if a task has the annotation mode. 
-      - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
-      - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
+      - [PASCAL VOC ZIP 1.1](http://host.robots.ox.ac.uk/pascal/VOC/)
+      - [YOLO ZIP 1.1](https://pjreddie.com/darknet/yolo/)
       - [COCO JSON 1.0](http://cocodataset.org/#format-data)
       - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file
       with the value of each color.
@@ -522,8 +524,8 @@ Usage examples:
 
     ![](static/documentation/images/image029.jpg "Example XML format") 
 
-    - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
-    - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
+    - [PASCAL VOC ZIP 1.1](http://host.robots.ox.ac.uk/pascal/VOC/)
+    - [YOLO ZIP 1.1](https://pjreddie.com/darknet/yolo/)
     - [COCO JSON 1.0](http://cocodataset.org/#format-data)
     - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file with
     the value of each color
@@ -934,6 +936,20 @@ To navigate between objects (pedestrians in the case), use the following shortcu
 By default, objects in the mode are zoomed. Check
 ``Open Menu`` —> ``Settings`` —> ``AAM Zoom Margin`` to adjust that.
 
+## Annotation with box by 4 points
+It is an efficient method of bounding box annotation, proposed 
+[here](https://arxiv.org/pdf/1708.02750.pdf). 
+Before starting, you need to be sure that ``Box by 4 points`` is selected.
+
+![](static/documentation/images/image134.jpg)
+
+Press ``N`` for entering drawing mode. Click exactly four extreme points: 
+the top, bottom, left- and right-most physical points on the object. 
+Drawing is automatically completed right after clicking the fourth point. 
+Press ``Esc`` to cancel editing.
+
+![](static/documentation/images/gif016.gif)
+
 ## Annotation with polygons
 
 It is used for semantic / instance segmentation.
@@ -1001,6 +1017,62 @@ of points in the "poly shape size" field, then drawing will be stopped
 automatically. You can adjust the polyline after it has been drawn.
 
 ![](static/documentation/images/image039.jpg)
+
+## Annotation with cuboids
+
+It is used to annotate 3 dimensional objects such as cars, boxes, etc... 
+Currently the feature supports one point perspective and has the contraint
+where the vertical edges are exactly parallel to the sides. 
+
+### Creating the cuboid
+
+Before starting, you have to be sure that ``Cuboid`` is selected.
+
+Press ``N`` for entering drawing mode. There are many ways to draw a cuboid.
+You may draw the cuboid by placing 4 points, after which the drawing completes automatically.
+The first 3 points will represent a plane of the cuboid
+while the last point represents the depth of that plane.
+For the first 3 points, it is recomended to only draw the 2 closest side faces,
+as well as the top and bottom face. 
+
+A few examples:  
+![](static/documentation/images/CuboidDrawing1.gif)
+
+![](static/documentation/images/CuboidDrawing2.gif)
+
+![](static/documentation/images/CuboidDrawing3.gif)
+
+### Editing the cuboid
+
+The cuboid can be edited in multiple ways, by dragging points or by dragging certain faces. 
+First notice that there is a face that is painted with pink lines only, let us call it the front face. 
+
+The cuboid can be moved by simply dragging the shape as normal. 
+The cuboid can be extended by dragging on the point in the middle of the edges. 
+The cuboid can also be extended up and down by dragging the point at the vertices. 
+
+![](static/documentation/images/CuboidEditing1.gif)
+
+To draw with perpective effects it is assumed that the front face is the closest to the camera.
+To begin simply drag the points on the vertices that are not on the pink/front face while holding ``Shift``.
+The cuboid can then be edited as usual.
+
+![](static/documentation/images/EditingPerspective.gif)
+
+If you wish to reset perspective effects, you may right click on cuboid,
+and select ``Reset Perspective`` to return to a regular cuboid. 
+
+The location of the pink face can be swapped with the adjacent visible side face.
+This is done by right clicking on the cuboid and selecting ``Switch Perspective Orientation``.
+Note that this will also reset the perspective effects. 
+
+![](static/documentation/images/ResetPerspective.gif)
+
+Certain faces of the cuboid can also be edited,
+these faces are the left, right and dorsal faces, relative to the pink face. 
+Simply drag the faces to move them independently from the rest of the cuboid. 
+
+![](static/documentation/images/CuboidEditing2.gif)
 
 ## Annotation with points
 

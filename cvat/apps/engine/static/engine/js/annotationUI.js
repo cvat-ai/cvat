@@ -96,7 +96,7 @@ function setupFrameFilters() {
     const brightnessRange = $('#playerBrightnessRange');
     const contrastRange = $('#playerContrastRange');
     const saturationRange = $('#playerSaturationRange');
-    const frameBackground = $('#frameBackground');
+    const canvasBackground = $('#canvasBackground');
     const reset = $('#resetPlayerFilterButton');
     let brightness = 100;
     let contrast = 100;
@@ -105,7 +105,7 @@ function setupFrameFilters() {
     const { shortkeys } = window.cvat.config;
 
     function updateFilterParameters() {
-        frameBackground.css('filter', `contrast(${contrast}%) brightness(${brightness}%) saturate(${saturation}%)`);
+        canvasBackground.css('filter', `contrast(${contrast}%) brightness(${brightness}%) saturate(${saturation}%)`);
     }
 
     brightnessRange.attr('title', `
@@ -295,6 +295,8 @@ function setupMenu(job, task, shapeCollectionModel,
                     <td> ${byLabelsStat[labelId].polylines.interpolation} </td>
                     <td> ${byLabelsStat[labelId].points.annotation} </td>
                     <td> ${byLabelsStat[labelId].points.interpolation} </td>
+                    <td> ${byLabelsStat[labelId].cuboids.annotation} </td>
+                    <td> ${byLabelsStat[labelId].cuboids.interpolation} </td>
                     <td> ${byLabelsStat[labelId].manually} </td>
                     <td> ${byLabelsStat[labelId].interpolated} </td>
                     <td class="semiBold"> ${byLabelsStat[labelId].total} </td>
@@ -312,6 +314,8 @@ function setupMenu(job, task, shapeCollectionModel,
                 <td> ${totalStat.polylines.interpolation} </td>
                 <td> ${totalStat.points.annotation} </td>
                 <td> ${totalStat.points.interpolation} </td>
+                <td> ${totalStat.cuboids.annotation} </td>
+                <td> ${totalStat.cuboids.interpolation} </td>
                 <td> ${totalStat.manually} </td>
                 <td> ${totalStat.interpolated} </td>
                 <td> ${totalStat.total} </td>
@@ -484,12 +488,15 @@ function setupMenu(job, task, shapeCollectionModel,
 }
 
 
-function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, annotationFormats,
-    loadJobEvent) {
+function buildAnnotationUI(
+    jobData, taskData, imageMetaData,
+    annotationData, annotationFormats, loadJobEvent,
+) {
     // Setup some API
     window.cvat = {
         labelsInfo: new LabelsInfo(taskData.labels),
         translate: new CoordinateTranslator(),
+        frozen: true,
         player: {
             geometry: {
                 scale: 1,
@@ -507,6 +514,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
             task_id: taskData.id,
             mode: taskData.mode,
             images: imageMetaData,
+            chunk_size: taskData.data_chunk_size,
         },
         search: {
             value: window.location.search,
@@ -642,7 +650,6 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
     playerModel.shift(window.cvat.search.get('frame') || 0, true);
 
     const { shortkeys } = window.cvat.config;
-
     setupHelpWindow(shortkeys);
     setupSettingsWindow();
     setupMenu(jobData, taskData, shapeCollectionModel,
@@ -670,13 +677,15 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
         'track count': totalStat.boxes.annotation + totalStat.boxes.interpolation
             + totalStat.polygons.annotation + totalStat.polygons.interpolation
             + totalStat.polylines.annotation + totalStat.polylines.interpolation
-            + totalStat.points.annotation + totalStat.points.interpolation,
+            + totalStat.points.annotation + totalStat.points.interpolation
+            + totalStat.cuboids.annotation + totalStat.cuboids.interpolation,
         'frame count': window.cvat.player.frames.stop - window.cvat.player.frames.start + 1,
         'object count': totalStat.total,
         'box count': totalStat.boxes.annotation + totalStat.boxes.interpolation,
         'polygon count': totalStat.polygons.annotation + totalStat.polygons.interpolation,
         'polyline count': totalStat.polylines.annotation + totalStat.polylines.interpolation,
         'points count': totalStat.points.annotation + totalStat.points.interpolation,
+        'cuboid count': totalStat.cuboids.annotation + totalStat.cuboids.interpolation,
     });
     loadJobEvent.close();
 
@@ -702,12 +711,14 @@ function callAnnotationUI(jid) {
     $.get(`/api/v1/jobs/${jid}`).done((jobData) => {
         $.when(
             $.get(`/api/v1/tasks/${jobData.task_id}`),
-            $.get(`/api/v1/tasks/${jobData.task_id}/frames/meta`),
+            $.get(`/api/v1/tasks/${jobData.task_id}/data/meta`),
             $.get(`/api/v1/jobs/${jid}/annotations`),
             $.get('/api/v1/server/annotation/formats'),
         ).then((taskData, imageMetaData, annotationData, annotationFormats) => {
             $('#loadingOverlay').remove();
-            setTimeout(() => {
+            setTimeout(async () => {
+                window.cvat.config.backendAPI = `${window.location.origin}/api/v1`;
+                [window.cvatTask] = (await window.cvat.tasks.get({ id: taskData[0].id }));
                 buildAnnotationUI(jobData, taskData[0],
                     imageMetaData[0], annotationData[0], annotationFormats[0], loadJobEvent);
             });

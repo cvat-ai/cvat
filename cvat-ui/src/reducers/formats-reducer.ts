@@ -1,6 +1,10 @@
-import { AnyAction } from 'redux';
-import { FormatsActionTypes } from '../actions/formats-actions';
-import { AuthActionTypes } from '../actions/auth-actions';
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
+import { FormatsActionTypes, FormatsActions } from 'actions/formats-actions';
+import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 
 import { FormatsState } from './interfaces';
 
@@ -11,7 +15,10 @@ const defaultState: FormatsState = {
     fetching: false,
 };
 
-export default (state = defaultState, action: AnyAction): FormatsState => {
+export default (
+    state: FormatsState = defaultState,
+    action: FormatsActions | AuthActions | boundariesActions,
+): FormatsState => {
     switch (action.type) {
         case FormatsActionTypes.GET_FORMATS: {
             return {
@@ -34,10 +41,9 @@ export default (state = defaultState, action: AnyAction): FormatsState => {
                 initialized: true,
                 fetching: false,
             };
+        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
-            return {
-                ...defaultState,
-            };
+            return { ...defaultState };
         }
         default:
             return state;

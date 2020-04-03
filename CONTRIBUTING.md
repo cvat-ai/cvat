@@ -12,55 +12,69 @@ patches and features.
 
 Next steps should work on clear Ubuntu 18.04.
 
-- Install necessary dependencies:
+-   Install necessary dependencies:
+    ```sh
+    $ sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential nodejs npm curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
+    ```
+    Also please make sure that you have installed ffmpeg with all necessary libav* libraries and pkg-config package.
+    ```sh
+    # General dependencies
+    sudo apt-get install -y pkg-config
 
-```sh
-$ sudo apt-get install -y curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
-```
+    # Library components
+    sudo apt-get install -y \
+        libavformat-dev libavcodec-dev libavdevice-dev \
+        libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
+    ```
+    See [PyAV Dependencies installation guide](http://docs.mikeboers.com/pyav/develop/overview/installation.html#dependencies)
+    for details.
 
 -   Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
 for development
 
 -   Install CVAT on your local host:
+    ```sh
+    git clone https://github.com/opencv/cvat
+    cd cvat && mkdir logs keys
+    python3 -m venv .env
+    . .env/bin/activate
+    pip install -U pip wheel setuptools
+    pip install -r cvat/requirements/development.txt
+    pip install -r datumaro/requirements.txt
+    python manage.py migrate
+    python manage.py collectstatic
+    ```
 
-```sh
-git clone https://github.com/opencv/cvat
-cd cvat && mkdir logs keys
-python3 -m venv .env
-. .env/bin/activate
-pip install -U pip wheel
-pip install -r cvat/requirements/development.txt
-pip install -r datumaro/requirements.txt
-python manage.py migrate
-python manage.py collectstatic
-```
+-   Create a super user for CVAT:
+    ```sh
+    $ python manage.py createsuperuser
+    Username (leave blank to use 'django'): ***
+    Email address: ***
+    Password: ***
+    Password (again): ***
+    ```
 
-- Create a super user for CVAT:
+-   Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
+    ```sh
+    cd cvat-core && npm install && \
+    cd ../cvat-canvas && npm install && \
+    cd ../cvat-data && npm install && \
+    cd ../cvat-ui && npm install && npm start
+    ```
 
-```sh
-$ python manage.py createsuperuser
-Username (leave blank to use 'django'): ***
-Email address: ***
-Password: ***
-Password (again): ***
-```
+-   Open new terminal (Ctrl + Shift + T), run Visual Studio Code from the virtual environment
+    ```sh
+    cd .. && source .env/bin/activate && code
+    ```
 
-- Install UI packages and start UI debug server:
-```sh
-cd cvat-core && npm install
-cd ../cvat-ui && npm install
-npm start
-```
+-   Install followig vscode extensions:
+    - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
+    - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
+    - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+    - [vscode-remark-lint](https://marketplace.visualstudio.com/items?itemName=drewbourne.vscode-remark-lint)
+    - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
 
-- Run Visual Studio Code from the virtual environment
-
-```sh
- code .
-```
-
--   Inside Visual Studio Code install [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome) and [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extensions
-
--   Reload Visual Studio Code
+-   Reload Visual Studio Code from virtual environment
 
 -   Select `server: debug` configuration and start it (F5) to run REST server and its workers
 
@@ -90,8 +104,8 @@ to changes in ``.env/bin/activate`` file are active.
 - Perform all steps in the automatic annotation section
 - Download ReID model and save it somewhere:
 ```sh
-    wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -O reid.xml
-    wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -O reid.bin
+    curl https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -o reid.xml
+    curl https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -o reid.bin
 ```
 - Add next line to ``.env/bin/activate``:
 ```sh
@@ -102,7 +116,7 @@ to changes in ``.env/bin/activate`` file are active.
 - Perform all steps in the automatic annotation section
 - Download Deep Extreme Cut model, unpack it, and save somewhere:
 ```sh
-wget https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip -O dextr.zip
+curl https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip -o dextr.zip
 unzip dextr.zip
 ```
 - Add next lines to ``.env/bin/activate``:
@@ -114,7 +128,7 @@ unzip dextr.zip
 ### Tensorflow RCNN
 - Download RCNN model, unpack it, and save it somewhere:
 ```sh
-wget -O model.tar.gz http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_resnet_v2_atrous_coco_2018_01_28.tar.gz && \
+curl http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_resnet_v2_atrous_coco_2018_01_28.tar.gz -o model.tar.gz && \
 tar -xzf model.tar.gz
 ```
 - Add next lines to ``.env/bin/activate``:
@@ -126,7 +140,7 @@ tar -xzf model.tar.gz
 ### Tensorflow Mask RCNN
 - Download Mask RCNN model, and save it somewhere:
 ```sh
-wget https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5
+curl https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o mask_rcnn_coco.h5
 ```
 - Add next lines to ``.env/bin/activate``:
 ```sh

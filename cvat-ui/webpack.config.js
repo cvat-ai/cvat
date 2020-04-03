@@ -1,12 +1,14 @@
-/*
- * Copyright (C) 2019 Intel Corporation
- * SPDX-License-Identifier: MIT
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 
 /* eslint-disable */
 const path = require('path');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
+const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     target: 'web',
@@ -26,6 +28,7 @@ module.exports = {
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+        plugins: [new TsconfigPathsPlugin({ configFile: "./tsconfig.json" })]
     },
     module: {
         rules: [{
@@ -39,7 +42,7 @@ module.exports = {
                     }]],
                     presets: [
                         ['@babel/preset-env', {
-                            targets: '> 3%', // https://github.com/browserslist/browserslist
+                            targets: '> 2.5%', // https://github.com/browserslist/browserslist
                         }],
                         ['@babel/preset-react'],
                         ['@babel/typescript'],
@@ -48,16 +51,7 @@ module.exports = {
                 },
             },
         }, {
-            test: /node_modules\/antd\/[\w\/]*.less$/,
-            use: ['style-loader', 'css-loader', {
-                loader: 'less-loader',
-                options: {
-                    javascriptEnabled: true,
-                },
-            }]
-        }, {
             test: /\.(css|scss)$/,
-            exclude: /node_modules/,
             use: ['style-loader', {
                 loader: 'css-loader',
                 options: {
@@ -80,16 +74,41 @@ module.exports = {
                     },
                 }
             ]
-        }],
+        }, {
+            test: /3rdparty\/.*\.worker\.js$/,
+            use: {
+                loader: 'worker-loader',
+                options: {
+                    publicPath: '/',
+                    name: '3rdparty/[name].js',
+                },
+            },
+        }, {
+            test: /\.worker\.js$/,
+            exclude: /3rdparty/,
+            use: {
+                loader: 'worker-loader',
+                options: {
+                    publicPath: '/',
+                    name: '[name].js',
+                },
+            },
+        },],
     },
     plugins: [
         new HtmlWebpackPlugin({
-          template: "./src/index.html",
-          inject: false,
+            template: "./src/index.html",
+            inject: false,
         }),
         new Dotenv({
             systemvars: true,
         }),
+        new CopyPlugin([
+            {
+                from: '../cvat-data/src/js/3rdparty/avc.wasm',
+                to: '3rdparty/',
+            },
+        ]),
     ],
     node: { fs: 'empty' },
 };

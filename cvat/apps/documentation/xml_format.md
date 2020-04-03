@@ -1,10 +1,10 @@
 # XML annotation format
 
-When you want to download annotations from Computer Vision Annotation Tool (CVAT) you can choose one of several data formats. The document describes XML annotation format. Each format has X.Y version (e.g. 1.0). In general the major version (X) is incremented then the data format has incompatible changes and the minor version (Y) is incremented then the data format is slightly modified (e.g. it has one or several extra fields inside meta information). The document will describe all changes for all versions of XML annotation format.
+When you want to download annotations from Computer Vision Annotation Tool (CVAT) you can choose one of several data formats. The document describes XML annotation format. Each format has X.Y version (e.g. 1.0). In general the major version (X) is incremented when the data format has incompatible changes and the minor version (Y) is incremented when the data format is slightly modified (e.g. it has one or several extra fields inside meta information). The document will describe all changes for all versions of XML annotation format.
 
 ## Version 1.1
 
-There are two different formats for annotation and interpolation modes at the moment. Both formats has a common part which is described below. From previous version `flipped` tag was added. Also `original_size` tag was added for interpolation mode to specify frame size. In annotation mode each image tag has `width` and `height` attributes for the same purpose.
+There are two different formats for annotation and interpolation modes at the moment. Both formats have a common part which is described below. From previous version `flipped` tag was added. Also `original_size` tag was added for interpolation mode to specify frame size. In annotation mode each image tag has `width` and `height` attributes for the same purpose.
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -25,7 +25,15 @@ There are two different formats for annotation and interpolation modes at the mo
         <label>
           <name>String: name of the label (e.g. car, person)</name>
           <attributes>
-            <attribute>String: attributes for the label (e.g. @select=quality:good,bad)</attribute>
+            <attribute>
+              <name>String: attribute name</name>
+              <mutable>Boolean: mutable (allow different values between frames)</mutable>
+              <input_type>String: select, checkbox, radio, number, text</input_type>
+              <default_value>String: default value</default_value>
+              <values>String: possible values, separated by newlines
+ex. value 2
+ex. value 3</values>
+            </attribute>
           </attributes>
         </label>
       </labels>
@@ -53,8 +61,8 @@ There are two different formats for annotation and interpolation modes at the mo
 ```
 
 ### Annotation
-Below you can find description of the data format for annotation mode. In the mode images are annotated. On each image it is possible to have many different objects. Each object can have multiple attributes. If an annotation task has been
-created with `z_order` flag then each object will have `z_order` attribute which is used to draw objects properly when they are intersected (if `z_order` is bigger the object is closer to camera). In previous version of the format only `box` shape was available. In the release `polygon`, `polyline`, and `points` were added. Please see below for more details:
+Below you can find description of the data format for annotation mode. In this mode images are annotated. On each image it is possible to have many different objects. Each object can have multiple attributes. If an annotation task has been
+created with `z_order` flag then each object will have `z_order` attribute which is used to draw objects properly when they are intersected (if `z_order` is bigger the object is closer to camera). In previous versions of the format only `box` shape was available. In later releases `polygon`, `polyline`, and `points` were added. Please see below for more details:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -379,7 +387,7 @@ Example:
 ```
 
 ### Interpolation
-Below you can find description of the data format for interpolation mode. In the mode frames are annotated. The annotation contains tracks. Each track corresponds to an object which can be presented on multiple frames. The same object cannot be presented on the same frame in multiple locations. Each location of the object can have multiple attributes even if an attribute is immutable for the object it will be cloned for each location (a known redundancy).
+Below you can find description of the data format for interpolation mode. In this mode frames are annotated. The annotation contains tracks. Each track corresponds to an object which can be presented on multiple frames. The same object cannot be presented on the same frame in multiple locations. Each location of the object can have multiple attributes even if an attribute is immutable for the object it will be cloned for each location (a known redundancy).
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>

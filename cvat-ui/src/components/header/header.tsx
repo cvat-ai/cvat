@@ -1,27 +1,21 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import './styles.scss';
 import React from 'react';
-
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
-
-import {
-    Layout,
-    Icon,
-    Button,
-    Menu,
-    Dropdown,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Layout from 'antd/lib/layout';
+import Icon from 'antd/lib/icon';
+import Button from 'antd/lib/button';
+import Menu from 'antd/lib/menu';
+import Dropdown from 'antd/lib/dropdown';
+import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 
-import getCore from '../../core';
-import {
-    CVATLogo,
-    AccountIcon,
-} from '../../icons';
-
-const core = getCore();
-const serverHost = core.config.backendAPI.slice(0, -7);
+import { CVATLogo, AccountIcon } from 'icons';
 
 interface HeaderContainerProps {
     onLogout: () => void;
@@ -30,7 +24,15 @@ interface HeaderContainerProps {
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
+    serverHost: string;
     username: string;
+    toolName: string;
+    serverVersion: string;
+    serverDescription: string;
+    coreVersion: string;
+    canvasVersion: string;
+    uiVersion: string;
+    switchSettingsShortcut: string;
 }
 
 type Props = HeaderContainerProps & RouteComponentProps;
@@ -42,21 +44,96 @@ function HeaderContainer(props: Props): JSX.Element {
         installedTFAnnotation,
         installedAnalytics,
         username,
+        toolName,
+        serverHost,
+        serverVersion,
+        serverDescription,
+        coreVersion,
+        canvasVersion,
+        uiVersion,
         onLogout,
         logoutFetching,
+        switchSettingsShortcut,
     } = props;
 
     const renderModels = installedAutoAnnotation
         || installedTFAnnotation
         || installedTFSegmentation;
 
+    function aboutModal(): void {
+        const CHANGELOG = 'https://github.com/opencv/cvat/blob/develop/CHANGELOG.md';
+        const LICENSE = 'https://github.com/opencv/cvat/blob/develop/LICENSE';
+        const GITTER = 'https://gitter.im/opencv-cvat';
+        const FORUM = 'https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit';
+
+        Modal.info({
+            title: `${toolName}`,
+            content: (
+                <div>
+                    <p>
+                        {`${serverDescription}`}
+                    </p>
+                    <p>
+                        <Text strong>
+                            Server version:
+                        </Text>
+                        <Text type='secondary'>
+                            {` ${serverVersion}`}
+                        </Text>
+                    </p>
+                    <p>
+                        <Text strong>
+                            Core version:
+                        </Text>
+                        <Text type='secondary'>
+                            {` ${coreVersion}`}
+                        </Text>
+                    </p>
+                    <p>
+                        <Text strong>
+                            Canvas version:
+                        </Text>
+                        <Text type='secondary'>
+                            {` ${canvasVersion}`}
+                        </Text>
+                    </p>
+                    <p>
+                        <Text strong>
+                            UI version:
+                        </Text>
+                        <Text type='secondary'>
+                            {` ${uiVersion}`}
+                        </Text>
+                    </p>
+                    <Row type='flex' justify='space-around'>
+                        <Col><a href={CHANGELOG} target='_blank' rel='noopener noreferrer'>{'What\'s new?'}</a></Col>
+                        <Col><a href={LICENSE} target='_blank' rel='noopener noreferrer'>License</a></Col>
+                        <Col><a href={GITTER} target='_blank' rel='noopener noreferrer'>Need help?</a></Col>
+                        <Col><a href={FORUM} target='_blank' rel='noopener noreferrer'>Forum on Intel Developer Zone</a></Col>
+                    </Row>
+                </div>
+            ),
+            width: 800,
+            okButtonProps: {
+                style: {
+                    width: '100px',
+                },
+            },
+        });
+    }
+
     const menu = (
         <Menu className='cvat-header-menu' mode='vertical'>
-            <Menu.Item>
+            <Menu.Item
+                title={`Press ${switchSettingsShortcut} to switch`}
+                onClick={
+                    (): void => props.history.push('/settings')
+                }
+            >
                 <Icon type='setting' />
                 Settings
             </Menu.Item>
-            <Menu.Item>
+            <Menu.Item onClick={() => aboutModal()}>
                 <Icon type='info-circle' />
                 About
             </Menu.Item>
@@ -98,8 +175,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         >
                             Models
                         </Button>
-                    )
-                }
+                    )}
                 { installedAnalytics
                     && (
                         <Button
@@ -115,8 +191,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         >
                             Analytics
                         </Button>
-                    )
-                }
+                    )}
             </div>
             <div className='cvat-right-header'>
                 <Button

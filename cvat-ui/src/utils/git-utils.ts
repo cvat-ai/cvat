@@ -1,4 +1,8 @@
-import getCore from '../core';
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import getCore from 'cvat-core';
 
 const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);

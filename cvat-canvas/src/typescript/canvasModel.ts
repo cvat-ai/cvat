@@ -1,17 +1,18 @@
-/*
-* Copyright (C) 2019 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
-
-// Disable till full implementation
-/* eslint class-methods-use-this: "off" */
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 import { MasterImpl } from './master';
-
 
 export interface Size {
     width: number;
     height: number;
+}
+
+export interface Image {
+    renderWidth: number;
+    renderHeight: number;
+    imageData: ImageData | CanvasImageSource;
 }
 
 export interface Position {
@@ -36,13 +37,19 @@ export interface FocusData {
 }
 
 export interface ActiveElement {
-    clientID: number;
-    attributeID: number;
+    clientID: number | null;
+    attributeID: number | null;
+}
+
+export enum RectDrawingMethod {
+    CLASSIC = 'By 2 points',
+    EXTREME_POINTS = 'By 4 points'
 }
 
 export interface DrawData {
     enabled: boolean;
     shapeType?: string;
+    rectDrawingMethod?: RectDrawingMethod;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
@@ -71,26 +78,29 @@ export enum FrameZoom {
     MAX = 10,
 }
 
-export enum Rotation {
-    ANTICLOCKWISE90,
-    CLOCKWISE90,
-}
-
 export enum UpdateReasons {
-    IMAGE = 'image',
-    OBJECTS = 'objects',
-    ZOOM = 'zoom',
-    FIT = 'fit',
-    MOVE = 'move',
-    GRID = 'grid',
-    FOCUS = 'focus',
-    ACTIVATE = 'activate',
+    IMAGE_CHANGED = 'image_changed',
+    IMAGE_ZOOMED = 'image_zoomed',
+    IMAGE_FITTED = 'image_fitted',
+    IMAGE_MOVED = 'image_moved',
+    GRID_UPDATED = 'grid_updated',
+    SET_Z_LAYER = 'set_z_layer',
+
+    OBJECTS_UPDATED = 'objects_updated',
+    SHAPE_ACTIVATED = 'shape_activated',
+    SHAPE_FOCUSED = 'shape_focused',
+
+    FITTED_CANVAS = 'fitted_canvas',
+
     DRAW = 'draw',
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
     SELECT = 'select',
     CANCEL = 'cancel',
+    BITMAP = 'bitmap',
+    DRAG_CANVAS = 'drag_canvas',
+    ZOOM_CANVAS = 'zoom_canvas',
 }
 
 export enum Mode {
@@ -102,11 +112,15 @@ export enum Mode {
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
+    DRAG_CANVAS = 'drag_canvas',
+    ZOOM_CANVAS = 'zoom_canvas',
 }
 
 export interface CanvasModel {
-    readonly image: string;
+    readonly imageBitmap: boolean;
+    readonly image: Image | null;
     readonly objects: any[];
+    readonly zLayer: number | null;
     readonly gridSize: Size;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
@@ -118,12 +132,13 @@ export interface CanvasModel {
     geometry: Geometry;
     mode: Mode;
 
+    setZLayer(zLayer: number | null): void;
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
 
     setup(frameData: any, objectStates: any[]): void;
-    activate(clientID: number, attributeID: number): void;
-    rotate(rotation: Rotation, remember: boolean): void;
+    activate(clientID: number | null, attributeID: number | null): void;
+    rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -134,6 +149,11 @@ export interface CanvasModel {
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
 
+    fitCanvas(width: number, height: number): void;
+    bitmap(enabled: boolean): void;
+    dragCanvas(enable: boolean): void;
+    zoomCanvas(enable: boolean): void;
+
     cancel(): void;
 }
 
@@ -142,16 +162,18 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         activeElement: ActiveElement;
         angle: number;
         canvasSize: Size;
-        image: string;
+        imageBitmap: boolean;
+        image: Image | null;
+        imageID: number | null;
         imageOffset: number;
         imageSize: Size;
         focusData: FocusData;
         gridSize: Size;
         left: number;
         objects: any[];
-        rememberAngle: boolean;
         scale: number;
         top: number;
+        zLayer: number | null;
         drawData: DrawData;
         mergeData: MergeData;
         groupData: GroupData;
@@ -173,7 +195,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 height: 0,
                 width: 0,
             },
-            image: '',
+            imageBitmap: false,
+            image: null,
+            imageID: null,
             imageOffset: 0,
             imageSize: {
                 height: 0,
@@ -189,13 +213,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             left: 0,
             objects: [],
-            rememberAngle: false,
             scale: 1,
             top: 0,
+            zLayer: null,
             drawData: {
                 enabled: false,
-                shapeType: null,
-                numberOfPoints: null,
                 initialState: null,
             },
             mergeData: {
@@ -208,8 +230,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 enabled: false,
             },
             selected: null,
-            mode: null,
+            mode: Mode.IDLE,
         };
+    }
+
+    public setZLayer(zLayer: number | null): void {
+        this.data.zLayer = zLayer;
+        this.notify(UpdateReasons.SET_Z_LAYER);
     }
 
     public zoom(x: number, y: number, direction: number): void {
@@ -233,42 +260,94 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 * (oldScale / this.data.scale - 1)) * this.data.scale;
         }
 
-        this.notify(UpdateReasons.ZOOM);
+        this.notify(UpdateReasons.IMAGE_ZOOMED);
     }
 
     public move(topOffset: number, leftOffset: number): void {
         this.data.top += topOffset;
         this.data.left += leftOffset;
-        this.notify(UpdateReasons.MOVE);
+        this.notify(UpdateReasons.IMAGE_MOVED);
+    }
+
+    public fitCanvas(width: number, height: number): void {
+        this.data.canvasSize.height = height;
+        this.data.canvasSize.width = width;
+
+        this.data.imageOffset = Math.floor(Math.max(
+            this.data.canvasSize.height / FrameZoom.MIN,
+            this.data.canvasSize.width / FrameZoom.MIN,
+        ));
+
+        this.notify(UpdateReasons.FITTED_CANVAS);
+        this.notify(UpdateReasons.OBJECTS_UPDATED);
+    }
+
+    public bitmap(enabled: boolean): void {
+        this.data.imageBitmap = enabled;
+        this.notify(UpdateReasons.BITMAP);
+    }
+
+    public dragCanvas(enable: boolean): void {
+        if (enable && this.data.mode !== Mode.IDLE) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (!enable && this.data.mode !== Mode.DRAG_CANVAS) {
+            throw Error(`Canvas is not in the drag mode. Action: ${this.data.mode}`);
+        }
+
+        this.data.mode = enable ? Mode.DRAG_CANVAS : Mode.IDLE;
+        this.notify(UpdateReasons.DRAG_CANVAS);
+    }
+
+    public zoomCanvas(enable: boolean): void {
+        if (enable && this.data.mode !== Mode.IDLE) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (!enable && this.data.mode !== Mode.ZOOM_CANVAS) {
+            throw Error(`Canvas is not in the zoom mode. Action: ${this.data.mode}`);
+        }
+
+        this.data.mode = enable ? Mode.ZOOM_CANVAS : Mode.IDLE;
+        this.notify(UpdateReasons.ZOOM_CANVAS);
     }
 
     public setup(frameData: any, objectStates: any[]): void {
+        if (frameData.number === this.data.imageID) {
+            this.data.objects = objectStates;
+            this.notify(UpdateReasons.OBJECTS_UPDATED);
+            return;
+        }
+
+        this.data.imageID = frameData.number;
         frameData.data(
             (): void => {
-                this.data.image = '';
-                this.notify(UpdateReasons.IMAGE);
+                this.data.image = null;
+                this.notify(UpdateReasons.IMAGE_CHANGED);
             },
-        ).then((data: string): void => {
+        ).then((data: Image): void => {
+            if (frameData.number !== this.data.imageID) {
+                // already another image
+                return;
+            }
+
             this.data.imageSize = {
                 height: (frameData.height as number),
                 width: (frameData.width as number),
             };
 
-            if (!this.data.rememberAngle) {
-                this.data.angle = 0;
-            }
-
             this.data.image = data;
-            this.notify(UpdateReasons.IMAGE);
+            this.notify(UpdateReasons.IMAGE_CHANGED);
             this.data.objects = objectStates;
-            this.notify(UpdateReasons.OBJECTS);
+            this.notify(UpdateReasons.OBJECTS_UPDATED);
         }).catch((exception: any): void => {
             throw exception;
         });
     }
 
-    public activate(clientID: number, attributeID: number): void {
-        if (this.data.mode !== Mode.IDLE) {
+    public activate(clientID: number | null, attributeID: number | null): void {
+        if (this.data.mode !== Mode.IDLE && clientID !== null) {
             // Exception or just return?
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
@@ -278,19 +357,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             attributeID,
         };
 
-        this.notify(UpdateReasons.ACTIVATE);
+        this.notify(UpdateReasons.SHAPE_ACTIVATED);
     }
 
-    public rotate(rotation: Rotation, remember: boolean = false): void {
-        if (rotation === Rotation.CLOCKWISE90) {
-            this.data.angle += 90;
-        } else {
-            this.data.angle -= 90;
+    public rotate(rotationAngle: number): void {
+        if (this.data.angle !== rotationAngle) {
+            this.data.angle = (360 + Math.floor((rotationAngle) / 90) * 90) % 360;
+            this.fit();
         }
-
-        this.data.angle %= 360;
-        this.data.rememberAngle = remember;
-        this.fit();
     }
 
     public focus(clientID: number, padding: number): void {
@@ -299,7 +373,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             padding,
         };
 
-        this.notify(UpdateReasons.FOCUS);
+        this.notify(UpdateReasons.SHAPE_FOCUSED);
     }
 
     public fit(): void {
@@ -326,7 +400,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.top = (this.data.canvasSize.height / 2 - this.data.imageSize.height / 2);
         this.data.left = (this.data.canvasSize.width / 2 - this.data.imageSize.width / 2);
 
-        this.notify(UpdateReasons.FIT);
+        this.notify(UpdateReasons.IMAGE_FITTED);
     }
 
     public grid(stepX: number, stepY: number): void {
@@ -335,7 +409,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             width: stepX,
         };
 
-        this.notify(UpdateReasons.GRID);
+        this.notify(UpdateReasons.GRID_UPDATED);
     }
 
     public draw(drawData: DrawData): void {
@@ -454,11 +528,24 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         ));
     }
 
-    public get image(): string {
+    public get zLayer(): number | null {
+        return this.data.zLayer;
+    }
+
+    public get imageBitmap(): boolean {
+        return this.data.imageBitmap;
+    }
+
+    public get image(): Image | null {
         return this.data.image;
     }
 
     public get objects(): any[] {
+        if (this.data.zLayer !== null) {
+            return this.data.objects
+                .filter((object: any): boolean => object.zOrder <= this.data.zLayer);
+        }
+
         return this.data.objects;
     }
 

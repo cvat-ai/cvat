@@ -148,6 +148,11 @@ class ShapeBufferModel extends Listener  {
         let object = this._makeObject(box, polyPoints, this._shape.mode === 'interpolation');
 
         if (object) {
+            if (this._shape.type === 'cuboid'
+                && !CuboidModel.isWithinFrame(PolyShapeModel.convertStringToNumberArray(polyPoints))) {
+                return
+            }
+
             Logger.addEvent(Logger.EventType.pasteObject);
             if (this._shape.type === 'box') {
                 this._collection.add(object, `${this._shape.mode}_${this._shape.type}`);
@@ -194,7 +199,7 @@ class ShapeBufferModel extends Listener  {
 
                 let imageSizes = window.cvat.job.images;
                 let startFrame = window.cvat.player.frames.start;
-                let originalImageSize = imageSizes[object.frame - startFrame] || imageSizes[0];
+                let originalImageSize = imageSizes.frames[object.frame - startFrame] || imageSizes.frames[0];
 
                 // Getting normalized coordinates [0..1]
                 let normalized = {};
@@ -220,7 +225,7 @@ class ShapeBufferModel extends Listener  {
                     numOfFrames --;
 
                     object.z_order = this._collection.zOrder(object.frame).max;
-                    let imageSize = imageSizes[object.frame - startFrame] || imageSizes[0];
+                    let imageSize = imageSizes.frames[object.frame - startFrame] || imageSizes.frames[0];
                     let position = {};
                     if (this._shape.type === 'box') {
                         position.xtl = normalized.xtl * imageSize.width;
@@ -305,9 +310,9 @@ class ShapeBufferController {
                         let imageSizes = window.cvat.job.images;
 
                         let message = `Propagate up to ${endFrame} frame. `;
-                        let refSize = imageSizes[curFrame - startFrame] || imageSizes[0];
+                        let refSize = imageSizes.frames[curFrame - startFrame] || imageSizes.frames[0];
                         for (let _frame = curFrame + 1; _frame <= endFrame; _frame ++) {
-                            let size = imageSizes[_frame - startFrame] || imageSizes[0];
+                            let size = imageSizes.frames[_frame - startFrame] || imageSizes.frames[0];
                             if ((size.width != refSize.width) || (size.height != refSize.height) ) {
                                 message += 'Some covered frames have another resolution. Shapes in them can differ from reference. ';
                                 break;
@@ -389,6 +394,19 @@ class ShapeBufferView {
                 'stroke-width': STROKE_WIDTH / scale,
             });
             break;
+        case 'cuboid':
+            points = window.cvat.translate.points.canvasToActual(points);
+            points = PolylineModel.convertStringToNumberArray(points);
+            let view_model = new Cuboid2PointViewModel(points);
+            this._shapeView = this._frameContent.polyline(points).addClass('shapeCreation').attr({
+                'stroke-width': 0,
+            });
+
+            this._shapeViewGroup = this._frameContent.cube(view_model).addClass('shapeCreation').attr({
+                'stroke-width': STROKE_WIDTH / scale,
+            });
+
+            break;
         case 'polyline':
             this._shapeView = this._frameContent.polyline(points).addClass('shapeCreation').attr({
                 'stroke-width': STROKE_WIDTH / scale,
@@ -449,12 +467,14 @@ class ShapeBufferView {
                 let frameWidth = window.cvat.player.geometry.frameWidth;
                 let frameHeight = window.cvat.player.geometry.frameHeight;
 
-                actualPoints = PolyShapeModel.convertStringToNumberArray(actualPoints);
-                for (let point of actualPoints) {
-                    point.x = Math.clamp(point.x, 0, frameWidth);
-                    point.y = Math.clamp(point.y, 0, frameHeight);
+                if (this.clipToFrame) {
+                    actualPoints = PolyShapeModel.convertStringToNumberArray(actualPoints);
+                    for (let point of actualPoints) {
+                        point.x = Math.clamp(point.x, 0, frameWidth);
+                        point.y = Math.clamp(point.y, 0, frameHeight);
+                    }
+                    actualPoints = PolyShapeModel.convertNumberArrayToString(actualPoints);
                 }
-                actualPoints = PolyShapeModel.convertNumberArrayToString(actualPoints);
 
                 // Set clamped points to a view in order to get an updated bounding box for a poly shape
                 this._shapeView.attr('points', window.cvat.translate.points.actualToCanvas(actualPoints));

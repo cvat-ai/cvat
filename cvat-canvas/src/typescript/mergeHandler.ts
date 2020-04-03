@@ -1,3 +1,7 @@
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import * as SVG from 'svg.js';
 import { MergeData } from './canvasModel';
 
@@ -5,16 +9,18 @@ export interface MergeHandler {
     merge(mergeData: MergeData): void;
     select(state: any): void;
     cancel(): void;
+    repeatSelection(): void;
 }
 
 
 export class MergeHandlerImpl implements MergeHandler {
     // callback is used to notify about merging end
-    private onMergeDone: (objects: any[]) => void;
+    private onMergeDone: (objects: any[] | null, duration?: number) => void;
     private onFindObject: (event: MouseEvent) => void;
+    private startTimestamp: number;
     private canvas: SVG.Container;
     private initialized: boolean;
-    private states: any[]; // are being merged
+    private statesToBeMerged: any[]; // are being merged
     private highlightedShapes: Record<number, SVG.Shape>;
     private constraints: {
         labelID: number;
@@ -22,7 +28,7 @@ export class MergeHandlerImpl implements MergeHandler {
     };
 
     private addConstraints(): void {
-        const shape = this.states[0];
+        const shape = this.statesToBeMerged[0];
         this.constraints = {
             labelID: shape.label.id,
             shapeType: shape.shapeType,
@@ -41,27 +47,28 @@ export class MergeHandlerImpl implements MergeHandler {
     private release(): void {
         this.removeConstraints();
         this.canvas.node.removeEventListener('click', this.onFindObject);
-        for (const state of this.states) {
+        for (const state of this.statesToBeMerged) {
             const shape = this.highlightedShapes[state.clientID];
             shape.removeClass('cvat_canvas_shape_merging');
         }
-        this.states = [];
+        this.statesToBeMerged = [];
         this.highlightedShapes = {};
         this.initialized = false;
     }
 
     private initMerging(): void {
         this.canvas.node.addEventListener('click', this.onFindObject);
+        this.startTimestamp = Date.now();
         this.initialized = true;
     }
 
     private closeMerging(): void {
         if (this.initialized) {
-            const { states } = this;
+            const { statesToBeMerged } = this;
             this.release();
 
-            if (states.length > 1) {
-                this.onMergeDone(states);
+            if (statesToBeMerged.length > 1) {
+                this.onMergeDone(statesToBeMerged, Date.now() - this.startTimestamp);
             } else {
                 this.onMergeDone(null);
                 // here is a cycle
@@ -72,14 +79,15 @@ export class MergeHandlerImpl implements MergeHandler {
     }
 
     public constructor(
-        onMergeDone: (objects: any[]) => void,
+        onMergeDone: (objects: any[] | null, duration?: number) => void,
         onFindObject: (event: MouseEvent) => void,
         canvas: SVG.Container,
     ) {
         this.onMergeDone = onMergeDone;
         this.onFindObject = onFindObject;
+        this.startTimestamp = Date.now();
         this.canvas = canvas;
-        this.states = [];
+        this.statesToBeMerged = [];
         this.highlightedShapes = {};
         this.constraints = null;
         this.initialized = false;
@@ -94,31 +102,41 @@ export class MergeHandlerImpl implements MergeHandler {
     }
 
     public select(objectState: any): void {
-        const stateIndexes = this.states.map((state): number => state.clientID);
-        const stateFrames = this.states.map((state): number => state.frame);
+        const stateIndexes = this.statesToBeMerged.map((state): number => state.clientID);
+        const stateFrames = this.statesToBeMerged.map((state): number => state.frame);
         const includes = stateIndexes.indexOf(objectState.clientID);
         if (includes !== -1) {
             const shape = this.highlightedShapes[objectState.clientID];
-            this.states.splice(includes, 1);
+            this.statesToBeMerged.splice(includes, 1);
             if (shape) {
                 delete this.highlightedShapes[objectState.clientID];
                 shape.removeClass('cvat_canvas_shape_merging');
             }
 
-            if (!this.states.length) {
+            if (!this.statesToBeMerged.length) {
                 this.removeConstraints();
             }
         } else {
             const shape = this.canvas.select(`#cvat_canvas_shape_${objectState.clientID}`).first();
             if (shape && this.checkConstraints(objectState)
             && !stateFrames.includes(objectState.frame)) {
-                this.states.push(objectState);
+                this.statesToBeMerged.push(objectState);
                 this.highlightedShapes[objectState.clientID] = shape;
                 shape.addClass('cvat_canvas_shape_merging');
 
-                if (this.states.length === 1) {
+                if (this.statesToBeMerged.length === 1) {
                     this.addConstraints();
                 }
+            }
+        }
+    }
+
+    public repeatSelection(): void {
+        for (const objectState of this.statesToBeMerged) {
+            const shape = this.canvas.select(`#cvat_canvas_shape_${objectState.clientID}`).first();
+            if (shape) {
+                this.highlightedShapes[objectState.clientID] = shape;
+                shape.addClass('cvat_canvas_shape_merging');
             }
         }
     }

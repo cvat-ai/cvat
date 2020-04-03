@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -12,7 +16,7 @@ import {
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
 
-import patterns from '../../utils/validation-patterns';
+import patterns from 'utils/validation-patterns';
 
 export interface AdvancedConfiguration {
     bugTracker?: string;
@@ -25,12 +29,60 @@ export interface AdvancedConfiguration {
     frameFilter?: string;
     lfs: boolean;
     repository?: string;
+    useZipChunks: boolean;
+    dataChunkSize?: number;
 }
 
 type Props = FormComponentProps & {
     onSubmit(values: AdvancedConfiguration): void;
     installedGit: boolean;
 };
+
+function isPositiveInteger(_: any, value: any, callback: any): void {
+    if (!value) {
+        callback();
+        return;
+    }
+
+    const intValue = +value;
+    if (Number.isNaN(intValue)
+        || !Number.isInteger(intValue) || intValue < 1) {
+        callback('Value must be a positive integer');
+    }
+
+    callback();
+}
+
+function isNonNegativeInteger(_: any, value: any, callback: any): void {
+    if (!value) {
+        callback();
+        return;
+    }
+
+    const intValue = +value;
+    if (Number.isNaN(intValue) || intValue < 0) {
+        callback('Value must be a non negative integer');
+    }
+
+    callback();
+}
+
+function isIntegerRange(min: number, max: number, _: any, value: any, callback: any): void {
+    if (!value) {
+        callback();
+        return;
+    }
+
+    const intValue = +value;
+    if (Number.isNaN(intValue)
+        || !Number.isInteger(intValue)
+        || intValue < min || intValue > max
+    ) {
+        callback(`Value must be an integer [${min}, ${max}]`);
+    }
+
+    callback();
+}
 
 class AdvancedConfigurationForm extends React.PureComponent<Props> {
     public submit(): Promise<void> {
@@ -44,6 +96,16 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 if (!error) {
                     const filteredValues = { ...values };
                     delete filteredValues.frameStep;
+
+                    if (values.overlapSize && +values.segmentSize <= +values.overlapSize) {
+                        reject(new Error('Overlap size must be more than segment size'));
+                    }
+
+                    if (typeof (values.startFrame) !== 'undefined' && typeof (values.stopFrame) !== 'undefined'
+                        && +values.stopFrame < +values.startFrame
+                    ) {
+                        reject(new Error('Stop frame must be more or equal start frame'));
+                    }
 
                     onSubmit({
                         ...values,
@@ -85,19 +147,19 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form.Item label={<span>Image quality</span>}>
-                <Tooltip overlay='Defines image compression level'>
+                <Tooltip title='Defines image compression level'>
                     {form.getFieldDecorator('imageQuality', {
                         initialValue: 70,
                         rules: [{
                             required: true,
-                            message: 'This field is required',
+                            message: 'The field is required.',
+                        }, {
+                            validator: isIntegerRange.bind(null, 5, 100),
                         }],
                     })(
                         <Input
                             size='large'
                             type='number'
-                            min={5}
-                            max={100}
                             suffix={<Icon type='percentage' />}
                         />,
                     )}
@@ -111,8 +173,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form.Item label={<span>Overlap size</span>}>
-                <Tooltip overlay='Defines a number of intersected frames between different segments'>
-                    {form.getFieldDecorator('overlapSize')(
+                <Tooltip title='Defines a number of intersected frames between different segments'>
+                    {form.getFieldDecorator('overlapSize', {
+                        rules: [{
+                            validator: isNonNegativeInteger,
+                        }],
+                    })(
                         <Input size='large' type='number' />,
                     )}
                 </Tooltip>
@@ -125,8 +191,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form.Item label={<span>Segment size</span>}>
-                <Tooltip overlay='Defines a number of frames in a segment'>
-                    {form.getFieldDecorator('segmentSize')(
+                <Tooltip title='Defines a number of frames in a segment'>
+                    {form.getFieldDecorator('segmentSize', {
+                        rules: [{
+                            validator: isPositiveInteger,
+                        }],
+                    })(
                         <Input size='large' type='number' />,
                     )}
                 </Tooltip>
@@ -139,7 +209,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form.Item label={<span>Start frame</span>}>
-                {form.getFieldDecorator('startFrame')(
+                {form.getFieldDecorator('startFrame', {
+                    rules: [{
+                        validator: isNonNegativeInteger,
+                    }],
+                })(
                     <Input
                         size='large'
                         type='number'
@@ -156,7 +230,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form.Item label={<span>Stop frame</span>}>
-                {form.getFieldDecorator('stopFrame')(
+                {form.getFieldDecorator('stopFrame', {
+                    rules: [{
+                        validator: isNonNegativeInteger,
+                    }],
+                })(
                     <Input
                         size='large'
                         type='number'
@@ -173,7 +251,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form.Item label={<span>Frame step</span>}>
-                {form.getFieldDecorator('frameStep')(
+                {form.getFieldDecorator('frameStep', {
+                    rules: [{
+                        validator: isPositiveInteger,
+                    }],
+                })(
                     <Input
                         size='large'
                         type='number'
@@ -285,6 +367,60 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderUzeZipChunks(): JSX.Element {
+        const { form } = this.props;
+        return (
+            <Form.Item help='Force to use zip chunks as compressed data. Actual for videos only.'>
+                {form.getFieldDecorator('useZipChunks', {
+                    initialValue: true,
+                    valuePropName: 'checked',
+                })(
+                    <Checkbox>
+                        <Text className='cvat-text-color'>
+                            Use zip chunks
+                        </Text>
+                    </Checkbox>,
+                )}
+            </Form.Item>
+        );
+    }
+
+    private renderChunkSize(): JSX.Element {
+        const { form } = this.props;
+
+        return (
+            <Form.Item label={<span>Chunk size</span>}>
+                <Tooltip
+                    title={(
+                        <>
+                            Defines a number of frames to be packed in
+                            a chunk when send from client to server.
+                            Server defines automatically if empty.
+                            <br />
+                            Recommended values:
+                            <br />
+                            1080p or less: 36
+                            <br />
+                            2k or less: 8 - 16
+                            <br />
+                            4k or less: 4 - 8
+                            <br />
+                            More: 1 - 4
+                        </>
+                    )}
+                >
+                    {form.getFieldDecorator('dataChunkSize', {
+                        rules: [{
+                            validator: isPositiveInteger,
+                        }],
+                    })(
+                        <Input size='large' type='number' />,
+                    )}
+                </Tooltip>
+            </Form.Item>
+        );
+    }
+
     public render(): JSX.Element {
         const { installedGit } = this.props;
 
@@ -293,6 +429,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Row>
                     <Col>
                         {this.renderZOrder()}
+                    </Col>
+                </Row>
+
+                <Row>
+                    <Col>
+                        {this.renderUzeZipChunks()}
                     </Col>
                 </Row>
 
@@ -317,6 +459,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     </Col>
                     <Col span={7} offset={1}>
                         {this.renderFrameStep()}
+                    </Col>
+                </Row>
+
+                <Row type='flex' justify='start'>
+                    <Col span={7}>
+                        {this.renderChunkSize()}
                     </Col>
                 </Row>
 

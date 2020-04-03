@@ -29,10 +29,10 @@ class AnnotationParser {
         const imWidth = this._im_meta[frame].width;
         const imHeight = this._im_meta[frame].height;
 
-        let xtl = +box.getAttribute('xtl');
-        let ytl = +box.getAttribute('ytl');
-        let xbr = +box.getAttribute('xbr');
-        let ybr = +box.getAttribute('ybr');
+        const xtl = +box.getAttribute("xtl");
+        const ytl = +box.getAttribute("ytl");
+        const xbr = +box.getAttribute("xbr");
+        const ybr = +box.getAttribute("ybr");
 
         if (xtl < 0 || ytl < 0 || xbr < 0 || ybr < 0
             || xtl > imWidth || ytl > imHeight || xbr > imWidth || ybr > imHeight) {
@@ -155,6 +155,7 @@ class AnnotationParser {
             polygons: [],
             polylines: [],
             points: [],
+            cuboids: [],
         };
 
         const tracks = xml.getElementsByTagName('track');
@@ -163,12 +164,14 @@ class AnnotationParser {
             polygon: this._getShapeFromPath('polygon', tracks),
             polyline: this._getShapeFromPath('polyline', tracks),
             points: this._getShapeFromPath('points', tracks),
+            cuboid: this._getShapeFromPath('cuboid', tracks),
         };
         const shapeTarget = {
             box: 'boxes',
             polygon: 'polygons',
             polyline: 'polylines',
             points: 'points',
+            cuboid: 'cuboids',
         };
 
         const images = xml.getElementsByTagName('image');
@@ -193,6 +196,10 @@ class AnnotationParser {
             for (const points of image.getElementsByTagName('points')) {
                 points.setAttribute('frame', frame);
                 parsed.points.push(points);
+            }
+            for (const cuboid of image.getElementsByTagName('cuboid')) {
+                cuboid.setAttribute('frame', frame);
+                parsed.cuboid.push(cuboid);
             }
         }
 
@@ -219,6 +226,18 @@ class AnnotationParser {
                             group: +group,
                             attributes: attributeList,
                             type: 'rectangle',
+                            z_order: zOrder,
+                            frame,
+                            occluded,
+                            points,
+                        });
+                    } else if (shapeType === 'cuboid') {
+                        const [points, occluded, zOrder] = this._getPolyPosition(shape, frame);
+                        data[shapeTarget[shapeType]].push({
+                            label_id: labelId,
+                            group: +group,
+                            attributes: attributeList,
+                            type: 'cuboid',
                             z_order: zOrder,
                             frame,
                             occluded,

@@ -1,54 +1,120 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import './styles.scss';
 import React from 'react';
 
 import {
     Icon,
+    Tabs,
     Layout,
 } from 'antd';
 
-interface State {
-    collapsed: boolean;
+import Text from 'antd/lib/typography/Text';
+import { RadioChangeEvent } from 'antd/lib/radio';
+import { SliderValue } from 'antd/lib/slider';
+import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+
+import { ColorBy } from 'reducers/interfaces';
+
+import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
+import LabelsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/labels-list';
+import AppearanceBlock from './appearance-block';
+
+interface Props {
+    sidebarCollapsed: boolean;
+    appearanceCollapsed: boolean;
+    colorBy: ColorBy;
+    opacity: number;
+    selectedOpacity: number;
+    blackBorders: boolean;
+    showBitmap: boolean;
+
+    collapseSidebar(): void;
+    collapseAppearance(): void;
+
+    changeShapesColorBy(event: RadioChangeEvent): void;
+    changeShapesOpacity(event: SliderValue): void;
+    changeSelectedShapesOpacity(event: SliderValue): void;
+    changeShapesBlackBorders(event: CheckboxChangeEvent): void;
+    changeShowBitmap(event: CheckboxChangeEvent): void;
 }
 
-export default class StandardWorkspaceComponent extends React.PureComponent<{}, State> {
-    public constructor(props: any) {
-        super(props);
-        this.state = {
-            collapsed: true,
-        };
-    }
+function ObjectsSideBar(props: Props): JSX.Element {
+    const {
+        sidebarCollapsed,
+        appearanceCollapsed,
+        colorBy,
+        opacity,
+        selectedOpacity,
+        blackBorders,
+        showBitmap,
+        collapseSidebar,
+        collapseAppearance,
+        changeShapesColorBy,
+        changeShapesOpacity,
+        changeSelectedShapesOpacity,
+        changeShapesBlackBorders,
+        changeShowBitmap,
+    } = props;
 
-    public render(): JSX.Element {
-        const { collapsed } = this.state;
-        return (
-            <Layout.Sider
-                className='cvat-annotation-page-objects-sidebar'
-                theme='light'
-                width={300}
-                collapsedWidth={0}
-                reverseArrow
-                collapsible
-                trigger={null}
-                collapsed={collapsed}
+    const appearanceProps = {
+        collapseAppearance,
+        appearanceCollapsed,
+        colorBy,
+        opacity,
+        selectedOpacity,
+        blackBorders,
+        showBitmap,
+
+        changeShapesColorBy,
+        changeShapesOpacity,
+        changeSelectedShapesOpacity,
+        changeShapesBlackBorders,
+        changeShowBitmap,
+    };
+
+    return (
+        <Layout.Sider
+            className='cvat-objects-sidebar'
+            theme='light'
+            width={300}
+            collapsedWidth={0}
+            reverseArrow
+            collapsible
+            trigger={null}
+            collapsed={sidebarCollapsed}
+        >
+            {/* eslint-disable-next-line */}
+            <span
+                className={`cvat-objects-sidebar-sider
+                    ant-layout-sider-zero-width-trigger
+                    ant-layout-sider-zero-width-trigger-left`}
+                onClick={collapseSidebar}
             >
-                {/* eslint-disable-next-line */}
-                <span
-                    className={`cvat-annotation-page-objects-sidebar
-                        ant-layout-sider-zero-width-trigger
-                        ant-layout-sider-zero-width-trigger-left`}
-                    onClick={
-                        (): void => this.setState(
-                            (prevState: State): State => ({
-                                collapsed: !prevState.collapsed,
-                            }),
-                        )
-                    }
-                >
-                    {collapsed ? <Icon type='menu-fold' title='Show' />
-                        : <Icon type='menu-unfold' title='Hide' />}
-                </span>
+                {sidebarCollapsed ? <Icon type='menu-fold' title='Show' />
+                    : <Icon type='menu-unfold' title='Hide' />}
+            </span>
 
-                Right sidebar
-            </Layout.Sider>
-        );
-    }
+            <Tabs type='card' defaultActiveKey='objects' className='cvat-objects-sidebar-tabs'>
+                <Tabs.TabPane
+                    tab={<Text strong>Objects</Text>}
+                    key='objects'
+                >
+                    <ObjectsListContainer />
+                </Tabs.TabPane>
+                <Tabs.TabPane
+                    tab={<Text strong>Labels</Text>}
+                    key='labels'
+                >
+                    <LabelsListContainer />
+                </Tabs.TabPane>
+            </Tabs>
+
+            { !sidebarCollapsed && <AppearanceBlock {...appearanceProps} /> }
+        </Layout.Sider>
+    );
 }
+
+export default React.memo(ObjectsSideBar);

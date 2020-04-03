@@ -1,9 +1,16 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
-import { TasksQuery } from '../reducers/interfaces';
+import {
+    TasksQuery,
+    CombinedState,
+} from 'reducers/interfaces';
+import { getCVATStore } from 'cvat-store';
+import getCore from 'cvat-core';
 import { getInferenceStatusAsync } from './models-actions';
-
-import getCore from '../core';
 
 const cvat = getCore();
 
@@ -214,6 +221,11 @@ export function loadAnnotationsAsync(task: any, loader: any, file: File):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
+            const store = getCVATStore();
+            const state: CombinedState = store.getState();
+            if (state.tasks.activities.loads[task.id]) {
+                throw Error('Only one loading of annotations for a task allowed at the same time');
+            }
             dispatch(loadAnnotations(task, loader));
             await task.annotations.upload(file, loader);
         } catch (error) {
@@ -377,6 +389,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             labels: data.labels,
             z_order: data.advanced.zOrder,
             image_quality: 70,
+            use_zip_chunks: data.advanced.useZipChunks,
         };
 
         if (data.advanced.bugTracker) {
@@ -399,6 +412,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
         if (data.advanced.imageQuality) {
             description.image_quality = data.advanced.imageQuality;
+        }
+        if (data.advanced.dataChunkSize) {
+            description.data_chunk_size = data.advanced.dataChunkSize;
         }
 
         const taskInstance = new cvat.classes.Task(description);

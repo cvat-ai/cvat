@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import './styles.scss';
 import React from 'react';
 
@@ -8,135 +12,151 @@ import {
 
 import { ClickParam } from 'antd/lib/menu/index';
 
-import LoaderItemComponent from './loader-item';
-import DumperItemComponent from './dumper-item';
-import ExportItemComponent from './export-item';
+import DumpSubmenu from './dump-submenu';
+import LoadSubmenu from './load-submenu';
+import ExportSubmenu from './export-submenu';
 
-interface ActionsMenuComponentProps {
-    taskInstance: any;
-    loaders: any[];
-    dumpers: any[];
-    exporters: any[];
+interface Props {
+    taskID: number;
+    taskMode: string;
+    bugTracker: string;
+
+    loaders: string[];
+    dumpers: string[];
+    exporters: string[];
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
+
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
     installedAutoAnnotation: boolean;
     inferenceIsActive: boolean;
-    onLoadAnnotation: (taskInstance: any, loader: any, file: File) => void;
-    onDumpAnnotation: (taskInstance: any, dumper: any) => void;
-    onExportDataset: (taskInstance: any, exporter: any) => void;
-    onDeleteTask: (taskInstance: any) => void;
-    onOpenRunWindow: (taskInstance: any) => void;
+
+    onClickMenu: (params: ClickParam, file?: File) => void;
 }
 
-interface MinActionsMenuProps {
-    taskInstance: any;
-    onDeleteTask: (task: any) => void;
-    onOpenRunWindow: (taskInstance: any) => void;
+export enum Actions {
+    DUMP_TASK_ANNO = 'dump_task_anno',
+    LOAD_TASK_ANNO = 'load_task_anno',
+    EXPORT_TASK_DATASET = 'export_task_dataset',
+    DELETE_TASK = 'delete_task',
+    RUN_AUTO_ANNOTATION = 'run_auto_annotation',
+    OPEN_BUG_TRACKER = 'open_bug_tracker',
 }
 
-export function handleMenuClick(props: MinActionsMenuProps, params: ClickParam): void {
-    const { taskInstance } = props;
-    const tracker = taskInstance.bugTracker;
-
-    if (params.keyPath.length !== 2) {
-        switch (params.key) {
-            case 'tracker': {
-                // false positive eslint(security/detect-non-literal-fs-filename)
-                // eslint-disable-next-line
-                window.open(`${tracker}`, '_blank');
-                return;
-            } case 'auto_annotation': {
-                props.onOpenRunWindow(taskInstance);
-                return;
-            } case 'delete': {
-                const taskID = taskInstance.id;
-                Modal.confirm({
-                    title: `The task ${taskID} will be deleted`,
-                    content: 'All related data (images, annotations) will be lost. Continue?',
-                    onOk: () => {
-                        props.onDeleteTask(taskInstance);
-                    },
-                });
-                break;
-            } default: {
-                // do nothing
-            }
-        }
-    }
-}
-
-export default function ActionsMenuComponent(props: ActionsMenuComponentProps): JSX.Element {
+export default function ActionsMenuComponent(props: Props): JSX.Element {
     const {
-        taskInstance,
+        taskID,
+        taskMode,
+        bugTracker,
+
         installedAutoAnnotation,
         installedTFAnnotation,
         installedTFSegmentation,
+        inferenceIsActive,
+
         dumpers,
         loaders,
         exporters,
-        inferenceIsActive,
+        onClickMenu,
+        dumpActivities,
+        exportActivities,
+        loadActivity,
     } = props;
-    const tracker = taskInstance.bugTracker;
+
     const renderModelRunner = installedAutoAnnotation
         || installedTFAnnotation || installedTFSegmentation;
+
+    let latestParams: ClickParam | null = null;
+    function onClickMenuWrapper(params: ClickParam | null, file?: File): void {
+        const copyParams = params || latestParams;
+        if (!copyParams) {
+            return;
+        }
+        latestParams = copyParams;
+
+        if (copyParams.keyPath.length === 2) {
+            const [, action] = copyParams.keyPath;
+            if (action === Actions.LOAD_TASK_ANNO) {
+                if (file) {
+                    Modal.confirm({
+                        title: 'Current annotation will be lost',
+                        content: 'You are going to upload new annotations to this task. Continue?',
+                        onOk: () => {
+                            onClickMenu(copyParams, file);
+                        },
+                        okButtonProps: {
+                            type: 'danger',
+                        },
+                        okText: 'Update',
+                    });
+                }
+            } else {
+                onClickMenu(copyParams);
+            }
+        } else if (copyParams.key === Actions.DELETE_TASK) {
+            Modal.confirm({
+                title: `The task ${taskID} will be deleted`,
+                content: 'All related data (images, annotations) will be lost. Continue?',
+                onOk: () => {
+                    onClickMenu(copyParams);
+                },
+                okButtonProps: {
+                    type: 'danger',
+                },
+                okText: 'Delete',
+            });
+        } else {
+            onClickMenu(copyParams);
+        }
+    }
 
     return (
         <Menu
             selectable={false}
             className='cvat-actions-menu'
-            onClick={
-                (params: ClickParam): void => handleMenuClick(props, params)
-            }
+            onClick={onClickMenuWrapper}
         >
-            <Menu.SubMenu key='dump' title='Dump annotations'>
-                {
-                    dumpers.map((dumper): JSX.Element => DumperItemComponent({
-                        dumper,
-                        taskInstance: props.taskInstance,
-                        dumpActivity: (props.dumpActivities || [])
-                            .filter((_dumper: string) => _dumper === dumper.name)[0] || null,
-                        onDumpAnnotation: props.onDumpAnnotation,
-                    }))
-                }
-            </Menu.SubMenu>
-            <Menu.SubMenu key='load' title='Upload annotations'>
-                {
-                    loaders.map((loader): JSX.Element => LoaderItemComponent({
-                        loader,
-                        taskInstance: props.taskInstance,
-                        loadActivity: props.loadActivity,
-                        onLoadAnnotation: props.onLoadAnnotation,
-                    }))
-                }
-            </Menu.SubMenu>
-            <Menu.SubMenu key='export' title='Export as a dataset'>
-                {
-                    exporters.map((exporter): JSX.Element => ExportItemComponent({
-                        exporter,
-                        taskInstance: props.taskInstance,
-                        exportActivity: (props.exportActivities || [])
-                            .filter((_exporter: string) => _exporter === exporter.name)[0] || null,
-                        onExportDataset: props.onExportDataset,
-                    }))
-                }
-            </Menu.SubMenu>
-            {tracker && <Menu.Item key='tracker'>Open bug tracker</Menu.Item>}
+            {
+                DumpSubmenu({
+                    taskMode,
+                    dumpers,
+                    dumpActivities,
+                    menuKey: Actions.DUMP_TASK_ANNO,
+                })
+            }
+            {
+                LoadSubmenu({
+                    loaders,
+                    loadActivity,
+                    onFileUpload: (file: File): void => {
+                        onClickMenuWrapper(null, file);
+                    },
+                    menuKey: Actions.LOAD_TASK_ANNO,
+                })
+            }
+            {
+                ExportSubmenu({
+                    exporters,
+                    exportActivities,
+                    menuKey: Actions.EXPORT_TASK_DATASET,
+                })
+            }
+            {!!bugTracker && <Menu.Item key={Actions.OPEN_BUG_TRACKER}>Open bug tracker</Menu.Item>}
             {
                 renderModelRunner
                     && (
                         <Menu.Item
                             disabled={inferenceIsActive}
-                            key='auto_annotation'
+                            key={Actions.RUN_AUTO_ANNOTATION}
                         >
                             Automatic annotation
                         </Menu.Item>
                     )
             }
             <hr />
-            <Menu.Item key='delete'>Delete</Menu.Item>
+            <Menu.Item key={Actions.DELETE_TASK}>Delete</Menu.Item>
         </Menu>
     );
 }

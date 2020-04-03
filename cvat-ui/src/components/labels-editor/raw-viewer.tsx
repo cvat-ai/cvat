@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
 import {
@@ -76,7 +80,7 @@ class RawViewer extends React.PureComponent<Props> {
                 </Form.Item>
                 <Row type='flex' justify='start' align='middle'>
                     <Col>
-                        <Tooltip overlay='Save labels and return'>
+                        <Tooltip title='Save labels and return'>
                             <Button
                                 style={{ width: '150px' }}
                                 type='primary'
@@ -87,7 +91,7 @@ class RawViewer extends React.PureComponent<Props> {
                         </Tooltip>
                     </Col>
                     <Col offset={1}>
-                        <Tooltip overlay='Do not save the label and return'>
+                        <Tooltip title='Do not save the label and return'>
                             <Button
                                 style={{ width: '150px' }}
                                 type='danger'

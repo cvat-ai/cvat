@@ -4,7 +4,7 @@
 
 import os
 
-path_prefix = os.path.join('cvat', 'apps', 'annotation')
+path_prefix = os.path.join('cvat', 'apps', 'dataset_manager', 'formats')
 BUILTIN_FORMATS = (
     os.path.join(path_prefix, 'cvat.py'),
     os.path.join(path_prefix, 'pascal_voc.py'),

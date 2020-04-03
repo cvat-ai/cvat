@@ -17,7 +17,7 @@
             const pluginList = await PluginRegistry.list();
             for (const plugin of pluginList) {
                 const pluginDecorators = plugin.functions
-                    .filter(obj => obj.callback === wrappedFunc)[0];
+                    .filter((obj) => obj.callback === wrappedFunc)[0];
                 if (pluginDecorators && pluginDecorators.enter) {
                     try {
                         await pluginDecorators.enter.call(this, plugin, ...args);
@@ -35,7 +35,7 @@
 
             for (const plugin of pluginList) {
                 const pluginDecorators = plugin.functions
-                    .filter(obj => obj.callback === wrappedFunc)[0];
+                    .filter((obj) => obj.callback === wrappedFunc)[0];
                 if (pluginDecorators && pluginDecorators.leave) {
                     try {
                         result = await pluginDecorators.leave.call(this, plugin, result, ...args);

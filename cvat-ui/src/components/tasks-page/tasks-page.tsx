@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
@@ -13,12 +17,13 @@ import Text from 'antd/lib/typography/Text';
 
 import {
     TasksQuery,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
+import FeedbackComponent from 'components/feedback/feedback';
+import TaskListContainer from 'containers/tasks-page/tasks-list';
 import TopBar from './top-bar';
-import FeedbackComponent from '../feedback/feedback';
 import EmptyListComponent from './empty-list';
-import TaskListContainer from '../../containers/tasks-page/tasks-list';
+
 
 interface TasksPageProps {
     tasksFetching: boolean;
@@ -222,8 +227,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
                         <TaskListContainer
                             onSwitchPage={this.handlePagination}
                         />
-                    ) : <EmptyListComponent />
-                }
+                    ) : <EmptyListComponent />}
                 <FeedbackComponent />
             </div>
         );

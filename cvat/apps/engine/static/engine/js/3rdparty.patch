@@ -1,7 +1,7 @@
-From a2f542cc7ac4149fe14f42e194e44ef982d7fc28 Mon Sep 17 00:00:00 2001
+From 11bd98c7f1ecf5a57b0eb327e6e86fa1e6ca33d9 Mon Sep 17 00:00:00 2001
 From: Boris Sekachev <boris.sekachev@yandex.ru>
-Date: Wed, 27 Mar 2019 15:08:18 +0300
-Subject: [PATCH] upd
+Date: Tue, 25 Feb 2020 19:08:36 +0300
+Subject: [PATCH] Applied patch
 
 ---
  .../static/engine/js/3rdparty/svg.draggable.js  |  1 +
@@ -117,7 +117,7 @@ index 47e07bd..cee6d34 100644
  
      if (!this.pointSelection.isSelected && !this.rectSelection.isSelected) {
          this.nested.remove();
-+        SVG.off(this.node);
++        SVG.off(this.nested.node);
          delete this.nested;
 -
      }

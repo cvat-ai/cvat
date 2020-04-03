@@ -11,10 +11,9 @@ from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data
+from cvat.apps.engine.frame_provider import FrameProvider
 
 import django_rq
-import fnmatch
-import json
 import os
 import rq
 
@@ -26,13 +25,7 @@ import sys
 import skimage.io
 from skimage.measure import find_contours, approximate_polygon
 
-
-def load_image_into_numpy(image):
-    (im_width, im_height) = image.size
-    return np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
-
-
-def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
+def run_tensorflow_auto_segmentation(frame_provider, labels_mapping, treshold):
     def _convert_to_int(boolean_mask):
         return boolean_mask.astype(np.uint8)
 
@@ -88,16 +81,17 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
 
     ## RUN OBJECT DETECTION
     result = {}
-    for image_num, image_path in enumerate(image_list):
+    frames = frame_provider.get_frames(frame_provider.Quality.ORIGINAL)
+    for image_num, image_bytes in enumerate(frames):
         job.refresh()
         if 'cancel' in job.meta:
             del job.meta['cancel']
             job.save()
             return None
-        job.meta['progress'] = image_num * 100 / len(image_list)
+        job.meta['progress'] = image_num * 100 / len(frame_provider)
         job.save_meta()
 
-        image = skimage.io.imread(image_path)
+        image = skimage.io.imread(image_bytes)
 
         # for multiple image detection, "batch size" must be equal to number of images
         r = model.detect([image], verbose=1)
@@ -116,20 +110,6 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
                         [image_num, segmentation])
 
     return result
-
-
-def make_image_list(path_to_data):
-    def get_image_key(item):
-        return int(os.path.splitext(os.path.basename(item))[0])
-
-    image_list = []
-    for root, _, filenames in os.walk(path_to_data):
-        for filename in fnmatch.filter(filenames, '*.jpg'):
-                image_list.append(os.path.join(root, filename))
-
-    image_list.sort(key=get_image_key)
-    return image_list
-
 
 def convert_to_cvat_format(data):
     result = {
@@ -166,12 +146,12 @@ def create_thread(tid, labels_mapping, user):
         # Get job indexes and segment length
         db_task = TaskModel.objects.get(pk=tid)
         # Get image list
-        image_list = make_image_list(db_task.get_data_dirname())
+        frame_provider = FrameProvider(db_task.data)
 
         # Run auto segmentation by tf
         result = None
         slogger.glob.info("auto segmentation with tensorflow framework for task {}".format(tid))
-        result = run_tensorflow_auto_segmentation(image_list, labels_mapping, TRESHOLD)
+        result = run_tensorflow_auto_segmentation(frame_provider, labels_mapping, TRESHOLD)
 
         if result is None:
             slogger.glob.info('auto segmentation for task {} canceled by user'.format(tid))

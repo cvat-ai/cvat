@@ -37,7 +37,7 @@ class TestCLI(APITestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.img_file = os.path.join(settings.SHARE_ROOT, 'test_cli.jpg')
-        data = generate_image_file(cls.img_file)
+        _, data = generate_image_file(cls.img_file)
         with open(cls.img_file, 'wb') as image:
             image.write(data.read())
 
@@ -65,9 +65,15 @@ class TestCLI(APITestCase):
         self.assertTrue(os.path.exists(path))
         os.remove(path)
 
+    def test_tasks_frame_original(self):
+        path = os.path.join(settings.SHARE_ROOT, 'task_1_frame_000000.jpg')
+        self.cli.tasks_frame(1, [0], outdir=settings.SHARE_ROOT, quality='original')
+        self.assertTrue(os.path.exists(path))
+        os.remove(path)
+
     def test_tasks_frame(self):
         path = os.path.join(settings.SHARE_ROOT, 'task_1_frame_000000.jpg')
-        self.cli.tasks_frame(1, [0], outdir=settings.SHARE_ROOT)
+        self.cli.tasks_frame(1, [0], outdir=settings.SHARE_ROOT, quality='compressed')
         self.assertTrue(os.path.exists(path))
         os.remove(path)
 

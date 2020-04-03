@@ -48,20 +48,25 @@ setuptools.setup(
     ],
     python_requires='>=3.5',
     install_requires=[
+        'defusedxml',
         'GitPython',
         'lxml',
         'matplotlib',
         'numpy',
         'opencv-python',
         'Pillow',
-        'PyYAML',
         'pycocotools',
+        'PyYAML',
+        'scikit-image',
         'tensorboardX',
-        'tensorflow',
     ],
+    extras_require={
+        'tf': ['tensorflow'],
+        'tf-gpu': ['tensorflow-gpu'],
+    },
     entry_points={
         'console_scripts': [
-            'datum=datumaro:main',
+            'datum=datumaro.cli.__main__:main',
         ],
     },
 )

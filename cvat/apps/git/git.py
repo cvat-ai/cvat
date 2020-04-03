@@ -271,7 +271,7 @@ class Git:
         display_name += " for images" if self._task_mode == "annotation" else " for videos"
         cvat_dumper = AnnotationDumper.objects.get(display_name=display_name)
         dump_name = os.path.join(db_task.get_task_dirname(),
-            "git_annotation_{}.".format(timestamp) + "dump")
+            "git_annotation_{}.xml".format(timestamp))
         dump_task_data(
             pk=self._tid,
             user=user,
@@ -283,7 +283,7 @@ class Git:
 
         ext = os.path.splitext(self._path)[1]
         if ext == '.zip':
-            subprocess.call('zip -j -r "{}" "{}"'.format(self._annotation_file, dump_name), shell=True)
+            subprocess.run(args=['7z', 'a', self._annotation_file, dump_name])
         elif ext == '.xml':
             shutil.copyfile(dump_name, self._annotation_file)
         else:

@@ -1,6 +1,9 @@
-import { AnyAction } from 'redux';
-import { AuthActionTypes } from '../actions/auth-actions';
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
+import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
+import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { AuthState } from './interfaces';
 
 const defaultState: AuthState = {
@@ -9,7 +12,7 @@ const defaultState: AuthState = {
     user: null,
 };
 
-export default (state = defaultState, action: AnyAction): AuthState => {
+export default function (state = defaultState, action: AuthActions | boundariesActions): AuthState {
     switch (action.type) {
         case AuthActionTypes.AUTHORIZED_SUCCESS:
             return {
@@ -53,7 +56,7 @@ export default (state = defaultState, action: AnyAction): AuthState => {
             return {
                 ...state,
                 fetching: true,
-                user: action.payload.user,
+                user: null,
             };
         case AuthActionTypes.REGISTER_SUCCESS:
             return {
@@ -66,7 +69,10 @@ export default (state = defaultState, action: AnyAction): AuthState => {
                 ...state,
                 fetching: false,
             };
+        case BoundariesActionTypes.RESET_AFTER_ERROR: {
+            return { ...defaultState };
+        }
         default:
             return state;
     }
-};
+}

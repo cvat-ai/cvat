@@ -1,5 +1,9 @@
-import getCore from '../core';
-import { SupportedPlugins } from '../reducers/interfaces';
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import getCore from 'cvat-core';
+import { SupportedPlugins } from 'reducers/interfaces';
 
 const core = getCore();
 

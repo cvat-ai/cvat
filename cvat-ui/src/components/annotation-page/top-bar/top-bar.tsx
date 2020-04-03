@@ -1,103 +1,145 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 
-import {
-    Row,
-    Col,
-    Icon,
-    Slider,
-    Layout,
-    Input,
-    Tooltip,
-    Select,
-} from 'antd';
+import { Row, Col } from 'antd/lib/grid';
+import InputNumber from 'antd/lib/input-number';
+import { SliderValue } from 'antd/lib/slider';
 
-import Text from 'antd/lib/typography/Text';
+import { Workspace } from 'reducers/interfaces';
+import LeftGroup from './left-group';
+import RightGroup from './right-group';
+import PlayerNavigation from './player-navigation';
+import PlayerButtons from './player-buttons';
 
-import {
-    MainMenuIcon,
-    SaveIcon,
-    UndoIcon,
-    RedoIcon,
-    PlaycontrolFirstIcon,
-    PlaycontrolBackJumpIcon,
-    PlaycontrolPreviousIcon,
-    PlaycontrolPlayIcon,
-    PlaycontrolNextIcon,
-    PlaycontrolForwardJumpIcon,
-    PlaycontrolLastIcon,
-    InfoIcon,
-    FullscreenIcon,
-} from '../../../icons';
+interface Props {
+    playing: boolean;
+    saving: boolean;
+    savingStatuses: string[];
+    frameNumber: number;
+    frameFilename: string;
+    inputFrameRef: React.RefObject<InputNumber>;
+    startFrame: number;
+    stopFrame: number;
+    undoAction?: string;
+    redoAction?: string;
+    workspace: Workspace;
+    saveShortcut: string;
+    undoShortcut: string;
+    redoShortcut: string;
+    playPauseShortcut: string;
+    nextFrameShortcut: string;
+    previousFrameShortcut: string;
+    forwardShortcut: string;
+    backwardShortcut: string;
+    focusFrameInputShortcut: string;
+    changeWorkspace(workspace: Workspace): void;
+    showStatistics(): void;
+    onSwitchPlay(): void;
+    onSaveAnnotation(): void;
+    onPrevFrame(): void;
+    onNextFrame(): void;
+    onForward(): void;
+    onBackward(): void;
+    onFirstFrame(): void;
+    onLastFrame(): void;
+    onSliderChange(value: SliderValue): void;
+    onInputChange(value: number): void;
+    onURLIconClick(): void;
+    onUndoClick(): void;
+    onRedoClick(): void;
+}
 
-export default function AnnotationPageComponent(): JSX.Element {
+export default function AnnotationTopBarComponent(props: Props): JSX.Element {
+    const {
+        saving,
+        savingStatuses,
+        undoAction,
+        redoAction,
+        playing,
+        frameNumber,
+        frameFilename,
+        inputFrameRef,
+        startFrame,
+        stopFrame,
+        workspace,
+        saveShortcut,
+        undoShortcut,
+        redoShortcut,
+        playPauseShortcut,
+        nextFrameShortcut,
+        previousFrameShortcut,
+        forwardShortcut,
+        backwardShortcut,
+        focusFrameInputShortcut,
+        showStatistics,
+        changeWorkspace,
+        onSwitchPlay,
+        onSaveAnnotation,
+        onPrevFrame,
+        onNextFrame,
+        onForward,
+        onBackward,
+        onFirstFrame,
+        onLastFrame,
+        onSliderChange,
+        onInputChange,
+        onURLIconClick,
+        onUndoClick,
+        onRedoClick,
+    } = props;
+
     return (
-        <Layout.Header className='cvat-annotation-page-header'>
-            <Row type='flex' justify='space-between'>
-                <Col className='cvat-annotation-header-left-group'>
-                    <div className='cvat-annotation-header-button'>
-                        <Icon component={MainMenuIcon} />
-                        <span>Menu</span>
-                    </div>
-                    <div className='cvat-annotation-header-button'>
-                        <Icon component={SaveIcon} />
-                        <span>Save</span>
-                    </div>
-                    <div className='cvat-annotation-header-button'>
-                        <Icon component={UndoIcon} />
-                        <span>Undo</span>
-                    </div>
-                    <div className='cvat-annotation-header-button'>
-                        <Icon component={RedoIcon} />
-                        <span>Redo</span>
-                    </div>
-                </Col>
-                <Col className='cvat-annotation-header-player-group'>
-                    <Row type='flex' align='middle'>
-                        <Col className='cvat-annotation-header-player-buttons'>
-                            <Icon component={PlaycontrolFirstIcon} />
-                            <Icon component={PlaycontrolBackJumpIcon} />
-                            <Icon component={PlaycontrolPreviousIcon} />
-                            <Icon component={PlaycontrolPlayIcon} />
-                            <Icon component={PlaycontrolNextIcon} />
-                            <Icon component={PlaycontrolForwardJumpIcon} />
-                            <Icon component={PlaycontrolLastIcon} />
-                        </Col>
-                        <Col className='cvat-annotation-header-player-controls'>
-                            <Row type='flex'>
-                                <Col>
-                                    <Slider className='cvat-annotation-header-player-slider' tipFormatter={null} />
-                                </Col>
-                            </Row>
-                            <Row type='flex' justify='space-around'>
-                                <Col className='cvat-annotation-header-filename-wrapper'>
-                                    <Tooltip overlay='filename.png'>
-                                        <Text type='secondary'>filename.png</Text>
-                                    </Tooltip>
-                                </Col>
-                            </Row>
-                        </Col>
-                        <Col>
-                            <Input className='cvat-annotation-header-frame-selector' type='number' />
-                        </Col>
-                    </Row>
-                </Col>
-                <Col className='cvat-annotation-header-right-group'>
-                    <div className='cvat-annotation-header-button'>
-                        <Icon component={FullscreenIcon} />
-                        <span>Fullscreen</span>
-                    </div>
-                    <div className='cvat-annotation-header-button'>
-                        <Icon component={InfoIcon} />
-                        <span>Info</span>
-                    </div>
-                    <div>
-                        <Select className='cvat-annotation-header-workspace-selector' defaultValue='standard'>
-                            <Select.Option key='standard' value='standard'>Standard</Select.Option>
-                            <Select.Option key='aam' value='aam'>Attribute annotation</Select.Option>
-                        </Select>
-                    </div>
-                </Col>
-            </Row>
-        </Layout.Header>
+        <Row type='flex' justify='space-between'>
+            <LeftGroup
+                saving={saving}
+                savingStatuses={savingStatuses}
+                undoAction={undoAction}
+                redoAction={redoAction}
+                saveShortcut={saveShortcut}
+                undoShortcut={undoShortcut}
+                redoShortcut={redoShortcut}
+                onSaveAnnotation={onSaveAnnotation}
+                onUndoClick={onUndoClick}
+                onRedoClick={onRedoClick}
+            />
+            <Col className='cvat-annotation-header-player-group'>
+                <Row type='flex' align='middle'>
+                    <PlayerButtons
+                        playing={playing}
+                        playPauseShortcut={playPauseShortcut}
+                        nextFrameShortcut={nextFrameShortcut}
+                        previousFrameShortcut={previousFrameShortcut}
+                        forwardShortcut={forwardShortcut}
+                        backwardShortcut={backwardShortcut}
+                        onPrevFrame={onPrevFrame}
+                        onNextFrame={onNextFrame}
+                        onForward={onForward}
+                        onBackward={onBackward}
+                        onFirstFrame={onFirstFrame}
+                        onLastFrame={onLastFrame}
+                        onSwitchPlay={onSwitchPlay}
+                    />
+                    <PlayerNavigation
+                        startFrame={startFrame}
+                        stopFrame={stopFrame}
+                        frameNumber={frameNumber}
+                        frameFilename={frameFilename}
+                        focusFrameInputShortcut={focusFrameInputShortcut}
+                        inputFrameRef={inputFrameRef}
+                        onSliderChange={onSliderChange}
+                        onInputChange={onInputChange}
+                        onURLIconClick={onURLIconClick}
+                    />
+                </Row>
+            </Col>
+            <RightGroup
+                workspace={workspace}
+                changeWorkspace={changeWorkspace}
+                showStatistics={showStatistics}
+            />
+        </Row>
     );
 }

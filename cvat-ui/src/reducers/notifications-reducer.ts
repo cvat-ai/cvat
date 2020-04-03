@@ -1,12 +1,19 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { AnyAction } from 'redux';
 
-import { AuthActionTypes } from '../actions/auth-actions';
-import { FormatsActionTypes } from '../actions/formats-actions';
-import { ModelsActionTypes } from '../actions/models-actions';
-import { ShareActionTypes } from '../actions/share-actions';
-import { TasksActionTypes } from '../actions/tasks-actions';
-import { UsersActionTypes } from '../actions/users-actions';
-import { NotificationsActionType } from '../actions/notification-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
+import { FormatsActionTypes } from 'actions/formats-actions';
+import { ModelsActionTypes } from 'actions/models-actions';
+import { ShareActionTypes } from 'actions/share-actions';
+import { TasksActionTypes } from 'actions/tasks-actions';
+import { UsersActionTypes } from 'actions/users-actions';
+import { AboutActionTypes } from 'actions/about-actions';
+import { AnnotationActionTypes } from 'actions/annotation-actions';
+import { NotificationsActionType } from 'actions/notification-actions';
+import { BoundariesActionTypes } from 'actions/boundaries-actions';
 
 import { NotificationsState } from './interfaces';
 
@@ -33,6 +40,9 @@ const defaultState: NotificationsState = {
         users: {
             fetching: null,
         },
+        about: {
+            fetching: null,
+        },
         share: {
             fetching: null,
         },
@@ -41,8 +51,34 @@ const defaultState: NotificationsState = {
             starting: null,
             deleting: null,
             fetching: null,
+            canceling: null,
             metaFetching: null,
             inferenceStatusFetching: null,
+        },
+        annotation: {
+            saving: null,
+            jobFetching: null,
+            frameFetching: null,
+            changingLabelColor: null,
+            updating: null,
+            creating: null,
+            merging: null,
+            grouping: null,
+            splitting: null,
+            removing: null,
+            propagating: null,
+            collectingStatistics: null,
+            savingJob: null,
+            uploadAnnotations: null,
+            removeAnnotations: null,
+            fetchingAnnotations: null,
+            undo: null,
+            redo: null,
+            search: null,
+            savingLogs: null,
+        },
+        boundaries: {
+            resetError: null,
         },
     },
     messages: {
@@ -276,6 +312,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case AboutActionTypes.GET_ABOUT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    about: {
+                        ...state.errors.about,
+                        fetching: {
+                            message: 'Could not get info about the server',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
         case ShareActionTypes.LOAD_SHARE_DATA_FAILED: {
             return {
                 ...state,
@@ -388,7 +439,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ModelsActionTypes.INFER_MODEL_FAILED: {
+        case ModelsActionTypes.START_INFERENCE_FAILED: {
             const { taskID } = action.payload;
             return {
                 ...state,
@@ -399,6 +450,351 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         starting: {
                             message: 'Could not infer model for the '
                                 + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ModelsActionTypes.CANCEL_INFERENCE_FAILED: {
+            const { taskID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    models: {
+                        ...state.errors.models,
+                        canceling: {
+                            message: 'Could not cancel model inference for the '
+                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_JOB_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        jobFetching: {
+                            message: 'Error during fetching a job',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_FRAME_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        frameFetching: {
+                            message: `Could not receive frame ${action.payload.number}`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        saving: {
+                            message: 'Could not save annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_LABEL_COLOR_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        changingLabelColor: {
+                            message: 'Could not change label color',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        updating: {
+                            message: 'Could not update annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        creating: {
+                            message: 'Could not create annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.MERGE_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        merging: {
+                            message: 'Could not merge annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GROUP_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        grouping: {
+                            message: 'Could not group annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SPLIT_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        splitting: {
+                            message: 'Could not split the track',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.REMOVE_OBJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        removing: {
+                            message: 'Could not remove the object',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.PROPAGATE_OBJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        propagating: {
+                            message: 'Could not propagate the object',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.COLLECT_STATISTICS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        collectingStatistics: {
+                            message: 'Could not collect annotations statistics',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        savingJob: {
+                            message: 'Could not save the job on the server',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_FAILED: {
+            const {
+                job,
+                error,
+            } = action.payload;
+
+            const {
+                id: jobID,
+                task: {
+                    id: taskID,
+                },
+            } = job;
+
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        uploadAnnotations: {
+                            message: 'Could not upload annotations for the '
+                                + `<a href="/tasks/${taskID}/jobs/${jobID}" target="_blank">job ${taskID}</a>`,
+                            reason: error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        removeAnnotations: {
+                            message: 'Could not remove annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.FETCH_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        fetchingAnnotations: {
+                            message: 'Could not fetch annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.REDO_ACTION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        redo: {
+                            message: 'Could not redo',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UNDO_ACTION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        undo: {
+                            message: 'Could not undo',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SEARCH_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        search: {
+                            message: 'Could not execute search annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SAVE_LOGS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        savingLogs: {
+                            message: 'Could not send logs to the server',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case BoundariesActionTypes.THROW_RESET_ERROR: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    boundaries: {
+                        ...state.errors.annotation,
+                        resetError: {
+                            message: 'Could not reset the state',
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -421,15 +817,12 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
-            return {
-                ...defaultState,
-            };
+            return { ...defaultState };
         }
         default: {
-            return {
-                ...state,
-            };
+            return state;
         }
     }
 }

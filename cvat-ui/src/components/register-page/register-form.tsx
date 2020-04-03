@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { FormComponentProps } from 'antd/lib/form/Form';
 import {
@@ -7,7 +11,7 @@ import {
     Form,
 } from 'antd';
 
-import patterns from '../../utils/validation-patterns';
+import patterns from 'utils/validation-patterns';
 
 export interface RegisterData {
     username: string;

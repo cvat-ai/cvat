@@ -1,12 +1,16 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { connect } from 'react-redux';
 
-import CreateModelPageComponent from '../../components/create-model-page/create-model-page';
-import { createModelAsync } from '../../actions/models-actions';
+import CreateModelPageComponent from 'components/create-model-page/create-model-page';
+import { createModelAsync } from 'actions/models-actions';
 import {
     ModelFiles,
     CombinedState,
-} from '../../reducers/interfaces';
+} from 'reducers/interfaces';
 
 interface StateToProps {
     isAdmin: boolean;
