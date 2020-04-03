@@ -28,7 +28,7 @@ const defaultState: SettingsState = {
         autoSave: false,
         autoSaveInterval: 15 * 60 * 1000,
         aamZoomMargin: 100,
-        showObjectsTextAlways: false,
+        showObjectsTextAlways: true,
         showAllInterpolationTracks: false,
     },
     player: {

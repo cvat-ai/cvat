@@ -967,31 +967,44 @@ export class CanvasViewImpl implements CanvasView, Listener {
         for (const state of states) {
             const { clientID } = state;
             const drawnState = this.drawnStates[clientID];
+            const shape = this.svgShapes[state.clientID];
+            const text = this.svgTexts[state.clientID];
 
             if (drawnState.hidden !== state.hidden || drawnState.outside !== state.outside) {
-                const none = state.hidden || state.outside;
-                if (state.shapeType === 'points') {
-                    this.svgShapes[clientID].remember('_selectHandler').nested
-                        .style('display', none ? 'none' : '');
+                const isInvisible = state.hidden || state.outside;
+                if (isInvisible) {
+                    (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
+                        .style('display', 'none');
+                    if (text) {
+                        text.addClass('cvat_canvas_hidden');
+                    }
                 } else {
-                    this.svgShapes[clientID].style('display', none ? 'none' : '');
+                    (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
+                        .style('display', '');
+                    if (text) {
+                        text.removeClass('cvat_canvas_hidden');
+                        this.updateTextPosition(
+                            text,
+                            shape,
+                        );
+                    }
                 }
             }
 
             if (drawnState.zOrder !== state.zOrder) {
                 if (state.shapeType === 'points') {
-                    this.svgShapes[clientID].remember('_selectHandler').nested
+                    shape.remember('_selectHandler').nested
                         .attr('data-z-order', state.zOrder);
                 } else {
-                    this.svgShapes[clientID].attr('data-z-order', state.zOrder);
+                    shape.attr('data-z-order', state.zOrder);
                 }
             }
 
             if (drawnState.occluded !== state.occluded) {
                 if (state.occluded) {
-                    this.svgShapes[clientID].addClass('cvat_canvas_shape_occluded');
+                    shape.addClass('cvat_canvas_shape_occluded');
                 } else {
-                    this.svgShapes[clientID].removeClass('cvat_canvas_shape_occluded');
+                    shape.removeClass('cvat_canvas_shape_occluded');
                 }
             }
 
@@ -1009,7 +1022,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.shapeType === 'rectangle') {
                     const [xtl, ytl, xbr, ybr] = translatedPoints;
 
-                    this.svgShapes[clientID].attr({
+                    shape.attr({
                         x: xtl,
                         y: ytl,
                         width: xbr - xtl,
@@ -1025,21 +1038,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             return `${acc}${val},`;
                         }, '',
                     );
-                    (this.svgShapes[clientID] as any).clear();
-                    this.svgShapes[clientID].attr('points', stringified);
+                    (shape as any).clear();
+                    shape.attr('points', stringified);
 
                     if (state.shapeType === 'points') {
-                        this.selectize(false, this.svgShapes[clientID]);
-                        this.setupPoints(this.svgShapes[clientID] as SVG.PolyLine, state);
+                        this.selectize(false, shape);
+                        this.setupPoints(shape as SVG.PolyLine, state);
                     }
                 }
             }
 
             for (const attrID of Object.keys(state.attributes)) {
                 if (state.attributes[attrID] !== drawnState.attributes[attrID]) {
-                    const text = this.svgTexts[state.clientID];
                     if (text) {
-                        const [span] = this.svgTexts[state.clientID].node
+                        const [span] = text.node
                             .querySelectorAll(`[attrID="${attrID}"]`) as any as SVGTSpanElement[];
                         if (span && span.textContent) {
                             const prefix = span.textContent.split(':').slice(0, -1).join(':');
@@ -1387,6 +1399,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     // Update text position after corresponding box has been moved, resized, etc.
     private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
+        if (text.node.style.display === 'none') return; // wrong transformation matrix
         let box = (shape.node as any).getBBox();
 
         // Translate the whole box to the client coordinate system
