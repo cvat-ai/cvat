@@ -108,7 +108,7 @@ Canvas itself handles:
         dragCanvas(enable: boolean): void;
         zoomCanvas(enable: boolean): void;
 
-        mode(): void;
+        mode(): Mode;
         cancel(): void;
         configure(configuration: Configuration): void;
     }
