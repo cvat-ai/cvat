@@ -5,6 +5,9 @@
 @import '../../base.scss';
 
 .cvat-settings-page {
+    height: 90%;
+    overflow-y: auto;
+
     > div:nth-child(1) {
         margin-top: 30px;
         margin-bottom: 10px;
@@ -73,10 +76,17 @@
     width: 90px;
 }
 
+.cvat-player-reset-color-settings,
 .cvat-player-settings-brightness,
 .cvat-player-settings-contrast,
 .cvat-player-settings-saturation {
     width: 40%;
+}
+
+.cvat-player-reset-color-settings {
+    > .ant-col {
+        text-align: center;
+    }
 }
 
 .cvat-settings-page-back-button {

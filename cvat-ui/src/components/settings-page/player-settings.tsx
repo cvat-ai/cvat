@@ -6,6 +6,7 @@ import React from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import Button from 'antd/lib/button';
 import Slider from 'antd/lib/slider';
 import Select from 'antd/lib/select';
 import InputNumber from 'antd/lib/input-number';
@@ -15,6 +16,7 @@ import Text from 'antd/lib/typography/Text';
 import { clamp } from 'utils/math';
 import { BackJumpIcon, ForwardJumpIcon } from 'icons';
 import { FrameSpeed, GridColor } from 'reducers/interfaces';
+
 
 interface Props {
     frameStep: number;
@@ -261,6 +263,19 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                             onChangeSaturationLevel(value as number);
                         }}
                     />
+                </Col>
+            </Row>
+            <Row className='cvat-player-reset-color-settings'>
+                <Col>
+                    <Button
+                        onClick={() => {
+                            onChangeBrightnessLevel(100);
+                            onChangeContrastLevel(100);
+                            onChangeSaturationLevel(100);
+                        }}
+                    >
+                        Reset color settings
+                    </Button>
                 </Col>
             </Row>
         </div>
