@@ -26,8 +26,8 @@ If you're unsure about any of these, don't hesitate to ask. We're here to help!
 
 - [ ] I have raised an issue to propose this change ([required](https://github.com/opencv/cvat/issues))
 - [ ] My issue has received approval from the maintainers
-- [ ] I've read the [CONTRIBUTION](/CONTRIBUTING.md) guide
-- [ ] I have added description of my changes into [CHANGELOG](/CHANGELOG.md) file
-- [ ] I have updated the documentation accordingly
+- [ ] I've read the [CONTRIBUTION](https://github.com/opencv/cvat/blob/develop/CONTRIBUTING.md) guide
+- [ ] I have added description of my changes into [CHANGELOG](https://github.com/opencv/cvat/blob/develop/CHANGELOG.md) file
+- [ ] I have updated the [documentation](https://github.com/opencv/cvat/blob/develop/README.md#documentation) accordingly
 - [ ] I have added tests to cover my changes
 - [ ] I have linked related issues ([read github docs](https://help.github.com/en/github/managing-your-work-on-github/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword))
