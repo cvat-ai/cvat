@@ -1,4 +1,10 @@
-<!--- Provide a general summary of your changes in the Title above -->
+<!---
+Copyright (C) 2020 Intel Corporation
+
+SPDX-License-Identifier: MIT
+-->
+
+<!-- Provide a general summary of your changes in the Title above -->
 
 ### Motivation and context
 > Why is this change required? What problem does it solve? If it fixes an open
@@ -25,3 +31,16 @@
 - [ ] I have added tests to cover my changes
 - [ ] I have linked related issues ([read github docs](
   https://help.github.com/en/github/managing-your-work-on-github/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword))
+
+### License
+
+- [ ] I submit _my code changes_ under the same [MIT License](
+  https://github.com/opencv/cvat/blob/develop/LICENSE) that covers the project.
+  Feel free to contact the maintainers if that's a concern.
+- [ ] I have updated the license header for each file (see an example below)
+
+```python
+# Copyright (C) 2020 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+```
