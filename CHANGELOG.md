@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added option to display shape text always
 
 ### Changed
--
+- Increase preview size of a task till 256, 256 on the server
 
 ### Deprecated
 -
