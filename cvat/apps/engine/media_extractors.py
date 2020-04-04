@@ -52,11 +52,12 @@ class IMediaReader(ABC):
 
     @staticmethod
     def _get_preview(obj):
+        PREVIEW_SIZE = (256, 256)
         if isinstance(obj, io.IOBase):
             preview = Image.open(obj)
         else:
             preview = obj
-        preview.thumbnail((128, 128))
+        preview.thumbnail(PREVIEW_SIZE)
 
         return preview.convert('RGB')
 
