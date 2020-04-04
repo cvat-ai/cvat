@@ -317,9 +317,9 @@ our server connection.
 
 We assume that 
 
-  1. you have sudo access on your server machine, 
-  2. you have an IP address to use for remote access, and
-  2. that the local CVAT installation works on your server.
+1. you have sudo access on your server machine, 
+2. you have an IP address to use for remote access, and
+3. that the local CVAT installation works on your server.
   
 If this is not the case, please complete the steps in the installation manual first.
 
@@ -327,10 +327,10 @@ If this is not the case, please complete the steps in the installation manual fi
 
 We will go through the following sequence of steps to get CVAT over HTTPS:
 
-  1. Move Docker Compose CVAT access port to 80/tcp.
-  2. Configure Nginx to pass one of the [ACME challenges](https://letsencrypt.org/docs/challenge-types/).
-  3. Create the certificate files using [acme.sh](https://github.com/acmesh-official/acme.sh).
-  4. Reconfigure Nginx to serve over HTTPS and map CVAT to Docker Compose port 443.
+1. Move Docker Compose CVAT access port to 80/tcp.
+2. Configure Nginx to pass one of the [ACME challenges](https://letsencrypt.org/docs/challenge-types/).
+3. Create the certificate files using [acme.sh](https://github.com/acmesh-official/acme.sh).
+4. Reconfigure Nginx to serve over HTTPS and map CVAT to Docker Compose port 443.
 
 #### Step-by-step instructions
 
@@ -442,7 +442,7 @@ services:
       ALLOWED_HOSTS: '*'
 ```
 
-Now create the directory and restart CVAT.
+Finally, create the directory and restart CVAT.
 
 ```bash
 # in the same directory where docker-compose.override.yml lives
@@ -452,7 +452,7 @@ docker-compose down
 docker-compose up -d
 ```
 
-Your server should still be visible (and unsecured) at `http://my-cvat-server.org` but you won't any behavior changes.
+Your server should still be visible (and unsecured) at `http://my-cvat-server.org` but you won't see any behavior changes.
 
 ##### 3. Create certificate files using an ACME challenge
 
@@ -468,12 +468,12 @@ d25a00475849        cvat                  "/usr/bin/supervisord"   About a minut
 52009636caa8        postgres:10-alpine    "docker-entrypoint.s…"   About a minute ago   Up About a minute   5432/tcp                                   cvat_db
 ```
 
-Now we will attach `cvat_proxy` container to run `acme.sh` scripts.
+We will attach `cvat_proxy` container to run `acme.sh` scripts.
 
 ```bash
 admin@tempVM:~/cvat$ docker exec -ti cvat_proxy /bin/sh
 
-# now we install some missing software inside cvat_proxy
+# install some missing software inside cvat_proxy
 / # apk add openssl curl
 / # curl https://get.acme.sh | sh
 / # ~/.acme.sh/acme.sh -h
@@ -518,7 +518,7 @@ services:
     - "443:443"
     volumes:
     - ./letsencrypt:/letsencrypt
-    - ./cert:/cert:ro
+    - ./cert:/cert:ro # this is new
     
   cvat:
     environment:
