@@ -317,9 +317,9 @@ our server connection.
 
 We assume that 
 
-- you have sudo access on your server machine, 
-- you have an IP address to use for remote access, and
-- that the local CVAT installation works on your server.
+-   you have sudo access on your server machine, 
+-   you have an IP address to use for remote access, and
+-   that the local CVAT installation works on your server.
   
 If this is not the case, please complete the steps in the installation manual first.
 
