@@ -317,9 +317,9 @@ our server connection.
 
 We assume that 
 
-1. you have sudo access on your server machine, 
-2. you have an IP address to use for remote access, and
-3. that the local CVAT installation works on your server.
+- you have sudo access on your server machine, 
+- you have an IP address to use for remote access, and
+- that the local CVAT installation works on your server.
   
 If this is not the case, please complete the steps in the installation manual first.
 
@@ -327,10 +327,10 @@ If this is not the case, please complete the steps in the installation manual fi
 
 We will go through the following sequence of steps to get CVAT over HTTPS:
 
-1. Move Docker Compose CVAT access port to 80/tcp.
-2. Configure Nginx to pass one of the [ACME challenges](https://letsencrypt.org/docs/challenge-types/).
-3. Create the certificate files using [acme.sh](https://github.com/acmesh-official/acme.sh).
-4. Reconfigure Nginx to serve over HTTPS and map CVAT to Docker Compose port 443.
+- Move Docker Compose CVAT access port to 80/tcp.
+- Configure Nginx to pass one of the [ACME challenges](https://letsencrypt.org/docs/challenge-types/).
+- Create the certificate files using [acme.sh](https://github.com/acmesh-official/acme.sh).
+- Reconfigure Nginx to serve over HTTPS and map CVAT to Docker Compose port 443.
 
 #### Step-by-step instructions
 
@@ -370,7 +370,8 @@ You should now see an unsecured version of CVAT at `http://my-cvat-server.org`.
 
 ##### 2. Configure Nginx for the ACME challenge
 
-Temporarily, enable serving `http://my-cvat-server.org/.well-known/acme-challenge/` route from `/letsencrypt` directory on the server's filesystem. 
+Temporarily, enable serving `http://my-cvat-server.org/.well-known/acme-challenge/` 
+route from `/letsencrypt` directory on the server's filesystem. 
 You can use the [Nginx quickstart guide](http://nginx.org/en/docs/beginners_guide.html) for reference.
 
 ```bash
@@ -452,7 +453,8 @@ docker-compose down
 docker-compose up -d
 ```
 
-Your server should still be visible (and unsecured) at `http://my-cvat-server.org` but you won't see any behavior changes.
+Your server should still be visible (and unsecured) at `http://my-cvat-server.org` 
+but you won't see any behavior changes.
 
 ##### 3. Create certificate files using an ACME challenge
 
@@ -513,7 +515,7 @@ version: "2.3"
 services:
   cvat_proxy:
     environment:
-      CVAT_HOST: my-cvat-server.westus2.cloudapp.azure.com
+      CVAT_HOST: my-cvat-server.org
     ports:
     - "443:443"
     volumes:
