@@ -12,14 +12,17 @@ class _Format:
     NAME = ''
     EXT = ''
     VERSION = ''
-    DISPLAY_NAME = '{name} {ext} {version}'
 
 class Exporter(_Format):
-    def __call__(self, dst_file, annotations, **options):
+    DISPLAY_NAME = '{name} {version}'
+
+    def __call__(self, dst_file, task_data, **options):
         raise NotImplementedError()
 
 class Importer(_Format):
-    def __call__(self, src_file, annotations, **options):
+    DISPLAY_NAME = '{name} {ext} {version}'
+
+    def __call__(self, src_file, task_data, **options):
         raise NotImplementedError()
 
 def _wrap_format(f_or_cls, klass, name, version, ext, display_name):
@@ -48,7 +51,7 @@ def _wrap_format(f_or_cls, klass, name, version, ext, display_name):
     return target
 
 EXPORT_FORMATS = {}
-def exporter(name, ext, version, display_name=None):
+def exporter(name, version, ext=None, display_name=None):
     assert name not in EXPORT_FORMATS, "Export format '%s' already registered" % name
     def wrap_with_params(f_or_cls):
         t = _wrap_format(f_or_cls, Exporter,
@@ -58,7 +61,7 @@ def exporter(name, ext, version, display_name=None):
     return wrap_with_params
 
 IMPORT_FORMATS = {}
-def importer(name, ext, version, display_name=None):
+def importer(name, version, ext, display_name=None):
     assert name not in IMPORT_FORMATS, "Import format '%s' already registered" % name
     def wrap_with_params(f_or_cls):
         t = _wrap_format(f_or_cls, Importer,
@@ -83,12 +86,12 @@ def get_import_formats():
     return [_serialize_format(f) for f in IMPORT_FORMATS]
 
 
-import .coco
-import .cvat
-import .datumaro
-import .labelme
-import .mask
-import .mot
-import .pascal_voc
-import .tfrecord
-import .yolo
+import cvat.apps.dataset_manager.formats.coco
+import cvat.apps.dataset_manager.formats.cvat
+import cvat.apps.dataset_manager.formats.datumaro
+import cvat.apps.dataset_manager.formats.labelme
+import cvat.apps.dataset_manager.formats.mask
+import cvat.apps.dataset_manager.formats.mot
+import cvat.apps.dataset_manager.formats.pascal_voc
+import cvat.apps.dataset_manager.formats.tfrecord
+import cvat.apps.dataset_manager.formats.yolo

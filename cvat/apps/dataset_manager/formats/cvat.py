@@ -2,31 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
-format_spec = {
-    "name": "CVAT",
-    "dumpers": [
-        {
-            "display_name": "{name} {format} {version} for videos",
-            "format": "XML",
-            "version": "1.1",
-            "handler": "dump_as_cvat_interpolation"
-        },
-        {
-            "display_name": "{name} {format} {version} for images",
-            "format": "XML",
-            "version": "1.1",
-            "handler": "dump_as_cvat_annotation"
-        }
-    ],
-    "loaders": [
-        {
-            "display_name": "{name} {format} {version}",
-            "format": "XML",
-            "version": "1.1",
-            "handler": "load",
-        }
-    ],
-}
+import os.path as osp
+from collections import OrderedDict
+from glob import glob
+from tempfile import TemporaryDirectory
+
+from pyunpack import Archive
+
+from cvat.apps.dataset_manager.formats import exporter, importer
+from cvat.apps.dataset_manager.util import make_zip_archive
+from datumaro.util.image import save_image
+
 
 def pairwise(iterable):
     a = iter(iterable)
@@ -34,7 +20,6 @@ def pairwise(iterable):
 
 def create_xml_dumper(file_object):
     from xml.sax.saxutils import XMLGenerator
-    from collections import OrderedDict
     class XmlAnnotationWriter:
         def __init__(self, file):
             self.version = "1.1"
@@ -184,7 +169,6 @@ def create_xml_dumper(file_object):
     return XmlAnnotationWriter(file_object)
 
 def dump_as_cvat_annotation(file_object, annotations):
-    from collections import OrderedDict
     dumper = create_xml_dumper(file_object)
     dumper.open_root()
     dumper.add_meta(annotations.meta)
@@ -298,7 +282,6 @@ def dump_as_cvat_annotation(file_object, annotations):
     dumper.close_root()
 
 def dump_as_cvat_interpolation(file_object, annotations):
-    from collections import OrderedDict
     dumper = create_xml_dumper(file_object)
     dumper.open_root()
     dumper.add_meta(annotations.meta)
@@ -525,3 +508,55 @@ def load(file_object, annotations):
                 annotations.add_tag(annotations.Tag(**tag))
                 tag = None
             el.clear()
+
+def _export(dst_file, task_data, anno_callback, **options):
+    dst_path = dst_file.name
+    anno_callback(dst_file, task_data)
+
+    if not save_images:
+        return
+
+    dst_file.close()
+    with TemporaryDirectory() as temp_dir:
+        shutil.move(dst_path, temp_dir)
+
+        frame_provider = FrameProvider(task_data.db_task.data)
+        frames = frame_provider.get_frames(
+            frame_provider.Quality.ORIGINAL,
+            frame_provider.Type.NUMPY_ARRAY)
+        for frame_id, frame_data in enumerate(frames):
+            frame_filename = osp.basename(task_data.frame_info[frame_id]['path'])
+            if '.' in frame_filename:
+                save_image(frame_data,
+                    osp.join(temp_dir, 'images', frame_filename),
+                    jpeg_quality=100)
+            else:
+                save_image(frame_data,
+                    osp.join(temp_dir, 'images', frame_filename + '.png'))
+
+        make_zip_archive(temp_dir, dst_file)
+
+@exporter(name='CVAT for videos', version='1.1')
+def _export_video(dst_file, task_data, save_images=False):
+    _export(dst_file, task_data,
+        anno_callback=dump_as_cvat_interpolation, save_images=save_images)
+
+@exporter(name='CVAT for images', version='1.1')
+def _export_images(dst_file, task_data, save_images=False):
+    _export(dst_file, task_data,
+        anno_callback=dump_as_cvat_annotation, save_images=save_images)
+
+@importer(name='CVAT', ext='XML, ZIP', version='1.1',
+    display_name='{name} {version}')
+def _import(src_file, task_data, **options):
+    src_path = src_file.name
+
+    if src_path.lower().endswith('.xml'):
+        load(src_path, task_data)
+    elif src_file.lower().endswith('.zip'):
+        with TemporaryDirectory() as tmp_dir:
+            Archive(src_path).extractall(tmp_dir)
+
+            anno_paths = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
+            for p in anno_paths:
+                load(p, task_data)

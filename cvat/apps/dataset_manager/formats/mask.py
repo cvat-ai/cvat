@@ -13,31 +13,28 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.project import Dataset
 
 
-@exporter(name="MASK", ext="ZIP", version="1.1")
-def export_mask(dst_file, annotations, **options):
-    extractor = CvatTaskDataExtractor(annotations)
+@exporter(name='MASK', version='1.1')
+def _export(dst_file, task_data, save_images=False):
+    extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
+    envt = dm_env.transforms
+    extractor = extractor.transform(envt.get('polygons_to_masks'))
+    extractor = extractor.transform(envt.get('boxes_to_masks'))
+    extractor = extractor.transform(envt.get('merge_instance_segments'))
+    extractor = extractor.transform(envt.get('id_from_image_name'))
+    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
-        envt = dm_env.transforms
-        extractor = extractor.transform(envt.get('polygons_to_masks'))
-        extractor = extractor.transform(envt.get('boxes_to_masks'))
-        extractor = extractor.transform(envt.get('merge_instance_segments'))
-        extractor = extractor.transform(envt.get('id_from_image_name'))
-        extractor = Dataset.from_extractors(extractor) # apply lazy transforms
-
         converter = dm_env.make_converter('voc_segmentation',
-            apply_colormap=True, label_map='source',
-            save_images=save_images)
+            apply_colormap=True, label_map='source', save_images=save_images)
         converter(extractor, save_dir=temp_dir)
 
-        make_zip_archive(temp_dir, file_object)
+        make_zip_archive(temp_dir, dst_file)
 
-@importer(name="MASK", ext="ZIP", version="1.0")
-def import_mask(src_file, annotations, **options):
-    archive_file = file_object if isinstance(file_object, str) else getattr(file_object, "name")
+@importer(name='MASK', ext='ZIP', version='1.1')
+def _import(src_file, task_data):
     with TemporaryDirectory() as tmp_dir:
-        Archive(archive_file).extractall(tmp_dir)
+        Archive(src_file.name).extractall(tmp_dir)
 
         dm_dataset = dm_env.make_importer('voc')(tmp_dir).make_dataset()
-        masks_to_polygons = Environment().transforms.get('masks_to_polygons')
+        masks_to_polygons = dm_env.transforms.get('masks_to_polygons')
         dm_dataset = dm_dataset.transform(masks_to_polygons)
-        import_dm_annotations(dm_dataset, annotations)
+        import_dm_annotations(dm_dataset, task_data)

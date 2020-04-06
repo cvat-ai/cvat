@@ -2,29 +2,42 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os.path as osp
 import shutil
 from tempfile import TemporaryDirectory
 
 from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, \
     import_dm_annotations
 from cvat.apps.dataset_manager.formats import dm_env, exporter, importer
+from cvat.apps.dataset_manager.util import make_zip_archive
 
 
-@exporter(name="COCO", ext="JSON", version="1.0")
-def export_coco(dst_file, task_data):
-    extractor = CvatTaskDataExtractor(task_data)
+@exporter(name='COCO', version='1.0')
+def _export(dst_file, task_data, save_images=False):
+    extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
+    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
+        converter = dm_env.make_converter('coco_instances',
+            save_images=save_images)
         converter(extractor, save_dir=temp_dir)
 
-        # HACK: dst_file should not be used this way, however,
-        # it is the most efficient way. The correct approach would be to copy
-        # file contents.
-        dst_file.close()
-        shutil.move(osp.join(temp_dir, 'annotations', 'instances_default.json'),
-            dst_file.name)
+        if save_images:
+            make_zip_archive(temp_dir, dst_file)
+        else:
+            # Return only json file
+            dst_file.close()
+            shutil.move(osp.join(temp_dir, 'annotations', 'instances_default.json'),
+                dst_file.name)
 
-@importer(name="COCO", ext="JSON", version="1.0")
-def import_coco(src_file, task_data):
-    dataset = dm_env.make_extractor('coco_instances')(src_file.name)
-    import_dm_annotations(dataset, task_data)
+@importer(name='COCO', ext='JSON, ZIP', version='1.0')
+def _import(src_file, task_data):
+    src_path = src_file.name
+
+    if src_path.lower.endswith('.json'):
+        dataset = dm_env.make_extractor('coco_instances', src_path)
+        import_dm_annotations(dataset, task_data)
+    else:
+        with TemporaryDirectory() as tmp_dir:
+            Archive(src_path).extractall(tmp_dir)
+
+            dataset = dm_env.make_importer('coco')(tmp_dir).make_dataset()
+            import_dm_annotations(dataset, task_data)
