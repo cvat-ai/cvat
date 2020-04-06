@@ -11,17 +11,17 @@
 # the global owner(s) will be requested for a review.
 
 # Component: Server
-/cvat/          @nmanovic
+/cvat/          @nmanovic @azhavoro
 
 # Component: CVAT UI
 /cvat-ui/       @bsekachev @ActiveChooN
-/cvat-data/     @bsekachev @ActiveChooN
+/cvat-data/     @azhavoro  @bsekachev
 /cvat-canvas/   @bsekachev @ActiveChooN
 /cvat-core/     @bsekachev @ActiveChooN
 
 # Component: Datumaro
-/datumaro/      @zhiltsov-max
-/cvat/apps/dataset_manager/ @zhiltsov-max
+/datumaro/      @zhiltsov-max @nmanovic
+/cvat/apps/dataset_manager/ @zhiltsov-max @nmanovic
 
 # Advanced components (e.g. OpenVINO)
 /components/    @azhavoro
