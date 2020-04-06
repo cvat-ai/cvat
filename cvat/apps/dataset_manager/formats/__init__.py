@@ -85,6 +85,12 @@ def get_export_formats():
 def get_import_formats():
     return [_serialize_format(f) for f in IMPORT_FORMATS]
 
+def make_importer(name):
+    return IMPORT_FORMATS[name]()
+
+def make_exporter(name):
+    return EXPORT_FORMATS[name]()
+
 
 import cvat.apps.dataset_manager.formats.coco
 import cvat.apps.dataset_manager.formats.cvat
