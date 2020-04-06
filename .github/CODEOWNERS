@@ -1,0 +1,40 @@
+# https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
+
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence, they will
+# be requested for review when someone opens a pull request.
+*               @nmanovic
+
+# Order is important; the last matching pattern takes the most
+# precedence. When someone opens a pull request that only
+# modifies components below, only the list of owners and not
+# the global owner(s) will be requested for a review.
+
+# Component: Server
+/cvat/          @nmanovic @azhavoro
+
+# Component: CVAT UI
+/cvat-ui/       @bsekachev @ActiveChooN
+/cvat-data/     @azhavoro  @bsekachev
+/cvat-canvas/   @bsekachev @ActiveChooN
+/cvat-core/     @bsekachev @ActiveChooN
+
+# Component: Datumaro
+/datumaro/      @zhiltsov-max @nmanovic
+/cvat/apps/dataset_manager/ @zhiltsov-max @nmanovic
+
+# Advanced components (e.g. OpenVINO)
+/components/    @azhavoro
+
+# Infrastructure
+Dockerfile*     @azhavoro
+docker-compose* @azhavoro
+.*              @azhavoro
+*.conf          @azhavoro
+*.sh            @azhavoro
+/cvat_proxy/    @azhavoro
+/tests/         @azhavoro
+/utils/         @azhavoro
+/*.md           @nmanovic
+/LICENSE        @nmanovic
+/.github/       @nmanovic
