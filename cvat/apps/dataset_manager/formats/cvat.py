@@ -548,7 +548,7 @@ def _export_images(dst_file, task_data, save_images=False):
 
 @importer(name='CVAT', ext='XML, ZIP', version='1.1',
     display_name='{name} {version}')
-def _import(src_file, task_data, **options):
+def _import(src_file, task_data):
     src_path = src_file.name
 
     if src_path.lower().endswith('.xml'):
