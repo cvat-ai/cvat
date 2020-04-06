@@ -2,14 +2,71 @@
 #
 # SPDX-License-Identifier: MIT
 
-import copy
+from copy import copy, deepcopy
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from shapely import geometry
 
-from . import models
+from cvat.apps.engine.models import ShapeType
+from cvat.apps.engine.serializers import LabeledDataSerializer
 
+
+class AnnotationIR:
+    def __init__(self, data=None):
+        self.reset()
+        if data:
+            self.tags = getattr(data, 'tags', []) or data['tags']
+            self.shapes = getattr(data, 'shapes', []) or data['shapes']
+            self.tracks = getattr(data, 'tracks', []) or data['tracks']
+
+    def add_tag(self, tag):
+        self.tags.append(tag)
+
+    def add_shape(self, shape):
+        self.shapes.append(shape)
+
+    def add_track(self, track):
+        self.tracks.append(track)
+
+    @property
+    def data(self):
+        return {
+            'version': self.version,
+            'tags': self.tags,
+            'shapes': self.shapes,
+            'tracks': self.tracks,
+        }
+
+    @data.setter
+    def data(self, data):
+        self.version = data['version']
+        self.tags = data['tags']
+        self.shapes = data['shapes']
+        self.tracks = data['tracks']
+
+    def serialize(self):
+        serializer = LabeledDataSerializer(data=self.data)
+        if serializer.is_valid(raise_exception=True):
+            return serializer.data
+
+    # makes a data copy from specified frame interval
+    def slice(self, start, stop):
+        def is_frame_inside(x): return (start <= int(x['frame']) <= stop)
+        splitted_data = AnnotationIR()
+        splitted_data.tags = deepcopy(list(filter(is_frame_inside, self.tags)))
+        splitted_data.shapes = deepcopy(
+            list(filter(is_frame_inside, self.shapes)))
+        splitted_data.tracks = deepcopy(list(filter(lambda y: len(
+            list(filter(is_frame_inside, y['shapes']))), self.tracks)))
+
+        return splitted_data
+
+    def reset(self):
+        self.version = 0
+        self.tags = []
+        self.shapes = []
+        self.tracks = []
 
 class AnnotationManager:
     def __init__(self, data):
@@ -164,13 +221,13 @@ class ShapeManager(ObjectManager):
     def to_tracks(self):
         tracks = []
         for shape in self.objects:
-            shape0 = copy.copy(shape)
+            shape0 = copy(shape)
             shape0["keyframe"] = True
             shape0["outside"] = False
             # TODO: Separate attributes on mutable and unmutable
             shape0["attributes"] = []
             shape0.pop("group", None)
-            shape1 = copy.copy(shape0)
+            shape1 = copy(shape0)
             shape1["outside"] = True
             shape1["frame"] += 1
 
@@ -198,12 +255,12 @@ class ShapeManager(ObjectManager):
         has_same_type  = obj0["type"] == obj1["type"]
         has_same_label = obj0.get("label_id") == obj1.get("label_id")
         if has_same_type and has_same_label:
-            if obj0["type"] == models.ShapeType.RECTANGLE:
+            if obj0["type"] == ShapeType.RECTANGLE:
                 p0 = geometry.box(*obj0["points"])
                 p1 = geometry.box(*obj1["points"])
 
                 return _calc_polygons_similarity(p0, p1)
-            elif obj0["type"] == models.ShapeType.POLYGON:
+            elif obj0["type"] == ShapeType.POLYGON:
                 p0 = geometry.Polygon(pairwise(obj0["points"]))
                 p1 = geometry.Polygon(pairwise(obj0["points"]))
 
@@ -286,7 +343,7 @@ class TrackManager(ObjectManager):
     def _modify_unmached_object(obj, end_frame):
         shape = obj["shapes"][-1]
         if not shape["outside"]:
-            shape = copy.deepcopy(shape)
+            shape = deepcopy(shape)
             shape["frame"] = end_frame
             shape["outside"] = True
             obj["shapes"].append(shape)
@@ -304,7 +361,7 @@ class TrackManager(ObjectManager):
             points.append(p.x)
             points.append(p.y)
 
-        shape = copy.copy(shape)
+        shape = copy(shape)
         shape["points"] = points
 
         return shape
@@ -314,8 +371,8 @@ class TrackManager(ObjectManager):
         def interpolate(shape0, shape1):
             shapes = []
             is_same_type = shape0["type"] == shape1["type"]
-            is_polygon = shape0["type"] == models.ShapeType.POLYGON
-            is_polyline = shape0["type"] == models.ShapeType.POLYLINE
+            is_polygon = shape0["type"] == ShapeType.POLYGON
+            is_polyline = shape0["type"] == ShapeType.POLYLINE
             is_same_size = len(shape0["points"]) == len(shape1["points"])
             if not is_same_type or is_polygon or is_polyline or not is_same_size:
                 shape0 = TrackManager.normalize_shape(shape0)
@@ -329,7 +386,7 @@ class TrackManager(ObjectManager):
                     points = np.asarray(shape0["points"]).reshape(-1, 2)
                 else:
                     points = (shape0["points"] + step * off).reshape(-1, 2)
-                shape = copy.deepcopy(shape0)
+                shape = deepcopy(shape0)
                 if len(points) == 1:
                     shape["points"] = points.flatten()
                 else:
@@ -353,7 +410,7 @@ class TrackManager(ObjectManager):
                 assert shape["frame"] > curr_frame
                 for attr in prev_shape["attributes"]:
                     if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
-                        shape["attributes"].append(copy.deepcopy(attr))
+                        shape["attributes"].append(deepcopy(attr))
                 if not prev_shape["outside"]:
                     shapes.extend(interpolate(prev_shape, shape))
 
@@ -363,9 +420,9 @@ class TrackManager(ObjectManager):
             prev_shape = shape
 
         # TODO: Need to modify a client and a database (append "outside" shapes for polytracks)
-        if not prev_shape["outside"] and (prev_shape["type"] == models.ShapeType.RECTANGLE
-               or prev_shape["type"] == models.ShapeType.POINTS):
-            shape = copy.copy(prev_shape)
+        if not prev_shape["outside"] and (prev_shape["type"] == ShapeType.RECTANGLE
+               or prev_shape["type"] == ShapeType.POINTS):
+            shape = copy(prev_shape)
             shape["frame"] = end_frame
             shapes.extend(interpolate(prev_shape, shape))
 
