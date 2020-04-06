@@ -1041,7 +1041,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     (shape as any).clear();
                     shape.attr('points', stringified);
 
-                    if (state.shapeType === 'points') {
+                    if (state.shapeType === 'points' && !state.hidden) {
                         this.selectize(false, shape);
                         this.setupPoints(shape as SVG.PolyLine, state);
                     }
