@@ -20,7 +20,7 @@ import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
 
 import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
-
+import consts from 'consts';
 import {
     ObjectOutsideIcon,
     FirstIcon,
@@ -30,9 +30,9 @@ import {
     BackgroundIcon,
     ForegroundIcon,
 } from 'icons';
-
 import { ObjectType, ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
+
 
 function ItemMenu(
     serverID: number | undefined,
@@ -508,7 +508,10 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                         }}
                     >
                         { attrValues.map((value: string): JSX.Element => (
-                            <Radio key={value} value={value}>{value}</Radio>
+                            <Radio key={value} value={value}>
+                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE
+                                    ? consts.NO_BREAK_SPACE : value}
+                            </Radio>
                         )) }
                     </Radio.Group>
                 </fieldset>
@@ -534,7 +537,10 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                         className='cvat-object-item-select-attribute'
                     >
                         { attrValues.map((value: string): JSX.Element => (
-                            <Select.Option key={value} value={value}>{value}</Select.Option>
+                            <Select.Option key={value} value={value}>
+                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE
+                                    ? consts.NO_BREAK_SPACE : value}
+                            </Select.Option>
                         )) }
                     </Select>
                 </Col>

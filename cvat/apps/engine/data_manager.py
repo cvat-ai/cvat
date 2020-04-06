@@ -293,7 +293,10 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def normalize_shape(shape):
-        points = np.asarray(shape["points"]).reshape(-1, 2)
+        points = list(shape["points"])
+        if len(points) == 2:
+            points.extend(points) # duplicate points for single point case
+        points = np.asarray(points).reshape(-1, 2)
         broken_line = geometry.LineString(points)
         points = []
         for off in range(0, 100, 1):

@@ -16,10 +16,12 @@ interface Props {
     autoSaveInterval: number;
     aamZoomMargin: number;
     showAllInterpolationTracks: boolean;
+    showObjectsTextAlways: boolean;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
+    onSwitchShowingObjectsTextAlways(enabled: boolean): void;
 }
 
 export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
@@ -28,10 +30,12 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
         autoSaveInterval,
         aamZoomMargin,
         showAllInterpolationTracks,
+        showObjectsTextAlways,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
         onChangeAAMZoomMargin,
         onSwitchShowingInterpolatedTracks,
+        onSwitchShowingObjectsTextAlways,
     } = props;
 
     const minAutoSaveInterval = 5;
@@ -91,6 +95,22 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 </Col>
                 <Col>
                     <Text type='secondary'> Show hidden interpolated objects in the side panel </Text>
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-show-text-always'>
+                <Col className='cvat-workspace-settings-show-text-always-checkbox'>
+                    <Checkbox
+                        className='cvat-text-color'
+                        checked={showObjectsTextAlways}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchShowingObjectsTextAlways(event.target.checked);
+                        }}
+                    >
+                        Always show object details
+                    </Checkbox>
+                </Col>
+                <Col>
+                    <Text type='secondary'> Show text for an object on the canvas not only when the object is activated  </Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-aam-zoom-margin'>

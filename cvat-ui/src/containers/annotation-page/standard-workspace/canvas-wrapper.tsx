@@ -62,6 +62,7 @@ interface StateToProps {
     colorBy: ColorBy;
     selectedOpacity: number;
     blackBorders: boolean;
+    showBitmap: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -73,6 +74,7 @@ interface StateToProps {
     saturationLevel: number;
     resetZoom: boolean;
     aamZoomMargin: number;
+    showObjectsTextAlways: boolean;
     workspace: Workspace;
     minZLayer: number;
     maxZLayer: number;
@@ -163,12 +165,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             workspace: {
                 aamZoomMargin,
+                showObjectsTextAlways,
             },
             shapes: {
                 opacity,
                 colorBy,
                 selectedOpacity,
                 blackBorders,
+                showBitmap,
             },
         },
         shortcuts: {
@@ -192,6 +196,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         colorBy,
         selectedOpacity,
         blackBorders,
+        showBitmap,
         grid,
         gridSize,
         gridColor,
@@ -203,6 +208,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         saturationLevel,
         resetZoom,
         aamZoomMargin,
+        showObjectsTextAlways,
         curZLayer,
         minZLayer,
         maxZLayer,

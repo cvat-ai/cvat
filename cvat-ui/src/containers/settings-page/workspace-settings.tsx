@@ -10,11 +10,10 @@ import {
     changeAutoSaveInterval,
     changeAAMZoomMargin,
     switchShowingInterpolatedTracks,
+    switchShowingObjectsTextAlways,
 } from 'actions/settings-actions';
 
-import {
-    CombinedState,
-} from 'reducers/interfaces';
+import { CombinedState } from 'reducers/interfaces';
 
 import WorkspaceSettingsComponent from 'components/settings-page/workspace-settings';
 
@@ -23,6 +22,7 @@ interface StateToProps {
     autoSaveInterval: number;
     aamZoomMargin: number;
     showAllInterpolationTracks: boolean;
+    showObjectsTextAlways: boolean;
 }
 
 interface DispatchToProps {
@@ -30,6 +30,7 @@ interface DispatchToProps {
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
+    onSwitchShowingObjectsTextAlways(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -39,6 +40,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         autoSaveInterval,
         aamZoomMargin,
         showAllInterpolationTracks,
+        showObjectsTextAlways,
     } = workspace;
 
     return {
@@ -46,6 +48,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         autoSaveInterval,
         aamZoomMargin,
         showAllInterpolationTracks,
+        showObjectsTextAlways,
     };
 }
 
@@ -62,6 +65,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSwitchShowingInterpolatedTracks(enabled: boolean): void {
             dispatch(switchShowingInterpolatedTracks(enabled));
+        },
+        onSwitchShowingObjectsTextAlways(enabled: boolean): void {
+            dispatch(switchShowingObjectsTextAlways(enabled));
         },
     };
 }

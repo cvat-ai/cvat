@@ -1,8 +1,10 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from django.utils import timezone
 from rest_framework import serializers
+
 from cvat.apps.annotation import models
 
 class AnnotationDumperSerializer(serializers.ModelSerializer):
@@ -57,6 +59,9 @@ class AnnotationFormatSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         dumper_names = [handler["display_name"] for handler in validated_data["annotationdumper_set"]]
         loader_names = [handler["display_name"] for handler in validated_data["annotationloader_set"]]
+        instance.handler_file = validated_data.get('handler_file', instance.handler_file)
+        instance.owner = validated_data.get('owner', instance.owner)
+        instance.updated_date = timezone.localtime(timezone.now())
 
         handlers_to_delete = [d for d in instance.annotationdumper_set.all() if d.display_name not in dumper_names] + \
             [l for l in instance.annotationloader_set.all() if l.display_name not in loader_names]
