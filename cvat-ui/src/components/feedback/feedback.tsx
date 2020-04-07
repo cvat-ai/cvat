@@ -4,13 +4,10 @@
 
 import './styles.scss';
 import React from 'react';
-
-import {
-    Button,
-    Icon,
-    Popover,
-} from 'antd';
-
+import Button from 'antd/lib/button';
+import Icon from 'antd/lib/icon';
+import Popover from 'antd/lib/popover';
+import Text from 'antd/lib/typography/Text';
 import {
     FacebookShareButton,
     LinkedinShareButton,
@@ -30,59 +27,59 @@ import {
     LinkedinIcon,
 } from 'react-share';
 
-import Text from 'antd/lib/typography/Text';
+import consts from 'consts';
 
 function renderContent(): JSX.Element {
-    const githubURL = 'https://github.com/opencv/cvat';
-    const githubImage = 'https://raw.githubusercontent.com/opencv/'
-        + 'cvat/develop/cvat/apps/documentation/static/documentation/images/cvat.jpg';
-    const questionsURL = 'https://gitter.im/opencv-cvat/public';
-    const feedbackURL = 'https://gitter.im/opencv-cvat/public';
+    const {
+        GITHUB_URL,
+        GITHUB_IMAGE_URL,
+        GITTER_PUBLIC_URL,
+    } = consts;
 
     return (
         <>
             <Icon type='star' />
             <Text style={{ marginLeft: '10px' }}>
                 Star us on
-                <a target='_blank' rel='noopener noreferrer' href={githubURL}> GitHub</a>
+                <a target='_blank' rel='noopener noreferrer' href={GITHUB_URL}> GitHub</a>
             </Text>
             <br />
             <Icon type='like' />
             <Text style={{ marginLeft: '10px' }}>
                 Leave a
-                <a target='_blank' rel='noopener noreferrer' href={feedbackURL}> feedback</a>
+                <a target='_blank' rel='noopener noreferrer' href={GITTER_PUBLIC_URL}> feedback</a>
             </Text>
             <hr />
             <div style={{ display: 'flex' }}>
-                <FacebookShareButton url={githubURL} quote='Computer Vision Annotation Tool'>
+                <FacebookShareButton url={GITHUB_URL} quote='Computer Vision Annotation Tool'>
                     <FacebookIcon size={32} round />
                 </FacebookShareButton>
-                <VKShareButton url={githubURL} title='Computer Vision Annotation Tool' image={githubImage} description='CVAT'>
+                <VKShareButton url={GITHUB_URL} title='Computer Vision Annotation Tool' image={GITHUB_IMAGE_URL} description='CVAT'>
                     <VKIcon size={32} round />
                 </VKShareButton>
-                <TwitterShareButton url={githubURL} title='Computer Vision Annotation Tool' hashtags={['CVAT']}>
+                <TwitterShareButton url={GITHUB_URL} title='Computer Vision Annotation Tool' hashtags={['CVAT']}>
                     <TwitterIcon size={32} round />
                 </TwitterShareButton>
-                <RedditShareButton url={githubURL} title='Computer Vision Annotation Tool'>
+                <RedditShareButton url={GITHUB_URL} title='Computer Vision Annotation Tool'>
                     <RedditIcon size={32} round />
                 </RedditShareButton>
-                <LinkedinShareButton url={githubURL}>
+                <LinkedinShareButton url={GITHUB_URL}>
                     <LinkedinIcon size={32} round />
                 </LinkedinShareButton>
-                <TelegramShareButton url={githubURL} title='Computer Vision Annotation Tool'>
+                <TelegramShareButton url={GITHUB_URL} title='Computer Vision Annotation Tool'>
                     <TelegramIcon size={32} round />
                 </TelegramShareButton>
-                <WhatsappShareButton url={githubURL} title='Computer Vision Annotation Tool'>
+                <WhatsappShareButton url={GITHUB_URL} title='Computer Vision Annotation Tool'>
                     <WhatsappIcon size={32} round />
                 </WhatsappShareButton>
-                <ViberShareButton url={githubURL} title='Computer Vision Annotation Tool'>
+                <ViberShareButton url={GITHUB_URL} title='Computer Vision Annotation Tool'>
                     <ViberIcon size={32} round />
                 </ViberShareButton>
             </div>
             <hr />
             <Text style={{ marginTop: '50px' }}>
                 Do you need help? Contact us on
-                <a target='_blank' rel='noopener noreferrer' href={questionsURL}> gitter</a>
+                <a target='_blank' rel='noopener noreferrer' href={GITTER_PUBLIC_URL}> gitter</a>
             </Text>
         </>
     );

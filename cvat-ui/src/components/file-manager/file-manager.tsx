@@ -4,17 +4,16 @@
 
 import './styles.scss';
 import React from 'react';
-
-import {
-    Tabs,
-    Icon,
-    Input,
-    Upload,
-} from 'antd';
-
-import Tree, { AntTreeNode, TreeNodeNormal } from 'antd/lib/tree/Tree';
-import { RcFile } from 'antd/lib/upload';
+import Tabs from 'antd/lib/tabs';
+import Icon from 'antd/lib/icon';
+import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
+import Paragraph from 'antd/lib/typography/Paragraph';
+import Upload, { RcFile } from 'antd/lib/upload';
+import Empty from 'antd/lib/empty';
+import Tree, { AntTreeNode, TreeNodeNormal } from 'antd/lib/tree/Tree';
+
+import consts from 'consts';
 
 export interface Files {
     local: File[];
@@ -148,6 +147,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
             });
         }
 
+        const { SHARE_MOUNT_GUIDE_URL } = consts;
         const { treeData } = this.props;
         const {
             expandedKeys,
@@ -156,7 +156,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
 
         return (
             <Tabs.TabPane key='share' tab='Connected file share'>
-                { treeData.length
+                { treeData[0].children && treeData[0].children.length
                     ? (
                         <Tree
                             className='cvat-share-tree'
@@ -190,7 +190,18 @@ export default class FileManager extends React.PureComponent<Props, State> {
                         >
                             { renderTreeNodes(treeData) }
                         </Tree>
-                    ) : <Text className='cvat-text-color'>No data found</Text>}
+                    ) : (
+                        <div className='cvat-empty-share-tree'>
+                            <Empty />
+                            <Paragraph className='cvat-text-color'>
+                                Please, be sure you had
+                                <Text strong>
+                                    <a href={SHARE_MOUNT_GUIDE_URL}> mounted </a>
+                                </Text>
+                                share before you built CVAT and the shared storage contains files
+                            </Paragraph>
+                        </div>
+                    )}
             </Tabs.TabPane>
         );
     }
