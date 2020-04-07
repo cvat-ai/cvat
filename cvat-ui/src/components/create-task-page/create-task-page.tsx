@@ -52,7 +52,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
                                 <Text>Please make sure it exists and you have access</Text>
                             </Paragraph>
                             <Paragraph>
-                                <Text>Consider adding following public ssh keys to Git: </Text>
+                                <Text>Consider adding the following public ssh keys to git: </Text>
                             </Paragraph>
                             <TextArea rows={10} value={sshKeys.join('\n\n')} />
                         </>
