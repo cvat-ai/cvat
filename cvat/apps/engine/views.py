@@ -4,7 +4,6 @@
 
 import os
 import os.path as osp
-import re
 import shutil
 import traceback
 from datetime import datetime
@@ -13,7 +12,6 @@ from tempfile import mkstemp
 import django_rq
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
@@ -36,6 +34,7 @@ from sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 from cvat.apps.authentication import auth
 from cvat.apps.authentication.decorators import login_required
+from cvat.apps.dataset_manager.serializers import DatasetFormatSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, Plugin, StatusChoice, Task
 from cvat.apps.engine.serializers import (
@@ -201,11 +200,20 @@ class ServerViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
-    @swagger_auto_schema(method='get', operation_summary='Method provides the list of available annotations formats supported by the server',
-        responses={'200': AnnotationFormatSerializer(many=True)})
-    @action(detail=False, methods=['GET'], url_path='annotation/formats')
-    def annotation_formats(request):
-        data = dm.views.get_formats()
+    @swagger_auto_schema(method='get', operation_summary='Method provides the list of supported annotations formats',
+        responses={'200': DatasetFormatSerializer(many=True)})
+    @action(detail=False, methods=['GET'], url_path='annotation/export_formats')
+    def annotation_export_formats(request):
+        data = dm.views.get_export_formats()
+        data = JSONRenderer().render(data)
+        return Response(data)
+
+    @staticmethod
+    @swagger_auto_schema(method='get', operation_summary='Method provides the list of supported annotations formats',
+        responses={'200': DatasetFormatSerializer(many=True)})
+    @action(detail=False, methods=['GET'], url_path='annotation/import_formats')
+    def annotation_import_formats(request):
+        data = dm.views.get_import_formats()
         data = JSONRenderer().render(data)
         return Response(data)
 
@@ -469,7 +477,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     def annotations(self, request, pk):
         self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
-            data = annotation.get_task_data(pk, request.user)
+            data = dm.task.get_task_data(pk)
             serializer = LabeledDataSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
@@ -478,26 +486,26 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 return load_data_proxy(
                     request=request,
                     rq_id="{}@/api/v1/tasks/{}/annotations/upload".format(request.user, pk),
-                    rq_func=annotation.load_task_data,
+                    rq_func=dm.task.import_task_annotations,
                     pk=pk,
                 )
             else:
                 serializer = LabeledDataSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
-                    data = annotation.put_task_data(pk, request.user, serializer.data)
+                    data = dm.task.put_task_data(pk, serializer.data)
                     return Response(data)
         elif request.method == 'DELETE':
-            annotation.delete_task_data(pk, request.user)
+            dm.task.delete_task_data(pk)
             return Response(status=status.HTTP_204_NO_CONTENT)
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
-            if action not in annotation.PatchAction.values():
+            if action not in dm.task.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 try:
-                    data = annotation.patch_task_data(pk, request.user, serializer.data, action)
+                    data = dm.task.patch_task_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
@@ -549,7 +557,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
                         timestamp = datetime.strftime(last_task_update_time,
                             "%Y_%m_%d_%H_%M_%S")
-                        filename = "task_{}_annotations-{}-{}.{}".format(
+                        filename = "task_{}-{}-{}_annotations.{}".format(
                             db_task.name, timestamp,
                             dst_format, osp.splitext(file_path)[1])
                         return sendfile(request, file_path, attachment=True,
@@ -673,7 +681,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
                         timestamp = datetime.strftime(last_task_update_time,
                             "%Y_%m_%d_%H_%M_%S")
-                        filename = "task_{}_dataset-{}-{}-{}-{}.{}".format(
+                        filename = "task_{}-{}-{}_dataset.{}".format(
                             db_task.name, timestamp,
                             dst_format, osp.splitext(file_path)[1])
                         return sendfile(request, file_path, attachment=True,
