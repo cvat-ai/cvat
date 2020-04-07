@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Increase preview size of a task till 256, 256 on the server
+- Public ssh-keys are displayed in a dedicated window instead of console when create a task with a repository
 
 ### Deprecated
 -
