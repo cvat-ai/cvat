@@ -1099,6 +1099,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     } else if (state.shapeType === 'points') {
                         this.svgShapes[state.clientID] = this
                             .addPoints(stringified, state);
+                    } else if (state.shapeType === 'cuboid') {
+                        this.svgShapes[state.clientID] = this
+                            .addCuboid(stringified, state);
                     }
                 }
 
@@ -1528,6 +1531,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         return polyline;
+    }
+
+    private addCuboid(points: string, state: any): SVG.PolyLine {
+        const cube = this.adoptedContent.cube(points).addClass('cvat_canvas_shape')
+
+        return cube;
     }
 
     private setupPoints(basicPolyline: SVG.PolyLine, state: any): any {

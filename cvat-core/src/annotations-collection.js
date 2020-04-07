@@ -595,6 +595,10 @@
                     shape: 0,
                     track: 0,
                 },
+                cuboid: {
+                    shape: 0,
+                    track: 0,
+                },
                 tags: 0,
                 manually: 0,
                 interpolated: 0,

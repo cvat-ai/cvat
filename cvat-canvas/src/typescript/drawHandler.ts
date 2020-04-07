@@ -469,9 +469,11 @@ export class DrawHandlerImpl implements DrawHandler {
 
         const p5 = { x: p3.x + vec.x, y: p3.y + vec.y + 0.1 };
         const p6 = { x: p4.x + vec.x, y: p4.y + vec.y - 0.1 };
+        const p7 = { x: p1.x + vec.x, y: p1.y + vec.y + 0.1 };
+        const p8 = { x: p2.x + vec.x, y: p2.y + vec.y - 0.1 };
 
         p1.y += 0.1;
-        return [p1, p2, p3, p4, p5, p6];
+        return [p1, p2, p3, p4, p5, p6, p7, p8];
     }
 
     private static cuboidPointsBy4Points(points: any[]): any[] {
@@ -537,25 +539,33 @@ export class DrawHandlerImpl implements DrawHandler {
         let cuboidPoints;
         // right
         if (Math.abs(angle) < Math.PI / 2 - 0.1) {
-            return DrawHandlerImpl.setupCuboidPoints(actualPoints);
-        }
-
+            cuboidPoints = DrawHandlerImpl.setupCuboidPoints(actualPoints);
         // left
-        if (Math.abs(angle) > Math.PI / 2 + 0.1) {
-            return DrawHandlerImpl.setupCuboidPoints(actualPoints);
-        }
+        } else if (Math.abs(angle) > Math.PI / 2 + 0.1) {
+            cuboidPoints = DrawHandlerImpl.setupCuboidPoints(actualPoints);
         // down
-        if (angle > 0) {
-            cuboidPoints = [plane1.p1, plane2.p1, plane1.p2, plane2.p2, plane1.p3, plane2.p3];
+        } else if (angle > 0) {
+            cuboidPoints = [
+                plane1.p1, plane2.p1, plane1.p2, plane2.p2,
+                plane1.p3, plane2.p3, plane1.p4, plane2.p4,
+            ];
             cuboidPoints[0].y += 0.1;
             cuboidPoints[4].y += 0.1;
-            return [plane1.p1, plane2.p1, plane1.p2, plane2.p2, plane1.p3, plane2.p3];
-        }
         // up
-        cuboidPoints = [plane2.p1, plane1.p1, plane2.p2, plane1.p2, plane2.p3, plane1.p3];
-        cuboidPoints[0].y += 0.1;
-        cuboidPoints[4].y += 0.1;
-        return cuboidPoints;
+        } else {
+            cuboidPoints = [
+                plane2.p1, plane1.p1, plane2.p2, plane1.p2,
+                plane2.p3, plane1.p3, plane2.p4, plane1.p4,
+            ];
+            cuboidPoints[0].y += 0.1;
+            cuboidPoints[4].y += 0.1;
+        }
+
+        return cuboidPoints.reduce((arr: number[], point: any): number[] => {
+            arr.push(point.x);
+            arr.push(point.y);
+            return arr;
+        }, []);
     }
 
     private drawCuboid(): void {

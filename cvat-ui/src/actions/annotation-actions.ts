@@ -98,12 +98,14 @@ async function jobInfoGenerator(job: any): Promise<Record<string, number>> {
         'track count': total.rectangle.shape + total.rectangle.track
             + total.polygon.shape + total.polygon.track
             + total.polyline.shape + total.polyline.track
-            + total.points.shape + total.points.track,
+            + total.points.shape + total.points.track
+            + total.cuboid.shape + total.cuboid.track,
         'object count': total.total,
         'box count': total.rectangle.shape + total.rectangle.track,
         'polygon count': total.polygon.shape + total.polygon.track,
         'polyline count': total.polyline.shape + total.polyline.track,
         'points count': total.points.shape + total.points.track,
+        'cuboids count': total.cuboid.shape + total.cuboid.track,
         'tag count': total.tags,
     };
 }
