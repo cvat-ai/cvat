@@ -33,19 +33,20 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from sendfile import sendfile
 
-import cvat.apps.dataset_manager as dataset_manager
+import cvat.apps.dataset_manager as dm
 from cvat.apps.authentication import auth
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, Plugin, StatusChoice, Task
 from cvat.apps.engine.serializers import (
-    AboutSerializer, BasicUserSerializer, DataMetaSerializer, DataSerializer,
-    ExceptionSerializer, FileInfoSerializer, JobSerializer,
-    LabeledDataSerializer, LogEventSerializer, PluginSerializer,
-    ProjectSerializer, RqStatusSerializer, TaskSerializer, UserSerializer)
+    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
+    DataMetaSerializer, DataSerializer, ExceptionSerializer,
+    FileInfoSerializer, JobSerializer, LabeledDataSerializer,
+    LogEventSerializer, PluginSerializer, ProjectSerializer,
+    RqStatusSerializer, TaskSerializer, UserSerializer)
 from cvat.settings.base import CSS_3RDPARTY, JS_3RDPARTY
 
-from . import annotation, models, task
+from . import models, task
 from .log import clogger, slogger
 
 
@@ -204,7 +205,7 @@ class ServerViewSet(viewsets.ViewSet):
         responses={'200': AnnotationFormatSerializer(many=True)})
     @action(detail=False, methods=['GET'], url_path='annotation/formats')
     def annotation_formats(request):
-        data = dataset_manager.get_formats()
+        data = dm.views.get_formats()
         data = JSONRenderer().render(data)
         return Response(data)
 
@@ -512,68 +513,70 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             '201': openapi.Response(description='Annotations file is ready to download'),
             '200': openapi.Response(description='Download of file started')})
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='annotations/(?P<filename>[^/]+)')
+        url_path='annotations')
     def dump(self, request, pk, filename):
         """
         Dump of annotations in common case is a long process which cannot be performed within one request.
         First request starts dumping process. When the file is ready (code 201) you can get it with query parameter action=download.
         """
-        filename = re.sub(r'[\\/*?:"<>|]', '_', filename)
-        username = request.user.username
-        db_task = self.get_object() # call check_object_permissions as well
-        timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        action = request.query_params.get("action")
-        if action not in [None, "download"]:
+        db_task = self.get_object()
+
+        action = request.query_params.get("action", "").lower()
+        if action not in {"", "download"}:
             raise serializers.ValidationError(
-                "Please specify a correct 'action' for the request")
+                "Unexpected action specified for the request")
 
-        dump_format = request.query_params.get("format", "")
-        try:
-            db_dumper = AnnotationDumper.objects.get(display_name=dump_format)
-        except ObjectDoesNotExist:
+        dst_format = request.query_params.get("format", "").lower()
+        if dst_format not in [f['tag'] for f in dm.views.get_export_formats()]:
             raise serializers.ValidationError(
-                "Please specify a correct 'format' parameter for the request")
+                "Unknown format specified for the request")
 
-        file_path = os.path.join(db_task.get_task_artifacts_dirname(),
-            "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.format.lower()))
-
+        rq_id = "/api/v1/tasks/{}/annotations/{}".format(pk, dst_format)
         queue = django_rq.get_queue("default")
-        rq_id = "{}@/api/v1/tasks/{}/annotations/{}/{}".format(username, pk, dump_format, filename)
+
         rq_job = queue.fetch_job(rq_id)
-
         if rq_job:
-            if rq_job.is_finished:
-                if not rq_job.meta.get("download"):
-                    if action == "download":
-                        rq_job.meta[action] = True
-                        rq_job.save_meta()
-                        return sendfile(request, rq_job.meta["file_path"], attachment=True,
-                            attachment_filename="{}.{}".format(filename, db_dumper.format.lower()))
-                    else:
-                        return Response(status=status.HTTP_201_CREATED)
-                else: # Remove the old dump file
-                    try:
-                        os.remove(rq_job.meta["file_path"])
-                    except OSError:
-                        pass
-                    finally:
-                        rq_job.delete()
-            elif rq_job.is_failed:
-                exc_info = str(rq_job.exc_info)
+            last_task_update_time = timezone.localtime(db_task.updated_date)
+            request_time = rq_job.meta.get('request_time', None)
+            if request_time is None or request_time < last_task_update_time:
+                rq_job.cancel()
                 rq_job.delete()
-                return Response(data=exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
-                return Response(status=status.HTTP_202_ACCEPTED)
+                if rq_job.is_finished:
+                    file_path = rq_job.return_value
+                    if action == "download" and osp.exists(file_path):
+                        rq_job.delete()
 
-        rq_job = queue.enqueue_call(
-            func=annotation.dump_task_data,
-            args=(pk, request.user, file_path, db_dumper,
-                  request.scheme, request.get_host()),
-            job_id=rq_id,
-        )
-        rq_job.meta["file_path"] = file_path
-        rq_job.save_meta()
+                        timestamp = datetime.strftime(last_task_update_time,
+                            "%Y_%m_%d_%H_%M_%S")
+                        filename = "task_{}_annotations-{}-{}.{}".format(
+                            db_task.name, timestamp,
+                            dst_format, osp.splitext(file_path)[1])
+                        return sendfile(request, file_path, attachment=True,
+                            attachment_filename=filename.lower())
+                    else:
+                        if osp.exists(file_path):
+                            return Response(status=status.HTTP_201_CREATED)
+                elif rq_job.is_failed:
+                    exc_info = str(rq_job.exc_info)
+                    rq_job.delete()
+                    return Response(exc_info,
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                else:
+                    return Response(status=status.HTTP_202_ACCEPTED)
 
+        try:
+            if request.scheme:
+                server_address = request.scheme + '://'
+            server_address += request.get_host()
+        except Exception:
+            server_address = None
+
+        ttl = dm.views.CACHE_TTL.total_seconds()
+        queue.enqueue_call(func=dm.views.export_task_annotations,
+            args=(pk, dst_format, server_address), job_id=rq_id,
+            meta={ 'request_time': timezone.localtime() },
+            result_ttl=ttl, failure_ttl=ttl)
         return Response(status=status.HTTP_202_ACCEPTED)
 
     @swagger_auto_schema(method='get', operation_summary='When task is being created the method returns information about a status of the creation process')
@@ -642,19 +645,15 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     def dataset_export(self, request, pk):
         db_task = self.get_object()
 
-        action = request.query_params.get("action", "")
-        action = action.lower()
-        if action not in ["", "download"]:
+        action = request.query_params.get("action", "").lower()
+        if action not in {"", "download"}:
             raise serializers.ValidationError(
-                "Unexpected parameter 'action' specified for the request")
+                "Unexpected action specified for the request")
 
-        dst_format = request.query_params.get("format", "")
-        if not dst_format:
-            dst_format = dataset_manager.DEFAULT_FORMAT
-        dst_format = dst_format.lower()
-        if dst_format not in [f['tag'] for f in dataset_manager.get_formats()]:
+        dst_format = request.query_params.get("format", "").lower()
+        if dst_format not in [f['tag'] for f in dm.views.get_export_formats()]:
             raise serializers.ValidationError(
-                "Unexpected parameter 'format' specified for the request")
+                "Unknown format specified for the request")
 
         rq_id = "/api/v1/tasks/{}/dataset/{}".format(pk, dst_format)
         queue = django_rq.get_queue("default")
@@ -672,9 +671,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     if action == "download" and osp.exists(file_path):
                         rq_job.delete()
 
-                        timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-                        filename = "task_{}-{}-{}.zip".format(
-                            db_task.name, timestamp, dst_format)
+                        timestamp = datetime.strftime(last_task_update_time,
+                            "%Y_%m_%d_%H_%M_%S")
+                        filename = "task_{}_dataset-{}-{}-{}-{}.{}".format(
+                            db_task.name, timestamp,
+                            dst_format, osp.splitext(file_path)[1])
                         return sendfile(request, file_path, attachment=True,
                             attachment_filename=filename.lower())
                     else:
@@ -689,13 +690,15 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     return Response(status=status.HTTP_202_ACCEPTED)
 
         try:
-            server_address = request.get_host()
+            if request.scheme:
+                server_address = request.scheme + '://'
+            server_address += request.get_host()
         except Exception:
             server_address = None
 
-        ttl = dataset_manager.CACHE_TTL.total_seconds()
-        queue.enqueue_call(func=dataset_manager.export_task_as_dataset,
-            args=(pk, request.user, dst_format, server_address), job_id=rq_id,
+        ttl = dm.views.CACHE_TTL.total_seconds()
+        queue.enqueue_call(func=dm.views.export_task_as_dataset,
+            args=(pk, dst_format, server_address), job_id=rq_id,
             meta={ 'request_time': timezone.localtime() },
             result_ttl=ttl, failure_ttl=ttl)
         return Response(status=status.HTTP_202_ACCEPTED)
@@ -734,37 +737,36 @@ class JobViewSet(viewsets.GenericViewSet,
     def annotations(self, request, pk):
         self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
-            data = annotation.get_job_data(pk, request.user)
+            data = dm.task.get_job_data(pk)
             return Response(data)
         elif request.method == 'PUT':
             if request.query_params.get("format", ""):
                 return load_data_proxy(
                     request=request,
                     rq_id="{}@/api/v1/jobs/{}/annotations/upload".format(request.user, pk),
-                    rq_func=annotation.load_job_data,
+                    rq_func=dm.task.import_job_annotations,
                     pk=pk,
                 )
             else:
                 serializer = LabeledDataSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     try:
-                        data = annotation.put_job_data(pk, request.user, serializer.data)
+                        data = dm.task.put_job_data(pk, serializer.data)
                     except (AttributeError, IntegrityError) as e:
                         return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                     return Response(data)
         elif request.method == 'DELETE':
-            annotation.delete_job_data(pk, request.user)
+            dm.task.delete_job_data(pk)
             return Response(status=status.HTTP_204_NO_CONTENT)
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
-            if action not in annotation.PatchAction.values():
+            if action not in dm.task.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 try:
-                    data = annotation.patch_job_data(pk, request.user,
-                        serializer.data, action)
+                    data = dm.task.patch_job_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
@@ -863,16 +865,13 @@ def rq_handler(job, exc_type, exc_value, tb):
 def load_data_proxy(request, rq_id, rq_func, pk):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
-    upload_format = request.query_params.get("format", "")
+    format_name = request.query_params.get("format", "").lower()
 
     if not rq_job:
         serializer = AnnotationFileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            try:
-                db_parser = AnnotationLoader.objects.get(pk=upload_format)
-            except ObjectDoesNotExist:
-                raise serializers.ValidationError(
-                    "Please specify a correct 'format' parameter for the upload request")
+            if format_name not in [f['tag'] for f in dm.views.get_import_formats()]:
+                raise serializers.ValidationError("Unknown input format")
 
             anno_file = serializer.validated_data['annotation_file']
             fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
@@ -881,7 +880,7 @@ def load_data_proxy(request, rq_id, rq_func, pk):
                     f.write(chunk)
             rq_job = queue.enqueue_call(
                 func=rq_func,
-                args=(pk, request.user, filename, db_parser),
+                args=(pk, filename, format_name),
                 job_id=rq_id
             )
             rq_job.meta['tmp_file'] = filename
