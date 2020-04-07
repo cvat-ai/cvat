@@ -11,7 +11,7 @@ from cvat.apps.dataset_manager.formats import dm_env, exporter, importer
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 
-@exporter(name='COCO', version='1.0')
+@exporter(name='COCO', ext='ZIP', version='1.0')
 def _export(dst_file, task_data, save_images=False):
     extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
     extractor = Dataset.from_extractors(extractor) # apply lazy transforms

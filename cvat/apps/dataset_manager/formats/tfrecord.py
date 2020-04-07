@@ -13,7 +13,7 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.project import Dataset
 
 
-@exporter(name='TFRecord', version='1.0')
+@exporter(name='TFRecord', ext='ZIP', version='1.0')
 def _export(dst_file, task_data, save_images=False):
     extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
     extractor = Dataset.from_extractors(extractor) # apply lazy transforms

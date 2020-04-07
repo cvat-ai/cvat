@@ -12,7 +12,9 @@ from django.utils import timezone
 import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task
+from datumaro.util import to_snake_case
 
+from .formats import IMPORT_FORMATS, EXPORT_FORMATS
 from .util import current_function_name
 
 
@@ -39,13 +41,16 @@ def export_task(task_id, dst_format, server_url=None, save_images=False):
         cache_dir = get_export_cache_dir(db_task)
 
         exporter = get_exporter(format_name)
-        output_path = osp.join(cache_dir, '%s.%s' % (dst_format, exporter.EXT))
+        output_base = '%s_%s' % ('dataset' if save_images else 'task',
+            to_snake_case(dst_format))
+        output_path = '%s.%s' % (output_base, exporter.EXT)
+        output_path = osp.join(cache_dir, output_path)
 
         task_time = timezone.localtime(db_task.updated_date).timestamp()
         if not (osp.exists(output_path) and \
                 task_time <= osp.getmtime(output_path)):
             os.makedirs(cache_dir, exist_ok=True)
-            task.export_task(task_id, output_path, dst_format,
+            task.export_task(task_id, dst_format, temp_dir,
                 server_url=server_url, save_images=save_images)
 
             archive_ctime = osp.getctime(output_path)
@@ -83,3 +88,18 @@ def clear_export_cache(task_id, file_path, file_ctime):
     except Exception:
         log_exception(slogger.task[task_id])
         raise
+
+
+def _serialize_format(f):
+    return {
+        'name': f.DISPLAY_NAME,
+        'tag': f.NAME.lower(),
+        'ext': f.EXT,
+        'version': f.VERSION,
+    }
+
+def get_export_formats():
+    return [_serialize_format(f) for f in EXPORT_FORMATS]
+
+def get_import_formats():
+    return [_serialize_format(f) for f in IMPORT_FORMATS]

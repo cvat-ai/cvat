@@ -12,16 +12,13 @@ class _Format:
     NAME = ''
     EXT = ''
     VERSION = ''
+    DISPLAY_NAME = '{name} {ext} {version}'
 
 class Exporter(_Format):
-    DISPLAY_NAME = '{name} {version}'
-
     def __call__(self, dst_file, task_data, **options):
         raise NotImplementedError()
 
 class Importer(_Format):
-    DISPLAY_NAME = '{name} {ext} {version}'
-
     def __call__(self, src_file, task_data, **options):
         raise NotImplementedError()
 
@@ -51,12 +48,12 @@ def _wrap_format(f_or_cls, klass, name, version, ext, display_name):
     return target
 
 EXPORT_FORMATS = {}
-def exporter(name, version, ext=None, display_name=None):
+def exporter(name, version, ext, display_name=None):
     assert name not in EXPORT_FORMATS, "Export format '%s' already registered" % name
     def wrap_with_params(f_or_cls):
         t = _wrap_format(f_or_cls, Exporter,
             name=name, ext=ext, version=version, display_name=display_name)
-        EXPORT_FORMATS[name] = t
+        EXPORT_FORMATS[name.lower()] = t
         return t
     return wrap_with_params
 
@@ -66,30 +63,15 @@ def importer(name, version, ext, display_name=None):
     def wrap_with_params(f_or_cls):
         t = _wrap_format(f_or_cls, Importer,
             name=name, ext=ext, version=version, display_name=display_name)
-        IMPORT_FORMATS[name] = t
+        IMPORT_FORMATS[name.lower()] = t
         return t
     return wrap_with_params
 
-
-def _serialize_format(f):
-    return {
-        'name': f.DISPLAY_NAME,
-        'tag': f.NAME,
-        'ext': f.EXT,
-        'version': f.VERSION,
-    }
-
-def get_export_formats():
-    return [_serialize_format(f) for f in EXPORT_FORMATS]
-
-def get_import_formats():
-    return [_serialize_format(f) for f in IMPORT_FORMATS]
-
 def make_importer(name):
-    return IMPORT_FORMATS[name]()
+    return IMPORT_FORMATS[name.lower()]()
 
 def make_exporter(name):
-    return EXPORT_FORMATS[name]()
+    return EXPORT_FORMATS[name.lower()]()
 
 
 import cvat.apps.dataset_manager.formats.coco

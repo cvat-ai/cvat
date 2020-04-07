@@ -17,7 +17,7 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.project import Dataset
 
 
-@exporter(name='PASCAL VOC', version='1.1')
+@exporter(name='PASCAL VOC', ext='ZIP', version='1.1')
 def _export(dst_file, task_data, save_images=False):
     extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
     envt = dm_env.transforms

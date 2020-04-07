@@ -710,9 +710,9 @@ def delete_task_data(pk):
 def export_task(task_id, dst_file, format_name,
         server_url=None, save_images=False):
     # For big tasks dump function may run for a long time and
-    # we dont need to acquire lock after _AnnotationForTask instance
-    # has been initialized from DB.
-    # But there is the bug with corrupted dump file in case 2 or more dump request received at the same time.
+    # we dont need to acquire lock after the task has been initialized from DB.
+    # But there is the bug with corrupted dump file in case 2 or
+    # more dump request received at the same time:
     # https://github.com/opencv/cvat/issues/217
     with transaction.atomic():
         task = TaskAnnotation(task_id)

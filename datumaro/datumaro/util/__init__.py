@@ -43,3 +43,16 @@ def cast(value, type_conv, default=None):
         return type_conv(value)
     except Exception:
         return default
+
+def to_snake_case(s):
+    if not s:
+        return ''
+
+    name = [s[0].lower()]
+    for char in s[1:]:
+        if char.isalpha() and char.isupper():
+            name.append('_')
+            name.append(char.lower())
+        else:
+            name.append(char)
+    return ''.join(name)
