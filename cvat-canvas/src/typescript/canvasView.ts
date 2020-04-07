@@ -969,9 +969,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const drawnState = this.drawnStates[clientID];
             const shape = this.svgShapes[state.clientID];
             const text = this.svgTexts[state.clientID];
+            const isInvisible = state.hidden || state.outside;
 
             if (drawnState.hidden !== state.hidden || drawnState.outside !== state.outside) {
-                const isInvisible = state.hidden || state.outside;
                 if (isInvisible) {
                     (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
                         .style('display', 'none');
@@ -1041,7 +1041,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     (shape as any).clear();
                     shape.attr('points', stringified);
 
-                    if (state.shapeType === 'points' && !state.hidden) {
+                    if (state.shapeType === 'points' && !isInvisible) {
                         this.selectize(false, shape);
                         this.setupPoints(shape as SVG.PolyLine, state);
                     }
