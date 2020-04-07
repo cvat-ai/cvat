@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New shape is added when press ``esc`` when drawing instead of cancellation
 - Fixed dextr segmentation.
 - Fixed `FileNotFoundError` during dump after moving format files
+- Fixed exception logs in the new UI (missed fields: task_id and job_id)
 
 ### Security
 -
