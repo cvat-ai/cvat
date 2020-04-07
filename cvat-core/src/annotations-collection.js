@@ -871,8 +871,10 @@
                 // In particular consider first and last frame as keyframes for all frames
                 const statesData = [].concat(
                     (frame in this.shapes ? this.shapes[frame] : [])
+                        .filter((shape) => !shape.removed)
                         .map((shape) => shape.get(frame)),
                     (frame in this.tags ? this.tags[frame] : [])
+                        .filter((tag) => !tag.removed)
                         .map((tag) => tag.get(frame)),
                 );
                 const tracks = Object.values(this.tracks)
@@ -880,7 +882,7 @@
                         frame in track.shapes
                         || frame === frameFrom
                         || frame === frameTo
-                    ));
+                    )).filter((track) => !track.removed);
                 statesData.push(
                     ...tracks.map((track) => track.get(frame))
                         .filter((state) => !state.outside),
