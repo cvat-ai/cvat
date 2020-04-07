@@ -136,6 +136,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     The ``Done`` button applies the changes and the ``Reset`` button cancels the changes. 
           ![](static/documentation/images/image126.jpg)
 
+    In ``Raw`` and ``Constructor`` mode, you can press the ``Copy`` button to copy the list of labels.
+
     **Select files**. Press tab ``My computer`` to choose some files for annotation from your PC. 
     If you select tab ``Connected file share`` you can choose files for annotation from your network. 
     If you select `` Remote source`` , you'll see a field where you can enter a list of URLs (one URL per line).
@@ -185,7 +187,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Stop frame**. Frame on which video in task ends.
 
     **Frame Step**. Use this option to filter video frames.
-    For example, enter ``step=25`` to leave every twenty fifth frame in the video. Use this option on video files only.
+    For example, enter ``25`` to leave every twenty fifth frame in the video. Use this option on video files only.
 
     **Chunk size**. Defines a number of frames to be packed in a chunk when send from client to server.
     Server defines automatically if empty. 
