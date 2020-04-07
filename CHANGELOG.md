@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hidden points (or outsided) are visible after changing a frame
 - Merge is allowed for points, but clicks on points conflict with frame dragging logic
 - Removed objects are visible for search
+- Add missed task_id and job_id fields into exception logs for the new UI (https://github.com/opencv/cvat/pull/1372) 
 
 ### Security
 -
