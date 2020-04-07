@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Increase preview size of a task till 256, 256 on the server
+- Minor style updates
 
 ### Deprecated
 -
@@ -23,8 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - New shape is added when press ``esc`` when drawing instead of cancellation
-- Fixed dextr segmentation.
-- Fixed `FileNotFoundError` during dump after moving format files
+- Dextr segmentation doesn't work.
+- `FileNotFoundError` during dump after moving format files
+- CVAT doesn't append outside shapes when merge polyshapes in old UI
+- Layout sometimes shows double scroll bars on create task, dashboard and settings pages
+- UI fails after trying to change frame during resizing, dragging, editing
+- Hidden points (or outsided) are visible after changing a frame
+- Merge is allowed for points, but clicks on points conflict with frame dragging logic
+- Removed objects are visible for search
 
 ### Security
 -

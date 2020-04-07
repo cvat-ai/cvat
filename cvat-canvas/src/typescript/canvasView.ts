@@ -1041,7 +1041,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     (shape as any).clear();
                     shape.attr('points', stringified);
 
-                    if (state.shapeType === 'points') {
+                    if (state.shapeType === 'points' && !state.hidden) {
                         this.selectize(false, shape);
                         this.setupPoints(shape as SVG.PolyLine, state);
                     }
@@ -1187,7 +1187,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).off('resizestart');
             (shape as any).off('resizing');
             (shape as any).off('resizedone');
-            (shape as any).resize(false);
+            (shape as any).resize('stop');
 
             // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[clientID];
@@ -1543,6 +1543,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         group.on('click.canvas', (event: MouseEvent): void => {
             // Need to redispatch the event on another element
             basicPolyline.fire(new MouseEvent('click', event));
+            // redispatch event to canvas to be able merge points clicking them
+            this.content.dispatchEvent(new MouseEvent('click', event));
         });
 
         group.bbox = basicPolyline.bbox.bind(basicPolyline);
