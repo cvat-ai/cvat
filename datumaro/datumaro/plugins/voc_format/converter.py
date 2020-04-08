@@ -426,9 +426,9 @@ class _Converter:
             label_map = OrderedDict()
             label_map['background'] = [None, [], []]
             for item in labels.items:
-                label_map[item.name] = [None, [], []]
+                label_map[self._strip_label(item.name)] = [None, [], []]
 
-        elif label_map_source in [LabelmapType.guess.name, None]:
+        elif label_map_source in {LabelmapType.guess.name, None}:
             # generate colormap for union of VOC and input dataset labels
             label_map = make_voc_label_map()
 
