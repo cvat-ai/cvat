@@ -1535,12 +1535,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     // TODO: verify tslint
-    private addCuboid(points: string, state: any): SVG.Cube {
+    private addCuboid(points: string, state: any): any {
         const cube = this.adoptedContent.cube(
             new Cuboid2PointViewModel(pointsToArray(points)),
         ).addClass('cvat_canvas_shape');
 
         return cube;
+
+        // return this.addPolyline(points, state);
     }
     // tslint:enable
 

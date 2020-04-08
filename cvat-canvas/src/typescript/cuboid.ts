@@ -16,15 +16,11 @@ class Equation {
     private a: number;
     private b: number;
     private c: number;
-    private cCanvas: number;
 
     public constructor(p1: number[], p2: number[]) {
         this.a = p1[1] - p2[1];
         this.b = p2[0] - p1[0];
         this.c = this.b * p1[1] + this.a * p1[0];
-
-        const p1Canvas = { x: p1[0], y: p1[1] };
-        this.cCanvas = this.b * p1Canvas.y + this.a * p1Canvas.x;
     }
 
     // get the line equation in actual coordinates
@@ -67,7 +63,6 @@ class Figure {
 class Edge extends Figure {
     public getEquation(): Equation {
         let { points } = this;
-        points = convertToArray(points);
         return new Equation(points[0], points[1]);
     }
 }

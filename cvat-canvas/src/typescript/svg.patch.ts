@@ -208,13 +208,13 @@ SVG.Cube = SVG.invent({
 
         setupProjections(viewModel: any) {
             this.ftProj = this.line(this.updateProjectionLine(viewModel.ft.getEquation(),
-                viewModel.ft.points[0], viewModel.vplCanvas));
+                viewModel.ft.points[0], viewModel.vpl));
             this.fbProj = this.line(this.updateProjectionLine(viewModel.fb.getEquation(),
-                viewModel.ft.points[0], viewModel.vplCanvas));
+                viewModel.ft.points[0], viewModel.vpl));
             this.rtProj = this.line(this.updateProjectionLine(viewModel.rt.getEquation(),
-                viewModel.rt.points[1], viewModel.vprCanvas));
+                viewModel.rt.points[1], viewModel.vpr));
             this.rbProj = this.line(this.updateProjectionLine(viewModel.rb.getEquation(),
-                viewModel.rb.points[1], viewModel.vprCanvas));
+                viewModel.rb.points[1], viewModel.vpr));
 
             this.ftProj.stroke({ color: '#C0C0C0' });
             this.fbProj.stroke({ color: '#C0C0C0' });
@@ -403,10 +403,10 @@ SVG.Cube = SVG.invent({
         },
 
         updateProjectionLine(equation: any, source: any, direction: any) {
-            const x1 = source.x;
+            const x1 = source[0];
             const y1 = equation.getY(x1);
 
-            const x2 = direction.x;
+            const x2 = direction[0];
             const y2 = equation.getY(x2);
             return [[x1, y1], [x2, y2]];
         },
