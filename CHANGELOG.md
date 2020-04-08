@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dialog window with some helpful information about using filters
 - Ability to display a bitmap in the new UI
 - Button to reset colors settings (brightness, saturation, contrast) in the new UI
-- Added option to display shape text always
+- Option to display shape text always
+- Dedicated message with clarifications when share is unmounted (https://github.com/opencv/cvat/pull/1373)
 
 ### Changed
 - Increase preview size of a task till 256, 256 on the server
