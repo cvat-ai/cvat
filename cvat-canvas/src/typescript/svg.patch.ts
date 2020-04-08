@@ -186,7 +186,7 @@ SVG.Cube = SVG.invent({
     inherit: SVG.G,
     extend: {
 
-        constructorMethod(viewModel) {
+        constructorMethod(viewModel: any) {
             this.attr('points', viewModel.getPoints());
             this.projectionLineEnable = false;
             this.setupFaces(viewModel);
@@ -199,22 +199,22 @@ SVG.Cube = SVG.invent({
             return this;
         },
 
-        setupFaces(viewModel) {
-            this.face = this.polygon(viewModel.front.canvasPoints);
-            this.right = this.polygon(viewModel.right.canvasPoints);
-            this.dorsal = this.polygon(viewModel.dorsal.canvasPoints);
-            this.left = this.polygon(viewModel.left.canvasPoints);
+        setupFaces(viewModel: any) {
+            this.face = this.polygon(viewModel.front.points);
+            this.right = this.polygon(viewModel.right.points);
+            this.dorsal = this.polygon(viewModel.dorsal.points);
+            this.left = this.polygon(viewModel.left.points);
         },
 
-        setupProjections(viewModel) {
+        setupProjections(viewModel: any) {
             this.ftProj = this.line(this.updateProjectionLine(viewModel.ft.getEquation(),
-                viewModel.ft.canvasPoints[0], viewModel.vplCanvas));
+                viewModel.ft.points[0], viewModel.vplCanvas));
             this.fbProj = this.line(this.updateProjectionLine(viewModel.fb.getEquation(),
-                viewModel.ft.canvasPoints[0], viewModel.vplCanvas));
+                viewModel.ft.points[0], viewModel.vplCanvas));
             this.rtProj = this.line(this.updateProjectionLine(viewModel.rt.getEquation(),
-                viewModel.rt.canvasPoints[1], viewModel.vprCanvas));
+                viewModel.rt.points[1], viewModel.vprCanvas));
             this.rbProj = this.line(this.updateProjectionLine(viewModel.rb.getEquation(),
-                viewModel.rb.canvasPoints[1], viewModel.vprCanvas));
+                viewModel.rb.points[1], viewModel.vprCanvas));
 
             this.ftProj.stroke({ color: '#C0C0C0' });
             this.fbProj.stroke({ color: '#C0C0C0' });
@@ -222,16 +222,16 @@ SVG.Cube = SVG.invent({
             this.rbProj.stroke({ color: '#C0C0C0' });
         },
 
-        setupEdges(viewModel) {
-            this.frontLeftEdge = this.line(viewModel.fl.canvasPoints);
-            this.frontRightEdge = this.line(viewModel.fr.canvasPoints);
-            this.dorsalRightEdge = this.line(viewModel.dr.canvasPoints);
-            this.dorsalLeftEdge = this.line(viewModel.dl.canvasPoints);
+        setupEdges(viewModel: any) {
+            this.frontLeftEdge = this.line(viewModel.fl.points);
+            this.frontRightEdge = this.line(viewModel.fr.points);
+            this.dorsalRightEdge = this.line(viewModel.dr.points);
+            this.dorsalLeftEdge = this.line(viewModel.dl.points);
 
-            this.frontTopEdge = this.line(viewModel.ft.canvasPoints);
-            this.rightTopEdge = this.line(viewModel.rt.canvasPoints);
-            this.frontBotEdge = this.line(viewModel.fb.canvasPoints);
-            this.rightBotEdge = this.line(viewModel.rb.canvasPoints);
+            this.frontTopEdge = this.line(viewModel.ft.points);
+            this.rightTopEdge = this.line(viewModel.rt.points);
+            this.frontBotEdge = this.line(viewModel.fb.points);
+            this.rightBotEdge = this.line(viewModel.rb.points);
         },
 
         setupGrabPoints() {
@@ -262,14 +262,14 @@ SVG.Cube = SVG.invent({
             }
         },
 
-        move(dx, dy) {
+        move(dx: Number, dy: Number) {
             this.face.dmove(dx, dy);
             this.dorsal.dmove(dx, dy);
             this.right.dmove(dx, dy);
             this.left.dmove(dx, dy);
 
             const edges = this.getEdges();
-            edges.forEach((edge) => {
+            edges.forEach((edge: any) => {
                 edge.dmove(dx, dy);
             });
         },
@@ -292,19 +292,19 @@ SVG.Cube = SVG.invent({
 
         showGrabPoints() {
             const grabPoints = this.getGrabPoints();
-            grabPoints.forEach((point) => {
+            grabPoints.forEach((point: any) => {
                 point.show();
             });
         },
 
         hideGrabPoints() {
             const grabPoints = this.getGrabPoints();
-            grabPoints.forEach((point) => {
+            grabPoints.forEach((point: any) => {
                 point.hide();
             });
         },
 
-        updateView(viewModel) {
+        updateView(viewModel: any) {
             const convertedPoints = window.cvat.translate.points.actualToCanvas(
                 viewModel.getPoints(),
             );
@@ -315,23 +315,23 @@ SVG.Cube = SVG.invent({
             this.attr('points', convertedPoints);
         },
 
-        updatePolygons(viewModel) {
-            this.face.plot(viewModel.front.canvasPoints);
-            this.right.plot(viewModel.right.canvasPoints);
-            this.dorsal.plot(viewModel.dorsal.canvasPoints);
-            this.left.plot(viewModel.left.canvasPoints);
+        updatePolygons(viewModel: any) {
+            this.face.plot(viewModel.front.points);
+            this.right.plot(viewModel.right.points);
+            this.dorsal.plot(viewModel.dorsal.points);
+            this.left.plot(viewModel.left.points);
         },
 
-        updateLines(viewModel) {
-            this.frontLeftEdge.plot(viewModel.fl.canvasPoints);
-            this.frontRightEdge.plot(viewModel.fr.canvasPoints);
-            this.dorsalRightEdge.plot(viewModel.dr.canvasPoints);
-            this.dorsalLeftEdge.plot(viewModel.dl.canvasPoints);
+        updateLines(viewModel: any) {
+            this.frontLeftEdge.plot(viewModel.fl.points);
+            this.frontRightEdge.plot(viewModel.fr.points);
+            this.dorsalRightEdge.plot(viewModel.dr.points);
+            this.dorsalLeftEdge.plot(viewModel.dl.points);
 
-            this.frontTopEdge.plot(viewModel.ft.canvasPoints);
-            this.rightTopEdge.plot(viewModel.rt.canvasPoints);
-            this.frontBotEdge.plot(viewModel.fb.canvasPoints);
-            this.rightBotEdge.plot(viewModel.rb.canvasPoints);
+            this.frontTopEdge.plot(viewModel.ft.points);
+            this.rightTopEdge.plot(viewModel.rt.points);
+            this.frontBotEdge.plot(viewModel.fb.points);
+            this.rightBotEdge.plot(viewModel.rb.points);
         },
 
         updateThickness() {
@@ -339,7 +339,7 @@ SVG.Cube = SVG.invent({
             const width = this.attr('stroke-width');
             const baseWidthOffset = 1.75;
             const expandedWidthOffset = 3;
-            edges.forEach((edge) => {
+            edges.forEach((edge: any) => {
                 edge.on('mouseover', function () {
                     this.attr({ 'stroke-width': width * expandedWidthOffset });
                 }).on('mouseout', function () {
@@ -348,15 +348,15 @@ SVG.Cube = SVG.invent({
             });
         },
 
-        updateProjections(viewModel) {
+        updateProjections(viewModel: any) {
             this.ftProj.plot(this.updateProjectionLine(viewModel.ft.getEquation(),
-                viewModel.ft.canvasPoints[0], viewModel.vplCanvas));
+                viewModel.ft.points[0], viewModel.vplCanvas));
             this.fbProj.plot(this.updateProjectionLine(viewModel.fb.getEquation(),
-                viewModel.ft.canvasPoints[0], viewModel.vplCanvas));
+                viewModel.ft.points[0], viewModel.vplCanvas));
             this.rtProj.plot(this.updateProjectionLine(viewModel.rt.getEquation(),
-                viewModel.rt.canvasPoints[1], viewModel.vprCanvas));
+                viewModel.rt.points[1], viewModel.vprCanvas));
             this.rbProj.plot(this.updateProjectionLine(viewModel.rb.getEquation(),
-                viewModel.rt.canvasPoints[1], viewModel.vprCanvas));
+                viewModel.rt.points[1], viewModel.vprCanvas));
         },
 
         paintOrientationLines() {
@@ -402,12 +402,12 @@ SVG.Cube = SVG.invent({
             return arr;
         },
 
-        updateProjectionLine(equation, source, direction) {
+        updateProjectionLine(equation: any, source: any, direction: any) {
             const x1 = source.x;
-            const y1 = equation.getYCanvas(x1);
+            const y1 = equation.getY(x1);
 
             const x2 = direction.x;
-            const y2 = equation.getYCanvas(x2);
+            const y2 = equation.getY(x2);
             return [[x1, y1], [x2, y2]];
         },
 
@@ -436,7 +436,7 @@ SVG.Cube = SVG.invent({
 
         removeMouseOverEvents() {
             const edges = this.getEdges();
-            edges.forEach((edge) => {
+            edges.forEach((edge: any) => {
                 edge.off('mouseover').off('mouseout');
             });
             this.left.off('mouseover').off('mouseout');
@@ -453,7 +453,7 @@ SVG.Cube = SVG.invent({
 
         addOccluded() {
             const edges = this.getEdges();
-            edges.forEach((edge) => {
+            edges.forEach((edge: any) => {
                 edge.node.classList.add('occludedShape');
             });
             this.face.attr('stroke-width', 0);
@@ -464,7 +464,7 @@ SVG.Cube = SVG.invent({
 
         removeOccluded() {
             const edges = this.getEdges();
-            edges.forEach((edge) => {
+            edges.forEach((edge: any) => {
                 edge.node.classList.remove('occludedShape');
             });
             this.face.attr('stroke-width', this.attr('stroke-width'));
@@ -474,7 +474,8 @@ SVG.Cube = SVG.invent({
         },
     },
     construct: {
-        cube(points) {
+        cube(points: Number[]) {
+            // tslint:disable-next-line
             return this.put(new SVG.Cube()).constructorMethod(points);
         },
     },

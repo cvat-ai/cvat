@@ -38,6 +38,7 @@ import {
     Size,
     Configuration,
 } from './canvasModel';
+import { Cuboid2PointViewModel } from './cuboid';
 
 export interface CanvasView {
     html(): HTMLDivElement;
@@ -1533,11 +1534,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return polyline;
     }
 
-    private addCuboid(points: string, state: any): SVG.PolyLine {
-        const cube = this.adoptedContent.cube(points).addClass('cvat_canvas_shape')
+    // TODO: verify tslint
+    private addCuboid(points: string, state: any): SVG.Cube {
+        const cube = this.adoptedContent.cube(
+            new Cuboid2PointViewModel(pointsToArray(points)),
+        ).addClass('cvat_canvas_shape');
 
         return cube;
     }
+    // tslint:enable
 
     private setupPoints(basicPolyline: SVG.PolyLine, state: any): any {
         this.selectize(true, basicPolyline);
