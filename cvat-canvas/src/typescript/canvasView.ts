@@ -385,6 +385,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 created.push(state);
             } else {
                 const drawnState = this.drawnStates[state.clientID];
+                // object has been changed or changed frame for a track
                 if (drawnState.updated !== state.updated || drawnState.frame !== state.frame) {
                     updated.push(state);
                 }
@@ -395,29 +396,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .filter((id: number): boolean => !newIDs.includes(id))
             .map((id: number): any => this.drawnStates[id]);
 
-
-        if (this.activeElement.clientID !== null) {
-            this.deactivate();
-        }
-
-        for (const state of deleted) {
-            if (state.clientID in this.svgTexts) {
-                this.svgTexts[state.clientID].remove();
+        if (deleted.length || updated.length || created.length) {
+            if (this.activeElement.clientID !== null) {
+                this.deactivate();
             }
 
-            this.svgShapes[state.clientID].off('click.canvas');
-            this.svgShapes[state.clientID].remove();
-            delete this.drawnStates[state.clientID];
-        }
+            for (const state of deleted) {
+                if (state.clientID in this.svgTexts) {
+                    this.svgTexts[state.clientID].remove();
+                }
 
-        this.addObjects(created, translate);
-        this.updateObjects(updated, translate);
-        this.sortObjects();
+                this.svgShapes[state.clientID].off('click.canvas');
+                this.svgShapes[state.clientID].remove();
+                delete this.drawnStates[state.clientID];
+            }
 
-        if (this.controller.activeElement.clientID !== null) {
-            const { clientID } = this.controller.activeElement;
-            if (states.map((state: any): number => state.clientID).includes(clientID)) {
-                this.activate(this.controller.activeElement);
+            this.addObjects(created, translate);
+            this.updateObjects(updated, translate);
+            this.sortObjects();
+
+            if (this.controller.activeElement.clientID !== null) {
+                const { clientID } = this.controller.activeElement;
+                if (states.map((state: any): number => state.clientID).includes(clientID)) {
+                    this.activate(this.controller.activeElement);
+                }
             }
         }
     }
@@ -960,6 +962,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             attributes: { ...state.attributes },
             zOrder: state.zOrder,
             pinned: state.pinned,
+            updated: state.updated,
+            frame: state.frame,
         };
     }
 
