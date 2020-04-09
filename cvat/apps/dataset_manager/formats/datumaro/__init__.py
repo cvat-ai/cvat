@@ -2,12 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os.path as osp
 from tempfile import TemporaryDirectory
 
-from cvat.apps.dataset_manager.bindings import import_dm_annotations, CvatTaskDataExtractor
-from .registry import dm_env, exporter
+from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+    import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.settings.base import DATUMARO_PATH
+
+from ..registry import dm_env, exporter
 
 
 @exporter(name="Datumaro", ext="ZIP", version="1.0")

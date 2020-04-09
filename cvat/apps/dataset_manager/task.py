@@ -84,7 +84,6 @@ def _merge_table_rows(rows, keys_for_merge, field_id):
 
 class JobAnnotation:
     def __init__(self, pk):
-        self.user = user
         self.db_job = models.Job.objects.select_related('segment__task') \
             .select_for_update().get(id=pk)
 
