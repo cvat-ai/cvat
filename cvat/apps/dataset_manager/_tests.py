@@ -184,6 +184,24 @@ class TaskExportTest(APITestCase):
                     "type": "polygon",
                     "occluded": False
                 },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 1,
+                    "attributes": [],
+                    "points": [100, 300.222, 400, 500, 1, 3],
+                    "type": "points",
+                    "occluded": False
+                },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 1,
+                    "attributes": [],
+                    "points": [2.0, 2.1, 400, 500, 1, 3],
+                    "type": "polyline",
+                    "occluded": False
+                },
             ],
             "tracks": [
                 {
