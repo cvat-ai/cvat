@@ -110,8 +110,8 @@ class _Converter:
         self._images_dir = images_dir
 
     def get_label(self, label_id):
-        return self._extractor.categories()[AnnotationType.label] \
-            .items[label_id].name
+        return self._strip_label(self._extractor. \
+            categories()[AnnotationType.label].items[label_id].name)
 
     def save_subsets(self):
         subsets = self._extractor.subsets()
@@ -489,7 +489,7 @@ class _Converter:
 
     def _make_label_id_map(self):
         source_labels = {
-            id: label.name for id, label in
+            id: self._strip_label(label.name) for id, label in
             enumerate(self._extractor.categories().get(
                 AnnotationType.label, LabelCategories()).items)
         }
