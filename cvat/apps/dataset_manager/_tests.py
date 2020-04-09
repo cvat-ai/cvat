@@ -269,16 +269,12 @@ class TaskExportTest(APITestCase):
         return response
 
     def _test_export(self, format_name, save_images=False):
-        self.assertTrue(format_name in [f['tag'] for f in dm.EXPORT_FORMATS])
-
         task, _ = self._generate_task()
-        project = dm.TaskProject.from_task(
-            Task.objects.get(pk=task["id"]), self.user.username)
 
-        with tempfile.TemporaryDirectory() as test_dir:
-            project.export(format_name, test_dir, save_images=save_images)
+        f = BytesIO()
+        dm.export_task(task["id"], format_name, f, save_images=save_images)
 
-            self.assertTrue(os.listdir(test_dir))
+        self.assertTrue(len(f.getvalue()) != 0)
 
     def test_datumaro(self):
         self._test_export('Datumaro 1.0', save_images=False)
@@ -310,9 +306,12 @@ class TaskExportTest(APITestCase):
     def test_cvat_images(self):
         self._test_export('CVAT for images 1.1', save_images=True)
 
-    def test_formats_query(self):
+    def test_export_formats_query(self):
         formats = dm.get_export_formats()
 
-        expected = set(f['tag'] for f in dm.EXPORT_FORMATS)
-        actual = set(f['tag'] for f in formats)
-        self.assertSetEqual(expected, actual)
+        self.assertEqual(len(formats), 10)
+
+    def test_import_formats_query(self):
+        formats = dm.get_import_formats()
+
+        self.assertEqual(len(formats), 8)
