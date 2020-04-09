@@ -6,11 +6,12 @@ from tempfile import TemporaryDirectory
 
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, \
-    import_dm_annotations
-from cvat.apps.dataset_manager.formats import dm_env, exporter, importer
+from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+    import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.project import Dataset
+
+from .registry import dm_env, exporter, importer
 
 
 @exporter(name='Segmentation mask', ext='ZIP', version='1.1')

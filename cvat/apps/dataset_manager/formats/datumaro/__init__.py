@@ -5,7 +5,7 @@
 from tempfile import TemporaryDirectory
 
 from cvat.apps.dataset_manager.bindings import import_dm_annotations, CvatTaskDataExtractor
-from cvat.apps.dataset_manager.formats import dm_env, exporter
+from .registry import dm_env, exporter
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.settings.base import DATUMARO_PATH
 

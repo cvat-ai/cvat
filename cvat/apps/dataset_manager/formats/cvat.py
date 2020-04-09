@@ -9,9 +9,10 @@ from tempfile import TemporaryDirectory
 
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.formats import exporter, importer
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.util.image import save_image
+
+from .registry import exporter, importer
 
 
 def pairwise(iterable):

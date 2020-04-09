@@ -5,8 +5,8 @@
 
 from datumaro.components.project import Environment
 
-dm_env = Environment()
 
+dm_env = Environment()
 
 class _Format:
     NAME = ''

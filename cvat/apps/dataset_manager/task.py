@@ -16,7 +16,7 @@ from cvat.apps.profiler import silk_profile
 
 from .annotation import AnnotationIR, AnnotationManager
 from .bindings import TaskData
-from .formats import make_exporter, make_importer
+from .formats.registry import make_exporter, make_importer
 
 
 class dotdict(OrderedDict):

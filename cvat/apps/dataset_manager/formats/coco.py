@@ -6,8 +6,9 @@ from tempfile import TemporaryDirectory
 
 from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, \
     import_dm_annotations
-from cvat.apps.dataset_manager.formats import dm_env, exporter, importer
 from cvat.apps.dataset_manager.util import make_zip_archive
+
+from .registry import dm_env, exporter, importer
 
 
 @exporter(name='COCO', ext='ZIP', version='1.0')
