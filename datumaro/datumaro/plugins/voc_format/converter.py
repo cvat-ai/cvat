@@ -428,7 +428,7 @@ class _Converter:
             for item in labels.items:
                 label_map[self._strip_label(item.name)] = [None, [], []]
 
-        elif label_map_source in {LabelmapType.guess.name, None}:
+        elif label_map_source in [LabelmapType.guess.name, None]:
             # generate colormap for union of VOC and input dataset labels
             label_map = make_voc_label_map()
 
