@@ -281,25 +281,34 @@ class TaskExportTest(APITestCase):
             self.assertTrue(os.listdir(test_dir))
 
     def test_datumaro(self):
-        self._test_export(dm.EXPORT_FORMAT_DATUMARO_PROJECT, save_images=False)
+        self._test_export('Datumaro 1.0', save_images=False)
 
     def test_coco(self):
-        self._test_export('cvat_coco', save_images=True)
+        self._test_export('COCO 1.0', save_images=True)
 
     def test_voc(self):
-        self._test_export('cvat_voc', save_images=True)
+        self._test_export('PASCAL VOC 1.1', save_images=True)
 
-    def test_tf_detection_api(self):
-        self._test_export('cvat_tfrecord', save_images=True)
+    def test_tf_record(self):
+        self._test_export('TFRecord 1.0', save_images=True)
 
     def test_yolo(self):
-        self._test_export('cvat_yolo', save_images=True)
+        self._test_export('YOLO 1.1', save_images=True)
 
     def test_mot(self):
-        self._test_export('cvat_mot', save_images=True)
+        self._test_export('MOT 1.1', save_images=True)
 
     def test_labelme(self):
-        self._test_export('cvat_label_me', save_images=True)
+        self._test_export('LabelMe 3.0', save_images=True)
+
+    def test_mask(self):
+        self._test_export('Segmentation mask 1.1', save_images=True)
+
+    def test_cvat_video(self):
+        self._test_export('CVAT for video 1.1', save_images=True)
+
+    def test_cvat_images(self):
+        self._test_export('CVAT for images 1.1', save_images=True)
 
     def test_formats_query(self):
         formats = dm.get_export_formats()

@@ -49,9 +49,13 @@ def to_snake_case(s):
         return ''
 
     name = [s[0].lower()]
-    for char in s[1:]:
+    for idx, char in enumerate(s[1:]):
+        idx = idx + 1
         if char.isalpha() and char.isupper():
-            name.append('_')
+            prev_char = s[idx - 1]
+            if not (prev_char.isalpha() and prev_char.isupper()):
+                # avoid "HTML" -> "h_t_m_l"
+                name.append('_')
             name.append(char.lower())
         else:
             name.append(char)

@@ -12,8 +12,10 @@ from django.utils import timezone
 import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task
+from datumaro.cli.util import make_file_name
+from datumaro.util import to_snake_case
 
-from .formats import IMPORT_FORMATS, EXPORT_FORMATS
+from .formats import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import current_function_name
 
 
@@ -41,7 +43,7 @@ def export_task(task_id, dst_format, server_url=None, save_images=False):
 
         exporter = get_exporter(format_name)
         output_base = '%s_%s' % ('dataset' if save_images else 'task',
-            to_snake_case(dst_format))
+            make_file_name(to_snake_case(dst_format)))
         output_path = '%s.%s' % (output_base, exporter.EXT)
         output_path = osp.join(cache_dir, output_path)
 
@@ -59,12 +61,11 @@ def export_task(task_id, dst_format, server_url=None, save_images=False):
                 task_id=task_id,
                 file_path=output_path, file_ctime=archive_ctime)
             slogger.task[task_id].info(
-                "The task '{}' is exported as '{}' "
-                "and available for downloading for next '{}'. "
-                "Export cache cleaning job is enqueued, "
-                "id '{}', start in '{}'".format(
-                    db_task.name, dst_format, CACHE_TTL,
-                    cleaning_job.id, CACHE_TTL))
+                "The task '{}' is exported as '{}' at '{}' "
+                "and available for downloading for the next {}. "
+                "Export cache cleaning job is enqueued, id '{}'".format(
+                db_task.name, dst_format, output_path, CACHE_TTL,
+                cleaning_job.id))
 
         return output_path
     except Exception:

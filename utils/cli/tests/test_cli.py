@@ -60,7 +60,7 @@ class TestCLI(APITestCase):
 
     def test_tasks_dump(self):
         path = os.path.join(settings.SHARE_ROOT, 'test_cli.xml')
-        self.cli.tasks_dump(1, 'CVAT XML 1.1 for images', path)
+        self.cli.tasks_dump(1, 'CVAT for images 1.1', path)
         self.assertTrue(os.path.exists(path))
         os.remove(path)
 
@@ -131,6 +131,6 @@ class TestCLI(APITestCase):
         path = os.path.join(settings.SHARE_ROOT, 'test_cli.json')
         with open(path, "wb") as coco:
             coco.write(content)
-        self.cli.tasks_upload(1, 'COCO JSON 1.0', path)
+        self.cli.tasks_upload(1, 'COCO 1.0', path)
         self.assertRegex(self.mock_stdout.getvalue(), '.*{}.*'.format("annotation file"))
         os.remove(path)

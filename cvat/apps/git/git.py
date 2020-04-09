@@ -266,8 +266,10 @@ class Git:
 
         # Dump an annotation
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        display_name = "CVAT XML 1.1"
-        display_name += " for images" if self._task_mode == "annotation" else " for videos"
+        if self._task_mode == "annotation":
+            display_name = "CVAT for images 1.1"
+        else:
+            display_name = "CVAT for video 1.1"
         cvat_dumper = AnnotationDumper.objects.get(display_name=display_name)
         dump_name = os.path.join(db_task.get_task_dirname(),
             "git_annotation_{}.xml".format(timestamp))

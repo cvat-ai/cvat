@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 from datumaro.components.project import Environment
-from datumaro.util import to_snake_case
 
 dm_env = Environment()
 
@@ -13,8 +12,7 @@ class _Format:
     NAME = ''
     EXT = ''
     VERSION = ''
-    DISPLAY_NAME = '{name} {ext} {version}'
-    TAG = ''
+    DISPLAY_NAME = '{NAME} {VERSION}'
 
 class Exporter(_Format):
     def __call__(self, dst_file, task_data, **options):
@@ -24,7 +22,7 @@ class Importer(_Format):
     def __call__(self, src_file, task_data, **options):
         raise NotImplementedError()
 
-def _wrap_format(f_or_cls, klass, name, version, ext, display_name, tag):
+def _wrap_format(f_or_cls, klass, name, version, ext, display_name):
     import inspect
     if inspect.isclass(f):
         assert hasattr(f_or_cls, '__call__')
@@ -45,29 +43,27 @@ def _wrap_format(f_or_cls, klass, name, version, ext, display_name, tag):
     target.VERSION = version or klass.VERSION
     target.EXT = ext or klass.EXT
     target.DISPLAY_NAME = (display_name or klass.DISPLAY_NAME).format(
-        name=name, version=version, ext=ext)
-    target.TAG = tag or to_snake_case(target.NAME)
-    assert all([target.NAME, target.VERSION, target.EXT, target.DISPLAY_NAME,
-        target.TAG])
+        NAME=name, VERSION=version, EXT=ext)
+    assert all([target.NAME, target.VERSION, target.EXT, target.DISPLAY_NAME])
     return target
 
 EXPORT_FORMATS = {}
-def exporter(name, version, ext, display_name=None, tag=None):
+def exporter(name, version, ext, display_name=None):
     assert name not in EXPORT_FORMATS, "Export format '%s' already registered" % name
     def wrap_with_params(f_or_cls):
-        t = _wrap_format(f_or_cls, Exporter, tag=tag,
+        t = _wrap_format(f_or_cls, Exporter,
             name=name, ext=ext, version=version, display_name=display_name)
-        EXPORT_FORMATS[t.TAG] = t
+        EXPORT_FORMATS[t.DISPLAY_NAME] = t
         return t
     return wrap_with_params
 
 IMPORT_FORMATS = {}
-def importer(name, version, ext, display_name=None, tag=None):
+def importer(name, version, ext, display_name=None):
     assert name not in IMPORT_FORMATS, "Import format '%s' already registered" % name
     def wrap_with_params(f_or_cls):
-        t = _wrap_format(f_or_cls, Importer, tag=tag,
+        t = _wrap_format(f_or_cls, Importer,
             name=name, ext=ext, version=version, display_name=display_name)
-        IMPORT_FORMATS[t.TAG] = t
+        IMPORT_FORMATS[t.DISPLAY_NAME] = t
         return t
     return wrap_with_params
 

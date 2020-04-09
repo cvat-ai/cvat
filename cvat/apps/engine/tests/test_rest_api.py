@@ -3036,26 +3036,26 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "shapes": [],
                     "tracks": [],
                 }
-            if annotation_format == "CVAT XML 1.1 for videos":
+            if annotation_format == "CVAT for video 1.1":
                 annotations["tracks"] = rectangle_tracks_with_attrs + rectangle_tracks_wo_attrs
 
-            elif annotation_format == "CVAT XML 1.1 for images":
+            elif annotation_format == "CVAT for images 1.1":
                 annotations["shapes"] = rectangle_shapes_with_attrs + rectangle_shapes_wo_attrs \
                     + polygon_shapes_wo_attrs + polygon_shapes_with_attrs
                 annotations["tags"] = tags_with_attrs + tags_wo_attrs
 
-            elif annotation_format == "PASCAL VOC ZIP 1.1":
+            elif annotation_format == "PASCAL VOC 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
                 annotations["tags"] = tags_wo_attrs
 
             elif annotation_format == "YOLO ZIP 1.1" or \
-                 annotation_format == "TFRecord ZIP 1.0":
+                 annotation_format == "TFRecord 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
-            elif annotation_format == "COCO JSON 1.0":
+            elif annotation_format == "COCO 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
-            elif annotation_format == "MASK ZIP 1.1":
+            elif annotation_format == "Segmentation mask 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs + polygon_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
@@ -3079,10 +3079,10 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             supported_formats = [{
                 "name": "CVAT",
                 "dumpers": [{
-                    "display_name": "CVAT XML 1.1 for images"
+                    "display_name": "CVAT for images 1.1"
                 }],
                 "loaders": [{
-                    "display_name": "CVAT XML 1.1"
+                    "display_name": "CVAT 1.1"
                 }]
             }]
 
@@ -3132,7 +3132,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     }
 
                     for loader in annotation_format["loaders"]:
-                        if loader["display_name"] == "MASK ZIP 1.1":
+                        if loader["display_name"] == "Segmentation mask 1.1":
                             continue # can't really predict the result and check
                         response = self._upload_api_v1_tasks_id_annotations(task["id"], annotator, uploaded_data, "format={}".format(loader["display_name"]))
                         self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
@@ -3183,7 +3183,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 self.assertTrue(coco.getAnnIds())
         elif annotation_format_name == "TFRecord":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif annotation_format_name == "MASK":
+        elif annotation_format_name == "Segmentation mask":
             self.assertTrue(zipfile.is_zipfile(content))
 
 

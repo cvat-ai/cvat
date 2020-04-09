@@ -536,18 +536,17 @@ def _export(dst_file, task_data, anno_callback, **options):
 
         make_zip_archive(temp_dir, dst_file)
 
-@exporter(name='CVAT XML for videos', ext='ZIP', version='1.1')
+@exporter(name='CVAT for video', ext='ZIP', version='1.1')
 def _export_video(dst_file, task_data, save_images=False):
     _export(dst_file, task_data,
         anno_callback=dump_as_cvat_interpolation, save_images=save_images)
 
-@exporter(name='CVAT XML for images', ext='ZIP', version='1.1')
+@exporter(name='CVAT for images', ext='ZIP', version='1.1')
 def _export_images(dst_file, task_data, save_images=False):
     _export(dst_file, task_data,
         anno_callback=dump_as_cvat_annotation, save_images=save_images)
 
-@importer(name='CVAT XML', ext='XML, ZIP', version='1.1',
-    display_name='{name} {version}')
+@importer(name='CVAT', ext='XML, ZIP', version='1.1')
 def _import(src_file, task_data):
     src_path = src_file.name
 

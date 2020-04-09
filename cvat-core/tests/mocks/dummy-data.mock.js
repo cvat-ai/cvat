@@ -10,13 +10,13 @@ const formatsDummyData = [{
     "id": 1,
     "dumpers": [
         {
-            "display_name": "CVAT XML 1.1 for videos",
+            "display_name": "CVAT for video 1.1",
             "format": "XML",
             "version": "1.1",
             "handler": "dump_as_cvat_interpolation"
         },
         {
-            "display_name": "CVAT XML 1.1 for images",
+            "display_name": "CVAT for images 1.1",
             "format": "XML",
             "version": "1.1",
             "handler": "dump_as_cvat_annotation"
@@ -24,7 +24,7 @@ const formatsDummyData = [{
     ],
     "loaders": [
         {
-            "display_name": "CVAT XML 1.1",
+            "display_name": "CVAT 1.1",
             "format": "XML",
             "version": "1.1",
             "handler": "load"

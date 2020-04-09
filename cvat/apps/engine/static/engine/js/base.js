@@ -224,6 +224,6 @@ $(document).ready(() => {
 });
 
 function isDefaultFormat(dumperName, taskMode) {
-    return (dumperName === 'CVAT XML 1.1 for videos' && taskMode === 'interpolation')
-    || (dumperName === 'CVAT XML 1.1 for images' && taskMode === 'annotation');
+    return (dumperName === 'CVAT for video 1.1' && taskMode === 'interpolation')
+    || (dumperName === 'CVAT for images 1.1' && taskMode === 'annotation');
 }

@@ -13,7 +13,7 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.project import Dataset
 
 
-@exporter(name='MASK', ext='ZIP', version='1.1')
+@exporter(name='Segmentation mask', ext='ZIP', version='1.1')
 def _export(dst_file, task_data, save_images=False):
     extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
     envt = dm_env.transforms
@@ -29,12 +29,12 @@ def _export(dst_file, task_data, save_images=False):
 
         make_zip_archive(temp_dir, dst_file)
 
-@importer(name='MASK', ext='ZIP', version='1.1')
+@importer(name='Segmentation mask', ext='ZIP', version='1.1')
 def _import(src_file, task_data):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
-        dm_dataset = dm_env.make_importer('voc')(tmp_dir).make_dataset()
+        dataset = dm_env.make_importer('voc')(tmp_dir).make_dataset()
         masks_to_polygons = dm_env.transforms.get('masks_to_polygons')
-        dm_dataset = dm_dataset.transform(masks_to_polygons)
-        import_dm_annotations(dm_dataset, task_data)
+        dataset = dataset.transform(masks_to_polygons)
+        import_dm_annotations(dataset, task_data)

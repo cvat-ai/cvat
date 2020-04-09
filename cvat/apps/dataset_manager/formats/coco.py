@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import shutil
 from tempfile import TemporaryDirectory
 
 from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, \
@@ -20,13 +19,7 @@ def _export(dst_file, task_data, save_images=False):
             save_images=save_images)
         converter(extractor, save_dir=temp_dir)
 
-        if save_images:
-            make_zip_archive(temp_dir, dst_file)
-        else:
-            # Return only json file
-            dst_file.close()
-            shutil.move(osp.join(temp_dir, 'annotations', 'instances_default.json'),
-                dst_file.name)
+        make_zip_archive(temp_dir, dst_file)
 
 @importer(name='COCO', ext='JSON, ZIP', version='1.0')
 def _import(src_file, task_data):
