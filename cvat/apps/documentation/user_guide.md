@@ -347,11 +347,11 @@ The search is case insensitive.
 ## Interface of the annotation tool
 
 The tool consists of:
-- ``Header`` -  pinned heading used to navigate CVAT sections and account settings;
-- ``Top panel`` — contains buttons navigation, main functions and accessing menu;
+- ``Header`` -  pinned header used to navigate CVAT sections and account settings;
+- ``Top panel`` — contains navigation buttons, main functions and menu access;
 - ``Workspace`` — space where images are shown;
 - ``Controls sidebar`` — contains tools for navigating the image, zoom,
-  creating shapes and editing tracks (combining, splitting, grouping)
+  creating shapes and editing tracks (merge, split, group)
 - ``Objects sidebar`` — contains label filter, two lists: 
   objects (on the frame) and labels (of objects on the frame) and appearance settings.
 
