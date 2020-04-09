@@ -34,21 +34,22 @@ CVAT is free, online, interactive video and image annotation tool for computer v
 
 ## Supported annotation formats
 
-Format selection is possible after clicking on the Upload annotation / Dump annotation button.
+Format selection is possible after clicking on the Upload annotation and Dump annotation buttons.
 [Datumaro](datumaro/README.md) dataset framework allows additional dataset transformations
-via its command line tool.
+via its command line tool and Python library.
 
-| Annotation format                                                                          | Dumper | Loader |
+| Annotation format                                                                          | Import | Export |
 | ------------------------------------------------------------------------------------------ | ------ | ------ |
-| [CVAT XML v1.1 for images](cvat/apps/documentation/xml_format.md#annotation)               | X      | X      |
-| [CVAT XML v1.1 for a video](cvat/apps/documentation/xml_format.md#interpolation)           | X      | X      |
-| [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                      | X      | X      |
+| [CVAT for images](cvat/apps/documentation/xml_format.md#annotation)                        | X      | X      |
+| [CVAT for a video](cvat/apps/documentation/xml_format.md#interpolation)                    | X      | X      |
+| [Datumaro](datumaro/README.md)                                                             |        | X      |
+| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                      | X      | X      |
+| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)              | X      | X      |
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                                 | X      | X      |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)                            | X      | X      |
-| PNG class mask + instance mask as in [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/) | X      | X      |
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)                      | X      | X      |
 | [MOT](https://motchallenge.net/)                                                           | X      | X      |
-| [LabelMe](http://labelme.csail.mit.edu/Release3.0)                                         | X      | X      |
+| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                     | X      | X      |
 
 ## Links
 - [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
