@@ -5,7 +5,8 @@
 
 import argparse
 
-from datumaro.cli.util import MultilineFormatter, to_snake_case
+from datumaro.cli.util import MultilineFormatter
+from datumaro.util import to_snake_case
 
 
 class CliPlugin:
