@@ -153,6 +153,7 @@ Standard JS events are used.
     - canvas.fit
     - canvas.dragshape => {id: number}
     - canvas.resizeshape => {id: number}
+    - canvas.contextmenu => { mouseEvent: MouseEvent, objectState: ObjectState,  pointID: number }
 ```
 
 ### WEB

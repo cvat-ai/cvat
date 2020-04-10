@@ -7,11 +7,8 @@ import consts from './consts';
 import 'svg.draw.js';
 import './svg.patch';
 
-import {
-    DrawData,
-    Geometry,
-    RectDrawingMethod,
-} from './canvasModel';
+import { DrawData, Geometry, RectDrawingMethod } from './canvasModel';
+import { AutoborderHandler } from './autoborderHandler';
 
 import {
     translateToSVG,
@@ -45,6 +42,7 @@ export class DrawHandlerImpl implements DrawHandler {
     };
     private drawData: DrawData;
     private geometry: Geometry;
+    private autoborderHandler: AutoborderHandler;
 
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
@@ -127,6 +125,7 @@ export class DrawHandlerImpl implements DrawHandler {
             return;
         }
 
+        this.autoborderHandler.autoborder(false);
         this.initialized = false;
         this.canvas.off('mousedown.draw');
         this.canvas.off('mouseup.draw');
@@ -334,6 +333,7 @@ export class DrawHandlerImpl implements DrawHandler {
             });
 
         this.drawPolyshape();
+        this.autoborderHandler.autoborder(true, this.drawInstance);
     }
 
     private drawPolyline(): void {
@@ -344,6 +344,7 @@ export class DrawHandlerImpl implements DrawHandler {
             });
 
         this.drawPolyshape();
+        this.autoborderHandler.autoborder(true, this.drawInstance);
     }
 
     private drawPoints(): void {
@@ -599,7 +600,9 @@ export class DrawHandlerImpl implements DrawHandler {
         onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean) => void,
         canvas: SVG.Container,
         text: SVG.Container,
+        autoborderHandler: AutoborderHandler,
     ) {
+        this.autoborderHandler = autoborderHandler;
         this.startTimestamp = Date.now();
         this.onDrawDone = onDrawDone;
         this.canvas = canvas;

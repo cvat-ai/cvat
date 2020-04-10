@@ -265,7 +265,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
-        canvasInstance.html().removeEventListener('point.contextmenu', this.onCanvasPointContextMenu);
+        canvasInstance.html().removeEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
 
         window.removeEventListener('resize', this.fitCanvas);
     }
@@ -686,7 +686,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
-        canvasInstance.html().addEventListener('point.contextmenu', this.onCanvasPointContextMenu);
+        canvasInstance.html().addEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
     }
 
     public render(): JSX.Element {

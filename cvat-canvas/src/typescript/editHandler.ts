@@ -6,14 +6,9 @@ import * as SVG from 'svg.js';
 import 'svg.select.js';
 
 import consts from './consts';
-import {
-    translateFromSVG,
-    pointsToArray,
-} from './shared';
-import {
-    EditData,
-    Geometry,
-} from './canvasModel';
+import { translateFromSVG, pointsToArray } from './shared';
+import { EditData, Geometry } from './canvasModel';
+import { AutoborderHandler } from './autoborderHandler';
 
 export interface EditHandler {
     edit(editData: EditData): void;
@@ -23,6 +18,7 @@ export interface EditHandler {
 
 export class EditHandlerImpl implements EditHandler {
     private onEditDone: (state: any, points: number[]) => void;
+    private autoborderHandler: AutoborderHandler;
     private geometry: Geometry;
     private canvas: SVG.Container;
     private editData: EditData;
@@ -89,6 +85,7 @@ export class EditHandlerImpl implements EditHandler {
         }
 
         this.setupEditEvents();
+        this.autoborderHandler.autoborder(true, this.editLine);
     }
 
     private setupEditEvents(): void {
@@ -273,6 +270,7 @@ export class EditHandlerImpl implements EditHandler {
         this.canvas.off('mousedown.edit');
         this.canvas.off('mouseup.edit');
         this.canvas.off('mousemove.edit');
+        this.autoborderHandler.autoborder(false);
 
         if (this.editedShape) {
             this.setupPoints(false);
@@ -314,7 +312,9 @@ export class EditHandlerImpl implements EditHandler {
     public constructor(
         onEditDone: (state: any, points: number[]) => void,
         canvas: SVG.Container,
+        autoborderHandler: AutoborderHandler,
     ) {
+        this.autoborderHandler = autoborderHandler;
         this.onEditDone = onEditDone;
         this.canvas = canvas;
         this.editData = null;
