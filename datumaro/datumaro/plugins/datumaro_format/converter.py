@@ -303,6 +303,7 @@ class DatumaroProjectConverter(Converter):
     def __call__(self, extractor, save_dir):
         os.makedirs(save_dir, exist_ok=True)
 
+        from datumaro.components.project import Project
         project = Project.generate(save_dir, config=self._config)
 
         converter = project.env.make_converter('datumaro',

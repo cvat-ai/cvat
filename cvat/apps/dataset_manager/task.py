@@ -718,8 +718,9 @@ def export_task(task_id, dst_file, format_name,
         task.init_from_db()
 
     exporter = make_exporter(format_name)
-    with open(dst_file, 'rb') as f:
-        task.export(exporter, f, host=server_url, save_images=save_images)
+    with open(dst_file, 'wb') as f:
+        task.export(f, exporter, host=server_url,
+            save_images=save_images)
 
 @transaction.atomic
 def import_task_annotations(task_id, src_file, format_name):

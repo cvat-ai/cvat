@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
+import shutil
 from collections import OrderedDict
 from glob import glob
 from tempfile import TemporaryDirectory
@@ -10,6 +11,7 @@ from tempfile import TemporaryDirectory
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.util import make_zip_archive
+from cvat.apps.engine.frame_provider import FrameProvider
 from datumaro.util.image import save_image
 
 from .registry import exporter, importer
@@ -510,7 +512,7 @@ def load(file_object, annotations):
                 tag = None
             el.clear()
 
-def _export(dst_file, task_data, anno_callback, **options):
+def _export(dst_file, task_data, anno_callback, save_images=False):
     dst_path = dst_file.name
     anno_callback(dst_file, task_data)
 
@@ -525,17 +527,16 @@ def _export(dst_file, task_data, anno_callback, **options):
         frames = frame_provider.get_frames(
             frame_provider.Quality.ORIGINAL,
             frame_provider.Type.NUMPY_ARRAY)
-        for frame_id, frame_data in enumerate(frames):
+        for frame_id, (frame_data, _) in enumerate(frames):
             frame_filename = osp.basename(task_data.frame_info[frame_id]['path'])
             if '.' in frame_filename:
-                save_image(frame_data,
-                    osp.join(temp_dir, 'images', frame_filename),
-                    jpeg_quality=100)
+                save_image(osp.join(temp_dir, 'images', frame_filename),
+                    frame_data, jpeg_quality=100)
             else:
-                save_image(frame_data,
-                    osp.join(temp_dir, 'images', frame_filename + '.png'))
+                save_image(osp.join(temp_dir, 'images', frame_filename + '.png'),
+                    frame_data)
 
-        make_zip_archive(temp_dir, dst_file)
+        make_zip_archive(temp_dir, dst_path)
 
 @exporter(name='CVAT for video', ext='ZIP', version='1.1')
 def _export_video(dst_file, task_data, save_images=False):

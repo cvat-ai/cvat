@@ -4,6 +4,7 @@
 
 from tempfile import TemporaryDirectory
 
+from datumaro.components.project import Dataset
 from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, \
     import_dm_annotations
 from cvat.apps.dataset_manager.util import make_zip_archive

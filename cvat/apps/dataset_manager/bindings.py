@@ -401,14 +401,15 @@ class TaskData:
         raise Exception(
             "Cannot match filename or determine frame number for {} filename".format(filename))
 
-class CvatTaskDataExtractor(datumaro.Extractor):
+class CvatTaskDataExtractor(datumaro.SourceExtractor):
     def __init__(self, task_data, include_images=False):
+        super().__init__()
         self._categories = self._load_categories(task_data)
 
         dm_items = []
 
         if include_images:
-            frame_provider = FrameProvider(db_task.data)
+            frame_provider = FrameProvider(task_data.db_task.data)
 
         for frame_data in task_data.group_by_frame(include_empty=include_images):
             loader = None

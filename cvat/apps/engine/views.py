@@ -32,6 +32,7 @@ from rest_framework.response import Response
 from sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
+import cvat.apps.dataset_manager.views
 from cvat.apps.authentication import auth
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.dataset_manager.serializers import DatasetFormatSerializer
@@ -205,8 +206,7 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], url_path='annotation/export_formats')
     def annotation_export_formats(request):
         data = dm.views.get_export_formats()
-        data = JSONRenderer().render(data)
-        return Response(data)
+        return Response(DatasetFormatSerializer(data, many=True).data)
 
     @staticmethod
     @swagger_auto_schema(method='get', operation_summary='Method provides the list of supported annotations formats',
@@ -214,8 +214,7 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], url_path='annotation/import_formats')
     def annotation_import_formats(request):
         data = dm.views.get_import_formats()
-        data = JSONRenderer().render(data)
-        return Response(data)
+        return Response(DatasetFormatSerializer(data, many=True).data)
 
 class ProjectFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
@@ -521,8 +520,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             '201': openapi.Response(description='Annotations file is ready to download'),
             '200': openapi.Response(description='Download of file started')})
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='annotations')
-    def dump(self, request, pk, filename):
+        url_path=r'annotations/(?P<dst_format>[^/]+)(\?(?P<filename>[^/&]+))?')
+    def dump(self, request, pk, dst_format, filename=None):
         """
         Dump of annotations in common case is a long process which cannot be performed within one request.
         First request starts dumping process. When the file is ready (code 201) you can get it with query parameter action=download.
@@ -534,8 +533,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Unexpected action specified for the request")
 
-        dst_format = request.query_params.get("format", "").lower()
-        if dst_format not in [f['tag'] for f in dm.views.get_export_formats()]:
+        if dst_format not in [f.DISPLAY_NAME for f in dm.views.get_export_formats()]:
             raise serializers.ValidationError(
                 "Unknown format specified for the request")
 
@@ -557,7 +555,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
                         timestamp = datetime.strftime(last_task_update_time,
                             "%Y_%m_%d_%H_%M_%S")
-                        filename = "task_{}-{}-{}_annotations.{}".format(
+                        filename = filename or \
+                            "task_{}-{}-{}_annotations.{}".format(
                             db_task.name, timestamp,
                             dst_format, osp.splitext(file_path)[1])
                         return sendfile(request, file_path, attachment=True,
@@ -659,7 +658,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 "Unexpected action specified for the request")
 
         dst_format = request.query_params.get("format", "").lower()
-        if dst_format not in [f['tag'] for f in dm.views.get_export_formats()]:
+        if dst_format not in [f.DISPLAY_NAME for f in dm.views.get_export_formats()]:
             raise serializers.ValidationError(
                 "Unknown format specified for the request")
 
@@ -878,8 +877,10 @@ def load_data_proxy(request, rq_id, rq_func, pk):
     if not rq_job:
         serializer = AnnotationFileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            if format_name not in [f['tag'] for f in dm.views.get_import_formats()]:
-                raise serializers.ValidationError("Unknown input format")
+            if format_name not in \
+                    [f.DISPLAY_NAME for f in dm.views.get_import_formats()]:
+                raise serializers.ValidationError(
+                    "Unknown input format '{}'".format(format_name))
 
             anno_file = serializer.validated_data['annotation_file']
             fd, filename = mkstemp(prefix='cvat_{}'.format(pk))

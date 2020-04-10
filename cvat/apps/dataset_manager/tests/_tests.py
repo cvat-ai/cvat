@@ -47,10 +47,8 @@ class _GitImportFix:
 
 def _setUpModule():
     _GitImportFix.apply()
-    import cvat.apps.dataset_manager.task as dm
-    from cvat.apps.engine.models import Task
+    import cvat.apps.dataset_manager as dm
     globals()['dm'] = dm
-    globals()['Task'] = Task
 
     import sys
     sys.path.insert(0, __file__[:__file__.rfind('/dataset_manager/')])
@@ -59,7 +57,7 @@ def tearDownModule():
     _GitImportFix.restore()
 
 from io import BytesIO
-import os
+import os.path as osp
 import random
 import tempfile
 
@@ -289,10 +287,13 @@ class TaskExportTest(APITestCase):
     def _test_export(self, format_name, save_images=False):
         task, _ = self._generate_task()
 
-        f = BytesIO()
-        dm.export_task(task["id"], format_name, f, save_images=save_images)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = osp.join(temp_dir, format_name)
+            dm.task.export_task(task["id"], file_path,
+                format_name, save_images=save_images)
 
-        self.assertTrue(len(f.getvalue()) != 0)
+            with open(file_path, 'rb') as f:
+                self.assertTrue(len(f.read()) != 0)
 
     def test_datumaro(self):
         self._test_export('Datumaro 1.0', save_images=False)
@@ -325,11 +326,11 @@ class TaskExportTest(APITestCase):
         self._test_export('CVAT for images 1.1', save_images=True)
 
     def test_export_formats_query(self):
-        formats = dm.get_export_formats()
+        formats = dm.views.get_export_formats()
 
         self.assertEqual(len(formats), 10)
 
     def test_import_formats_query(self):
-        formats = dm.get_import_formats()
+        formats = dm.views.get_import_formats()
 
         self.assertEqual(len(formats), 8)

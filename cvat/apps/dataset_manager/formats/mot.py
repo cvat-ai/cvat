@@ -22,7 +22,8 @@ def _export(dst_file, task_data, save_images=False):
     extractor = extractor.transform(envt.get('id_from_image_name'))
     extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
-        converter = dm_env.make_converter('mot_seq', save_images=save_images)
+        converter = dm_env.make_converter('mot_seq_gt',
+            save_images=save_images)
         converter(extractor, save_dir=temp_dir)
 
         make_zip_archive(temp_dir, dst_file)

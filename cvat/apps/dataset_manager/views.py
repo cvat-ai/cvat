@@ -15,7 +15,7 @@ from cvat.apps.engine.models import Task
 from datumaro.cli.util import make_file_name
 from datumaro.util import to_snake_case
 
-from .formats import EXPORT_FORMATS, IMPORT_FORMATS
+from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import current_function_name
 
 
@@ -41,7 +41,7 @@ def export_task(task_id, dst_format, server_url=None, save_images=False):
 
         cache_dir = get_export_cache_dir(db_task)
 
-        exporter = get_exporter(format_name)
+        exporter = EXPORT_FORMATS[dst_format]
         output_base = '%s_%s' % ('dataset' if save_images else 'task',
             make_file_name(to_snake_case(dst_format)))
         output_path = '%s.%s' % (output_base, exporter.EXT)
@@ -51,7 +51,7 @@ def export_task(task_id, dst_format, server_url=None, save_images=False):
         if not (osp.exists(output_path) and \
                 task_time <= osp.getmtime(output_path)):
             os.makedirs(cache_dir, exist_ok=True)
-            task.export_task(task_id, dst_format, output_path,
+            task.export_task(task_id, output_path, dst_format,
                 server_url=server_url, save_images=save_images)
 
             archive_ctime = osp.getctime(output_path)
