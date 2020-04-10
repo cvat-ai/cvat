@@ -38,6 +38,9 @@ class AnnotationIR:
             'tracks': self.tracks,
         }
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
     @data.setter
     def data(self, data):
         self.version = data['version']
