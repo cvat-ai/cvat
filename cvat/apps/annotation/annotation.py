@@ -83,7 +83,31 @@ class AnnotationIR:
         splitted_data = AnnotationIR()
         splitted_data.tags = copy.deepcopy(list(filter(is_frame_inside, self.tags)))
         splitted_data.shapes = copy.deepcopy(list(filter(is_frame_inside, self.shapes)))
-        splitted_data.tracks = copy.deepcopy(list(filter(lambda y: len(list(filter(is_frame_inside, y['shapes']))), self.tracks)))
+        splitted_data.tracks = []
+
+        for track_ in self.tracks:
+            if not list(filter(is_frame_inside, track_['shapes'])):
+                continue
+
+            track = copy.deepcopy(track_)
+            track['frame'] = max(start, track['frame'])
+
+            segment_shapes = [s for s in track['shapes'] if is_frame_inside(s)]
+
+            if len(segment_shapes) < len(track['shapes']):
+                interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, stop)
+                if track['shapes'][0]['frame'] < start:
+                    start_shape = next(s for s in interpolated_shapes if s['frame'] == start)
+                    segment_shapes.insert(0, start_shape)
+                if track['shapes'][-1]['frame'] > stop:
+                    stop_shape = next(s for s in interpolated_shapes if s['frame'] == stop)
+                    segment_shapes.append(stop_shape)
+                del track['interpolated_shapes']
+                for shape in segment_shapes:
+                    del shape['keyframe']
+
+            track['shapes'] = segment_shapes
+            splitted_data.tracks.append(track)
 
         return splitted_data
 
