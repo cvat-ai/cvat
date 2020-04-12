@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Merge is allowed for points, but clicks on points conflict with frame dragging logic
 - Removed objects are visible for search
 - Add missed task_id and job_id fields into exception logs for the new UI (https://github.com/opencv/cvat/pull/1372)
+- Fixed polygon exporting bug in COCO dataset (https://github.com/opencv/cvat/issues/1387)
 - Task creation from remote files (https://github.com/opencv/cvat/pull/1392)
 
 ### Security
