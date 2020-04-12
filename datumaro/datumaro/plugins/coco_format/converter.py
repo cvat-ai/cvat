@@ -514,7 +514,7 @@ class _Converter:
         filename += CocoPath.IMAGE_EXT
         path = osp.join(self._images_dir, filename)
         save_image(path, image)
-        return filename
+        return path
 
     def convert(self):
         self._make_dirs()
@@ -536,7 +536,7 @@ class _Converter:
             for item in subset:
                 filename = ''
                 if item.has_image:
-                    filename = item.image.filename
+                    filename = item.image.path
                 if self._save_images:
                     if item.has_image:
                         filename = self._save_image(item)
