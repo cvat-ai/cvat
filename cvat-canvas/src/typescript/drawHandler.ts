@@ -7,7 +7,6 @@ import consts from './consts';
 import 'svg.draw.js';
 import './svg.patch';
 
-import { DrawData, Geometry, RectDrawingMethod } from './canvasModel';
 import { AutoborderHandler } from './autoborderHandler';
 
 import {
@@ -20,7 +19,15 @@ import {
     Box,
 } from './shared';
 
+import {
+    DrawData,
+    Geometry,
+    RectDrawingMethod,
+    Configuration,
+} from './canvasModel';
+
 export interface DrawHandler {
+    configurate(configuration: Configuration): void;
     draw(drawData: DrawData, geometry: Geometry): void;
     transform(geometry: Geometry): void;
     cancel(): void;
@@ -43,6 +50,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private drawData: DrawData;
     private geometry: Geometry;
     private autoborderHandler: AutoborderHandler;
+    private autobordersEnabled: boolean;
 
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
@@ -333,7 +341,9 @@ export class DrawHandlerImpl implements DrawHandler {
             });
 
         this.drawPolyshape();
-        this.autoborderHandler.autoborder(true, this.drawInstance);
+        if (this.autobordersEnabled) {
+            this.autoborderHandler.autoborder(true, this.drawInstance, false);
+        }
     }
 
     private drawPolyline(): void {
@@ -344,7 +354,9 @@ export class DrawHandlerImpl implements DrawHandler {
             });
 
         this.drawPolyshape();
-        this.autoborderHandler.autoborder(true, this.drawInstance);
+        if (this.autobordersEnabled) {
+            this.autoborderHandler.autoborder(true, this.drawInstance, false);
+        }
     }
 
     private drawPoints(): void {
@@ -603,6 +615,7 @@ export class DrawHandlerImpl implements DrawHandler {
         autoborderHandler: AutoborderHandler,
     ) {
         this.autoborderHandler = autoborderHandler;
+        this.autobordersEnabled = false;
         this.startTimestamp = Date.now();
         this.onDrawDone = onDrawDone;
         this.canvas = canvas;
@@ -630,6 +643,19 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.crosshair.y.attr({ x1: x, x2: x });
             }
         });
+    }
+
+    public configurate(configuration: Configuration): void {
+        if (typeof (configuration.autoborders) === 'boolean') {
+            this.autobordersEnabled = configuration.autoborders;
+            if (this.drawInstance) {
+                if (this.autobordersEnabled) {
+                    this.autoborderHandler.autoborder(true, this.drawInstance, false);
+                } else {
+                    this.autoborderHandler.autoborder(false);
+                }
+            }
+        }
     }
 
     public transform(geometry: Geometry): void {

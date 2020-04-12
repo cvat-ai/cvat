@@ -725,8 +725,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.geometry = this.controller.geometry;
         if (reason === UpdateReasons.CONFIG_UPDATED) {
             this.configuration = model.configuration;
-            this.setupObjects([]);
-            this.setupObjects(model.objects);
+            this.editHandler.configurate(this.configuration);
+            this.drawHandler.configurate(this.configuration);
+
+            // todo: setup text, add if doesn't exist and enabled
+            // remove if exist and not enabled
+            // this.setupObjects([]);
+            // this.setupObjects(model.objects);
         } else if (reason === UpdateReasons.BITMAP) {
             const { imageBitmap } = model;
             if (imageBitmap) {

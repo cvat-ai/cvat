@@ -47,6 +47,7 @@ export enum RectDrawingMethod {
 }
 
 export interface Configuration {
+    autoborders?: boolean;
     displayAllText?: boolean;
     undefinedAttrValue?: string;
 }
@@ -206,6 +207,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             configuration: {
                 displayAllText: false,
+                autoborders: false,
                 undefinedAttrValue: '',
             },
             imageBitmap: false,
@@ -519,12 +521,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public configure(configuration: Configuration): void {
-        if (this.data.mode !== Mode.IDLE) {
-            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
-        }
-
         if (typeof (configuration.displayAllText) !== 'undefined') {
             this.data.configuration.displayAllText = configuration.displayAllText;
+        }
+
+        if (typeof (configuration.autoborders) !== 'undefined') {
+            this.data.configuration.autoborders = configuration.autoborders;
         }
 
         if (typeof (configuration.undefinedAttrValue) !== 'undefined') {

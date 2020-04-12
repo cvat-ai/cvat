@@ -197,7 +197,7 @@ Standard JS events are used.
 | dragCanvas() | +    | -     | -     | -    | -     | -    | +    | -      | -           | +           |
 | zoomCanvas() | +    | -     | -     | -    | -     | -    | -    | +      | +           | -           |
 | cancel()     | -    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| configure()  | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
+| configure()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
 | bitmap()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
 | setZLayer()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
 

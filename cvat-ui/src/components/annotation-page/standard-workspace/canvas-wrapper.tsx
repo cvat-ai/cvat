@@ -62,7 +62,9 @@ interface Props {
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
     workspace: Workspace;
+    automaticBordering: boolean;
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    switchableAutomaticBordering: boolean;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -89,11 +91,13 @@ interface Props {
     onChangeGridOpacity(opacity: number): void;
     onChangeGridColor(color: GridColor): void;
     onSwitchGrid(enabled: boolean): void;
+    onSwitchAutomaticBordering(enabled: boolean): void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
         const {
+            automaticBordering,
             showObjectsTextAlways,
             canvasInstance,
             curZLayer,
@@ -106,6 +110,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         wrapper.appendChild(canvasInstance.html());
 
         canvasInstance.configure({
+            autoborders: automaticBordering,
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
         });
@@ -139,12 +144,16 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             workspace,
             frameFetching,
             showObjectsTextAlways,
+            automaticBordering,
         } = this.props;
 
-        if (prevProps.showObjectsTextAlways !== showObjectsTextAlways) {
+        if (prevProps.showObjectsTextAlways !== showObjectsTextAlways
+            || prevProps.automaticBordering !== automaticBordering
+        ) {
             canvasInstance.configure({
                 undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
                 displayAllText: showObjectsTextAlways,
+                autoborders: automaticBordering,
             });
         }
 
@@ -699,16 +708,19 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             brightnessLevel,
             contrastLevel,
             saturationLevel,
+            keyMap,
             grid,
             gridColor,
             gridOpacity,
+            switchableAutomaticBordering,
+            automaticBordering,
             onChangeBrightnessLevel,
             onChangeSaturationLevel,
             onChangeContrastLevel,
             onChangeGridColor,
             onChangeGridOpacity,
             onSwitchGrid,
-            keyMap,
+            onSwitchAutomaticBordering,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -727,7 +739,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             INCREASE_GRID_OPACITY: keyMap.INCREASE_GRID_OPACITY,
             DECREASE_GRID_OPACITY: keyMap.DECREASE_GRID_OPACITY,
             CHANGE_GRID_COLOR: keyMap.CHANGE_GRID_COLOR,
+            SWITCH_AUTOMATIC_BORDERING: keyMap.SWITCH_AUTOMATIC_BORDERING,
         };
+
 
         const step = 10;
         const handlers = {
@@ -802,6 +816,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 const indexOf = colors.indexOf(gridColor) + 1;
                 const color = colors[indexOf >= colors.length ? 0 : indexOf];
                 onChangeGridColor(color);
+            },
+            SWITCH_AUTOMATIC_BORDERING: (event: KeyboardEvent | undefined) => {
+                if (switchableAutomaticBordering) {
+                    preventDefault(event);
+                    onSwitchAutomaticBordering(!automaticBordering);
+                }
             },
         };
 
