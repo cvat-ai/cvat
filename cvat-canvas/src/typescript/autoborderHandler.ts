@@ -154,8 +154,9 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
 
                         // it is the first click
                         if (this.auxiliaryClicks.length === 1) {
+                            const handler = this.currentShape.remember('_paintHandler');
                             // draw and remove initial point just to initialize data structures
-                            if (!this.currentShape.remember('_paintHandler').startPoint) {
+                            if (!handler || !handler.startPoint) {
                                 (this.currentShape as any).draw('point', event);
                                 (this.currentShape as any).draw('undo');
                             }
