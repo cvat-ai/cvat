@@ -409,7 +409,6 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame,
                 attributes=shape.attributes,
-                annotation_type=shape.annotation_type,
             ),
             annotations.TrackedShape(
                 type=shape.type,
@@ -420,7 +419,6 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame + annotations.frame_step,
                 attributes=shape.attributes,
-                annotation_type=shape.annotation_type,
             ),
             ],
         ))
@@ -465,7 +463,7 @@ def load(file_object, annotations):
                     'label': el.attrib['label'],
                     'group': int(el.attrib.get('group_id', 0)),
                     'attributes': attributes,
-                    'annotation_type': el.attrib["annotation_type"],
+                    'annotation_type': str(el.attrib.get('annotation_type', 'Manual'))
                 }
         elif ev == 'end':
             if el.tag == 'attribute' and attributes is not None:
@@ -482,11 +480,11 @@ def load(file_object, annotations):
                     shape['frame'] = frame_id
                     shape['label'] = el.attrib['label']
                     shape['group'] = int(el.attrib.get('group_id', 0))
+                    shape['annotation_type'] = str(el.attrib.get('annotation_type', 'Manual'))
 
                 shape['type'] = 'rectangle' if el.tag == 'box' else el.tag
                 shape['occluded'] = el.attrib['occluded'] == '1'
                 shape['z_order'] = int(el.attrib.get('z_order', 0))
-                shape['annotation_type'] = el.attrib.get('annotation_type', 'Manual')
 
                 if el.tag == 'box':
                     shape['points'].append(el.attrib['xtl'])
