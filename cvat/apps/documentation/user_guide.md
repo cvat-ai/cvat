@@ -359,26 +359,19 @@ The tool consists of:
 
 ### Basic navigation
 
-1.  Use arrows below to move to the next/previous frame.
+1.  Use arrows below to move on next/previous frame.
     Use the scroll bar slider to scroll through frames.
-    Almost every button has a shortcut.
-    To get a hint about a shortcut, just move your mouse pointer over an UI element.
+    Almost every button is covered by a shortcut.
+    To get a hint about a shortcut, just put your mouse pointer over an UI element.
 
     ![](static/documentation/images/image008.jpg)
 
-1.  To navigate the image, use the button on the controls sidebar. 
-    Another way an image can be moved/shifted is by holding the left mouse button inside an area without annotated objects. 
-    If the ``Mouse Wheel`` is pressed, then all annotated objects are ignored. Otherwise the
-    a highlighted bounding box will be moved instead of the image itself.
+1.  An image can be scaled in/out using mouse's wheel. The image will be zoomed relatively your current cursor position.
+    Thus, if you point on an object, it will be under your mouse during zooming process.
 
-    ![](static/documentation/images/image136.jpg)
-
-1.  You can use the button on the sidebar controls to zoom on a region of interest. 
-    Use the button ``Fit the image`` to fit the image in the workspace.
-    You can also use the mouse wheel to scale the image 
-    (the image will be zoomed relatively to your current cursor position).
-
-    ![](static/documentation/images/image137.jpg)
+1.  An image can be moved/shifted by holding left mouse button inside some area without annotated objects.
+    If ``Mouse Wheel`` is pressed, then all annotated objects are ignored.
+    Otherwise, a highlighted bounding box will be moved instead of the image itself.
 
 ### Types of shapes (basics)
 There are four shapes which you can annotate your images with:
