@@ -1080,6 +1080,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.shapeType === 'rectangle') {
                     this.svgShapes[state.clientID] = this
                         .addRect(translatedPoints, state);
+                } else if (state.shapeType === 'cuboid') {
+                    this.svgShapes[state.clientID] = this
+                        .addCuboid(state);
                 } else {
                     const stringified = translatedPoints.reduce(
                         (acc: string, val: number, idx: number): string => {
@@ -1100,9 +1103,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     } else if (state.shapeType === 'points') {
                         this.svgShapes[state.clientID] = this
                             .addPoints(stringified, state);
-                    } else if (state.shapeType === 'cuboid') {
-                        this.svgShapes[state.clientID] = this
-                            .addCuboid(stringified, state);
                     }
                 }
 
@@ -1257,6 +1257,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.lock) {
             return;
+        }
+
+        if (state.shapeType === 'cuboid') {
+            shape.addMouseOverEvents();
         }
 
         shape.addClass('cvat_canvas_shape_activated');
@@ -1535,10 +1539,36 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     // TODO: verify tslint
-    private addCuboid(points: string, state: any): any {
-        const cube = this.adoptedContent.cube(
-            new Cuboid2PointViewModel(pointsToArray(points)),
-        ).addClass('cvat_canvas_shape');
+    private addCuboid(state: any): any {
+        const { offset } = this.controller.geometry;
+        const points = state.points.slice(0, 12).reduce(
+            (acc: any[], current: number, i: number): any[] => {
+                if (i % 2 === 0) {
+                    acc.push({ x: current });
+                    return acc;
+                }
+                acc.slice(-1)[0].y = current;
+                return acc;
+            }, [],
+        );
+
+        const model = new Cuboid2PointViewModel(points, offset);
+
+        const cube = this.adoptedContent.cube(model)
+            .fill(state.color).attr({
+                clientID: state.clientID,
+                'color-rendering': 'optimizeQuality',
+                id: `cvat_canvas_shape_${state.clientID}`,
+                fill: state.color,
+                'shape-rendering': 'geometricprecision',
+                stroke: state.color,
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'data-z-order': state.zOrder,
+            });
+
+        cube.projectionLineEnable = true;
+        cube.addMouseOverEvents();
+        cube.paintOrientationLines();
 
         return cube;
 
