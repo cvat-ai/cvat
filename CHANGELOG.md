@@ -253,6 +253,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial version
 
+## [0.6.1] - 2020-04-14
+### Added
+- Annotation type to determine whether a drawn shape is auto annotated using Tensorflow Object detection API or manually annotated by the user
+- Annotation_type field support for cvat dumper/loader
+- Annotation_type field support for tags
+
 ## Template
 ```
 ## [Unreleased]
