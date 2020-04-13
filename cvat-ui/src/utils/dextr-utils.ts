@@ -122,7 +122,15 @@ function serverRequest(
                         if (!plugin.data.canceled) {
                             setTimeout(timeoutCallback, 1000);
                         } else {
-                            resolve(points);
+                            core.server.request(
+                                `${baseURL}/dextr/cancel/${jid}`, {
+                                    method: 'GET',
+                                },
+                            ).then(() => {
+                                resolve(points);
+                            }).catch((error: Error) => {
+                                reject(error);
+                            });
                         }
                     }
                 }).catch((error: Error) => {
