@@ -96,10 +96,12 @@ class AnnotationIR:
 
             if len(segment_shapes) < len(track['shapes']):
                 interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, stop)
-                if track['shapes'][0]['frame'] < start:
+                if track['shapes'][0]['frame'] < start and \
+                    segment_shapes[0]['frame'] > start:
                     start_shape = next(s for s in interpolated_shapes if s['frame'] == start)
                     segment_shapes.insert(0, start_shape)
-                if track['shapes'][-1]['frame'] > stop:
+                if track['shapes'][-1]['frame'] > stop and \
+                    segment_shapes[-1]['frame'] < stop:
                     stop_shape = next(s for s in interpolated_shapes if s['frame'] == stop)
                     segment_shapes.append(stop_shape)
                 del track['interpolated_shapes']
