@@ -649,7 +649,7 @@ class VocConverterTest(TestCase):
 
             def categories(self):
                 label_cat = LabelCategories()
-                label_cat.add('label_1')
+                label_cat.add('Label_1') # should become lowercase
                 label_cat.add('label_2')
                 return {
                     AnnotationType.label: label_cat,

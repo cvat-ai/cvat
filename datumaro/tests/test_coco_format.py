@@ -560,6 +560,9 @@ class CocoConverterTest(TestCase):
                         annotations=[
                             # Solitary keypoints
                             Points([1, 2, 0, 2, 4, 1], label=5, id=3),
+
+                            # Some other solitary annotations (bug #1387)
+                            Polygon([0, 0, 4, 0, 4, 4], label=3, id=4),
                         ]),
 
                     DatasetItem(id=3, subset='val',

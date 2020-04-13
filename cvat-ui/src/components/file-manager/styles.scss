@@ -10,3 +10,9 @@
     max-height: 20em;
     overflow: auto;
 }
+
+.cvat-empty-share-tree {
+    > .ant-typography {
+        margin-top: 10px;
+    }
+}

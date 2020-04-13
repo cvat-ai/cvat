@@ -23,6 +23,7 @@ import {
     changeWorkspace as changeWorkspaceAction,
     activateObject,
 } from 'actions/annotation-actions';
+import { Canvas, isAbleToChangeFrame } from 'cvat-canvas';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
@@ -45,6 +46,7 @@ interface StateToProps {
     workspace: Workspace;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
+    canvasInstance: Canvas;
 }
 
 interface DispatchToProps {
@@ -81,6 +83,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             canvas: {
                 ready: canvasIsReady,
+                instance: canvasInstance,
             },
             workspace,
         },
@@ -118,6 +121,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         workspace,
         keyMap,
         normalizedKeyMap,
+        canvasInstance,
     };
 }
 
@@ -197,6 +201,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             frameDelay,
             playing,
             canvasIsReady,
+            canvasInstance,
             onSwitchPlay,
             onChangeFrame,
         } = this.props;
@@ -217,10 +222,14 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
-                        onChangeFrame(
-                            frameNumber + 1 + framesSkiped,
-                            stillPlaying, framesSkiped + 1,
-                        );
+                        if (isAbleToChangeFrame(canvasInstance)) {
+                            onChangeFrame(
+                                frameNumber + 1 + framesSkiped,
+                                stillPlaying, framesSkiped + 1,
+                            );
+                        } else {
+                            onSwitchPlay(false);
+                        }
                     }
                 }, frameDelay);
             } else {
@@ -240,9 +249,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             undo,
             jobInstance,
             frameNumber,
+            canvasInstance,
         } = this.props;
 
-        undo(jobInstance, frameNumber);
+        if (isAbleToChangeFrame(canvasInstance)) {
+            undo(jobInstance, frameNumber);
+        }
     };
 
     private redo = (): void => {
@@ -250,9 +262,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             redo,
             jobInstance,
             frameNumber,
+            canvasInstance,
         } = this.props;
 
-        redo(jobInstance, frameNumber);
+        if (isAbleToChangeFrame(canvasInstance)) {
+            redo(jobInstance, frameNumber);
+        }
     };
 
     private showStatistics = (): void => {
@@ -285,7 +300,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = jobInstance.startFrame;
@@ -293,7 +307,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -304,7 +318,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -313,7 +326,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -323,7 +336,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -332,7 +344,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -342,7 +354,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -351,7 +362,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -362,7 +373,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -371,7 +381,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -381,7 +391,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = jobInstance.stopFrame;
@@ -389,7 +398,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -403,22 +412,16 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     };
 
     private onChangePlayerSliderValue = (value: SliderValue): void => {
-        const {
-            playing,
-            onSwitchPlay,
-            onChangeFrame,
-        } = this.props;
-
+        const { playing, onSwitchPlay } = this.props;
         if (playing) {
             onSwitchPlay(false);
         }
-        onChangeFrame(value as number);
+        this.changeFrame(value as number);
     };
 
     private onChangePlayerInputValue = (value: number): void => {
         const {
             onSwitchPlay,
-            onChangeFrame,
             playing,
             frameNumber,
         } = this.props;
@@ -427,7 +430,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(value);
+            this.changeFrame(value);
         }
     };
 
@@ -440,6 +443,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const url = `${origin}${pathname}?frame=${frameNumber}`;
         copy(url);
     };
+
+    private changeFrame(frame: number): void {
+        const { onChangeFrame, canvasInstance } = this.props;
+        if (isAbleToChangeFrame(canvasInstance)) {
+            onChangeFrame(frame);
+        }
+    }
 
     private beforeUnloadCallback(event: BeforeUnloadEvent): any {
         const { jobInstance } = this.props;
@@ -472,6 +482,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             changeWorkspace,
             keyMap,
             normalizedKeyMap,
+            canvasInstance,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -537,13 +548,17 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             },
             SEARCH_FORWARD: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                if (frameNumber + 1 <= stopFrame && canvasIsReady) {
+                if (frameNumber + 1 <= stopFrame && canvasIsReady
+                    && isAbleToChangeFrame(canvasInstance)
+                ) {
                     searchAnnotations(jobInstance, frameNumber + 1, stopFrame);
                 }
             },
             SEARCH_BACKWARD: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                if (frameNumber - 1 >= startFrame && canvasIsReady) {
+                if (frameNumber - 1 >= startFrame && canvasIsReady
+                    && isAbleToChangeFrame(canvasInstance)
+                ) {
                     searchAnnotations(jobInstance, frameNumber - 1, startFrame);
                 }
             },
