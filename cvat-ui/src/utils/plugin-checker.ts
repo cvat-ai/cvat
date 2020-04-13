@@ -35,6 +35,9 @@ class PluginChecker {
             case SupportedPlugins.TF_SEGMENTATION: {
                 return isReachable(`${serverHost}/tensorflow/segmentation/meta/get`, 'OPTIONS');
             }
+            case SupportedPlugins.DEXTR_SEGMENTATION: {
+                return isReachable(`${serverHost}/dextr/enabled`, 'GET');
+            }
             case SupportedPlugins.ANALYTICS: {
                 return isReachable(`${serverHost}/analytics/app/kibana`, 'GET');
             }
