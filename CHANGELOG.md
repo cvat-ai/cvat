@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dedicated message with clarifications when share is unmounted (https://github.com/opencv/cvat/pull/1373)
 - Ability to create one tracked point (https://github.com/opencv/cvat/pull/1383)
 - Ability to draw/edit polygons and polylines with automatic bordering feature (https://github.com/opencv/cvat/pull/1394)
+- Tutorial: instructions for CVAT over HTTPS
 
 ### Changed
 - Increase preview size of a task till 256, 256 on the server
@@ -40,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multiple savings when hold Ctrl+S (a lot of the same copies of events were sent with the same working time) (https://github.com/opencv/cvat/pull/1383)
 - UI doesn't have any reaction when git repos synchronization failed (https://github.com/opencv/cvat/pull/1383)
 - Bug when annotations cannot be saved after (delete - save - undo - save) (https://github.com/opencv/cvat/pull/1383)
+- VOC format exports Upper case labels correctly in lower case (https://github.com/opencv/cvat/pull/1379)
 - Fixed polygon exporting bug in COCO dataset (https://github.com/opencv/cvat/issues/1387)
 - Task creation from remote files (https://github.com/opencv/cvat/pull/1392)
 
