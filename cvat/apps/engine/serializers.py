@@ -207,6 +207,7 @@ class DataSerializer(serializers.ModelSerializer):
 
         os.makedirs(db_data.get_compressed_cache_dirname())
         os.makedirs(db_data.get_original_cache_dirname())
+        os.makedirs(db_data.get_upload_dirname())
 
         for f in client_files:
             client_file = models.ClientFile(data=db_data, **f)
