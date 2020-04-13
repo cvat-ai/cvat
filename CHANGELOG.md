@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to draw/edit polygons and polylines with automatic bordering feature (https://github.com/opencv/cvat/pull/1394)
 - Tutorial: instructions for CVAT over HTTPS
 
+
 ### Changed
 - Increase preview size of a task till 256, 256 on the server
 - Minor style updates
