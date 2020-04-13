@@ -367,7 +367,8 @@ The tool consists of:
     ![](static/documentation/images/image008.jpg)
 
 1.  To navigate the image, use the button on the controls sidebar. 
-    Another way an image can be moved/shifted is by holding the left mouse button inside an area without annotated objects. 
+    Another way an image can be moved/shifted is by holding the left mouse button inside 
+    an area without annotated objects. 
     If the ``Mouse Wheel`` is pressed, then all annotated objects are ignored. Otherwise the
     a highlighted bounding box will be moved instead of the image itself.
 
