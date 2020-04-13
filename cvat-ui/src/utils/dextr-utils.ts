@@ -26,6 +26,7 @@ interface DEXTRPlugin {
         };
     };
     data: {
+        canceled: boolean;
         enabled: boolean;
     };
 }
@@ -35,7 +36,47 @@ interface Point {
     y: number;
 }
 
-function serverRequest(jid: number, frame: number, points: number[]): Promise<number[]> {
+const antModalRoot = document.createElement('div');
+const antModalMask = document.createElement('div');
+antModalMask.classList.add('ant-modal-mask');
+const antModalWrap = document.createElement('div');
+antModalWrap.classList.add('ant-modal-wrap');
+antModalWrap.setAttribute('role', 'dialog');
+const antModal = document.createElement('div');
+antModal.classList.add('ant-modal');
+antModal.style.width = '300px';
+antModal.style.top = '40%';
+antModal.setAttribute('role', 'document');
+const antModalContent = document.createElement('div');
+antModalContent.classList.add('ant-modal-content');
+const antModalBody = document.createElement('div');
+antModalBody.classList.add('ant-modal-body');
+antModalBody.style.textAlign = 'center';
+const antModalSpan = document.createElement('span');
+antModalSpan.innerText = 'Segmentation request is being processed';
+antModalSpan.style.display = 'block';
+const antModalButton = document.createElement('button');
+antModalButton.disabled = true;
+antModalButton.classList.add('ant-btn', 'ant-btn-primary');
+antModalButton.style.width = '100px';
+antModalButton.style.margin = '10px auto';
+const antModalButtonSpan = document.createElement('span');
+antModalButtonSpan.innerText = 'Cancel';
+
+antModalBody.append(antModalSpan, antModalButton);
+antModalButton.append(antModalButtonSpan);
+antModalContent.append(antModalBody);
+antModal.append(antModalContent);
+antModalWrap.append(antModal);
+antModalRoot.append(antModalMask, antModalWrap);
+
+
+function serverRequest(
+    plugin: DEXTRPlugin,
+    jid: number,
+    frame: number,
+    points: number[],
+): Promise<number[]> {
     return new Promise((resolve, reject) => {
         const reducer = (acc: Point[], _: number, index: number, array: number[]): Point[] => {
             if (!(index % 2)) { // 0, 2, 4
@@ -75,12 +116,23 @@ function serverRequest(jid: number, frame: number, points: number[]): Promise<nu
                     } else if (status === RQStatus.unknown) {
                         reject(new Error('Unknown DEXTR status has been received'));
                     } else {
-                        setTimeout(timeoutCallback, 1000);
+                        if (status === RQStatus.queued) {
+                            antModalButton.disabled = false;
+                        }
+                        if (!plugin.data.canceled) {
+                            setTimeout(timeoutCallback, 1000);
+                        } else {
+                            resolve(points);
+                        }
                     }
+                }).catch((error: Error) => {
+                    reject(error);
                 });
             };
 
             setTimeout(timeoutCallback, 1000);
+        }).catch((error: Error) => {
+            reject(error);
         });
     });
 
@@ -99,10 +151,12 @@ const plugin: DEXTRPlugin = {
                             async enter(self: DEXTRPlugin, objects: any[]): Promise<void> {
                                 try {
                                     if (self.data.enabled) {
+                                        document.body.append(antModalRoot);
                                         const promises: Record<number, Promise<number[]>> = {};
                                         for (let i = 0; i < objects.length; i++) {
                                             if (objects[i].points.length >= 8) {
                                                 promises[i] = serverRequest(
+                                                    self,
                                                     (this as any).id,
                                                     objects[i].frame,
                                                     objects[i].points,
@@ -133,6 +187,11 @@ const plugin: DEXTRPlugin = {
                                     return;
                                 } catch (error) {
                                     throw new core.exceptions.PluginError(error.toString());
+                                } finally {
+                                    // eslint-disable-next-line no-param-reassign
+                                    self.data.canceled = false;
+                                    antModalButton.disabled = true;
+                                    document.body.removeChild(antModalRoot);
                                 }
                             },
                         },
@@ -142,13 +201,15 @@ const plugin: DEXTRPlugin = {
         },
     },
     data: {
+        canceled: false,
         enabled: false,
     },
 };
 
-export function cancel(): void {
-    // todo: cancel
-}
+
+antModalButton.onclick = () => {
+    plugin.data.canceled = true;
+};
 
 export function activate(canvasInstance: Canvas): void {
     if (!plugin.data.enabled) {
