@@ -465,8 +465,35 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 slogger.task[pk].error(msg, exc_info=True)
                 return Response(data=msg + '\n' + str(e), status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(method='get', operation_summary='Method returns annotations for a specific task')
-    @swagger_auto_schema(method='put', operation_summary='Method performs an update of all annotations in a specific task')
+    @swagger_auto_schema(method='get', operation_summary='Method allows to download task annotations',
+        manual_parameters=[
+            openapi.Parameter('format', openapi.IN_QUERY,
+                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/export_formats",
+                type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('filename', openapi.IN_QUERY,
+                description="Desired output file name",
+                type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('action', in_=openapi.IN_QUERY,
+                description='Used to start downloading process after annotation file had been created',
+                type=openapi.TYPE_STRING, required=False, enum=['download'])
+        ],
+        responses={
+            '202': openapi.Response(description='Dump of annotations has been started'),
+            '201': openapi.Response(description='Annotations file is ready to download'),
+            '200': openapi.Response(description='Download of file started')
+        }
+    )
+    @swagger_auto_schema(method='put', operation_summary='Method allows to upload task annotations',
+        manual_parameters=[
+            openapi.Parameter('format', openapi.IN_QUERY,
+                description="Input format name\nYou can get the list of supported formats at:\n/server/annotation/import_formats",
+                type=openapi.TYPE_STRING, required=False),
+        ],
+        responses={
+            '202': openapi.Response(description='Uploading has been started'),
+            '201': openapi.Response(description='Uploading has finished'),
+        }
+    )
     @swagger_auto_schema(method='patch', operation_summary='Method performs a partial update of annotations in a specific task',
         manual_parameters=[openapi.Parameter('action', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
             enum=['create', 'update', 'delete'])])
@@ -474,17 +501,38 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        self.get_object() # force to call check_object_permissions
+        db_task = self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
-            data = dm.task.get_task_data(pk)
-            serializer = LabeledDataSerializer(data=data)
-            if serializer.is_valid(raise_exception=True):
-                return Response(serializer.data)
+            format_name = request.query_params.get('format')
+            if format_name:
+                return _export_annotations(db_task=db_task,
+                    rq_id="/api/v1/tasks/{}/annotations/{}".format(pk, format_name),
+                    request=request,
+                    action=request.query_params.get("action", "").lower(),
+                    callback=dm.views.export_task_annotations,
+                    format_name=format_name,
+                    filename=request.query_params.get("filename", "").lower(),
+                )
+            else:
+                data = dm.task.get_task_data(pk)
+                serializer = LabeledDataSerializer(data=data)
+                if serializer.is_valid(raise_exception=True):
+                    return Response(serializer.data)
         elif request.method == 'PUT':
-            serializer = LabeledDataSerializer(data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                data = dm.task.put_task_data(pk, serializer.data)
-                return Response(data)
+            format_name = request.query_params.get('format')
+            if format_name:
+                return _import_annotations(
+                    request=request,
+                    rq_id="{}@/api/v1/tasks/{}/annotations/upload".format(request.user, pk),
+                    rq_func=dm.task.import_task_annotations,
+                    pk=pk,
+                    format_name=format_name,
+                )
+            else:
+                serializer = LabeledDataSerializer(data=request.data)
+                if serializer.is_valid(raise_exception=True):
+                    data = dm.task.put_task_data(pk, serializer.data)
+                    return Response(data)
         elif request.method == 'DELETE':
             dm.task.delete_task_data(pk)
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -500,65 +548,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
-
-    @swagger_auto_schema(method='put', operation_summary='Method allows to download annotations as a file',
-        manual_parameters=[
-            openapi.Parameter('format', openapi.IN_PATH,
-                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/import_formats",
-                type=openapi.TYPE_STRING, required=True),
-        ],
-        responses={
-            '202': openapi.Response(description='Uploading has been started'),
-            '201': openapi.Response(description='Uploading has finished'),
-        }
-    )
-    @action(detail=True, methods=['PUT'], serializer_class=None,
-        url_path=r'annotations/(?P<src_format>[^/&]+)')
-    def upload(self, request, pk, src_format):
-        self.get_object() # force to call check_object_permissions
-
-        return _import_annotations(
-            request=request,
-            rq_id="{}@/api/v1/tasks/{}/annotations/upload".format(request.user, pk),
-            rq_func=dm.task.import_task_annotations,
-            pk=pk,
-            format_name=src_format,
-        )
-
-    @swagger_auto_schema(method='get', operation_summary='Method allows to download annotations as a file',
-        manual_parameters=[
-            openapi.Parameter('format', openapi.IN_PATH,
-                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/export_formats",
-                type=openapi.TYPE_STRING, required=True),
-            openapi.Parameter('filename', openapi.IN_QUERY,
-                description="Desired output file name",
-                type=openapi.TYPE_STRING, required=False),
-            openapi.Parameter('action', in_=openapi.IN_QUERY,
-                description='Used to start downloading process after annotation file had been created',
-                type=openapi.TYPE_STRING, required=False, enum=['download'])
-        ],
-        responses={'202': openapi.Response(description='Dump of annotations has been started'),
-            '201': openapi.Response(description='Annotations file is ready to download'),
-            '200': openapi.Response(description='Download of file started')
-        }
-    )
-    @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path=r'annotations/(?P<dst_format>[^/&]+)')
-    def dump(self, request, pk, dst_format):
-        """
-        Dump of annotations in common case is a long process which cannot be performed within one request.
-        First request starts dumping process. When the file is ready (code 201) you can get it with query parameter action=download.
-        """
-        db_task = self.get_object() # force to call check_object_permissions
-
-        return _export_annotations(db_task=db_task,
-            rq_id="/api/v1/tasks/{}/annotations/{}".format(pk, dst_format),
-            request=request,
-            action=request.query_params.get("action", "").lower(),
-            callback=dm.views.export_task_annotations,
-            dst_format=dst_format,
-            filename=request.query_params.get("filename", "").lower(),
-        )
 
     @swagger_auto_schema(method='get', operation_summary='When task is being created the method returns information about a status of the creation process')
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
@@ -632,16 +621,16 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         }
     )
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path=r'dataset/(?P<dst_format>[^/&]+)')
-    def dataset_export(self, request, pk, dst_format):
+        url_path=r'dataset/(?P<format_name>[^/&]+)')
+    def dataset_export(self, request, pk, format_name):
         db_task = self.get_object() # force to call check_object_permissions
 
         return _export_annotations(db_task=db_task,
-            rq_id="/api/v1/tasks/{}/dataset/{}".format(pk, dst_format),
+            rq_id="/api/v1/tasks/{}/dataset/{}".format(pk, format_name),
             request=request,
             action=request.query_params.get("action", "").lower(),
             callback=dm.views.export_task_as_dataset,
-            dst_format=dst_format,
+            format_name=format_name,
             filename=request.query_params.get("filename", "").lower(),
         )
 
@@ -682,7 +671,7 @@ class JobViewSet(viewsets.GenericViewSet,
             data = dm.task.get_job_data(pk)
             return Response(data)
         elif request.method == 'PUT':
-            format_name = request.query_params.get("format", ""):
+            format_name = request.query_params.get("format", "")
             if format_name:
                 return _import_annotations(
                     request=request,
@@ -846,12 +835,12 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name):
 
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _export_annotations(db_task, rq_id, request, dst_format, action, callback, filename):
+def _export_annotations(db_task, rq_id, request, format_name, action, callback, filename):
     if action not in {"", "download"}:
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
 
-    if dst_format not in [f.DISPLAY_NAME for f in dm.views.get_export_formats()]:
+    if format_name not in [f.DISPLAY_NAME for f in dm.views.get_export_formats()]:
         raise serializers.ValidationError(
             "Unknown format specified for the request")
 
@@ -875,7 +864,7 @@ def _export_annotations(db_task, rq_id, request, dst_format, action, callback, f
                     filename = filename or \
                         "task_{}-{}-{}.{}".format(
                         db_task.name, timestamp,
-                        dst_format, osp.splitext(file_path)[1])
+                        format_name, osp.splitext(file_path)[1])
                     return sendfile(request, file_path, attachment=True,
                         attachment_filename=filename.lower())
                 else:
@@ -898,7 +887,7 @@ def _export_annotations(db_task, rq_id, request, dst_format, action, callback, f
 
     ttl = dm.views.CACHE_TTL.total_seconds()
     queue.enqueue_call(func=callback,
-        args=(db_task.id, dst_format, server_address), job_id=rq_id,
+        args=(db_task.id, format_name, server_address), job_id=rq_id,
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)

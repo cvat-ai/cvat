@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from glob import glob
 import io
 import os
 import os.path as osp
@@ -12,7 +13,6 @@ import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
 from enum import Enum
-from glob import glob
 from io import BytesIO
 from unittest import mock
 
@@ -26,7 +26,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
-                                     Segment, StatusChoice, Task)
+    Segment, StatusChoice, Task)
 
 
 def create_db_users(cls):
@@ -3080,6 +3080,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                                         polygon_shapes_wo_attrs + \
                                         polygon_shapes_with_attrs
 
+            else:
+                raise Exception("Unknown format {}".format(annotation_format))
+
             return annotations
 
         response = self._get_import_formats(annotator)
@@ -3130,15 +3133,15 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
                 # 3. download annotation
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
-                    "/{}".format(export_format))
+                    "?format={}".format(export_format))
                 self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
-                    "/{}".format(export_format))
+                    "?format={}".format(export_format))
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
-                    "/{}?action=download".format(export_format))
+                    "?format={}&action=download".format(export_format))
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 # 4. check downloaded data

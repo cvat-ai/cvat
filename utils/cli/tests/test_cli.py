@@ -1,16 +1,21 @@
+# Copyright (C) 2020 Intel Corporation
+#
 # SPDX-License-Identifier: MIT
-import logging
+
 import io
+import logging
 import os
 import sys
 import unittest
+
 from django.conf import settings
-from requests.auth import HTTPBasicAuth
-from utils.cli.core import CLI, CVAT_API_V1, ResourceType
-from rest_framework.test import APITestCase, RequestsClient
-from cvat.apps.engine.tests.test_rest_api import create_db_users
-from cvat.apps.engine.tests.test_rest_api import generate_image_file
 from PIL import Image
+from requests.auth import HTTPBasicAuth
+from rest_framework.test import APITestCase, RequestsClient
+
+from cvat.apps.engine.tests.test_rest_api import (create_db_users,
+    generate_image_file)
+from utils.cli.core import CLI, CVAT_API_V1, ResourceType
 
 
 class TestCLI(APITestCase):
