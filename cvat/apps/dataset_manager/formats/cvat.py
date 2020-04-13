@@ -3,12 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
-import shutil
+import zipfile
 from collections import OrderedDict
 from glob import glob
 from tempfile import TemporaryDirectory
-
-from pyunpack import Archive
 
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -513,30 +511,25 @@ def load(file_object, annotations):
             el.clear()
 
 def _export(dst_file, task_data, anno_callback, save_images=False):
-    dst_path = dst_file.name
-    anno_callback(dst_file, task_data)
-
-    if not save_images:
-        return
-
-    dst_file.close()
     with TemporaryDirectory() as temp_dir:
-        shutil.move(dst_path, temp_dir)
+        with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
+            anno_callback(f, task_data)
 
-        frame_provider = FrameProvider(task_data.db_task.data)
-        frames = frame_provider.get_frames(
-            frame_provider.Quality.ORIGINAL,
-            frame_provider.Type.NUMPY_ARRAY)
-        for frame_id, (frame_data, _) in enumerate(frames):
-            frame_filename = osp.basename(task_data.frame_info[frame_id]['path'])
-            if '.' in frame_filename:
-                save_image(osp.join(temp_dir, 'images', frame_filename),
-                    frame_data, jpeg_quality=100)
-            else:
-                save_image(osp.join(temp_dir, 'images', frame_filename + '.png'),
-                    frame_data)
+        if save_images:
+            frame_provider = FrameProvider(task_data.db_task.data)
+            frames = frame_provider.get_frames(
+                frame_provider.Quality.ORIGINAL,
+                frame_provider.Type.NUMPY_ARRAY)
+            for frame_id, (frame_data, _) in enumerate(frames):
+                frame_name = osp.basename(task_data.frame_info[frame_id]['path'])
+                if '.' in frame_name:
+                    save_image(osp.join(temp_dir, 'images', frame_name),
+                        frame_data, jpeg_quality=100)
+                else:
+                    save_image(osp.join(temp_dir, 'images', frame_name + '.png'),
+                        frame_data)
 
-        make_zip_archive(temp_dir, dst_path)
+        make_zip_archive(temp_dir, dst_file)
 
 @exporter(name='CVAT for video', ext='ZIP', version='1.1')
 def _export_video(dst_file, task_data, save_images=False):
@@ -550,14 +543,12 @@ def _export_images(dst_file, task_data, save_images=False):
 
 @importer(name='CVAT', ext='XML, ZIP', version='1.1')
 def _import(src_file, task_data):
-    src_path = src_file.name
-
-    if src_path.lower().endswith('.xml'):
-        load(src_path, task_data)
-    elif src_file.lower().endswith('.zip'):
+    if zipfile.is_zipfile(src_file):
         with TemporaryDirectory() as tmp_dir:
-            Archive(src_path).extractall(tmp_dir)
+            zipfile.ZipFile(src_file).extractall(tmp_dir)
 
             anno_paths = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
             for p in anno_paths:
                 load(p, task_data)
+    else:
+        load(src_file, task_data)

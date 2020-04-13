@@ -4,6 +4,7 @@
 
 import io
 import os
+import os.path as osp
 import random
 import shutil
 import tempfile
@@ -11,6 +12,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
 from enum import Enum
+from glob import glob
 from io import BytesIO
 from unittest import mock
 
@@ -24,7 +26,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task)
+                                     Segment, StatusChoice, Task)
 
 
 def create_db_users(cls):
@@ -3082,13 +3084,19 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         response = self._get_import_formats(annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        import_formats = response.data
+        if annotator is not None:
+            import_formats = response.data
+        else:
+            import_formats = response = self._get_import_formats(owner).data
         self.assertTrue(isinstance(import_formats, list) and import_formats)
         import_formats = { v['name'] for v in import_formats }
 
         response = self._get_export_formats(annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        export_formats = response.data
+        if annotator is not None:
+            export_formats = response.data
+        else:
+            export_formats = response = self._get_export_formats(owner).data
         self.assertTrue(isinstance(export_formats, list) and export_formats)
         export_formats = { v['name'] for v in export_formats }
 
@@ -3134,10 +3142,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 # 4. check downloaded data
-                self.assertTrue(response.streaming)
-                content = io.BytesIO(b"".join(response.streaming_content))
-                self._check_dump_content(content, task, jobs, data, export_format)
-                content.seek(0)
+                if annotator is not None:
+                    self.assertTrue(response.streaming)
+                    content = io.BytesIO(b"".join(response.streaming_content))
+                    self._check_dump_content(content, task, jobs, data, export_format)
+                    content.seek(0)
+                else:
+                    content = io.BytesIO()
 
                 # 5. remove annotation form the task
                 response = self._delete_api_v1_tasks_id_annotations(task["id"], annotator)
@@ -3166,6 +3177,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     continue # can't really predict the result to check
                 response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
                 self.assertEqual(response.status_code, HTTP_200_OK)
+
+                if annotator is None:
+                    continue
                 data["version"] += 2 # upload is delete + put
                 self._check_response(response, data)
 
@@ -3194,9 +3208,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 xmls = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
                 self.assertTrue(xmls)
                 for xml in xmls:
-                    xmldump = ET.parse(xml)
-                    self.assertEqual(xmldump.tag, "annotations")
-                    tags = xmldump.findall("./meta")
+                    xmlroot = ET.parse(xml).getroot()
+                    self.assertEqual(xmlroot.tag, "annotations")
+                    tags = xmlroot.findall("./meta")
                     self.assertEqual(len(tags), 1)
                     meta = etree_to_dict(tags[0])["meta"]
                     self.assertEqual(meta["task"]["name"], task["name"])

@@ -38,8 +38,8 @@ def _import(src_file, task_data):
             filename = osp.splitext(osp.basename(filename))[0]
             frame_info = None
             try:
-                frame_id = match_frame(DatasetItem(id=filename), annotations)
-                frame_info = annotations.frame_info[frame_id]
+                frame_id = match_frame(DatasetItem(id=filename), task_data)
+                frame_info = task_data.frame_info[frame_id]
             except Exception:
                 pass
             if frame_info is not None:

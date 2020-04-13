@@ -59,6 +59,6 @@ def _import(src_file, task_data):
                 shutil.move(f, anno_dir)
 
         dataset = dm_env.make_importer('voc')(tmp_dir).make_dataset()
-        masks_to_polygons = Environment().transforms.get('masks_to_polygons')
+        masks_to_polygons = dm_env.transforms.get('masks_to_polygons')
         dataset = dataset.transform(masks_to_polygons)
         import_dm_annotations(dataset, task_data)

@@ -41,7 +41,7 @@ def _import(src_file, task_data):
         for item in dataset:
             frame_id = match_frame(item, task_data)
 
-            for ann in item.task_data:
+            for ann in item.annotations:
                 if ann.type != datumaro.AnnotationType.bbox:
                     continue
 

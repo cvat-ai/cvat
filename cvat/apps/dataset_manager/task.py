@@ -729,7 +729,7 @@ def import_task_annotations(task_id, src_file, format_name):
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        task.import_annotations(importer, f)
+        task.import_annotations(f, importer)
 
 @transaction.atomic
 def import_job_annotations(job_id, src_file, format_name):
@@ -738,4 +738,4 @@ def import_job_annotations(job_id, src_file, format_name):
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        job.import_annotations(importer, f)
+        job.import_annotations(f, importer)

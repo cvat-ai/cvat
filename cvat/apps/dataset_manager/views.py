@@ -73,10 +73,10 @@ def export_task(task_id, dst_format, server_url=None, save_images=False):
         raise
 
 def export_task_as_dataset(task_id, dst_format=None, server_url=None):
-    export_task(task_id, dst_format, server_url=server_url, save_images=True)
+    return export_task(task_id, dst_format, server_url=server_url, save_images=True)
 
 def export_task_annotations(task_id, dst_format=None, server_url=None):
-    export_task(task_id, dst_format, server_url=server_url, save_images=False)
+    return export_task(task_id, dst_format, server_url=server_url, save_images=False)
 
 def clear_export_cache(task_id, file_path, file_ctime):
     try:

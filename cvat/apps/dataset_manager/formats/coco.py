@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import zipfile
 from tempfile import TemporaryDirectory
 
 from datumaro.components.project import Dataset
@@ -25,14 +26,12 @@ def _export(dst_file, task_data, save_images=False):
 
 @importer(name='COCO', ext='JSON, ZIP', version='1.0')
 def _import(src_file, task_data):
-    src_path = src_file.name
-
-    if src_path.lower.endswith('.json'):
-        dataset = dm_env.make_extractor('coco_instances', src_path)
-        import_dm_annotations(dataset, task_data)
-    else:
+    if zipfile.is_zipfile(src_file):
         with TemporaryDirectory() as tmp_dir:
-            Archive(src_path).extractall(tmp_dir)
+            zipfile.ZipFile(src_file).extractall(tmp_dir)
 
             dataset = dm_env.make_importer('coco')(tmp_dir).make_dataset()
             import_dm_annotations(dataset, task_data)
+    else:
+        dataset = dm_env.make_extractor('coco_instances', src_file.name)
+        import_dm_annotations(dataset, task_data)
