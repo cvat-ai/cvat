@@ -7,13 +7,14 @@ import rq
 import cv2
 import math
 import numpy
-import fnmatch
+import itertools
 
 from openvino.inference_engine import IENetwork, IEPlugin
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import euclidean, cosine
 
 from cvat.apps.engine.models import Job
+from cvat.apps.engine.frame_provider import FrameProvider
 
 
 class ReID:
@@ -33,22 +34,20 @@ class ReID:
     def __init__(self, jid, data):
         self.__threshold = data["threshold"]
         self.__max_distance = data["maxDistance"]
-        self.__frame_urls = {}
+
         self.__frame_boxes = {}
 
         db_job = Job.objects.select_related('segment__task').get(pk = jid)
         db_segment = db_job.segment
         db_task = db_segment.task
+        self.__frame_iter = itertools.islice(
+            FrameProvider(db_task.data).get_frames(FrameProvider.Quality.ORIGINAL),
+            db_segment.start_frame,
+            db_segment.stop_frame + 1,
+        )
 
         self.__stop_frame = db_segment.stop_frame
-
-        for root, _, filenames in os.walk(db_task.get_data_dirname()):
-            for filename in fnmatch.filter(filenames, '*.jpg'):
-                frame = int(os.path.splitext(filename)[0])
-                if frame >= db_segment.start_frame and frame <= db_segment.stop_frame:
-                    self.__frame_urls[frame] = os.path.join(root, filename)
-
-        for frame in self.__frame_urls:
+        for frame in range(db_segment.start_frame, db_segment.stop_frame + 1):
             self.__frame_boxes[frame] = [box for box in data["boxes"] if box["frame"] == frame]
 
         IE_PLUGINS_PATH = os.getenv('IE_PLUGINS_PATH', None)
@@ -151,6 +150,7 @@ class ReID:
         job = rq.get_current_job()
         box_tracks = {}
 
+        next_image = cv2.imdecode(numpy.fromstring(next(self.__frame_iter).read(), numpy.uint8), cv2.IMREAD_COLOR)
         for idx, (cur_frame, next_frame) in enumerate(list(zip(frames[:-1], frames[1:]))):
             job.refresh()
             if "cancel" in job.meta:
@@ -171,8 +171,8 @@ class ReID:
             if not (len(cur_boxes) and len(next_boxes)):
                 continue
 
-            cur_image = cv2.imread(self.__frame_urls[cur_frame], cv2.IMREAD_COLOR)
-            next_image = cv2.imread(self.__frame_urls[next_frame], cv2.IMREAD_COLOR)
+            cur_image = next_image
+            next_image = cv2.imdecode(numpy.fromstring(next(self.__frame_iter).read(), numpy.uint8), cv2.IMREAD_COLOR)
             difference_matrix = self.__compute_difference_matrix(cur_boxes, next_boxes, cur_image, next_image)
             cur_idxs, next_idxs = linear_sum_assignment(difference_matrix)
             for idx, cur_idx in enumerate(cur_idxs):

@@ -3,7 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
+from cvat.apps.auto_annotation.inference_engine import make_plugin_or_core, make_network
+from cvat.apps.engine.frame_provider import FrameProvider
 
 import os
 import cv2
@@ -29,17 +30,22 @@ class DEXTR_HANDLER:
             raise Exception("DEXTR_MODEL_DIR is not defined")
 
 
-    def handle(self, im_path, points):
+    def handle(self, db_data, frame, points):
         # Lazy initialization
         if not self._plugin:
-            self._plugin = make_plugin()
+            self._plugin = make_plugin_or_core()
             self._network = make_network(os.path.join(_DEXTR_MODEL_DIR, 'dextr.xml'),
                 os.path.join(_DEXTR_MODEL_DIR, 'dextr.bin'))
             self._input_blob = next(iter(self._network.inputs))
             self._output_blob = next(iter(self._network.outputs))
-            self._exec_network = self._plugin.load(network=self._network)
+            if getattr(self._plugin, 'load_network', False):
+                self._exec_network = self._plugin.load_network(self._network, 'CPU')
+            else:
+                self._exec_network = self._plugin.load(network=self._network)
 
-        image = PIL.Image.open(im_path)
+        frame_provider = FrameProvider(db_data)
+        image = frame_provider.get_frame(frame, frame_provider.Quality.ORIGINAL)
+        image = PIL.Image.open(image[0])
         numpy_image = np.array(image)
         points = np.asarray([[int(p["x"]), int(p["y"])] for p in points], dtype=int)
         bounding_box = (

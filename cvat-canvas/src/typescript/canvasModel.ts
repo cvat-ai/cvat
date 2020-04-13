@@ -9,6 +9,12 @@ export interface Size {
     height: number;
 }
 
+export interface Image {
+    renderWidth: number;
+    renderHeight: number;
+    imageData: ImageData | CanvasImageSource;
+}
+
 export interface Position {
     x: number;
     y: number;
@@ -38,6 +44,11 @@ export interface ActiveElement {
 export enum RectDrawingMethod {
     CLASSIC = 'By 2 points',
     EXTREME_POINTS = 'By 4 points'
+}
+
+export interface Configuration {
+    displayAllText?: boolean;
+    undefinedAttrValue?: string;
 }
 
 export interface DrawData {
@@ -92,8 +103,10 @@ export enum UpdateReasons {
     GROUP = 'group',
     SELECT = 'select',
     CANCEL = 'cancel',
+    BITMAP = 'bitmap',
     DRAG_CANVAS = 'drag_canvas',
-    ZOOM_CANVAS = 'ZOOM_CANVAS',
+    ZOOM_CANVAS = 'zoom_canvas',
+    CONFIG_UPDATED = 'config_updated',
 }
 
 export enum Mode {
@@ -110,7 +123,8 @@ export enum Mode {
 }
 
 export interface CanvasModel {
-    readonly image: HTMLImageElement | null;
+    readonly imageBitmap: boolean;
+    readonly image: Image | null;
     readonly objects: any[];
     readonly zLayer: number | null;
     readonly gridSize: Size;
@@ -120,6 +134,7 @@ export interface CanvasModel {
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
     readonly groupData: GroupData;
+    readonly configuration: Configuration;
     readonly selected: any;
     geometry: Geometry;
     mode: Mode;
@@ -142,9 +157,11 @@ export interface CanvasModel {
     select(objectState: any): void;
 
     fitCanvas(width: number, height: number): void;
+    bitmap(enabled: boolean): void;
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
+    configure(configuration: Configuration): void;
     cancel(): void;
 }
 
@@ -153,7 +170,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         activeElement: ActiveElement;
         angle: number;
         canvasSize: Size;
-        image: HTMLImageElement | null;
+        configuration: Configuration;
+        imageBitmap: boolean;
+        image: Image | null;
         imageID: number | null;
         imageOffset: number;
         imageSize: Size;
@@ -185,6 +204,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 height: 0,
                 width: 0,
             },
+            configuration: {
+                displayAllText: false,
+                undefinedAttrValue: '',
+            },
+            imageBitmap: false,
             image: null,
             imageID: null,
             imageOffset: 0,
@@ -271,6 +295,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.OBJECTS_UPDATED);
     }
 
+    public bitmap(enabled: boolean): void {
+        this.data.imageBitmap = enabled;
+        this.notify(UpdateReasons.BITMAP);
+    }
+
     public dragCanvas(enable: boolean): void {
         if (enable && this.data.mode !== Mode.IDLE) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -298,6 +327,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public setup(frameData: any, objectStates: any[]): void {
+        if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
         if (frameData.number === this.data.imageID) {
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
@@ -310,7 +343,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.data.image = null;
                 this.notify(UpdateReasons.IMAGE_CHANGED);
             },
-        ).then((data: HTMLImageElement): void => {
+        ).then((data: Image): void => {
             if (frameData.number !== this.data.imageID) {
                 // already another image
                 return;
@@ -479,8 +512,28 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.selected = null;
     }
 
+    public configure(configuration: Configuration): void {
+        if (this.data.mode !== Mode.IDLE) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (typeof (configuration.displayAllText) !== 'undefined') {
+            this.data.configuration.displayAllText = configuration.displayAllText;
+        }
+
+        if (typeof (configuration.undefinedAttrValue) !== 'undefined') {
+            this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
+        }
+
+        this.notify(UpdateReasons.CONFIG_UPDATED);
+    }
+
     public cancel(): void {
         this.notify(UpdateReasons.CANCEL);
+    }
+
+    public get configuration(): Configuration {
+        return { ...this.data.configuration };
     }
 
     public get geometry(): Geometry {
@@ -516,7 +569,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return this.data.zLayer;
     }
 
-    public get image(): HTMLImageElement | null {
+    public get imageBitmap(): boolean {
+        return this.data.imageBitmap;
+    }
+
+    public get image(): Image | null {
         return this.data.image;
     }
 

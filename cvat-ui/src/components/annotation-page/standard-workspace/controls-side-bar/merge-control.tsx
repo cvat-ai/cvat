@@ -19,12 +19,13 @@ import { ActiveControl } from 'reducers/interfaces';
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
-
+    switchMergeShortcut: string;
     mergeObjects(enabled: boolean): void;
 }
 
 function MergeControl(props: Props): JSX.Element {
     const {
+        switchMergeShortcut,
         activeControl,
         canvasInstance,
         mergeObjects,
@@ -46,7 +47,7 @@ function MergeControl(props: Props): JSX.Element {
         };
 
     return (
-        <Tooltip title='Merge shapes/tracks' placement='right'>
+        <Tooltip title={`Merge shapes/tracks ${switchMergeShortcut}`} placement='right'>
             <Icon {...dynamicIconProps} component={MergeIcon} />
         </Tooltip>
     );

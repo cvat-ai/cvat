@@ -37,6 +37,24 @@ Canvas itself handles:
         EXTREME_POINTS = 'By 4 points'
     }
 
+    enum Mode {
+        IDLE = 'idle',
+        DRAG = 'drag',
+        RESIZE = 'resize',
+        DRAW = 'draw',
+        EDIT = 'edit',
+        MERGE = 'merge',
+        SPLIT = 'split',
+        GROUP = 'group',
+        DRAG_CANVAS = 'drag_canvas',
+        ZOOM_CANVAS = 'zoom_canvas',
+    }
+
+    interface Configuration {
+        displayAllText?: boolean;
+        undefinedAttrValue?: string;
+    }
+
     interface DrawData {
         enabled: boolean;
         shapeType?: string;
@@ -86,10 +104,13 @@ Canvas itself handles:
         select(objectState: any): void;
 
         fitCanvas(): void;
+        bitmap(enabled: boolean): void;
         dragCanvas(enable: boolean): void;
         zoomCanvas(enable: boolean): void;
 
+        mode(): Mode;
         cancel(): void;
+        configure(configuration: Configuration): void;
     }
 ```
 
@@ -128,6 +149,10 @@ Standard JS events are used.
     - canvas.dragstop
     - canvas.zoomstart
     - canvas.zoomstop
+    - canvas.zoom
+    - canvas.fit
+    - canvas.dragshape => {id: number}
+    - canvas.resizeshape => {id: number}
 ```
 
 ### WEB
@@ -135,7 +160,8 @@ Standard JS events are used.
     // Create an instance of a canvas
     const canvas = new window.canvas.Canvas();
 
-    console.log('Version', window.canvas.CanvasVersion);
+    console.log('Version ', window.canvas.CanvasVersion);
+    console.log('Current mode is ', window.canvas.mode());
 
     // Put canvas to a html container
     htmlContainer.appendChild(canvas.html());
@@ -153,21 +179,23 @@ Standard JS events are used.
 
 ## API Reaction
 
-|              | IDLE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING | DRAG | ZOOM |
-|--------------|------|----------|-----------|---------|---------|---------|------|------|
-| html()       | +    | +        | +         | +       | +       | +       | +    | +    |
-| setup()      | +    | +        | +         | +       | +       | -       | +    | +    |
-| activate()   | +    | -        | -         | -       | -       | -       | -    | -    |
-| rotate()     | +    | +        | +         | +       | +       | +       | +    | +    |
-| focus()      | +    | +        | +         | +       | +       | +       | +    | +    |
-| fit()        | +    | +        | +         | +       | +       | +       | +    | +    |
-| grid()       | +    | +        | +         | +       | +       | +       | +    | +    |
-| draw()       | +    | -        | -         | -       | -       | -       | -    | -    |
-| split()      | +    | -        | +         | -       | -       | -       | -    | -    |
-| group()      | +    | +        | -         | -       | -       | -       | -    | -    |
-| merge()      | +    | -        | -         | -       | +       | -       | -    | -    |
-| fitCanvas()  | +    | +        | +         | +       | +       | +       | +    | +    |
-| dragCanvas() | +    | -        | -         | -       | -       | -       | +    | -    |
-| zoomCanvas() | +    | -        | -         | -       | -       | -       | -    | +    |
-| cancel()     | -    | +        | +         | +       | +       | +       | +    | +    |
-| setZLayer()  | +    | +        | +         | +       | +       | +       | +    | +    |
+|              | IDLE | GROUP | SPLIT | DRAW | MERGE | EDIT | DRAG | RESIZE | ZOOM_CANVAS | DRAG_CANVAS |
+|--------------|------|-------|-------|------|-------|------|------|--------|-------------|-------------|
+| html()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| setup()      | +    | +     | +     | +    | +     | -    | -    | -      | +           | +           |
+| activate()   | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
+| rotate()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| focus()      | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| fit()        | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| grid()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| draw()       | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
+| split()      | +    | -     | +     | -    | -     | -    | -    | -      | -           | -           |
+| group()      | +    | +     | -     | -    | -     | -    | -    | -      | -           | -           |
+| merge()      | +    | -     | -     | -    | +     | -    | -    | -      | -           | -           |
+| fitCanvas()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| dragCanvas() | +    | -     | -     | -    | -     | -    | +    | -      | -           | +           |
+| zoomCanvas() | +    | -     | -     | -    | -     | -    | -    | +      | +           | -           |
+| cancel()     | -    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| configure()  | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
+| bitmap()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| setZLayer()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |

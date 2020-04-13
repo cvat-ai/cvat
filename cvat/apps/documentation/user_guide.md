@@ -136,6 +136,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     The ``Done`` button applies the changes and the ``Reset`` button cancels the changes. 
           ![](static/documentation/images/image126.jpg)
 
+    In ``Raw`` and ``Constructor`` mode, you can press the ``Copy`` button to copy the list of labels.
+
     **Select files**. Press tab ``My computer`` to choose some files for annotation from your PC. 
     If you select tab ``Connected file share`` you can choose files for annotation from your network. 
     If you select `` Remote source`` , you'll see a field where you can enter a list of URLs (one URL per line).
@@ -147,6 +149,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       ![](static/documentation/images/image128.jpg)  
 
     **Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
+
+    **Use zip chunks**. Force to use zip chunks as compressed data. Actual for videos only.
     
     **Image Quality**. Use this option to specify quality of uploaded images.
     The option helps to load high resolution datasets faster.
@@ -182,8 +186,17 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     **Stop frame**. Frame on which video in task ends.
 
-    **Frame Filter**. Use this option to filter video frames.
-    For example, enter ``step=25`` to leave every twenty fifth frame in the video. Use this option on video files only.
+    **Frame Step**. Use this option to filter video frames.
+    For example, enter ``25`` to leave every twenty fifth frame in the video. Use this option on video files only.
+
+    **Chunk size**. Defines a number of frames to be packed in a chunk when send from client to server.
+    Server defines automatically if empty. 
+    
+    Recommended values:
+    - 1080p or less: 36
+    - 2k or less: 8 - 16
+    - 4k or less: 4 - 8
+    - More: 1 - 4
 
     **Dataset Repository**.  URL link of the repository optionally specifies the path to the repository for storage
     (``default: annotation / <dump_file_name> .zip``).
@@ -232,7 +245,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       - [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [MS COCO](http://cocodataset.org/#format-data)
       - [YOLO](https://pjreddie.com/darknet/yolo/)
-    - ``Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
+    - ``Automatic Annotation`` — automatic annotation with  OpenVINO toolkit.
       Presence depends on how you build CVAT instance.
     - ``Open bug tracker`` — opens a link to Issue tracker.
     - ``Delete`` — delete task.
@@ -269,7 +282,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 1.  Follow a link inside ``Jobs`` section to start annotation process.
     In some cases, you can have several links. It depends on size of your
     task and ``Overlap Size`` and ``Segment Size`` parameters. To improve
-    UX, only the first several frames will be loaded and you will be able
+    UX, only the first chunk of several frames will be loaded and you will be able
     to annotate first images. Other frames will be loaded in background.
 
     ![](static/documentation/images/image007.jpg)

@@ -31,7 +31,8 @@ export interface DrawHandler {
 
 export class DrawHandlerImpl implements DrawHandler {
     // callback is used to notify about creating new shape
-    private onDrawDone: (data: object, continueDraw?: boolean) => void;
+    private onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean) => void;
+    private startTimestamp: number;
     private canvas: SVG.Container;
     private text: SVG.Container;
     private cursorPosition: {
@@ -49,6 +50,7 @@ export class DrawHandlerImpl implements DrawHandler {
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
     private drawInstance: any;
     private initialized: boolean;
+    private canceled: boolean;
     private pointsGroup: SVG.G | null;
     private shapeSizeElement: ShapeSizeElement;
 
@@ -148,6 +150,7 @@ export class DrawHandlerImpl implements DrawHandler {
             // Clear drawing
             this.drawInstance.draw('stop');
         }
+
         this.drawInstance.off();
         this.drawInstance.remove();
         this.drawInstance = null;
@@ -159,6 +162,10 @@ export class DrawHandlerImpl implements DrawHandler {
 
         if (this.crosshair) {
             this.removeCrosshair();
+        }
+
+        if (!this.drawData.initialState) {
+            this.onDrawDone(null);
         }
     }
 
@@ -174,13 +181,14 @@ export class DrawHandlerImpl implements DrawHandler {
             const bbox = (e.target as SVGRectElement).getBBox();
             const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
             const { shapeType } = this.drawData;
-            this.cancel();
+            this.release();
 
+            if (this.canceled) return;
             if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
                 this.onDrawDone({
                     shapeType,
                     points: [xtl, ytl, xbr, ybr],
-                });
+                }, Date.now() - this.startTimestamp);
             }
         }).on('drawupdate', (): void => {
             this.shapeSizeElement.update(this.drawInstance);
@@ -213,7 +221,7 @@ export class DrawHandlerImpl implements DrawHandler {
                         this.onDrawDone({
                             shapeType,
                             points: [xtl, ytl, xbr, ybr],
-                        });
+                        }, Date.now() - this.startTimestamp);
                     }
                 }
             }).on('undopoint', (): void => {
@@ -289,18 +297,18 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
             const targetPoints = pointsToArray((e.target as SVGElement).getAttribute('points'));
-
             const { points, box } = this.getFinalPolyshapeCoordinates(targetPoints);
             const { shapeType } = this.drawData;
-            this.cancel();
+            this.release();
 
+            if (this.canceled) return;
             if (shapeType === 'polygon'
                 && ((box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD)
                 && points.length >= 3 * 2) {
                 this.onDrawDone({
                     shapeType,
                     points,
-                });
+                }, Date.now() - this.startTimestamp);
             } else if (shapeType === 'polyline'
                 && ((box.xbr - box.xtl) >= consts.SIZE_THRESHOLD
                 || (box.ybr - box.ytl) >= consts.SIZE_THRESHOLD)
@@ -308,13 +316,13 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.onDrawDone({
                     shapeType,
                     points,
-                });
+                }, Date.now() - this.startTimestamp);
             } else if (shapeType === 'points'
                 && (e.target as any).getAttribute('points') !== '0,0') {
                 this.onDrawDone({
                     shapeType,
                     points,
-                });
+                }, Date.now() - this.startTimestamp);
             }
         });
     }
@@ -365,7 +373,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 attributes: { ...this.drawData.initialState.attributes },
                 label: this.drawData.initialState.label,
                 color: this.drawData.initialState.color,
-            }, e.detail.originalEvent.ctrlKey);
+            }, Date.now() - this.startTimestamp, e.detail.originalEvent.ctrlKey);
         });
     }
 
@@ -405,7 +413,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 attributes: { ...this.drawData.initialState.attributes },
                 label: this.drawData.initialState.label,
                 color: this.drawData.initialState.color,
-            }, e.detail.originalEvent.ctrlKey);
+            }, Date.now() - this.startTimestamp, e.detail.originalEvent.ctrlKey);
         });
     }
 
@@ -583,18 +591,21 @@ export class DrawHandlerImpl implements DrawHandler {
             this.setupDrawEvents();
         }
 
+        this.startTimestamp = Date.now();
         this.initialized = true;
     }
 
     public constructor(
-        onDrawDone: (data: object, continueDraw?: boolean) => void,
+        onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean) => void,
         canvas: SVG.Container,
         text: SVG.Container,
     ) {
+        this.startTimestamp = Date.now();
         this.onDrawDone = onDrawDone;
         this.canvas = canvas;
         this.text = text;
         this.initialized = false;
+        this.canceled = false;
         this.drawData = null;
         this.geometry = null;
         this.crosshair = null;
@@ -668,17 +679,18 @@ export class DrawHandlerImpl implements DrawHandler {
         this.geometry = geometry;
 
         if (drawData.enabled) {
+            this.canceled = false;
             this.drawData = drawData;
             this.initDrawing();
             this.startDraw();
         } else {
-            this.cancel();
+            this.release();
             this.drawData = drawData;
         }
     }
 
     public cancel(): void {
+        this.canceled = true;
         this.release();
-        this.onDrawDone(null);
     }
 }
