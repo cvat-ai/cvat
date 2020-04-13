@@ -520,7 +520,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             },
             SAVE_JOB: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                this.onSaveAnnotation();
+                if (!saving) {
+                    this.onSaveAnnotation();
+                }
             },
             NEXT_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Button to reset colors settings (brightness, saturation, contrast) in the new UI
 - Option to display shape text always
 - Dedicated message with clarifications when share is unmounted (https://github.com/opencv/cvat/pull/1373)
+- Ability to create one tracked point (https://github.com/opencv/cvat/pull/1383)
 - Tutorial: instructions for CVAT over HTTPS
 
 ### Changed
@@ -35,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Merge is allowed for points, but clicks on points conflict with frame dragging logic
 - Removed objects are visible for search
 - Add missed task_id and job_id fields into exception logs for the new UI (https://github.com/opencv/cvat/pull/1372)
+- UI fails when annotations saving occurs during drag/resize/edit (https://github.com/opencv/cvat/pull/1383)
+- Multiple savings when hold Ctrl+S (a lot of the same copies of events were sent with the same working time) (https://github.com/opencv/cvat/pull/1383)
+- UI doesn't have any reaction when git repos synchronization failed (https://github.com/opencv/cvat/pull/1383)
+- Bug when annotations cannot be saved after (delete - save - undo - save) (https://github.com/opencv/cvat/pull/1383)
 - VOC format exports Upper case labels correctly in lower case (https://github.com/opencv/cvat/pull/1379)
 - Fixed polygon exporting bug in COCO dataset (https://github.com/opencv/cvat/issues/1387)
 - Task creation from remote files (https://github.com/opencv/cvat/pull/1392)
