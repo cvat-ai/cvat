@@ -327,8 +327,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public setup(frameData: any, objectStates: any[]): void {
-        if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
-            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        if (this.data.imageID !== frameData.number) {
+            if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
+                throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+            }
         }
 
         if (frameData.number === this.data.imageID) {
@@ -364,6 +366,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public activate(clientID: number | null, attributeID: number | null): void {
+        if (this.data.activeElement.clientID === clientID) {
+            return;
+        }
+
         if (this.data.mode !== Mode.IDLE && clientID !== null) {
             // Exception or just return?
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);

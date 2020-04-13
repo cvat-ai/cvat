@@ -182,7 +182,7 @@ Standard JS events are used.
 |              | IDLE | GROUP | SPLIT | DRAW | MERGE | EDIT | DRAG | RESIZE | ZOOM_CANVAS | DRAG_CANVAS |
 |--------------|------|-------|-------|------|-------|------|------|--------|-------------|-------------|
 | html()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| setup()      | +    | +     | +     | +    | +     | -    | -    | -      | +           | +           |
+| setup()      | +    | +     | +     | +    | +     | +/-  | +/-  | +/-    | +           | +           |
 | activate()   | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
 | rotate()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
 | focus()      | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
@@ -199,3 +199,5 @@ Standard JS events are used.
 | configure()  | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
 | bitmap()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
 | setZLayer()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+
+You can call setup() during editing, dragging, and resizing only to update objects, not to change a frame.

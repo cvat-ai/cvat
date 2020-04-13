@@ -1,5 +1,5 @@
 
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -364,9 +364,9 @@ class _KeypointsConverter(_InstancesConverter):
         solitary_points = []
 
         for g_id, group in groupby(annotations, lambda a: a.group):
-            if g_id and not cls.find_instance_anns(group):
+            if not g_id or g_id and not cls.find_instance_anns(group):
                 group = [a for a in group if a.type == AnnotationType.points]
-            solitary_points.extend(group)
+                solitary_points.extend(group)
 
         return solitary_points
 

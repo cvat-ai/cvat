@@ -347,18 +347,15 @@ The search is case insensitive.
 ## Interface of the annotation tool
 
 The tool consists of:
-- ``Workspace`` — where images are shown;
-- ``Bottom panel`` (under workspace) — for navigation, filtering annotation and accessing tools' menu;
-- ``Side panel`` — contains two lists: objects (on the frame) and labels (of objects on the frame);
-- ``Bottom side panel`` — contains the main annotation functions (create, merge, group objects).
-  Here you can choose a type of shape, a label you want to annotate and a mode (annotation or interpolation)
+- ``Header`` -  pinned header used to navigate CVAT sections and account settings;
+- ``Top panel`` — contains navigation buttons, main functions and menu access;
+- ``Workspace`` — space where images are shown;
+- ``Controls sidebar`` — contains tools for navigating the image, zoom,
+  creating shapes and editing tracks (merge, split, group)
+- ``Objects sidebar`` — contains label filter, two lists: 
+  objects (on the frame) and labels (of objects on the frame) and appearance settings.
 
-![](static/documentation/images/image034.jpg)
-
-There is also:
-- ``Settings`` (F2) — the button inside ``Open Menu`` in the bottom panel. Contains different parameters
-  which can be adjusted according to the user's needs.
-- ``Context menu`` — available on right mouse button.
+![](static/documentation/images/image034_DETRAC.jpg)
 
 ### Basic navigation
 

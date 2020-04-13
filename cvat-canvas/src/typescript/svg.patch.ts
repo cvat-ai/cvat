@@ -16,7 +16,9 @@ SVG.Element.prototype.draw = function constructor(...args: any): any {
     if (!handler) {
         originalDraw.call(this, ...args);
         handler = this.remember('_paintHandler');
-        if (!handler.set) {
+        // There is use case (drawing a single point when handler is created and destructed immediately in one stack)
+        // So, we need to check if handler still exists
+        if (handler && !handler.set) {
             handler.set = new SVG.Set();
         }
     } else {
