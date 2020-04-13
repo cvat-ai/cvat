@@ -285,7 +285,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     UX, only the first chunk of several frames will be loaded and you will be able
     to annotate first images. Other frames will be loaded in background.
 
-    ![](static/documentation/images/image007.jpg)
+    ![](static/documentation/images/image007_DETRAC.jpg)
 
 ### Models
 
