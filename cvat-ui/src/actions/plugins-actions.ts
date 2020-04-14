@@ -33,6 +33,7 @@ export function checkPluginsAsync(): ThunkAction {
             GIT_INTEGRATION: false,
             TF_ANNOTATION: false,
             TF_SEGMENTATION: false,
+            REID: false,
         };
 
         const promises: Promise<boolean>[] = [
@@ -41,6 +42,7 @@ export function checkPluginsAsync(): ThunkAction {
             PluginChecker.check(SupportedPlugins.GIT_INTEGRATION),
             PluginChecker.check(SupportedPlugins.TF_ANNOTATION),
             PluginChecker.check(SupportedPlugins.TF_SEGMENTATION),
+            PluginChecker.check(SupportedPlugins.REID),
         ];
 
         const values = await Promise.all(promises);
@@ -49,6 +51,7 @@ export function checkPluginsAsync(): ThunkAction {
         [,, plugins.GIT_INTEGRATION] = values;
         [,,, plugins.TF_ANNOTATION] = values;
         [,,,, plugins.TF_SEGMENTATION] = values;
+        [,,,,, plugins.REID] = values;
 
         dispatch(pluginActions.checkedAllPlugins(plugins));
     };

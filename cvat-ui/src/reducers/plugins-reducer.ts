@@ -17,6 +17,7 @@ const defaultState: PluginsState = {
         TF_ANNOTATION: false,
         TF_SEGMENTATION: false,
         ANALYTICS: false,
+        REID: false,
     },
 };
 
