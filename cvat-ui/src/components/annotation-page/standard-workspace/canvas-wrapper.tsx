@@ -160,9 +160,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (prevProps.activatedStateID !== null
             && prevProps.activatedStateID !== activatedStateID) {
             canvasInstance.activate(null);
-        }
-
-        if (activatedStateID) {
             const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
             if (el) {
                 (el as any).instance.fill({ opacity: opacity / 100 });

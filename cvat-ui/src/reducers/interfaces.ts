@@ -317,6 +317,7 @@ export interface AnnotationState {
     };
     job: {
         labels: any[];
+        requestedId: number | null;
         instance: any | null | undefined;
         attributes: Record<number, any[]>;
         fetching: boolean;
