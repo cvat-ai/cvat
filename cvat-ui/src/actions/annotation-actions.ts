@@ -923,7 +923,9 @@ export function getJobAsync(
 
             dispatch({
                 type: AnnotationActionTypes.GET_JOB,
-                payload: {},
+                payload: {
+                    requestedId: jid,
+                },
             });
 
             const loadJobEvent = await logger.log(
