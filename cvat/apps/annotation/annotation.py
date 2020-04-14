@@ -77,39 +77,58 @@ class AnnotationIR:
         if serializer.is_valid(raise_exception=True):
             return serializer.data
 
+    @staticmethod
+    def _is_shape_inside(shape, start, stop):
+        return start <= int(shape['frame']) <= stop
+
+    @staticmethod
+    def _is_track_inside(track, start, stop):
+        # should be a0 <= a1, b0 <= b1
+        def is_intervals_overlapped(a0, a1, b0, b1):
+            return 0 <= min(a1, b1) - max(a0, b0)
+
+        prev_shape = None
+        for shape in track['shapes']:
+            if prev_shape and not prev_shape['outside'] and \
+                is_intervals_overlapped(
+                    prev_shape['frame'], shape['frame'], start, stop):
+                    return True
+            prev_shape = shape
+
+        if not prev_shape["outside"] and prev_shape['frame'] <= stop:
+            return True
+
+        return False
+
+    @staticmethod
+    def _slice_track(track_, start, stop):
+        track = copy.deepcopy(track_)
+        segment_shapes = [s for s in track['shapes'] if AnnotationIR._is_shape_inside(s, start, stop)]
+
+        if len(segment_shapes) < len(track['shapes']):
+            interpolated_shapes = TrackManager.get_interpolated_shapes(track, start, stop)
+
+            for shape in interpolated_shapes:
+                if shape['frame'] == start and \
+                    (not segment_shapes or segment_shapes[0]['frame'] > start):
+                    segment_shapes.insert(0, shape)
+                elif shape['frame'] == stop and \
+                    (not segment_shapes or segment_shapes[-1]['frame'] < stop):
+                    segment_shapes.append(shape)
+            del track['interpolated_shapes']
+            for shape in segment_shapes:
+                del shape['keyframe']
+
+        track['shapes'] = segment_shapes
+        track['frame'] = track['shapes'][0]['frame']
+        return track
+
     #makes a data copy from specified frame interval
     def slice(self, start, stop):
-        is_frame_inside = lambda x: (start <= int(x['frame']) <= stop)
         splitted_data = AnnotationIR()
-        splitted_data.tags = copy.deepcopy(list(filter(is_frame_inside, self.tags)))
-        splitted_data.shapes = copy.deepcopy(list(filter(is_frame_inside, self.shapes)))
-        splitted_data.tracks = []
-
-        for track_ in self.tracks:
-            if not list(filter(is_frame_inside, track_['shapes'])):
-                continue
-
-            track = copy.deepcopy(track_)
-            track['frame'] = max(start, track['frame'])
-
-            segment_shapes = [s for s in track['shapes'] if is_frame_inside(s)]
-
-            if len(segment_shapes) < len(track['shapes']):
-                interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, stop)
-                if track['shapes'][0]['frame'] < start and \
-                    segment_shapes[0]['frame'] > start:
-                    start_shape = next(s for s in interpolated_shapes if s['frame'] == start)
-                    segment_shapes.insert(0, start_shape)
-                if track['shapes'][-1]['frame'] > stop and \
-                    segment_shapes[-1]['frame'] < stop:
-                    stop_shape = next(s for s in interpolated_shapes if s['frame'] == stop)
-                    segment_shapes.append(stop_shape)
-                del track['interpolated_shapes']
-                for shape in segment_shapes:
-                    del shape['keyframe']
-
-            track['shapes'] = segment_shapes
-            splitted_data.tracks.append(track)
+        splitted_data.tags = [copy.deepcopy(t) for t in self.tags if self._is_shape_inside(t, start, stop)]
+        splitted_data.shapes = [copy.deepcopy(s) for s in self.shapes if self._is_shape_inside(s, start, stop)]
+        splitted_data.tracks = [self._slice_track(t, start, stop) for t in self.tracks if self._is_track_inside(t, start, stop)]
 
         return splitted_data
 

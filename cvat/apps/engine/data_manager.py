@@ -133,9 +133,6 @@ class ObjectManager:
                     if j != -1:
                         self._modify_unmached_object(old_objects[j],
                             start_frame + overlap)
-                        # Need to reset cached interpolated shapes
-                        # because shapes was changed 
-                        old_objects[j]['interpolated_shapes'] = []
             else:
                 # We don't have old objects on the frame. Let's add all new ones.
                 self.objects.extend(int_objects_by_frame[frame])
@@ -293,6 +290,9 @@ class TrackManager(ObjectManager):
             shape["frame"] = end_frame
             shape["outside"] = True
             obj["shapes"].append(shape)
+            # Need to reset cached interpolated shapes
+            # because key shapes were changed
+            obj['interpolated_shapes'] = []
 
     @staticmethod
     def normalize_shape(shape):
