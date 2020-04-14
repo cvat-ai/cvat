@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -52,20 +52,20 @@ def _read_old_diffs(diff_dir, summary):
 
 
 class Git:
-    def __init__(self, db_git, tid, user):
+    def __init__(self, db_git, db_task, user):
         self._db_git = db_git
         self._url = db_git.url
         self._path = db_git.path
-        self._tid = tid
+        self._tid = db_task.id
         self._user = {
             "name": user.username,
             "email": user.email or "dummy@cvat.com"
         }
-        self._cwd = os.path.join(os.getcwd(), "data", str(tid), "repos")
-        self._diffs_dir = os.path.join(os.getcwd(), "data", str(tid), "repos_diffs_v2")
-        self._task_mode = Task.objects.get(pk = tid).mode
-        self._task_name = re.sub(r'[\\/*?:"<>|\s]', '_', Task.objects.get(pk = tid).name)[:100]
-        self._branch_name = 'cvat_{}_{}'.format(tid, self._task_name)
+        self._cwd = os.path.join(db_task.get_task_artifacts_dirname(), "repos")
+        self._diffs_dir = os.path.join(db_task.get_task_artifacts_dirname(), "repos_diffs_v2")
+        self._task_mode = db_task.mode
+        self._task_name = re.sub(r'[\\/*?:"<>|\s]', '_', db_task.name)[:100]
+        self._branch_name = 'cvat_{}_{}'.format(db_task.id, self._task_name)
         self._annotation_file = os.path.join(self._cwd, self._path)
         self._sync_date = db_git.sync_date
         self._lfs = db_git.lfs
@@ -377,7 +377,7 @@ def initial_create(tid, git_path, lfs, user):
         db_git.lfs = lfs
 
         try:
-            _git = Git(db_git, tid, db_task.owner)
+            _git = Git(db_git, db_task, db_task.owner)
             _git.init_repos()
             db_git.save()
         except git.exc.GitCommandError as ex:
@@ -393,7 +393,7 @@ def push(tid, user, scheme, host):
         db_task = Task.objects.get(pk = tid)
         db_git = GitData.objects.select_for_update().get(pk = db_task)
         try:
-            _git = Git(db_git, tid, user)
+            _git = Git(db_git, db_task, user)
             _git.init_repos()
             _git.push(user, scheme, host, db_task, db_task.updated_date)
 
@@ -427,7 +427,7 @@ def get(tid, user):
                 response['status']['value'] = str(db_git.status)
             else:
                 try:
-                    _git = Git(db_git, tid, user)
+                    _git = Git(db_git, db_task, user)
                     _git.init_repos(True)
                     db_git.status = _git.remote_status(db_task.updated_date)
                     response['status']['value'] = str(db_git.status)
@@ -459,8 +459,8 @@ def _onsave(jid, user, data, action):
     db_task = Job.objects.select_related('segment__task').get(pk = jid).segment.task
     try:
         db_git = GitData.objects.select_for_update().get(pk = db_task.id)
-        diff_dir = os.path.join(os.getcwd(), "data", str(db_task.id), "repos_diffs")
-        diff_dir_v2 = os.path.join(os.getcwd(), "data", str(db_task.id), "repos_diffs_v2")
+        diff_dir = os.path.join(db_task.get_task_artifacts_dirname(), "repos_diffs")
+        diff_dir_v2 = os.path.join(db_task.get_task_artifacts_dirname(), "repos_diffs_v2")
 
         summary = {
             "update": 0,
