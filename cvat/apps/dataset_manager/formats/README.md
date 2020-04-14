@@ -1,65 +1,61 @@
-<!--lint disable list-item-indent-->
-<!--lint disable no-duplicate-headings-->
-## Description
+# Dataset and annotation formats
 
-The purpose of this application is to add support for multiple annotation formats for CVAT.
-It allows to download and upload annotations in different formats and easily add support for new.
+## Contents
 
-## How to add a new annotation format support
+- [How to add a format](#how-to-add)
+- [Format descriptions](#formats)
+  - [CVAT](#cvat)
+  - [LabelMe](#labelme)
+  - [MOT](#mot)
+  - [COCO](#coco)
+  - [PASCAL VOC and mask](#voc)
+  - [YOLO](#yolo)
+  - [TF detection API](#tfrecord)
 
-1.  Write a python script that will be executed via exec() function. Following items must be defined inside at code:
-    - **format_spec** - a dictionary with the following structure:
-      ```python
-      format_spec = {
-        "name": "CVAT",
-        "dumpers": [
-            {
-                "display_name": "{name} {format} {version} for videos",
-                "format": "XML",
-                "version": "1.1",
-                "handler": "dump_as_cvat_interpolation"
-            },
-            {
-                "display_name": "{name} {format} {version} for images",
-                "format": "XML",
-                "version": "1.1",
-                "handler": "dump_as_cvat_annotation"
-            }
-        ],
-        "loaders": [
-            {
-                "display_name": "{name} {format} {version}",
-                "format": "XML",
-                "version": "1.1",
-                "handler": "load",
-            }
-        ],
-      }
-      ```
-      - **name** - unique name for each format
-      - **dumpers and loaders** - lists of objects that describes exposed dumpers and loaders and must
-        have following keys:
-        1. display_name - **unique** string used as ID for dumpers and loaders.
-           Also this string is displayed in CVAT UI.
-           Possible to use a named placeholders like the python format function
-           (supports only name, format and version variables).
-        1. format - a string, used as extension for a dumped annotation.
-        1. version - just string with version.
-        1. handler - function that will be called and should be defined at top scope.
-    - dumper/loader handler functions. Each function should have the following signature:
-      ```python
-      def dump_handler(file_object, annotations):
-      ```
+## How to add a new annotation format support<a id="how-to-add"></a>
 
-    Inside of the script environment 2 variables are available:
-    - **file_object** - python's standard file object returned by open() function and exposing a file-oriented API
-    (with methods such as read() or write()) to an underlying resource.
-    - **annotations** - instance of [Annotation](annotation.py#L106) class.
+1. Add a python script to `dataset_manager/formats`
+1. Add an import statement to [registry.py](./registry.py).
+1. Each format is supported by an importer and exporter.
+    It can be a function or a class decorated with
+    `importer` or `exporter` from [registry.py](./registry.py). Examples:
+    ```
+    @importer(name="MyFormat", version="1.0", ext="ZIP")
+    def my_importer(file_object, task_data, **options):
+      ...
 
-    Annotation class expose API and some additional pre-defined types that allow to get/add shapes inside
-    a loader/dumper code.
+    @importer(name="MyFormat", version="2.0", ext="XML")
+    class my_importer(file_object, task_data, **options):
+      ...
+      def __call__(self, file_object, task_data, **options):
+        ...
 
-    Short description of the public methods:
+    @exporter(name="MyFormat", version="1.0", ext="ZIP"):
+    def my_exporter(file_object, task_data, **options):
+      ...
+    ```
+    Each decorator defines format parameters such as:
+    - *name*
+    - *version
+    - *file extension*. For the `importer` it can be a comma-separated list.
+
+    These parameters are combined to produce a visible name. It can be
+    set explicitly by the `display_name` argument.
+
+    Importer arguments:
+    - *file_object* - a file with annotations or dataset
+    - *task_data* - an instance of `TaskData` class.
+
+    Exporter arguments:
+    - *file_object* - a file for annotations or dataset
+    - *task_data* - an instance of `TaskData` class.
+    - *options* - format-specific options. `save_images` is the option to
+    distinguish if dataset or just annotations are requested.
+
+    [`TaskData`](../bindings.py) provides many task properties and interfaces
+    to add and read task annotations.
+
+    Public methods:
     - **Annotation.shapes** - property, returns a generator of Annotation.LabeledShape objects
     - **Annotation.tracks** - property, returns a generator of Annotation.Track objects
     - **Annotation.tags** - property, returns a generator of Annotation.Tag objects
@@ -67,31 +63,26 @@ It allows to download and upload annotations in different formats and easily add
       which groups annotation objects by frame. Note that TrackedShapes will be represented as Annotation.LabeledShape.
     - **Annotation.meta** - property, returns dictionary which represent a task meta information,
       for example - video source name, number of frames, number of jobs, etc
-    - **Annotation.add_tag(tag)** - tag should be a instance of the Annotation.Tag class
-    - **Annotation.add_shape(shape)** - shape should be a instance of the Annotation.Shape class
-    - **Annotation.add_track(track)** - track should be a instance of the Annotation.Track class
+    - **Annotation.add_tag(tag)** - tag should be an instance of the Annotation.Tag class
+    - **Annotation.add_shape(shape)** - shape should be an instance of the Annotation.Shape class
+    - **Annotation.add_track(track)** - track should be an instance of the Annotation.Track class
     - **Annotation.Attribute** = namedtuple('Attribute', 'name, value')
-      - name - String, name of the attribute
-      - value - String, value of the attribute
     - **Annotation.LabeledShape** = namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes,
       group, z_order')
-      LabeledShape.\__new\__.\__defaults\__ = (0, None)
     - **TrackedShape** = namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside,
       keyframe, z_order')
-      TrackedShape.\__new\__.\__defaults\__ = (None, )
     - **Track** = namedtuple('Track', 'label, group, shapes')
     - **Tag** = namedtuple('Tag', 'frame, label, attributes, group')
-      Tag.\__new\__.\__defaults\__ = (0, )
     - **Frame** = namedtuple('Frame', 'frame, name, width, height, labeled_shapes, tags')
 
-    Pseudocode for a dumper script
+    Sample exporter code:
     ```python
     ...
     # dump meta info if necessary
     ...
 
     # iterate over all frames
-    for frame_annotation in annotations.group_by_frame():
+    for frame_annotation in task_data.group_by_frame():
         # get frame info
         image_name = frame_annotation.name
         image_width = frame_annotation.width
@@ -114,14 +105,15 @@ It allows to download and upload annotations in different formats and easily add
     file_object.write(...)
     ...
     ```
-    Pseudocode for a loader code
+
+    Sample importer code:
     ```python
     ...
     #read file_object
     ...
 
     for parsed_shape in parsed_shapes:
-        shape = annotations.LabeledShape(
+        shape = task_data.LabeledShape(
             type="rectangle",
             points=[0, 0, 100, 100],
             occluded=False,
@@ -131,53 +123,60 @@ It allows to download and upload annotations in different formats and easily add
             frame=99,
         )
 
-        annotations.add_shape(shape)
-    ```
-    Full examples can be found in corrseponding *.py files (cvat.py, coco.py, yolo.py, etc.).
-1.  Add path to a new python script to the annotation app settings:
-
-    ```python
-    BUILTIN_FORMATS = (
-      os.path.join(path_prefix, 'cvat.py'),
-      os.path.join(path_prefix,'pascal_voc.py'),
-    )
+        task_data.add_shape(shape)
     ```
 
-## Ideas for improvements
+## Format specifications<a id="formats" />
 
-- Annotation format manager like DL Model manager with which the user can add custom format support by
-  writing dumper/loader scripts.
-- Often a custom loader/dumper requires additional python packages and it would be useful if CVAT provided some API
-  that allows the user to install a python dependencies from their own code without changing the source code.
-  Possible solutions: install additional modules via pip call to a separate directory for each Annotation Format
-  to reduce version conflicts, etc. Thus, custom code can be run in an extended environment, and core CVAT modules
-  should not be affected. As well, this functionality can be useful for Auto Annotation module.
+### CVAT<a id="cvat" />
 
-## Format specifications
+This is the native CVAT annotation format. It supports all CVAT annotations
+features, so it can be used to make data backups.
+- supported annotations - Rectangles, Polygons, Polylines, Points, Cuboids, Tags, Tracks
+- attributes are supported
+- [Format specification](/cvat/apps/documentation/xml_format.md)
 
-### CVAT
-This is native CVAT annotation format.
-[Detailed format description](cvat/apps/documentation/xml_format.md)
+#### CVAT for images dumper
+- downloaded file: a ZIP file of the following structure:
+  ```bash
+  taskname.zip/
+  ├── images/
+  |   ├── img1.png
+  |   └── img2.jpg
+  └── annotations.xml
+  ```
 
-#### CVAT XML for images dumper
-- downloaded file: Single unpacked XML
-- supported shapes - Rectangles, Polygons, Polylines, Points
+- tracks are split by frames
 
-#### CVAT XML for videos dumper
-- downloaded file: Single unpacked XML
-- supported shapes - Rectangles, Polygons, Polylines, Points
+#### CVAT for videos dumper
+- downloaded file: a ZIP file
 
-#### CVAT XML Loader
-- uploaded file: Single unpacked XML
-- supported shapes - Rectangles, Polygons, Polylines, Points
+- shapes are exported as single-frame tracks
 
-### [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
+#### CVAT loader
+- uploaded file: an XML file or a ZIP file
+
+
+### [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)<a id="voc" />
 - [Format specification](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf)
 
-#### Pascal dumper description
+- supported annotations:
+  - Rectangles (detection and layout tasks)
+  - Tags (action- and classification tasks)
+  - Polygons (segmentation task)
+- supported attributes:
+  - `occluded`
+  - `truncated` and `difficult` (should be defined for labels as `checkbox`-es)
+  - action attributes (import only, should be defined as `checkbox`-es)
+
+#### Pascal VOC export
 - downloaded file: a zip archive of the following structure:
   ```bash
   taskname.zip/
+  ├── JpegImages/
+  │   ├── <image_name1>.jpg
+  │   ├── <image_name2>.jpg
+  │   └── <image_nameN>.jpg
   ├── Annotations/
   │   ├── <image_name1>.xml
   │   ├── <image_name2>.xml
@@ -186,26 +185,8 @@ This is native CVAT annotation format.
   │   └── Main/
   │       └── default.txt
   └── labelmap.txt
-  ```
 
-- supported shapes: Rectangles
-- additional comments: If you plan to use `truncated` and `difficult` attributes please add the corresponding
-  items to the CVAT label attributes:
-  `~checkbox=difficult:false ~checkbox=truncated:false`
-
-#### Pascal loader description
-- uploaded file: a zip archive of the structure declared above or the following:
-  ```bash
-  taskname.zip/
-  ├── <image_name1>.xml
-  ├── <image_name2>.xml
-  ├── <image_nameN>.xml
-  └── labelmap.txt # optional
-  ```
-
-  The `labelmap.txt` file contains dataset labels. It **must** be included
-  if dataset labels **differ** from VOC default labels. The file structure:
-  ```bash
+  # labelmap.txt
   # label : color_rgb : 'body' parts : actions
   background:::
   aeroplane:::
@@ -213,17 +194,72 @@ This is native CVAT annotation format.
   bird:::
   ```
 
-  It must be possible for CVAT to match the frame (image name) and file name from annotation \*.xml
-  file (the tag filename, e.g. `<filename>2008_004457.jpg</filename>`). There are 2 options:
-  1. full match between image name and filename from annotation \*.xml
-      (in cases when task was created from images or image archive).
-  1. match by frame number (if CVAT cannot match by name). File name should
-      be in the following format `<number>.jpg`.
-      It should be used when task was created from a video.
+#### Pascal VOC import
+- uploaded file: a zip archive of the structure declared above or the following:
+  ```bash
+  taskname.zip/
+  ├── <image_name1>.xml
+  ├── <image_name2>.xml
+  └── <image_nameN>.xml
+  ```
 
-- supported shapes: Rectangles
-- limitations: Support of Pascal VOC object detection format
-- additional comments: the CVAT task should be created with the full label set that may be in the annotation files
+  It must be possible for CVAT to match the frame name and file name from annotation `.xml`
+  file (the `filename` tag, e.g. `<filename>2008_004457.jpg</filename>`). There are 2 options:
+  1. full match between frame name and file name from annotation `.xml`
+      (in cases when task was created from images or image archive).
+  1. match by frame number.
+      File name should be in the following format
+      `<number>.jpg` or `frame_000000.jpg`.
+      It should be used when task was created from video.
+
+#### Segmentation mask export
+- downloaded file: a zip archive with the following structure:
+  ```bash
+  taskname.zip/
+  ├── labelmap.txt # optional, required for non-VOC labels
+  ├── ImageSets/
+  │   └── Segmentation/
+  │       └── default.txt # list of image names without extension
+  ├── SegmentationClass/ # merged class masks
+  │   ├── image1.png
+  │   └── image2.png
+  └── SegmentationObject/ # merged instance masks
+      ├── image1.png
+      └── image2.png
+  ```
+  Mask is a png image with several (RGB) channels where each pixel has own color which corresponds to a label.
+  Color generation correspond to the Pascal VOC color generation
+  [algorithm](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/devkit_doc.html#sec:voclabelcolormap).
+  (0, 0, 0) is used for background.
+  `labelmap.txt` file contains the values of the used colors in RGB format. The file structure:
+  ```bash
+  # label:color_rgb:parts:actions
+  background:0,128,0::
+  aeroplane:10,10,128::
+  bicycle:10,128,0::
+  bird:0,108,128::
+  boat:108,0,100::
+  bottle:18,0,8::
+  bus:12,28,0::
+  ```
+- supported shapes - Rectangles, Polygons
+
+#### Segmentation mask import
+- uploaded file: a zip archive of the following structure:
+  ```bash
+  taskname.zip/
+  ├── labelmap.txt # optional, required for non-VOC labels
+  ├── ImageSets/
+  │   └── Segmentation/
+  │       └── <any_subset_name>.txt
+  ├── SegmentationClass/
+  │   ├── image1.png
+  │   └── image2.png
+  └── SegmentationObject/
+      ├── image1.png
+      └── image2.png
+  ```
+- supported shapes: Polygons
 
 #### How to create a task from Pascal VOC dataset
 1.  Download the Pascal Voc dataset (Can be downloaded from the
@@ -242,10 +278,12 @@ This is native CVAT annotation format.
 and select the *.zip file with annotations from previous step.
 It may take some time.
 
-### [YOLO](https://pjreddie.com/darknet/yolo/)
-#### Yolo dumper description
+### [YOLO](https://pjreddie.com/darknet/yolo/)<a id="yolo" />
+- [Format specification](https://github.com/AlexeyAB/darknet#how-to-train-to-detect-your-custom-objects)
+- supported annotations: Rectangles
+
+#### YOLO export
 - downloaded file: a zip archive with following structure:
-  [Format specification](https://github.com/AlexeyAB/darknet#how-to-train-to-detect-your-custom-objects)
   ```bash
   archive.zip/
   ├── obj.data
@@ -285,19 +323,15 @@ It may take some time.
   The `*.txt` file structure: each line describes label and bounding box
   in the following format `label_id cx cy w h`.
   `obj.names` contains the ordered list of label names.
-- supported shapes - Rectangles
 
-#### Yolo loader description
--   uploaded file: a zip archive of the same structure as above
-    It must be possible to match the CVAT frame (image name) and annotation file name
-    There are 2 options:
-    1. full match between image name and name of annotation `*.txt` file
-       (in cases when a task was created from images or archive of images).
-    1. match by frame number (if CVAT cannot match by name). File name should be in the following format `<number>.jpg`.
-       It should be used when task was created from a video.
-
--   supported shapes: Rectangles
--   additional comments: the CVAT task should be created with the full label set that may be in the annotation files
+#### YOLO import
+- uploaded file: a zip archive of the same structure as above
+  It must be possible to match the CVAT frame (image name) and annotation file name
+  There are 2 options:
+  1. full match between image name and name of annotation `*.txt` file
+      (in cases when a task was created from images or archive of images).
+  1. match by frame number (if CVAT cannot match by name). File name should be in the following format `<number>.jpg`.
+      It should be used when task was created from a video.
 
 #### How to create a task from YOLO formatted dataset (from VOC for example)
 1. Follow the official [guide](https://pjreddie.com/darknet/yolo/)(see Training YOLO on VOC section)
@@ -344,7 +378,8 @@ It may take some time.
 1. Click `Upload annotation` button, choose `YOLO ZIP 1.1` and select the *.zip file with labels from previous step.
    It may take some time.
 
-### [MS COCO Object Detection](http://cocodataset.org/#format-data)
+### [MS COCO Object Detection](http://cocodataset.org/#format-data)<a id="coco" />
+
 #### COCO dumper description
 - downloaded file: single unpacked `json`. Detailed description of the MS COCO format can be found [here](http://cocodataset.org/#format-data)
 - supported shapes - Polygons, Rectangles (interpreted as polygons)
@@ -371,7 +406,7 @@ It may take some time.
 1.  click `Upload annotation` button,
     choose `COCO JSON 1.0` and select `instances_val2017.json.json` annotation file. It may take some time.
 
-### [TFRecord](https://www.tensorflow.org/tutorials/load_data/tf_records)
+### [TFRecord](https://www.tensorflow.org/tutorials/load_data/tf_records)<a id="tfrecord" />
 TFRecord is a very flexible format, but we try to correspond the format that used in
 [TF object detection](https://github.com/tensorflow/models/tree/master/research/object_detection)
 with minimal modifications.
@@ -517,58 +552,7 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
 1. Click `Upload annotation` button, choose `TFRecord ZIP 1.0` and select the *.zip file
    with labels from previous step. It may take some time.
 
-### PNG mask
-#### Mask dumper description
-- downloaded file: a zip archive with the following structure:
-  ```bash
-  taskname.zip
-  ├── labelmap.txt # optional, required for non-VOC labels
-  ├── ImageSets/
-  │   └── Segmentation/
-  │       └── default.txt # list of image names without extension
-  ├── SegmentationClass/ # merged class masks
-  │   ├── image1.png
-  │   └── image2.png
-  └── SegmentationObject/ # merged instance masks
-      ├── image1.png
-      └── image2.png
-  ```
-  Mask is a png image with several (RGB) channels where each pixel has own color which corresponds to a label.
-  Color generation correspond to the Pascal VOC color generation
-  [algorithm](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/devkit_doc.html#sec:voclabelcolormap).
-  (0, 0, 0) is used for background.
-  `labelmap.txt` file contains the values of the used colors in RGB format. The file structure:
-  ```bash
-  # label:color_rgb:parts:actions
-  background:0,128,0::
-  aeroplane:10,10,128::
-  bicycle:10,128,0::
-  bird:0,108,128::
-  boat:108,0,100::
-  bottle:18,0,8::
-  bus:12,28,0::
-  ```
-- supported shapes - Rectangles, Polygons
-
-#### Mask loader description
-- uploaded file: a zip archive of the following structure:
-  ```bash
-  name.zip
-  ├── labelmap.txt # optional, required for non-VOC labels
-  ├── ImageSets/
-  │   └── Segmentation/
-  │       └── <any_subset_name>.txt
-  ├── SegmentationClass/
-  │   ├── image1.png
-  │   └── image2.png
-  └── SegmentationObject/
-      ├── image1.png
-      └── image2.png
-  ```
-- supported shapes: Polygons
-- additional comments: the CVAT task should be created with the full label set that may be in the annotation files
-
-### [MOT sequence](https://arxiv.org/pdf/1906.04567.pdf)
+### [MOT sequence](https://arxiv.org/pdf/1906.04567.pdf)<a id="mot" />
 #### Dumper
 - downloaded file: a zip archive of the following structure:
   ```bash
@@ -604,7 +588,8 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   ```
 - supported annotations: Rectangle tracks
 
-### [LabelMe](http://labelme.csail.mit.edu/Release3.0)
+### [LabelMe](http://labelme.csail.mit.edu/Release3.0)<a id="labelme" />
+
 #### Dumper
 - downloaded file: a zip archive of the following structure:
   ```bash
