@@ -314,6 +314,12 @@ const defaultKeyMap = {
         sequences: ['`', '~'],
         action: 'keydown',
     },
+    SWITCH_AUTOMATIC_BORDERING: {
+        name: 'Switch automatic bordering',
+        description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
+        sequences: ['Control'],
+        action: 'keydown',
+    },
 } as any as Record<string, ExtendedKeyMapOptions>;
 
 
