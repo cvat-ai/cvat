@@ -1,8 +1,7 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from glob import glob
 import io
 import os
 import os.path as osp
@@ -13,6 +12,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
 from enum import Enum
+from glob import glob
 from io import BytesIO
 from unittest import mock
 
@@ -3079,6 +3079,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                                         rectangle_shapes_wo_attrs + \
                                         polygon_shapes_wo_attrs + \
                                         polygon_shapes_with_attrs
+
+            elif annotation_format == "Datumaro 1.0":
+                annotations["shapes"] = rectangle_shapes_with_attrs + \
+                                        rectangle_shapes_wo_attrs + \
+                                        polygon_shapes_wo_attrs + \
+                                        polygon_shapes_with_attrs
+                annotations["tags"] = tags_with_attrs + tags_wo_attrs
 
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
