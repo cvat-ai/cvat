@@ -43,6 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VOC format exports Upper case labels correctly in lower case (https://github.com/opencv/cvat/pull/1379)
 - Fixed polygon exporting bug in COCO dataset (https://github.com/opencv/cvat/issues/1387)
 - Task creation from remote files (https://github.com/opencv/cvat/pull/1392)
+- Job cannot be opened in some cases when the previous job was failed during opening (https://github.com/opencv/cvat/issues/1403)
+- Deactivated shape is still highlighted on the canvas (https://github.com/opencv/cvat/issues/1403)
+- AttributeError: 'tuple' object has no attribute 'read' in ReID algorithm (https://github.com/opencv/cvat/issues/1403)
+- Wrong semi-automatic segmentation near edges of an image (https://github.com/opencv/cvat/issues/1403)
+
 
 ### Security
 -
