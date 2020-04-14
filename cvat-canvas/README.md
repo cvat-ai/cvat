@@ -153,6 +153,7 @@ Standard JS events are used.
     - canvas.fit
     - canvas.dragshape => {id: number}
     - canvas.resizeshape => {id: number}
+    - canvas.contextmenu => { mouseEvent: MouseEvent, objectState: ObjectState,  pointID: number }
 ```
 
 ### WEB
@@ -196,7 +197,7 @@ Standard JS events are used.
 | dragCanvas() | +    | -     | -     | -    | -     | -    | +    | -      | -           | +           |
 | zoomCanvas() | +    | -     | -     | -    | -     | -    | -    | +      | +           | -           |
 | cancel()     | -    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| configure()  | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
+| configure()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
 | bitmap()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
 | setZLayer()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
 

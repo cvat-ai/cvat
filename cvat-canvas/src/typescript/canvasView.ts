@@ -16,6 +16,7 @@ import { MergeHandler, MergeHandlerImpl } from './mergeHandler';
 import { SplitHandler, SplitHandlerImpl } from './splitHandler';
 import { GroupHandler, GroupHandlerImpl } from './groupHandler';
 import { ZoomHandler, ZoomHandlerImpl } from './zoomHandler';
+import { AutoborderHandler, AutoborderHandlerImpl } from './autoborderHandler';
 import consts from './consts';
 import {
     translateToSVG,
@@ -23,6 +24,7 @@ import {
     pointsToArray,
     displayShapeSize,
     ShapeSizeElement,
+    DrawnState,
 } from './shared';
 import {
     CanvasModel,
@@ -58,7 +60,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private controller: CanvasController;
     private svgShapes: Record<number, SVG.Shape>;
     private svgTexts: Record<number, SVG.Text>;
-    private drawnStates: Record<number, any>;
+    private drawnStates: Record<number, DrawnState>;
     private geometry: Geometry;
     private drawHandler: DrawHandler;
     private editHandler: EditHandler;
@@ -66,6 +68,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private splitHandler: SplitHandler;
     private groupHandler: GroupHandler;
     private zoomHandler: ZoomHandler;
+    private autoborderHandler: AutoborderHandler;
     private activeElement: ActiveElement;
     private configuration: Configuration;
 
@@ -358,6 +361,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Transform handlers
         this.drawHandler.transform(this.geometry);
         this.editHandler.transform(this.geometry);
+        this.autoborderHandler.transform(this.geometry);
     }
 
     private resizeCanvas(): void {
@@ -421,6 +425,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.activate(this.controller.activeElement);
                 }
             }
+
+            this.autoborderHandler.updateObjects();
         }
     }
 
@@ -461,7 +467,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             e.preventDefault();
         }
 
-        function contextmenuHandler(e: MouseEvent): void {
+        function contextMenuHandler(e: MouseEvent): void {
             const pointID = Array.prototype.indexOf
                 .call(((e.target as HTMLElement).parentElement as HTMLElement).children, e.target);
             if (self.activeElement.clientID !== null) {
@@ -469,7 +475,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .filter((_state: any): boolean => (
                         _state.clientID === self.activeElement.clientID
                     ));
-                self.canvas.dispatchEvent(new CustomEvent('point.contextmenu', {
+                self.canvas.dispatchEvent(new CustomEvent('canvas.contextmenu', {
                     bubbles: false,
                     cancelable: true,
                     detail: {
@@ -504,7 +510,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         });
 
                         circle.on('dblclick', dblClickHandler);
-                        circle.on('contextmenu', contextmenuHandler);
+                        circle.on('contextmenu', contextMenuHandler);
                         circle.addClass('cvat_canvas_selected_point');
                     });
 
@@ -514,7 +520,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         });
 
                         circle.off('dblclick', dblClickHandler);
-                        circle.off('contextmenu', contextmenuHandler);
+                        circle.off('contextmenu', contextMenuHandler);
                         circle.removeClass('cvat_canvas_selected_point');
                     });
 
@@ -622,14 +628,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const self = this;
 
         // Setup API handlers
+        this.autoborderHandler = new AutoborderHandlerImpl(
+            this.content,
+        );
         this.drawHandler = new DrawHandlerImpl(
             this.onDrawDone.bind(this),
             this.adoptedContent,
             this.adoptedText,
+            this.autoborderHandler,
         );
         this.editHandler = new EditHandlerImpl(
             this.onEditDone.bind(this),
             this.adoptedContent,
+            this.autoborderHandler,
         );
         this.mergeHandler = new MergeHandlerImpl(
             this.onMergeDone.bind(this),
@@ -714,8 +725,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.geometry = this.controller.geometry;
         if (reason === UpdateReasons.CONFIG_UPDATED) {
             this.configuration = model.configuration;
-            this.setupObjects([]);
-            this.setupObjects(model.objects);
+            this.editHandler.configurate(this.configuration);
+            this.drawHandler.configurate(this.configuration);
+
+            // todo: setup text, add if doesn't exist and enabled
+            // remove if exist and not enabled
+            // this.setupObjects([]);
+            // this.setupObjects(model.objects);
         } else if (reason === UpdateReasons.BITMAP) {
             const { imageBitmap } = model;
             if (imageBitmap) {
@@ -1053,7 +1069,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             for (const attrID of Object.keys(state.attributes)) {
-                if (state.attributes[attrID] !== drawnState.attributes[attrID]) {
+                if (state.attributes[attrID] !== drawnState.attributes[+attrID]) {
                     if (text) {
                         const [span] = text.node
                             .querySelectorAll(`[attrID="${attrID}"]`) as any as SVGTSpanElement[];
@@ -1541,6 +1557,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .addClass('cvat_canvas_shape').attr({
                 clientID: state.clientID,
                 id: `cvat_canvas_shape_${state.clientID}`,
+                'data-polyline-id': basicPolyline.attr('id'),
                 'data-z-order': state.zOrder,
             });
 

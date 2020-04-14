@@ -57,6 +57,7 @@ export interface TasksState {
         };
         creates: {
             status: string;
+            error: string;
         };
     };
 }
@@ -74,6 +75,7 @@ export enum SupportedPlugins {
     AUTO_ANNOTATION = 'AUTO_ANNOTATION',
     TF_ANNOTATION = 'TF_ANNOTATION',
     TF_SEGMENTATION = 'TF_SEGMENTATION',
+    DEXTR_SEGMENTATION = 'DEXTR_SEGMENTATION',
     ANALYTICS = 'ANALYTICS',
 }
 
@@ -316,6 +318,7 @@ export interface AnnotationState {
     };
     job: {
         labels: any[];
+        requestedId: number | null;
         instance: any | null | undefined;
         attributes: Record<number, any[]>;
         fetching: boolean;
@@ -426,6 +429,7 @@ export interface WorkspaceSettingsState {
     autoSave: boolean;
     autoSaveInterval: number; // in ms
     aamZoomMargin: number;
+    automaticBordering: boolean;
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
 }

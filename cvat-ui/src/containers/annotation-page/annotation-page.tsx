@@ -33,6 +33,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
             job: {
+                requestedId,
                 instance: job,
                 fetching,
             },
@@ -41,7 +42,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     } = state;
 
     return {
-        job: !job || jobID === job.id ? job : null,
+        job: jobID === requestedId ? job : null,
         fetching,
         workspace,
     };
