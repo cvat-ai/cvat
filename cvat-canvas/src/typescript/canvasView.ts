@@ -1259,10 +1259,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return;
         }
 
-        if (state.shapeType === 'cuboid') {
-            shape.addMouseOverEvents();
-        }
-
         shape.addClass('cvat_canvas_shape_activated');
         if (state.shapeType === 'points') {
             this.content.append(this.svgShapes[clientID]
@@ -1271,7 +1267,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.content.append(shape.node);
         }
 
-        if (!state.pinned) {
+        if (!state.pinned && state.shapeType !== 'cuboid') {
             (shape as any).draggable().on('dragstart', (): void => {
                 this.mode = Mode.DRAG;
                 if (text) {
@@ -1315,57 +1311,68 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.selectize(true, shape);
         }
 
-        let shapeSizeElement: ShapeSizeElement | null = null;
-        let resized = false;
-        (shape as any).resize().on('resizestart', (): void => {
-            this.mode = Mode.RESIZE;
-            if (state.shapeType === 'rectangle') {
-                shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
-            }
-            resized = false;
-            if (text) {
-                text.addClass('cvat_canvas_hidden');
-            }
-        }).on('resizing', (): void => {
-            resized = true;
-            if (shapeSizeElement) {
-                shapeSizeElement.update(shape);
-            }
-        }).on('resizedone', (): void => {
-            if (shapeSizeElement) {
-                shapeSizeElement.rm();
-            }
+        if (state.shapeType !== 'cuboid') {
+            let shapeSizeElement: ShapeSizeElement | null = null;
+            let resized = false;
+            (shape as any).resize().on('resizestart', (): void => {
+                this.mode = Mode.RESIZE;
+                if (state.shapeType === 'rectangle') {
+                    shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
+                }
+                resized = false;
+                if (text) {
+                    text.addClass('cvat_canvas_hidden');
+                }
+            }).on('resizing', (): void => {
+                resized = true;
+                if (shapeSizeElement) {
+                    shapeSizeElement.update(shape);
+                }
+            }).on('resizedone', (): void => {
+                if (shapeSizeElement) {
+                    shapeSizeElement.rm();
+                }
 
-            if (text) {
-                text.removeClass('cvat_canvas_hidden');
-                this.updateTextPosition(
-                    text,
-                    shape,
-                );
-            }
+                if (text) {
+                    text.removeClass('cvat_canvas_hidden');
+                    this.updateTextPosition(
+                        text,
+                        shape,
+                    );
+                }
 
-            this.mode = Mode.IDLE;
+                this.mode = Mode.IDLE;
 
-            if (resized) {
-                const { offset } = this.controller.geometry;
+                if (resized) {
+                    const { offset } = this.controller.geometry;
 
-                const points = pointsToArray(
-                    shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} `
-                        + `${shape.attr('x') + shape.attr('width')},`
-                        + `${shape.attr('y') + shape.attr('height')}`,
-                ).map((x: number): number => x - offset);
+                    const points = pointsToArray(
+                        shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} `
+                            + `${shape.attr('x') + shape.attr('width')},`
+                            + `${shape.attr('y') + shape.attr('height')}`,
+                    ).map((x: number): number => x - offset);
 
-                this.drawnStates[state.clientID].points = points;
-                this.canvas.dispatchEvent(new CustomEvent('canvas.resizeshape', {
-                    bubbles: false,
-                    cancelable: true,
-                    detail: {
-                        id: state.clientID,
-                    },
-                }));
-                this.onEditDone(state, points);
-            }
-        });
+                    this.drawnStates[state.clientID].points = points;
+                    this.canvas.dispatchEvent(new CustomEvent('canvas.resizeshape', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            id: state.clientID,
+                        },
+                    }));
+                    this.onEditDone(state, points);
+                }
+            });
+        }
+
+
+        if (shape && state.shapeType === 'cuboid') {
+            (shape as any).selectize(false);
+            (shape as any).addEvents();
+            (shape as any).showGrabPoints(consts.BASE_POINT_SIZE / this.geometry.scale,
+                consts.BASE_STROKE_WIDTH / this.geometry.scale);
+            (shape as any).addMouseOverEvents();
+        }
 
         this.activeElement = {
             ...this.activeElement,

@@ -9,6 +9,8 @@ import 'svg.resize.js';
 import 'svg.select.js';
 import 'svg.draw.js';
 
+import { Equation, MIN_EDGE_LENGTH } from './cuboid';
+
 // Update constructor
 const originalDraw = SVG.Element.prototype.draw;
 SVG.Element.prototype.draw = function constructor(...args: any): any {
@@ -187,6 +189,7 @@ SVG.Cube = SVG.invent({
     extend: {
 
         constructorMethod(viewModel) {
+            this.viewModel = viewModel;
             this.attr('points', viewModel.getPoints());
             this.projectionLineEnable = false;
             this.setupFaces(viewModel);
@@ -253,6 +256,266 @@ SVG.Cube = SVG.invent({
             }
         },
 
+        addEvents() {
+            const edges = this.getEdges();
+            const grabPoints =this.getGrabPoints();
+            const draggableFaces = [
+                this.left,
+                this.dorsal,
+                this.right,
+            ];
+
+            if (this.viewModel.dl.points[0].x > this.viewModel.fl.points[0].x) {
+                this.orientation = 1;
+            } else {
+                this.orientation = 2;
+            }
+
+            this.updateGrabPoints();
+            edges.forEach((edge) => {
+                edge.on('resizestart', () => {
+                    // TODO: dipatch proper canvas event
+                }).on('resizedone', () => {
+                    this.updateModel();
+                    this.updateViewModel();
+                    // TODO: dipatch proper canvas event
+                });
+            });
+            grabPoints.forEach((grabPoint) => {
+                grabPoint.on('dragstart', () => {
+                    // TODO: dipatch proper canvas event
+                }).on('dragend', () => {
+                    // TODO: dipatch proper canvas event
+                    this.updateModel();
+                    this.updateViewModel();
+                });
+            });
+
+            draggableFaces.forEach((face) => {
+                face.on('dragstart', () => {
+                    // TODO: dipatch proper canvas event
+                }).on('dragend', () => {
+                    // TODO: dipatch proper canvas event
+                    this.updateModel();
+                    this.updateViewModel();
+                    this.updateGrabPoints();
+                });
+            });
+
+            this.makeDraggable();
+            // this.makeResizable();
+        },
+
+        makeDraggable() {
+            let startPoint: any = null;
+            let startPosition: any = null;
+
+            this.draggable().off('dragend').on('dragstart', (e) => {
+                startPoint = e.detail.p;
+                startPosition = this.viewModel.getPoints();
+            }).on('dragmove', (e) => {
+                e.preventDefault();
+                this.translatePoints(startPoint, startPosition, e.detail.p);
+                this.refreshView();
+            }).on('dragend', () => {
+                this.updateModel();
+                this.updateViewModel();
+            });
+
+            // Controllable vertical edges
+            this.flCenter.draggable(function (x) {
+                const vpX = this.cx() - this.viewModel.vplCanvas.x > 0 ? this.viewModel.vplCanvas.x : 0;
+                return { x: x < this.viewModel.fr.canvasPoints[0].x && x > vpX + MIN_EDGE_LENGTH };
+            }).on('dragmove', function () {
+                this.frontLeftEdge.center(this.cx(), this.cy());
+
+                const [ position ] = this.viewModel.canvasToActual([{x: this.frontLeftEdge.attr('x1'), y: this.frontLeftEdge.attr('y1')}]);
+                const { x } = position;
+
+                const y1 = this.viewModel.ft.getEquation().getY(x);
+                const y2 = this.viewModel.fb.getEquation().getY(x);
+
+                const topPoint = { x, y: y1 };
+                const botPoint = { x, y: y2 };
+
+                this.viewModel.fl.points = [topPoint, botPoint];
+                this.updateViewAndVM();
+            });
+
+            this.drCenter.draggable(function (x) {
+                let xStatus;
+                if (this.cx() < this.viewModel.fr.canvasPoints[0].x) {
+                    xStatus = x < this.viewModel.fr.canvasPoints[0].x - MIN_EDGE_LENGTH
+                        && x > this.viewModel.vprCanvas.x + MIN_EDGE_LENGTH;
+                } else {
+                    xStatus = x > this.viewModel.fr.canvasPoints[0].x + MIN_EDGE_LENGTH
+                        && x < this.viewModel.vprCanvas.x - MIN_EDGE_LENGTH;
+                }
+                return { x: xStatus, y: this.attr('y1') };
+            }).on('dragmove', function () {
+                this.dorsalRightEdge.center(this.cx(), this.cy());
+
+                const [ position ] = this.viewModel.canvasToActual([{x: this.dorsalRightEdge.attr('x1'), y: this.dorsalRightEdge.attr('y1')}]);
+                const { x } = position;
+
+                const y1 = this.viewModel.rt.getEquation().getY(x);
+                const y2 = this.viewModel.rb.getEquation().getY(x);
+
+                const topPoint = { x, y: y1 };
+                const botPoint = { x, y: y2 };
+
+                this.viewModel.dr.points = [topPoint, botPoint];
+                this.updateViewAndVM();
+            });
+
+            this.dlCenter.draggable(function (x) {
+                let xStatus;
+                if (this.cx() < this.viewModel.fl.canvasPoints[0].x) {
+                    xStatus = x < this.viewModel.fl.canvasPoints[0].x - MIN_EDGE_LENGTH
+                        && x > this.viewModel.vprCanvas.x + MIN_EDGE_LENGTH;
+                } else {
+                    xStatus = x > this.viewModel.fl.canvasPoints[0].x + MIN_EDGE_LENGTH
+                        && x < this.viewModel.vprCanvas.x + MIN_EDGE_LENGTH;
+                }
+                return { x: xStatus, y: this.attr('y1') };
+            }).on('dragmove', function () {
+                this.dorsalLeftEdge.center(this.cx(), this.cy());
+
+                const position = this.viewModel.canvasToActual([{x: this.dorsalLeftEdge.attr('x1'), y: this.dorsalLeftEdge.attr('y1')}]);
+                const { x } = position;
+
+                const y1 = this.viewModel.lt.getEquation().getY(x);
+                const y2 = this.viewModel.lb.getEquation().getY(x);
+
+                const topPoint = { x, y: y1 };
+                const botPoint = { x, y: y2 };
+
+                this.viewModel.dl.points = [topPoint, botPoint];
+                this.updateViewAndVM(true);
+            });
+
+            this.frCenter.draggable((x) =>  {
+                return { x: x > this.viewModel.fl.canvasPoints[0].x, y: this.attr('y1') };
+            }).on('dragmove', () => {
+                this.frontRightEdge.center(this.cx(), this.cy());
+
+                const [ position ]= this.viewModel.canvasToActual([{x: this.frontRightEdge.attr('x1'), y: this.frontRightEdge.attr('y1')}]);
+                const { x } = position;
+
+                const y1 = this.viewModel.ft.getEquation().getY(x);
+                const y2 = this.viewModel.fb.getEquation().getY(x);
+
+                const topPoint = { x, y: y1 };
+                const botPoint = { x, y: y2 };
+
+                this.viewModel.fr.points = [topPoint, botPoint];
+                this.updateViewAndVM(true);
+            });
+
+
+            // Controllable 'horizontal' edges
+            this.ftCenter.draggable((x, y) => {
+                return { x: x === this.cx(), y: y < this.fbCenter.cy() - MIN_EDGE_LENGTH };
+            }).on('dragmove', () => {
+                this.frontTopEdge.center(this.cx(), this.cy());
+                this.horizontalEdgeControl(this.viewModel.top, this.frontTopEdge.attr('x2'), this.frontTopEdge.attr('y2'));
+                this.updateViewAndVM();
+            });
+
+            this.fbCenter.draggable((x, y) => {
+                return { x: x === this.cx(), y: y > this.ftCenter.cy() + MIN_EDGE_LENGTH };
+            }).on('dragmove', () => {
+                this.frontBotEdge.center(this.cx(), this.cy());
+                this.horizontalEdgeControl(this.viewModel.bot, this.frontBotEdge.attr('x2'), this.frontBotEdge.attr('y2'));
+                this.updateViewAndVM();
+            });
+
+            // Controllable faces
+            this.left.draggable((x, y) => ({ x: x < Math.min(this.viewModel.dr.canvasPoints[0].x, this.viewModel.fr.canvasPoints[0].x) - MIN_EDGE_LENGTH, y })).on('dragmove', () => {
+                this.faceDragControl(this.viewModel.left, this.attr('points'));
+            });
+            this.dorsal.draggable().on('dragmove', () => {
+                this.faceDragControl(this.viewModel.dorsal, this.attr('points'));
+            });
+            this.right.draggable((x, y) => ({ x: x > Math.min(this.viewModel.dl.canvasPoints[0].x, this.viewModel.fl.canvasPoints[0].x) + MIN_EDGE_LENGTH, y })).on('dragmove', () => {
+                this.faceDragControl(this.viewModel.right, this.attr('points'), true);
+            });
+        },
+
+        translatePoints(startPoint, startPosition, currentPosition) {
+            const dx = currentPosition.x - startPoint.x;
+            const dy = currentPosition.y - startPoint.y;
+            const newPoints: any[] = [];
+            for (let i = 0; i < startPosition.length; i += 1) {
+                newPoints[i] = { x: startPosition[i].x + dx, y: startPosition[i].y + dy };
+            }
+            this.viewModel.setPoints(newPoints);
+        },
+
+        computeHeightFace(point, index) {
+            switch (index) {
+            // fl
+            case 1: {
+                const p2 = this.updatedEdge(this.viewModel.fr.points[0], point, this.viewModel.vpl);
+                const p3 = this.updatedEdge(this.viewModel.dr.points[0], p2, this.viewModel.vpr);
+                const p4 = this.updatedEdge(this.viewModel.dl.points[0], point, this.viewModel.vpr);
+                return [point, p2, p3, p4];
+            }
+            // fr
+            case 2: {
+                const p2 = this.updatedEdge(this.viewModel.fl.points[0], point, this.viewModel.vpl);
+                const p3 = this.updatedEdge(this.viewModel.dr.points[0], point, this.viewModel.vpr);
+                const p4 = this.updatedEdge(this.viewModel.dl.points[0], p3, this.viewModel.vpr);
+                return [p2, point, p3, p4];
+            }
+            // dr
+            case 3: {
+                const p2 = this.updatedEdge(this.viewModel.dl.points[0], point, this.viewModel.vpl);
+                const p3 = this.updatedEdge(this.viewModel.fr.points[0], point, this.viewModel.vpr);
+                const p4 = this.updatedEdge(this.viewModel.fl.points[0], p2, this.viewModel.vpr);
+                return [p4, p3, point, p2];
+            }
+            // dl
+            case 4: {
+                const p2 = this.updatedEdge(this.viewModel.dr.points[0], point, this.viewModel.vpl);
+                const p3 = this.updatedEdge(this.viewModel.fl.points[0], point, this.viewModel.vpr);
+                const p4 = this.updatedEdge(this.viewModel.fr.points[0], p2, this.viewModel.vpr);
+                return [p3, p4, p2, point];
+            }
+            default: {
+                return [null, null, null, null];
+            }
+            }
+        },
+
+        updateViewAndVM() {
+            this.viewModel.buildBackEdge();
+            this.refreshView();
+        },
+
+        refreshView() {
+            // TODO: fixit
+            this.udpateView(this.viewModel);
+        },
+
+        updatedEdge(target, base, pivot) {
+            const targetX = target.x;
+            const line = new Equation(pivot,
+                [base.x, base.y], this.viewModel);
+            const newY = line.getY(targetX);
+            return { x: targetX, y: newY };
+        },
+
+        resizeControl(vmEdge, updatedEdge, constraints) {
+            const [ topPoint ] = this.viewModel.canvasToActual([{x: updatedEdge.attr('x1'), y: updatedEdge.attr('y1')}]);
+            const [ botPoint ] = this.viewModel.canvasToActual([{x: updatedEdge.attr('x2'), y: updatedEdge.attr('y2')}]);
+
+            topPoint.y = Math.min(Math.max(topPoint.y, constraints.y1Range.min), constraints.y1Range.max);
+            botPoint.y = Math.min(Math.max(botPoint.y, constraints.y2Range.min), constraints.y2Range.max);
+
+            vmEdge.points = [topPoint, botPoint];
+        },
+
         updateGrabPoints() {
             const centers = this.getGrabPoints();
             const edges = this.getEdges();
@@ -260,6 +523,27 @@ SVG.Cube = SVG.invent({
                 const edge = edges[`${i}`];
                 centers[`${i}`].center(edge.cx(), edge.cy());
             }
+
+            this.dorsalRightEdge.selectize({
+                points: 't,b',
+                rotationPoint: false,
+            }).resize().on('resizing', function (e) {
+                if (e.detail.event.shiftKey) {
+                    this.resizeControl(this.viewModel.dr,
+                        this,
+                        this.viewModel.computeSideEdgeConstraints(this.viewModel.dr));
+                } else {
+                    const [ midPointUp ] = this.viewModel.canvasToActual([{x: this.dorsalRightEdge.attr('x1'), y: this.dorsalRightEdge.attr('y1')}])[0];
+                    const [ midPointDown ] = this.viewModel.canvasToActual([{x: this.dorsalRightEdge.attr('x2'), y: this.dorsalRightEdge.attr('y2')}])[0];
+                    this.viewModel.top.points = this.computeHeightFace(midPointUp, 3);
+                    this.viewModel.bot.points = this.computeHeightFace(midPointDown, 3);
+                }
+                this.updateViewAndVM();
+            });
+            this.drCenter.show();
+
+            this.dorsalLeftEdge.selectize(false);
+            this.dlCenter.hide();
         },
 
         move(dx, dy) {
@@ -290,10 +574,10 @@ SVG.Cube = SVG.invent({
             this.rbProj.hide();
         },
 
-        showGrabPoints() {
+        showGrabPoints(radius: number, stroke: number, color: string) {
             const grabPoints = this.getGrabPoints();
             grabPoints.forEach((point) => {
-                point.show();
+                point.radius(radius).attr('stroke-width', stroke).show();
             });
         },
 

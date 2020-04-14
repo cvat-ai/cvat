@@ -8,16 +8,16 @@
  */
 
 
-import { convertToArray, intersection, convertArrayToDoubleArray } from './shared';
+import { convertToArray, intersection } from './shared';
 
-const MIN_EDGE_LENGTH = 3;
+export const MIN_EDGE_LENGTH = 3;
 
 interface Point {
     x: number;
     y: number;
 }
 
-class Equation {
+export class Equation {
     private a: number;
     private b: number;
     private c: number;
