@@ -67,7 +67,7 @@ def _import(src_file, task_data):
                 tracks[track_id].shapes.append(shape)
 
         for track in tracks.values():
-            # MOT task_data do not require frames to be ordered
+            # MOT annotations do not require frames to be ordered
             track.shapes.sort(key=lambda t: t.frame)
             # Set outside=True for the last shape in a track to finish the track
             track.shapes[-1] = track.shapes[-1]._replace(outside=True)

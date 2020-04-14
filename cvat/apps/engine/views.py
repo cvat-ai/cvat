@@ -605,7 +605,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
     @swagger_auto_schema(method='get', operation_summary='Export task as a dataset in a specific format',
         manual_parameters=[
-            openapi.Parameter('format', openapi.IN_PATH,
+            openapi.Parameter('format', openapi.IN_QUERY,
                 description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/export_formats",
                 type=openapi.TYPE_STRING, required=True),
             openapi.Parameter('filename', openapi.IN_QUERY,
@@ -621,10 +621,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         }
     )
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path=r'dataset/(?P<format_name>[^/&]+)')
-    def dataset_export(self, request, pk, format_name):
+        url_path='dataset')
+    def dataset_export(self, request, pk):
         db_task = self.get_object() # force to call check_object_permissions
 
+        format_name = request.query_params.get("format", "")
         return _export_annotations(db_task=db_task,
             rq_id="/api/v1/tasks/{}/dataset/{}".format(pk, format_name),
             request=request,
