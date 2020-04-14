@@ -32,6 +32,7 @@ const defaultState: TasksState = {
         deletes: {},
         creates: {
             status: '',
+            error: '',
         },
     },
 };
@@ -238,6 +239,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...state.activities,
                     creates: {
                         status: '',
+                        error: '',
                     },
                 },
             };
@@ -276,6 +278,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     creates: {
                         ...state.activities.creates,
                         status: 'FAILED',
+                        error: action.payload.error.toString(),
                     },
                 },
             };

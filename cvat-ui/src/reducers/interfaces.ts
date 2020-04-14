@@ -57,6 +57,7 @@ export interface TasksState {
         };
         creates: {
             status: string;
+            error: string;
         };
     };
 }

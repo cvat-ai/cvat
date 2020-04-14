@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Increase preview size of a task till 256, 256 on the server
 - Minor style updates
+- Public ssh-keys are displayed in a dedicated window instead of console when create a task with a repository
 
 ### Deprecated
 -
@@ -47,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deactivated shape is still highlighted on the canvas (https://github.com/opencv/cvat/issues/1403)
 - AttributeError: 'tuple' object has no attribute 'read' in ReID algorithm (https://github.com/opencv/cvat/issues/1403)
 - Wrong semi-automatic segmentation near edges of an image (https://github.com/opencv/cvat/issues/1403)
-
+- Git repos paths (https://github.com/opencv/cvat/pull/1400)
 
 ### Security
 -
