@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dedicated message with clarifications when share is unmounted (https://github.com/opencv/cvat/pull/1373)
 - Ability to create one tracked point (https://github.com/opencv/cvat/pull/1383)
 - Tutorial: instructions for CVAT over HTTPS
+- Added deep extreme cut (semi-automatic segmentation) to the new UI (https://github.com/opencv/cvat/pull/1398)
 
 ### Changed
 - Increase preview size of a task till 256, 256 on the server
