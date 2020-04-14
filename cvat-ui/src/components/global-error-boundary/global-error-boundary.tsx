@@ -19,6 +19,7 @@ import ErrorStackParser from 'error-stack-parser';
 import { resetAfterErrorAsync } from 'actions/boundaries-actions';
 import { CombinedState } from 'reducers/interfaces';
 import logger, { LogType } from 'cvat-logger';
+import consts from 'consts';
 
 interface StateToProps {
     job: any | null;
@@ -161,7 +162,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                                 </li>
                                 <li>
                                     Notify an administrator or submit the issue directly on
-                                    <a href='https://github.com/opencv/cvat'> GitHub. </a>
+                                    <a href={consts.GITHUB_URL}> GitHub. </a>
                                     Please, provide also:
                                     <ul>
                                         <li>Steps to reproduce the issue</li>

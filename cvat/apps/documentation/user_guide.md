@@ -136,6 +136,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     The ``Done`` button applies the changes and the ``Reset`` button cancels the changes. 
           ![](static/documentation/images/image126.jpg)
 
+    In ``Raw`` and ``Constructor`` mode, you can press the ``Copy`` button to copy the list of labels.
+
     **Select files**. Press tab ``My computer`` to choose some files for annotation from your PC. 
     If you select tab ``Connected file share`` you can choose files for annotation from your network. 
     If you select `` Remote source`` , you'll see a field where you can enter a list of URLs (one URL per line).
@@ -147,6 +149,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       ![](static/documentation/images/image128.jpg)  
 
     **Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
+
+    **Use zip chunks**. Force to use zip chunks as compressed data. Actual for videos only.
     
     **Image Quality**. Use this option to specify quality of uploaded images.
     The option helps to load high resolution datasets faster.
@@ -182,8 +186,17 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     **Stop frame**. Frame on which video in task ends.
 
-    **Frame Filter**. Use this option to filter video frames.
-    For example, enter ``step=25`` to leave every twenty fifth frame in the video. Use this option on video files only.
+    **Frame Step**. Use this option to filter video frames.
+    For example, enter ``25`` to leave every twenty fifth frame in the video or every twenty fifth image. 
+
+    **Chunk size**. Defines a number of frames to be packed in a chunk when send from client to server.
+    Server defines automatically if empty. 
+    
+    Recommended values:
+    - 1080p or less: 36
+    - 2k or less: 8 - 16
+    - 4k or less: 4 - 8
+    - More: 1 - 4
 
     **Dataset Repository**.  URL link of the repository optionally specifies the path to the repository for storage
     (``default: annotation / <dump_file_name> .zip``).
@@ -232,7 +245,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       - [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [MS COCO](http://cocodataset.org/#format-data)
       - [YOLO](https://pjreddie.com/darknet/yolo/)
-    - ``Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
+    - ``Automatic Annotation`` — automatic annotation with  OpenVINO toolkit.
       Presence depends on how you build CVAT instance.
     - ``Open bug tracker`` — opens a link to Issue tracker.
     - ``Delete`` — delete task.
@@ -269,10 +282,10 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 1.  Follow a link inside ``Jobs`` section to start annotation process.
     In some cases, you can have several links. It depends on size of your
     task and ``Overlap Size`` and ``Segment Size`` parameters. To improve
-    UX, only the first several frames will be loaded and you will be able
+    UX, only the first chunk of several frames will be loaded and you will be able
     to annotate first images. Other frames will be loaded in background.
 
-    ![](static/documentation/images/image007.jpg)
+    ![](static/documentation/images/image007_DETRAC.jpg)
 
 ### Models
 
@@ -334,34 +347,39 @@ The search is case insensitive.
 ## Interface of the annotation tool
 
 The tool consists of:
-- ``Workspace`` — where images are shown;
-- ``Bottom panel`` (under workspace) — for navigation, filtering annotation and accessing tools' menu;
-- ``Side panel`` — contains two lists: objects (on the frame) and labels (of objects on the frame);
-- ``Bottom side panel`` — contains the main annotation functions (create, merge, group objects).
-  Here you can choose a type of shape, a label you want to annotate and a mode (annotation or interpolation)
+- ``Header`` -  pinned header used to navigate CVAT sections and account settings;
+- ``Top panel`` — contains navigation buttons, main functions and menu access;
+- ``Workspace`` — space where images are shown;
+- ``Controls sidebar`` — contains tools for navigating the image, zoom,
+  creating shapes and editing tracks (merge, split, group)
+- ``Objects sidebar`` — contains label filter, two lists: 
+  objects (on the frame) and labels (of objects on the frame) and appearance settings.
 
-![](static/documentation/images/image034.jpg)
-
-There is also:
-- ``Settings`` (F2) — the button inside ``Open Menu`` in the bottom panel. Contains different parameters
-  which can be adjusted according to the user's needs.
-- ``Context menu`` — available on right mouse button.
+![](static/documentation/images/image034_DETRAC.jpg)
 
 ### Basic navigation
 
-1.  Use arrows below to move on next/previous frame.
+1.  Use arrows below to move to the next/previous frame.
     Use the scroll bar slider to scroll through frames.
-    Almost every button is covered by a shortcut.
-    To get a hint about a shortcut, just put your mouse pointer over an UI element.
+    Almost every button has a shortcut.
+    To get a hint about a shortcut, just move your mouse pointer over an UI element.
 
     ![](static/documentation/images/image008.jpg)
 
-1.  An image can be scaled in/out using mouse's wheel. The image will be zoomed relatively your current cursor position.
-    Thus, if you point on an object, it will be under your mouse during zooming process.
+1.  To navigate the image, use the button on the controls sidebar. 
+    Another way an image can be moved/shifted is by holding the left mouse button inside 
+    an area without annotated objects. 
+    If the ``Mouse Wheel`` is pressed, then all annotated objects are ignored. Otherwise the
+    a highlighted bounding box will be moved instead of the image itself.
 
-1.  An image can be moved/shifted by holding left mouse button inside some area without annotated objects.
-    If ``Mouse Wheel`` is pressed, then all annotated objects are ignored.
-    Otherwise, a highlighted bounding box will be moved instead of the image itself.
+    ![](static/documentation/images/image136.jpg)
+
+1.  You can use the button on the sidebar controls to zoom on a region of interest. 
+    Use the button ``Fit the image`` to fit the image in the workspace.
+    You can also use the mouse wheel to scale the image 
+    (the image will be zoomed relatively to your current cursor position).
+
+    ![](static/documentation/images/image137.jpg)
 
 ### Types of shapes (basics)
 There are four shapes which you can annotate your images with:

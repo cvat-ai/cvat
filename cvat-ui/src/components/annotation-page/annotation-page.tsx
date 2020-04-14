@@ -36,7 +36,17 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         saveLogs();
-        return saveLogs;
+        const root = window.document.getElementById('root');
+        if (root) {
+            root.style.minHeight = '768px';
+        }
+
+        return () => {
+            saveLogs();
+            if (root) {
+                root.style.minHeight = '';
+            }
+        };
     }, []);
 
     if (job === null) {

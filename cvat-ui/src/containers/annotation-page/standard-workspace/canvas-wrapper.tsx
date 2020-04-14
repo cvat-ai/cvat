@@ -74,6 +74,7 @@ interface StateToProps {
     saturationLevel: number;
     resetZoom: boolean;
     aamZoomMargin: number;
+    showObjectsTextAlways: boolean;
     workspace: Workspace;
     minZLayer: number;
     maxZLayer: number;
@@ -164,6 +165,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             workspace: {
                 aamZoomMargin,
+                showObjectsTextAlways,
             },
             shapes: {
                 opacity,
@@ -206,6 +208,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         saturationLevel,
         resetZoom,
         aamZoomMargin,
+        showObjectsTextAlways,
         curZLayer,
         minZLayer,
         maxZLayer,

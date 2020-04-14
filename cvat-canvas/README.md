@@ -50,6 +50,11 @@ Canvas itself handles:
         ZOOM_CANVAS = 'zoom_canvas',
     }
 
+    interface Configuration {
+        displayAllText?: boolean;
+        undefinedAttrValue?: string;
+    }
+
     interface DrawData {
         enabled: boolean;
         shapeType?: string;
@@ -83,7 +88,6 @@ Canvas itself handles:
     }
 
     interface Canvas {
-        mode(): Mode;
         html(): HTMLDivElement;
         setZLayer(zLayer: number | null): void;
         setup(frameData: any, objectStates: any[]): void;
@@ -104,7 +108,9 @@ Canvas itself handles:
         dragCanvas(enable: boolean): void;
         zoomCanvas(enable: boolean): void;
 
+        mode(): Mode;
         cancel(): void;
+        configure(configuration: Configuration): void;
     }
 ```
 
@@ -173,22 +179,25 @@ Standard JS events are used.
 
 ## API Reaction
 
-|              | IDLE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING | DRAG | ZOOM |
-|--------------|------|----------|-----------|---------|---------|---------|------|------|
-| html()       | +    | +        | +         | +       | +       | +       | +    | +    |
-| setup()      | +    | +        | +         | +       | +       | -       | +    | +    |
-| activate()   | +    | -        | -         | -       | -       | -       | -    | -    |
-| rotate()     | +    | +        | +         | +       | +       | +       | +    | +    |
-| focus()      | +    | +        | +         | +       | +       | +       | +    | +    |
-| fit()        | +    | +        | +         | +       | +       | +       | +    | +    |
-| grid()       | +    | +        | +         | +       | +       | +       | +    | +    |
-| draw()       | +    | -        | -         | -       | -       | -       | -    | -    |
-| split()      | +    | -        | +         | -       | -       | -       | -    | -    |
-| group()      | +    | +        | -         | -       | -       | -       | -    | -    |
-| merge()      | +    | -        | -         | -       | +       | -       | -    | -    |
-| fitCanvas()  | +    | +        | +         | +       | +       | +       | +    | +    |
-| dragCanvas() | +    | -        | -         | -       | -       | -       | +    | -    |
-| zoomCanvas() | +    | -        | -         | -       | -       | -       | -    | +    |
-| cancel()     | -    | +        | +         | +       | +       | +       | +    | +    |
-| bitmap()     | +    | +        | +         | +       | +       | +       | +    | +    |
-| setZLayer()  | +    | +        | +         | +       | +       | +       | +    | +    |
+|              | IDLE | GROUP | SPLIT | DRAW | MERGE | EDIT | DRAG | RESIZE | ZOOM_CANVAS | DRAG_CANVAS |
+|--------------|------|-------|-------|------|-------|------|------|--------|-------------|-------------|
+| html()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| setup()      | +    | +     | +     | +    | +     | +/-  | +/-  | +/-    | +           | +           |
+| activate()   | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
+| rotate()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| focus()      | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| fit()        | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| grid()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| draw()       | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
+| split()      | +    | -     | +     | -    | -     | -    | -    | -      | -           | -           |
+| group()      | +    | +     | -     | -    | -     | -    | -    | -      | -           | -           |
+| merge()      | +    | -     | -     | -    | +     | -    | -    | -      | -           | -           |
+| fitCanvas()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| dragCanvas() | +    | -     | -     | -    | -     | -    | +    | -      | -           | +           |
+| zoomCanvas() | +    | -     | -     | -    | -     | -    | -    | +      | +           | -           |
+| cancel()     | -    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| configure()  | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
+| bitmap()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| setZLayer()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+
+You can call setup() during editing, dragging, and resizing only to update objects, not to change a frame.
