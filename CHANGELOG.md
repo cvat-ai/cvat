@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Increase preview size of a task till 256, 256 on the server
 - Minor style updates
+- New UI is primary now
 
 ### Deprecated
 -
@@ -43,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VOC format exports Upper case labels correctly in lower case (https://github.com/opencv/cvat/pull/1379)
 - Fixed polygon exporting bug in COCO dataset (https://github.com/opencv/cvat/issues/1387)
 - Task creation from remote files (https://github.com/opencv/cvat/pull/1392)
+- Job with cuboids does not open in new UI
 
 ### Security
 -
