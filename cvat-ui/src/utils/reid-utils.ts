@@ -3,7 +3,15 @@
 // add button to menu
 // add run and check callbacks
 
-export function run(): Promise<void> {
+type Params = {
+    threshold: number;
+    distance: number;
+    onUpdatePercentage(percentage: number): void;
+    jobID: number;
+    annotations: any[];
+};
+
+export function run(params: Params): Promise<void> {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             resolve();

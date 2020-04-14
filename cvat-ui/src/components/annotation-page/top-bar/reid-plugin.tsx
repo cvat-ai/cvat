@@ -9,6 +9,8 @@ import Tooltip from 'antd/lib/tooltip';
 
 import { clamp } from 'utils/math';
 import { run, cancel } from 'utils/reid-utils';
+import { connect } from 'react-redux';
+import { CombinedState } from 'reducers/interfaces';
 
 interface InputModalProps {
     visible: boolean;
@@ -106,8 +108,36 @@ const reidContainer = window.document.createElement('div');
 reidContainer.setAttribute('id', 'cvat-reid-wrapper');
 window.document.body.appendChild(reidContainer);
 
-export default function ReIDPlugin(props: {}): JSX.Element {
-    const { ...rest } = props;
+
+interface StateToProps {
+    jobInstance: any | null;
+}
+
+interface DispatchToProps {
+
+}
+
+function mapStateToProps(state: CombinedState): StateToProps {
+    const {
+        annotation: {
+            job: {
+                instance: jobInstance,
+            },
+        },
+    } = state;
+
+    return {
+        jobInstance,
+    };
+}
+
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+
+}
+
+
+function ReIDPlugin(props: StateToProps & DispatchToProps): JSX.Element {
+    const { jobInstance, ...rest } = props;
     const [showInputDialog, setShowInputDialog] = useState(false);
     const [showInProgressDialog, setShowInProgressDialog] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -131,16 +161,18 @@ export default function ReIDPlugin(props: {}): JSX.Element {
                         setShowInputDialog(false);
                         setShowInProgressDialog(true);
 
-                        // get annotations
+                        // как экспортировать и импортировать аннотацию, без сохранения на сервере
+                        // на клиенте мы можем только получить аннотацию для текущего фрейма
+                        // скорее всего нужен import row, export raw
+
                         // get job id
-                        // push everything to run
-                        // implement run
+                        // get annotations
                         const onUpdatePercentage = (percent: number): void => {
                             setProgress(percent);
                         };
 
                         run({
-                            threshold, 
+                            threshold,
                             distance,
                             onUpdatePercentage,
                             jobID: 0,
@@ -167,10 +199,17 @@ export default function ReIDPlugin(props: {}): JSX.Element {
             key='run_reid'
             title='Run algorithm that merges separated bounding boxes automatically'
             onClick={() => {
-                setShowInputDialog(true);
+                if (jobInstance) {
+                    setShowInputDialog(true);
+                }
             }}
         >
             Run ReID merge
         </Menu.Item>
     );
 }
+
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps,
+)(ReIDPlugin);
