@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 import os.path as osp
 import zipfile
 from collections import OrderedDict
@@ -516,17 +517,19 @@ def _export(dst_file, task_data, anno_callback, save_images=False):
             anno_callback(f, task_data)
 
         if save_images:
+            img_dir = osp.join(temp_dir, 'images')
+            os.makedirs(img_dir)
             frame_provider = FrameProvider(task_data.db_task.data)
             frames = frame_provider.get_frames(
                 frame_provider.Quality.ORIGINAL,
                 frame_provider.Type.NUMPY_ARRAY)
             for frame_id, (frame_data, _) in enumerate(frames):
-                frame_name = osp.basename(task_data.frame_info[frame_id]['path'])
+                frame_name = task_data.frame_info[frame_id]['path']
                 if '.' in frame_name:
-                    save_image(osp.join(temp_dir, 'images', frame_name),
+                    save_image(osp.join(img_dir, frame_name),
                         frame_data, jpeg_quality=100)
                 else:
-                    save_image(osp.join(temp_dir, 'images', frame_name + '.png'),
+                    save_image(osp.join(img_dir, frame_name + '.png'),
                         frame_data)
 
         make_zip_archive(temp_dir, dst_file)

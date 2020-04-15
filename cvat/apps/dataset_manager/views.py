@@ -4,6 +4,7 @@
 
 import os
 import os.path as osp
+import tempfile
 from datetime import timedelta
 
 import django_rq
@@ -51,8 +52,11 @@ def export_task(task_id, dst_format, server_url=None, save_images=False):
         if not (osp.exists(output_path) and \
                 task_time <= osp.getmtime(output_path)):
             os.makedirs(cache_dir, exist_ok=True)
-            task.export_task(task_id, output_path, dst_format,
-                server_url=server_url, save_images=save_images)
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_file = osp.join(temp_dir, 'result')
+                task.export_task(task_id, temp_file, dst_format,
+                    server_url=server_url, save_images=save_images)
+                os.replace(temp_file, output_path)
 
             archive_ctime = osp.getctime(output_path)
             scheduler = django_rq.get_scheduler()
@@ -95,3 +99,9 @@ def get_export_formats():
 
 def get_import_formats():
     return list(IMPORT_FORMATS.values())
+
+def get_all_formats():
+    return {
+        'importers': get_import_formats(),
+        'exporters': get_export_formats(),
+    }

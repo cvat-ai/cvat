@@ -416,7 +416,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             if include_images:
                 loader = lambda p: frame_provider.get_frame(frame_data.frame,
                     quality=frame_provider.Quality.ORIGINAL,
-                    out_type=frame_provider.Type.NUMPY_ARRAY)
+                    out_type=frame_provider.Type.NUMPY_ARRAY)[0]
             dm_image = Image(path=frame_data.name, loader=loader,
                 size=(frame_data.height, frame_data.width)
             )

@@ -195,9 +195,9 @@ class Image:
             path = ''
         self._path = path
 
-        assert data is not None or path, "Image can not be empty"
-        if data is None and path:
-            if osp.isfile(path):
+        assert data is not None or path or loader, "Image can not be empty"
+        if data is None and (path or loader):
+            if osp.isfile(path) or loader:
                 data = lazy_image(path, loader=loader, cache=cache)
         self._data = data
 
