@@ -53,6 +53,7 @@ export function run(params: Params): Promise<void> {
                     const { status } = response;
                     if (status === RQStatus.finished) {
                         if (!response.result) {
+                            // cancelled
                             resolve(annotations);
                         }
 
@@ -63,7 +64,9 @@ export function run(params: Params): Promise<void> {
                         resolve(collection);
                     } else if (status === RQStatus.started) {
                         const { progress } = response;
-                        onUpdatePercentage(+progress.toFixed(2));
+                        if (typeof (progress) === 'number') {
+                            onUpdatePercentage(+progress.toFixed(2));
+                        }
                         setTimeout(timeoutCallback, 1000);
                     } else if (status === RQStatus.failed) {
                         reject(new Error(response.stderr));
