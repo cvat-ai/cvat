@@ -1,3 +1,5 @@
+<!--lint disable list-item-indent-->
+
 # Dataset and annotation formats
 
 ## Contents
@@ -17,114 +19,102 @@
 1. Add a python script to `dataset_manager/formats`
 1. Add an import statement to [registry.py](./registry.py).
 1. Each format is supported by an importer and exporter.
-    It can be a function or a class decorated with
-    `importer` or `exporter` from [registry.py](./registry.py). Examples:
-    ```
-    @importer(name="MyFormat", version="1.0", ext="ZIP")
-    def my_importer(file_object, task_data, **options):
-      ...
+   It can be a function or a class decorated with
+   `importer` or `exporter` from [registry.py](./registry.py). Examples:
+   ```python
+   @importer(name="MyFormat", version="1.0", ext="ZIP")
+   def my_importer(file_object, task_data, **options):
+     ...
+   @importer(name="MyFormat", version="2.0", ext="XML")
+   class my_importer(file_object, task_data, **options):
+     ...
+     def __call__(self, file_object, task_data, **options):
+       ...
+   @exporter(name="MyFormat", version="1.0", ext="ZIP"):
+   def my_exporter(file_object, task_data, **options):
+     ...
+   ```
+   Each decorator defines format parameters such as:
+   - _name_
+   - _version_
+   - _file extension_. For the `importer` it can be a comma-separated list.
+   These parameters are combined to produce a visible name. It can be
+   set explicitly by the `display_name` argument.
+   Importer arguments:
+   - _file_object_ - a file with annotations or dataset
+   - _task_data_ - an instance of `TaskData` class.
+   Exporter arguments:
+   - _file_object_ - a file for annotations or dataset
+   - _task_data_ - an instance of `TaskData` class.
+   - _options_ - format-specific options. `save_images` is the option to
+   distinguish if dataset or just annotations are requested.
 
-    @importer(name="MyFormat", version="2.0", ext="XML")
-    class my_importer(file_object, task_data, **options):
-      ...
-      def __call__(self, file_object, task_data, **options):
-        ...
+   [`TaskData`](../bindings.py) provides many task properties and interfaces
+   to add and read task annotations.
 
-    @exporter(name="MyFormat", version="1.0", ext="ZIP"):
-    def my_exporter(file_object, task_data, **options):
-      ...
-    ```
-    Each decorator defines format parameters such as:
-    - *name*
-    - *version
-    - *file extension*. For the `importer` it can be a comma-separated list.
-
-    These parameters are combined to produce a visible name. It can be
-    set explicitly by the `display_name` argument.
-
-    Importer arguments:
-    - *file_object* - a file with annotations or dataset
-    - *task_data* - an instance of `TaskData` class.
-
-    Exporter arguments:
-    - *file_object* - a file for annotations or dataset
-    - *task_data* - an instance of `TaskData` class.
-    - *options* - format-specific options. `save_images` is the option to
-    distinguish if dataset or just annotations are requested.
-
-    [`TaskData`](../bindings.py) provides many task properties and interfaces
-    to add and read task annotations.
-
-    Public methods:
-    - **Annotation.shapes** - property, returns a generator of Annotation.LabeledShape objects
-    - **Annotation.tracks** - property, returns a generator of Annotation.Track objects
-    - **Annotation.tags** - property, returns a generator of Annotation.Tag objects
-    - **Annotation.group_by_frame()** - method, returns an iterator on Annotation.Frame object,
-      which groups annotation objects by frame. Note that TrackedShapes will be represented as Annotation.LabeledShape.
-    - **Annotation.meta** - property, returns dictionary which represent a task meta information,
-      for example - video source name, number of frames, number of jobs, etc
-    - **Annotation.add_tag(tag)** - tag should be an instance of the Annotation.Tag class
-    - **Annotation.add_shape(shape)** - shape should be an instance of the Annotation.Shape class
-    - **Annotation.add_track(track)** - track should be an instance of the Annotation.Track class
-    - **Annotation.Attribute** = namedtuple('Attribute', 'name, value')
-    - **Annotation.LabeledShape** = namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes,
-      group, z_order')
-    - **TrackedShape** = namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside,
-      keyframe, z_order')
-    - **Track** = namedtuple('Track', 'label, group, shapes')
-    - **Tag** = namedtuple('Tag', 'frame, label, attributes, group')
-    - **Frame** = namedtuple('Frame', 'frame, name, width, height, labeled_shapes, tags')
-
-    Sample exporter code:
-    ```python
-    ...
-    # dump meta info if necessary
-    ...
-
-    # iterate over all frames
-    for frame_annotation in task_data.group_by_frame():
-        # get frame info
-        image_name = frame_annotation.name
-        image_width = frame_annotation.width
-        image_height = frame_annotation.height
-
-        # iterate over all shapes on the frame
-        for shape in frame_annotation.labeled_shapes:
-            label = shape.label
-            xtl = shape.points[0]
-            ytl = shape.points[1]
-            xbr = shape.points[2]
-            ybr = shape.points[3]
-
-            # iterate over shape attributes
-            for attr in shape.attributes:
-                attr_name = attr.name
-                attr_value = attr.value
-    ...
-    # dump annotation code
-    file_object.write(...)
-    ...
-    ```
-
-    Sample importer code:
-    ```python
-    ...
-    #read file_object
-    ...
-
-    for parsed_shape in parsed_shapes:
-        shape = task_data.LabeledShape(
-            type="rectangle",
-            points=[0, 0, 100, 100],
-            occluded=False,
-            attributes=[],
-            label="car",
-            outside=False,
-            frame=99,
-        )
-
-        task_data.add_shape(shape)
-    ```
+   Public methods:
+   - **Annotation.shapes** - property, returns a generator of Annotation.LabeledShape objects
+   - **Annotation.tracks** - property, returns a generator of Annotation.Track objects
+   - **Annotation.tags** - property, returns a generator of Annotation.Tag objects
+   - **Annotation.group_by_frame()** - method, returns an iterator on Annotation.Frame object,
+     which groups annotation objects by frame. Note that TrackedShapes will be represented as Annotation.LabeledShape.
+   - **Annotation.meta** - property, returns dictionary which represent a task meta information,
+     for example - video source name, number of frames, number of jobs, etc
+   - **Annotation.add_tag(tag)** - tag should be an instance of the Annotation.Tag class
+   - **Annotation.add_shape(shape)** - shape should be an instance of the Annotation.Shape class
+   - **Annotation.add_track(track)** - track should be an instance of the Annotation.Track class
+   - **Annotation.Attribute** = namedtuple('Attribute', 'name, value')
+   - **Annotation.LabeledShape** = namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes,
+     group, z_order')
+   - **TrackedShape** = namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside,
+     keyframe, z_order')
+   - **Track** = namedtuple('Track', 'label, group, shapes')
+   - **Tag** = namedtuple('Tag', 'frame, label, attributes, group')
+   - **Frame** = namedtuple('Frame', 'frame, name, width, height, labeled_shapes, tags')
+   Sample exporter code:
+   ```python
+   ...
+   # dump meta info if necessary
+   ...
+   # iterate over all frames
+   for frame_annotation in task_data.group_by_frame():
+     # get frame info
+     image_name = frame_annotation.name
+     image_width = frame_annotation.width
+     image_height = frame_annotation.height
+     # iterate over all shapes on the frame
+     for shape in frame_annotation.labeled_shapes:
+       label = shape.label
+       xtl = shape.points[0]
+       ytl = shape.points[1]
+       xbr = shape.points[2]
+       ybr = shape.points[3]
+       # iterate over shape attributes
+       for attr in shape.attributes:
+         attr_name = attr.name
+         attr_value = attr.value
+   ...
+   # dump annotation code
+   file_object.write(...)
+   ...
+   ```
+   Sample importer code:
+   ```python
+   ...
+   #read file_object
+   ...
+   for parsed_shape in parsed_shapes:
+     shape = task_data.LabeledShape(
+       type="rectangle",
+       points=[0, 0, 100, 100],
+       occluded=False,
+       attributes=[],
+       label="car",
+       outside=False,
+       frame=99,
+     )
+   task_data.add_shape(shape)
+   ```
 
 ## Format specifications<a id="formats" />
 
@@ -155,7 +145,6 @@ features, so it can be used to make data backups.
 
 #### CVAT loader
 - uploaded file: an XML file or a ZIP file
-
 
 ### [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)<a id="voc" />
 - [Format specification](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf)
