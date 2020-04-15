@@ -116,54 +116,17 @@ export function convertToArray(points: Point[]): number[][] {
     return arr;
 }
 
-export function convertArrayToObjects(pointsArray: number[][]): Point[] {
-    return pointsArray.reduce((points: Point[], point: number[]): Point[] => {
-        const [x, y] = point;
-        points.push({ x, y });
-        return points;
-    }, []);
-}
-
-export function convertArrayToDoubleArray(points: number[]): number[][] {
-    if (points.length % 2 !== 0) {
-        throw new Error('Points array must have length multiple of two.');
-    }
-
-    const pointsArray = [];
-
-    for (let i = 0; i < points.length; i += 2) {
-        pointsArray.push([points[i], points[i]]);
-    }
-
-    return pointsArray;
-}
-
-function line(p1: number[], p2: number[]): number[] {
-    const a = p1[1] - p2[1];
-    const b = p2[0] - p1[0];
-    const c = b * p1[1] + a * p1[0];
-    return [a, b, c];
-}
-
-export function intersection(
-    p1: number[], p2: number[], p3: number[], p4: number[]
-): number[] | null {
-    const L1 = line(p1, p2);
-    const L2 = line(p3, p4);
-
-    const D = L1[0] * L2[1] - L1[1] * L2[0];
-    const Dx = L1[2] * L2[1] - L1[1] * L2[2];
-    const Dy = L1[0] * L2[2] - L1[2] * L2[0];
-
-    let x = null;
-    let y = null;
-    if (D !== 0) {
-        x = Dx / D;
-        y = Dy / D;
-        return [x, y];
-    }
-
-    return null;
+export function pointsToObjects(stringified: string): Point[] {
+    return pointsToArray(stringified)
+        .reduce((points: Point[], coord: number, index: number): Point[] => {
+            if (index % 2 === 0) {
+                points.push({ x: coord, y: null });
+            } else {
+                // eslint-disable-next-line no-param-reassign
+                points.slice(-1)[0].y = coord;
+            }
+            return points;
+        }, []);
 }
 
 export function clamp(x: number, min: number, max: number): number {

@@ -7,58 +7,71 @@
  * SPDX-License-Identifier: MIT
  */
 
+import consts from './consts';
 
-import { convertToArray, intersection } from './shared';
-
-export const MIN_EDGE_LENGTH = 3;
-
-interface Point {
+export interface Point {
     x: number;
     y: number;
+}
+
+function line(p1: Point, p2: Point): number[] {
+    const a = p1.y - p2.y;
+    const b = p2.x - p1.x;
+    const c = b * p1.y + a * p1.x;
+    return [a, b, c];
+}
+
+function intersection(
+    p1: Point, p2: Point, p3: Point, p4: Point,
+): Point | null {
+    const L1 = line(p1, p2);
+    const L2 = line(p3, p4);
+
+    const D = L1[0] * L2[1] - L1[1] * L2[0];
+    const Dx = L1[2] * L2[1] - L1[1] * L2[2];
+    const Dy = L1[0] * L2[2] - L1[2] * L2[0];
+
+    let x = null;
+    let y = null;
+    if (D !== 0) {
+        x = Dx / D;
+        y = Dy / D;
+        return { x, y };
+    }
+
+    return null;
 }
 
 export class Equation {
     private a: number;
     private b: number;
     private c: number;
-    private cCanvas: number;
-    private viewModel: Cuboid2PointViewModel;
 
-    public constructor(p1: number[], p2: number[], model: Cuboid2PointViewModel) {
-        this.viewModel = model;
-        this.a = p1[1] - p2[1];
-        this.b = p2[0] - p1[0];
-        this.c = this.b * p1[1] + this.a * p1[0];
-
-        const temp = { x: p1[0], y: p1[1] };
-        const p1Canvas = this.viewModel.actualToCanvas([temp])[0];
-        this.cCanvas = this.b * p1Canvas.y + this.a * p1Canvas.x;
+    public constructor(p1: Point, p2: Point) {
+        this.a = p1.y - p2.y;
+        this.b = p2.x - p1.x;
+        this.c = this.b * p1.y + this.a * p1.x;
     }
 
     // get the line equation in actual coordinates
     public getY(x: number): number {
         return (this.c - this.a * x) / this.b;
     }
-
-    // get the line equation in canvas coordinates
-    public getYCanvas(x: number): number {
-        return (this.cCanvas - this.a * x) / this.b;
-    }
 }
 
-class Figure {
+export class Figure {
     private indices: number[];
-    public viewmodel: Cuboid2PointViewModel;
+    private allPoints: Point[];
 
-    public constructor(indices: number[], Vmodel: Cuboid2PointViewModel) {
+    public constructor(indices: number[], points: Point[]) {
         this.indices = indices;
-        this.viewmodel = Vmodel;
+        this.allPoints = points;
     }
 
-    public get points(): any[] {
+    public get points(): Point[] {
         const points = [];
         for (const index of this.indices) {
-            points.push(this.viewmodel.points[index]);
+            points.push(this.allPoints[index]);
         }
         return points;
     }
@@ -68,32 +81,22 @@ class Figure {
     // if you only need to update a subset of the points,
     // simply put null for the points you want to keep
     public set points(newPoints) {
-        const oldPoints = this.viewmodel.points;
         for (let i = 0; i < newPoints.length; i += 1) {
             if (newPoints[i] !== null) {
-                oldPoints[this.indices[i]] = { x: newPoints[i].x, y: newPoints[i].y };
+                this.allPoints[this.indices[i]] = { x: newPoints[i].x, y: newPoints[i].y };
             }
         }
     }
-
-    public get canvasPoints(): Point[] {
-        let { points } = this;
-        points = this.viewmodel.actualToCanvas(points);
-        return points;
-    }
 }
 
-class Edge extends Figure {
+export class Edge extends Figure {
     public getEquation(): Equation {
-        let { points } = this;
-        points = convertToArray(points);
-        return new Equation(points[0], points[1], this.viewmodel);
+        return new Equation(this.points[0], this.points[1]);
     }
 }
 
-export class Cuboid2PointViewModel {
-    private canvasOffset: number;
-    public points: any[];
+export class CuboidModel {
+    public points: Point[];
     private fr: Edge;
     private fl: Edge;
     private dr: Edge;
@@ -114,31 +117,16 @@ export class Cuboid2PointViewModel {
     private top: Figure;
     private bot: Figure;
     public facesList: Figure[];
-    public vpl: number[] | null;
-    public vpr: number[] | null;
+    public vpl: Point | null;
+    public vpr: Point | null;
 
-    public constructor(points: Point[], offset: number) {
-        this.canvasOffset = offset;
+    public constructor(points?: Point[]) {
         this.points = points;
         this.initEdges();
         this.initFaces();
         this.updateVanishingPoints();
         this.buildBackEdge();
         this.updatePoints();
-    }
-
-    public canvasToActual(points: Point[]): Point[] {
-        return points.map((point): Point => ({
-            x: point.x - this.canvasOffset,
-            y: point.y - this.canvasOffset,
-        }));
-    }
-
-    public actualToCanvas(points: Point[]): Point[] {
-        return points.map((point): Point => ({
-            x: point.x + this.canvasOffset,
-            y: point.y + this.canvasOffset,
-        }));
     }
 
     public getPoints(): Point[] {
@@ -158,18 +146,18 @@ export class Cuboid2PointViewModel {
     }
 
     public computeSideEdgeConstraints(edge: any): any {
-        const midLength = this.fr.canvasPoints[1].y - this.fr.canvasPoints[0].y - 1;
+        const midLength = this.fr.points[1].y - this.fr.points[0].y - 1;
 
-        const minY = edge.canvasPoints[1].y - midLength;
-        const maxY = edge.canvasPoints[0].y + midLength;
+        const minY = edge.points[1].y - midLength;
+        const maxY = edge.points[0].y + midLength;
 
         const y1 = edge.points[0].y;
         const y2 = edge.points[1].y;
 
         const miny1 = y2 - midLength;
-        const maxy1 = y2 - MIN_EDGE_LENGTH;
+        const maxy1 = y2 - consts.MIN_EDGE_LENGTH;
 
-        const miny2 = y1 + MIN_EDGE_LENGTH;
+        const miny2 = y1 + consts.MIN_EDGE_LENGTH;
         const maxy2 = y1 + midLength;
 
         return {
@@ -190,63 +178,63 @@ export class Cuboid2PointViewModel {
 
     // boolean value parameter controls which edges should be used to recalculate vanishing points
     private updateVanishingPoints(): void {
-        const leftEdge = convertToArray(this.fl.points);
-        const rightEdge = convertToArray(this.dr.points);
-        const midEdge = convertToArray(this.fr.points);
+        const leftEdge = this.fl.points;
+        const rightEdge = this.dr.points;
+        const midEdge = this.fr.points;
 
         this.vpl = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
         this.vpr = intersection(rightEdge[0], midEdge[0], rightEdge[1], midEdge[1]);
         if (this.vpl === null) {
             // shift the edge slightly to avoid edge case
-            leftEdge[0][1] -= 0.001;
-            leftEdge[0][0] += 0.001;
-            leftEdge[1][0] += 0.001;
+            leftEdge[0].y -= 0.001;
+            leftEdge[0].x += 0.001;
+            leftEdge[1].x += 0.001;
             this.vpl = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
         }
         if (this.vpr === null) {
             // shift the edge slightly to avoid edge case
-            rightEdge[0][1] -= 0.001;
-            rightEdge[0][0] -= 0.001;
-            rightEdge[1][0] -= 0.001;
+            rightEdge[0].y -= 0.001;
+            rightEdge[0].x -= 0.001;
+            rightEdge[1].x -= 0.001;
             this.vpr = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
         }
     }
 
     private initEdges(): void {
-        this.fl = new Edge([0, 1], this);
-        this.fr = new Edge([2, 3], this);
-        this.dr = new Edge([4, 5], this);
-        this.dl = new Edge([6, 7], this);
+        this.fl = new Edge([0, 1], this.points);
+        this.fr = new Edge([2, 3], this.points);
+        this.dr = new Edge([4, 5], this.points);
+        this.dl = new Edge([6, 7], this.points);
 
-        this.ft = new Edge([0, 2], this);
-        this.lt = new Edge([0, 6], this);
-        this.rt = new Edge([2, 4], this);
-        this.dt = new Edge([6, 4], this);
+        this.ft = new Edge([0, 2], this.points);
+        this.lt = new Edge([0, 6], this.points);
+        this.rt = new Edge([2, 4], this.points);
+        this.dt = new Edge([6, 4], this.points);
 
-        this.fb = new Edge([1, 3], this);
-        this.lb = new Edge([1, 7], this);
-        this.rb = new Edge([3, 5], this);
-        this.db = new Edge([7, 5], this);
+        this.fb = new Edge([1, 3], this.points);
+        this.lb = new Edge([1, 7], this.points);
+        this.rb = new Edge([3, 5], this.points);
+        this.db = new Edge([7, 5], this.points);
 
         this.edgeList = [this.fl, this.fr, this.dl, this.dr, this.ft, this.lt,
             this.rt, this.dt, this.fb, this.lb, this.rb, this.db];
     }
 
     private initFaces(): void {
-        this.front = new Figure([0, 1, 3, 2], this);
-        this.right = new Figure([2, 3, 5, 4], this);
-        this.dorsal = new Figure([4, 5, 7, 6], this);
-        this.left = new Figure([6, 7, 1, 0], this);
-        this.top = new Figure([0, 2, 4, 6], this);
-        this.bot = new Figure([1, 3, 5, 7], this);
+        this.front = new Figure([0, 1, 3, 2], this.points);
+        this.right = new Figure([2, 3, 5, 4], this.points);
+        this.dorsal = new Figure([4, 5, 7, 6], this.points);
+        this.left = new Figure([6, 7, 1, 0], this.points);
+        this.top = new Figure([0, 2, 4, 6], this.points);
+        this.bot = new Figure([1, 3, 5, 7], this.points);
 
         this.facesList = [this.front, this.right, this.dorsal, this.left];
     }
 
     private buildBackEdge(): void {
         this.updateVanishingPoints();
-        const leftPoints = convertToArray(this.dr.points);
-        const rightPoints = convertToArray(this.fl.points);
+        const leftPoints = this.dr.points;
+        const rightPoints = this.fl.points;
         const topIndex = 6;
         const botIndex = 7;
 
@@ -257,28 +245,16 @@ export class Cuboid2PointViewModel {
         let p2 = intersection(vpLeft, leftPoints[1], vpRight, rightPoints[1]);
 
         if (p1 === null) {
-            p1 = [p2[0], vpLeft[1]];
+            p1 = { x: p2.x, y: vpLeft.y };
         } else if (p2 === null) {
-            p2 = [p1[0], vpLeft[1]];
+            p2 = { x: p1.x, y: vpLeft.y };
         }
 
-        this.points[topIndex] = { x: p1[0], y: p1[1] };
-        this.points[botIndex] = { x: p2[0], y: p2[1] };
+        this.points[topIndex] = { x: p1.x, y: p1.y };
+        this.points[botIndex] = { x: p2.x, y: p2.y };
 
         // Making sure that the vertical edges stay vertical
         this.updatePoints();
-    }
-
-    public get vplCanvas(): Point {
-        const { vpl } = this;
-        const vp = { x: vpl[0], y: vpl[1] };
-        return this.actualToCanvas([vp])[0];
-    }
-
-    public get vprCanvas(): Point {
-        const { vpr } = this;
-        const vp = { x: vpr[0], y: vpr[1] };
-        return this.actualToCanvas([vp])[0];
     }
 }
 
