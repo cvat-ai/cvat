@@ -32,10 +32,10 @@ from rest_framework.response import Response
 from sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
-import cvat.apps.dataset_manager.views
+import cvat.apps.dataset_manager.views # pylint: disable=unused-import
 from cvat.apps.authentication import auth
 from cvat.apps.authentication.decorators import login_required
-from cvat.apps.dataset_manager.serializers import DatasetFormatSerializer
+from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, Plugin, StatusChoice, Task
 from cvat.apps.engine.serializers import (
@@ -202,19 +202,11 @@ class ServerViewSet(viewsets.ViewSet):
 
     @staticmethod
     @swagger_auto_schema(method='get', operation_summary='Method provides the list of supported annotations formats',
-        responses={'200': DatasetFormatSerializer(many=True)})
-    @action(detail=False, methods=['GET'], url_path='annotation/export_formats')
-    def annotation_export_formats(request):
-        data = dm.views.get_export_formats()
-        return Response(DatasetFormatSerializer(data, many=True).data)
-
-    @staticmethod
-    @swagger_auto_schema(method='get', operation_summary='Method provides the list of supported annotations formats',
-        responses={'200': DatasetFormatSerializer(many=True)})
-    @action(detail=False, methods=['GET'], url_path='annotation/import_formats')
-    def annotation_import_formats(request):
-        data = dm.views.get_import_formats()
-        return Response(DatasetFormatSerializer(data, many=True).data)
+        responses={'200': DatasetFormatsSerializer()})
+    @action(detail=False, methods=['GET'], url_path='annotation/formats')
+    def annotation_formats(request):
+        data = dm.views.get_all_formats()
+        return Response(DatasetFormatsSerializer(data).data)
 
 class ProjectFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
@@ -468,7 +460,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @swagger_auto_schema(method='get', operation_summary='Method allows to download task annotations',
         manual_parameters=[
             openapi.Parameter('format', openapi.IN_QUERY,
-                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/export_formats",
+                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
                 type=openapi.TYPE_STRING, required=False),
             openapi.Parameter('filename', openapi.IN_QUERY,
                 description="Desired output file name",
@@ -486,7 +478,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @swagger_auto_schema(method='put', operation_summary='Method allows to upload task annotations',
         manual_parameters=[
             openapi.Parameter('format', openapi.IN_QUERY,
-                description="Input format name\nYou can get the list of supported formats at:\n/server/annotation/import_formats",
+                description="Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
                 type=openapi.TYPE_STRING, required=False),
         ],
         responses={
@@ -606,7 +598,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @swagger_auto_schema(method='get', operation_summary='Export task as a dataset in a specific format',
         manual_parameters=[
             openapi.Parameter('format', openapi.IN_QUERY,
-                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/export_formats",
+                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
                 type=openapi.TYPE_STRING, required=True),
             openapi.Parameter('filename', openapi.IN_QUERY,
                 description="Desired output file name",

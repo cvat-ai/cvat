@@ -2475,17 +2475,10 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         return response
 
-    def _get_import_formats(self, user):
+    def _get_formats(self, user):
         with ForceLogin(user, self.client):
             response = self.client.get(
-                path="/api/v1/server/annotation/import_formats"
-            )
-        return response
-
-    def _get_export_formats(self, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(
-                path="/api/v1/server/annotation/export_formats"
+                path="/api/v1/server/annotation/formats"
             )
         return response
 
@@ -3092,22 +3085,17 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
             return annotations
 
-        response = self._get_import_formats(annotator)
+        response = self._get_formats(annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         if annotator is not None:
-            import_formats = response.data
+            data = response.data
         else:
-            import_formats = response = self._get_import_formats(owner).data
+            data = self._get_formats(owner).data
+        import_formats = data['importers']
+        export_formats = data['exporters']
         self.assertTrue(isinstance(import_formats, list) and import_formats)
-        import_formats = { v['name'] for v in import_formats }
-
-        response = self._get_export_formats(annotator)
-        self.assertEqual(response.status_code, HTTP_200_OK)
-        if annotator is not None:
-            export_formats = response.data
-        else:
-            export_formats = response = self._get_export_formats(owner).data
         self.assertTrue(isinstance(export_formats, list) and export_formats)
+        import_formats = { v['name'] for v in import_formats }
         export_formats = { v['name'] for v in export_formats }
 
         formats = { exp: exp if exp in import_formats else None
