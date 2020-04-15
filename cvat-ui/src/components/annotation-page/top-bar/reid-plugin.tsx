@@ -149,8 +149,7 @@ function ReIDPlugin(props: StateToProps & DispatchToProps): JSX.Element {
                     visible={showInProgressDialog}
                     progress={progress}
                     onCancel={() => {
-                        // get task id
-                        cancel();
+                        cancel(jobInstance.id);
                     }}
                 />
                 <InputModal
@@ -161,32 +160,29 @@ function ReIDPlugin(props: StateToProps & DispatchToProps): JSX.Element {
                         setShowInputDialog(false);
                         setShowInProgressDialog(true);
 
-                        // как экспортировать и импортировать аннотацию, без сохранения на сервере
-                        // на клиенте мы можем только получить аннотацию для текущего фрейма
-                        // скорее всего нужен import row, export raw
-
-                        // get job id
-                        // get annotations
                         const onUpdatePercentage = (percent: number): void => {
                             setProgress(percent);
                         };
 
-                        run({
-                            threshold,
-                            distance,
-                            onUpdatePercentage,
-                            jobID: 0,
-                            annotations: [],
-                        }).then(() => {
+                        jobInstance.annotations.export().then((annotations: any) => (
+                            run({
+                                threshold,
+                                distance,
+                                onUpdatePercentage,
+                                jobID: jobInstance.id,
+                                annotations,
+                            })
+                        )).then(() => {
                             // save annotations (just import it to collection)
                         }).catch((error: Error) => {
                             Modal.error({
                                 title: 'Could not merge annotations',
                                 content: error.toString(),
                             });
-                        }).finally(() => {
-                            setShowInProgressDialog(false);
-                        });
+                        })
+                            .finally(() => {
+                                setShowInProgressDialog(false);
+                            });
                     }}
                 />
             </>

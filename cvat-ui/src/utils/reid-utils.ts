@@ -1,14 +1,14 @@
 // TODO:
-// add dialog window
-// add button to menu
 // add run and check callbacks
+
+// когда запускаем
 
 type Params = {
     threshold: number;
     distance: number;
     onUpdatePercentage(percentage: number): void;
     jobID: number;
-    annotations: any[];
+    annotations: any;
 };
 
 export function run(params: Params): Promise<void> {
@@ -19,6 +19,6 @@ export function run(params: Params): Promise<void> {
     });
 }
 
-export function cancel(): void {
+export function cancel(jobID: number): void {
 
 }
