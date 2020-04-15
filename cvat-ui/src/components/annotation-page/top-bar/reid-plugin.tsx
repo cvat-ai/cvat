@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import ReactDOM from 'react-dom';
 import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'antd/lib/grid';
@@ -11,6 +15,9 @@ import { clamp } from 'utils/math';
 import { run, cancel } from 'utils/reid-utils';
 import { connect } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
+import { fetchAnnotationsAsync } from 'actions/annotation-actions';
+
+/* eslint newline-per-chained-call: 0 */
 
 interface InputModalProps {
     visible: boolean;
@@ -114,7 +121,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-
+    updateAnnotations(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -132,12 +139,16 @@ function mapStateToProps(state: CombinedState): StateToProps {
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
-
+    return {
+        updateAnnotations(): void {
+            dispatch(fetchAnnotationsAsync());
+        },
+    };
 }
 
 
 function ReIDPlugin(props: StateToProps & DispatchToProps): JSX.Element {
-    const { jobInstance, ...rest } = props;
+    const { jobInstance, updateAnnotations, ...rest } = props;
     const [showInputDialog, setShowInputDialog] = useState(false);
     const [showInProgressDialog, setShowInProgressDialog] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -155,7 +166,7 @@ function ReIDPlugin(props: StateToProps & DispatchToProps): JSX.Element {
                 <InputModal
                     visible={showInputDialog}
                     onCancel={() => setShowInputDialog(false)}
-                    onSubmit={(threshold: number, distance: number) => {
+                    onSubmit={async (threshold: number, distance: number) => {
                         setProgress(0);
                         setShowInputDialog(false);
                         setShowInProgressDialog(true);
@@ -164,25 +175,27 @@ function ReIDPlugin(props: StateToProps & DispatchToProps): JSX.Element {
                             setProgress(percent);
                         };
 
-                        jobInstance.annotations.export().then((annotations: any) => (
-                            run({
+                        try {
+                            const annotations = await jobInstance.annotations.export();
+                            const merged = await run({
                                 threshold,
                                 distance,
                                 onUpdatePercentage,
                                 jobID: jobInstance.id,
                                 annotations,
-                            })
-                        )).then(() => {
-                            // save annotations (just import it to collection)
-                        }).catch((error: Error) => {
+                            });
+                            await jobInstance.annotations.clear();
+                            updateAnnotations(); // one more call to do not confuse canvas
+                            await jobInstance.annotations.import(merged);
+                            updateAnnotations();
+                        } catch (error) {
                             Modal.error({
                                 title: 'Could not merge annotations',
                                 content: error.toString(),
                             });
-                        })
-                            .finally(() => {
-                                setShowInProgressDialog(false);
-                            });
+                        } finally {
+                            setShowInProgressDialog(false);
+                        }
                     }}
                 />
             </>
