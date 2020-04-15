@@ -50,7 +50,7 @@ class DEXTR_HANDLER:
         points = np.asarray([[int(p["x"]), int(p["y"])] for p in points], dtype=int)
 
         # Padding mustn't be more than the closest distance to an edge of an image
-        [width, height] = numpy_image.shape[:2]
+        [height, width] = numpy_image.shape[:2]
         x_values = points[:, 0]
         y_values = points[:, 1]
         [min_x, max_x] = [np.min(x_values), np.max(x_values)]
@@ -59,8 +59,8 @@ class DEXTR_HANDLER:
         bounding_box = (
             max(min(points[:, 0]) - padding, 0),
             max(min(points[:, 1]) - padding, 0),
-            min(max(points[:, 0]) + padding, numpy_image.shape[1] - 1),
-            min(max(points[:, 1]) + padding, numpy_image.shape[0] - 1)
+            min(max(points[:, 0]) + padding, width - 1),
+            min(max(points[:, 1]) + padding, height - 1)
         )
 
         # Prepare an image
