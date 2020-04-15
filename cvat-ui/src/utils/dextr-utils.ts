@@ -199,7 +199,9 @@ const plugin: DEXTRPlugin = {
                                     // eslint-disable-next-line no-param-reassign
                                     self.data.canceled = false;
                                     antModalButton.disabled = true;
-                                    document.body.removeChild(antModalRoot);
+                                    if (antModalRoot.parentElement === document.body) {
+                                        document.body.removeChild(antModalRoot);
+                                    }
                                 }
                             },
                         },
