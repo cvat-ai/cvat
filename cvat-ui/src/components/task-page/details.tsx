@@ -299,8 +299,14 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                                         repositoryStatus: 'sync',
                                                     });
                                                 }
-                                            }).catch((): void => {
+                                            }).catch((error): void => {
                                                 if (this.mounted) {
+                                                    Modal.error({
+                                                        width: 800,
+                                                        title: 'Could not synchronize the repository',
+                                                        content: error.toString(),
+                                                    });
+
                                                     this.setState({
                                                         repositoryStatus: '!sync',
                                                     });

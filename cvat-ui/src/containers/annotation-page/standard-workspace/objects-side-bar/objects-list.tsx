@@ -15,6 +15,7 @@ import {
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
 } from 'actions/annotation-actions';
+import { Canvas, isAbleToChangeFrame } from 'cvat-canvas';
 import { CombinedState, StatesOrdering, ObjectType } from 'reducers/interfaces';
 
 interface StateToProps {
@@ -32,6 +33,7 @@ interface StateToProps {
     annotationsFiltersHistory: string[];
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
+    canvasInstance: Canvas;
 }
 
 interface DispatchToProps {
@@ -64,6 +66,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 frame: {
                     number: frameNumber,
                 },
+            },
+            canvas: {
+                instance: canvasInstance,
             },
             tabContentHeight: listHeight,
         },
@@ -104,6 +109,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotationsFiltersHistory,
         keyMap,
         normalizedKeyMap,
+        canvasInstance,
     };
 }
 
@@ -254,6 +260,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             minZLayer,
             keyMap,
             normalizedKeyMap,
+            canvasInstance,
         } = this.props;
         const {
             sortedStatesID,
@@ -388,7 +395,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 if (state && state.objectType === ObjectType.TRACK) {
                     const frame = typeof (state.keyframes.next) === 'number'
                         ? state.keyframes.next : null;
-                    if (frame !== null) {
+                    if (frame !== null && isAbleToChangeFrame(canvasInstance)) {
                         changeFrame(frame);
                     }
                 }
@@ -399,7 +406,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 if (state && state.objectType === ObjectType.TRACK) {
                     const frame = typeof (state.keyframes.prev) === 'number'
                         ? state.keyframes.prev : null;
-                    if (frame !== null) {
+                    if (frame !== null && isAbleToChangeFrame(canvasInstance)) {
                         changeFrame(frame);
                     }
                 }

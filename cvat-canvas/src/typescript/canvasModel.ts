@@ -47,6 +47,7 @@ export enum RectDrawingMethod {
 }
 
 export interface Configuration {
+    autoborders?: boolean;
     displayAllText?: boolean;
     undefinedAttrValue?: string;
 }
@@ -206,6 +207,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             configuration: {
                 displayAllText: false,
+                autoborders: false,
                 undefinedAttrValue: '',
             },
             imageBitmap: false,
@@ -327,6 +329,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public setup(frameData: any, objectStates: any[]): void {
+        if (this.data.imageID !== frameData.number) {
+            if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
+                throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+            }
+        }
+
         if (frameData.number === this.data.imageID) {
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
@@ -360,6 +368,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public activate(clientID: number | null, attributeID: number | null): void {
+        if (this.data.activeElement.clientID === clientID) {
+            return;
+        }
+
         if (this.data.mode !== Mode.IDLE && clientID !== null) {
             // Exception or just return?
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -509,12 +521,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public configure(configuration: Configuration): void {
-        if (this.data.mode !== Mode.IDLE) {
-            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
-        }
-
         if (typeof (configuration.displayAllText) !== 'undefined') {
             this.data.configuration.displayAllText = configuration.displayAllText;
+        }
+
+        if (typeof (configuration.autoborders) !== 'undefined') {
+            this.data.configuration.autoborders = configuration.autoborders;
         }
 
         if (typeof (configuration.undefinedAttrValue) !== 'undefined') {

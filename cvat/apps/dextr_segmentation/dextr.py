@@ -48,11 +48,19 @@ class DEXTR_HANDLER:
         image = PIL.Image.open(image[0])
         numpy_image = np.array(image)
         points = np.asarray([[int(p["x"]), int(p["y"])] for p in points], dtype=int)
+
+        # Padding mustn't be more than the closest distance to an edge of an image
+        [height, width] = numpy_image.shape[:2]
+        x_values = points[:, 0]
+        y_values = points[:, 1]
+        [min_x, max_x] = [np.min(x_values), np.max(x_values)]
+        [min_y, max_y] = [np.min(y_values), np.max(y_values)]
+        padding = min(min_x, min_y, width - max_x, height - max_y, _DEXTR_PADDING)
         bounding_box = (
-            max(min(points[:, 0]) - _DEXTR_PADDING, 0),
-            max(min(points[:, 1]) - _DEXTR_PADDING, 0),
-            min(max(points[:, 0]) + _DEXTR_PADDING, numpy_image.shape[1] - 1),
-            min(max(points[:, 1]) + _DEXTR_PADDING, numpy_image.shape[0] - 1)
+            max(min(points[:, 0]) - padding, 0),
+            max(min(points[:, 1]) - padding, 0),
+            min(max(points[:, 0]) + padding, width - 1),
+            min(max(points[:, 1]) + padding, height - 1)
         )
 
         # Prepare an image
@@ -61,7 +69,7 @@ class DEXTR_HANDLER:
             interpolation = cv2.INTER_CUBIC).astype(np.float32)
 
         # Make a heatmap
-        points = points - [min(points[:, 0]), min(points[:, 1])] + [_DEXTR_PADDING, _DEXTR_PADDING]
+        points = points - [min(points[:, 0]), min(points[:, 1])] + [padding, padding]
         points = (points * [_DEXTR_SIZE / numpy_cropped.shape[1], _DEXTR_SIZE / numpy_cropped.shape[0]]).astype(int)
         heatmap = np.zeros(shape=resized.shape[:2], dtype=np.float64)
         for point in points:

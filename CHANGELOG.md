@@ -10,10 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dialog window with some helpful information about using filters
 - Ability to display a bitmap in the new UI
 - Button to reset colors settings (brightness, saturation, contrast) in the new UI
-- Added option to display shape text always
+- Option to display shape text always
+- Dedicated message with clarifications when share is unmounted (https://github.com/opencv/cvat/pull/1373)
+- Ability to create one tracked point (https://github.com/opencv/cvat/pull/1383)
+- Ability to draw/edit polygons and polylines with automatic bordering feature (https://github.com/opencv/cvat/pull/1394)
+- Tutorial: instructions for CVAT over HTTPS
+- Added deep extreme cut (semi-automatic segmentation) to the new UI (https://github.com/opencv/cvat/pull/1398)
+
 
 ### Changed
 - Increase preview size of a task till 256, 256 on the server
+- Minor style updates
+- Public ssh-keys are displayed in a dedicated window instead of console when create a task with a repository
+- React UI has become is a primary UI
 
 ### Deprecated
 -
@@ -23,8 +32,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - New shape is added when press ``esc`` when drawing instead of cancellation
-- Fixed dextr segmentation.
-- Fixed `FileNotFoundError` during dump after moving format files
+- Dextr segmentation doesn't work.
+- `FileNotFoundError` during dump after moving format files
+- CVAT doesn't append outside shapes when merge polyshapes in old UI
+- Layout sometimes shows double scroll bars on create task, dashboard and settings pages
+- UI fails after trying to change frame during resizing, dragging, editing
+- Hidden points (or outsided) are visible after changing a frame
+- Merge is allowed for points, but clicks on points conflict with frame dragging logic
+- Removed objects are visible for search
+- Add missed task_id and job_id fields into exception logs for the new UI (https://github.com/opencv/cvat/pull/1372)
+- UI fails when annotations saving occurs during drag/resize/edit (https://github.com/opencv/cvat/pull/1383)
+- Multiple savings when hold Ctrl+S (a lot of the same copies of events were sent with the same working time) (https://github.com/opencv/cvat/pull/1383)
+- UI doesn't have any reaction when git repos synchronization failed (https://github.com/opencv/cvat/pull/1383)
+- Bug when annotations cannot be saved after (delete - save - undo - save) (https://github.com/opencv/cvat/pull/1383)
+- VOC format exports Upper case labels correctly in lower case (https://github.com/opencv/cvat/pull/1379)
+- Fixed polygon exporting bug in COCO dataset (https://github.com/opencv/cvat/issues/1387)
+- Task creation from remote files (https://github.com/opencv/cvat/pull/1392)
+- Job cannot be opened in some cases when the previous job was failed during opening (https://github.com/opencv/cvat/issues/1403)
+- Deactivated shape is still highlighted on the canvas (https://github.com/opencv/cvat/issues/1403)
+- AttributeError: 'tuple' object has no attribute 'read' in ReID algorithm (https://github.com/opencv/cvat/issues/1403)
+- Wrong semi-automatic segmentation near edges of an image (https://github.com/opencv/cvat/issues/1403)
+- Git repos paths (https://github.com/opencv/cvat/pull/1400)
 
 ### Security
 -

@@ -16,6 +16,7 @@ import { MergeHandler, MergeHandlerImpl } from './mergeHandler';
 import { SplitHandler, SplitHandlerImpl } from './splitHandler';
 import { GroupHandler, GroupHandlerImpl } from './groupHandler';
 import { ZoomHandler, ZoomHandlerImpl } from './zoomHandler';
+import { AutoborderHandler, AutoborderHandlerImpl } from './autoborderHandler';
 import consts from './consts';
 import {
     translateToSVG,
@@ -23,6 +24,7 @@ import {
     pointsToArray,
     displayShapeSize,
     ShapeSizeElement,
+    DrawnState,
 } from './shared';
 import {
     CanvasModel,
@@ -58,7 +60,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private controller: CanvasController;
     private svgShapes: Record<number, SVG.Shape>;
     private svgTexts: Record<number, SVG.Text>;
-    private drawnStates: Record<number, any>;
+    private drawnStates: Record<number, DrawnState>;
     private geometry: Geometry;
     private drawHandler: DrawHandler;
     private editHandler: EditHandler;
@@ -66,6 +68,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private splitHandler: SplitHandler;
     private groupHandler: GroupHandler;
     private zoomHandler: ZoomHandler;
+    private autoborderHandler: AutoborderHandler;
     private activeElement: ActiveElement;
     private configuration: Configuration;
 
@@ -358,6 +361,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Transform handlers
         this.drawHandler.transform(this.geometry);
         this.editHandler.transform(this.geometry);
+        this.autoborderHandler.transform(this.geometry);
     }
 
     private resizeCanvas(): void {
@@ -385,6 +389,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 created.push(state);
             } else {
                 const drawnState = this.drawnStates[state.clientID];
+                // object has been changed or changed frame for a track
                 if (drawnState.updated !== state.updated || drawnState.frame !== state.frame) {
                     updated.push(state);
                 }
@@ -395,30 +400,33 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .filter((id: number): boolean => !newIDs.includes(id))
             .map((id: number): any => this.drawnStates[id]);
 
-
-        if (this.activeElement.clientID !== null) {
-            this.deactivate();
-        }
-
-        for (const state of deleted) {
-            if (state.clientID in this.svgTexts) {
-                this.svgTexts[state.clientID].remove();
+        if (deleted.length || updated.length || created.length) {
+            if (this.activeElement.clientID !== null) {
+                this.deactivate();
             }
 
-            this.svgShapes[state.clientID].off('click.canvas');
-            this.svgShapes[state.clientID].remove();
-            delete this.drawnStates[state.clientID];
-        }
+            for (const state of deleted) {
+                if (state.clientID in this.svgTexts) {
+                    this.svgTexts[state.clientID].remove();
+                }
 
-        this.addObjects(created, translate);
-        this.updateObjects(updated, translate);
-        this.sortObjects();
-
-        if (this.controller.activeElement.clientID !== null) {
-            const { clientID } = this.controller.activeElement;
-            if (states.map((state: any): number => state.clientID).includes(clientID)) {
-                this.activate(this.controller.activeElement);
+                this.svgShapes[state.clientID].off('click.canvas');
+                this.svgShapes[state.clientID].remove();
+                delete this.drawnStates[state.clientID];
             }
+
+            this.addObjects(created, translate);
+            this.updateObjects(updated, translate);
+            this.sortObjects();
+
+            if (this.controller.activeElement.clientID !== null) {
+                const { clientID } = this.controller.activeElement;
+                if (states.map((state: any): number => state.clientID).includes(clientID)) {
+                    this.activate(this.controller.activeElement);
+                }
+            }
+
+            this.autoborderHandler.updateObjects();
         }
     }
 
@@ -459,7 +467,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             e.preventDefault();
         }
 
-        function contextmenuHandler(e: MouseEvent): void {
+        function contextMenuHandler(e: MouseEvent): void {
             const pointID = Array.prototype.indexOf
                 .call(((e.target as HTMLElement).parentElement as HTMLElement).children, e.target);
             if (self.activeElement.clientID !== null) {
@@ -467,7 +475,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .filter((_state: any): boolean => (
                         _state.clientID === self.activeElement.clientID
                     ));
-                self.canvas.dispatchEvent(new CustomEvent('point.contextmenu', {
+                self.canvas.dispatchEvent(new CustomEvent('canvas.contextmenu', {
                     bubbles: false,
                     cancelable: true,
                     detail: {
@@ -502,7 +510,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         });
 
                         circle.on('dblclick', dblClickHandler);
-                        circle.on('contextmenu', contextmenuHandler);
+                        circle.on('contextmenu', contextMenuHandler);
                         circle.addClass('cvat_canvas_selected_point');
                     });
 
@@ -512,7 +520,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         });
 
                         circle.off('dblclick', dblClickHandler);
-                        circle.off('contextmenu', contextmenuHandler);
+                        circle.off('contextmenu', contextMenuHandler);
                         circle.removeClass('cvat_canvas_selected_point');
                     });
 
@@ -620,14 +628,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const self = this;
 
         // Setup API handlers
+        this.autoborderHandler = new AutoborderHandlerImpl(
+            this.content,
+        );
         this.drawHandler = new DrawHandlerImpl(
             this.onDrawDone.bind(this),
             this.adoptedContent,
             this.adoptedText,
+            this.autoborderHandler,
         );
         this.editHandler = new EditHandlerImpl(
             this.onEditDone.bind(this),
             this.adoptedContent,
+            this.autoborderHandler,
         );
         this.mergeHandler = new MergeHandlerImpl(
             this.onMergeDone.bind(this),
@@ -712,8 +725,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.geometry = this.controller.geometry;
         if (reason === UpdateReasons.CONFIG_UPDATED) {
             this.configuration = model.configuration;
-            this.setupObjects([]);
-            this.setupObjects(model.objects);
+            this.editHandler.configurate(this.configuration);
+            this.drawHandler.configurate(this.configuration);
+
+            // todo: setup text, add if doesn't exist and enabled
+            // remove if exist and not enabled
+            // this.setupObjects([]);
+            // this.setupObjects(model.objects);
         } else if (reason === UpdateReasons.BITMAP) {
             const { imageBitmap } = model;
             if (imageBitmap) {
@@ -960,6 +978,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             attributes: { ...state.attributes },
             zOrder: state.zOrder,
             pinned: state.pinned,
+            updated: state.updated,
+            frame: state.frame,
         };
     }
 
@@ -969,9 +989,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const drawnState = this.drawnStates[clientID];
             const shape = this.svgShapes[state.clientID];
             const text = this.svgTexts[state.clientID];
+            const isInvisible = state.hidden || state.outside;
 
             if (drawnState.hidden !== state.hidden || drawnState.outside !== state.outside) {
-                const isInvisible = state.hidden || state.outside;
                 if (isInvisible) {
                     (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
                         .style('display', 'none');
@@ -1041,7 +1061,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     (shape as any).clear();
                     shape.attr('points', stringified);
 
-                    if (state.shapeType === 'points') {
+                    if (state.shapeType === 'points' && !isInvisible) {
                         this.selectize(false, shape);
                         this.setupPoints(shape as SVG.PolyLine, state);
                     }
@@ -1049,7 +1069,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             for (const attrID of Object.keys(state.attributes)) {
-                if (state.attributes[attrID] !== drawnState.attributes[attrID]) {
+                if (state.attributes[attrID] !== drawnState.attributes[+attrID]) {
                     if (text) {
                         const [span] = text.node
                             .querySelectorAll(`[attrID="${attrID}"]`) as any as SVGTSpanElement[];
@@ -1187,7 +1207,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).off('resizestart');
             (shape as any).off('resizing');
             (shape as any).off('resizedone');
-            (shape as any).resize(false);
+            (shape as any).resize('stop');
 
             // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[clientID];
@@ -1537,12 +1557,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .addClass('cvat_canvas_shape').attr({
                 clientID: state.clientID,
                 id: `cvat_canvas_shape_${state.clientID}`,
+                'data-polyline-id': basicPolyline.attr('id'),
                 'data-z-order': state.zOrder,
             });
 
         group.on('click.canvas', (event: MouseEvent): void => {
             // Need to redispatch the event on another element
             basicPolyline.fire(new MouseEvent('click', event));
+            // redispatch event to canvas to be able merge points clicking them
+            this.content.dispatchEvent(new MouseEvent('click', event));
         });
 
         group.bbox = basicPolyline.bbox.bind(basicPolyline);

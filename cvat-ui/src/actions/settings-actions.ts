@@ -28,6 +28,7 @@ export enum SettingsActionTypes {
     SWITCH_AUTO_SAVE = 'SWITCH_AUTO_SAVE',
     CHANGE_AUTO_SAVE_INTERVAL = 'CHANGE_AUTO_SAVE_INTERVAL',
     CHANGE_AAM_ZOOM_MARGIN = 'CHANGE_AAM_ZOOM_MARGIN',
+    SWITCH_AUTOMATIC_BORDERING = 'SWITCH_AUTOMATIC_BORDERING',
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
     SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS = 'SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS',
 }
@@ -217,6 +218,15 @@ export function switchShowingObjectsTextAlways(showObjectsTextAlways: boolean): 
         type: SettingsActionTypes.SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS,
         payload: {
             showObjectsTextAlways,
+        },
+    };
+}
+
+export function switchAutomaticBordering(automaticBordering: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_AUTOMATIC_BORDERING,
+        payload: {
+            automaticBordering,
         },
     };
 }

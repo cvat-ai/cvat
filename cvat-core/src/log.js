@@ -195,12 +195,11 @@ class LogWithExceptionInfo extends Log {
     }
 
     dump() {
-        const payload = { ...this.payload };
+        let body = super.dump();
+        const payload = body.payload;
         const client = detect();
-        const body = {
-            client_id: payload.client_id,
-            name: this.type,
-            time: this.time.toISOString(),
+        body = {
+            ...body,
             message: payload.message,
             filename: payload.filename,
             line: payload.line,
@@ -211,17 +210,13 @@ class LogWithExceptionInfo extends Log {
             version: client.version,
         };
 
-        delete payload.client_id;
         delete payload.message;
         delete payload.filename;
         delete payload.line;
         delete payload.column;
         delete payload.stack;
 
-        return {
-            ...body,
-            payload,
-        };
+        return body;
     }
 }
 
