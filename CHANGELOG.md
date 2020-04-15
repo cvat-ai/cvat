@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0-beta] - Unreleased
+## [1.0.0-beta] - 2020-04-15
 ### Added
 - Special behaviour for attribute value ``__undefined__`` (invisibility, no shortcuts to be set in AAM)
 - Dialog window with some helpful information about using filters
@@ -17,18 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tutorial: instructions for CVAT over HTTPS
 - Added deep extreme cut (semi-automatic segmentation) to the new UI (https://github.com/opencv/cvat/pull/1398)
 
-
 ### Changed
 - Increase preview size of a task till 256, 256 on the server
-- Minor style updates
 - Public ssh-keys are displayed in a dedicated window instead of console when create a task with a repository
-- React UI has become is a primary UI
-
-### Deprecated
--
-
-### Removed
--
+- React UI is the primary UI
 
 ### Fixed
 - New shape is added when press ``esc`` when drawing instead of cancellation
@@ -53,9 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AttributeError: 'tuple' object has no attribute 'read' in ReID algorithm (https://github.com/opencv/cvat/issues/1403)
 - Wrong semi-automatic segmentation near edges of an image (https://github.com/opencv/cvat/issues/1403)
 - Git repos paths (https://github.com/opencv/cvat/pull/1400)
-
-### Security
--
 
 ## [1.0.0-alpha] - 2020-03-31
 ### Added
