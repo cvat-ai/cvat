@@ -103,6 +103,11 @@ function InProgressDialog(props: InProgressDialogProps): JSX.Element {
                 type: 'danger',
             }}
             onOk={onCancel}
+            cancelButtonProps={{
+                style: {
+                    display: 'none',
+                },
+            }}
         >
             <Text>{`Merging is in progress ${progress}%`}</Text>
         </Modal>
