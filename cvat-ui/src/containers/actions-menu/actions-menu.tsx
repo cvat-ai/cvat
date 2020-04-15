@@ -24,8 +24,7 @@ interface OwnProps {
 }
 
 interface StateToProps {
-    annotationFormats: any[];
-    exporters: any[];
+    annotationFormats: any;
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
@@ -53,7 +52,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         formats: {
             annotationFormats,
-            datasetFormats,
         },
         plugins: {
             list: {
@@ -79,7 +77,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         exportActivities: tid in activeExports ? activeExports[tid] : null,
         loadActivity: tid in loads ? loads[tid] : null,
         annotationFormats,
-        exporters: datasetFormats,
         inferenceIsActive: tid in state.models.inferences,
     };
 }
@@ -108,7 +105,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
     const {
         taskInstance,
         annotationFormats,
-        exporters,
         loadActivity,
         dumpActivities,
         exportActivities,
@@ -125,11 +121,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
     } = props;
 
 
-    const loaders = annotationFormats
-        .map((format: any): any[] => format.loaders).flat();
-
-    const dumpers = annotationFormats
-        .map((format: any): any[] => format.dumpers).flat();
+    const loaders = annotationFormats.loaders.flat();
+    const dumpers = annotationFormats.dumpers.flat();
 
     function onClickMenu(params: ClickParam, file?: File): void {
         if (params.keyPath.length > 1) {
@@ -150,7 +143,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
                 }
             } else if (action === Actions.EXPORT_TASK_DATASET) {
                 const format = additionalKey;
-                const [exporter] = exporters
+                const [exporter] = dumpers
                     .filter((_exporter: any): boolean => _exporter.name === format);
                 if (exporter) {
                     exportDataset(taskInstance, exporter);
@@ -176,7 +169,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             bugTracker={taskInstance.bugTracker}
             loaders={loaders.map((loader: any): string => `${loader.name}::${loader.format}`)}
             dumpers={dumpers.map((dumper: any): string => dumper.name)}
-            exporters={exporters.map((exporter: any): string => exporter.name)}
             loadActivity={loadActivity}
             dumpActivities={dumpActivities}
             exportActivities={exportActivities}

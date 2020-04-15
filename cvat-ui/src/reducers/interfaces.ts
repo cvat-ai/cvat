@@ -62,8 +62,7 @@ export interface TasksState {
 }
 
 export interface FormatsState {
-    annotationFormats: any[];
-    datasetFormats: any[];
+    annotationFormats: any;
     fetching: boolean;
     initialized: boolean;
 }

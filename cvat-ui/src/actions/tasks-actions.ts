@@ -280,7 +280,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         dispatch(exportDataset(task, exporter));
 
         try {
-            const url = await task.annotations.exportDataset(exporter.tag);
+            const url = await task.annotations.exportDataset(exporter.name);
             const downloadAnchor = (window.document.getElementById('downloadAnchor') as HTMLAnchorElement);
             downloadAnchor.href = url;
             downloadAnchor.click();
