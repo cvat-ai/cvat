@@ -287,7 +287,7 @@ class Git:
             with TemporaryDirectory() as tmp_dir:
                 # TODO: remove extra packing-unpacking
                 Archive(src_path).extractall(tmp_dir)
-                anno_paths = glob(osp.join(tmp_dir, '**', '*.xml'), 
+                anno_paths = glob(osp.join(tmp_dir, '**', '*.xml'),
                     recursive=True)
                 shutil.move(anno_paths[0], self._annotation_file)
         else:

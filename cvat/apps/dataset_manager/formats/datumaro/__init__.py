@@ -22,7 +22,8 @@ class DatumaroProjectExporter:
     _REMOTE_IMAGES_EXTRACTOR = 'cvat_rest_api_task_images'
     _TEMPLATES_DIR = osp.join(osp.dirname(__file__), 'export_templates')
 
-    def _save_image_info(self, save_dir, task_data):
+    @staticmethod
+    def _save_image_info(save_dir, task_data):
         os.makedirs(save_dir, exist_ok=True)
 
         config = {
