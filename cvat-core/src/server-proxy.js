@@ -602,8 +602,8 @@
             async function dumpAnnotations(id, name, format) {
                 const { backendAPI } = config;
                 const filename = name.replace(/\//g, '_');
-                const baseURL = `${backendAPI}/tasks/${id}/annotations/${encodeURIComponent(filename)}`;
-                let query = `format=${encodeURIComponent(format)}`;
+                const baseURL = `${backendAPI}/tasks/${id}/annotations`;
+                let query = `format=${encodeURIComponent(format)}&filename=${encodeURIComponent(filename)}`;
                 let url = `${baseURL}?${query}`;
 
                 return new Promise((resolve, reject) => {

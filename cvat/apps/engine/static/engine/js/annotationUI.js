@@ -403,21 +403,19 @@ function setupMenu(job, task, shapeCollectionModel,
 
     const loaders = {};
 
-    for (const format of annotationFormats) {
-        for (const dumper of format.dumpers) {
-            const item = $(`<option>${dumper.display_name}</li>`);
+    for (const dumper of annotationFormats.dumpers) {
+        const item = $(`<option>${dumper.name}</li>`);
 
-            if (!isDefaultFormat(dumper.display_name, window.cvat.job.mode)) {
-                item.addClass('regular');
-            }
-
-            item.appendTo(downloadButton);
+        if (!isDefaultFormat(dumper.name, window.cvat.job.mode)) {
+            item.addClass('regular');
         }
 
-        for (const loader of format.loaders) {
-            loaders[loader.display_name] = loader;
-            $(`<option class="regular">${loader.display_name}</li>`).appendTo(uploadButton);
-        }
+        item.appendTo(downloadButton);
+    }
+
+    for (const loader of annotationFormats.loaders) {
+        loaders[loader.name] = loader;
+        $(`<option class="regular">${loader.name}</li>`).appendTo(uploadButton);
     }
 
     downloadButton.on('change', async (e) => {
