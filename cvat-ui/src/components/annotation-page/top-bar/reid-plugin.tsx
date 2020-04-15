@@ -17,8 +17,6 @@ import { connect } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
 import { fetchAnnotationsAsync } from 'actions/annotation-actions';
 
-/* eslint newline-per-chained-call: 0 */
-
 interface InputModalProps {
     visible: boolean;
     onCancel(): void;
