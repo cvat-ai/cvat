@@ -11,8 +11,8 @@ class ImageLoader():
         self._frame_provider = frame_provider
 
     def __iter__(self):
-        for frame in self._frame_provider.get_frames(self._frame_provider.Quality.ORIGINAL):
-            yield self._load_image(frame[0])
+        for frame, _ in self._frame_provider.get_frames(self._frame_provider.Quality.ORIGINAL):
+            yield self._load_image(frame)
 
     def __len__(self):
         return len(self._frame_provider)

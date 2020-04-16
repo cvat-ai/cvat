@@ -51,20 +51,20 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
         key: 'job',
         render: (id: number): JSX.Element => (
             <div>
-                <Button type='link' href={`${baseURL}/?id=${id}`}>{`Job #${id}`}</Button>
-                |
-                <Tooltip title='Beta version of new UI written in React. It is to get
-                                acquainted only, we do not recommend use it to annotation
-                                process because it lacks of some features and can be unstable.'
+                <Button
+                    type='link'
+                    onClick={(): void => {
+                        push(`/tasks/${taskId}/jobs/${id}`);
+                    }}
                 >
-                    <Button
-                        type='link'
-                        onClick={(): void => {
-                            push(`/tasks/${taskId}/jobs/${id}`);
-                        }}
-                    >
-                        Try new UI
-                    </Button>
+                    {`Job #${id}`}
+                </Button>
+                |
+                <Tooltip title='Old version of UI is deprecated and will be removed from
+                                new versions of UI. We still recomend it only if you use
+                                specific features from it like cuboids annotation.'
+                >
+                    <Button type='link' href={`${baseURL}/?id=${id}`}>Old UI</Button>
                 </Tooltip>
             </div>
         ),
