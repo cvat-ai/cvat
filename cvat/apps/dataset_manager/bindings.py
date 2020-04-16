@@ -28,7 +28,7 @@ class TaskData:
     Tag = namedtuple('Tag', 'frame, label, attributes, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
-        'Frame', 'frame, name, width, height, labeled_shapes, tags')
+        'Frame', 'idx, frame, name, width, height, labeled_shapes, tags')
 
     def __init__(self, annotation_ir, db_task, host='', create_callback=None):
         self._annotation_ir = annotation_ir
@@ -100,7 +100,8 @@ class TaskData:
     def _init_frame_info(self):
         if hasattr(self._db_task.data, 'video'):
             self._frame_info = {frame: {
-                "path": "frame_{:06d}".format(frame),
+                "path": "frame_{:06d}".format(
+                    self._db_task.data.start_frame + frame * self._frame_step),
                 "width": self._db_task.data.video.width,
                 "height": self._db_task.data.video.height,
             } for frame in range(self._db_task.data.size)}
@@ -234,6 +235,7 @@ class TaskData:
             frame = self._db_task.data.start_frame + idx * self._frame_step
             if frame not in frames:
                 frames[frame] = TaskData.Frame(
+                    idx=idx,
                     frame=frame,
                     name=frame_info['path'],
                     height=frame_info["height"],
@@ -414,7 +416,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
         for frame_data in task_data.group_by_frame(include_empty=include_images):
             loader = None
             if include_images:
-                loader = lambda p: frame_provider.get_frame(frame_data.frame,
+                loader = lambda p, i=frame_data.idx: frame_provider.get_frame(i,
                     quality=frame_provider.Quality.ORIGINAL,
                     out_type=frame_provider.Type.NUMPY_ARRAY)[0]
             dm_image = Image(path=frame_data.name, loader=loader,
@@ -423,12 +425,12 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             dm_anno = self._read_cvat_anno(frame_data, task_data)
             dm_item = datumaro.DatasetItem(id=frame_data.frame,
                 annotations=dm_anno, image=dm_image)
-            dm_items.append((frame_data.frame, dm_item))
+            dm_items.append(dm_item)
 
-        self._items = sorted(dm_items, key=lambda e: e[0])
+        self._items = dm_items
 
     def __iter__(self):
-        for _, item in self._items:
+        for item in self._items:
             yield item
 
     def __len__(self):
