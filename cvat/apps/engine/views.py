@@ -855,7 +855,7 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
                     timestamp = datetime.strftime(last_task_update_time,
                         "%Y_%m_%d_%H_%M_%S")
                     filename = filename or \
-                        "task_{}-{}-{}.{}".format(
+                        "task_{}-{}-{}{}".format(
                         db_task.name, timestamp,
                         format_name, osp.splitext(file_path)[1])
                     return sendfile(request, file_path, attachment=True,

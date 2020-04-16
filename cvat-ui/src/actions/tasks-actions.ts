@@ -169,7 +169,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             dispatch(dumpAnnotation(task, dumper));
-            const url = await task.annotations.dump(task.name, dumper);
+            const url = await task.annotations.dump('', dumper);
             const downloadAnchor = (window.document.getElementById('downloadAnchor') as HTMLAnchorElement);
             downloadAnchor.href = url;
             downloadAnchor.click();
