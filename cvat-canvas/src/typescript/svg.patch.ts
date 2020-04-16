@@ -10,7 +10,7 @@ import 'svg.select.js';
 import 'svg.draw.js';
 
 import { Point, Equation, CuboidModel } from './cuboid';
-import { pointsToObjects } from './shared';
+import { pointsToObjects, pointObjectsToString } from './shared';
 // import consts from './consts'
 
 // Update constructor
@@ -190,7 +190,7 @@ for (const key of Object.keys(originalResize)) {
     inherit: SVG.G,
     extend: {
         constructorMethod(points: string) {
-            this.attr('points', points);
+            this._attr('points', points);
             this._viewModel = new CuboidModel(pointsToObjects(points));
             this.setupFaces();
             this.setupEdges();
@@ -199,6 +199,8 @@ for (const key of Object.keys(originalResize)) {
 
             this.hideProjections();
             this.hideGrabPoints();
+
+            this.addEvents();
 
             return this;
         },
@@ -326,6 +328,8 @@ for (const key of Object.keys(originalResize)) {
             this.dorsalRightEdge.selectize(value, options)
         },
 
+        _attr: SVG.Element.prototype.attr,
+
         attr(a: any, v: any, n: any) {
             const _attr = SVG.Element.prototype.attr.bind(this);
             if (a === 'fill' && v !== undefined) {
@@ -334,6 +338,20 @@ for (const key of Object.keys(originalResize)) {
             } else if (a === 'stroke-width' && typeof v === "number") {
                 _attr(a, v, n);
                 this.updateThickness();
+            } else if (a === 'projections-visiable' && v === true) {
+                this.showProjections();
+            } else if (a === 'projections-visiable' && v === false) {
+                this.hideProjections();
+            } else if (a === 'points' && typeof v === 'string' && v.length) {
+                const points = pointsToObjects(a);
+                if (points.length !== 8 ) {
+                    throw new Error('cuboid points quantity must be exact 8');
+                }
+                pointsToObjects(a).forEach((point: Point, i: number) => {
+                    this._viewModel.points[i] = point;
+                });
+
+                this.updateViewAndVM();
             } else {
                 return _attr(a, v, n);
             }
@@ -377,6 +395,116 @@ for (const key of Object.keys(originalResize)) {
             this.right.stroke({ color: fillColor });
             this.dorsal.stroke({ color: fillColor });
             this.left.stroke({ color: fillColor });
+        },
+
+        dmove(dx: number, dy: number) {
+            this._viewModel.points.forEach((point: Point) => {
+                point.x += dx;
+                point.y += dy;
+            });
+
+            this.updateViewAndVM();
+        },
+
+        updateViewAndVM() {
+            this._viewModel.buildBackEdge();
+            this.updateView();
+            this._attr('points', pointObjectsToString(this._viewModel.points));
+
+        },
+
+        updateView() {
+            this.updatePolygons();
+            this.updateLines();
+            this.updateProjections();
+            // this.updateGrabPoints();
+        },
+
+        updatePolygons() {
+            this.face.plot(this._viewModel.front.points);
+            this.right.plot(this._viewModel.right.points);
+            this.dorsal.plot(this._viewModel.dorsal.points);
+            this.left.plot(this._viewModel.left.points);
+        },
+
+        updateLines() {
+            this.frontLeftEdge.plot(this._viewModel.fl.points);
+            this.frontRightEdge.plot(this._viewModel.fr.points);
+            this.dorsalRightEdge.plot(this._viewModel.dr.points);
+            this.dorsalLeftEdge.plot(this._viewModel.dl.points);
+
+            this.frontTopEdge.plot(this._viewModel.ft.points);
+            this.rightTopEdge.plot(this._viewModel.rt.points);
+            this.frontBotEdge.plot(this._viewModel.fb.points);
+            this.rightBotEdge.plot(this._viewModel.rb.points);
+        },
+
+        updateProjections() {
+            this.ftProj.plot(this.updateProjectionLine(this._viewModel.ft.getEquation(),
+                this._viewModel.ft.points[0], this._viewModel.vpl));
+            this.fbProj.plot(this.updateProjectionLine(this._viewModel.fb.getEquation(),
+                this._viewModel.ft.points[0], this._viewModel.vpl));
+            this.rtProj.plot(this.updateProjectionLine(this._viewModel.rt.getEquation(),
+                this._viewModel.rt.points[1], this._viewModel.vpr));
+            this.rbProj.plot(this.updateProjectionLine(this._viewModel.rb.getEquation(),
+                this._viewModel.rt.points[1], this._viewModel.vpr));
+        },
+
+        addDragEvents() {
+            this.face.draggable().on('dragstart', (e: CustomEvent) => {
+                this.dragPoint = { x: e.detail.p.x,
+                                   y: e.detail.p.y};
+                this.fire('dragstart', e.detail);
+            }).on('dragmove', (e: CustomEvent) => {
+                this.dmove(e.detail.p.x - this.dragPoint.x,
+                           e.detail.p.y - this.dragPoint.y);
+                this.dragPoint = { x: e.detail.p.x,
+                                   y: e.detail.p.y }
+                this.fire('dragmove', e.detail);
+            }).on('dragend', (e: CustomEvent) => {
+                this.fire('dragend', e.detail);
+            });
+
+            const faces = [this.right, this.dorsal, this.left];
+            faces.forEach((face: any, i: number) => {
+                face.draggable().on('dragstart', (e: CustomEvent) => {
+                    this.dragPoint = { x: e.detail.p.x,
+                                       y: e.detail.p.y};
+                    this.fire('dragstart', e.detail);
+                }).on('dragmove', (e: CustomEvent) => {
+                    this._viewModel.facesList[i+1].points.forEach((point: Point) => {
+                        point.x += e.detail.p.x - this.dragPoint.x;
+                        point.y += e.detail.p.y - this.dragPoint.y;
+                    });
+                    this.dragPoint = { x: e.detail.p.x,
+                                       y: e.detail.p.y };
+
+                    this.updateViewAndVM();
+                    this.fire('dragmove', e.detail);
+                }).on('dragend', (e: CustomEvent) => {
+                    this.fire('dragend', e.detail);
+                });
+            });
+        },
+
+        removeDragEvents() {
+            const faces = [this.face, this.right, this.dorsal, this.left]
+            faces.forEach((face: any) => {
+                face.draggable(false);
+                face.off('dragstart');
+                face.off('dragmove');
+                face.off('dragsend');
+            })
+        },
+
+        draggable(value: any, constraint: any) {
+            const _draggable = SVG.Element.prototype.draggable.bind(this)
+            if (value !== false) {
+                this.addDragEvents();
+            } else {
+                this.removeDragEvents();
+            }
+            return _draggable(value, constraint);
         },
 
         // addEvents() {
