@@ -382,19 +382,23 @@ The tool consists of:
     ![](static/documentation/images/image137.jpg)
 
 ### Types of shapes (basics)
+
 There are four shapes which you can annotate your images with:
-- ``box``
-- ``polygon``
-- ``polyline``
-- ``points``
-- ``auto segmentation``
+- ``Rectangle`` or ``Bounding box``
+- ``Polygon``
+- ``Polyline``
+- ``Points``
+- ``Tag``
 
 And there is how they all look like:
 
-![](static/documentation/images/image038.jpg "Box") ![](static/documentation/images/image033.jpg "Polygon")
+![](static/documentation/images/image038_DETRAC.jpg "Rectangle") ![](static/documentation/images/image033_DETRAC.jpg "Polygon")
 
-![](static/documentation/images/image009.jpg "Polyline") ![](static/documentation/images/image010.jpg "Points")
-![](static/documentation/images/gif009_DETRAC.gif "Auto Segmentation")
+![](static/documentation/images/image009_mapillary_vistas.jpg "Polyline") ![](static/documentation/images/image010_Affectnet.jpg "Points")
+
+![](static/documentation/images/image135.jpg "Tag")
+
+``Tag`` - has no shape in the workspace, but is displayed in objects sidebar.
 
 ### Annotation mode (basics)
 Usage examples:
