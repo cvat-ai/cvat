@@ -378,16 +378,52 @@ for (const key of Object.keys(originalResize)) {
                     this.updateView();
                     this.face.plot(this._viewModel.front.points);
                     this.fire(new CustomEvent('resizing', event));
-                }).on('resizedone', () => {
+                }).on('resizedone', (event: CustomEvent) => {
                     this.fire(new CustomEvent('resizedone', event));
                 });
 
-                this.dorsalRightEdge.on('resizestart', () => {
-                    // TODO
-                }).on('resizing', () => {
-                    // TODO
-                }).on('resizedone', () => {
-                    // TODO
+                this.dorsalRightEdge.on('resizestart', (event: CustomEvent) => {
+                    cubePoints = JSON.parse(JSON.stringify(this._viewModel.getPoints()));
+                    const { target } = event.detail.event.detail.event;
+                    const { parentElement } = target;
+                    resizablePointIndex = Array
+                        .from(parentElement.children)
+                        .indexOf(target);
+                    this.fire(new CustomEvent('resizestart', event));
+                }).on('resizing', (event: CustomEvent) => {
+                    const { dx, dy } = event.detail;
+    
+                    // up top or bottom edge on the dorsal face
+                    if (resizablePointIndex === 0) {
+                        this._viewModel.dt.points[1].y = cubePoints[4].y + dy;
+                    } else if (resizablePointIndex === 1) {
+                        this._viewModel.db.points[1].y = cubePoints[5].y + dy;
+                    }
+
+                    // shift front edge on dx (only one point, the second will be shifted later)
+                    this._viewModel.fr.points[0].x = cubePoints[2].x + dx;
+
+                    // get top and bottom x and y for this edge (front left)
+                    const x1 = cubePoints[4].x + dx;
+                    const x2 = cubePoints[5].x + dx;
+                    const y1 = this._viewModel.dt.getEquation().getY(x1);
+                    const y2 = this._viewModel.db.getEquation().getY(x2);
+
+                    // now compute new coordinates for top and bottom faces
+                    const midPointUp = { x: x1, y: y1 };
+                    const midPointDown = { x: x2, y: y2 };
+                    const topPoints = this.computeHeightFace(midPointUp, 3);
+                    const bottomPoints = this.computeHeightFace(midPointDown, 3);
+                    
+                    // and apply them
+                    this._viewModel.top.points = topPoints;
+                    this._viewModel.bot.points = bottomPoints;
+
+                    this.updateView();
+                    this.face.plot(this._viewModel.front.points);
+                    this.fire(new CustomEvent('resizing', event));
+                }).on('resizedone', (event: CustomEvent) => {
+                    this.fire(new CustomEvent('resizedone', event));
                 });
             }
             
@@ -770,10 +806,10 @@ for (const key of Object.keys(originalResize)) {
             }
             // dr
             case 3: {
-                const p2 = this.updatedEdge(this._viewModel.dl.points[0], point, this._viewModel.vpl);
-                const p3 = this.updatedEdge(this._viewModel.fr.points[0], point, this._viewModel.vpr);
-                const p4 = this.updatedEdge(this._viewModel.fl.points[0], p2, this._viewModel.vpr);
-                return [p4, p3, point, p2];
+                const p2 = this.updatedEdge(this._viewModel.fr.points[0], point, this._viewModel.vpr);
+                const p4 = this.updatedEdge(this._viewModel.dl.points[0], point, this._viewModel.vpl);
+                const p1 = this.updatedEdge(this._viewModel.fl.points[0], p4, this._viewModel.vpr);
+                return [p1, p2, point, p4];
             }
             // dl
             case 4: {
