@@ -200,8 +200,6 @@ for (const key of Object.keys(originalResize)) {
             this.hideProjections();
             this.hideGrabPoints();
 
-            this.addEvents();
-
             return this;
         },
 
@@ -276,10 +274,18 @@ for (const key of Object.keys(originalResize)) {
             this.rbProj.hide();
         },
 
-        showGrabPoints(radius: number, stroke: number, color: string) {
+        showGrabPoints() {
             const grabPoints = this.getGrabPoints();
             grabPoints.forEach((point: SVG.Circle) => {
-                point.radius(radius).attr('stroke-width', stroke).show();
+                point.attr('stroke-width', this.attr('stroke-width'))
+                    .fill(this.attr('stroke'))
+                    .attr('fill-opacity', 1)
+                    .on('mouseover', () => {
+                        point.attr('stroke-width', this.attr('stroke-width') * 2);
+                    })
+                    .on('mouseout', () => {
+                        point.attr('stroke-width', this.attr('stroke-width'));
+                    }).show();
             });
         },
 
@@ -326,6 +332,11 @@ for (const key of Object.keys(originalResize)) {
         selectize(value: any, options: any) {
             this.face.selectize(value, options);
             this.dorsalRightEdge.selectize(value, options)
+            if (value === true) {
+                this.showGrabPoints();
+            } else {
+                this.hideGrabPoints();
+            }
         },
 
         _attr: SVG.Element.prototype.attr,
@@ -417,7 +428,7 @@ for (const key of Object.keys(originalResize)) {
             this.updatePolygons();
             this.updateLines();
             this.updateProjections();
-            // this.updateGrabPoints();
+            this.updateGrabPoints();
         },
 
         updatePolygons() {
@@ -448,6 +459,15 @@ for (const key of Object.keys(originalResize)) {
                 this._viewModel.rt.points[1], this._viewModel.vpr));
             this.rbProj.plot(this.updateProjectionLine(this._viewModel.rb.getEquation(),
                 this._viewModel.rt.points[1], this._viewModel.vpr));
+        },
+
+        updateGrabPoints() {
+            const centers = this.getGrabPoints();
+            const edges = this.getEdges();
+            for (let i = 0; i < centers.length; i += 1) {
+                const edge = edges[i];
+                centers[i].center(edge.cx(), edge.cy());
+            }
         },
 
         addDragEvents() {
@@ -505,6 +525,30 @@ for (const key of Object.keys(originalResize)) {
                 this.removeDragEvents();
             }
             return _draggable(value, constraint);
+        },
+
+        addResizeEvents() {
+            this.face.resize().on('resizestart', (e: CustomEvent) => {
+                console.log(e);
+            }).on('resizing', (e: CustomEvent) => {
+                console.log(e);
+            }).on('resizedone', (e: CustomEvent) => {
+                console.log(e);
+            })
+        },
+
+        removeResizeEvents() {
+
+        },
+
+        resize(options: any) {
+            const _resize = SVG.Element.prototype.resize.bind(this);
+            if (options !== false) {
+                this.addResizeEvents();
+            } else {
+                this.removeResizeEvents();
+            }
+            return _resize(options);
         },
 
         // addEvents() {
