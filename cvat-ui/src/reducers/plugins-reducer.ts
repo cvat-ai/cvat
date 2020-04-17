@@ -19,6 +19,7 @@ const defaultState: PluginsState = {
         TF_SEGMENTATION: false,
         DEXTR_SEGMENTATION: false,
         ANALYTICS: false,
+        REID: false,
     },
 };
 

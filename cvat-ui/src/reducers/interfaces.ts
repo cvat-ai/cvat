@@ -77,6 +77,7 @@ export enum SupportedPlugins {
     TF_SEGMENTATION = 'TF_SEGMENTATION',
     DEXTR_SEGMENTATION = 'DEXTR_SEGMENTATION',
     ANALYTICS = 'ANALYTICS',
+    REID = 'REID',
 }
 
 export interface PluginsState {

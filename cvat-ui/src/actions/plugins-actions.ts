@@ -33,6 +33,7 @@ export function checkPluginsAsync(): ThunkAction {
             GIT_INTEGRATION: false,
             TF_ANNOTATION: false,
             TF_SEGMENTATION: false,
+            REID: false,
             DEXTR_SEGMENTATION: false,
         };
 
@@ -43,11 +44,12 @@ export function checkPluginsAsync(): ThunkAction {
             PluginChecker.check(SupportedPlugins.TF_ANNOTATION),
             PluginChecker.check(SupportedPlugins.TF_SEGMENTATION),
             PluginChecker.check(SupportedPlugins.DEXTR_SEGMENTATION),
+            PluginChecker.check(SupportedPlugins.REID),
         ];
 
         const values = await Promise.all(promises);
-        [plugins.ANALYTICS, plugins.AUTO_ANNOTATION, plugins.GIT_INTEGRATION,
-            plugins.TF_ANNOTATION, plugins.TF_SEGMENTATION, plugins.DEXTR_SEGMENTATION] = values;
+        [plugins.ANALYTICS, plugins.AUTO_ANNOTATION, plugins.GIT_INTEGRATION, plugins.TF_ANNOTATION,
+            plugins.TF_SEGMENTATION, plugins.DEXTR_SEGMENTATION, plugins.REID] = values;
         dispatch(pluginActions.checkedAllPlugins(plugins));
     };
 }

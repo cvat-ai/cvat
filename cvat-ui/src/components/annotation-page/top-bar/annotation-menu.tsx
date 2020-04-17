@@ -9,6 +9,7 @@ import Modal from 'antd/lib/modal';
 import DumpSubmenu from 'components/actions-menu/dump-submenu';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import ExportSubmenu from 'components/actions-menu/export-submenu';
+import ReIDPlugin from './reid-plugin';
 
 interface Props {
     taskMode: string;
@@ -18,6 +19,7 @@ interface Props {
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
+    installedReID: boolean;
     onClickMenu(params: ClickParam, file?: File): void;
 }
 
@@ -39,6 +41,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         loadActivity,
         dumpActivities,
         exportActivities,
+        installedReID,
     } = props;
 
     let latestParams: ClickParam | null = null;
@@ -120,6 +123,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             <Menu.Item key={Actions.OPEN_TASK}>
                 Open the task
             </Menu.Item>
+            { installedReID && <ReIDPlugin /> }
         </Menu>
     );
 }

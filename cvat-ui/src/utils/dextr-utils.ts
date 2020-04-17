@@ -143,8 +143,6 @@ function serverRequest(
             reject(error);
         });
     });
-
-    // start checking
 }
 
 const plugin: DEXTRPlugin = {

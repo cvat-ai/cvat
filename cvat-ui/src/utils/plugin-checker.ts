@@ -41,6 +41,9 @@ class PluginChecker {
             case SupportedPlugins.ANALYTICS: {
                 return isReachable(`${serverHost}/analytics/app/kibana`, 'GET');
             }
+            case SupportedPlugins.REID: {
+                return isReachable(`${serverHost}/reid/enabled`, 'GET');
+            }
             default:
                 return false;
         }
