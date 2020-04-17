@@ -1190,7 +1190,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).off('resizestart');
             (shape as any).off('resizing');
             (shape as any).off('resizedone');
-            (shape as any).resize(false);
+            (shape as any).resize('stop');
 
             // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[clientID];

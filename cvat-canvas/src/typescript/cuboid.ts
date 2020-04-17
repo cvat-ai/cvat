@@ -2,7 +2,7 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable curly */
 /*
- * Copyright (C) 2018 Intel Corporation
+ * Copyright (C) 2020 Intel Corporation
  *
  * SPDX-License-Identifier: MIT
  */
@@ -81,9 +81,10 @@ export class Figure {
     // if you only need to update a subset of the points,
     // simply put null for the points you want to keep
     public set points(newPoints) {
+        const oldPoints = this.allPoints;
         for (let i = 0; i < newPoints.length; i += 1) {
             if (newPoints[i] !== null) {
-                this.allPoints[this.indices[i]] = { x: newPoints[i].x, y: newPoints[i].y };
+                oldPoints[this.indices[i]] = { x: newPoints[i].x, y: newPoints[i].y };
             }
         }
     }
@@ -135,6 +136,15 @@ export class CuboidModel {
 
     public setPoints(points: Point[]): void {
         this.points = points;
+        // for (const edge of this.edgeList) {
+        //     edge.points = points;
+        // }
+
+        // for (const face of this.facesList) {
+        //     face.points = points;
+        // }
+
+        // this.updatePoints();
     }
 
     public updatePoints(): void {
