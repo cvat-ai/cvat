@@ -300,7 +300,7 @@ for (const key of Object.keys(originalResize)) {
                     resizablePointIndex = Array
                         .from(parentElement.children)
                         .indexOf(target);
-                    this.fire(new CustomEvent('resizedone', event));
+                    this.fire(new CustomEvent('resizestart', event));
                 }).on('resizing', (event: CustomEvent) => {
                     const { dx, dy } = event.detail;                    
                     const facePoints = this.face
