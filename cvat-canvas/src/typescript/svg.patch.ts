@@ -290,6 +290,10 @@ for (const key of Object.keys(originalResize)) {
             this.dorsalRightEdge.off('resizing').off('resizedone').off('resizestart');
 
             if (value !== 'stop') {
+                const accumulatedOffset: Point = {
+                    x: 0,
+                    y: 0,
+                };
                 let cubePoints: Point[] = [];
                 let resizablePointIndex: null | number = null;
                 
@@ -301,9 +305,16 @@ for (const key of Object.keys(originalResize)) {
                         .from(parentElement.children)
                         .indexOf(target);
                     this.fire(new CustomEvent('resizestart', event));
+                    accumulatedOffset.x = 0;
+                    accumulatedOffset.y = 0;
                 }).on('resizing', (event: CustomEvent) => {
-                    const { dx, dy } = event.detail;                    
-                    const facePoints = this.face
+                    let { dx, dy } = event.detail;
+                    let dxPortion = dx - accumulatedOffset.x;
+                    let dyPortion = dy - accumulatedOffset.y;
+                    accumulatedOffset.x += dxPortion;
+                    accumulatedOffset.y += dyPortion;
+
+                    let facePoints = this.face
                         .attr('points')
                         .split(/\s/)
                         .map((point: string): Point => {
@@ -319,64 +330,72 @@ for (const key of Object.keys(originalResize)) {
                     ) {
                         this.face.plot(this._viewModel.front.points);
                         return;
-                    } 
-
-                    if ([0, 1].includes(resizablePointIndex)) {
-                        // if we changed Y for the first end of the edge
-                        // we must change Y for the second end of the edge on the same value
-                        // here we up top or bottom edge on the front face
-                        if (resizablePointIndex === 0) {
-                            this._viewModel.ft.points[0].y = cubePoints[0].y + dy;
-                        } else if (resizablePointIndex === 1) {
-                            this._viewModel.fb.points[0].y = cubePoints[1].y + dy;
-                        }
-
-                        // we must shift neightbour edge on X (dl for fl, dr for fr)
-                        // actually shifting happens in computeHeightFace() function
-                        // but this function is going to use this point, so we must update it
-                        // shift back edge on dx (only one point to computing, the second will be shifted later)
-                        this._viewModel.dl.points[0].x = cubePoints[7].x + dx;
-
-                        // compute new coordinates for this cube point
-                        const x1 = cubePoints[0].x + dx;
-                        const x2 = cubePoints[1].x + dx;
-                        const y1 = this._viewModel.ft.getEquation().getY(x1);
-                        const y2 = this._viewModel.fb.getEquation().getY(x2);
-
-                        // now compute new coordinates for top and bottom faces
-                        const midPointUp = { x: x1, y: y1 };
-                        const midPointDown = { x: x2, y: y2 };
-                        const topPoints = this.computeHeightFace(midPointUp, 1);
-                        const bottomPoints = this.computeHeightFace(midPointDown, 1);
-                        
-                        // and apply these faces to the cube
-                        // all points of the cube will be updated properly
-                        this._viewModel.top.points = topPoints;
-                        this._viewModel.bot.points = bottomPoints;
-                    } else if ([2, 3].includes(resizablePointIndex)) {
-                        if (resizablePointIndex === 3) {
-                            this._viewModel.ft.points[1].y = cubePoints[2].y + dy;
-                        } else if (resizablePointIndex === 2) {
-                            this._viewModel.fb.points[1].y = cubePoints[3].y + dy;
-                        }
-
-                        this._viewModel.dr.points[0].x = cubePoints[4].x + dx;
-
-                        const x1 = cubePoints[2].x + dx;
-                        const x2 = cubePoints[3].x + dx;
-                        const y1 = this._viewModel.ft.getEquation().getY(x1);
-                        const y2 = this._viewModel.fb.getEquation().getY(x2);
-
-                        const midPointUp = { x: x1, y: y1 };
-                        const midPointDown = { x: x2, y: y2 };
-                        const topPoints = this.computeHeightFace(midPointUp, 2);
-                        const bottomPoints = this.computeHeightFace(midPointDown, 2);
-                        
-                        this._viewModel.top.points = topPoints;
-                        this._viewModel.bot.points = bottomPoints;                        
                     }
 
-                    this.updateView();
+
+                    if ([0, 1].includes(resizablePointIndex)) {
+                        facePoints = this._viewModel.getPoints();
+
+                        const x1 = facePoints[0].x + dxPortion;
+                        const x2 = facePoints[1].x + dxPortion;
+                        const y1 = this._viewModel.ft.getEquation().getY(x1);
+                        const y2 = this._viewModel.fb.getEquation().getY(x2);
+                        const topPoint = { x: x1, y: y1 };
+                        const botPoint = { x: x2, y: y2 };
+
+                        this._viewModel.fl.points = [topPoint, botPoint];
+                        this.updateViewAndVM();
+
+                        
+                        facePoints = this._viewModel.getPoints();
+                        let midPointUp: Point | null = null;
+                        let midPointDown: Point | null = null;
+                        if (resizablePointIndex === 0) {
+                            midPointUp = { x: facePoints[0].x, y: facePoints[0].y + dyPortion }
+                            midPointDown = { x: facePoints[1].x, y: facePoints[1].y };
+                        } else if (resizablePointIndex === 1) {
+                            midPointUp = { x: facePoints[0].x, y: facePoints[0].y };
+                            midPointDown = { x: facePoints[1].x, y: facePoints[1].y + dyPortion };
+                        }
+                        
+                        const topPoints = this.computeHeightFace(midPointUp, 1);
+                        const bottomPoints = this.computeHeightFace(midPointDown, 1);
+                        this._viewModel.top.points = topPoints;
+                        this._viewModel.bot.points = bottomPoints;                        
+                        this.updateViewAndVM(false);                        
+                    } else if ([2, 3].includes(resizablePointIndex)) {
+                        facePoints = this._viewModel.getPoints();
+
+                        const x1 = facePoints[2].x + dxPortion;
+                        const x2 = facePoints[3].x + dxPortion;
+                        const y1 = this._viewModel.ft.getEquation().getY(x1);
+                        const y2 = this._viewModel.fb.getEquation().getY(x2);
+                        const topPoint = { x: x1, y: y1 };
+                        const botPoint = { x: x2, y: y2 };
+
+                        this._viewModel.fr.points = [topPoint, botPoint];
+                        this.updateViewAndVM(true);
+
+
+
+                        facePoints = this._viewModel.getPoints();
+                        let midPointUp: Point | null = null;
+                        let midPointDown: Point | null = null;
+                        if (resizablePointIndex === 3) {
+                            midPointUp = { x: facePoints[2].x, y: facePoints[2].y + dyPortion }
+                            midPointDown = { x: facePoints[3].x, y: facePoints[3].y };
+                        } else if (resizablePointIndex === 2) {
+                            midPointUp = { x: facePoints[2].x, y: facePoints[2].y };
+                            midPointDown = { x: facePoints[3].x, y: facePoints[3].y + dyPortion };
+                        }
+                        
+                        const topPoints = this.computeHeightFace(midPointUp, 2);
+                        const bottomPoints = this.computeHeightFace(midPointDown, 2);
+                        this._viewModel.top.points = topPoints;
+                        this._viewModel.bot.points = bottomPoints;                        
+                        this.updateViewAndVM(false);                             
+                    }
+
                     this.face.plot(this._viewModel.front.points);
                     this.fire(new CustomEvent('resizing', event));
                 }).on('resizedone', (event: CustomEvent) => {
@@ -391,31 +410,46 @@ for (const key of Object.keys(originalResize)) {
                         .from(parentElement.children)
                         .indexOf(target);
                     this.fire(new CustomEvent('resizestart', event));
+                    accumulatedOffset.x = 0;
+                    accumulatedOffset.y = 0;
                 }).on('resizing', (event: CustomEvent) => {
-                    const { dx, dy } = event.detail;
-    
+                    let { dx, dy } = event.detail;
+                    let dxPortion = dx - accumulatedOffset.x;
+                    let dyPortion = dy - accumulatedOffset.y;
+                    accumulatedOffset.x += dxPortion;
+                    accumulatedOffset.y += dyPortion;
+
+                    let facePoints = this._viewModel.getPoints();
+
+                    const x1 = facePoints[4].x + dxPortion;
+                    const x2 = facePoints[5].x + dxPortion;
+                    const y1 = this._viewModel.rt.getEquation().getY(x1);
+                    const y2 = this._viewModel.rb.getEquation().getY(x2);
+                    const topPoint = { x: x1, y: y1 };
+                    const botPoint = { x: x2, y: y2 };
+
+                    this._viewModel.dr.points = [topPoint, botPoint];
+                    this.updateViewAndVM();
+
+
+
+                    facePoints = this._viewModel.getPoints();
+                    let midPointUp: Point | null = null;
+                    let midPointDown: Point | null = null;
                     if (resizablePointIndex === 0) {
-                        this._viewModel.dt.points[1].y = cubePoints[4].y + dy;
+                        midPointUp = { x: facePoints[4].x, y: facePoints[4].y + dyPortion }
+                        midPointDown = { x: facePoints[5].x, y: facePoints[5].y };
                     } else if (resizablePointIndex === 1) {
-                        this._viewModel.db.points[1].y = cubePoints[5].y + dy;
+                        midPointUp = { x: facePoints[4].x, y: facePoints[4].y };
+                        midPointDown = { x: facePoints[5].x, y: facePoints[5].y + dyPortion };
                     }
-
-                    this._viewModel.fr.points[0].x = cubePoints[2].x + dx;
-
-                    const x1 = cubePoints[4].x + dx;
-                    const x2 = cubePoints[5].x + dx;
-                    const y1 = this._viewModel.dt.getEquation().getY(x1);
-                    const y2 = this._viewModel.db.getEquation().getY(x2);
-
-                    const midPointUp = { x: x1, y: y1 };
-                    const midPointDown = { x: x2, y: y2 };
+                    
                     const topPoints = this.computeHeightFace(midPointUp, 3);
                     const bottomPoints = this.computeHeightFace(midPointDown, 3);
-                    
                     this._viewModel.top.points = topPoints;
-                    this._viewModel.bot.points = bottomPoints;
+                    this._viewModel.bot.points = bottomPoints;                        
+                    this.updateViewAndVM(false);  
 
-                    this.updateView();
                     this.face.plot(this._viewModel.front.points);
                     this.fire(new CustomEvent('resizing', event));
                 }).on('resizedone', (event: CustomEvent) => {
@@ -490,18 +524,10 @@ for (const key of Object.keys(originalResize)) {
             this.updateViewAndVM();
         },
 
-        updateViewAndVM() {
-            this._viewModel.buildBackEdge();
+        updateViewAndVM(build: boolean) {
+            this._viewModel.buildBackEdge(build);
             this.updateView();
             this._attr('points', pointObjectsToString(this._viewModel.points));
-
-        },
-
-        updateView() {
-            this.updatePolygons();
-            this.updateLines();
-            this.updateProjections();
-            this.updateGrabPoints();
         },
 
         updatePolygons() {
@@ -797,15 +823,15 @@ for (const key of Object.keys(originalResize)) {
             case 2: {
                 const p1 = this.updatedEdge(this._viewModel.fl.points[0], point, this._viewModel.vpl);
                 const p3 = this.updatedEdge(this._viewModel.dr.points[0], point, this._viewModel.vpr);
-                const p4 = this.updatedEdge(this._viewModel.dl.points[0], p1, this._viewModel.vpr);
+                const p4 = this.updatedEdge(this._viewModel.dl.points[0], p3, this._viewModel.vpr);
                 return [p1, point, p3, p4];
             }
             // dr
             case 3: {
-                const p2 = this.updatedEdge(this._viewModel.fr.points[0], point, this._viewModel.vpr);
-                const p4 = this.updatedEdge(this._viewModel.dl.points[0], point, this._viewModel.vpl);
-                const p1 = this.updatedEdge(this._viewModel.fl.points[0], p4, this._viewModel.vpr);
-                return [p1, p2, point, p4];
+                const p2 = this.updatedEdge(this._viewModel.dl.points[0], point, this._viewModel.vpl);
+                const p3 = this.updatedEdge(this._viewModel.fr.points[0], point, this._viewModel.vpr);
+                const p4 = this.updatedEdge(this._viewModel.fl.points[0], p2, this._viewModel.vpr);
+                return [p4, p3, point, p2];
             }
             // dl
             case 4: {
@@ -895,19 +921,6 @@ for (const key of Object.keys(originalResize)) {
             this.rightTopEdge.plot(viewModel.rt.points);
             this.frontBotEdge.plot(viewModel.fb.points);
             this.rightBotEdge.plot(viewModel.rb.points);
-        },
-
-        updateProjections() {
-            const viewModel = this._viewModel;
-
-            // this.ftProj.plot(this.updateProjectionLine(viewModel.ft.getEquation(),
-            //     viewModel.ft.points[0], viewModel.vplCanvas));
-            // this.fbProj.plot(this.updateProjectionLine(viewModel.fb.getEquation(),
-            //     viewModel.ft.points[0], viewModel.vplCanvas));
-            // this.rtProj.plot(this.updateProjectionLine(viewModel.rt.getEquation(),
-            //     viewModel.rt.points[1], viewModel.vprCanvas));
-            // this.rbProj.plot(this.updateProjectionLine(viewModel.rb.getEquation(),
-            //     viewModel.rt.points[1], viewModel.vprCanvas));
         },
 
         // addMouseOverEvents() {

@@ -187,10 +187,19 @@ export class CuboidModel {
     }
 
     // boolean value parameter controls which edges should be used to recalculate vanishing points
-    private updateVanishingPoints(): void {
-        const leftEdge = this.fl.points;
-        const rightEdge = this.dr.points;
-        const midEdge = this.fr.points;
+    private updateVanishingPoints(buildright: boolean): void {
+        let leftEdge = [];
+        let rightEdge = [];
+        let midEdge = [];
+        if (buildright) {
+            leftEdge = this.fr.points;
+            rightEdge = this.dl.points;
+            midEdge = this.fl.points;
+        } else {
+            leftEdge = this.fl.points;
+            rightEdge = this.dr.points;
+            midEdge = this.fr.points;
+        }
 
         this.vpl = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
         this.vpr = intersection(rightEdge[0], midEdge[0], rightEdge[1], midEdge[1]);
@@ -241,12 +250,27 @@ export class CuboidModel {
         this.facesList = [this.front, this.right, this.dorsal, this.left];
     }
 
-    private buildBackEdge(): void {
-        this.updateVanishingPoints();
-        const leftPoints = this.dr.points;
-        const rightPoints = this.fl.points;
-        const topIndex = 6;
-        const botIndex = 7;
+    private buildBackEdge(buildright: boolean): void {
+        this.updateVanishingPoints(buildright);
+        let leftPoints = [];
+        let rightPoints = [];
+
+        let topIndex = 0;
+        let botIndex = 0;
+
+        if (buildright) {
+            this.updateVanishingPoints(true);
+            leftPoints = this.dl.points;
+            rightPoints = this.fr.points;
+            topIndex = 4;
+            botIndex = 5;
+        } else {
+            this.updateVanishingPoints(false);
+            leftPoints = this.dr.points;
+            rightPoints = this.fl.points;
+            topIndex = 6;
+            botIndex = 7;
+        }
 
         const vpLeft = this.vpl;
         const vpRight = this.vpr;
