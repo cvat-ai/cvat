@@ -129,6 +129,12 @@ export function pointsToObjects(stringified: string): Point[] {
         }, []);
 }
 
+export function pointObjectsToString(points: Point[]): string {
+    return points.reduce((acc: string, point: Point): string => {
+        return `${acc}${point.x} ${point.y},`;
+    }, '').slice(0, -1);
+}
+
 export function clamp(x: number, min: number, max: number): number {
     return Math.min(Math.max(x, min), max);
 };
