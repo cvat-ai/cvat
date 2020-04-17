@@ -3,8 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
+import { Action } from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 import Layout, { SiderProps } from 'antd/lib/layout';
 import { SelectValue } from 'antd/lib/select';
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
@@ -30,6 +32,8 @@ interface StateToProps {
     states: any[];
     labels: any[];
     jobInstance: any;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 }
 
 interface DispatchToProps {
@@ -54,6 +58,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 labels,
             },
         },
+        shortcuts: {
+            keyMap,
+            normalizedKeyMap,
+        },
     } = state;
 
     return {
@@ -62,10 +70,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedStateID,
         activatedAttributeID,
         states,
+        keyMap,
+        normalizedKeyMap,
     };
 }
 
-function mapDispatchToProps(dispatch: any): DispatchToProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
     return {
         activateObject(clientID: number, attrID: number): void {
             dispatch(activateObjectAction(clientID, attrID));
@@ -85,6 +95,8 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         jobInstance,
         updateAnnotations,
         activateObject,
+        keyMap,
+        normalizedKeyMap,
     } = props;
 
     const [labelAttrMap, setLabelAttrMap] = useState(
@@ -165,31 +177,11 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         trigger: null,
     };
 
-    const keyMap = {
-        NEXT_ATTRIBUTE: {
-            name: 'Next attribute',
-            description: 'Go to the next attribute',
-            sequence: 'ArrowDown',
-            action: 'keydown',
-        },
-        PREVIOUS_ATTRIBUTE: {
-            name: 'Previous attribute',
-            description: 'Go to the previous attribute',
-            sequence: 'ArrowUp',
-            action: 'keydown',
-        },
-        NEXT_OBJECT: {
-            name: 'Next object',
-            description: 'Go to the next object',
-            sequence: 'Tab',
-            action: 'keydown',
-        },
-        PREVIOUS_OBJECT: {
-            name: 'Previous object',
-            description: 'Go to the previous object',
-            sequence: 'Shift+Tab',
-            action: 'keydown',
-        },
+    const subKeyMap = {
+        NEXT_ATTRIBUTE: keyMap.NEXT_ATTRIBUTE,
+        PREVIOUS_ATTRIBUTE: keyMap.PREVIOUS_ATTRIBUTE,
+        NEXT_OBJECT: keyMap.NEXT_OBJECT,
+        PREVIOUS_OBJECT: keyMap.PREVIOUS_OBJECT,
     };
 
     const handlers = {
@@ -226,7 +218,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
     if (activeObjectState) {
         return (
             <Layout.Sider {...siderProps}>
-                <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
                 <Row>
                     <Col>
                         <AnnotationsFiltersInput />
@@ -238,6 +230,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     occluded={activeObjectState.occluded}
                     objectsCount={states.length}
                     currentIndex={states.indexOf(activeObjectState)}
+                    normalizedKeyMap={normalizedKeyMap}
                     nextObject={nextObject}
                 />
                 <ObjectBasicsEditor
@@ -265,6 +258,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                                     currentIndex={activeObjectState.label.attributes
                                         .indexOf(activeAttribute)}
                                     attributesCount={activeObjectState.label.attributes.length}
+                                    normalizedKeyMap={normalizedKeyMap}
                                     nextAttribute={nextAttribute}
                                 />
                                 <AttributeEditor

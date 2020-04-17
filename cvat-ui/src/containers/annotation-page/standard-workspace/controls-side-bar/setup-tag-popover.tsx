@@ -5,15 +5,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import {
-    CombinedState,
-    ObjectType,
-} from 'reducers/interfaces';
-
-import {
-    createAnnotationsAsync,
-    rememberObject,
-} from 'actions/annotation-actions';
+import { CombinedState, ObjectType } from 'reducers/interfaces';
+import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actions';
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 import { Canvas } from 'cvat-canvas';
@@ -26,6 +19,7 @@ interface DispatchToProps {
 }
 
 interface StateToProps {
+    normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
     jobInstance: any;
     labels: any[];
@@ -59,6 +53,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 },
             },
         },
+        shortcuts: {
+            normalizedKeyMap,
+        },
     } = state;
 
     return {
@@ -66,6 +63,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         labels,
         frame,
+        normalizedKeyMap,
     };
 }
 
@@ -91,7 +89,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         });
     };
 
-    private onSetup(): void {
+    private onSetup = (): void => {
         const {
             frame,
             labels,
@@ -114,23 +112,17 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         });
 
         onAnnotationCreate(jobInstance, frame, [objectState]);
-    }
+    };
 
     public render(): JSX.Element {
-        const {
-            selectedLabelID,
-        } = this.state;
-
-        const {
-            labels,
-        } = this.props;
-
-        this.onSetup = this.onSetup.bind(this);
+        const { selectedLabelID } = this.state;
+        const { normalizedKeyMap, labels } = this.props;
 
         return (
             <SetupTagPopoverComponent
                 labels={labels}
                 selectedLabeID={selectedLabelID}
+                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
                 onChangeLabel={this.onChangeLabel}
                 onSetup={this.onSetup}
             />

@@ -10,7 +10,7 @@ import numpy as np
 import os
 import os.path as osp
 
-from datumaro.components.extractor import (SourceExtractor,
+from datumaro.components.extractor import (SourceExtractor, DEFAULT_SUBSET_NAME,
     DatasetItem, AnnotationType, Mask, Bbox, Polygon, LabelCategories
 )
 from datumaro.components.extractor import Importer
@@ -26,12 +26,8 @@ class LabelMePath:
 
 class LabelMeExtractor(SourceExtractor):
     def __init__(self, path, subset_name=None):
-        super().__init__()
-
-        assert osp.isdir(path)
-        self._rootdir = path
-
-        self._subset = subset_name
+        assert osp.isdir(path), path
+        super().__init__(subset=subset_name)
 
         items, categories = self._parse(path)
         self._categories = categories
@@ -46,16 +42,6 @@ class LabelMeExtractor(SourceExtractor):
 
     def __len__(self):
         return len(self._items)
-
-    def subsets(self):
-        if self._subset:
-            return [self._subset]
-        return None
-
-    def get_subset(self, name):
-        if name != self._subset:
-            return None
-        return self
 
     def _parse(self, path):
         categories = {
@@ -95,9 +81,16 @@ class LabelMeExtractor(SourceExtractor):
             for attr in [a.strip() for a in attr_str.split(',') if a.strip()]:
                 if '=' in attr:
                     name, value = attr.split('=', maxsplit=1)
+                    if value.lower() in {'true', 'false'}:
+                        value = value.lower() == 'true'
+                    else:
+                        try:
+                            value = float(value)
+                        except Exception:
+                            pass
                     parsed.append((name, value))
                 else:
-                    parsed.append((attr, '1'))
+                    parsed.append((attr, True))
 
             return parsed
 
@@ -440,10 +433,7 @@ class LabelMeConverter(Converter, CliPlugin):
 
             attrs = []
             for k, v in ann.attributes.items():
-                if isinstance(v, bool):
-                    attrs.append(k)
-                else:
-                    attrs.append('%s=%s' % (k, v))
+                attrs.append('%s=%s' % (k, v))
             ET.SubElement(obj_elem, 'attributes').text = ', '.join(attrs)
 
             obj_id += 1

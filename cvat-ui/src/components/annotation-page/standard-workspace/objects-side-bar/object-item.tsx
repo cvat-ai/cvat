@@ -3,29 +3,24 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Icon,
-    Select,
-    Radio,
-    Input,
-    Collapse,
-    Checkbox,
-    InputNumber,
-    Dropdown,
-    Menu,
-    Button,
-    Modal,
-    Popover,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Select from 'antd/lib/select';
+import Radio, { RadioChangeEvent } from 'antd/lib/radio';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import Input from 'antd/lib/input';
+import InputNumber from 'antd/lib/input-number';
+import Collapse from 'antd/lib/collapse';
+import Dropdown from 'antd/lib/dropdown';
+import Menu from 'antd/lib/menu';
+import Button from 'antd/lib/button';
+import Modal from 'antd/lib/modal';
+import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
-import { RadioChangeEvent } from 'antd/lib/radio';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
+import Tooltip from 'antd/lib/tooltip';
 
+import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
+import consts from 'consts';
 import {
     ObjectOutsideIcon,
     FirstIcon,
@@ -35,15 +30,20 @@ import {
     BackgroundIcon,
     ForegroundIcon,
 } from 'icons';
+import { ObjectType, ShapeType } from 'reducers/interfaces';
+import { clamp } from 'utils/math';
 
-import {
-    ObjectType, ShapeType,
-} from 'reducers/interfaces';
 
 function ItemMenu(
     serverID: number | undefined,
     locked: boolean,
     objectType: ObjectType,
+    copyShortcut: string,
+    pasteShortcut: string,
+    propagateShortcut: string,
+    toBackgroundShortcut: string,
+    toForegroundShortcut: string,
+    removeShortcut: string,
     copy: (() => void),
     remove: (() => void),
     propagate: (() => void),
@@ -52,58 +52,68 @@ function ItemMenu(
     toForeground: (() => void),
 ): JSX.Element {
     return (
-        <Menu key='unique' className='cvat-object-item-menu'>
+        <Menu className='cvat-object-item-menu'>
             <Menu.Item>
                 <Button disabled={serverID === undefined} type='link' icon='link' onClick={createURL}>
                     Create object URL
                 </Button>
             </Menu.Item>
             <Menu.Item>
-                <Button type='link' icon='copy' onClick={copy}>
-                    Make a copy
-                </Button>
+                <Tooltip title={`${copyShortcut} and ${pasteShortcut}`}>
+                    <Button type='link' icon='copy' onClick={copy}>
+                        Make a copy
+                    </Button>
+                </Tooltip>
             </Menu.Item>
             <Menu.Item>
-                <Button type='link' icon='block' onClick={propagate}>
-                    Propagate
-                </Button>
+                <Tooltip title={`${propagateShortcut}`}>
+                    <Button type='link' icon='block' onClick={propagate}>
+                        Propagate
+                    </Button>
+                </Tooltip>
             </Menu.Item>
             { objectType !== ObjectType.TAG && (
-                <>
-                    <Menu.Item>
+                <Menu.Item>
+                    <Tooltip title={`${toBackgroundShortcut}`}>
                         <Button type='link' onClick={toBackground}>
                             <Icon component={BackgroundIcon} />
                             To background
                         </Button>
-                    </Menu.Item>
-                    <Menu.Item>
+                    </Tooltip>
+                </Menu.Item>
+            )}
+            { objectType !== ObjectType.TAG && (
+                <Menu.Item>
+                    <Tooltip title={`${toForegroundShortcut}`}>
                         <Button type='link' onClick={toForeground}>
                             <Icon component={ForegroundIcon} />
                             To foreground
                         </Button>
-                    </Menu.Item>
-                </>
+                    </Tooltip>
+                </Menu.Item>
             )}
             <Menu.Item>
-                <Button
-                    type='link'
-                    icon='delete'
-                    onClick={(): void => {
-                        if (locked) {
-                            Modal.confirm({
-                                title: 'Object is locked',
-                                content: 'Are you sure you want to remove it?',
-                                onOk() {
-                                    remove();
-                                },
-                            });
-                        } else {
-                            remove();
-                        }
-                    }}
-                >
-                    Remove
-                </Button>
+                <Tooltip title={`${removeShortcut}`}>
+                    <Button
+                        type='link'
+                        icon='delete'
+                        onClick={(): void => {
+                            if (locked) {
+                                Modal.confirm({
+                                    title: 'Object is locked',
+                                    content: 'Are you sure you want to remove it?',
+                                    onOk() {
+                                        remove();
+                                    },
+                                });
+                            } else {
+                                remove();
+                            }
+                        }}
+                    >
+                        Remove
+                    </Button>
+                </Tooltip>
             </Menu.Item>
         </Menu>
     );
@@ -117,6 +127,12 @@ interface ItemTopComponentProps {
     objectType: ObjectType;
     type: string;
     locked: boolean;
+    copyShortcut: string;
+    pasteShortcut: string;
+    propagateShortcut: string;
+    toBackgroundShortcut: string;
+    toForegroundShortcut: string;
+    removeShortcut: string;
     changeLabel(labelID: string): void;
     copy(): void;
     remove(): void;
@@ -135,6 +151,12 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         objectType,
         type,
         locked,
+        copyShortcut,
+        pasteShortcut,
+        propagateShortcut,
+        toBackgroundShortcut,
+        toForegroundShortcut,
+        removeShortcut,
         changeLabel,
         copy,
         remove,
@@ -152,13 +174,15 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                 <Text type='secondary' style={{ fontSize: 10 }}>{type}</Text>
             </Col>
             <Col span={12}>
-                <Select size='small' value={`${labelID}`} onChange={changeLabel}>
-                    { labels.map((label: any): JSX.Element => (
-                        <Select.Option key={label.id} value={`${label.id}`}>
-                            {label.name}
-                        </Select.Option>
-                    ))}
-                </Select>
+                <Tooltip title='Change current label'>
+                    <Select size='small' value={`${labelID}`} onChange={changeLabel}>
+                        { labels.map((label: any): JSX.Element => (
+                            <Select.Option key={label.id} value={`${label.id}`}>
+                                {label.name}
+                            </Select.Option>
+                        ))}
+                    </Select>
+                </Tooltip>
             </Col>
             <Col span={2}>
                 <Dropdown
@@ -167,6 +191,12 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                         serverID,
                         locked,
                         objectType,
+                        copyShortcut,
+                        pasteShortcut,
+                        propagateShortcut,
+                        toBackgroundShortcut,
+                        toForegroundShortcut,
+                        removeShortcut,
                         copy,
                         remove,
                         propagate,
@@ -193,6 +223,13 @@ interface ItemButtonsComponentProps {
     pinned: boolean;
     hidden: boolean;
     keyframe: boolean | undefined;
+    switchOccludedShortcut: string;
+    switchOutsideShortcut: string;
+    switchLockShortcut: string;
+    switchHiddenShortcut: string;
+    switchKeyFrameShortcut: string;
+    nextKeyFrameShortcut: string;
+    prevKeyFrameShortcut: string;
 
     navigateFirstKeyframe: null | (() => void);
     navigatePrevKeyframe: null | (() => void);
@@ -223,6 +260,13 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
         pinned,
         hidden,
         keyframe,
+        switchOccludedShortcut,
+        switchOutsideShortcut,
+        switchLockShortcut,
+        switchHiddenShortcut,
+        switchKeyFrameShortcut,
+        nextKeyFrameShortcut,
+        prevKeyFrameShortcut,
 
         navigateFirstKeyframe,
         navigatePrevKeyframe,
@@ -255,12 +299,26 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                         </Col>
                         <Col>
                             { navigatePrevKeyframe
-                                ? <Icon component={PreviousIcon} onClick={navigatePrevKeyframe} />
+                                ? (
+                                    <Tooltip title={`Go to previous keyframe ${prevKeyFrameShortcut}`}>
+                                        <Icon
+                                            component={PreviousIcon}
+                                            onClick={navigatePrevKeyframe}
+                                        />
+                                    </Tooltip>
+                                )
                                 : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                         <Col>
                             { navigateNextKeyframe
-                                ? <Icon component={NextIcon} onClick={navigateNextKeyframe} />
+                                ? (
+                                    <Tooltip title={`Go to next keyframe ${nextKeyFrameShortcut}`}>
+                                        <Icon
+                                            component={NextIcon}
+                                            onClick={navigateNextKeyframe}
+                                        />
+                                    </Tooltip>
+                                )
                                 : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
                         </Col>
                         <Col>
@@ -271,36 +329,48 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                     </Row>
                     <Row type='flex' justify='space-around'>
                         <Col>
-                            { outside
-                                ? <Icon component={ObjectOutsideIcon} onClick={unsetOutside} />
-                                : <Icon type='select' onClick={setOutside} />}
+                            <Tooltip title={`Switch outside property ${switchOutsideShortcut}`}>
+                                { outside
+                                    ? <Icon component={ObjectOutsideIcon} onClick={unsetOutside} />
+                                    : <Icon type='select' onClick={setOutside} />}
+                            </Tooltip>
                         </Col>
                         <Col>
-                            { locked
-                                ? <Icon type='lock' onClick={unlock} />
-                                : <Icon type='unlock' onClick={lock} />}
+                            <Tooltip title={`Switch lock property ${switchLockShortcut}`}>
+                                { locked
+                                    ? <Icon type='lock' onClick={unlock} />
+                                    : <Icon type='unlock' onClick={lock} />}
+                            </Tooltip>
                         </Col>
                         <Col>
-                            { occluded
-                                ? <Icon type='team' onClick={unsetOccluded} />
-                                : <Icon type='user' onClick={setOccluded} />}
+                            <Tooltip title={`Switch occluded property ${switchOccludedShortcut}`}>
+                                { occluded
+                                    ? <Icon type='team' onClick={unsetOccluded} />
+                                    : <Icon type='user' onClick={setOccluded} />}
+                            </Tooltip>
                         </Col>
                         <Col>
-                            { hidden
-                                ? <Icon type='eye-invisible' onClick={show} />
-                                : <Icon type='eye' onClick={hide} />}
+                            <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`}>
+                                { hidden
+                                    ? <Icon type='eye-invisible' onClick={show} />
+                                    : <Icon type='eye' onClick={hide} />}
+                            </Tooltip>
                         </Col>
                         <Col>
-                            { keyframe
-                                ? <Icon type='star' theme='filled' onClick={unsetKeyframe} />
-                                : <Icon type='star' onClick={setKeyframe} />}
+                            <Tooltip title={`Switch keyframe property ${switchKeyFrameShortcut}`}>
+                                { keyframe
+                                    ? <Icon type='star' theme='filled' onClick={unsetKeyframe} />
+                                    : <Icon type='star' onClick={setKeyframe} />}
+                            </Tooltip>
                         </Col>
                         {
                             shapeType !== ShapeType.POINTS && (
                                 <Col>
-                                    { pinned
-                                        ? <Icon type='pushpin' theme='filled' onClick={unpin} />
-                                        : <Icon type='pushpin' onClick={pin} />}
+                                    <Tooltip title='Switch pinned property'>
+                                        { pinned
+                                            ? <Icon type='pushpin' theme='filled' onClick={unpin} />
+                                            : <Icon type='pushpin' onClick={pin} />}
+                                    </Tooltip>
                                 </Col>
                             )
                         }
@@ -316,9 +386,11 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                 <Col span={20} style={{ textAlign: 'center' }}>
                     <Row type='flex' justify='space-around'>
                         <Col>
-                            { locked
-                                ? <Icon type='lock' onClick={unlock} />
-                                : <Icon type='unlock' onClick={lock} />}
+                            <Tooltip title={`Switch lock property ${switchLockShortcut}`}>
+                                { locked
+                                    ? <Icon type='lock' onClick={unlock} />
+                                    : <Icon type='unlock' onClick={lock} />}
+                            </Tooltip>
                         </Col>
                     </Row>
                 </Col>
@@ -331,26 +403,34 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
             <Col span={20} style={{ textAlign: 'center' }}>
                 <Row type='flex' justify='space-around'>
                     <Col>
-                        { locked
-                            ? <Icon type='lock' onClick={unlock} />
-                            : <Icon type='unlock' onClick={lock} />}
+                        <Tooltip title={`Switch lock property ${switchLockShortcut}`}>
+                            { locked
+                                ? <Icon type='lock' onClick={unlock} />
+                                : <Icon type='unlock' onClick={lock} />}
+                        </Tooltip>
                     </Col>
                     <Col>
-                        { occluded
-                            ? <Icon type='team' onClick={unsetOccluded} />
-                            : <Icon type='user' onClick={setOccluded} />}
+                        <Tooltip title={`Switch occluded property ${switchOccludedShortcut}`}>
+                            { occluded
+                                ? <Icon type='team' onClick={unsetOccluded} />
+                                : <Icon type='user' onClick={setOccluded} />}
+                        </Tooltip>
                     </Col>
                     <Col>
-                        { hidden
-                            ? <Icon type='eye-invisible' onClick={show} />
-                            : <Icon type='eye' onClick={hide} />}
+                        <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`}>
+                            { hidden
+                                ? <Icon type='eye-invisible' onClick={show} />
+                                : <Icon type='eye' onClick={hide} />}
+                        </Tooltip>
                     </Col>
                     {
                         shapeType !== ShapeType.POINTS && (
                             <Col>
-                                { pinned
-                                    ? <Icon type='pushpin' theme='filled' onClick={unpin} />
-                                    : <Icon type='pushpin' onClick={pin} />}
+                                <Tooltip title='Switch pinned property'>
+                                    { pinned
+                                        ? <Icon type='pushpin' theme='filled' onClick={unpin} />
+                                        : <Icon type='pushpin' onClick={pin} />}
+                                </Tooltip>
                             </Col>
                         )
                     }
@@ -428,7 +508,10 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                         }}
                     >
                         { attrValues.map((value: string): JSX.Element => (
-                            <Radio key={value} value={value}>{value}</Radio>
+                            <Radio key={value} value={value}>
+                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE
+                                    ? consts.NO_BREAK_SPACE : value}
+                            </Radio>
                         )) }
                     </Radio.Group>
                 </fieldset>
@@ -454,7 +537,10 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                         className='cvat-object-item-select-attribute'
                     >
                         { attrValues.map((value: string): JSX.Element => (
-                            <Select.Option key={value} value={value}>{value}</Select.Option>
+                            <Select.Option key={value} value={value}>
+                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE
+                                    ? consts.NO_BREAK_SPACE : value}
+                            </Select.Option>
                         )) }
                     </Select>
                 </Col>
@@ -463,7 +549,7 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
     }
 
     if (attrInputType === 'number') {
-        const [min, max, step] = attrValues;
+        const [min, max, step] = attrValues.map((value: string): number => +value);
 
         return (
             <>
@@ -476,15 +562,17 @@ function ItemAttributeComponent(props: ItemAttributeComponentProps): JSX.Element
                     <InputNumber
                         size='small'
                         onChange={(value: number | undefined): void => {
-                            if (typeof (value) !== 'undefined') {
-                                changeAttribute(attrID, `${value}`);
+                            if (typeof (value) === 'number') {
+                                changeAttribute(
+                                    attrID, `${clamp(value, min, max)}`,
+                                );
                             }
                         }}
                         value={+attrValue}
                         className='cvat-object-item-number-attribute'
-                        min={+min}
-                        max={+max}
-                        step={+step}
+                        min={min}
+                        max={max}
+                        step={step}
                     />
                 </Col>
             </>
@@ -591,6 +679,7 @@ function ItemAttributesComponent(props: ItemAttributesComponentProps): JSX.Eleme
 const ItemAttributes = React.memo(ItemAttributesComponent, attrAreTheSame);
 
 interface Props {
+    normalizedKeyMap: Record<string, string>;
     activated: boolean;
     objectType: ObjectType;
     shapeType: ShapeType;
@@ -657,6 +746,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         && nextProps.collapsed === prevProps.collapsed
         && nextProps.labels === prevProps.labels
         && nextProps.attributes === prevProps.attributes
+        && nextProps.normalizedKeyMap === prevProps.normalizedKeyMap
         && nextProps.navigateFirstKeyframe === prevProps.navigateFirstKeyframe
         && nextProps.navigatePrevKeyframe === prevProps.navigatePrevKeyframe
         && nextProps.navigateNextKeyframe === prevProps.navigateNextKeyframe
@@ -685,6 +775,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         attributes,
         labels,
         collapsed,
+        normalizedKeyMap,
         navigateFirstKeyframe,
         navigatePrevKeyframe,
         navigateNextKeyframe,
@@ -752,6 +843,12 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     objectType={objectType}
                     type={type}
                     locked={locked}
+                    copyShortcut={normalizedKeyMap.COPY_SHAPE}
+                    pasteShortcut={normalizedKeyMap.PASTE_SHAPE}
+                    propagateShortcut={normalizedKeyMap.PROPAGATE_OBJECT}
+                    toBackgroundShortcut={normalizedKeyMap.TO_BACKGROUND}
+                    toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
+                    removeShortcut={normalizedKeyMap.DELETE_OBJECT}
                     changeLabel={changeLabel}
                     copy={copy}
                     remove={remove}
@@ -769,6 +866,13 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     pinned={pinned}
                     hidden={hidden}
                     keyframe={keyframe}
+                    switchOccludedShortcut={normalizedKeyMap.SWITCH_OCCLUDED}
+                    switchOutsideShortcut={normalizedKeyMap.SWITCH_OUTSIDE}
+                    switchLockShortcut={normalizedKeyMap.SWITCH_LOCK}
+                    switchHiddenShortcut={normalizedKeyMap.SWITCH_HIDDEN}
+                    switchKeyFrameShortcut={normalizedKeyMap.SWITCH_KEYFRAME}
+                    nextKeyFrameShortcut={normalizedKeyMap.NEXT_KEY_FRAME}
+                    prevKeyFrameShortcut={normalizedKeyMap.PREV_KEY_FRAME}
                     navigateFirstKeyframe={navigateFirstKeyframe}
                     navigatePrevKeyframe={navigatePrevKeyframe}
                     navigateNextKeyframe={navigateNextKeyframe}

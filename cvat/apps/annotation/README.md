@@ -1,3 +1,5 @@
+<!--lint disable list-item-indent-->
+<!--lint disable no-duplicate-headings-->
 ## Description
 
 The purpose of this application is to add support for multiple annotation formats for CVAT.
@@ -525,10 +527,10 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   │   └── Segmentation/
   │       └── default.txt # list of image names without extension
   ├── SegmentationClass/ # merged class masks
-  │   └── image1.png
+  │   ├── image1.png
   │   └── image2.png
   └── SegmentationObject/ # merged instance masks
-      └── image1.png
+      ├── image1.png
       └── image2.png
   ```
   Mask is a png image with several (RGB) channels where each pixel has own color which corresponds to a label.
@@ -557,11 +559,70 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   │   └── Segmentation/
   │       └── <any_subset_name>.txt
   ├── SegmentationClass/
-  │   └── image1.png
+  │   ├── image1.png
   │   └── image2.png
   └── SegmentationObject/
-      └── image.png
+      ├── image1.png
       └── image2.png
   ```
 - supported shapes: Polygons
 - additional comments: the CVAT task should be created with the full label set that may be in the annotation files
+
+### [MOT sequence](https://arxiv.org/pdf/1906.04567.pdf)
+#### Dumper
+- downloaded file: a zip archive of the following structure:
+  ```bash
+  taskname.zip/
+  ├── img1/
+  |   ├── imgage1.jpg
+  |   └── imgage2.jpg
+  └── gt/
+      ├── labels.txt
+      └── gt.txt
+
+  # labels.txt
+  cat
+  dog
+  person
+  ...
+
+  # gt.txt
+  # frame_id, track_id, x, y, w, h, "not ignored", class_id, visibility, <skipped>
+  1,1,1363,569,103,241,1,1,0.86014
+  ...
+
+  ```
+- supported annotations: Rectangle shapes and tracks
+- supported attributes: `visibility` (number), `ignored` (checkbox)
+
+#### Loader
+- uploaded file: a zip archive of the structure above or:
+  ```bash
+  taskname.zip/
+  ├── labels.txt # optional, mandatory for non-official labels
+  └── gt.txt
+  ```
+- supported annotations: Rectangle tracks
+
+### [LabelMe](http://labelme.csail.mit.edu/Release3.0)
+#### Dumper
+- downloaded file: a zip archive of the following structure:
+  ```bash
+  taskname.zip/
+  ├── img1.jpg
+  └── img1.xml
+  ```
+- supported annotations: Rectangles, Polygons (with attributes)
+
+#### Loader
+- uploaded file: a zip archive of the following structure:
+  ```bash
+  taskname.zip/
+  ├── Masks/
+  |   ├── img1_mask1.png
+  |   └── img1_mask2.png
+  ├── img1.xml
+  ├── img2.xml
+  └── img3.xml
+  ```
+- supported annotations: Rectangles, Polygons, Masks (as polygons)

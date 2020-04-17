@@ -150,6 +150,7 @@
             }
 
             for (const shape of data.shapes) {
+                if (shape.type === 'cuboid') continue;
                 const clientID = ++this.count;
                 const shapeModel = shapeFactory(shape, clientID, this.injection);
                 this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
@@ -317,7 +318,7 @@
 
                     // Push outside shape after each annotation shape
                     // Any not outside shape rewrites it
-                    if (!((object.frame + 1) in keyframes)) {
+                    if (!((object.frame + 1) in keyframes) && object.frame + 1 <= this.stopFrame) {
                         keyframes[object.frame + 1] = JSON
                             .parse(JSON.stringify(keyframes[object.frame]));
                         keyframes[object.frame + 1].outside = true;
@@ -427,7 +428,10 @@
                 for (const object of objectsForMerge) {
                     object.removed = true;
                 }
-            }, [...objectsForMerge.map((object) => object.clientID), trackModel.clientID]);
+            }, [
+                ...objectsForMerge
+                    .map((object) => object.clientID), trackModel.clientID,
+            ], objectStates[0].frame);
         }
 
         split(objectState, frame) {
@@ -522,7 +526,7 @@
                 object.removed = true;
                 prevTrack.removed = false;
                 nextTrack.removed = false;
-            }, [object.clientID, prevTrack.clientID, nextTrack.clientID]);
+            }, [object.clientID, prevTrack.clientID, nextTrack.clientID], frame);
         }
 
         group(objectStates, reset) {
@@ -554,7 +558,7 @@
                 objectsForGroup.forEach((object, idx) => {
                     object.group = redoGroups[idx];
                 });
-            }, objectsForGroup.map((object) => object.clientID));
+            }, objectsForGroup.map((object) => object.clientID), objectStates[0].frame);
 
             return groupIdx;
         }
@@ -792,7 +796,7 @@
                 importedArray.forEach((object) => {
                     object.removed = false;
                 });
-            }, importedArray.map((object) => object.clientID));
+            }, importedArray.map((object) => object.clientID), objectStates[0].frame);
         }
 
         select(objectStates, x, y) {
@@ -870,8 +874,10 @@
                 // In particular consider first and last frame as keyframes for all frames
                 const statesData = [].concat(
                     (frame in this.shapes ? this.shapes[frame] : [])
+                        .filter((shape) => !shape.removed)
                         .map((shape) => shape.get(frame)),
                     (frame in this.tags ? this.tags[frame] : [])
+                        .filter((tag) => !tag.removed)
                         .map((tag) => tag.get(frame)),
                 );
                 const tracks = Object.values(this.tracks)
@@ -879,7 +885,7 @@
                         frame in track.shapes
                         || frame === frameFrom
                         || frame === frameTo
-                    ));
+                    )).filter((track) => !track.removed);
                 statesData.push(
                     ...tracks.map((track) => track.get(frame))
                         .filter((state) => !state.outside),

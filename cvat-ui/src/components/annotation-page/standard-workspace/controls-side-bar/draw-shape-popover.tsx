@@ -3,21 +3,18 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Select,
-    Button,
-    InputNumber,
-    Radio,
-} from 'antd';
-
-import { RadioChangeEvent } from 'antd/lib/radio';
+import { Row, Col } from 'antd/lib/grid';
+import Select from 'antd/lib/select';
+import Button from 'antd/lib/button';
+import InputNumber from 'antd/lib/input-number';
+import Radio, { RadioChangeEvent } from 'antd/lib/radio';
+import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 
 import { RectDrawingMethod } from 'cvat-canvas';
 import { ShapeType } from 'reducers/interfaces';
+import { clamp } from 'utils/math';
+import DEXTRPlugin from './dextr-plugin';
 
 interface Props {
     shapeType: ShapeType;
@@ -26,6 +23,7 @@ interface Props {
     rectDrawingMethod?: RectDrawingMethod;
     numberOfPoints?: number;
     selectedLabeID: number;
+    repeatShapeShortcut: string;
     onChangeLabel(value: string): void;
     onChangePoints(value: number | undefined): void;
     onChangeRectDrawingMethod(event: RadioChangeEvent): void;
@@ -41,12 +39,16 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         selectedLabeID,
         numberOfPoints,
         rectDrawingMethod,
+        repeatShapeShortcut,
         onDrawTrack,
         onDrawShape,
         onChangeLabel,
         onChangePoints,
         onChangeRectDrawingMethod,
     } = props;
+
+    const trackDisabled = shapeType === ShapeType.POLYGON || shapeType === ShapeType.POLYLINE
+        || (shapeType === ShapeType.POINTS && numberOfPoints !== 1);
 
     return (
         <div className='cvat-draw-shape-popover-content'>
@@ -79,6 +81,9 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
+            {
+                shapeType === ShapeType.POLYGON && <DEXTRPlugin />
+            }
             {
                 shapeType === ShapeType.RECTANGLE ? (
                     <>
@@ -117,7 +122,15 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                         </Col>
                         <Col span={10}>
                             <InputNumber
-                                onChange={onChangePoints}
+                                onChange={(value: number | undefined) => {
+                                    if (typeof (value) === 'number') {
+                                        onChangePoints(Math.floor(
+                                            clamp(value, minimumPoints, Number.MAX_SAFE_INTEGER),
+                                        ));
+                                    } else if (!value) {
+                                        onChangePoints(undefined);
+                                    }
+                                }}
                                 className='cvat-draw-shape-popover-points-selector'
                                 min={minimumPoints}
                                 value={numberOfPoints}
@@ -129,19 +142,23 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             }
             <Row type='flex' justify='space-around'>
                 <Col span={12}>
-                    <Button
-                        onClick={onDrawShape}
-                    >
-                        Shape
-                    </Button>
+                    <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
+                        <Button
+                            onClick={onDrawShape}
+                        >
+                            Shape
+                        </Button>
+                    </Tooltip>
                 </Col>
                 <Col span={12}>
-                    <Button
-                        onClick={onDrawTrack}
-                        disabled={shapeType !== ShapeType.RECTANGLE}
-                    >
-                        Track
-                    </Button>
+                    <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
+                        <Button
+                            onClick={onDrawTrack}
+                            disabled={trackDisabled}
+                        >
+                            Track
+                        </Button>
+                    </Tooltip>
                 </Col>
             </Row>
         </div>

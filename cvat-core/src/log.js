@@ -6,6 +6,7 @@
     require:false
 */
 
+const { detect } = require('detect-browser');
 const PluginRegistry = require('./plugins');
 const { ArgumentError } = require('./exceptions');
 const { LogType } = require('./enums');
@@ -179,6 +180,43 @@ class LogWithExceptionInfo extends Log {
                 + 'It must be a number';
             throw new ArgumentError(message);
         }
+
+        if (typeof (this.payload.column) !== 'number') {
+            const message = `The field "column" is required for ${this.type} log. `
+                + 'It must be a number';
+            throw new ArgumentError(message);
+        }
+
+        if (typeof (this.payload.stack) !== 'string') {
+            const message = `The field "stack" is required for ${this.type} log. `
+                + 'It must be a string';
+            throw new ArgumentError(message);
+        }
+    }
+
+    dump() {
+        let body = super.dump();
+        const payload = body.payload;
+        const client = detect();
+        body = {
+            ...body,
+            message: payload.message,
+            filename: payload.filename,
+            line: payload.line,
+            column: payload.column,
+            stack: payload.stack,
+            system: client.os,
+            client: client.name,
+            version: client.version,
+        };
+
+        delete payload.message;
+        delete payload.filename;
+        delete payload.line;
+        delete payload.column;
+        delete payload.stack;
+
+        return body;
     }
 }
 

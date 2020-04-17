@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
+import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 
@@ -31,6 +32,7 @@ const defaultState: TasksState = {
         deletes: {},
         creates: {
             status: '',
+            error: '',
         },
     },
 };
@@ -237,6 +239,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...state.activities,
                     creates: {
                         status: '',
+                        error: '',
                     },
                 },
             };
@@ -275,6 +278,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     creates: {
                         ...state.activities.creates,
                         status: 'FAILED',
+                        error: action.payload.error.toString(),
                     },
                 },
             };
@@ -320,10 +324,9 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 hideEmpty: action.payload.hideEmpty,
             };
         }
+        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
-            return {
-                ...defaultState,
-            };
+            return { ...defaultState };
         }
         default:
             return state;

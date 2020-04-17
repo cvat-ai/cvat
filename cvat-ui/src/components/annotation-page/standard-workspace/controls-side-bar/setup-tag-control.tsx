@@ -3,10 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import {
-    Popover,
-    Icon,
-} from 'antd';
+import Popover from 'antd/lib/popover';
+import Icon from 'antd/lib/icon';
 
 import { Canvas } from 'cvat-canvas';
 import { TagIcon } from 'icons';

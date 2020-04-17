@@ -66,9 +66,7 @@ class MotSeqExtractor(SourceExtractor):
         super().__init__()
 
         assert osp.isfile(path)
-        self._path = path
         seq_root = osp.dirname(osp.dirname(path))
-
         self._image_dir = ''
         if osp.isdir(osp.join(seq_root, MotPath.IMAGE_DIR)):
             self._image_dir = osp.join(seq_root, MotPath.IMAGE_DIR)
@@ -91,12 +89,9 @@ class MotSeqExtractor(SourceExtractor):
                 is_gt = True
         self._is_gt = is_gt
 
-        self._subset = None
-
         if labels is None:
-            if osp.isfile(osp.join(seq_root, MotPath.LABELS_FILE)):
-                labels = osp.join(seq_root, MotPath.LABELS_FILE)
-            else:
+            labels = osp.join(osp.dirname(path), MotPath.LABELS_FILE)
+            if not osp.isfile(labels):
                 labels = [lbl.name for lbl in MotLabel]
         if isinstance(labels, str):
             labels = self._parse_labels(labels)
@@ -116,16 +111,6 @@ class MotSeqExtractor(SourceExtractor):
 
     def __len__(self):
         return len(self._items)
-
-    def subsets(self):
-        if self._subset:
-            return [self._subset]
-        return None
-
-    def get_subset(self, name):
-        if name != self._subset:
-            return None
-        return self
 
     @staticmethod
     def _parse_labels(path):
@@ -291,6 +276,8 @@ class MotSeqGtConverter(Converter, CliPlugin):
         anno_file = osp.join(anno_dir, MotPath.GT_FILENAME)
         with open(anno_file, 'w', encoding="utf-8") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=MotPath.FIELDS)
+
+            track_id_mapping = {-1: -1}
             for idx, item in enumerate(extractor):
                 log.debug("Converting item '%s'", item.id)
 
@@ -300,9 +287,13 @@ class MotSeqGtConverter(Converter, CliPlugin):
                     if anno.type != AnnotationType.bbox:
                         continue
 
+                    track_id = int(anno.attributes.get('track_id', -1))
+                    if track_id not in track_id_mapping:
+                        track_id_mapping[track_id] = len(track_id_mapping)
+                    track_id = track_id_mapping[track_id]
                     writer.writerow({
                         'frame_id': frame_id,
-                        'track_id': int(anno.attributes.get('track_id', -1)),
+                        'track_id': track_id,
                         'x': anno.x,
                         'y': anno.y,
                         'w': anno.w,
@@ -324,7 +315,7 @@ class MotSeqGtConverter(Converter, CliPlugin):
                     else:
                         log.debug("Item '%s' has no image" % item.id)
 
-        labels_file = osp.join(save_dir, MotPath.LABELS_FILE)
+        labels_file = osp.join(anno_dir, MotPath.LABELS_FILE)
         with open(labels_file, 'w', encoding='utf-8') as f:
             f.write('\n'.join(l.name
                 for l in extractor.categories()[AnnotationType.label].items)

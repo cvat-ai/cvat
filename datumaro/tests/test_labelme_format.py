@@ -36,7 +36,10 @@ class LabelMeConverterTest(TestCase):
                         annotations=[
                             Bbox(0, 4, 4, 8, label=2, group=2),
                             Polygon([0, 4, 4, 4, 5, 6], label=3, attributes={
-                                'occluded': True
+                                'occluded': True,
+                                'a1': 'qwe',
+                                'a2': True,
+                                'a3': 123,
                             }),
                             Mask(np.array([[0, 1], [1, 0], [1, 1]]), group=2,
                                 attributes={ 'username': 'test' }),
@@ -70,6 +73,9 @@ class LabelMeConverterTest(TestCase):
                             Polygon([0, 4, 4, 4, 5, 6], label=1, id=1,
                                 attributes={
                                     'occluded': True, 'username': '',
+                                    'a1': 'qwe',
+                                    'a2': True,
+                                    'a3': 123,
                                 }
                             ),
                             Mask(np.array([[0, 1], [1, 0], [1, 1]]), group=2,
@@ -150,7 +156,7 @@ class LabelMeExtractorTest(TestCase):
                             Polygon([30, 12, 42, 21, 24, 26, 15, 22, 18, 14, 22, 12, 27, 12],
                                 label=2, group=2, id=2,
                                 attributes={
-                                    'a1': '1',
+                                    'a1': True,
                                     'occluded': True,
                                     'username': 'anonymous'
                                 }
@@ -158,21 +164,21 @@ class LabelMeExtractorTest(TestCase):
                             Polygon([35, 21, 43, 22, 40, 28, 28, 31, 31, 22, 32, 25],
                                 label=3, group=2, id=3,
                                 attributes={
-                                    'kj': '1',
+                                    'kj': True,
                                     'occluded': False,
                                     'username': 'anonymous'
                                 }
                             ),
                             Bbox(13, 19, 10, 11, label=4, group=2, id=4,
                                 attributes={
-                                    'hg': '1',
+                                    'hg': True,
                                     'occluded': True,
                                     'username': 'anonymous'
                                 }
                             ),
                             Mask(mask2, label=5, group=1, id=5,
                                 attributes={
-                                    'd': '1',
+                                    'd': True,
                                     'occluded': False,
                                     'username': 'anonymous'
                                 }
@@ -180,7 +186,7 @@ class LabelMeExtractorTest(TestCase):
                             Polygon([64, 21, 74, 24, 72, 32, 62, 34, 60, 27, 62, 22],
                                 label=6, group=1, id=6,
                                 attributes={
-                                    'gfd lkj lkj hi': '1',
+                                    'gfd lkj lkj hi': True,
                                     'occluded': False,
                                     'username': 'anonymous'
                                 }

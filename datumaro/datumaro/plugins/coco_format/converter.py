@@ -1,5 +1,5 @@
 
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -364,9 +364,9 @@ class _KeypointsConverter(_InstancesConverter):
         solitary_points = []
 
         for g_id, group in groupby(annotations, lambda a: a.group):
-            if g_id and not cls.find_instance_anns(group):
+            if not g_id or g_id and not cls.find_instance_anns(group):
                 group = [a for a in group if a.type == AnnotationType.points]
-            solitary_points.extend(group)
+                solitary_points.extend(group)
 
         return solitary_points
 
@@ -514,7 +514,7 @@ class _Converter:
         filename += CocoPath.IMAGE_EXT
         path = osp.join(self._images_dir, filename)
         save_image(path, image)
-        return filename
+        return path
 
     def convert(self):
         self._make_dirs()
@@ -536,7 +536,7 @@ class _Converter:
             for item in subset:
                 filename = ''
                 if item.has_image:
-                    filename = item.image.filename
+                    filename = item.image.path
                 if self._save_images:
                     if item.has_image:
                         filename = self._save_image(item)

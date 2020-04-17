@@ -3,20 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
+import Layout from 'antd/lib/layout';
 
-import {
-    Layout,
-} from 'antd';
-
-import {
-    ActiveControl,
-    Rotation,
-} from 'reducers/interfaces';
-
-import {
-    Canvas,
-} from 'cvat-canvas';
+import { ActiveControl, Rotation } from 'reducers/interfaces';
+import { Canvas } from 'cvat-canvas';
 
 import RotateControl from './rotate-control';
 import CursorControl from './cursor-control';
@@ -35,6 +26,8 @@ import SplitControl from './split-control';
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 
     mergeObjects(enabled: boolean): void;
     groupObjects(enabled: boolean): void;
@@ -57,6 +50,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         repeatDrawShape,
         pasteShape,
         resetGroup,
+        normalizedKeyMap,
+        keyMap,
     } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -65,55 +60,15 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         }
     };
 
-    const keyMap = {
-        PASTE_SHAPE: {
-            name: 'Paste shape',
-            description: 'Paste a shape from internal CVAT clipboard',
-            sequence: 'ctrl+v',
-            action: 'keydown',
-        },
-        SWITCH_DRAW_MODE: {
-            name: 'Draw mode',
-            description: 'Repeat the latest procedure of drawing with the same parameters',
-            sequence: 'n',
-            action: 'keydown',
-        },
-        SWITCH_MERGE_MODE: {
-            name: 'Merge mode',
-            description: 'Activate or deactivate mode to merging shapes',
-            sequence: 'm',
-            action: 'keydown',
-        },
-        SWITCH_GROUP_MODE: {
-            name: 'Group mode',
-            description: 'Activate or deactivate mode to grouping shapes',
-            sequence: 'g',
-            action: 'keydown',
-        },
-        RESET_GROUP: {
-            name: 'Reset group',
-            description: 'Reset group for selected shapes (in group mode)',
-            sequence: 'shift+g',
-            action: 'keyup',
-        },
-        CANCEL: {
-            name: 'Cancel',
-            description: 'Cancel any active canvas mode',
-            sequence: 'esc',
-            action: 'keydown',
-        },
-        CLOCKWISE_ROTATION: {
-            name: 'Rotate clockwise',
-            description: 'Change image angle (add 90 degrees)',
-            sequence: 'ctrl+r',
-            action: 'keydown',
-        },
-        ANTICLOCKWISE_ROTATION: {
-            name: 'Rotate anticlockwise',
-            description: 'Change image angle (substract 90 degrees)',
-            sequence: 'ctrl+shift+r',
-            action: 'keydown',
-        },
+    const subKeyMap = {
+        PASTE_SHAPE: keyMap.PASTE_SHAPE,
+        SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
+        SWITCH_MERGE_MODE: keyMap.SWITCH_MERGE_MODE,
+        SWITCH_GROUP_MODE: keyMap.SWITCH_GROUP_MODE,
+        RESET_GROUP: keyMap.RESET_GROUP,
+        CANCEL: keyMap.CANCEL,
+        CLOCKWISE_ROTATION: keyMap.CLOCKWISE_ROTATION,
+        ANTICLOCKWISE_ROTATION: keyMap.ANTICLOCKWISE_ROTATION,
     };
 
     const handlers = {
@@ -186,11 +141,18 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             theme='light'
             width={44}
         >
-            <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
-
-            <CursorControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+            <CursorControl
+                cursorShortkey={normalizedKeyMap.CANCEL}
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+            />
             <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
-            <RotateControl rotateFrame={rotateFrame} />
+            <RotateControl
+                anticlockwiseShortcut={normalizedKeyMap.ANTICLOCKWISE_ROTATION}
+                clockwiseShortcut={normalizedKeyMap.CLOCKWISE_ROTATION}
+                rotateFrame={rotateFrame}
+            />
 
             <hr />
 
@@ -224,11 +186,14 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
 
             <MergeControl
+                switchMergeShortcut={normalizedKeyMap.SWITCH_MERGE_MODE}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 mergeObjects={mergeObjects}
             />
             <GroupControl
+                switchGroupShortcut={normalizedKeyMap.SWITCH_GROUP_MODE}
+                resetGroupShortcut={normalizedKeyMap.RESET_GROUP}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 groupObjects={groupObjects}

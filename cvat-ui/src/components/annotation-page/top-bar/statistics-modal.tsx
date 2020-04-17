@@ -3,18 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Tooltip,
-    Select,
-    Table,
-    Modal,
-    Spin,
-    Icon,
-    Row,
-    Col,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Tooltip from 'antd/lib/tooltip';
+import Select from 'antd/lib/select';
+import Table from 'antd/lib/table';
+import Modal from 'antd/lib/modal';
+import Spin from 'antd/lib/spin';
+import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 
 interface Props {

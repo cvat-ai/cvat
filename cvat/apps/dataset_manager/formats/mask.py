@@ -22,27 +22,38 @@ format_spec = {
     ],
 }
 
+from datumaro.components.converter import Converter
+class CvatMaskConverter(Converter):
+    def __init__(self, save_images=False):
+        self._save_images = save_images
+
+    def __call__(self, extractor, save_dir):
+        from datumaro.components.project import Environment, Dataset
+
+        env = Environment()
+        polygons_to_masks = env.transforms.get('polygons_to_masks')
+        boxes_to_masks = env.transforms.get('boxes_to_masks')
+        merge_instance_segments = env.transforms.get('merge_instance_segments')
+        id_from_image = env.transforms.get('id_from_image_name')
+
+        extractor = extractor.transform(polygons_to_masks)
+        extractor = extractor.transform(boxes_to_masks)
+        extractor = extractor.transform(merge_instance_segments)
+        extractor = extractor.transform(id_from_image)
+        extractor = Dataset.from_extractors(extractor) # apply lazy transforms
+
+        converter = env.make_converter('voc_segmentation',
+            apply_colormap=True, label_map='source',
+            save_images=self._save_images)
+        converter(extractor, save_dir=save_dir)
 
 def dump(file_object, annotations):
     from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor
     from cvat.apps.dataset_manager.util import make_zip_archive
-    from datumaro.components.project import Environment, Dataset
     from tempfile import TemporaryDirectory
 
-    env = Environment()
-    polygons_to_masks = env.transforms.get('polygons_to_masks')
-    boxes_to_masks = env.transforms.get('boxes_to_masks')
-    merge_instance_segments = env.transforms.get('merge_instance_segments')
-    id_from_image = env.transforms.get('id_from_image_name')
-
     extractor = CvatAnnotationsExtractor('', annotations)
-    extractor = extractor.transform(polygons_to_masks)
-    extractor = extractor.transform(boxes_to_masks)
-    extractor = extractor.transform(merge_instance_segments)
-    extractor = extractor.transform(id_from_image)
-    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
-    converter = env.make_converter('voc_segmentation',
-        apply_colormap=True, label_map='source')
+    converter = CvatMaskConverter()
     with TemporaryDirectory() as temp_dir:
         converter(extractor, save_dir=temp_dir)
         make_zip_archive(temp_dir, file_object)
