@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+# FIXME: Git application and package name clash in tests
 class _GitImportFix:
     import sys
     former_path = sys.path[:]
@@ -53,8 +54,8 @@ def _setUpModule():
     import sys
     sys.path.insert(0, __file__[:__file__.rfind('/dataset_manager/')])
 
-def tearDownModule():
-    _GitImportFix.restore()
+# def tearDownModule():
+    # _GitImportFix.restore()
 
 from io import BytesIO
 import os.path as osp
