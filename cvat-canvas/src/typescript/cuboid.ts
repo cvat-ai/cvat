@@ -328,7 +328,7 @@ function sortPointsClockwise(points: any[]): any[] {
     return points.reverse();
 }
 
-function setupCuboidPoints(actualPoints: any[]): any[] {
+function setupCuboidPoints(points: Point[]): any[] {
     let left;
     let right;
     let left2;
@@ -338,18 +338,18 @@ function setupCuboidPoints(actualPoints: any[]): any[] {
     let p3;
     let p4;
 
-    const height = Math.abs(actualPoints[0].x - actualPoints[1].x)
-        < Math.abs(actualPoints[1].x - actualPoints[2].x)
-        ? Math.abs(actualPoints[1].y - actualPoints[0].y)
-        : Math.abs(actualPoints[1].y - actualPoints[2].y);
+    const height = Math.abs(points[0].x - points[1].x)
+        < Math.abs(points[1].x - points[2].x)
+        ? Math.abs(points[1].y - points[0].y)
+        : Math.abs(points[1].y - points[2].y);
 
     // seperate into left and right point
     // we pick the first and third point because we know assume they will be on
     // opposite corners
-    if (actualPoints[0].x < actualPoints[2].x) {
-        [left,, right] = actualPoints;
+    if (points[0].x < points[2].x) {
+        [left,, right] = points;
     } else {
-        [right,, left] = actualPoints;
+        [right,, left] = points;
     }
 
     // get other 2 points using the given height
@@ -363,8 +363,8 @@ function setupCuboidPoints(actualPoints: any[]): any[] {
 
     // get the vector for the last point relative to the previous point
     const vec = {
-        x: actualPoints[3].x - actualPoints[2].x,
-        y: actualPoints[3].y - actualPoints[2].y,
+        x: points[3].x - points[2].x,
+        y: points[3].y - points[2].y,
     };
 
     if (left.y < left2.y) {
@@ -392,13 +392,13 @@ function setupCuboidPoints(actualPoints: any[]): any[] {
     return [p1, p2, p3, p4, p5, p6, p7, p8];
 }
 
-export function cuboidPointsBy4Points(points: any[]): any[] {
-    const actualPoints = [];
+export function cuboidFrom4Points(flattenedPoints: any[]): any[] {
+    const points: Point[] = [];
     for (let i = 0; i < 4; i++) {
-        const [x, y] = points.slice(i * 2, i * 2 + 2);
-        actualPoints.push({ x, y });
+        const [x, y] = flattenedPoints.slice(i * 2, i * 2 + 2);
+        points.push({ x, y });
     }
-    const unsortedPlanePoints = actualPoints.slice(0, 3);
+    const unsortedPlanePoints = points.slice(0, 3);
     function rotate(array: any[], times: number): void{
         let t = times;
         while (t--) {
@@ -408,22 +408,22 @@ export function cuboidPointsBy4Points(points: any[]): any[] {
     }
 
     const plane2 = {
-        p1: actualPoints[0],
-        p2: actualPoints[0],
-        p3: actualPoints[0],
-        p4: actualPoints[0],
+        p1: points[0],
+        p2: points[0],
+        p3: points[0],
+        p4: points[0],
     };
 
     // completing the plane
     const vector = {
-        x: actualPoints[2].x - actualPoints[1].x,
-        y: actualPoints[2].y - actualPoints[1].y,
+        x: points[2].x - points[1].x,
+        y: points[2].y - points[1].y,
     };
 
     // sorting the first plane
     unsortedPlanePoints.push({
-        x: actualPoints[0].x + vector.x,
-        y: actualPoints[0].y + vector.y,
+        x: points[0].x + vector.x,
+        y: points[0].y + vector.y,
     });
     const sortedPlanePoints = sortPointsClockwise(unsortedPlanePoints);
     let leftIndex = 0;
@@ -439,8 +439,8 @@ export function cuboidPointsBy4Points(points: any[]): any[] {
     };
 
     const vec = {
-        x: actualPoints[3].x - actualPoints[2].x,
-        y: actualPoints[3].y - actualPoints[2].y,
+        x: points[3].x - points[2].x,
+        y: points[3].y - points[2].y,
     };
     // determine the orientation
     const angle = Math.atan2(vec.y, vec.x);
@@ -455,10 +455,10 @@ export function cuboidPointsBy4Points(points: any[]): any[] {
     let cuboidPoints;
     // right
     if (Math.abs(angle) < Math.PI / 2 - 0.1) {
-        cuboidPoints = setupCuboidPoints(actualPoints);
+        cuboidPoints = setupCuboidPoints(points);
     // left
     } else if (Math.abs(angle) > Math.PI / 2 + 0.1) {
-        cuboidPoints = setupCuboidPoints(actualPoints);
+        cuboidPoints = setupCuboidPoints(points);
     // down
     } else if (angle > 0) {
         cuboidPoints = [

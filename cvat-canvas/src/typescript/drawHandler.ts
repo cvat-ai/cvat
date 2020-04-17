@@ -23,7 +23,7 @@ import {
     Box,
 } from './shared';
 
-import { Cuboid2PointViewModel, cuboidPointsBy4Points } from './cuboid';
+import { cuboidFrom4Points } from './cuboid';
 
 export interface DrawHandler {
     draw(drawData: DrawData, geometry: Geometry): void;
@@ -343,7 +343,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 && points.length === 4 * 2) {
                 this.onDrawDone({
                     shapeType,
-                    points: cuboidPointsBy4Points(points),
+                    points: cuboidFrom4Points(points),
                 }, Date.now() - this.startTimestamp);
             }
         });
