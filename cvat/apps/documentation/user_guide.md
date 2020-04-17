@@ -187,7 +187,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Stop frame**. Frame on which video in task ends.
 
     **Frame Step**. Use this option to filter video frames.
-    For example, enter ``25`` to leave every twenty fifth frame in the video. Use this option on video files only.
+    For example, enter ``25`` to leave every twenty fifth frame in the video or every twenty fifth image. 
 
     **Chunk size**. Defines a number of frames to be packed in a chunk when send from client to server.
     Server defines automatically if empty.
@@ -281,7 +281,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     UX, only the first chunk of several frames will be loaded and you will be able
     to annotate first images. Other frames will be loaded in background.
 
-    ![](static/documentation/images/image007.jpg)
+    ![](static/documentation/images/image007_DETRAC.jpg)
 
 ### Models
 
@@ -355,34 +355,46 @@ The tool consists of:
 
 ### Basic navigation
 
-1.  Use arrows below to move on next/previous frame.
+1.  Use arrows below to move to the next/previous frame.
     Use the scroll bar slider to scroll through frames.
-    Almost every button is covered by a shortcut.
-    To get a hint about a shortcut, just put your mouse pointer over an UI element.
+    Almost every button has a shortcut.
+    To get a hint about a shortcut, just move your mouse pointer over an UI element.
 
     ![](static/documentation/images/image008.jpg)
 
-1.  An image can be scaled in/out using mouse's wheel. The image will be zoomed relatively your current cursor position.
-    Thus, if you point on an object, it will be under your mouse during zooming process.
+1.  To navigate the image, use the button on the controls sidebar. 
+    Another way an image can be moved/shifted is by holding the left mouse button inside 
+    an area without annotated objects. 
+    If the ``Mouse Wheel`` is pressed, then all annotated objects are ignored. Otherwise the
+    a highlighted bounding box will be moved instead of the image itself.
 
-1.  An image can be moved/shifted by holding left mouse button inside some area without annotated objects.
-    If ``Mouse Wheel`` is pressed, then all annotated objects are ignored.
-    Otherwise, a highlighted bounding box will be moved instead of the image itself.
+    ![](static/documentation/images/image136.jpg)
+
+1.  You can use the button on the sidebar controls to zoom on a region of interest. 
+    Use the button ``Fit the image`` to fit the image in the workspace.
+    You can also use the mouse wheel to scale the image 
+    (the image will be zoomed relatively to your current cursor position).
+
+    ![](static/documentation/images/image137.jpg)
 
 ### Types of shapes (basics)
+
 There are four shapes which you can annotate your images with:
-- ``box``
-- ``polygon``
-- ``polyline``
-- ``points``
-- ``auto segmentation``
+- ``Rectangle`` or ``Bounding box``
+- ``Polygon``
+- ``Polyline``
+- ``Points``
+- ``Tag``
 
 And there is how they all look like:
 
-![](static/documentation/images/image038.jpg "Box") ![](static/documentation/images/image033.jpg "Polygon")
+![](static/documentation/images/image038_DETRAC.jpg "Rectangle") ![](static/documentation/images/image033_DETRAC.jpg "Polygon")
 
-![](static/documentation/images/image009.jpg "Polyline") ![](static/documentation/images/image010.jpg "Points")
-![](static/documentation/images/gif009_DETRAC.gif "Auto Segmentation")
+![](static/documentation/images/image009_mapillary_vistas.jpg "Polyline") ![](static/documentation/images/image010_Affectnet.jpg "Points")
+
+![](static/documentation/images/image135.jpg "Tag")
+
+``Tag`` - has no shape in the workspace, but is displayed in objects sidebar.
 
 ### Annotation mode (basics)
 Usage examples:

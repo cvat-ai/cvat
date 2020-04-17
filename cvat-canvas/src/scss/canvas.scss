@@ -103,6 +103,24 @@ polyline.cvat_canvas_shape_splitting {
     stroke-dasharray: 5;
 }
 
+.cvat_canvas_autoborder_point {
+    opacity: 0.55;
+}
+
+.cvat_canvas_autoborder_point:hover {
+    opacity: 1;
+    fill: red;
+}
+
+.cvat_canvas_autoborder_point:active {
+    opacity: 0.55;
+    fill: red;
+}
+
+.cvat_canvas_autoborder_point_direction {
+    fill: blueviolet;
+}
+
 .svg_select_boundingRect {
     opacity: 0;
     pointer-events: none;
