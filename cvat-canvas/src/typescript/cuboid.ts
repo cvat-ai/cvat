@@ -125,8 +125,8 @@ export class CuboidModel {
         this.points = points;
         this.initEdges();
         this.initFaces();
-        this.updateVanishingPoints();
-        this.buildBackEdge();
+        this.updateVanishingPoints(false);
+        this.buildBackEdge(false);
         this.updatePoints();
     }
 

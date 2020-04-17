@@ -4,7 +4,6 @@
 
 import * as SVG from 'svg.js';
 import consts from './consts';
-import { Position } from './canvasModel';
 
 export interface ShapeSizeElement {
     sizeElement: any;
@@ -107,7 +106,6 @@ export function displayShapeSize(
     return shapeSize;
 }
 
-
 export function convertToArray(points: Point[]): number[][] {
     const arr: number[][] = [];
     points.forEach((point: Point): void => {
@@ -116,25 +114,17 @@ export function convertToArray(points: Point[]): number[][] {
     return arr;
 }
 
-export function pointsToObjects(stringified: string): Point[] {
-    return pointsToArray(stringified)
-        .reduce((points: Point[], coord: number, index: number): Point[] => {
-            if (index % 2 === 0) {
-                points.push({ x: coord, y: null });
-            } else {
-                // eslint-disable-next-line no-param-reassign
-                points.slice(-1)[0].y = coord;
-            }
-            return points;
-        }, []);
+export function parsePoints(stringified: string): Point[] {
+    return stringified.trim().split(/\s/).map((point: string): Point => {
+        const [x, y] = point.split(',').map((coord: string): number => +coord);
+        return { x, y };
+    });
 }
 
-export function pointObjectsToString(points: Point[]): string {
-    return points.reduce((acc: string, point: Point): string => {
-        return `${acc}${point.x} ${point.y},`;
-    }, '').slice(0, -1);
+export function stringifyPoints(points: Point[]): string {
+    return points.map((point: Point): string => `${point.x},${point.y}`).join(' ');
 }
 
 export function clamp(x: number, min: number, max: number): number {
     return Math.min(Math.max(x, min), max);
-};
+}
