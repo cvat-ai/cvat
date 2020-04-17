@@ -322,17 +322,22 @@ for (const key of Object.keys(originalResize)) {
                     } 
 
                     if ([0, 1].includes(resizablePointIndex)) {
-                        // up top or bottom edge on the front face
+                        // if we changed Y for the first end of the edge
+                        // we must change Y for the second end of the edge on the same value
+                        // here we up top or bottom edge on the front face
                         if (resizablePointIndex === 0) {
                             this._viewModel.ft.points[0].y = cubePoints[0].y + dy;
                         } else if (resizablePointIndex === 1) {
                             this._viewModel.fb.points[0].y = cubePoints[1].y + dy;
                         }
 
-                        // shift back edge on dx (only one point, the second will be shifted later)
+                        // we must shift neightbour edge on X (dl for fl, dr for fr)
+                        // actually shifting happens in computeHeightFace() function
+                        // but this function is going to use this point, so we must update it
+                        // shift back edge on dx (only one point to computing, the second will be shifted later)
                         this._viewModel.dl.points[0].x = cubePoints[7].x + dx;
 
-                        // get top and bottom x and y for this edge (front left)
+                        // compute new coordinates for this cube point
                         const x1 = cubePoints[0].x + dx;
                         const x2 = cubePoints[1].x + dx;
                         const y1 = this._viewModel.ft.getEquation().getY(x1);
@@ -344,33 +349,29 @@ for (const key of Object.keys(originalResize)) {
                         const topPoints = this.computeHeightFace(midPointUp, 1);
                         const bottomPoints = this.computeHeightFace(midPointDown, 1);
                         
-                        // and apply them
+                        // and apply these faces to the cube
+                        // all points of the cube will be updated properly
                         this._viewModel.top.points = topPoints;
                         this._viewModel.bot.points = bottomPoints;
                     } else if ([2, 3].includes(resizablePointIndex)) {
-                        // up top or bottom edge on the front face
                         if (resizablePointIndex === 3) {
                             this._viewModel.ft.points[1].y = cubePoints[2].y + dy;
                         } else if (resizablePointIndex === 2) {
                             this._viewModel.fb.points[1].y = cubePoints[3].y + dy;
                         }
 
-                        // shift back edge on dx (only one point, the second will be shifted later)
                         this._viewModel.dr.points[0].x = cubePoints[4].x + dx;
 
-                        // get top and bottom x and y for this edge (front left)
                         const x1 = cubePoints[2].x + dx;
                         const x2 = cubePoints[3].x + dx;
                         const y1 = this._viewModel.ft.getEquation().getY(x1);
                         const y2 = this._viewModel.fb.getEquation().getY(x2);
 
-                        // now compute new coordinates for top and bottom faces
                         const midPointUp = { x: x1, y: y1 };
                         const midPointDown = { x: x2, y: y2 };
                         const topPoints = this.computeHeightFace(midPointUp, 2);
                         const bottomPoints = this.computeHeightFace(midPointDown, 2);
                         
-                        // and apply them
                         this._viewModel.top.points = topPoints;
                         this._viewModel.bot.points = bottomPoints;                        
                     }
@@ -393,29 +394,24 @@ for (const key of Object.keys(originalResize)) {
                 }).on('resizing', (event: CustomEvent) => {
                     const { dx, dy } = event.detail;
     
-                    // up top or bottom edge on the dorsal face
                     if (resizablePointIndex === 0) {
                         this._viewModel.dt.points[1].y = cubePoints[4].y + dy;
                     } else if (resizablePointIndex === 1) {
                         this._viewModel.db.points[1].y = cubePoints[5].y + dy;
                     }
 
-                    // shift front edge on dx (only one point, the second will be shifted later)
                     this._viewModel.fr.points[0].x = cubePoints[2].x + dx;
 
-                    // get top and bottom x and y for this edge (front left)
                     const x1 = cubePoints[4].x + dx;
                     const x2 = cubePoints[5].x + dx;
                     const y1 = this._viewModel.dt.getEquation().getY(x1);
                     const y2 = this._viewModel.db.getEquation().getY(x2);
 
-                    // now compute new coordinates for top and bottom faces
                     const midPointUp = { x: x1, y: y1 };
                     const midPointDown = { x: x2, y: y2 };
                     const topPoints = this.computeHeightFace(midPointUp, 3);
                     const bottomPoints = this.computeHeightFace(midPointDown, 3);
                     
-                    // and apply them
                     this._viewModel.top.points = topPoints;
                     this._viewModel.bot.points = bottomPoints;
 
