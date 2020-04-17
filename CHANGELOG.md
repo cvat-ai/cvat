@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0-beta.2] - Unreleased
 ### Added
 - Added `datumaro_project` export format (https://github.com/opencv/cvat/pull/1352)
+- Re-Identification algorithm to merging bounding boxes automatically to the new UI (https://github.com/opencv/cvat/pull/1406)
+- Methods ``import`` and ``export`` to import/export raw annotations for Job and Task in ``cvat-core`` (https://github.com/opencv/cvat/pull/1406)
 
 ### Changed
 - Downloaded file name in annotations export became more informative (https://github.com/opencv/cvat/pull/1352)
@@ -30,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added directory removal on error during `extract` command (https://github.com/opencv/cvat/pull/1352)
 - Added debug error message on incorrect XPath (https://github.com/opencv/cvat/pull/1352)
 - Exporting frame stepped task (https://github.com/opencv/cvat/issues/1294, https://github.com/opencv/cvat/issues/1334)
+- Auto annotation, TF annotation and Auto segmentation apps (https://github.com/opencv/cvat/pull/1409)
 
 ### Security
 -
@@ -45,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to create one tracked point (https://github.com/opencv/cvat/pull/1383)
 - Ability to draw/edit polygons and polylines with automatic bordering feature (https://github.com/opencv/cvat/pull/1394)
 - Tutorial: instructions for CVAT over HTTPS
-- Added deep extreme cut (semi-automatic segmentation) to the new UI (https://github.com/opencv/cvat/pull/1398)
+- Deep extreme cut (semi-automatic segmentation) to the new UI (https://github.com/opencv/cvat/pull/1398)
 
 ### Changed
 - Increase preview size of a task till 256, 256 on the server

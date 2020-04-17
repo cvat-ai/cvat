@@ -150,7 +150,7 @@ class ReID:
         job = rq.get_current_job()
         box_tracks = {}
 
-        next_image = cv2.imdecode(numpy.fromstring(next(self.__frame_iter).read(), numpy.uint8), cv2.IMREAD_COLOR)
+        next_image = cv2.imdecode(numpy.fromstring((next(self.__frame_iter)[0]).read(), numpy.uint8), cv2.IMREAD_COLOR)
         for idx, (cur_frame, next_frame) in enumerate(list(zip(frames[:-1], frames[1:]))):
             job.refresh()
             if "cancel" in job.meta:
@@ -172,7 +172,7 @@ class ReID:
                 continue
 
             cur_image = next_image
-            next_image = cv2.imdecode(numpy.fromstring(next(self.__frame_iter).read(), numpy.uint8), cv2.IMREAD_COLOR)
+            next_image = cv2.imdecode(numpy.fromstring((next(self.__frame_iter)[0]).read(), numpy.uint8), cv2.IMREAD_COLOR)
             difference_matrix = self.__compute_difference_matrix(cur_boxes, next_boxes, cur_image, next_image)
             cur_idxs, next_idxs = linear_sum_assignment(difference_matrix)
             for idx, cur_idx in enumerate(cur_idxs):

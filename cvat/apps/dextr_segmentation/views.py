@@ -123,3 +123,6 @@ def check(request, jid):
     except Exception as ex:
         slogger.job[jid].error("can't check a dextr request for the job {}".format(jid), exc_info=True)
         return HttpResponseBadRequest(str(ex))
+
+def enabled(request):
+    return HttpResponse()
