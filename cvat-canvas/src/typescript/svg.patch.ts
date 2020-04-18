@@ -10,7 +10,12 @@ import 'svg.select.js';
 import 'svg.draw.js';
 
 import consts from './consts';
-import { Point, Equation, CuboidModel } from './cuboid';
+import { 
+    Point,
+    Equation,
+    CuboidModel,
+    Orientation,
+} from './cuboid';
 import { parsePoints, stringifyPoints } from './shared';
 
 // Update constructor
@@ -190,7 +195,7 @@ for (const key of Object.keys(originalResize)) {
     inherit: SVG.G,
     extend: {
         constructorMethod(points: string) {
-            this._viewModel = new CuboidModel(parsePoints(points));
+            this.cuboidModel = new CuboidModel(parsePoints(points));
             this.setupFaces();
             this.setupEdges();
             this.setupProjections();
@@ -201,21 +206,21 @@ for (const key of Object.keys(originalResize)) {
         },
 
         setupFaces() {
-            this.face = this.polygon(this._viewModel.front.points);
-            this.right = this.polygon(this._viewModel.right.points);
-            this.dorsal = this.polygon(this._viewModel.dorsal.points);
-            this.left = this.polygon(this._viewModel.left.points);
+            this.face = this.polygon(this.cuboidModel.front.points);
+            this.right = this.polygon(this.cuboidModel.right.points);
+            this.dorsal = this.polygon(this.cuboidModel.dorsal.points);
+            this.left = this.polygon(this.cuboidModel.left.points);
         },
 
         setupProjections() {
-            this.ftProj = this.line(this.updateProjectionLine(this._viewModel.ft.getEquation(),
-                this._viewModel.ft.points[0], this._viewModel.vpl));
-            this.fbProj = this.line(this.updateProjectionLine(this._viewModel.fb.getEquation(),
-                this._viewModel.ft.points[0], this._viewModel.vpl));
-            this.rtProj = this.line(this.updateProjectionLine(this._viewModel.rt.getEquation(),
-                this._viewModel.rt.points[1], this._viewModel.vpr));
-            this.rbProj = this.line(this.updateProjectionLine(this._viewModel.rb.getEquation(),
-                this._viewModel.rb.points[1], this._viewModel.vpr));
+            this.ftProj = this.line(this.updateProjectionLine(this.cuboidModel.ft.getEquation(),
+                this.cuboidModel.ft.points[0], this.cuboidModel.vpl));
+            this.fbProj = this.line(this.updateProjectionLine(this.cuboidModel.fb.getEquation(),
+                this.cuboidModel.ft.points[0], this.cuboidModel.vpl));
+            this.rtProj = this.line(this.updateProjectionLine(this.cuboidModel.rt.getEquation(),
+                this.cuboidModel.rt.points[1], this.cuboidModel.vpr));
+            this.rbProj = this.line(this.updateProjectionLine(this.cuboidModel.rb.getEquation(),
+                this.cuboidModel.rb.points[1], this.cuboidModel.vpr));
 
             this.ftProj.stroke({ color: '#C0C0C0' });
             this.fbProj.stroke({ color: '#C0C0C0' });
@@ -224,15 +229,15 @@ for (const key of Object.keys(originalResize)) {
         },
 
         setupEdges() {
-            this.frontLeftEdge = this.line(this._viewModel.fl.points);
-            this.frontRightEdge = this.line(this._viewModel.fr.points);
-            this.dorsalRightEdge = this.line(this._viewModel.dr.points);
-            this.dorsalLeftEdge = this.line(this._viewModel.dl.points);
+            this.frontLeftEdge = this.line(this.cuboidModel.fl.points);
+            this.frontRightEdge = this.line(this.cuboidModel.fr.points);
+            this.dorsalRightEdge = this.line(this.cuboidModel.dr.points);
+            this.dorsalLeftEdge = this.line(this.cuboidModel.dl.points);
 
-            this.frontTopEdge = this.line(this._viewModel.ft.points);
-            this.rightTopEdge = this.line(this._viewModel.rt.points);
-            this.frontBotEdge = this.line(this._viewModel.fb.points);
-            this.rightBotEdge = this.line(this._viewModel.rb.points);
+            this.frontTopEdge = this.line(this.cuboidModel.ft.points);
+            this.rightTopEdge = this.line(this.cuboidModel.rt.points);
+            this.frontBotEdge = this.line(this.cuboidModel.fb.points);
+            this.rightBotEdge = this.line(this.cuboidModel.rb.points);
         },
 
         showProjections() {
@@ -273,180 +278,246 @@ for (const key of Object.keys(originalResize)) {
             return [[x1, y1], [x2, y2]];
         },
 
-        selectize(value: any, options: any) {
+        selectize(value: boolean, options: object) {
             this.face.selectize(value, options);
 
-            this.dorsalRightEdge.selectize(value, options);
+            if (this.cuboidModel.orientation === Orientation.LEFT) {
+                this.dorsalLeftEdge.selectize(false, options);
+                this.dorsalRightEdge.selectize(value, options);
+            } else {
+                this.dorsalRightEdge.selectize(false, options);
+                this.dorsalLeftEdge.selectize(value, options);
+            }
 
             return this;
         },
 
         resize(value?: string | object) {
             this.face.resize(value);
-            this.dorsalRightEdge.resize(value);
 
-            this.face.off('resizing').off('resizedone').off('resizestart');
-            this.dorsalRightEdge.off('resizing').off('resizedone').off('resizestart');
+            if (value === 'stop') {
+                this.dorsalRightEdge.resize(value);
+                this.dorsalLeftEdge.resize(value);
+                this.face.off('resizing').off('resizedone').off('resizestart');
+                this.dorsalRightEdge.off('resizing').off('resizedone').off('resizestart');
+                this.dorsalLeftEdge.off('resizing').off('resizedone').off('resizestart');
+                return;
+            }
 
-            if (value !== 'stop') {
-                const accumulatedOffset: Point = {
-                    x: 0,
-                    y: 0,
-                };
-                let cubePoints: Point[] = [];
-                let resizablePointIndex: null | number = null;
-                
-                this.face.on('resizestart', (event: CustomEvent) => {
-                    cubePoints = JSON.parse(JSON.stringify(this._viewModel.getPoints()));
-                    const { target } = event.detail.event.detail.event;
-                    const { parentElement } = target;
-                    resizablePointIndex = Array
-                        .from(parentElement.children)
-                        .indexOf(target);
-                    this.fire(new CustomEvent('resizestart', event));
-                    accumulatedOffset.x = 0;
-                    accumulatedOffset.y = 0;
-                }).on('resizing', (event: CustomEvent) => {
-                    let { dx, dy } = event.detail;
-                    let dxPortion = dx - accumulatedOffset.x;
-                    let dyPortion = dy - accumulatedOffset.y;
-                    accumulatedOffset.x += dxPortion;
-                    accumulatedOffset.y += dyPortion;
+            const accumulatedOffset: Point = {
+                x: 0,
+                y: 0,
+            };
+            let cubePoints: Point[] = [];
+            let resizablePointIndex: null | number = null;
+            
+            this.face.on('resizestart', (event: CustomEvent) => {
+                cubePoints = JSON.parse(JSON.stringify(this.cuboidModel.getPoints()));
+                const { target } = event.detail.event.detail.event;
+                const { parentElement } = target;
+                resizablePointIndex = Array
+                    .from(parentElement.children)
+                    .indexOf(target);
+                this.fire(new CustomEvent('resizestart', event));
+                accumulatedOffset.x = 0;
+                accumulatedOffset.y = 0;
+            }).on('resizing', (event: CustomEvent) => {
+                let { dx, dy } = event.detail;
+                let dxPortion = dx - accumulatedOffset.x;
+                let dyPortion = dy - accumulatedOffset.y;
+                accumulatedOffset.x += dxPortion;
+                accumulatedOffset.y += dyPortion;
 
-                    let facePoints = parsePoints(this.face.attr('points'));
+                let facePoints = parsePoints(this.face.attr('points'));
 
-                    if (facePoints[2].x - facePoints[1].x + dx < consts.MIN_EDGE_LENGTH 
-                        || facePoints[1].y - facePoints[0].y + dy < consts.MIN_EDGE_LENGTH
-                    ) {
-                        this.face.plot(this._viewModel.front.points);
-                        return;
-                    }
+                if (facePoints[2].x - facePoints[1].x + dx < consts.MIN_EDGE_LENGTH 
+                    || facePoints[1].y - facePoints[0].y + dy < consts.MIN_EDGE_LENGTH
+                ) {
+                    this.face.plot(this.cuboidModel.front.points);
+                    return;
+                }
 
+                if ([0, 1].includes(resizablePointIndex)) {
+                    let cuboidPoints = this.cuboidModel.getPoints();
 
-                    if ([0, 1].includes(resizablePointIndex)) {
-                        facePoints = this._viewModel.getPoints();
-
-                        const x1 = facePoints[0].x + dxPortion;
-                        const x2 = facePoints[1].x + dxPortion;
-                        const y1 = this._viewModel.ft.getEquation().getY(x1);
-                        const y2 = this._viewModel.fb.getEquation().getY(x2);
-                        const topPoint = { x: x1, y: y1 };
-                        const botPoint = { x: x2, y: y2 };
-
-                        this._viewModel.fl.points = [topPoint, botPoint];
-                        this.updateViewAndVM();
-
-                        
-                        facePoints = this._viewModel.getPoints();
-                        let midPointUp: Point | null = null;
-                        let midPointDown: Point | null = null;
-                        if (resizablePointIndex === 0) {
-                            midPointUp = { x: facePoints[0].x, y: facePoints[0].y + dyPortion }
-                            midPointDown = { x: facePoints[1].x, y: facePoints[1].y };
-                        } else if (resizablePointIndex === 1) {
-                            midPointUp = { x: facePoints[0].x, y: facePoints[0].y };
-                            midPointDown = { x: facePoints[1].x, y: facePoints[1].y + dyPortion };
-                        }
-                        
-                        const topPoints = this.computeHeightFace(midPointUp, 1);
-                        const bottomPoints = this.computeHeightFace(midPointDown, 1);
-                        this._viewModel.top.points = topPoints;
-                        this._viewModel.bot.points = bottomPoints;                        
-                        this.updateViewAndVM(false);                        
-                    } else if ([2, 3].includes(resizablePointIndex)) {
-                        facePoints = this._viewModel.getPoints();
-
-                        const x1 = facePoints[2].x + dxPortion;
-                        const x2 = facePoints[3].x + dxPortion;
-                        const y1 = this._viewModel.ft.getEquation().getY(x1);
-                        const y2 = this._viewModel.fb.getEquation().getY(x2);
-                        const topPoint = { x: x1, y: y1 };
-                        const botPoint = { x: x2, y: y2 };
-
-                        this._viewModel.fr.points = [topPoint, botPoint];
-                        this.updateViewAndVM(true);
-
-
-
-                        facePoints = this._viewModel.getPoints();
-                        let midPointUp: Point | null = null;
-                        let midPointDown: Point | null = null;
-                        if (resizablePointIndex === 3) {
-                            midPointUp = { x: facePoints[2].x, y: facePoints[2].y + dyPortion }
-                            midPointDown = { x: facePoints[3].x, y: facePoints[3].y };
-                        } else if (resizablePointIndex === 2) {
-                            midPointUp = { x: facePoints[2].x, y: facePoints[2].y };
-                            midPointDown = { x: facePoints[3].x, y: facePoints[3].y + dyPortion };
-                        }
-                        
-                        const topPoints = this.computeHeightFace(midPointUp, 2);
-                        const bottomPoints = this.computeHeightFace(midPointDown, 2);
-                        this._viewModel.top.points = topPoints;
-                        this._viewModel.bot.points = bottomPoints;                        
-                        this.updateViewAndVM(false);                             
-                    }
-
-                    this.face.plot(this._viewModel.front.points);
-                    this.fire(new CustomEvent('resizing', event));
-                }).on('resizedone', (event: CustomEvent) => {
-                    this.fire(new CustomEvent('resizedone', event));
-                });
-
-                this.dorsalRightEdge.on('resizestart', (event: CustomEvent) => {
-                    cubePoints = JSON.parse(JSON.stringify(this._viewModel.getPoints()));
-                    const { target } = event.detail.event.detail.event;
-                    const { parentElement } = target;
-                    resizablePointIndex = Array
-                        .from(parentElement.children)
-                        .indexOf(target);
-                    this.fire(new CustomEvent('resizestart', event));
-                    accumulatedOffset.x = 0;
-                    accumulatedOffset.y = 0;
-                }).on('resizing', (event: CustomEvent) => {
-                    let { dx, dy } = event.detail;
-                    let dxPortion = dx - accumulatedOffset.x;
-                    let dyPortion = dy - accumulatedOffset.y;
-                    accumulatedOffset.x += dxPortion;
-                    accumulatedOffset.y += dyPortion;
-
-                    let facePoints = this._viewModel.getPoints();
-
-                    const x1 = facePoints[4].x + dxPortion;
-                    const x2 = facePoints[5].x + dxPortion;
-                    const y1 = this._viewModel.rt.getEquation().getY(x1);
-                    const y2 = this._viewModel.rb.getEquation().getY(x2);
+                    const x1 = cuboidPoints[0].x + dxPortion;
+                    const x2 = cuboidPoints[1].x + dxPortion;
+                    const y1 = this.cuboidModel.ft.getEquation().getY(x1);
+                    const y2 = this.cuboidModel.fb.getEquation().getY(x2);
                     const topPoint = { x: x1, y: y1 };
                     const botPoint = { x: x2, y: y2 };
 
-                    this._viewModel.dr.points = [topPoint, botPoint];
+                    this.cuboidModel.fl.points = [topPoint, botPoint];
+                    this.updateViewAndVM();
+
+                    
+                    cuboidPoints = this.cuboidModel.getPoints();
+                    let midPointUp: Point | null = null;
+                    let midPointDown: Point | null = null;
+                    if (resizablePointIndex === 0) {
+                        midPointUp = { x: cuboidPoints[0].x, y: cuboidPoints[0].y + dyPortion }
+                        midPointDown = { x: cuboidPoints[1].x, y: cuboidPoints[1].y };
+                    } else if (resizablePointIndex === 1) {
+                        midPointUp = { x: cuboidPoints[0].x, y: cuboidPoints[0].y };
+                        midPointDown = { x: cuboidPoints[1].x, y: cuboidPoints[1].y + dyPortion };
+                    }
+                    
+                    const topPoints = this.computeHeightFace(midPointUp, 1);
+                    const bottomPoints = this.computeHeightFace(midPointDown, 1);
+                    this.cuboidModel.top.points = topPoints;
+                    this.cuboidModel.bot.points = bottomPoints;                        
+                    this.updateViewAndVM(false);                        
+                } else if ([2, 3].includes(resizablePointIndex)) {
+                    let cuboidPoints = this.cuboidModel.getPoints();
+
+                    const x1 = cuboidPoints[2].x + dxPortion;
+                    const x2 = cuboidPoints[3].x + dxPortion;
+                    const y1 = this.cuboidModel.ft.getEquation().getY(x1);
+                    const y2 = this.cuboidModel.fb.getEquation().getY(x2);
+                    const topPoint = { x: x1, y: y1 };
+                    const botPoint = { x: x2, y: y2 };
+
+                    this.cuboidModel.fr.points = [topPoint, botPoint];
+                    this.updateViewAndVM(true);
+
+
+
+                    cuboidPoints = this.cuboidModel.getPoints();
+                    let midPointUp: Point | null = null;
+                    let midPointDown: Point | null = null;
+                    if (resizablePointIndex === 3) {
+                        midPointUp = { x: cuboidPoints[2].x, y: cuboidPoints[2].y + dyPortion }
+                        midPointDown = { x: cuboidPoints[3].x, y: cuboidPoints[3].y };
+                    } else if (resizablePointIndex === 2) {
+                        midPointUp = { x: cuboidPoints[2].x, y: cuboidPoints[2].y };
+                        midPointDown = { x: cuboidPoints[3].x, y: cuboidPoints[3].y + dyPortion };
+                    }
+                    
+                    const topPoints = this.computeHeightFace(midPointUp, 2);
+                    const bottomPoints = this.computeHeightFace(midPointDown, 2);
+                    this.cuboidModel.top.points = topPoints;
+                    this.cuboidModel.bot.points = bottomPoints;                        
+                    this.updateViewAndVM(false);                             
+                }
+
+                this.face.plot(this.cuboidModel.front.points);
+                this.fire(new CustomEvent('resizing', event));
+            }).on('resizedone', (event: CustomEvent) => {
+                this.fire(new CustomEvent('resizedone', event));
+            });
+
+            if (this.cuboidModel.orientation === Orientation.LEFT) {
+                this.dorsalRightEdge.resize(value);
+                this.dorsalRightEdge.on('resizestart', (event: CustomEvent) => {
+                    cubePoints = JSON.parse(JSON.stringify(this.cuboidModel.getPoints()));
+                    const { target } = event.detail.event.detail.event;
+                    const { parentElement } = target;
+                    resizablePointIndex = Array
+                        .from(parentElement.children)
+                        .indexOf(target);
+                    this.fire(new CustomEvent('resizestart', event));
+                    accumulatedOffset.x = 0;
+                    accumulatedOffset.y = 0;
+                }).on('resizing', (event: CustomEvent) => {
+                    let { dx, dy } = event.detail;
+                    let dxPortion = dx - accumulatedOffset.x;
+                    let dyPortion = dy - accumulatedOffset.y;
+                    accumulatedOffset.x += dxPortion;
+                    accumulatedOffset.y += dyPortion;
+
+                    let cuboidPoints = this.cuboidModel.getPoints();
+
+                    const x1 = cuboidPoints[4].x + dxPortion;
+                    const x2 = cuboidPoints[5].x + dxPortion;
+                    const y1 = this.cuboidModel.rt.getEquation().getY(x1);
+                    const y2 = this.cuboidModel.rb.getEquation().getY(x2);
+                    const topPoint = { x: x1, y: y1 };
+                    const botPoint = { x: x2, y: y2 };
+
+                    this.cuboidModel.dr.points = [topPoint, botPoint];
                     this.updateViewAndVM();
 
 
 
-                    facePoints = this._viewModel.getPoints();
+                    cuboidPoints = this.cuboidModel.getPoints();
                     let midPointUp: Point | null = null;
                     let midPointDown: Point | null = null;
                     if (resizablePointIndex === 0) {
-                        midPointUp = { x: facePoints[4].x, y: facePoints[4].y + dyPortion }
-                        midPointDown = { x: facePoints[5].x, y: facePoints[5].y };
+                        midPointUp = { x: cuboidPoints[4].x, y: cuboidPoints[4].y + dyPortion }
+                        midPointDown = { x: cuboidPoints[5].x, y: cuboidPoints[5].y };
                     } else if (resizablePointIndex === 1) {
-                        midPointUp = { x: facePoints[4].x, y: facePoints[4].y };
-                        midPointDown = { x: facePoints[5].x, y: facePoints[5].y + dyPortion };
+                        midPointUp = { x: cuboidPoints[4].x, y: cuboidPoints[4].y };
+                        midPointDown = { x: cuboidPoints[5].x, y: cuboidPoints[5].y + dyPortion };
                     }
                     
                     const topPoints = this.computeHeightFace(midPointUp, 3);
                     const bottomPoints = this.computeHeightFace(midPointDown, 3);
-                    this._viewModel.top.points = topPoints;
-                    this._viewModel.bot.points = bottomPoints;                        
+                    this.cuboidModel.top.points = topPoints;
+                    this.cuboidModel.bot.points = bottomPoints;                        
                     this.updateViewAndVM(false);  
 
-                    this.face.plot(this._viewModel.front.points);
+                    this.face.plot(this.cuboidModel.front.points);
                     this.fire(new CustomEvent('resizing', event));
                 }).on('resizedone', (event: CustomEvent) => {
                     this.fire(new CustomEvent('resizedone', event));
                 });
-            }
-            
+            } else {
+                this.dorsalLeftEdge.resize();
+                this.dorsalLeftEdge.on('resizestart', (event: CustomEvent) => {
+                    cubePoints = JSON.parse(JSON.stringify(this.cuboidModel.getPoints()));
+                    const { target } = event.detail.event.detail.event;
+                    const { parentElement } = target;
+                    resizablePointIndex = Array
+                        .from(parentElement.children)
+                        .indexOf(target);
+                    this.fire(new CustomEvent('resizestart', event));
+                    accumulatedOffset.x = 0;
+                    accumulatedOffset.y = 0;
+                }).on('resizing', (event: CustomEvent) => {
+                    let { dx, dy } = event.detail;
+                    let dxPortion = dx - accumulatedOffset.x;
+                    let dyPortion = dy - accumulatedOffset.y;
+                    accumulatedOffset.x += dxPortion;
+                    accumulatedOffset.y += dyPortion;
+
+                    let cuboidPoints = this.cuboidModel.getPoints();
+
+                    const x1 = cuboidPoints[6].x + dxPortion;
+                    const x2 = cuboidPoints[7].x + dxPortion;
+                    const y1 = this.cuboidModel.lt.getEquation().getY(x1);
+                    const y2 = this.cuboidModel.lb.getEquation().getY(x2);
+                    const topPoint = { x: x1, y: y1 };
+                    const botPoint = { x: x2, y: y2 };
+
+                    this.cuboidModel.dl.points = [topPoint, botPoint];
+                    this.updateViewAndVM(true);
+
+
+
+                    cuboidPoints = this.cuboidModel.getPoints();
+                    let midPointUp: Point | null = null;
+                    let midPointDown: Point | null = null;
+                    if (resizablePointIndex === 0) {
+                        midPointUp = { x: cuboidPoints[6].x, y: cuboidPoints[6].y + dyPortion }
+                        midPointDown = { x: cuboidPoints[7].x, y: cuboidPoints[7].y };
+                    } else if (resizablePointIndex === 1) {
+                        midPointUp = { x: cuboidPoints[6].x, y: cuboidPoints[6].y };
+                        midPointDown = { x: cuboidPoints[7].x, y: cuboidPoints[7].y + dyPortion };
+                    }
+                    
+                    const topPoints = this.computeHeightFace(midPointUp, 4);
+                    const bottomPoints = this.computeHeightFace(midPointDown, 4);
+                    this.cuboidModel.top.points = topPoints;
+                    this.cuboidModel.bot.points = bottomPoints;                        
+                    this.updateViewAndVM(false);  
+
+                    this.face.plot(this.cuboidModel.front.points);
+                    this.fire(new CustomEvent('resizing', event));
+                }).on('resizedone', (event: CustomEvent) => {
+                    this.fire(new CustomEvent('resizedone', event));
+                });
+            }                
+
             return this;
         },
 
@@ -506,7 +577,7 @@ for (const key of Object.keys(originalResize)) {
         },
 
         dmove(dx: number, dy: number) {
-            this._viewModel.points.forEach((point: Point) => {
+            this.cuboidModel.points.forEach((point: Point) => {
                 point.x += dx;
                 point.y += dy;
             });
@@ -515,39 +586,40 @@ for (const key of Object.keys(originalResize)) {
         },
 
         updateViewAndVM(build: boolean) {
-            this._viewModel.buildBackEdge(build);
+            this.cuboidModel.updateOrientation();
+            this.cuboidModel.buildBackEdge(build);
             this.updateView();
-            this._attr('points', stringifyPoints(this._viewModel.points));
+            this._attr('points', stringifyPoints(this.cuboidModel.points));
         },
 
         updatePolygons() {
-            this.face.plot(this._viewModel.front.points);
-            this.right.plot(this._viewModel.right.points);
-            this.dorsal.plot(this._viewModel.dorsal.points);
-            this.left.plot(this._viewModel.left.points);
+            this.face.plot(this.cuboidModel.front.points);
+            this.right.plot(this.cuboidModel.right.points);
+            this.dorsal.plot(this.cuboidModel.dorsal.points);
+            this.left.plot(this.cuboidModel.left.points);
         },
 
         updateLines() {
-            this.frontLeftEdge.plot(this._viewModel.fl.points);
-            this.frontRightEdge.plot(this._viewModel.fr.points);
-            this.dorsalRightEdge.plot(this._viewModel.dr.points);
-            this.dorsalLeftEdge.plot(this._viewModel.dl.points);
+            this.frontLeftEdge.plot(this.cuboidModel.fl.points);
+            this.frontRightEdge.plot(this.cuboidModel.fr.points);
+            this.dorsalRightEdge.plot(this.cuboidModel.dr.points);
+            this.dorsalLeftEdge.plot(this.cuboidModel.dl.points);
 
-            this.frontTopEdge.plot(this._viewModel.ft.points);
-            this.rightTopEdge.plot(this._viewModel.rt.points);
-            this.frontBotEdge.plot(this._viewModel.fb.points);
-            this.rightBotEdge.plot(this._viewModel.rb.points);
+            this.frontTopEdge.plot(this.cuboidModel.ft.points);
+            this.rightTopEdge.plot(this.cuboidModel.rt.points);
+            this.frontBotEdge.plot(this.cuboidModel.fb.points);
+            this.rightBotEdge.plot(this.cuboidModel.rb.points);
         },
 
         updateProjections() {
-            this.ftProj.plot(this.updateProjectionLine(this._viewModel.ft.getEquation(),
-                this._viewModel.ft.points[0], this._viewModel.vpl));
-            this.fbProj.plot(this.updateProjectionLine(this._viewModel.fb.getEquation(),
-                this._viewModel.ft.points[0], this._viewModel.vpl));
-            this.rtProj.plot(this.updateProjectionLine(this._viewModel.rt.getEquation(),
-                this._viewModel.rt.points[1], this._viewModel.vpr));
-            this.rbProj.plot(this.updateProjectionLine(this._viewModel.rb.getEquation(),
-                this._viewModel.rt.points[1], this._viewModel.vpr));
+            this.ftProj.plot(this.updateProjectionLine(this.cuboidModel.ft.getEquation(),
+                this.cuboidModel.ft.points[0], this.cuboidModel.vpl));
+            this.fbProj.plot(this.updateProjectionLine(this.cuboidModel.fb.getEquation(),
+                this.cuboidModel.ft.points[0], this.cuboidModel.vpl));
+            this.rtProj.plot(this.updateProjectionLine(this.cuboidModel.rt.getEquation(),
+                this.cuboidModel.rt.points[1], this.cuboidModel.vpr));
+            this.rbProj.plot(this.updateProjectionLine(this.cuboidModel.rb.getEquation(),
+                this.cuboidModel.rt.points[1], this.cuboidModel.vpr));
         },
 
         updateGrabPoints() {
@@ -581,7 +653,7 @@ for (const key of Object.keys(originalResize)) {
                                        y: e.detail.p.y};
                     this.fire('dragstart', e.detail);
                 }).on('dragmove', (e: CustomEvent) => {
-                    this._viewModel.facesList[i+1].points.forEach((point: Point) => {
+                    this.cuboidModel.facesList[i+1].points.forEach((point: Point) => {
                         point.x += e.detail.p.x - this.dragPoint.x;
                         point.y += e.detail.p.y - this.dragPoint.y;
                     });
@@ -620,30 +692,30 @@ for (const key of Object.keys(originalResize)) {
             switch (index) {
             // fl
             case 1: {
-                const p2 = this.updatedEdge(this._viewModel.fr.points[0], point, this._viewModel.vpl);
-                const p3 = this.updatedEdge(this._viewModel.dr.points[0], p2, this._viewModel.vpr);
-                const p4 = this.updatedEdge(this._viewModel.dl.points[0], point, this._viewModel.vpr);
+                const p2 = this.updatedEdge(this.cuboidModel.fr.points[0], point, this.cuboidModel.vpl);
+                const p3 = this.updatedEdge(this.cuboidModel.dr.points[0], p2, this.cuboidModel.vpr);
+                const p4 = this.updatedEdge(this.cuboidModel.dl.points[0], point, this.cuboidModel.vpr);
                 return [point, p2, p3, p4];
             }
             // fr
             case 2: {
-                const p1 = this.updatedEdge(this._viewModel.fl.points[0], point, this._viewModel.vpl);
-                const p3 = this.updatedEdge(this._viewModel.dr.points[0], point, this._viewModel.vpr);
-                const p4 = this.updatedEdge(this._viewModel.dl.points[0], p3, this._viewModel.vpr);
+                const p1 = this.updatedEdge(this.cuboidModel.fl.points[0], point, this.cuboidModel.vpl);
+                const p3 = this.updatedEdge(this.cuboidModel.dr.points[0], point, this.cuboidModel.vpr);
+                const p4 = this.updatedEdge(this.cuboidModel.dl.points[0], p3, this.cuboidModel.vpr);
                 return [p1, point, p3, p4];
             }
             // dr
             case 3: {
-                const p2 = this.updatedEdge(this._viewModel.dl.points[0], point, this._viewModel.vpl);
-                const p3 = this.updatedEdge(this._viewModel.fr.points[0], point, this._viewModel.vpr);
-                const p4 = this.updatedEdge(this._viewModel.fl.points[0], p2, this._viewModel.vpr);
+                const p2 = this.updatedEdge(this.cuboidModel.dl.points[0], point, this.cuboidModel.vpl);
+                const p3 = this.updatedEdge(this.cuboidModel.fr.points[0], point, this.cuboidModel.vpr);
+                const p4 = this.updatedEdge(this.cuboidModel.fl.points[0], p2, this.cuboidModel.vpr);
                 return [p4, p3, point, p2];
             }
             // dl
             case 4: {
-                const p2 = this.updatedEdge(this._viewModel.dr.points[0], point, this._viewModel.vpl);
-                const p3 = this.updatedEdge(this._viewModel.fl.points[0], point, this._viewModel.vpr);
-                const p4 = this.updatedEdge(this._viewModel.fr.points[0], p2, this._viewModel.vpr);
+                const p2 = this.updatedEdge(this.cuboidModel.dr.points[0], point, this.cuboidModel.vpl);
+                const p3 = this.updatedEdge(this.cuboidModel.fl.points[0], point, this.cuboidModel.vpr);
+                const p4 = this.updatedEdge(this.cuboidModel.fr.points[0], p2, this.cuboidModel.vpr);
                 return [p3, p4, p2, point];
             }
             default: {
@@ -665,13 +737,13 @@ for (const key of Object.keys(originalResize)) {
             this.updateProjections();
 
             // to correct getting of points in resizedone, dragdone
-            this.attr('points', this._viewModel
+            this.attr('points', this.cuboidModel
                 .getPoints()
                 .reduce((acc: string, point: Point): string => `${acc} ${point.x},${point.y}`, '').trim());
         },
 
         updateFaces() {
-            const viewModel = this._viewModel;
+            const viewModel = this.cuboidModel;
         
             const frontPoints = viewModel.front.points;
             this.face.resize()
@@ -684,7 +756,7 @@ for (const key of Object.keys(originalResize)) {
         },
 
         updateEdges() {
-            const viewModel = this._viewModel;
+            const viewModel = this.cuboidModel;
 
             this.frontLeftEdge.plot(viewModel.fl.points);
             this.frontRightEdge.plot(viewModel.fr.points);

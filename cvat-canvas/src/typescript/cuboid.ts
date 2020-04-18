@@ -14,6 +14,11 @@ export interface Point {
     y: number;
 }
 
+export enum Orientation {
+    LEFT = 'left',
+    RIGHT = 'right',
+}
+
 function line(p1: Point, p2: Point): number[] {
     const a = p1.y - p2.y;
     const b = p2.x - p1.x;
@@ -120,6 +125,7 @@ export class CuboidModel {
     public facesList: Figure[];
     public vpl: Point | null;
     public vpr: Point | null;
+    public orientation: Orientation;
 
     public constructor(points?: Point[]) {
         this.points = points;
@@ -128,6 +134,7 @@ export class CuboidModel {
         this.updateVanishingPoints(false);
         this.buildBackEdge(false);
         this.updatePoints();
+        this.updateOrientation();
     }
 
     public getPoints(): Point[] {
@@ -136,15 +143,16 @@ export class CuboidModel {
 
     public setPoints(points: Point[]): void {
         this.points = points;
-        // for (const edge of this.edgeList) {
-        //     edge.points = points;
-        // }
+    }
 
-        // for (const face of this.facesList) {
-        //     face.points = points;
-        // }
+    public updateOrientation(): void {
+        if (this.dl.points[0].x > this.fl.points[0].x) {
+            this.orientation = Orientation.LEFT;
+        } else {
+            this.orientation = Orientation.RIGHT;
+        }
 
-        // this.updatePoints();
+        console.log(this.orientation);
     }
 
     public updatePoints(): void {
@@ -259,13 +267,11 @@ export class CuboidModel {
         let botIndex = 0;
 
         if (buildright) {
-            this.updateVanishingPoints(true);
             leftPoints = this.dl.points;
             rightPoints = this.fr.points;
             topIndex = 4;
             botIndex = 5;
         } else {
-            this.updateVanishingPoints(false);
             leftPoints = this.dr.points;
             rightPoints = this.fl.points;
             topIndex = 6;
