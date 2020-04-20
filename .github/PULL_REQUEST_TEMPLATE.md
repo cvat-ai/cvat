@@ -4,6 +4,12 @@ Copyright (C) 2020 Intel Corporation
 SPDX-License-Identifier: MIT
 -->
 
+<!-- Raised an issue to propose your change (https://github.com/opencv/cvat/issues).
+It will help avoiding duplication of efforts from multiple independent contributors.
+Discuss your ideas with maintainers to be sure that changes will be approved and merged.
+Read the [CONTRIBUTION](https://github.com/opencv/cvat/blob/develop/CONTRIBUTING.md)
+guide. -->
+
 <!-- Provide a general summary of your changes in the Title above -->
 
 ### Motivation and context
@@ -21,10 +27,7 @@ see how your change affects other areas of the code, etc. -->
 If an item isn't applicable by a reason then ~~explicitly strikethrough~~ the whole
 line. If you don't do that github will show incorrect process for the pull request.
 If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
-
-- [ ] I have raised an issue to propose this change ([required](https://github.com/opencv/cvat/issues))
-- [ ] My issue has received approval from the maintainers
-- [ ] I've read the [CONTRIBUTION](https://github.com/opencv/cvat/blob/develop/CONTRIBUTING.md) guide
+- [ ] I submit my changes into the `develop` branch
 - [ ] I have added description of my changes into [CHANGELOG](https://github.com/opencv/cvat/blob/develop/CHANGELOG.md) file
 - [ ] I have updated the [documentation](
   https://github.com/opencv/cvat/blob/develop/README.md#documentation) accordingly
