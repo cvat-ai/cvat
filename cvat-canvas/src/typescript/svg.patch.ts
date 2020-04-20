@@ -17,7 +17,7 @@ import {
     Orientation,
     Edge,
 } from './cuboid';
-import { parsePoints, stringifyPoints } from './shared';
+import { parsePoints, stringifyPoints, clamp } from './shared';
 
 // Update constructor
 const originalDraw = SVG.Element.prototype.draw;
@@ -415,6 +415,37 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.fire(new CustomEvent('resizedone', event));
             });
 
+            function computeSideEdgeConstraints(edge: Edge, fr: Edge) {
+                const midLength = fr.points[1].y - fr.points[0].y - 1;
+        
+                const minY = edge.points[1].y - midLength;
+                const maxY = edge.points[0].y + midLength;
+        
+                const y1 = edge.points[0].y;
+                const y2 = edge.points[1].y;
+        
+                const miny1 = y2 - midLength;
+                const maxy1 = y2 - consts.MIN_EDGE_LENGTH;
+        
+                const miny2 = y1 + consts.MIN_EDGE_LENGTH;
+                const maxy2 = y1 + midLength;
+        
+                return {
+                    constraint: {
+                        minY,
+                        maxY,
+                    },
+                    y1Range: {
+                        max: maxy1,
+                        min: miny1,
+                    },
+                    y2Range: {
+                        max: maxy2,
+                        min: miny2,
+                    },
+                };
+            }
+
             function setupDorsalEdge(edge: SVG.Line, orientation: Orientation) {
                 edge.on('resizestart', (event: CustomEvent) => {
                     accumulatedOffset.x = 0;
@@ -430,35 +461,54 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
                     const edge = getEdgeIndex(resizedCubePoint);
                     const [edgeTopIndex, edgeBottomIndex] = getTopDown(edge);
-
                     let cuboidPoints = this.cuboidModel.getPoints();
-                    const x1 = cuboidPoints[edgeTopIndex].x + dxPortion;
-                    const x2 = cuboidPoints[edgeBottomIndex].x + dxPortion;
-                    const y1 = (orientation === Orientation.LEFT 
-                        ? this.cuboidModel.rt : this.cuboidModel.lt).getEquation().getY(x1);
-                    const y2 = (orientation === Orientation.LEFT 
-                        ? this.cuboidModel.rb : this.cuboidModel.lb).getEquation().getY(x2);
-                    
-                    const frontTopPoint = orientation === Orientation.LEFT ? 2 : 0;
-                    if ((cuboidPoints[frontTopPoint].y - y1) > consts.MIN_EDGE_LENGTH) {
-                        const topPoint = { x: x1, y: y1 };
-                        const botPoint = { x: x2, y: y2 };
-                        (orientation === Orientation.LEFT 
-                            ? this.cuboidModel.dr : this.cuboidModel.dl).points = [topPoint, botPoint];
+
+                    if (!event.detail.event.shiftKey) {
+                        const x1 = cuboidPoints[edgeTopIndex].x + dxPortion;
+                        const x2 = cuboidPoints[edgeBottomIndex].x + dxPortion;
+                        const y1 = (orientation === Orientation.LEFT 
+                            ? this.cuboidModel.rt : this.cuboidModel.lt).getEquation().getY(x1);
+                        const y2 = (orientation === Orientation.LEFT 
+                            ? this.cuboidModel.rb : this.cuboidModel.lb).getEquation().getY(x2);
+                        
+                        const frontTopPoint = orientation === Orientation.LEFT ? 2 : 0;
+                        if (cuboidPoints[edgeTopIndex].x < cuboidPoints[frontTopPoint].x
+                            && x1 < cuboidPoints[frontTopPoint].x - consts.MIN_EDGE_LENGTH
+                            && x1 > this.cuboidModel.vpr.x + consts.MIN_EDGE_LENGTH
+                            || cuboidPoints[edgeTopIndex].x >= cuboidPoints[frontTopPoint].x
+                            && x1 > cuboidPoints[frontTopPoint].x + consts.MIN_EDGE_LENGTH 
+                            && x1 < this.cuboidModel.vpr.x + consts.MIN_EDGE_LENGTH
+                        ) {
+                            const topPoint = { x: x1, y: y1 };
+                            const botPoint = { x: x2, y: y2 };
+                            (orientation === Orientation.LEFT 
+                                ? this.cuboidModel.dr : this.cuboidModel.dl).points = [topPoint, botPoint];
+                            this.updateViewAndVM(edge === EdgeIndex.DL);
+                        }
+                        
+
+                        cuboidPoints = this.cuboidModel.getPoints();
+                        const midPointUp = { ...cuboidPoints[edgeTopIndex] };
+                        const midPointDown = { ...cuboidPoints[edgeBottomIndex] };
+                        (edgeTopIndex === resizedCubePoint ? midPointUp : midPointDown).y += dyPortion;
+                        if (midPointDown.y - midPointUp.y > consts.MIN_EDGE_LENGTH) {
+                            const topPoints = this.computeHeightFace(midPointUp, edge);
+                            const bottomPoints = this.computeHeightFace(midPointDown, edge);
+                            this.cuboidModel.top.points = topPoints;
+                            this.cuboidModel.bot.points = bottomPoints;                        
+                        }
+                    } else {
+                        const midPointUp = { ...cuboidPoints[edgeTopIndex] };
+                        const midPointDown = { ...cuboidPoints[edgeBottomIndex] };
+                        (edgeTopIndex === resizedCubePoint ? midPointUp : midPointDown).y += dyPortion;
+                        const dorselEdge = (orientation === Orientation.LEFT ? this.cuboidModel.dr : this.cuboidModel.dl);
+                        const constraints = computeSideEdgeConstraints(dorselEdge, this.cuboidModel.fr);
+                        midPointUp.y = clamp(midPointUp.y, constraints.y1Range.min, constraints.y1Range.max);
+                        midPointDown.y = clamp(midPointDown.y, constraints.y2Range.min, constraints.y2Range.max);
+                        dorselEdge.points = [midPointUp, midPointDown];
                         this.updateViewAndVM(edge === EdgeIndex.DL);
                     }
-
-                    cuboidPoints = this.cuboidModel.getPoints();
-                    const midPointUp = { ...cuboidPoints[edgeTopIndex] };
-                    const midPointDown = { ...cuboidPoints[edgeBottomIndex] };
-                    (edgeTopIndex === resizedCubePoint ? midPointUp : midPointDown).y += dyPortion;
-
-                    if (midPointDown.y - midPointUp.y > consts.MIN_EDGE_LENGTH) {
-                        const topPoints = this.computeHeightFace(midPointUp, edge);
-                        const bottomPoints = this.computeHeightFace(midPointDown, edge);
-                        this.cuboidModel.top.points = topPoints;
-                        this.cuboidModel.bot.points = bottomPoints;                        
-                    }   
+                       
 
                     this.updateViewAndVM(false);
                     this.face.plot(this.cuboidModel.front.points);
