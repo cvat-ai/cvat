@@ -151,8 +151,6 @@ export class CuboidModel {
         } else {
             this.orientation = Orientation.RIGHT;
         }
-
-        console.log(this.orientation);
     }
 
     public updatePoints(): void {
