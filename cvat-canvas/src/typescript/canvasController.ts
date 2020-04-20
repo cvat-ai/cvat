@@ -36,7 +36,6 @@ export interface CanvasController {
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
-
     fit(): void;
 }
 

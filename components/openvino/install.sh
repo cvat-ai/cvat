@@ -22,7 +22,7 @@ cd /tmp/components/openvino
 tar -xzf `ls | grep "openvino_toolkit"`
 cd `ls -d */ | grep "openvino_toolkit"`
 
-apt-get update && apt-get install -y sudo cpio && \
+apt-get update && apt-get --no-install-recommends install -y sudo cpio && \
  if [ -f "install_cv_sdk_dependencies.sh" ]; then ./install_cv_sdk_dependencies.sh; \
  else ./install_openvino_dependencies.sh; fi && SUDO_FORCE_REMOVE=yes apt-get remove -y sudo
 

@@ -24,12 +24,14 @@ interface Props {
     opacity: number;
     selectedOpacity: number;
     blackBorders: boolean;
+    showBitmap: boolean;
 
     collapseAppearance(): void;
     changeShapesColorBy(event: RadioChangeEvent): void;
     changeShapesOpacity(event: SliderValue): void;
     changeSelectedShapesOpacity(event: SliderValue): void;
     changeShapesBlackBorders(event: CheckboxChangeEvent): void;
+    changeShowBitmap(event: CheckboxChangeEvent): void;
 }
 
 function AppearanceBlock(props: Props): JSX.Element {
@@ -39,11 +41,13 @@ function AppearanceBlock(props: Props): JSX.Element {
         opacity,
         selectedOpacity,
         blackBorders,
+        showBitmap,
         collapseAppearance,
         changeShapesColorBy,
         changeShapesOpacity,
         changeSelectedShapesOpacity,
         changeShapesBlackBorders,
+        changeShowBitmap,
     } = props;
 
     return (
@@ -84,6 +88,12 @@ function AppearanceBlock(props: Props): JSX.Element {
                         checked={blackBorders}
                     >
                         Black borders
+                    </Checkbox>
+                    <Checkbox
+                        onChange={changeShowBitmap}
+                        checked={showBitmap}
+                    >
+                        Show bitmap
                     </Checkbox>
                 </div>
             </Collapse.Panel>

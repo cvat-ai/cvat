@@ -1,3 +1,7 @@
+# Copyright (C) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import copy
 
 import numpy as np
@@ -222,12 +226,11 @@ class TrackManager(ObjectManager):
         shapes = []
         for idx, track in enumerate(self.objects):
             for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame):
-                if not shape["outside"]:
-                    shape["label_id"] = track["label_id"]
-                    shape["group"] = track["group"]
-                    shape["track_id"] = idx
-                    shape["attributes"] += track["attributes"]
-                    shapes.append(shape)
+                shape["label_id"] = track["label_id"]
+                shape["group"] = track["group"]
+                shape["track_id"] = idx
+                shape["attributes"] += track["attributes"]
+                shapes.append(shape)
         return shapes
 
     @staticmethod
@@ -290,7 +293,10 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def normalize_shape(shape):
-        points = np.asarray(shape["points"]).reshape(-1, 2)
+        points = list(shape["points"])
+        if len(points) == 2:
+            points.extend(points) # duplicate points for single point case
+        points = np.asarray(points).reshape(-1, 2)
         broken_line = geometry.LineString(points)
         points = []
         for off in range(0, 100, 1):

@@ -8,6 +8,7 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
+from datumaro.plugins.datumaro_format.importer import DatumaroImporter
 from datumaro.plugins.datumaro_format.converter import DatumaroConverter
 from datumaro.util.mask_tools import generate_colormap
 from datumaro.util.image import Image
@@ -99,3 +100,9 @@ class DatumaroConverterTest(TestCase):
             self.assertEqual(
                 source_dataset.categories(),
                 parsed_dataset.categories())
+
+    def test_can_detect(self):
+        with TestDir() as test_dir:
+            DatumaroConverter()(self.TestExtractor(), save_dir=test_dir)
+
+            self.assertTrue(DatumaroImporter.detect(test_dir))

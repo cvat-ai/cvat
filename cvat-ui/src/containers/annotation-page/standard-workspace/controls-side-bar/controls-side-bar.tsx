@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas';
-
 import {
     mergeObjects,
     groupObjects,
@@ -16,16 +16,14 @@ import {
     resetAnnotationsGroup,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
-import {
-    ActiveControl,
-    CombinedState,
-    Rotation,
-} from 'reducers/interfaces';
+import { ActiveControl, CombinedState, Rotation } from 'reducers/interfaces';
 
 interface StateToProps {
     canvasInstance: Canvas;
     rotateAll: boolean;
     activeControl: ActiveControl;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
 }
 
 interface DispatchToProps {
@@ -51,12 +49,18 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 rotateAll,
             },
         },
+        shortcuts: {
+            keyMap,
+            normalizedKeyMap,
+        },
     } = state;
 
     return {
         rotateAll,
         canvasInstance,
         activeControl,
+        normalizedKeyMap,
+        keyMap,
     };
 }
 

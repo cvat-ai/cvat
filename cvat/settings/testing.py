@@ -9,8 +9,19 @@ _temp_dir = tempfile.TemporaryDirectory(suffix="cvat")
 
 DATA_ROOT = os.path.join(_temp_dir.name, 'data')
 os.makedirs(DATA_ROOT, exist_ok=True)
+
 SHARE_ROOT = os.path.join(_temp_dir.name, 'share')
 os.makedirs(SHARE_ROOT, exist_ok=True)
+
+MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
+os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
+
+TASKS_ROOT = os.path.join(DATA_ROOT, 'tasks')
+os.makedirs(TASKS_ROOT, exist_ok=True)
+
+MODELS_ROOT = os.path.join(DATA_ROOT, 'models')
+os.makedirs(MODELS_ROOT, exist_ok=True)
+
 
 # To avoid ERROR django.security.SuspiciousFileOperation:
 # The joined path (...) is located outside of the base path component

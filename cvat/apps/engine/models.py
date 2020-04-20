@@ -1,11 +1,9 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from enum import Enum
-
 import re
-import shlex
 import os
 
 from django.db import models
@@ -27,11 +25,101 @@ class StatusChoice(str, Enum):
     COMPLETED = 'completed'
 
     @classmethod
-    def choices(self):
-        return tuple((x.value, x.name) for x in self)
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
 
     def __str__(self):
         return self.value
+
+class DataChoice(str, Enum):
+    VIDEO = 'video'
+    IMAGESET = 'imageset'
+    LIST = 'list'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+class Data(models.Model):
+    chunk_size = models.PositiveIntegerField(null=True)
+    size = models.PositiveIntegerField(default=0)
+    image_quality = models.PositiveSmallIntegerField(default=50)
+    start_frame = models.PositiveIntegerField(default=0)
+    stop_frame = models.PositiveIntegerField(default=0)
+    frame_filter = models.CharField(max_length=256, default="", blank=True)
+    compressed_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
+        default=DataChoice.IMAGESET)
+    original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
+        default=DataChoice.IMAGESET)
+
+    class Meta:
+        default_permissions = ()
+
+    def get_frame_step(self):
+        match = re.search("step\s*=\s*([1-9]\d*)", self.frame_filter)
+        return int(match.group(1)) if match else 1
+
+    def get_data_dirname(self):
+        return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
+
+    def get_upload_dirname(self):
+        return os.path.join(self.get_data_dirname(), "raw")
+
+    def get_compressed_cache_dirname(self):
+        return os.path.join(self.get_data_dirname(), "compressed")
+
+    def get_original_cache_dirname(self):
+        return os.path.join(self.get_data_dirname(), "original")
+
+    @staticmethod
+    def _get_chunk_name(chunk_number, chunk_type):
+        if chunk_type == DataChoice.VIDEO:
+            ext = 'mp4'
+        elif chunk_type == DataChoice.IMAGESET:
+            ext = 'zip'
+        else:
+            ext = 'list'
+
+        return '{}.{}'.format(chunk_number, ext)
+
+    def _get_compressed_chunk_name(self, chunk_number):
+        return self._get_chunk_name(chunk_number, self.compressed_chunk_type)
+
+    def _get_original_chunk_name(self, chunk_number):
+        return self._get_chunk_name(chunk_number, self.original_chunk_type)
+
+    def get_original_chunk_path(self, chunk_number):
+        return os.path.join(self.get_original_cache_dirname(),
+            self._get_original_chunk_name(chunk_number))
+
+    def get_compressed_chunk_path(self, chunk_number):
+        return os.path.join(self.get_compressed_cache_dirname(),
+            self._get_compressed_chunk_name(chunk_number))
+
+    def get_preview_path(self):
+        return os.path.join(self.get_data_dirname(), 'preview.jpeg')
+
+class Video(models.Model):
+    data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
+    path = models.CharField(max_length=1024, default='')
+    width = models.PositiveIntegerField()
+    height = models.PositiveIntegerField()
+
+    class Meta:
+        default_permissions = ()
+
+class Image(models.Model):
+    data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="images", null=True)
+    path = models.CharField(max_length=1024, default='')
+    frame = models.PositiveIntegerField()
+    width = models.PositiveIntegerField()
+    height = models.PositiveIntegerField()
+
+    class Meta:
+        default_permissions = ()
 
 class Project(models.Model):
     name = SafeCharField(max_length=256)
@@ -54,7 +142,6 @@ class Task(models.Model):
         null=True, blank=True, related_name="tasks",
         related_query_name="task")
     name = SafeCharField(max_length=256)
-    size = models.PositiveIntegerField()
     mode = models.CharField(max_length=32)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="owners")
@@ -67,52 +154,28 @@ class Task(models.Model):
     # Zero means that there are no limits (default)
     segment_size = models.PositiveIntegerField(default=0)
     z_order = models.BooleanField(default=False)
-    image_quality = models.PositiveSmallIntegerField(default=50)
-    start_frame = models.PositiveIntegerField(default=0)
-    stop_frame = models.PositiveIntegerField(default=0)
-    frame_filter = models.CharField(max_length=256, default="", blank=True)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
+    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name="tasks")
 
     # Extend default permission model
     class Meta:
         default_permissions = ()
 
-    def get_frame_path(self, frame):
-        d1 = str(int(frame) // 10000)
-        d2 = str(int(frame) // 100)
-        path = os.path.join(self.get_data_dirname(), d1, d2,
-            str(frame) + '.jpg')
+    def get_task_dirname(self):
+        return os.path.join(settings.TASKS_ROOT, str(self.id))
 
-        return path
-
-    @staticmethod
-    def get_image_frame(image_path):
-        assert image_path.endswith('.jpg')
-        index = os.path.splitext(os.path.basename(image_path))[0]
-        return int(index)
-
-    def get_frame_step(self):
-        match = re.search("step\s*=\s*([1-9]\d*)", self.frame_filter)
-        return int(match.group(1)) if match else 1
-
-    def get_upload_dirname(self):
-        return os.path.join(self.get_task_dirname(), ".upload")
-
-    def get_data_dirname(self):
-        return os.path.join(self.get_task_dirname(), "data")
-
-    def get_log_path(self):
-        return os.path.join(self.get_task_dirname(), "task.log")
+    def get_task_logs_dirname(self):
+        return os.path.join(self.get_task_dirname(), 'logs')
 
     def get_client_log_path(self):
-        return os.path.join(self.get_task_dirname(), "client.log")
+        return os.path.join(self.get_task_logs_dirname(), "client.log")
 
-    def get_image_meta_cache_path(self):
-        return os.path.join(self.get_task_dirname(), "image_meta.cache")
+    def get_log_path(self):
+        return os.path.join(self.get_task_logs_dirname(), "task.log")
 
-    def get_task_dirname(self):
-        return os.path.join(settings.DATA_ROOT, str(self.id))
+    def get_task_artifacts_dirname(self):
+        return os.path.join(self.get_task_dirname(), 'artifacts')
 
     def __str__(self):
         return self.name
@@ -129,21 +192,21 @@ class MyFileSystemStorage(FileSystemStorage):
         return name
 
 def upload_path_handler(instance, filename):
-    return os.path.join(instance.task.get_upload_dirname(), filename)
+    return os.path.join(instance.data.get_upload_dirname(), filename)
 
 # For client files which the user is uploaded
 class ClientFile(models.Model):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='client_files')
     file = models.FileField(upload_to=upload_path_handler,
         max_length=1024, storage=MyFileSystemStorage())
 
     class Meta:
         default_permissions = ()
-        unique_together = ("task", "file")
+        unique_together = ("data", "file")
 
 # For server files on the mounted share
 class ServerFile(models.Model):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='server_files')
     file = models.CharField(max_length=1024)
 
     class Meta:
@@ -151,27 +214,8 @@ class ServerFile(models.Model):
 
 # For URLs
 class RemoteFile(models.Model):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='remote_files')
     file = models.CharField(max_length=1024)
-
-    class Meta:
-        default_permissions = ()
-
-class Video(models.Model):
-    task = models.OneToOneField(Task, on_delete=models.CASCADE)
-    path = models.CharField(max_length=1024)
-    width = models.PositiveIntegerField()
-    height = models.PositiveIntegerField()
-
-    class Meta:
-        default_permissions = ()
-
-class Image(models.Model):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    path = models.CharField(max_length=1024)
-    frame = models.PositiveIntegerField()
-    width = models.PositiveIntegerField()
-    height = models.PositiveIntegerField()
 
     class Meta:
         default_permissions = ()
@@ -212,8 +256,8 @@ class AttributeType(str, Enum):
     SELECT = 'select'
 
     @classmethod
-    def choices(self):
-        return tuple((x.value, x.name) for x in self)
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
 
     def __str__(self):
         return self.value
@@ -252,8 +296,8 @@ class ShapeType(str, Enum):
     CUBOID = 'cuboid'
 
     @classmethod
-    def choices(self):
-        return tuple((x.value, x.name) for x in self)
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
 
     def __str__(self):
         return self.value

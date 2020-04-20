@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 
 import CanvasWrapperComponent from 'components/annotation-page/standard-workspace/canvas-wrapper';
@@ -33,12 +34,16 @@ import {
     changeBrightnessLevel,
     changeContrastLevel,
     changeSaturationLevel,
+    switchAutomaticBordering,
 } from 'actions/settings-actions';
 import {
     ColorBy,
     GridColor,
     ObjectType,
     CombinedState,
+    ContextMenuType,
+    Workspace,
+    ActiveControl,
 } from 'reducers/interfaces';
 
 import { Canvas } from 'cvat-canvas';
@@ -48,15 +53,18 @@ interface StateToProps {
     canvasInstance: Canvas;
     jobInstance: any;
     activatedStateID: number | null;
+    activatedAttributeID: number | null;
     selectedStatesID: number[];
     annotations: any[];
     frameData: any;
     frameAngle: number;
+    frameFetching: boolean;
     frame: number;
     opacity: number;
     colorBy: ColorBy;
     selectedOpacity: number;
     blackBorders: boolean;
+    showBitmap: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -67,9 +75,17 @@ interface StateToProps {
     contrastLevel: number;
     saturationLevel: number;
     resetZoom: boolean;
+    aamZoomMargin: number;
+    showObjectsTextAlways: boolean;
+    workspace: Workspace;
     minZLayer: number;
     maxZLayer: number;
     curZLayer: number;
+    automaticBordering: boolean;
+    contextVisible: boolean;
+    contextType: ContextMenuType;
+    switchableAutomaticBordering: boolean;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
 }
 
 interface DispatchToProps {
@@ -82,14 +98,15 @@ interface DispatchToProps {
     onGroupObjects: (enabled: boolean) => void;
     onSplitTrack: (enabled: boolean) => void;
     onEditShape: (enabled: boolean) => void;
-    onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onUpdateAnnotations(states: any[]): void;
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject: (activatedStateID: number | null) => void;
     onSelectObjects: (selectedStatesID: number[]) => void;
-    onUpdateContextMenu(visible: boolean, left: number, top: number): void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType,
+        pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
     onChangeBrightnessLevel(level: number): void;
@@ -98,12 +115,18 @@ interface DispatchToProps {
     onChangeGridOpacity(opacity: number): void;
     onChangeGridColor(color: GridColor): void;
     onSwitchGrid(enabled: boolean): void;
+    onSwitchAutomaticBordering(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: {
+                activeControl,
+                contextMenu: {
+                    visible: contextVisible,
+                    type: contextType,
+                },
                 instance: canvasInstance,
             },
             drawing: {
@@ -117,12 +140,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 frame: {
                     data: frameData,
                     number: frame,
+                    fetching: frameFetching,
                 },
                 frameAngles,
             },
             annotations: {
                 states: annotations,
                 activatedStateID,
+                activatedAttributeID,
                 selectedStatesID,
                 zLayer: {
                     cur: curZLayer,
@@ -131,6 +156,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 },
             },
             sidebarCollapsed,
+            workspace,
         },
         settings: {
             player: {
@@ -143,12 +169,21 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 saturationLevel,
                 resetZoom,
             },
+            workspace: {
+                aamZoomMargin,
+                showObjectsTextAlways,
+                automaticBordering,
+            },
             shapes: {
                 opacity,
                 colorBy,
                 selectedOpacity,
                 blackBorders,
+                showBitmap,
             },
+        },
+        shortcuts: {
+            keyMap,
         },
     } = state;
 
@@ -158,14 +193,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         frameData,
         frameAngle: frameAngles[frame - jobInstance.startFrame],
+        frameFetching,
         frame,
         activatedStateID,
+        activatedAttributeID,
         selectedStatesID,
         annotations,
         opacity,
         colorBy,
         selectedOpacity,
         blackBorders,
+        showBitmap,
         grid,
         gridSize,
         gridColor,
@@ -176,9 +214,19 @@ function mapStateToProps(state: CombinedState): StateToProps {
         contrastLevel,
         saturationLevel,
         resetZoom,
+        aamZoomMargin,
+        showObjectsTextAlways,
         curZLayer,
         minZLayer,
         maxZLayer,
+        automaticBordering,
+        contextVisible,
+        contextType,
+        workspace,
+        keyMap,
+        switchableAutomaticBordering: activeControl === ActiveControl.DRAW_POLYGON
+            || activeControl === ActiveControl.DRAW_POLYLINE
+            || activeControl === ActiveControl.EDIT,
     };
 }
 
@@ -211,8 +259,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onEditShape(enabled: boolean): void {
             dispatch(editShape(enabled));
         },
-        onUpdateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
-            dispatch(updateAnnotationsAsync(sessionInstance, frame, states));
+        onUpdateAnnotations(states: any[]): void {
+            dispatch(updateAnnotationsAsync(states));
         },
         onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
             dispatch(createAnnotationsAsync(sessionInstance, frame, states));
@@ -231,13 +279,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
                 dispatch(updateCanvasContextMenu(false, 0, 0));
             }
 
-            dispatch(activateObject(activatedStateID));
+            dispatch(activateObject(activatedStateID, null));
         },
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjects(selectedStatesID));
         },
-        onUpdateContextMenu(visible: boolean, left: number, top: number): void {
-            dispatch(updateCanvasContextMenu(visible, left, top));
+        onUpdateContextMenu(visible: boolean, left: number, top: number,
+            type: ContextMenuType, pointID?: number): void {
+            dispatch(updateCanvasContextMenu(visible, left, top, pointID, type));
         },
         onAddZLayer(): void {
             dispatch(addZLayer());
@@ -262,6 +311,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSwitchGrid(enabled: boolean): void {
             dispatch(switchGrid(enabled));
+        },
+        onSwitchAutomaticBordering(enabled: boolean): void {
+            dispatch(switchAutomaticBordering(enabled));
         },
     };
 }

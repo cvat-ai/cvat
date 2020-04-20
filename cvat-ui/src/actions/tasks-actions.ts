@@ -389,6 +389,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             labels: data.labels,
             z_order: data.advanced.zOrder,
             image_quality: 70,
+            use_zip_chunks: data.advanced.useZipChunks,
         };
 
         if (data.advanced.bugTracker) {
@@ -411,6 +412,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
         if (data.advanced.imageQuality) {
             description.image_quality = data.advanced.imageQuality;
+        }
+        if (data.advanced.dataChunkSize) {
+            description.data_chunk_size = data.advanced.dataChunkSize;
         }
 
         const taskInstance = new cvat.classes.Task(description);
