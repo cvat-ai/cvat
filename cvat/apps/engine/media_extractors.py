@@ -5,7 +5,11 @@ import numpy as np
 
 from ffmpy import FFmpeg
 from pyunpack import Archive
-from PIL import Image
+from PIL import Image, ImageFile
+
+# fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
+# see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 import mimetypes
 _SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
