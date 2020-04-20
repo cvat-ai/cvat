@@ -71,7 +71,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             ? loads[taskID] || jobLoads[jobID] : null,
         jobInstance,
         annotationFormats,
-        exporters,
         installedReID: list.REID,
     };
 }
