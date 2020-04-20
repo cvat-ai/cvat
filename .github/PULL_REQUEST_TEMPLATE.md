@@ -27,7 +27,6 @@ see how your change affects other areas of the code, etc. -->
 If an item isn't applicable by a reason then ~~explicitly strikethrough~~ the whole
 line. If you don't do that github will show incorrect process for the pull request.
 If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
-
 - [ ] I submit my changes into the `develop` branch
 - [ ] I have added description of my changes into [CHANGELOG](https://github.com/opencv/cvat/blob/develop/CHANGELOG.md) file
 - [ ] I have updated the [documentation](
