@@ -673,7 +673,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.content.addEventListener('mousedown', (event): void => {
             if ([1, 2].includes(event.which)) {
-                if (![Mode.ZOOM_CANVAS, Mode.GROUP].includes(this.mode) || event.which === 2) {
+                if ([Mode.IDLE, Mode.DRAG, Mode.MERGE, Mode.SPLIT].includes(this.mode)
+                    || event.which === 2 || event.altKey
+                ) {
                     self.controller.enableDrag(event.clientX, event.clientY);
                 }
             }
