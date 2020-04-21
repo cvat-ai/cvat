@@ -10,7 +10,7 @@ import 'svg.select.js';
 import 'svg.draw.js';
 
 import consts from './consts';
-import { 
+import {
     Point,
     Equation,
     CuboidModel,
@@ -201,13 +201,13 @@ enum EdgeIndex {
 function getEdgeIndex(cuboidPoint: number): EdgeIndex {
     switch (cuboidPoint) {
         case 0:
-        case 1: 
+        case 1:
             return EdgeIndex.FL;
-        case 2: 
+        case 2:
         case 3:
             return EdgeIndex.FR;
         case 4:
-        case 5: 
+        case 5:
             return EdgeIndex.DR;
         default:
             return EdgeIndex.DL;
@@ -218,9 +218,9 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
     switch (edgeIndex) {
         case EdgeIndex.FL:
             return [0, 1];
-        case EdgeIndex.FR: 
+        case EdgeIndex.FR:
             return [2, 3];
-        case EdgeIndex.DR: 
+        case EdgeIndex.DR:
             return [4, 5];
         default:
             return [6, 7];
@@ -354,14 +354,14 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 x: 0,
                 y: 0,
             };
-            
+
             this.face.on('resizestart', (event: CustomEvent) => {
                 accumulatedOffset.x = 0;
                 accumulatedOffset.y = 0;
                 const resizedFacePoint = getResizedPointIndex(event);
                 resizedCubePoint = [0, 1].includes(resizedFacePoint) ? resizedFacePoint
                     : 5 - resizedFacePoint; // 2,3 -> 3,2
-                this.fire(new CustomEvent('resizestart', event)); 
+                this.fire(new CustomEvent('resizestart', event));
             }).on('resizing', (event: CustomEvent) => {
                 let { dx, dy } = event.detail;
                 let dxPortion = dx - accumulatedOffset.x;
@@ -371,7 +371,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
                 const edge = getEdgeIndex(resizedCubePoint);
                 const [edgeTopIndex, edgeBottomIndex] = getTopDown(edge);
-            
+
                 let cuboidPoints = this.cuboidModel.getPoints();
                 let x1 = cuboidPoints[edgeTopIndex].x + dxPortion;
                 let x2 = cuboidPoints[edgeBottomIndex].x + dxPortion;
@@ -380,7 +380,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 ) {
                     x1 = cuboidPoints[edgeTopIndex].x;
                     x2 = cuboidPoints[edgeBottomIndex].x;
-                } else if (edge === EdgeIndex.FR 
+                } else if (edge === EdgeIndex.FR
                     && (cuboidPoints[2].x + dxPortion - cuboidPoints[0].x < consts.MIN_EDGE_LENGTH)
                 ) {
                     x1 = cuboidPoints[edgeTopIndex].x;
@@ -405,9 +405,9 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     const topPoints = this.computeHeightFace(midPointUp, edge);
                     const bottomPoints = this.computeHeightFace(midPointDown, edge);
                     this.cuboidModel.top.points = topPoints;
-                    this.cuboidModel.bot.points = bottomPoints;                        
-                    this.updateViewAndVM(false);               
-                }   
+                    this.cuboidModel.bot.points = bottomPoints;
+                    this.updateViewAndVM(false);
+                }
 
                 this.face.plot(this.cuboidModel.front.points);
                 this.fire(new CustomEvent('resizing', event));
@@ -417,19 +417,19 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
             function computeSideEdgeConstraints(edge: Edge, fr: Edge) {
                 const midLength = fr.points[1].y - fr.points[0].y - 1;
-        
+
                 const minY = edge.points[1].y - midLength;
                 const maxY = edge.points[0].y + midLength;
-        
+
                 const y1 = edge.points[0].y;
                 const y2 = edge.points[1].y;
-        
+
                 const miny1 = y2 - midLength;
                 const maxy1 = y2 - consts.MIN_EDGE_LENGTH;
-        
+
                 const miny2 = y1 + consts.MIN_EDGE_LENGTH;
                 const maxy2 = y1 + midLength;
-        
+
                 return {
                     constraint: {
                         minY,
@@ -466,26 +466,26 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     if (!event.detail.event.shiftKey) {
                         const x1 = cuboidPoints[edgeTopIndex].x + dxPortion;
                         const x2 = cuboidPoints[edgeBottomIndex].x + dxPortion;
-                        const y1 = (orientation === Orientation.LEFT 
+                        const y1 = (orientation === Orientation.LEFT
                             ? this.cuboidModel.rt : this.cuboidModel.lt).getEquation().getY(x1);
-                        const y2 = (orientation === Orientation.LEFT 
+                        const y2 = (orientation === Orientation.LEFT
                             ? this.cuboidModel.rb : this.cuboidModel.lb).getEquation().getY(x2);
-                        
+
                         const frontTopPoint = orientation === Orientation.LEFT ? 2 : 0;
                         if (cuboidPoints[edgeTopIndex].x < cuboidPoints[frontTopPoint].x
                             && x1 < cuboidPoints[frontTopPoint].x - consts.MIN_EDGE_LENGTH
                             && x1 > this.cuboidModel.vpr.x + consts.MIN_EDGE_LENGTH
                             || cuboidPoints[edgeTopIndex].x >= cuboidPoints[frontTopPoint].x
-                            && x1 > cuboidPoints[frontTopPoint].x + consts.MIN_EDGE_LENGTH 
+                            && x1 > cuboidPoints[frontTopPoint].x + consts.MIN_EDGE_LENGTH
                             && x1 < this.cuboidModel.vpr.x + consts.MIN_EDGE_LENGTH
                         ) {
                             const topPoint = { x: x1, y: y1 };
                             const botPoint = { x: x2, y: y2 };
-                            (orientation === Orientation.LEFT 
+                            (orientation === Orientation.LEFT
                                 ? this.cuboidModel.dr : this.cuboidModel.dl).points = [topPoint, botPoint];
                             this.updateViewAndVM(edge === EdgeIndex.DL);
                         }
-                        
+
 
                         cuboidPoints = this.cuboidModel.getPoints();
                         const midPointUp = { ...cuboidPoints[edgeTopIndex] };
@@ -495,7 +495,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                             const topPoints = this.computeHeightFace(midPointUp, edge);
                             const bottomPoints = this.computeHeightFace(midPointDown, edge);
                             this.cuboidModel.top.points = topPoints;
-                            this.cuboidModel.bot.points = bottomPoints;                        
+                            this.cuboidModel.bot.points = bottomPoints;
                         }
                     } else {
                         const midPointUp = { ...cuboidPoints[edgeTopIndex] };
@@ -508,7 +508,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                         dorselEdge.points = [midPointUp, midPointDown];
                         this.updateViewAndVM(edge === EdgeIndex.DL);
                     }
-                       
+
 
                     this.updateViewAndVM(false);
                     this.face.plot(this.cuboidModel.front.points);
@@ -525,7 +525,75 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.dorsalLeftEdge.resize(value);
                 setupDorsalEdge.call(this, this.dorsalLeftEdge, this.cuboidModel.orientation);
             }
+            return this;
+        },
 
+        draggable(value: any, constraint: any) {
+            const _draggable = SVG.Element.prototype.draggable.bind(this)
+            const faces = [this.right, this.dorsal, this.left]
+            const accumulatedOffset: Point = {
+                x: 0,
+                y: 0,
+            };
+
+            if (value === false) {
+                [this.face, ...faces].forEach((face: any) => {
+                    face.draggable(false);
+                    face.off('dragstart');
+                    face.off('dragmove');
+                    face.off('dragsend');
+                })
+                return
+            }
+
+            this.face.draggable().on('dragstart', (event: CustomEvent) => {
+                accumulatedOffset.x = 0;
+                accumulatedOffset.y = 0;
+
+                this.fire(new CustomEvent('dragstart', event));
+            }).on('dragmove', (event: CustomEvent) => {
+                const dx = event.detail.p.x - event.detail.handler.startPoints.point.x;
+                const dy = event.detail.p.y - event.detail.handler.startPoints.point.y;
+                let dxPortion = dx - accumulatedOffset.x;
+                let dyPortion = dy - accumulatedOffset.y;
+                accumulatedOffset.x += dxPortion;
+                accumulatedOffset.y += dyPortion;
+
+                this.dmove(dxPortion, dyPortion);
+
+                this.fire(new CustomEvent('dragmove', event));
+            }).on('dragend', (event: CustomEvent) => {
+
+                this.fire(new CustomEvent('dragend', event));
+            })
+
+            faces.forEach((face: any, i: number) => {
+                face.draggable().on('dragstart', (event: CustomEvent) => {
+                    accumulatedOffset.x = 0;
+                    accumulatedOffset.y = 0;
+
+                    this.fire(new CustomEvent('dragstart', event));
+                }).on('dragmove', (event: CustomEvent) => {
+                    const dx = event.detail.p.x - event.detail.handler.startPoints.point.x;
+                    const dy = event.detail.p.y - event.detail.handler.startPoints.point.y;
+                    let dxPortion = dx - accumulatedOffset.x;
+                    let dyPortion = dy - accumulatedOffset.y;
+                    accumulatedOffset.x += dxPortion;
+                    accumulatedOffset.y += dyPortion;
+
+                    this.cuboidModel.facesList[i+1].points.forEach((point: Point) => {
+                        point.x += dxPortion;
+                        point.y += dyPortion;
+                    });
+
+                    this.updateViewAndVM();
+
+                    this.fire(new CustomEvent('dragmove', event));
+                }).on('dragend', (event: CustomEvent) => {
+
+                    this.fire(new CustomEvent('dragend', event));
+                })
+            })
             return this;
         },
 
@@ -639,63 +707,6 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             }
         },
 
-        addDragEvents() {
-            this.face.draggable().on('dragstart', (e: CustomEvent) => {
-                this.dragPoint = { x: e.detail.p.x,
-                                   y: e.detail.p.y};
-                this.fire('dragstart', e.detail);
-            }).on('dragmove', (e: CustomEvent) => {
-                this.dmove(e.detail.p.x - this.dragPoint.x,
-                           e.detail.p.y - this.dragPoint.y);
-                this.dragPoint = { x: e.detail.p.x,
-                                   y: e.detail.p.y }
-                this.fire('dragmove', e.detail);
-            }).on('dragend', (e: CustomEvent) => {
-                this.fire('dragend', e.detail);
-            });
-
-            const faces = [this.right, this.dorsal, this.left];
-            faces.forEach((face: any, i: number) => {
-                face.draggable().on('dragstart', (e: CustomEvent) => {
-                    this.dragPoint = { x: e.detail.p.x,
-                                       y: e.detail.p.y};
-                    this.fire('dragstart', e.detail);
-                }).on('dragmove', (e: CustomEvent) => {
-                    this.cuboidModel.facesList[i+1].points.forEach((point: Point) => {
-                        point.x += e.detail.p.x - this.dragPoint.x;
-                        point.y += e.detail.p.y - this.dragPoint.y;
-                    });
-                    this.dragPoint = { x: e.detail.p.x,
-                                       y: e.detail.p.y };
-
-                    this.updateViewAndVM();
-                    this.fire('dragmove', e.detail);
-                }).on('dragend', (e: CustomEvent) => {
-                    this.fire('dragend', e.detail);
-                });
-            });
-        },
-
-        removeDragEvents() {
-            const faces = [this.face, this.right, this.dorsal, this.left]
-            faces.forEach((face: any) => {
-                face.draggable(false);
-                face.off('dragstart');
-                face.off('dragmove');
-                face.off('dragsend');
-            })
-        },
-
-        draggable(value: any, constraint: any) {
-            const _draggable = SVG.Element.prototype.draggable.bind(this)
-            if (value !== false) {
-                this.addDragEvents();
-            } else {
-                this.removeDragEvents();
-            }
-            return _draggable(value, constraint);
-        },
-
         computeHeightFace(point: Point, index: number) {
             switch (index) {
             // fl
@@ -752,7 +763,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
         updateFaces() {
             const viewModel = this.cuboidModel;
-        
+
             const frontPoints = viewModel.front.points;
             this.face.resize()
                 .resize(frontPoints[2].x - frontPoints[0].x, frontPoints[1].y - frontPoints[0].y)
