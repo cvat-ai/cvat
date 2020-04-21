@@ -1,0 +1,20 @@
+apiVersion: "nuclio.io/v1"
+kind: "NuclioFunction"
+metadata:
+  name: dextr
+  namespace: cvat
+
+spec:
+  description: Deep Extreme Cut
+  runtime: "python:3.6"
+  handler: main:handler
+  build:
+    image: cvat/dextr:latest
+    mode: "neverBuild"
+  eventTimeout: 30
+  replicas: 0
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: "http"
+      workerAvailabilityTimeoutMilliseconds: 10000
