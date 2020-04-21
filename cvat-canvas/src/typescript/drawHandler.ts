@@ -168,9 +168,7 @@ export class DrawHandlerImpl implements DrawHandler {
             this.removeCrosshair();
         }
 
-        if (!this.drawData.initialState) {
-            this.onDrawDone(null);
-        }
+        this.onDrawDone(null);
     }
 
     private initDrawing(): void {
@@ -374,7 +372,10 @@ export class DrawHandlerImpl implements DrawHandler {
                 .map((coord: string): number => +coord);
 
             const { points } = this.getFinalPolyshapeCoordinates(targetPoints);
-            this.release();
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
+            }
+
             this.onDrawDone({
                 shapeType: this.drawData.initialState.shapeType,
                 objectType: this.drawData.initialState.objectType,
@@ -414,7 +415,10 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance.on('done', (e: CustomEvent): void => {
             const bbox = this.drawInstance.node.getBBox();
             const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
-            this.release();
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
+            }
+
             this.onDrawDone({
                 shapeType: this.drawData.initialState.shapeType,
                 objectType: this.drawData.initialState.objectType,

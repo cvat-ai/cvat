@@ -98,7 +98,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             this.canvas.dispatchEvent(event);
-        } else {
+        } else if (!continueDraw) {
             const event: CustomEvent = new CustomEvent('canvas.canceled', {
                 bubbles: false,
                 cancelable: true,
@@ -107,12 +107,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
         }
 
-        if (continueDraw) {
-            this.drawHandler.draw(
-                this.controller.drawData,
-                this.geometry,
-            );
-        } else {
+        if (!continueDraw) {
             this.mode = Mode.IDLE;
             this.controller.draw({
                 enabled: false,
