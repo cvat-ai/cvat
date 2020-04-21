@@ -924,26 +924,63 @@ export class CanvasViewImpl implements CanvasView, Listener {
             for (const state of states) {
                 if (state.hidden || state.outside) continue;
                 ctx.fillStyle = 'white';
-                if (['rectangle', 'polygon'].includes(state.shapeType)) {
-                    const points = state.shapeType === 'rectangle' ? [
-                        state.points[0], // xtl
-                        state.points[1], // ytl
-                        state.points[2], // xbr
-                        state.points[1], // ytl
-                        state.points[2], // xbr
-                        state.points[3], // ybr
-                        state.points[0], // xtl
-                        state.points[3], // ybr
-                    ] : state.points;
+                if (['rectangle', 'polygon', 'cuboid'].includes(state.shapeType)) {
+                    let points = [];
+                    if (state.shapeType === 'rectangle') {
+                        points = [
+                            state.points[0], // xtl
+                            state.points[1], // ytl
+                            state.points[2], // xbr
+                            state.points[1], // ytl
+                            state.points[2], // xbr
+                            state.points[3], // ybr
+                            state.points[0], // xtl
+                            state.points[3], // ybr
+                        ];
+                    } else if (state.shapeType === 'cuboid') {
+                        points = [
+                            state.points[0],
+                            state.points[1],
+                            state.points[4],
+                            state.points[5],
+                            state.points[8],
+                            state.points[9],
+                            state.points[12],
+                            state.points[13],
+                        ];
+                    } else {
+                        points = [...state.points];
+                    }
                     ctx.beginPath();
                     ctx.moveTo(points[0], points[1]);
                     for (let i = 0; i < points.length; i += 2) {
                         ctx.lineTo(points[i], points[i + 1]);
                     }
                     ctx.closePath();
+                    ctx.fill();
                 }
 
-                ctx.fill();
+                if (state.shapeType === 'cuboid') {
+                    for (let i = 0; i < 5; i++) {
+                        const points = [
+                            state.points[(0 + i * 4) % 16],
+                            state.points[(1 + i * 4) % 16],
+                            state.points[(2 + i * 4) % 16],
+                            state.points[(3 + i * 4) % 16],
+                            state.points[(6 + i * 4) % 16],
+                            state.points[(7 + i * 4) % 16],
+                            state.points[(4 + i * 4) % 16],
+                            state.points[(5 + i * 4) % 16],
+                        ];
+                        ctx.beginPath();
+                        ctx.moveTo(points[0], points[1]);
+                        for (let j = 0; j < points.length; j += 2) {
+                            ctx.lineTo(points[j], points[j + 1]);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
             }
         }
     }
@@ -1187,6 +1224,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.selectize(false, shape);
             }
 
+            if (drawnState.shapeType === 'cuboid') {
+                (shape as any).attr('projections', false);
+            }
+
             (shape as any).off('resizestart');
             (shape as any).off('resizing');
             (shape as any).off('resizedone');
@@ -1264,6 +1305,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 .remember('_selectHandler').nested.node);
         } else {
             this.content.append(shape.node);
+        }
+
+        const { showProjections } = this.configuration;
+        if (state.shapeType === 'cuboid' && showProjections) {
+            (shape as any).attr('projections', true);
         }
 
         if (!state.pinned) {

@@ -30,6 +30,7 @@ interface Props {
     selectedOpacity: number;
     blackBorders: boolean;
     showBitmap: boolean;
+    showProjections: boolean;
 
     collapseSidebar(): void;
     collapseAppearance(): void;
@@ -39,6 +40,7 @@ interface Props {
     changeSelectedShapesOpacity(event: SliderValue): void;
     changeShapesBlackBorders(event: CheckboxChangeEvent): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
+    changeShowProjections(event: CheckboxChangeEvent): void;
 }
 
 function ObjectsSideBar(props: Props): JSX.Element {
@@ -50,6 +52,7 @@ function ObjectsSideBar(props: Props): JSX.Element {
         selectedOpacity,
         blackBorders,
         showBitmap,
+        showProjections,
         collapseSidebar,
         collapseAppearance,
         changeShapesColorBy,
@@ -57,6 +60,7 @@ function ObjectsSideBar(props: Props): JSX.Element {
         changeSelectedShapesOpacity,
         changeShapesBlackBorders,
         changeShowBitmap,
+        changeShowProjections,
     } = props;
 
     const appearanceProps = {
@@ -67,12 +71,14 @@ function ObjectsSideBar(props: Props): JSX.Element {
         selectedOpacity,
         blackBorders,
         showBitmap,
+        showProjections,
 
         changeShapesColorBy,
         changeShapesOpacity,
         changeSelectedShapesOpacity,
         changeShapesBlackBorders,
         changeShowBitmap,
+        changeShowProjections,
     };
 
     return (

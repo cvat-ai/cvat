@@ -49,6 +49,7 @@ export enum RectDrawingMethod {
 export interface Configuration {
     displayAllText?: boolean;
     undefinedAttrValue?: string;
+    showProjections?: boolean;
 }
 
 export interface DrawData {
@@ -515,6 +516,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof (configuration.displayAllText) !== 'undefined') {
             this.data.configuration.displayAllText = configuration.displayAllText;
+        }
+
+        if (typeof (configuration.showProjections) !== 'undefined') {
+            this.data.configuration.showProjections = configuration.showProjections;
         }
 
         if (typeof (configuration.undefinedAttrValue) !== 'undefined') {

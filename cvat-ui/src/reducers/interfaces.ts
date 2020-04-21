@@ -438,6 +438,7 @@ export interface ShapesSettingsState {
     selectedOpacity: number;
     blackBorders: boolean;
     showBitmap: boolean;
+    showProjections: boolean;
 }
 
 export interface SettingsState {

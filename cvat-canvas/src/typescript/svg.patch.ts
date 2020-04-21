@@ -529,15 +529,15 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
         },
 
         draggable(value: any, constraint: any) {
-            const _draggable = SVG.Element.prototype.draggable.bind(this)
-            const faces = [this.right, this.dorsal, this.left]
+            const { cuboidModel } = this;
+            const faces = [this.face, this.right, this.dorsal, this.left]
             const accumulatedOffset: Point = {
                 x: 0,
                 y: 0,
             };
 
             if (value === false) {
-                [this.face, ...faces].forEach((face: any) => {
+                faces.forEach((face: any) => {
                     face.draggable(false);
                     face.off('dragstart');
                     face.off('dragmove');
@@ -567,23 +567,45 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.fire(new CustomEvent('dragend', event));
             })
 
-            faces.forEach((face: any, i: number) => {
-                face.draggable().on('dragstart', (event: CustomEvent) => {
-                    accumulatedOffset.x = 0;
-                    accumulatedOffset.y = 0;
+            this.left.draggable((x: number, y: number) => ({
+                x: x < Math.min(cuboidModel.dr.points[0].x,
+                    cuboidModel.fr.points[0].x) - consts.MIN_EDGE_LENGTH, y
+            })).on('dragstart', (event: CustomEvent) => {
+                this.fire(new CustomEvent('dragstart', event));
+            }).on('dragmove', (event: CustomEvent) => {
+                this.cuboidModel.left.points =  parsePoints(this.left.attr('points'));
+                this.updateViewAndVM();
 
-                    this.fire(new CustomEvent('dragstart', event));
-                }).on('dragmove', (event: CustomEvent) => {
-                    this.cuboidModel.facesList[i+1].points =  parsePoints(face.attr('points'));
+                this.fire(new CustomEvent('dragmove', event));
+            }).on('dragend', (event: CustomEvent) => {
+                this.fire(new CustomEvent('dragend', event));
+            });
 
-                    this.updateViewAndVM(i === 0);
+            this.dorsal.draggable().on('dragstart', (event: CustomEvent) => {
+                this.fire(new CustomEvent('dragstart', event));
+            }).on('dragmove', (event: CustomEvent) => {
+                this.cuboidModel.dorsal.points =  parsePoints(this.dorsal.attr('points'));
+                this.updateViewAndVM();
 
-                    this.fire(new CustomEvent('dragmove', event));
-                }).on('dragend', (event: CustomEvent) => {
+                this.fire(new CustomEvent('dragmove', event));
+            }).on('dragend', (event: CustomEvent) => {
+                this.fire(new CustomEvent('dragend', event));
+            });
 
-                    this.fire(new CustomEvent('dragend', event));
-                })
-            })
+            this.right.draggable((x: number, y: number) => ({
+                x: x > Math.min(cuboidModel.dl.points[0].x,
+                    cuboidModel.fl.points[0].x) + consts.MIN_EDGE_LENGTH, y
+            })).on('dragstart', (event: CustomEvent) => {
+                this.fire(new CustomEvent('dragstart', event));
+            }).on('dragmove', (event: CustomEvent) => {
+                this.cuboidModel.right.points =  parsePoints(this.right.attr('points'));
+                this.updateViewAndVM(true);
+
+                this.fire(new CustomEvent('dragmove', event));
+            }).on('dragend', (event: CustomEvent) => {
+                this.fire(new CustomEvent('dragend', event));
+            });
+
             return this;
         },
 
@@ -591,9 +613,22 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
         attr(a: any, v: any, n: any) {
             const _attr = SVG.Element.prototype.attr.bind(this);
-            if (a === 'fill' && v !== undefined) {
+            if ((a === 'fill' || a === 'stroke') && v !== undefined) {
                 _attr(a, v, n);
                 this.paintOrientationLines();
+            } else if (a === 'projections') {
+                _attr(a, v, n)
+                if (v === true) {
+                    this.ftProj.show();
+                    this.fbProj.show();
+                    this.rtProj.show();
+                    this.rbProj.show();
+                } else {
+                    this.ftProj.hide();
+                    this.fbProj.hide();
+                    this.rtProj.hide();
+                    this.rbProj.hide();
+                }
             } else if (a === 'stroke-width' && typeof v === "number") {
                 _attr(a, v, n);
                 this.updateThickness();
@@ -625,21 +660,26 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
         paintOrientationLines() {
             const fillColor = this.attr('fill');
+            const strokeColor = this.attr('stroke');
             const selectedColor = '#ff007f';
             this.frontTopEdge.stroke({ color: selectedColor });
             this.frontLeftEdge.stroke({ color: selectedColor });
             this.frontBotEdge.stroke({ color: selectedColor });
             this.frontRightEdge.stroke({ color: selectedColor });
 
-            this.rightTopEdge.stroke({ color: fillColor });
-            this.rightBotEdge.stroke({ color: fillColor });
-            this.dorsalRightEdge.stroke({ color: fillColor });
-            this.dorsalLeftEdge.stroke({ color: fillColor });
+            this.rightTopEdge.stroke({ color: strokeColor });
+            this.rightBotEdge.stroke({ color: strokeColor });
+            this.dorsalRightEdge.stroke({ color: strokeColor });
+            this.dorsalLeftEdge.stroke({ color: strokeColor });
 
-            this.face.stroke({ color: fillColor, width: 0 });
-            this.right.stroke({ color: fillColor });
-            this.dorsal.stroke({ color: fillColor });
-            this.left.stroke({ color: fillColor });
+            this.face.stroke({ color: strokeColor, width: 0 })
+                .fill({ color: fillColor });
+            this.right.stroke({ color: strokeColor })
+                .fill({ color: fillColor });
+            this.dorsal.stroke({ color: strokeColor })
+                .fill({ color: fillColor });
+            this.left.stroke({ color: strokeColor })
+                .fill({ color: fillColor });
         },
 
         dmove(dx: number, dy: number) {
@@ -686,15 +726,6 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.cuboidModel.rt.points[1], this.cuboidModel.vpr));
             this.rbProj.plot(this.updateProjectionLine(this.cuboidModel.rb.getEquation(),
                 this.cuboidModel.rt.points[1], this.cuboidModel.vpr));
-        },
-
-        updateGrabPoints() {
-            const centers = this.getGrabPoints();
-            const edges = this.getEdges();
-            for (let i = 0; i < centers.length; i += 1) {
-                const edge = edges[i];
-                centers[i].center(edge.cx(), edge.cy());
-            }
         },
 
         computeHeightFace(point: Point, index: number) {
