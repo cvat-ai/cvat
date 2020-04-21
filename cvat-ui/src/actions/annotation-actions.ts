@@ -362,6 +362,10 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 },
             );
 
+            await job.annotations.clear(true);
+            await job.actions.clear();
+            const history = await job.actions.get();
+
             // One more update to escape some problems
             // in canvas when shape with the same
             // clientID has different type (polygon, rectangle) for example
@@ -370,12 +374,10 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 payload: {
                     job,
                     states: [],
+                    history,
                 },
             });
 
-            await job.annotations.clear(true);
-            await job.actions.clear();
-            const history = await job.actions.get();
             const states = await job.annotations.get(frame, showAllInterpolationTracks, filters);
 
             setTimeout(() => {
