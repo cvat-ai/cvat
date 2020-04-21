@@ -1381,11 +1381,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         });
 
-        this.activeElement = {
-            ...this.activeElement,
-            clientID,
-        };
-
         this.canvas.dispatchEvent(new CustomEvent('canvas.activated', {
             bubbles: false,
             cancelable: true,
@@ -1409,6 +1404,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const { clientID, attributeID } = activeElement;
         if (clientID !== null && this.activeElement.clientID !== clientID) {
             this.activateShape(clientID);
+            this.activeElement = {
+                ...this.activeElement,
+                clientID,
+            };
         }
 
         if (clientID !== null
