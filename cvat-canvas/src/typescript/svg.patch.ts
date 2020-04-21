@@ -541,7 +541,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     face.draggable(false);
                     face.off('dragstart');
                     face.off('dragmove');
-                    face.off('dragsend');
+                    face.off('dragend');
                 })
                 return
             }
@@ -574,19 +574,9 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
                     this.fire(new CustomEvent('dragstart', event));
                 }).on('dragmove', (event: CustomEvent) => {
-                    const dx = event.detail.p.x - event.detail.handler.startPoints.point.x;
-                    const dy = event.detail.p.y - event.detail.handler.startPoints.point.y;
-                    let dxPortion = dx - accumulatedOffset.x;
-                    let dyPortion = dy - accumulatedOffset.y;
-                    accumulatedOffset.x += dxPortion;
-                    accumulatedOffset.y += dyPortion;
+                    this.cuboidModel.facesList[i+1].points =  parsePoints(face.attr('points'));
 
-                    this.cuboidModel.facesList[i+1].points.forEach((point: Point) => {
-                        point.x += dxPortion;
-                        point.y += dyPortion;
-                    });
-
-                    this.updateViewAndVM();
+                    this.updateViewAndVM(i === 0);
 
                     this.fire(new CustomEvent('dragmove', event));
                 }).on('dragend', (event: CustomEvent) => {
@@ -764,11 +754,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
         updateFaces() {
             const viewModel = this.cuboidModel;
 
-            const frontPoints = viewModel.front.points;
-            this.face.resize()
-                .resize(frontPoints[2].x - frontPoints[0].x, frontPoints[1].y - frontPoints[0].y)
-                .move(frontPoints[0].x, frontPoints[0].y);
-
+            this.face.plot(viewModel.front.points);
             this.right.plot(viewModel.right.points);
             this.dorsal.plot(viewModel.dorsal.points);
             this.left.plot(viewModel.left.points);
