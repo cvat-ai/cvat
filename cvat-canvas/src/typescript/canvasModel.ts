@@ -368,7 +368,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public activate(clientID: number | null, attributeID: number | null): void {
-        if (this.data.activeElement.clientID === clientID) {
+        if (this.data.activeElement.clientID === clientID
+            && this.data.activeElement.attributeID === attributeID
+        ) {
             return;
         }
 
