@@ -9,10 +9,37 @@ spec:
   runtime: "python:3.6"
   handler: main:handler
   build:
-    image: cvat/dextr:latest
-    mode: "neverBuild"
-  eventTimeout: 30
-  replicas: 0
+    image: cvat/dextr
+    baseImage: openvino/ubuntu18_runtime:2020.2
+
+    directives:
+      preCopy:
+      - kind: USER
+        value: root
+
+      - kind: WORKDIR
+        value: /opt/nuclio
+
+      - kind: ENV
+        value: PATH=/opt/nuclio:${PATH}
+
+      postCopy:
+      - kind: RUN
+        value: curl -O https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip
+      - kind: RUN
+        value: unzip dextr_model_v1.zip
+      - kind: RUN
+        value: pip3 install -r requirements.txt
+      - kind: USER
+        value: openvino
+
+#    commands:
+#    - "@nuclio.postCopy"
+#    - curl -O https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip
+#    - unzip dextr_model_v1.zip
+#    - pip3 install -r requirements.txt
+
+  eventTimeout: 30s
   triggers:
     myHttpTrigger:
       maxWorkers: 2
