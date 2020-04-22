@@ -3,12 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Button,
-} from 'antd';
+import { Row, Col } from 'antd/lib/grid';
+import Button from 'antd/lib/button';
 
 interface Props {
     colors: string[];

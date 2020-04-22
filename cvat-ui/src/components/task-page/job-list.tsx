@@ -3,21 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
-
-import {
-    Row,
-    Col,
-    Icon,
-    Table,
-    Button,
-    Tooltip,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Table from 'antd/lib/table';
+import Button from 'antd/lib/button';
+import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
-
 import moment from 'moment';
 import copy from 'copy-to-clipboard';
 

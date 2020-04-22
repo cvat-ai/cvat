@@ -3,16 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
 import { RouteComponentProps } from 'react-router';
 import { Link, withRouter } from 'react-router-dom';
-
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
-import {
-    Col,
-    Row,
-} from 'antd';
+import { Row, Col } from 'antd/lib/grid';
 
 import LoginForm, { LoginData } from './login-form';
 

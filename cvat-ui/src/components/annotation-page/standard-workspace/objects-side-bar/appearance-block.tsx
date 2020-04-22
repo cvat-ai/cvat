@@ -3,18 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Checkbox,
-    Collapse,
-    Slider,
-    Radio,
-} from 'antd';
-
 import Text from 'antd/lib/typography/Text';
-import { RadioChangeEvent } from 'antd/lib/radio';
-import { SliderValue } from 'antd/lib/slider';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import Radio, { RadioChangeEvent } from 'antd/lib/radio';
+import Slider, { SliderValue } from 'antd/lib/slider';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import Collapse from 'antd/lib/collapse';
 
 import { ColorBy } from 'reducers/interfaces';
 
