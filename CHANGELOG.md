@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Auto annotation, TF annotation and Auto segmentation apps (https://github.com/opencv/cvat/pull/1409)
 - Import works with truncated images now: "OSError:broken data stream" on corrupt images (https://github.com/opencv/cvat/pull/1430)
+- Hide functionality (H) doesn't work (<https://github.com/opencv/cvat/pull/1445>)
+- The highlighted attribute doesn't correspond to the chosen attribute in AAM (<https://github.com/opencv/cvat/pull/1445>)
+- Inconvinient image shaking while drawing a polygon (hold Alt key during drawing/editing/grouping to drag an image) (<https://github.com/opencv/cvat/pull/1445>)
+- Filter property "shape" doesn't work and extra operator in description (<https://github.com/opencv/cvat/pull/1445>)
+- Block of text information doesn't disappear after deactivating for locked shapes (<https://github.com/opencv/cvat/pull/1445>)
+- Annotation uploading fails in annotation view (<https://github.com/opencv/cvat/pull/1445>)
+- UI freezes after canceling pasting with escape (<https://github.com/opencv/cvat/pull/1445>)
 - Duplicating keypoints in COCO export (https://github.com/opencv/cvat/pull/1435)
 
 ### Security
