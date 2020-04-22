@@ -422,7 +422,7 @@ Usage examples:
 
     -   Choose the opposite points. Your first rectangle is ready!
 
-        ![](static/documentation/images/gif017_DETRAC.gif)
+        ![](static/documentation/images/image011_DETRAC.jpg)
 
     -   To learn about creating a rectangle using the by 4 point drawing method, ([read here](#annotation-by-rectangle-4-points)).
 
