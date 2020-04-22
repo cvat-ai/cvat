@@ -19,8 +19,8 @@ import {
     ShapeType,
 } from 'reducers/interfaces';
 import { LogType } from 'cvat-logger';
-import { Canvas } from 'cvat-canvas';
-import getCore from 'cvat-core';
+import { Canvas } from 'cvat-canvas-wrapper';
+import getCore from 'cvat-core-wrapper';
 import consts from 'consts';
 
 const cvat = getCore();

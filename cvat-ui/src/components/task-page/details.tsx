@@ -13,7 +13,7 @@ import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
 
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 import patterns from 'utils/validation-patterns';
 import { getReposData, syncRepos } from 'utils/git-utils';
 import UserSelector from './user-selector';

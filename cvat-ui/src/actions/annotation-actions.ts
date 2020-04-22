@@ -22,9 +22,9 @@ import {
     Workspace,
 } from 'reducers/interfaces';
 
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
-import { RectDrawingMethod } from 'cvat-canvas';
+import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { getCVATStore } from 'cvat-store';
 
 interface AnnotationsParameters {

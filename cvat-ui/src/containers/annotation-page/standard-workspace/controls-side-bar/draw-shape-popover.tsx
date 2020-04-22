@@ -8,7 +8,7 @@ import { RadioChangeEvent } from 'antd/lib/radio';
 
 import { CombinedState, ShapeType, ObjectType } from 'reducers/interfaces';
 import { rememberObject } from 'actions/annotation-actions';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas';
+import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 
 interface OwnProps {
