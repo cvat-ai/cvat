@@ -632,6 +632,9 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             } else if (a === 'stroke-width' && typeof v === "number") {
                 _attr(a, v, n);
                 this.updateThickness();
+            } else if (a === 'face-stroke' && v !== undefined) {
+                _attr(a,v,n);
+                this.paintOrientationLines()
             } else {
                 return _attr(a, v, n);
             }
@@ -661,7 +664,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
         paintOrientationLines() {
             const fillColor = this.attr('fill');
             const strokeColor = this.attr('stroke');
-            const selectedColor = '#ff007f';
+            const selectedColor = this.attr('face-stroke') || '#ff007f';
             this.frontTopEdge.stroke({ color: selectedColor });
             this.frontLeftEdge.stroke({ color: selectedColor });
             this.frontBotEdge.stroke({ color: selectedColor });
@@ -689,6 +692,26 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             });
 
             this.updateViewAndVM();
+        },
+
+        x(x?: number) {
+            if (typeof x === 'number') {
+                const { x: xInitial } = this.bbox();
+                this.dmove(x - xInitial, 0);
+                return this;
+            } else {
+                return this.bbox().x;
+            }
+        },
+
+        y(y?: number) {
+            if (typeof y === 'number') {
+                const { y: yInitial } = this.bbox();
+                this.dmove(0, y - yInitial);
+                return this;
+            } else {
+                return this.bbox().y;
+            }
         },
 
         updateViewAndVM(build: boolean) {

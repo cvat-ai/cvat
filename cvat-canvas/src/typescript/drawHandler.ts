@@ -466,6 +466,15 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pastePolyshape();
     }
 
+    private pasteCuboid(points: string): void {
+        this.drawInstance = (this.canvas as any).cube(points).addClass('cvat_canvas_shape_drawing').attr({
+            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+            'face-stroke': 'black',
+        });
+        this.pasteShape();
+        this.pastePolyshape();
+    }
+
     private pastePoints(initialPoints: string): void {
         function moveShape(
             shape: SVG.PolyLine,
@@ -597,6 +606,8 @@ export class DrawHandlerImpl implements DrawHandler {
                     this.pastePolyline(stringifiedPoints);
                 } else if (this.drawData.shapeType === 'points') {
                     this.pastePoints(stringifiedPoints);
+                } else if (this.drawData.shapeType === 'cuboid') {
+                    this.pasteCuboid(stringifiedPoints);
                 }
             }
             this.setupPasteEvents();
