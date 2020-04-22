@@ -238,7 +238,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.setupProjections();
             this.hideProjections();
 
-            this.attr('points', points);
+            this._attr('points', points);
             return this;
         },
 
@@ -612,12 +612,16 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
         _attr: SVG.Element.prototype.attr,
 
         attr(a: any, v: any, n: any) {
-            const _attr = SVG.Element.prototype.attr.bind(this);
-            if ((a === 'fill' || a === 'stroke') && v !== undefined) {
-                _attr(a, v, n);
+            if ((a === 'fill' || a === 'stroke' || a === 'face-stroke')
+                && v !== undefined) {
+                this._attr(a, v, n);
                 this.paintOrientationLines();
+            } else if (a === 'points' && typeof v === 'string') {
+                const points = parsePoints(v);
+                this.cuboidModel.setPoints(points);
+                this.updateViewAndVM();
             } else if (a === 'projections') {
-                _attr(a, v, n)
+                this._attr(a, v, n);
                 if (v === true) {
                     this.ftProj.show();
                     this.fbProj.show();
@@ -630,13 +634,10 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     this.rbProj.hide();
                 }
             } else if (a === 'stroke-width' && typeof v === "number") {
-                _attr(a, v, n);
+                this._attr(a, v, n);
                 this.updateThickness();
-            } else if (a === 'face-stroke' && v !== undefined) {
-                _attr(a,v,n);
-                this.paintOrientationLines()
             } else {
-                return _attr(a, v, n);
+                return this._attr(a ,v, n);
             }
 
             return this;
@@ -718,7 +719,11 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.cuboidModel.updateOrientation();
             this.cuboidModel.buildBackEdge(build);
             this.updateView();
-            this._attr('points', stringifyPoints(this.cuboidModel.points));
+
+            // to correct getting of points in resizedone, dragdone
+            this._attr('points', this.cuboidModel
+                .getPoints()
+                .reduce((acc: string, point: Point): string => `${acc} ${point.x},${point.y}`, '').trim());
         },
 
         updatePolygons() {
@@ -798,11 +803,6 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.updateFaces();
             this.updateEdges();
             this.updateProjections();
-
-            // to correct getting of points in resizedone, dragdone
-            this.attr('points', this.cuboidModel
-                .getPoints()
-                .reduce((acc: string, point: Point): string => `${acc} ${point.x},${point.y}`, '').trim());
         },
 
         updateFaces() {

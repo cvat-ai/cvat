@@ -1075,7 +1075,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             return `${acc}${val},`;
                         }, '',
                     );
-                    (shape as any).clear();
+                    if (state.shapeType !== 'cuboid') {
+                        (shape as any).clear();
+                    }
                     shape.attr('points', stringified);
 
                     if (state.shapeType === 'points') {
@@ -1591,6 +1593,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'data-z-order': state.zOrder,
             });
+
+        (window as any).cube = cube;
 
         return cube;
     }

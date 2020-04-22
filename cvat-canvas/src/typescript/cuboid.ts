@@ -141,8 +141,13 @@ export class CuboidModel {
         return this.points;
     }
 
-    public setPoints(points: Point[]): void {
-        this.points = points;
+    public setPoints(points: (Point | null)[]): void {
+        points.forEach((point: Point | null, i: number): void => {
+            if (point !== null) {
+                this.points[i].x = point.x;
+                this.points[i].y = point.y;
+            }
+        });
     }
 
     public updateOrientation(): void {
