@@ -125,6 +125,24 @@ task_create_parser.add_argument(
     help='list of paths or URLs',
     nargs='+'
 )
+task_create_parser.add_argument(
+    '--annotation_path',
+    default='',
+    type=str,
+    help='path to annotation file'
+)
+task_create_parser.add_argument(
+    '--annotation_format',
+    default='CVAT XML 1.1',
+    type=str,
+    help='format of the annotation file being uploaded, e.g. CVAT XML 1.1'
+)
+task_create_parser.add_argument(
+    '--cooldown_period_in_secs',
+    default=180,
+    type=int,
+    help='number of seconds to wait for the job to be created until uploading the annotations'
+)
 
 #######################################################################
 # Delete
