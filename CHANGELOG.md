@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Block of text information doesn't disappear after deactivating for locked shapes (<https://github.com/opencv/cvat/pull/1445>)
 - Annotation uploading fails in annotation view (<https://github.com/opencv/cvat/pull/1445>)
 - UI freezes after canceling pasting with escape (<https://github.com/opencv/cvat/pull/1445>)
+- Duplicating keypoints in COCO export (https://github.com/opencv/cvat/pull/1435)
 
 ### Security
 -
