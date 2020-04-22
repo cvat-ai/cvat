@@ -400,39 +400,47 @@ And there is how they all look like:
 
 ``Tag`` - has no shape in the workspace, but is displayed in objects sidebar.
 
-### Annotation mode (basics)
+### Shape mode (basics)
 Usage examples:
 - Create new annotations for a set of images.
 - Add/modify/delete objects for existing annotations.
 
-1.  Before starting, you need to check if ``Annotation`` is selected:
+1.  You need to select ``Rectangle`` on the controls sidebar:
 
-    ![](static/documentation/images/image082.jpg) ![](static/documentation/images/image081.jpg)
+    ![](static/documentation/images/image082.jpg)
 
-1.  Create a new annotation:
+    Before you start, select the correct `` Label`` (should be specified by you when creating the task) 
+    and `` Drawing Method`` (by 2 points or by 4 points):
 
-    -   Choose a right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
+    ![](static/documentation/images/image080.jpg) 
 
-        ![](static/documentation/images/image080.jpg) ![](static/documentation/images/image083.jpg)
+1.  Creating a new annotation in ``Shape mode``:
 
-    -   Create a bounding box by clicking on ``Create Shape`` button or ``N`` shortcut.
-        Choose opposite points. Your first bounding box is ready!
+    -   Create a separate ``Rectangle`` by clicking on ``Shape``. 
 
-        ![](static/documentation/images/image011.jpg)
+        ![](static/documentation/images/image081.jpg) 
 
-    -   It is possible to adjust boundaries and location of the bounding box using mouse.
-        Box's size is shown in the top right corner , you can check it clicking on the one point of box.
+    -   Choose the opposite points. Your first rectangle is ready!
+
+        ![](static/documentation/images/image011_DETRAC.jpg)
+
+    -   To learn about creating a rectangle using the by 4 point drawing method, ([read here](#annotation-by-rectangle-4-points)).
+
+    -   It is possible to adjust boundaries and location of the rectangle using a mouse.
+        Rectangle's size is shown in the top right corner , you can check it by clicking on any point of the shape.
         You can also undo your actions using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
 
-1.  In the list of objects you can see the labeled car.
-    In the side panel you can perform basic operations under the object — choose attributes,
-    change its label or delete box.
+1.  You can see the ``Object card`` in the objects sidebar or open it by right-clicking on the object.
+    You can change the attributes in the details section. 
+    You can perform basic operations or delete an object by clicking on the action menu button.
 
     ![](static/documentation/images/image012.jpg)
 
-1.  The following figure is an example of fully annotated frame in ``Annotation`` mode.
+1.  The following figure is an example of a fully annotated frame with separate shapes.
 
-    ![](static/documentation/images/image013.jpg)
+    ![](static/documentation/images/image013_DETRAC.jpg)
+
+    Read more in the section [shape mode (advanced)](#shape-mode-advanced).
 
 ### Interpolation mode (basics)
 Usage examples:
