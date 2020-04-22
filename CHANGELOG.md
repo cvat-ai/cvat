@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Auto annotation, TF annotation and Auto segmentation apps (https://github.com/opencv/cvat/pull/1409)
 - Import works with truncated images now: "OSError:broken data stream" on corrupt images (https://github.com/opencv/cvat/pull/1430)
+- Duplicating keypoints in COCO export (https://github.com/opencv/cvat/pull/1435)
 
 ### Security
 -
