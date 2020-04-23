@@ -49,6 +49,8 @@ class _SubsetWriter:
             'id': item.id,
             'annotations': annotations,
         }
+        if item.attributes:
+            item_desc['attr'] = item.attributes
         if item.path:
             item_desc['path'] = item.path
         if item.has_image:
@@ -236,16 +238,14 @@ class _Converter:
         subsets = self._extractor.subsets()
         if len(subsets) == 0:
             subsets = [ None ]
-        subsets = [n if n else DEFAULT_SUBSET_NAME for n in subsets]
+        subsets = [n or DEFAULT_SUBSET_NAME for n in subsets]
         subsets = { name: _SubsetWriter(name, self) for name in subsets }
 
         for subset, writer in subsets.items():
             writer.write_categories(self._extractor.categories())
 
         for item in self._extractor:
-            subset = item.subset
-            if not subset:
-                subset = DEFAULT_SUBSET_NAME
+            subset = item.subset or DEFAULT_SUBSET_NAME
             writer = subsets[subset]
 
             writer.write_item(item)
@@ -258,14 +258,9 @@ class _Converter:
         if image is None:
             return ''
 
-        filename = item.image.filename
-        if filename:
-            filename = osp.splitext(filename)[0]
-        else:
-            filename = item.id
-        filename += DatumaroPath.IMAGE_EXT
+        filename = item.id + DatumaroPath.IMAGE_EXT
         image_path = osp.join(self._images_dir, filename)
-        save_image(image_path, image)
+        save_image(image_path, image, create_dir=True)
         return filename
 
 class DatumaroConverter(Converter, CliPlugin):
