@@ -1,5 +1,3 @@
-apiVersion: "nuclio.io/v1"
-kind: "NuclioFunction"
 metadata:
   name: dextr
   namespace: cvat
@@ -8,6 +6,11 @@ spec:
   description: Deep Extreme Cut
   runtime: "python:3.6"
   handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: NUCLIO_PYTHON_EXE_PATH
+      value: /opt/nuclio/python3
+
   build:
     image: cvat/dextr
     baseImage: openvino/ubuntu18_runtime:2020.2
@@ -16,12 +19,10 @@ spec:
       preCopy:
       - kind: USER
         value: root
-
       - kind: WORKDIR
         value: /opt/nuclio
-
-      - kind: ENV
-        value: PATH=/opt/nuclio:${PATH}
+      - kind: RUN
+        value: ln -s /usr/bin/pip3 /usr/bin/pip
 
       postCopy:
       - kind: RUN
@@ -33,13 +34,6 @@ spec:
       - kind: USER
         value: openvino
 
-#    commands:
-#    - "@nuclio.postCopy"
-#    - curl -O https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip
-#    - unzip dextr_model_v1.zip
-#    - pip3 install -r requirements.txt
-
-  eventTimeout: 30s
   triggers:
     myHttpTrigger:
       maxWorkers: 2
