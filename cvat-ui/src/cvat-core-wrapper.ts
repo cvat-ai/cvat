@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import _cvat from '../../cvat-core/src/api';
+import _cvat from 'cvat-core/src/api';
 
 const cvat: any = _cvat;
 

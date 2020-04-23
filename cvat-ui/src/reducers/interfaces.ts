@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas';
+import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
 
 export type StringObject = {
     [index: string]: string;

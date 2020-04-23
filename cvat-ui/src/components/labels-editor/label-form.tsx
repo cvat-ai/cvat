@@ -3,22 +3,17 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Icon,
-    Input,
-    Button,
-    Select,
-    Tooltip,
-    Checkbox,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Input from 'antd/lib/input';
+import Button from 'antd/lib/button';
+import Checkbox from 'antd/lib/checkbox';
+import Tooltip from 'antd/lib/tooltip';
+import Select from 'antd/lib/select';
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
-import patterns from 'utils/validation-patterns';
 
+import patterns from 'utils/validation-patterns';
 import {
     equalArrayHead,
     idGenerator,

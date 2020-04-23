@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 
 const core = getCore();
 const { logger } = core;

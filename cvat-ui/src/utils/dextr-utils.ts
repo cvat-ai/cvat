@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import getCore from 'cvat-core';
-import { Canvas } from 'cvat-canvas';
+import getCore from 'cvat-core-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { ShapeType, RQStatus } from 'reducers/interfaces';
 
 const core = getCore();
