@@ -54,9 +54,7 @@ class LabelMeExtractor(SourceExtractor):
         for p in sorted(p for p in os.listdir(path) if p.endswith('.xml')):
             root = ElementTree.parse(osp.join(path, p))
 
-            image = None
             image_path = osp.join(path, root.find('filename').text)
-
             image_size = None
             imagesize_elem = root.find('imagesize')
             if imagesize_elem is not None:
@@ -67,8 +65,8 @@ class LabelMeExtractor(SourceExtractor):
 
             annotations = self._parse_annotations(root, path, categories)
 
-            items.append(DatasetItem(id=osp.splitext(p)[0], subset=self._subset,
-                image=image, annotations=annotations))
+            items.append(DatasetItem(id=osp.splitext(p)[0],
+                subset=self._subset, image=image, annotations=annotations))
         return items, categories
 
     @classmethod
@@ -333,18 +331,11 @@ class LabelMeConverter(Converter, CliPlugin):
 
         log.debug("Converting item '%s'", item.id)
 
-        image_filename = ''
-        if item.has_image:
-            image_filename = item.image.filename
+        image_filename = item.id + LabelMePath.IMAGE_EXT
         if self._save_images:
             if item.has_image and item.image.has_data:
-                if image_filename:
-                    image_filename = osp.splitext(image_filename)[0]
-                else:
-                    image_filename = item.id
-                image_filename += LabelMePath.IMAGE_EXT
                 save_image(osp.join(subset_dir, image_filename),
-                    item.image.data)
+                    item.image.data, create_dir=True)
             else:
                 log.debug("Item '%s' has no image" % item.id)
 
