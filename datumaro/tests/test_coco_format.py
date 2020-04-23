@@ -1,6 +1,4 @@
-import json
 import numpy as np
-import os
 import os.path as osp
 
 from unittest import TestCase
@@ -19,99 +17,19 @@ from datumaro.plugins.coco_format.converter import (
     CocoLabelsConverter,
 )
 from datumaro.plugins.coco_format.importer import CocoImporter
-from datumaro.util.image import save_image, Image
+from datumaro.util.image import Image
 from datumaro.util.test_utils import TestDir, compare_datasets
 
 
+DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__), 'assets', 'coco_dataset')
+
 class CocoImporterTest(TestCase):
-    @staticmethod
-    def generate_annotation():
-        annotation = {
-            'licenses': [],
-            'info': {},
-            'categories': [],
-            'images': [],
-            'annotations': [],
-        }
-        annotation['licenses'].append({
-            'name': '',
-            'id': 0,
-            'url': '',
-        })
-        annotation['info'] = {
-            'contributor': '',
-            'date_created': '',
-            'description': '',
-            'url': '',
-            'version': '',
-            'year': '',
-        }
-        annotation['licenses'].append({
-            'name': '',
-            'id': 0,
-            'url': '',
-        })
-        annotation['categories'].append({
-            'id': 1,
-            'name': 'TEST',
-            'supercategory': '',
-        })
-        annotation['images'].append({
-            "id": 1,
-            "width": 5,
-            "height": 10,
-            "file_name": '000000000001.jpg',
-            "license": 0,
-            "flickr_url": '',
-            "coco_url": '',
-            "date_captured": 0,
-        })
-        annotation['annotations'].append({
-            "id": 1,
-            "image_id": 1,
-            "category_id": 1,
-            "segmentation": [[0, 0, 1, 0, 1, 2, 0, 2]],
-            "area": 2,
-            "bbox": [0, 0, 1, 2],
-            "iscrowd": 0,
-        })
-        annotation['annotations'].append({
-            "id": 2,
-            "image_id": 1,
-            "category_id": 1,
-            "segmentation": {
-                "counts": [
-                    0, 10,
-                    5, 5,
-                    5, 5,
-                    0, 10,
-                    10, 0],
-                "size": [10, 5]},
-            "area": 30,
-            "bbox": [0, 0, 10, 4],
-            "iscrowd": 1,
-        })
-        return annotation
-
-    def COCO_dataset_generate(self, path):
-        img_dir = osp.join(path, 'images', 'val')
-        ann_dir = osp.join(path, 'annotations')
-        os.makedirs(img_dir)
-        os.makedirs(ann_dir)
-
-        image = np.ones((10, 5, 3))
-        save_image(osp.join(img_dir, '000000000001.jpg'), image)
-
-        annotation = self.generate_annotation()
-
-        with open(osp.join(ann_dir, 'instances_val.json'), 'w') as outfile:
-            json.dump(annotation, outfile)
-
     def test_can_import(self):
         class DstExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, image=np.ones((10, 5, 3)), subset='val',
+                    DatasetItem(id='000000000001', image=np.ones((10, 5, 3)),
+                        subset='val', attributes={'id': 1},
                         annotations=[
                             Polygon([0, 0, 1, 0, 1, 2, 0, 2], label=0,
                                 id=1, group=1, attributes={'is_crowd': False}),
@@ -129,18 +47,13 @@ class CocoImporterTest(TestCase):
                 label_cat.add('TEST')
                 return { AnnotationType.label: label_cat }
 
-        with TestDir() as test_dir:
-            self.COCO_dataset_generate(test_dir)
+        dataset = Project.import_from(DUMMY_DATASET_DIR, 'coco') \
+            .make_dataset()
 
-            dataset = Project.import_from(test_dir, 'coco').make_dataset()
-
-            compare_datasets(self, DstExtractor(), dataset)
+        compare_datasets(self, DstExtractor(), dataset)
 
     def test_can_detect(self):
-        with TestDir() as test_dir:
-            self.COCO_dataset_generate(test_dir)
-
-            self.assertTrue(CocoImporter.detect(test_dir))
+        self.assertTrue(CocoImporter.detect(DUMMY_DATASET_DIR))
 
 class CocoConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
@@ -164,16 +77,16 @@ class CocoConverterTest(TestCase):
                         annotations=[
                             Caption('hello', id=1, group=1),
                             Caption('world', id=2, group=2),
-                        ]),
+                        ], attributes={'id': 1}),
                     DatasetItem(id=2, subset='train',
                         annotations=[
                             Caption('test', id=3, group=3),
-                        ]),
+                        ], attributes={'id': 2}),
 
                     DatasetItem(id=3, subset='val',
                         annotations=[
                             Caption('word', id=1, group=1),
-                        ]
+                        ], attributes={'id': 1}
                     ),
                 ])
 
@@ -199,7 +112,7 @@ class CocoConverterTest(TestCase):
                             Polygon([0, 1, 2, 1, 2, 3, 0, 3],
                                 attributes={ 'is_crowd': False },
                                 label=2, group=1, id=1),
-                        ]),
+                        ], attributes={'id': 1}),
                     DatasetItem(id=2, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
                             # Mask + bbox
@@ -213,7 +126,7 @@ class CocoConverterTest(TestCase):
                                 label=4, group=3, id=3),
                             Bbox(1, 0, 2, 2, label=4, group=3, id=3,
                                 attributes={ 'is_crowd': True }),
-                        ]),
+                        ], attributes={'id': 2}),
 
                     DatasetItem(id=3, subset='val', image=np.ones((4, 4, 3)),
                         annotations=[
@@ -228,7 +141,7 @@ class CocoConverterTest(TestCase):
                                 ),
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
-                        ]),
+                        ], attributes={'id': 1}),
                 ])
 
             def categories(self):
@@ -242,7 +155,7 @@ class CocoConverterTest(TestCase):
                             Polygon([0, 1, 2, 1, 2, 3, 0, 3],
                                 attributes={ 'is_crowd': False },
                                 label=2, group=1, id=1),
-                        ]),
+                        ], attributes={'id': 1}),
                     DatasetItem(id=2, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
                             Mask(np.array([
@@ -253,7 +166,7 @@ class CocoConverterTest(TestCase):
                                 ),
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
-                        ]),
+                        ], attributes={'id': 2}),
 
                     DatasetItem(id=3, subset='val', image=np.ones((4, 4, 3)),
                         annotations=[
@@ -265,7 +178,7 @@ class CocoConverterTest(TestCase):
                                 ),
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
-                        ]),
+                        ], attributes={'id': 1}),
                 ])
 
             def categories(self):
@@ -282,7 +195,7 @@ class CocoConverterTest(TestCase):
             label_categories.add(str(i))
         categories = { AnnotationType.label: label_categories }
 
-        class TestExtractor(Extractor):
+        class SrcExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=1, image=np.zeros((6, 10, 3)),
@@ -298,30 +211,35 @@ class CocoConverterTest(TestCase):
             def categories(self):
                 return categories
 
-        class TargetExtractor(TestExtractor):
+        class DstExtractor(Extractor):
             def __iter__(self):
-                items = list(super().__iter__())
-                items[0]._annotations = [
-                    Mask(np.array([
-                            [0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
-                            [0, 0, 1, 1, 0, 1, 1, 1, 0, 0],
-                            [0, 0, 0, 1, 0, 1, 1, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
-                            # only internal fragment (without the border),
-                            # but not everywhere...
-                        ),
-                        label=3, id=4, group=4,
-                        attributes={ 'is_crowd': False }),
-                ]
-                return iter(items)
+                return iter([
+                    DatasetItem(id=1, image=np.zeros((6, 10, 3)),
+                        annotations=[
+                            Mask(np.array([
+                                [0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
+                                [0, 0, 1, 1, 0, 1, 1, 1, 0, 0],
+                                [0, 0, 0, 1, 0, 1, 1, 0, 0, 0],
+                                [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+                                # only internal fragment (without the border),
+                                # but not everywhere...
+                            ),
+                            label=3, id=4, group=4,
+                            attributes={ 'is_crowd': False }),
+                        ], attributes={'id': 1}
+                    ),
+                ])
+
+            def categories(self):
+                return categories
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(SrcExtractor(),
                 CocoInstancesConverter(), test_dir,
                 importer_args={'merge_instance_polygons': True},
-                target_dataset=TargetExtractor())
+                target_dataset=DstExtractor())
 
     def test_can_crop_covered_segments(self):
         label_categories = LabelCategories()
@@ -368,7 +286,7 @@ class CocoConverterTest(TestCase):
                             Polygon([1, 1, 4, 1, 4, 4, 1, 4],
                                 label=1, id=2, group=2,
                                 attributes={ 'is_crowd': False }),
-                        ]
+                        ], attributes={'id': 1}
                     ),
                 ])
 
@@ -418,7 +336,7 @@ class CocoConverterTest(TestCase):
                                 ),
                                 attributes={ 'is_crowd': True },
                                 label=3, id=4, group=4),
-                        ]
+                        ], attributes={'id': 1}
                     ),
                 ])
 
@@ -435,7 +353,7 @@ class CocoConverterTest(TestCase):
         for i in range(10):
             label_categories.add(str(i))
 
-        class SrcTestExtractor(Extractor):
+        class SrcExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=1, image=np.zeros((5, 10, 3)),
@@ -455,7 +373,7 @@ class CocoConverterTest(TestCase):
             def categories(self):
                 return { AnnotationType.label: label_categories }
 
-        class DstTestExtractor(Extractor):
+        class DstExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=1, image=np.zeros((5, 10, 3)),
@@ -468,7 +386,7 @@ class CocoConverterTest(TestCase):
                                 [5.0, 3.5, 4.5, 0.0, 8.0, 0.0, 5.0, 3.5],
                                 label=3, id=4, group=4,
                                 attributes={ 'is_crowd': False }),
-                        ]
+                        ], attributes={'id': 1}
                     ),
                 ])
 
@@ -476,22 +394,22 @@ class CocoConverterTest(TestCase):
                 return { AnnotationType.label: label_categories }
 
         with TestDir() as test_dir:
-            self._test_save_and_load(SrcTestExtractor(),
+            self._test_save_and_load(SrcExtractor(),
                 CocoInstancesConverter(segmentation_mode='polygons'), test_dir,
-                target_dataset=DstTestExtractor())
+                target_dataset=DstExtractor())
 
     def test_can_save_and_load_images(self):
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, subset='train'),
-                    DatasetItem(id=2, subset='train'),
+                    DatasetItem(id=1, subset='train', attributes={'id': 1}),
+                    DatasetItem(id=2, subset='train', attributes={'id': 2}),
 
-                    DatasetItem(id=2, subset='val'),
-                    DatasetItem(id=3, subset='val'),
-                    DatasetItem(id=4, subset='val'),
+                    DatasetItem(id=2, subset='val', attributes={'id': 2}),
+                    DatasetItem(id=3, subset='val', attributes={'id': 3}),
+                    DatasetItem(id=4, subset='val', attributes={'id': 4}),
 
-                    DatasetItem(id=5, subset='test'),
+                    DatasetItem(id=5, subset='test', attributes={'id': 1}),
                 ])
 
         with TestDir() as test_dir:
@@ -506,16 +424,16 @@ class CocoConverterTest(TestCase):
                         annotations=[
                             Label(4, id=1, group=1),
                             Label(9, id=2, group=2),
-                        ]),
+                        ], attributes={'id': 1}),
                     DatasetItem(id=2, subset='train',
                         annotations=[
                             Label(4, id=4, group=4),
-                        ]),
+                        ], attributes={'id': 2}),
 
                     DatasetItem(id=3, subset='val',
                         annotations=[
                             Label(2, id=1, group=1),
-                        ]),
+                        ], attributes={'id': 1}),
                 ])
 
             def categories(self):
@@ -593,7 +511,7 @@ class CocoConverterTest(TestCase):
                             Polygon([1, 2, 3, 2, 3, 4, 1, 4],
                                 group=2, id=2,
                                 attributes={'is_crowd': False}),
-                        ]),
+                        ], attributes={'id': 1}),
                     DatasetItem(id=2, subset='train',
                         annotations=[
                             Points([1, 2, 0, 2, 4, 1],
@@ -602,7 +520,7 @@ class CocoConverterTest(TestCase):
                             Polygon([0, 1, 4, 1, 4, 2, 0, 2],
                                 label=5, group=3, id=3,
                                 attributes={'is_crowd': False}),
-                        ]),
+                        ], attributes={'id': 2}),
 
                     DatasetItem(id=3, subset='val',
                         annotations=[
@@ -612,7 +530,7 @@ class CocoConverterTest(TestCase):
                             Polygon([1, 2, 3, 2, 3, 4, 1, 4],
                                 group=3, id=3,
                                 attributes={'is_crowd': False}),
-                        ]),
+                        ], attributes={'id': 3}),
                 ])
 
         with TestDir() as test_dir:
@@ -626,11 +544,11 @@ class CocoConverterTest(TestCase):
                 return iter([
                     DatasetItem(id=1, annotations=[
                         Label(2, id=1, group=1),
-                    ]),
+                    ], attributes={'id': 1}),
 
                     DatasetItem(id=2, annotations=[
                         Label(3, id=2, group=2),
-                    ]),
+                    ], attributes={'id': 2}),
                 ])
 
             def categories(self):
@@ -652,9 +570,38 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, image=Image(path='1.jpg', size=(10, 15))),
+                    DatasetItem(id=1, image=Image(path='1.jpg', size=(10, 15)),
+                        attributes={'id': 1}),
                 ])
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
                 CocoConverter(tasks='image_info'), test_dir)
+
+    def test_relative_paths(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='1', image=np.ones((4, 2, 3)),
+                        attributes={'id': 1}),
+                    DatasetItem(id='subdir1/1', image=np.ones((2, 6, 3)),
+                        attributes={'id': 2}),
+                    DatasetItem(id='subdir2/1', image=np.ones((5, 4, 3)),
+                        attributes={'id': 3}),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                CocoConverter(tasks='image_info', save_images=True), test_dir)
+
+    def test_preserve_coco_ids(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='some/name1', image=np.ones((4, 2, 3)),
+                        attributes={'id': 40}),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                CocoConverter(tasks='image_info', save_images=True), test_dir)
