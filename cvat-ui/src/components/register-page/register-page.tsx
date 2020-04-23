@@ -14,13 +14,15 @@ import {
     Row,
 } from 'antd';
 
-import RegisterForm, { RegisterData } from './register-form';
+import RegisterForm, { RegisterData, UserAgreement } from './register-form';
 
 interface RegisterPageComponentProps {
     fetching: boolean;
+    userAgreements: any[];
     onRegister: (username: string, firstName: string,
         lastName: string, email: string,
-        password1: string, password2: string) => void;
+        password1: string, password2: string,
+        userAgreements: UserAgreement[]) => void;
 }
 
 function RegisterPageComponent(
@@ -36,6 +38,7 @@ function RegisterPageComponent(
 
     const {
         fetching,
+        userAgreements,
         onRegister,
     } = props;
 
@@ -45,6 +48,7 @@ function RegisterPageComponent(
                 <Title level={2}> Create an account </Title>
                 <RegisterForm
                     fetching={fetching}
+                    userAgreements={userAgreements}
                     onSubmit={(registerData: RegisterData): void => {
                         onRegister(
                             registerData.username,
@@ -53,6 +57,7 @@ function RegisterPageComponent(
                             registerData.email,
                             registerData.password1,
                             registerData.password2,
+                            registerData.userAgreements,
                         );
                     }}
                 />

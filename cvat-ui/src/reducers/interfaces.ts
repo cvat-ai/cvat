@@ -105,6 +105,12 @@ export interface AboutState {
     initialized: boolean;
 }
 
+export interface UserAgreementsState {
+    userAgreements: any[];
+    fetching: boolean;
+    initialized: boolean;
+}
+
 export interface ShareFileInfo { // get this data from cvat-core
     name: string;
     type: 'DIR' | 'REG';
@@ -462,6 +468,7 @@ export interface CombinedState {
     about: AboutState;
     share: ShareState;
     formats: FormatsState;
+    userAgreements: UserAgreementsState;
     plugins: PluginsState;
     models: ModelsState;
     notifications: NotificationsState;

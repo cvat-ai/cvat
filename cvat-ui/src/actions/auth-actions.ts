@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import { UserAgreement } from 'components/register-page/register-form'
 import getCore from 'cvat-core';
 
 const cvat = getCore();
@@ -44,13 +45,14 @@ export const registerAsync = (
     email: string,
     password1: string,
     password2: string,
+    userAgreements: UserAgreement[],
 ): ThunkAction => async (
     dispatch,
 ) => {
     dispatch(authActions.register());
 
     try {
-        await cvat.server.register(username, firstName, lastName, email, password1, password2);
+        await cvat.server.register(username, firstName, lastName, email, password1, password2, userAgreements);
         const users = await cvat.users.get({ self: true });
 
         dispatch(authActions.registerSuccess(users[0]));
