@@ -115,6 +115,35 @@
         return area >= MIN_SHAPE_AREA;
     }
 
+    function fitPoints(shapeType, points, maxX, maxY) {
+        const fittedPoints = [];
+
+        for (let i = 0; i < points.length - 1; i += 2) {
+            const x = points[i];
+            const y = points[i + 1];
+
+            checkObjectType('coordinate', x, 'number', null);
+            checkObjectType('coordinate', y, 'number', null);
+
+            fittedPoints.push(
+                Math.clamp(x, 0, maxX),
+                Math.clamp(y, 0, maxY),
+            );
+        }
+
+        return shapeType === ObjectShape.CUBOID ? points : fittedPoints;
+    }
+
+    function checkOutside(points, width, height) {
+        let inside = false;
+        for (let i = 0; i < points.length - 1; i += 2) {
+            const [x, y] = points.slice(i);
+            inside = inside || (x >= 0 && x <= width && y >= 0 && y <= height);
+        }
+
+        return !inside;
+    }
+
     function validateAttributeValue(value, attr) {
         const { values } = attr;
         const type = attr.inputType;
@@ -292,20 +321,9 @@
                 checkNumberOfPoints(this.shapeType, data.points);
                 // cut points
                 const { width, height } = this.frameMeta[frame];
-                for (let i = 0; i < data.points.length - 1; i += 2) {
-                    const x = data.points[i];
-                    const y = data.points[i + 1];
+                fittedPoints = fitPoints(this.shapeType, data.points, width, height);
 
-                    checkObjectType('coordinate', x, 'number', null);
-                    checkObjectType('coordinate', y, 'number', null);
-
-                    fittedPoints.push(
-                        Math.clamp(x, 0, width),
-                        Math.clamp(y, 0, height),
-                    );
-                }
-
-                if (!checkShapeArea(this.shapeType, fittedPoints)) {
+                if ((!checkShapeArea(this.shapeType, fittedPoints)) || checkOutside(fittedPoints, width, height)) {
                     fittedPoints = [];
                 }
             }
@@ -1361,6 +1379,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.CUBOID;
+            checkNumberOfPoints(this.shapeType, this.points);
         }
 
         static makeHull(geoPoints) {
@@ -1925,10 +1944,23 @@
         }
     }
 
+    class CuboidTrack extends PolyTrack {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.CUBOID;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
+        }
+
+        // TODO: interpolation;
+    }
+
     RectangleTrack.distance = RectangleShape.distance;
     PolygonTrack.distance = PolygonShape.distance;
     PolylineTrack.distance = PolylineShape.distance;
     PointsTrack.distance = PointsShape.distance;
+    CuboidTrack.distance = CuboidShape.distance;
 
     module.exports = {
         RectangleShape,
@@ -1940,6 +1972,7 @@
         PolygonTrack,
         PolylineTrack,
         PointsTrack,
+        CuboidTrack,
         Track,
         Shape,
         Tag,

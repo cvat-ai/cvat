@@ -18,6 +18,7 @@
         PolygonTrack,
         PolylineTrack,
         PointsTrack,
+        CuboidTrack,
         Track,
         Shape,
         Tag,
@@ -90,6 +91,9 @@
                 break;
             case 'points':
                 trackModel = new PointsTrack(trackData, clientID, color, injection);
+                break;
+            case 'cuboid':
+                trackModel = new CuboidTrack(trackData, clientID, color, injection);
                 break;
             default:
                 throw new DataError(

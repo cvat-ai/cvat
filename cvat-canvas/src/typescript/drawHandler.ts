@@ -103,6 +103,84 @@ export class DrawHandlerImpl implements DrawHandler {
         };
     }
 
+    private getFinalCuboidCoordinates(targetPoints: number[]): {
+        points: number[];
+        box: Box;
+    } {
+        const { offset } = this.geometry;
+        let points = targetPoints;
+
+        const box = {
+            xtl: 0,
+            ytl: 0,
+            xbr: Number.MAX_SAFE_INTEGER,
+            ybr: Number.MAX_SAFE_INTEGER,
+        };
+
+        const frameWidth = this.geometry.image.width;
+        const frameHeight = this.geometry.image.height;
+
+        const cuboidOffsets = [];
+        const minCuboidOffset = {
+            d: Number.MAX_SAFE_INTEGER,
+            dx: 0,
+            dy: 0,
+        };
+
+        for (let i = 0; i < points.length - 1; i += 2) {
+            const [x, y] = points.slice(i);
+
+            if (x >= offset && x <= offset + frameWidth
+                && y >= offset && y <= offset + frameHeight) continue;
+
+            let xOffset = 0;
+            let yOffset = 0;
+
+            if (x < offset) {
+                xOffset = offset - x;
+            } else if (x > offset + frameWidth) {
+                xOffset = offset + frameWidth - x;
+            }
+
+            if (y < offset) {
+                yOffset = offset - y;
+            } else if (y > offset + frameHeight) {
+                yOffset = offset + frameHeight - y;
+            }
+
+            cuboidOffsets.push([xOffset, yOffset]);
+        }
+
+        if (cuboidOffsets.length === points.length / 2) {
+            cuboidOffsets.forEach((offsetCoords: number[]): void => {
+                if (Math.sqrt((offsetCoords[0] ** 2) + (offsetCoords[1] ** 2))
+                        < minCuboidOffset.d) {
+                    minCuboidOffset.d = Math.sqrt((offsetCoords[0] ** 2) + (offsetCoords[1] ** 2));
+                    [minCuboidOffset.dx, minCuboidOffset.dy] = offsetCoords;
+                }
+            });
+
+            points = points.map((coord: number, i: number): number => {
+                const finalCoord = coord + (i % 2 === 0 ? minCuboidOffset.dx : minCuboidOffset.dy);
+
+                if (i % 2 === 0) {
+                    box.xtl = Math.max(box.xtl, finalCoord);
+                    box.xbr = Math.min(box.xbr, finalCoord);
+                } else {
+                    box.ytl = Math.max(box.ytl, finalCoord);
+                    box.ybr = Math.min(box.ybr, finalCoord);
+                }
+
+                return finalCoord;
+            });
+        }
+
+        return {
+            points: points.map((coord: number): number => coord - offset),
+            box,
+        };
+    }
+
     private addCrosshair(): void {
         const { x, y } = this.cursorPosition;
         this.crosshair = {
@@ -312,8 +390,9 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
             const targetPoints = pointsToArray((e.target as SVGElement).getAttribute('points'));
-            const { points, box } = this.getFinalPolyshapeCoordinates(targetPoints);
             const { shapeType } = this.drawData;
+            const { points, box } = shapeType === 'cuboid' ? this.getFinalCuboidCoordinates(targetPoints)
+                : this.getFinalPolyshapeCoordinates(targetPoints);
             this.release();
 
             if (this.canceled) return;
@@ -393,7 +472,8 @@ export class DrawHandlerImpl implements DrawHandler {
                 .split(/[,\s]/g)
                 .map((coord: string): number => +coord);
 
-            const { points } = this.getFinalPolyshapeCoordinates(targetPoints);
+            const { points } = this.drawData.initialState.shapeType === 'cuboid' ? this.getFinalCuboidCoordinates(targetPoints)
+                : this.getFinalPolyshapeCoordinates(targetPoints);
             this.release();
             this.onDrawDone({
                 shapeType: this.drawData.initialState.shapeType,
