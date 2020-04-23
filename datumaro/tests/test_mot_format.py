@@ -1,10 +1,12 @@
 import numpy as np
+import os.path as osp
 
 from unittest import TestCase
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Bbox, LabelCategories
 )
+from datumaro.components.project import Project
 from datumaro.plugins.mot_format import MotSeqGtConverter, MotSeqImporter
 from datumaro.util.test_utils import TestDir, compare_datasets
 
@@ -116,15 +118,25 @@ class MotConverterTest(TestCase):
                 SrcExtractor(), MotSeqGtConverter(save_images=True),
                 test_dir, target_dataset=DstExtractor())
 
+
+DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__), 'assets', 'mot_dataset')
+
 class MotImporterTest(TestCase):
     def test_can_detect(self):
-        class TestExtractor(Extractor):
+        self.assertTrue(MotSeqImporter.detect(DUMMY_DATASET_DIR))
+
+    def test_can_import(self):
+        class DstExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, subset='train',
+                    DatasetItem(id=1,
                         image=np.ones((16, 16, 3)),
                         annotations=[
-                            Bbox(0, 4, 4, 8, label=2),
+                            Bbox(0, 4, 4, 8, label=2, attributes={
+                                'occluded': False,
+                                'visibility': 1.0,
+                                'ignored': False,
+                            }),
                         ]
                     ),
                 ])
@@ -137,10 +149,7 @@ class MotImporterTest(TestCase):
                     AnnotationType.label: label_cat,
                 }
 
-        def generate_dummy_dataset(path):
-            MotSeqGtConverter()(TestExtractor(), save_dir=path)
+        dataset = Project.import_from(DUMMY_DATASET_DIR, 'mot_seq') \
+            .make_dataset()
 
-        with TestDir() as test_dir:
-            generate_dummy_dataset(test_dir)
-
-            self.assertTrue(MotSeqImporter.detect(test_dir))
+        compare_datasets(self, DstExtractor(), dataset)

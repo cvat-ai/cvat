@@ -313,7 +313,7 @@ class MotSeqGtConverter(Converter, CliPlugin):
                     if item.has_image and item.image.has_data:
                         save_image(osp.join(self._images_dir,
                                 '%06d%s' % (frame_id, MotPath.IMAGE_EXT)),
-                            item.image.data, create_dir=True)
+                            item.image.data)
                     else:
                         log.debug("Item '%s' has no image" % item.id)
 
