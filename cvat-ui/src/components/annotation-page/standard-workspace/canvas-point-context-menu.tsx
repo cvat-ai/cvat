@@ -4,10 +4,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-
-import {
-    Button,
-} from 'antd';
+import Button from 'antd/lib/button';
 
 interface Props {
     activatedStateID: number | null;

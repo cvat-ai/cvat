@@ -3,12 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
-import consts from './consts';
 import 'svg.draw.js';
 import './svg.patch';
 
 import { AutoborderHandler } from './autoborderHandler';
-
 import {
     translateToSVG,
     displayShapeSize,
@@ -18,7 +16,7 @@ import {
     BBox,
     Box,
 } from './shared';
-
+import consts from './consts';
 import {
     DrawData,
     Geometry,
@@ -136,7 +134,6 @@ export class DrawHandlerImpl implements DrawHandler {
         this.autoborderHandler.autoborder(false);
         this.initialized = false;
         this.canvas.off('mousedown.draw');
-        this.canvas.off('mouseup.draw');
         this.canvas.off('mousemove.draw');
         this.canvas.off('click.draw');
 
@@ -171,9 +168,7 @@ export class DrawHandlerImpl implements DrawHandler {
             this.removeCrosshair();
         }
 
-        if (!this.drawData.initialState) {
-            this.onDrawDone(null);
-        }
+        this.onDrawDone(null);
     }
 
     private initDrawing(): void {
@@ -256,7 +251,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
         // Add ability to cancel the latest drawn point
         this.canvas.on('mousedown.draw', (e: MouseEvent): void => {
-            if (e.which === 3) {
+            if (e.button === 2) {
                 e.stopPropagation();
                 e.preventDefault();
                 this.drawInstance.draw('undo');
@@ -377,7 +372,10 @@ export class DrawHandlerImpl implements DrawHandler {
                 .map((coord: string): number => +coord);
 
             const { points } = this.getFinalPolyshapeCoordinates(targetPoints);
-            this.release();
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
+            }
+
             this.onDrawDone({
                 shapeType: this.drawData.initialState.shapeType,
                 objectType: this.drawData.initialState.objectType,
@@ -417,7 +415,10 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance.on('done', (e: CustomEvent): void => {
             const bbox = this.drawInstance.node.getBBox();
             const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
-            this.release();
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
+            }
+
             this.onDrawDone({
                 shapeType: this.drawData.initialState.shapeType,
                 objectType: this.drawData.initialState.objectType,
@@ -502,54 +503,23 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private setupPasteEvents(): void {
-        let mouseX: number | null = null;
-        let mouseY: number | null = null;
-
         this.canvas.on('mousedown.draw', (e: MouseEvent): void => {
-            if (e.which === 1) {
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-            }
-        });
-
-        this.canvas.on('mouseup.draw', (e: MouseEvent): void => {
-            const threshold = 10; // px
-            if (e.which === 1) {
-                if (Math.sqrt( // l2 distance < threshold
-                    ((mouseX - e.clientX) ** 2)
-                    + ((mouseY - e.clientY) ** 2),
-                ) < threshold) {
-                    this.drawInstance.fire('done', { originalEvent: e });
-                }
+            if (e.button === 0 && !e.altKey) {
+                this.drawInstance.fire('done', { originalEvent: e });
             }
         });
     }
 
     private setupDrawEvents(): void {
         let initialized = false;
-        let mouseX: number | null = null;
-        let mouseY: number | null = null;
 
         this.canvas.on('mousedown.draw', (e: MouseEvent): void => {
-            if (e.which === 1) {
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-            }
-        });
-
-        this.canvas.on('mouseup.draw', (e: MouseEvent): void => {
-            const threshold = 10; // px
-            if (e.which === 1) {
-                if (Math.sqrt( // l2 distance < threshold
-                    ((mouseX - e.clientX) ** 2)
-                    + ((mouseY - e.clientY) ** 2),
-                ) < threshold) {
-                    if (!initialized) {
-                        this.drawInstance.draw(e, { snapToGrid: 0.1 });
-                        initialized = true;
-                    } else {
-                        this.drawInstance.draw(e);
-                    }
+            if (e.button === 0 && !e.altKey) {
+                if (!initialized) {
+                    this.drawInstance.draw(e, { snapToGrid: 0.1 });
+                    initialized = true;
+                } else {
+                    this.drawInstance.draw(e);
                 }
             }
         });

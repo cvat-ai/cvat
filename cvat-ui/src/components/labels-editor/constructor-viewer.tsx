@@ -3,11 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Icon,
-    Button,
-} from 'antd';
+import Icon from 'antd/lib/icon';
+import Button from 'antd/lib/button';
 
 import ConstructorViewerItem from './constructor-viewer-item';
 import { Label } from './common';

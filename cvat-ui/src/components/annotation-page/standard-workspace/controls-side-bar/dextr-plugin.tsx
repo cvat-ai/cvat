@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
 
-import { Canvas } from 'cvat-canvas';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState } from 'reducers/interfaces';
 import { activate as activatePlugin, deactivate as deactivatePlugin } from 'utils/dextr-utils';
 

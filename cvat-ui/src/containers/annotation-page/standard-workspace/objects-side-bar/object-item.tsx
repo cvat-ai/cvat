@@ -7,7 +7,7 @@ import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
 import { LogType } from 'cvat-logger';
-import { Canvas, isAbleToChangeFrame } from 'cvat-canvas';
+import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
 import { ActiveControl, CombinedState, ColorBy } from 'reducers/interfaces';
 import {
     collapseObjectItems,

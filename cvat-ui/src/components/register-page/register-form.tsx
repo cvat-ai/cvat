@@ -3,14 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { FormComponentProps } from 'antd/lib/form/Form';
-import {
-    Button,
-    Icon,
-    Input,
-    Form,
-    Checkbox,
-} from 'antd';
+import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import Button from 'antd/lib/button';
+import Icon from 'antd/lib/icon';
+import Input from 'antd/lib/input';
+import Checkbox from 'antd/lib/checkbox';
 
 import patterns from 'utils/validation-patterns';
 

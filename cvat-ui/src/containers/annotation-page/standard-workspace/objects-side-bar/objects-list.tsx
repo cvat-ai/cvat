@@ -15,7 +15,7 @@ import {
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
 } from 'actions/annotation-actions';
-import { Canvas, isAbleToChangeFrame } from 'cvat-canvas';
+import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
 import { CombinedState, StatesOrdering, ObjectType } from 'reducers/interfaces';
 
 interface StateToProps {

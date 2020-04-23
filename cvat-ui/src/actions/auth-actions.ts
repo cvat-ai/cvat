@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { UserAgreement } from 'components/register-page/register-form'
-import getCore from 'cvat-core';
+import { UserAgreement } from 'components/register-page/register-form';
+import getCore from 'cvat-core-wrapper';
 
 const cvat = getCore();
 

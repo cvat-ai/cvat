@@ -3,14 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Menu,
-    Icon,
-    Upload,
-    Button,
-} from 'antd';
-
+import Menu from 'antd/lib/menu';
+import Icon from 'antd/lib/icon';
+import Upload from 'antd/lib/upload';
+import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
 interface Props {

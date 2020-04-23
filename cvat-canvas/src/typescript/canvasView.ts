@@ -98,7 +98,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             this.canvas.dispatchEvent(event);
-        } else {
+        } else if (!continueDraw) {
             const event: CustomEvent = new CustomEvent('canvas.canceled', {
                 bubbles: false,
                 cancelable: true,
@@ -107,12 +107,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
         }
 
-        if (continueDraw) {
-            this.drawHandler.draw(
-                this.controller.drawData,
-                this.geometry,
-            );
-        } else {
+        if (!continueDraw) {
             this.mode = Mode.IDLE;
             this.controller.draw({
                 enabled: false,
@@ -672,8 +667,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.content.addEventListener('mousedown', (event): void => {
-            if ([1, 2].includes(event.which)) {
-                if (![Mode.ZOOM_CANVAS, Mode.GROUP].includes(this.mode) || event.which === 2) {
+            if ([0, 1].includes(event.button)) {
+                if ([Mode.IDLE, Mode.DRAG, Mode.MERGE, Mode.SPLIT].includes(this.mode)
+                    || event.button === 1 || event.altKey
+                ) {
                     self.controller.enableDrag(event.clientX, event.clientY);
                 }
             }
@@ -1379,11 +1376,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         });
 
-        this.activeElement = {
-            ...this.activeElement,
-            clientID,
-        };
-
         this.canvas.dispatchEvent(new CustomEvent('canvas.activated', {
             bubbles: false,
             cancelable: true,
@@ -1407,6 +1399,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const { clientID, attributeID } = activeElement;
         if (clientID !== null && this.activeElement.clientID !== clientID) {
             this.activateShape(clientID);
+            this.activeElement = {
+                ...this.activeElement,
+                clientID,
+            };
         }
 
         if (clientID !== null
