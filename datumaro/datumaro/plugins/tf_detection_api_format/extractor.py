@@ -145,9 +145,7 @@ class TfDetectionApiExtractor(SourceExtractor):
                     continue
                 dataset_labels[label] = label_id - 1
 
-            item_id = frame_id
-            if not item_id:
-                item_id = osp.splitext(frame_filename)[0]
+            item_id = osp.splitext(frame_filename)[0]
 
             annotations = []
             for shape_id, shape in enumerate(
@@ -188,6 +186,7 @@ class TfDetectionApiExtractor(SourceExtractor):
                 image = Image(**image_params, size=image_size)
 
             dataset_items.append(DatasetItem(id=item_id, subset=subset,
-                image=image, annotations=annotations))
+                image=image, annotations=annotations,
+                attributes={'source_id': frame_id}))
 
         return dataset_items, dataset_labels

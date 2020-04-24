@@ -15,6 +15,7 @@ from datumaro.components.extractor import (AnnotationType, DEFAULT_SUBSET_NAME,
 )
 from datumaro.components.converter import Converter
 from datumaro.components.cli_plugin import CliPlugin
+from datumaro.util import cast
 from datumaro.util.image import encode_image
 from datumaro.util.mask_tools import merge_masks
 from datumaro.util.annotation_tools import (compute_bbox,
@@ -97,8 +98,8 @@ class TfDetectionApiConverter(Converter, CliPlugin):
 
             anno_path = osp.join(save_dir, '%s.tfrecord' % (subset_name))
             with tf.io.TFRecordWriter(anno_path) as writer:
-                for item in subset:
-                    tf_example = self._make_tf_example(item)
+                for index, item in enumerate(subset):
+                    tf_example = self._make_tf_example(item, index)
                     writer.write(tf_example.SerializeToString())
 
     @staticmethod
@@ -160,16 +161,14 @@ class TfDetectionApiConverter(Converter, CliPlugin):
                 result['image/object/mask'] = bytes_list_feature(masks)
         return result
 
-    def _make_tf_example(self, item):
+    def _make_tf_example(self, item, index):
         features = {
-            'image/source_id': bytes_feature(str(item.id).encode('utf-8')),
+            'image/source_id': bytes_feature(str(
+                cast(item.attributes.get('frame_id', item.id), int, index)
+            ).encode('utf-8')),
         }
 
-        filename = ''
-        if item.has_image:
-            filename = item.image.filename
-        if not filename:
-            filename = item.id + DetectionApiPath.IMAGE_EXT
+        filename = item.id + DetectionApiPath.IMAGE_EXT
         features['image/filename'] = bytes_feature(filename.encode('utf-8'))
 
         if not item.has_image:

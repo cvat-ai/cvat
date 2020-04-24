@@ -1,10 +1,12 @@
 import numpy as np
+import os.path as osp
 
 from unittest import TestCase
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Bbox, Mask, LabelCategories
 )
+from datumaro.components.project import Project
 from datumaro.plugins.tf_detection_api_format.importer import TfDetectionApiImporter
 from datumaro.plugins.tf_detection_api_format.extractor import TfDetectionApiExtractor
 from datumaro.plugins.tf_detection_api_format.converter import TfDetectionApiConverter
@@ -135,7 +137,8 @@ class TfrecordConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, image=Image(path='1/q.e', size=(10, 15))),
+                    DatasetItem(id='1/q.e',
+                        image=Image(path='1/q.e', size=(10, 15))),
                 ])
 
             def categories(self):
@@ -171,9 +174,16 @@ class TfrecordConverterTest(TestCase):
 
         self.assertEqual(expected, parsed)
 
+
+DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__),
+    'assets', 'tf_detection_api_dataset')
+
 class TfrecordImporterTest(TestCase):
     def test_can_detect(self):
-        class TestExtractor(Extractor):
+        self.assertTrue(TfDetectionApiImporter.detect(DUMMY_DATASET_DIR))
+
+    def test_can_import(self):
+        class DstExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=1, subset='train',
@@ -192,10 +202,7 @@ class TfrecordImporterTest(TestCase):
                     AnnotationType.label: label_cat,
                 }
 
-        def generate_dummy_tfrecord(path):
-            TfDetectionApiConverter()(TestExtractor(), save_dir=path)
+        dataset = Project.import_from(DUMMY_DATASET_DIR, 'tf_detection_api') \
+            .make_dataset()
 
-        with TestDir() as test_dir:
-            generate_dummy_tfrecord(test_dir)
-
-            self.assertTrue(TfDetectionApiImporter.detect(test_dir))
+        compare_datasets(self, DstExtractor(), dataset)
