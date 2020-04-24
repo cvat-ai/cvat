@@ -4,10 +4,7 @@
 
 import './styles.scss';
 import React from 'react';
-
-import {
-    Layout,
-} from 'antd';
+import Layout from 'antd/lib/layout';
 
 import CanvasWrapperContainer from 'containers/annotation-page/standard-workspace/canvas-wrapper';
 import ControlsSideBarContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';

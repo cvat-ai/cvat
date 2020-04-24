@@ -10,7 +10,7 @@ import {
     ActiveInference,
     CombinedState,
 } from 'reducers/interfaces';
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 
 export enum PreinstalledModels {
     RCNN = 'RCNN Object Detector',

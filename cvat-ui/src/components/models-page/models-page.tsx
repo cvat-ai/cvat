@@ -4,10 +4,7 @@
 
 import './styles.scss';
 import React from 'react';
-
-import {
-    Spin,
-} from 'antd';
+import Spin from 'antd/lib/spin';
 
 import TopBarComponent from './top-bar';
 import UploadedModelsList from './uploaded-models-list';

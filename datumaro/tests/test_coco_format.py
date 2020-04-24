@@ -556,7 +556,7 @@ class CocoConverterTest(TestCase):
                             Points([1, 2, 3, 4, 2, 3], group=2, id=2),
                             Bbox(1, 2, 2, 2, group=2, id=2),
                         ]),
-                    DatasetItem(id=2, subset='train',
+                    DatasetItem(id=2, subset='train', image=np.zeros((5, 4, 3)),
                         annotations=[
                             # Solitary keypoints
                             Points([1, 2, 0, 2, 4, 1], label=5, id=3),

@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "0.5.2",
+  "version": "1.0.0",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -47,6 +47,8 @@
     "worker-loader": "^2.0.0"
   },
   "dependencies": {
+    "cvat-core": "file:../cvat-core",
+    "cvat-canvas": "file:../cvat-canvas",
     "@types/react": "^16.9.2",
     "@types/react-dom": "^16.9.0",
     "@types/react-redux": "^7.1.2",
