@@ -460,7 +460,7 @@ Usage examples:
 
     - In ``Track mode`` the rectangle will be automatically interpolated on the next frames.
     - The cyclist starts moving on frame #2270. Let's mark the frame as a key frame.
-      You can press ``K`` for that or lick the ``star`` button (see the screenshot below).
+      You can press ``K`` for that or click the ``star`` button (see the screenshot below).
 
         ![](static/documentation/images/image016.jpg)
 
