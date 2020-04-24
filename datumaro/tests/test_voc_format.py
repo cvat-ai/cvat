@@ -148,7 +148,7 @@ class VocConverterTest(TestCase):
         class TestExtractor(TestExtractorBase):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=0, subset='a', annotations=[
+                    DatasetItem(id='a/0', subset='a', annotations=[
                         Label(1),
                         Label(2),
                         Label(3),
@@ -167,7 +167,7 @@ class VocConverterTest(TestCase):
         class TestExtractor(TestExtractorBase):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, subset='a', annotations=[
+                    DatasetItem(id='a/1', subset='a', annotations=[
                         Bbox(2, 3, 4, 5, label=2,
                             attributes={ 'occluded': True }
                         ),
@@ -186,7 +186,7 @@ class VocConverterTest(TestCase):
         class DstExtractor(TestExtractorBase):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, subset='a', annotations=[
+                    DatasetItem(id='a/1', subset='a', annotations=[
                         Bbox(2, 3, 4, 5, label=2, id=1, group=1,
                             attributes={
                                 'truncated': False,
@@ -223,7 +223,7 @@ class VocConverterTest(TestCase):
         class TestExtractor(TestExtractorBase):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, subset='a', annotations=[
+                    DatasetItem(id='a/b/1', subset='a', annotations=[
                         # overlapping masks, the first should be truncated
                         # the second and third are different instances
                         Mask(image=np.array([[0, 1, 1, 1, 0]]), label=4,
@@ -238,7 +238,7 @@ class VocConverterTest(TestCase):
         class DstExtractor(TestExtractorBase):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, subset='a', annotations=[
+                    DatasetItem(id='a/b/1', subset='a', annotations=[
                         Mask(image=np.array([[0, 0, 1, 0, 0]]), label=4,
                             group=1),
                         Mask(image=np.array([[1, 1, 0, 0, 0]]), label=3,
@@ -257,7 +257,7 @@ class VocConverterTest(TestCase):
         class TestExtractor(TestExtractorBase):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, subset='a', annotations=[
+                    DatasetItem(id='a/b/1', subset='a', annotations=[
                         Bbox(2, 3, 4, 5, label=2, id=1, group=1,
                             attributes={
                                 'pose': VOC.VocPose(1).name,
@@ -281,7 +281,7 @@ class VocConverterTest(TestCase):
         class TestExtractor(TestExtractorBase):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, subset='a', annotations=[
+                    DatasetItem(id='a/b/1', subset='a', annotations=[
                         Bbox(2, 3, 4, 5, label=2,
                             attributes={
                                 'truncated': True,
@@ -302,7 +302,7 @@ class VocConverterTest(TestCase):
         class DstExtractor(TestExtractorBase):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, subset='a', annotations=[
+                    DatasetItem(id='a/b/1', subset='a', annotations=[
                         Bbox(2, 3, 4, 5, label=2,
                             id=1, group=1, attributes={
                                 'truncated': True,
@@ -554,3 +554,16 @@ class VocConverterTest(TestCase):
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
                 VocConverter(label_map='voc'), test_dir)
+
+    def test_relative_paths(self):
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='1', image=np.ones((4, 2, 3))),
+                    DatasetItem(id='subdir1/1', image=np.ones((2, 6, 3))),
+                    DatasetItem(id='subdir2/1', image=np.ones((5, 4, 3))),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                VocConverter(label_map='voc', save_images=True), test_dir)

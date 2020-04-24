@@ -255,7 +255,9 @@ class _Converter:
                             VocTask.detection,
                             VocTask.person_layout,
                             VocTask.action_classification}:
-                        with open(osp.join(self._ann_dir, item.id + '.xml'), 'w') as f:
+                        ann_path = osp.join(self._ann_dir, item.id + '.xml')
+                        os.makedirs(osp.dirname(ann_path), exist_ok=True)
+                        with open(ann_path, 'w') as f:
                             f.write(ET.tostring(root_elem,
                                 encoding='unicode', pretty_print=True))
 
@@ -397,7 +399,7 @@ class _Converter:
             if colormap is None:
                 colormap = self._categories[AnnotationType.mask].colormap
             mask = paint_mask(mask, colormap)
-        save_image(path, mask)
+        save_image(path, mask, create_dir=True)
 
     def save_label_map(self):
         path = osp.join(self._save_dir, VocPath.LABELMAP_FILE)
