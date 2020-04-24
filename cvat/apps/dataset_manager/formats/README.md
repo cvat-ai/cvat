@@ -1,4 +1,8 @@
 <!--lint disable list-item-indent-->
+<!--lint disable list-item-spacing-->
+<!--lint disable emphasis-marker-->
+<!--lint disable maximum-line-length-->
+<!--lint disable list-item-spacing-->
 
 # Dataset and annotation formats
 
@@ -23,7 +27,7 @@
 Each format is supported by an importer and exporter.
 
 It can be a function or a class decorated with
-`importer` or `exporter` from [registry. py](. /registry. py). Examples:
+`importer` or `exporter` from [registry.py](./registry.py). Examples:
 
 ``` python
 @importer(name="MyFormat", version="1.0", ext="ZIP")
@@ -502,9 +506,8 @@ Uploaded file: single unpacked `*.json` .
 1. Unpack `annotations_trainval2017.zip`
 
 1. click `Upload annotation` button,
-
-    choose `COCO 1.1` and select `instances_val2017.json.json`
-    annotation file. It may take some time.
+   choose `COCO 1.1` and select `instances_val2017.json.json`
+   annotation file. It can take some time.
 
 ### [TFRecord](https://www.tensorflow.org/tutorials/load_data/tf_records)<a id="tfrecord" />
 
@@ -641,7 +644,7 @@ item {
 }
 ```
 
-1. Use [create_pascal_tf_record. py](https://github.com/tensorflow/models/blob/master/research/object_detection/dataset_tools/create_pascal_tf_record.py)
+1. Use [create_pascal_tf_record.py](https://github.com/tensorflow/models/blob/master/research/object_detection/dataset_tools/create_pascal_tf_record.py)
 
 to convert VOC2007 dataset to TFRecord format.
 As example:
@@ -663,7 +666,7 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
    ```
 
    Select images. zip as data.
-   See [Creating an annotation task](cvat/apps/documentation/user_guide. md#creating-an-annotation-task)
+   See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task)
    guide for details.
 
 1. Zip `pascal.tfrecord` and `label_map.pbtxt` files together
