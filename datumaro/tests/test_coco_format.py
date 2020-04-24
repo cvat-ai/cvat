@@ -425,15 +425,6 @@ class CocoConverterTest(TestCase):
                             Label(4, id=1, group=1),
                             Label(9, id=2, group=2),
                         ], attributes={'id': 1}),
-                    DatasetItem(id=2, subset='train',
-                        annotations=[
-                            Label(4, id=4, group=4),
-                        ], attributes={'id': 2}),
-
-                    DatasetItem(id=3, subset='val',
-                        annotations=[
-                            Label(2, id=1, group=1),
-                        ], attributes={'id': 1}),
                 ])
 
             def categories(self):
@@ -473,21 +464,16 @@ class CocoConverterTest(TestCase):
                             # Full instance annotations: bbox + keypoints
                             Points([1, 2, 3, 4, 2, 3], group=2, id=2),
                             Bbox(1, 2, 2, 2, group=2, id=2),
-                        ]),
-                    DatasetItem(id=2, subset='train', image=np.zeros((5, 4, 3)),
-                        annotations=[
+
                             # Solitary keypoints
                             Points([1, 2, 0, 2, 4, 1], label=5, id=3),
 
                             # Some other solitary annotations (bug #1387)
                             Polygon([0, 0, 4, 0, 4, 4], label=3, id=4),
-                        ]),
 
-                    DatasetItem(id=3, subset='val',
-                        annotations=[
                             # Solitary keypoints with no label
-                            Points([0, 0, 1, 2, 3, 4], [0, 1, 2], id=3),
-                        ]),
+                            Points([0, 0, 1, 2, 3, 4], [0, 1, 2], id=5),
+                        ])
                 ])
 
             def categories(self):
@@ -511,26 +497,25 @@ class CocoConverterTest(TestCase):
                             Polygon([1, 2, 3, 2, 3, 4, 1, 4],
                                 group=2, id=2,
                                 attributes={'is_crowd': False}),
-                        ], attributes={'id': 1}),
-                    DatasetItem(id=2, subset='train',
-                        annotations=[
+
                             Points([1, 2, 0, 2, 4, 1],
                                 label=5, group=3, id=3,
                                 attributes={'is_crowd': False}),
                             Polygon([0, 1, 4, 1, 4, 2, 0, 2],
                                 label=5, group=3, id=3,
                                 attributes={'is_crowd': False}),
-                        ], attributes={'id': 2}),
 
-                    DatasetItem(id=3, subset='val',
-                        annotations=[
+                            Polygon([0, 0, 4, 0, 4, 4], label=3,
+                                group=4, id=4,
+                                attributes={'is_crowd': False}),
+
                             Points([0, 0, 1, 2, 3, 4], [0, 1, 2],
-                                group=3, id=3,
+                                group=3, id=5,
                                 attributes={'is_crowd': False}),
                             Polygon([1, 2, 3, 2, 3, 4, 1, 4],
-                                group=3, id=3,
+                                group=3, id=5,
                                 attributes={'is_crowd': False}),
-                        ], attributes={'id': 3}),
+                        ], attributes={'id': 1}),
                 ])
 
         with TestDir() as test_dir:

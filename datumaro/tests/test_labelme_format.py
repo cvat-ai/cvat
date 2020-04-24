@@ -211,6 +211,6 @@ class LabelMeImporterTest(TestCase):
                     AnnotationType.label: label_cat,
                 }
 
-        parsed = Project.import_from(DUMMY_DATASET_DIR, 'labelme') \
+        parsed = Project.import_from(DUMMY_DATASET_DIR, 'label_me') \
             .make_dataset()
         compare_datasets(self, expected=DstExtractor(), actual=parsed)
