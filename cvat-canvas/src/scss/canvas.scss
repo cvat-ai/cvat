@@ -126,6 +126,26 @@ polyline.cvat_canvas_shape_splitting {
     pointer-events: none;
 }
 
+.svg_select_points_lb:hover, .svg_select_points_rt:hover {
+    cursor: nesw-resize;
+}
+
+.svg_select_points_lt:hover, .svg_select_points_rb:hover {
+    cursor: nwse-resize;
+}
+
+.svg_select_points_l:hover, .svg_select_points_r:hover {
+    cursor: ew-resize;
+}
+
+.svg_select_points_t:hover, .svg_select_points_b:hover {
+    cursor: ns-resize;
+}
+
+.cvat_canvas_shape_draggable:hover {
+    cursor: move;
+}
+
 #cvat_canvas_wrapper {
     width: calc(100% - 10px);
     height: calc(100% - 10px);

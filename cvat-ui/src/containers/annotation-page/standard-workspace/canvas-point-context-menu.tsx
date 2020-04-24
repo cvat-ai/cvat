@@ -104,7 +104,7 @@ class CanvasPointContextMenuContainer extends React.PureComponent<Props, State> 
         }
 
         if (typeof state.activatedStateID !== typeof props.activatedStateID
-            || typeof state.activatedPointID !== typeof props.activatedPointID) {
+            || state.activatedPointID !== props.activatedPointID) {
             newState.activatedStateID = props.activatedStateID;
             newState.activatedPointID = props.activatedPointID;
         }
