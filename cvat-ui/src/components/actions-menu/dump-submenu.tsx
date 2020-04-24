@@ -3,12 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Menu,
-    Icon,
-} from 'antd';
-
+import Menu from 'antd/lib/menu';
+import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 
 function isDefaultFormat(dumperName: string, taskMode: string): boolean {

@@ -56,9 +56,7 @@ for development
 
 -   Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
     ```sh
-    cd cvat-core && npm install && \
-    cd ../cvat-canvas && npm install && \
-    cd ../cvat-data && npm install && \
+    cd cvat-data && npm install && \
     cd ../cvat-ui && npm install && npm start
     ```
 

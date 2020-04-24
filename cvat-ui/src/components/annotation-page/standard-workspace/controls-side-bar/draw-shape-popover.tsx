@@ -11,7 +11,7 @@ import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 
-import { RectDrawingMethod } from 'cvat-canvas';
+import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
 import DEXTRPlugin from './dextr-plugin';

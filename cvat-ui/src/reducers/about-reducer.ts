@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
+import getCore from 'cvat-core-wrapper';
+import { CanvasVersion } from 'cvat-canvas-wrapper';
 import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AboutActions, AboutActionTypes } from 'actions/about-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { AboutState } from './interfaces';
-
-import { CanvasVersion } from '../cvat-canvas';
-import getCore from '../cvat-core';
 import pjson from '../../package.json';
 
 const defaultState: AboutState = {

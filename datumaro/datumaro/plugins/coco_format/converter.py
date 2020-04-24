@@ -352,8 +352,7 @@ class _KeypointsConverter(_InstancesConverter):
             instance = [points, [], None, points.get_bbox()]
             elem = super().convert_instance(instance, item)
             elem.update(self.convert_points_object(points))
-            if elem:
-                self.annotations.append(elem)
+            self.annotations.append(elem)
 
         # Create annotations for complete instance + keypoints annotations
         super().save_annotations(item)
@@ -390,7 +389,8 @@ class _KeypointsConverter(_InstancesConverter):
 
     def convert_instance(self, instance, item):
         points_ann = find(item.annotations, lambda x: \
-            x.type == AnnotationType.points and x.group == instance[0].group)
+            x.type == AnnotationType.points and \
+            instance[0].group and x.group == instance[0].group)
         if not points_ann:
             return None
 

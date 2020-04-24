@@ -3,15 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Button,
-    Dropdown,
-    Icon,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Button from 'antd/lib/button';
+import Dropdown from 'antd/lib/dropdown';
+import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';

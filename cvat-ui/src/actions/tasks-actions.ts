@@ -9,7 +9,7 @@ import {
     CombinedState,
 } from 'reducers/interfaces';
 import { getCVATStore } from 'cvat-store';
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 import { getInferenceStatusAsync } from './models-actions';
 
 const cvat = getCore();
