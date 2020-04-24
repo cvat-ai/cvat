@@ -52,7 +52,7 @@ def export_task(task_id, dst_format, server_url=None, save_images=False):
         if not (osp.exists(output_path) and \
                 task_time <= osp.getmtime(output_path)):
             os.makedirs(cache_dir, exist_ok=True)
-            with tempfile.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
                 temp_file = osp.join(temp_dir, 'result')
                 task.export_task(task_id, temp_file, dst_format,
                     server_url=server_url, save_images=save_images)
