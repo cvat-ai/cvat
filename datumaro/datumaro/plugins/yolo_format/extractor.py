@@ -10,6 +10,7 @@ import re
 from datumaro.components.extractor import (SourceExtractor, Extractor,
     DatasetItem, AnnotationType, Bbox, LabelCategories
 )
+from datumaro.util import split_path
 from datumaro.util.image import Image
 
 from .format import YoloPath
@@ -83,21 +84,21 @@ class YoloExtractor(SourceExtractor):
                 config_path)
 
         for subset_name, list_path in subsets.items():
-            list_path = self._make_local_path(list_path)
+            list_path = osp.join(self._path, self._localize_path(list_path))
             if not osp.isfile(list_path):
                 raise Exception("Not found '%s' subset list file" % subset_name)
 
             subset = YoloExtractor.Subset(subset_name, self)
             with open(list_path, 'r') as f:
-                subset.items = OrderedDict(
-                    (osp.splitext(osp.basename(p.strip()))[0], p.strip())
-                    for p in f
-                )
+                subset.items = OrderedDict()
+                for p in f:
+                    subset.items[self._name_from_path(p)] = \
+                        self._localize_path(p.strip())
 
-            for item_id, image_path in subset.items.items():
-                image_path = self._make_local_path(image_path)
-                if not osp.isfile(image_path) and item_id not in image_info:
-                    raise Exception("Can't find image '%s'" % item_id)
+            for item_id, path in subset.items.items():
+                path = osp.join(self._path, path)
+                if item_id not in image_info and not osp.isfile(path):
+                    raise Exception("Can't find image '%s'" % path)
 
             subsets[subset_name] = subset
 
@@ -105,26 +106,38 @@ class YoloExtractor(SourceExtractor):
 
         self._categories = {
             AnnotationType.label:
-                self._load_categories(self._make_local_path(names_path))
+                self._load_categories(
+                    osp.join(self._path, self._localize_path(names_path)))
         }
 
-    def _make_local_path(self, path):
+    @staticmethod
+    def _localize_path(path):
         default_base = osp.join('data', '')
         if path.startswith(default_base): # default path
             path = path[len(default_base) : ]
-        return osp.join(self._path, path) # relative or absolute path
+        return path
+
+    @classmethod
+    def _name_from_path(cls, path):
+        path = cls._localize_path(path)
+        parts = split_path(path)
+        if 1 < len(parts) and not osp.isabs(path):
+            # NOTE: when path is like [data/]<subset_obj>/<image_name>
+            # drop everything but <image name>
+            # <image name> can be <a/b/c/filename.ext>, so no just basename()
+            path = osp.join(*parts[1:])
+        return osp.splitext(path)[0]
 
     def _get(self, item_id, subset_name):
         subset = self._subsets[subset_name]
         item = subset.items[item_id]
 
         if isinstance(item, str):
-            image_path = self._make_local_path(item)
             image_size = self._image_info.get(item_id)
-            image = Image(path=image_path, size=image_size)
-            h, w = image.size
+            image = Image(path=osp.join(self._path, item), size=image_size)
 
-            anno_path = osp.splitext(image_path)[0] + '.txt'
+            h, w = image.size
+            anno_path = osp.join(self._path, osp.splitext(item)[0] + '.txt')
             annotations = self._parse_annotations(anno_path, w, h)
 
             item = DatasetItem(id=item_id, subset=subset_name,

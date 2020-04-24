@@ -1,0 +1,1 @@
+data/obj_train_data/1.jpg
