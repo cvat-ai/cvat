@@ -473,7 +473,7 @@ Usage examples:
 
     -   After that the rectangle of the object will be changed automatically on frames 2270 to 2300:
 
-        ![](static/documentation/images/Gif019_DETRAC.gif)
+        ![](static/documentation/images/gif019_DETRAC.gif)
 
 1.  When the annotated object disappears or becomes too small, you need to
     finish the track. You have to choose ``Outside Property``, shortcut ``O``.
