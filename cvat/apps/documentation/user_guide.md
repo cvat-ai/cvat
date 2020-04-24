@@ -8,8 +8,8 @@
   - [Interface of the annotation tool](#interface-of-the-annotation-tool)
     - [Basic navigation](#basic-navigation)
     - [Types of shapes (basics)](#types-of-shapes-basics)
-    - [Annotation mode (basics)](#annotation-mode-basics)
-    - [Interpolation mode (basics)](#interpolation-mode-basics)
+    - [Shape mode (basics)](#shape-mode-basics)
+    - [Track mode (basics)](#track-mode-basics)
     - [Attribute annotation mode (basics)](#attribute-annotation-mode-basics)
     - [Downloading annotations](#downloading-annotations)
     - [Task synchronization with a repository](#task-synchronization-with-a-repository)
@@ -255,7 +255,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 1.  Task details is a task page which contains a preview, a progress bar 
     and the details of the task (specified when the task was created) and the jobs section.
   
-    ![](static/documentation/images/image131.jpg)
+    ![](static/documentation/images/image131_DETRAC.jpg)
 
     - The next actions are available on this page:
       1. Change the task’s title.
@@ -267,7 +267,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or 
       choose the right person out of the dropdown list.
     - ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
-      - Jobs name whit a hyperlink to it.
+      - Jobs name with a hyperlink to it.
       - Frames — the frame interval. 
       - A status of the job. The status is specified by the user in the menu inside the job. 
       There are three types of status: annotation, validation or completed. 
@@ -442,39 +442,38 @@ Usage examples:
 
     Read more in the section [shape mode (advanced)](#shape-mode-advanced).
 
-### Interpolation mode (basics)
+### Track mode (basics)
 Usage examples:
 - Create new annotations for a sequence of frames.
 - Add/modify/delete objects for existing annotations.
-- Edit tracks, merge a lot of bounding boxes into one track.
+- Edit tracks, merge several rectangles into one track.
 
-1.  Before starting, you have to be sure that ``Interpolation`` is selected.
+1.  Like in the ``Shape mode``, you need to select a ``Rectangle`` on the sidebar, 
+    in the appearing form, select the desired ``Label`` and the ``Drawing method``.
 
-    ![](static/documentation/images/image014.jpg)
+    ![](static/documentation/images/image083.jpg) 
 
-1.  Create a track for an object (look at the selected car as an example):
-    - Annotate a bounding box on the first frame for the object.
-    - In ``Interpolation`` mode the bounding box will be interpolated on next frames automatically.
+1.  Creating a track for an object (look at the selected car as an example):
+    - Create a ``Rectangle`` in ``Track mode`` by clicking on ``Track``.
 
-    ![](static/documentation/images/image015_DETRAC.jpg)
+      ![](static/documentation/images/image014.jpg)
 
-1.  If the object starts to change its position, you need to modify bounding
-    boxes where it happens. It isn't necessary to change bounding boxes on each
-    frame. It is enough to update several key frames and frames between them
-    will be interpolated automatically. See an example below:
-    -   The car starts moving on frame #630. Let's mark the frame as a key frame.
-        You can press ``K`` for that or push ``star`` button (see the screenshot below)
+    - In ``Track mode`` the rectangle will be automatically interpolated on the next frames.
+    - The cyclist starts moving on frame #2270. Let's mark the frame as a key frame.
+      You can press ``K`` for that or click the ``star`` button (see the screenshot below).
 
         ![](static/documentation/images/image016.jpg)
 
-    -   Let's jump 30 frames forward and adjust boundaries of the object.
+    - If the object starts to change its position, you need to modify the rectangle where it happens. 
+      It isn't necessary to change the rectangle on each frame, simply update several keyframes 
+      and the frames between them will be interpolated automatically.
+    - Let's jump 30 frames forward and adjust the boundaries of the object. See an example below:
 
         ![](static/documentation/images/image017_DETRAC.jpg)
 
-    -   After that, bounding boxes of the object between 630 and 660 frames
-        will be changed automatically. For example, frame #645 looks like on the figure below:
+    -   After that the rectangle of the object will be changed automatically on frames 2270 to 2300:
 
-        ![](static/documentation/images/image018.jpg)
+        ![](static/documentation/images/gif019_DETRAC.gif)
 
 1.  When the annotated object disappears or becomes too small, you need to
     finish the track. You have to choose ``Outside Property``, shortcut ``O``.
@@ -482,32 +481,30 @@ Usage examples:
     ![](static/documentation/images/image019.jpg)
 
 1.  If the object isn't visible on a couple of frames and then appears again,
-    you can use ``Merge Tracks`` feature to merge several individual tracks
+    you can use the ``Merge`` feature to merge several individual tracks
     into one.
 
     ![](static/documentation/images/image020.jpg)
 
-    -   Let's create a track for the bus.
+    -   Create tracks for moments when the cyclist is visible:
 
-        ![](static/documentation/images/gif001.gif)
+        ![](static/documentation/images/gif001_DETRAC.gif)
 
-        After that, you should create a track when it appears again on the sequence of frames.
+    -   Click ``Merge`` button or press key ``M`` and click on any rectangle of the first track 
+        and on any rectangle of the second track and so on:
 
-        ![](static/documentation/images/gif002.gif)
+        ![](static/documentation/images/image162_DETRAC.jpg)
 
-    -   Press ``Merge Tracks`` button and click on any bounding box of the
-        first track and on any bounding box of the second track.
+    -   Click ``Merge`` button or press ``M`` to apply changes.
 
-        ![](static/documentation/images/image021.jpg)
-
-    -   Press ``Apply Merge`` button to apply changes.
-
-        ![](static/documentation/images/image022.jpg)
+        ![](static/documentation/images/image020.jpg)
 
     -   The final annotated sequence of frames in ``Interpolation`` mode can
         look like the clip below:
 
-        ![](static/documentation/images/gif003.gif)
+        ![](static/documentation/images/gif003_DETRAC.gif)
+
+        Read more in the section [track mode (advanced)](#track-mode-advanced).
 
 ### Attribute annotation mode (basics)
 
