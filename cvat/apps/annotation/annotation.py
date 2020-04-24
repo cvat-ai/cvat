@@ -83,15 +83,14 @@ class AnnotationIR:
 
     @staticmethod
     def _is_track_inside(track, start, stop):
-        # should be a0 <= a1, b0 <= b1
-        def is_intervals_overlapped(a0, a1, b0, b1):
-            return 0 <= min(a1, b1) - max(a0, b0)
+        # a <= b
+        def has_overlap(a, b):
+            return 0 <= min(b, stop) - max(a, start)
 
         prev_shape = None
         for shape in track['shapes']:
             if prev_shape and not prev_shape['outside'] and \
-                is_intervals_overlapped(
-                    prev_shape['frame'], shape['frame'], start, stop):
+                has_overlap(prev_shape['frame'], shape['frame']):
                     return True
             prev_shape = shape
 
