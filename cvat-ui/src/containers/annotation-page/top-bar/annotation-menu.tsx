@@ -97,7 +97,10 @@ type Props = StateToProps & DispatchToProps & RouteComponentProps;
 function AnnotationMenuContainer(props: Props): JSX.Element {
     const {
         jobInstance,
-        annotationFormats,
+        annotationFormats: {
+            loaders,
+            dumpers,
+        },
         loadAnnotations,
         dumpAnnotations,
         exportDataset,
@@ -108,9 +111,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         exportActivities,
         installedReID,
     } = props;
-
-    const loaders = annotationFormats.loaders.flat();
-    const dumpers = annotationFormats.dumpers.flat();
 
     const onClickMenu = (params: ClickParam, file?: File): void => {
         if (params.keyPath.length > 1) {

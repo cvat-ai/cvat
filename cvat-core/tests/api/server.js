@@ -21,7 +21,7 @@ const {
     AnnotationFormats,
     Loader,
     Dumper,
-} = require('../../src/annotation-format');
+} = require('../../src/annotation-formats');
 
 // Test cases
 describe('Feature: get info about cvat', () => {

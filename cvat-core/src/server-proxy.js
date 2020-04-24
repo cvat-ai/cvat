@@ -601,10 +601,10 @@
             // Session is 'task' or 'job'
             async function dumpAnnotations(id, name, format) {
                 const { backendAPI } = config;
-                const filename = name.replace(/\//g, '_');
                 const baseURL = `${backendAPI}/tasks/${id}/annotations`;
                 let query = `format=${encodeURIComponent(format)}`;
                 if (name) {
+                    const filename = name.replace(/\//g, '_');
                     query += `&filename=${encodeURIComponent(filename)}`;
                 }
                 let url = `${baseURL}?${query}`;

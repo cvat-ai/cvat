@@ -104,7 +104,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps): JSX.Element {
     const {
         taskInstance,
-        annotationFormats,
+        annotationFormats: {
+            loaders,
+            dumpers,
+        },
         loadActivity,
         dumpActivities,
         exportActivities,
@@ -119,10 +122,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         deleteTask,
         openRunModelWindow,
     } = props;
-
-
-    const loaders = annotationFormats.loaders.flat();
-    const dumpers = annotationFormats.dumpers.flat();
 
     function onClickMenu(params: ClickParam, file?: File): void {
         if (params.keyPath.length > 1) {
