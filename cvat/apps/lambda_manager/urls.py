@@ -9,15 +9,18 @@ from . import views
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register('functions', views.FunctionViewSet)
+router.register('requests', views.RequestViewSet)
 
 # GET  /api/v1/lambda/functions - get list of functions
 # POST /api/v1/lambda/functions - add one more function
 # GET  /api/v1/lambda/functions/<int:fid> - get information about the function
 # DEL  /api/v1/lambda/functions/<int:fid> - delete a function
-# POST /api/v1/labmda/functions/<int:fid>/requests - call a function
-# GET  /api/v1/lambda/functions/<int:fid>/requests - get list of requests
-# GET  /api/v1/lambda/functions/<int:fid>/requests/<int:rid> - get information about the call
-# DEL  /api/v1/lambda/functions/<int:fid>/requests/<int:rid> - cancel a request (don't delete)
+# POST /api/v1/labmda/online-requests - call a function
+# { "function": "<id>", "mode": "online|offline", "job": "<jid>", "frame": "<n>",
+#   "points": [...], }
+# GET  /api/v1/lambda/requests - get list of requests
+# GET  /api/v1/lambda/requests/<int:rid> - get status of the request
+# DEL  /api/v1/lambda/requests/<int:rid> - cancel a request (don't delete)
 urlpatterns = [
     path('api/v1/lambda', include((router.urls, 'cvat'), namespace='v1'))
 ]
