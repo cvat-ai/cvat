@@ -5,7 +5,7 @@ provider:
 functions:
   dextr:
     lang: dockerfile
-    handler: ./dextr
+    handler: .
     image: dextr:latest
     environment:
       read_timeout: 20s
