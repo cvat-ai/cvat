@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Annotation uploading fails in annotation view (<https://github.com/opencv/cvat/pull/1445>)
 - UI freezes after canceling pasting with escape (<https://github.com/opencv/cvat/pull/1445>)
 - Duplicating keypoints in COCO export (https://github.com/opencv/cvat/pull/1435)
+- CVAT new UI: add arrows on a mouse cursor (<https://github.com/opencv/cvat/pull/1391>)
+- Delete point bug (in new UI) (<https://github.com/opencv/cvat/pull/1440>)
 
 ### Security
 -
