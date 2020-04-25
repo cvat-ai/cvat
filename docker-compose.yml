@@ -94,6 +94,17 @@ services:
       - ./cvat_proxy/conf.d/cvat.conf.template:/etc/nginx/conf.d/cvat.conf.template:ro
     command: /bin/sh -c "envsubst '$$CVAT_HOST' < /etc/nginx/conf.d/cvat.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
 
+  serverless:
+    container_name: nuclio-dashboard
+    image: quay.io/nuclio/dashboard:stable-amd64
+    networks:
+      default:
+        aliases:
+          - nuclio
+    volumes:
+      - /tmp:/tmp
+      - /var/run/docker.sock:/var/run/docker.sock
+
 volumes:
   cvat_db:
   cvat_data:

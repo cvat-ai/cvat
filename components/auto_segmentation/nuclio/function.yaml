@@ -1,0 +1,41 @@
+metadata:
+  name: dextr
+  namespace: cvat
+
+spec:
+  description: Deep Extreme Cut
+  runtime: "python:3.6"
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: NUCLIO_PYTHON_EXE_PATH
+      value: /opt/nuclio/python3
+
+  build:
+    image: cvat/dextr
+    baseImage: openvino/ubuntu18_runtime:2020.2
+
+    directives:
+      preCopy:
+      - kind: USER
+        value: root
+      - kind: WORKDIR
+        value: /opt/nuclio
+      - kind: RUN
+        value: ln -s /usr/bin/pip3 /usr/bin/pip
+
+      postCopy:
+      - kind: RUN
+        value: curl -O https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip
+      - kind: RUN
+        value: unzip dextr_model_v1.zip
+      - kind: RUN
+        value: pip3 install -r requirements.txt
+      - kind: USER
+        value: openvino
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: "http"
+      workerAvailabilityTimeoutMilliseconds: 10000
