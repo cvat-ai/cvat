@@ -60,6 +60,7 @@ class CLI():
         data = {'name': name,
                 'labels': labels,
                 'bug_tracker': bug,
+                'image_quality':50
         }
         response = self.session.post(url, json=data)
         response.raise_for_status()
