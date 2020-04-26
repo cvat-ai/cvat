@@ -32,7 +32,7 @@ services:
 
   cvat:
     container_name: cvat
-    image: cvat
+    image: cvat/server
     restart: always
     depends_on:
       - cvat_redis
@@ -61,6 +61,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
+    image: cvat/ui
     restart: always
     build:
       context: .
@@ -95,7 +96,7 @@ services:
     command: /bin/sh -c "envsubst '$$CVAT_HOST' < /etc/nginx/conf.d/cvat.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
 
   serverless:
-    container_name: nuclio-dashboard
+    container_name: nuclio
     image: quay.io/nuclio/dashboard:stable-amd64
     networks:
       default:
