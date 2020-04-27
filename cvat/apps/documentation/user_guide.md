@@ -1,3 +1,5 @@
+<!--lint disable maximum-line-length-->
+
 - [User's guide](#users-guide)
   - [Getting started](#getting-started)
     - [Authorization](#authorization)
@@ -504,7 +506,7 @@ Usage examples:
 
 ### Attribute annotation mode (basics)
 
--   In this mode you can edit attributes with fast navigation between objects and frames using a keyboard. 
+-   In this mode you can edit attributes with fast navigation between objects and frames using a keyboard.
     Open the drop-down list in the top panel and select Attribute annotation Mode.
 
     ![](static/documentation/images/image023_Affectnet.jpg)
@@ -518,7 +520,7 @@ Usage examples:
     or select from the drop-down list.
 
     ![](static/documentation/images/image024_Affectnet.jpg)
-    
+
 -   Press ``Up Arrow``/``Down Arrow`` on your keyboard or click the buttons in the UI to go to the next/previous
     attribute. In this case, after pressing ``Down Arrow`` you will be able to edit the ``Age`` attribute.
 
@@ -526,34 +528,36 @@ Usage examples:
 
 -   Use ``Right Arrow``/``Left Arrow`` keys to move to the previous/next image with annotation.
 
-To see all the hot keys available in the attribute annotation mode, press ``F2``. 
+To see all the hot keys available in the attribute annotation mode, press ``F2``.
 Read more in the section [attribute annotation mode (advanced)](#attribute-annotation-mode-advanced).
 
 ### Downloading annotations
 
-1.  To download the latest annotations, you have to save all changes first. 
+1.  To download the latest annotations, you have to save all changes first.
     click the ``Save`` button. There is a ``Ctrl+S`` shortcut to save annotations quickly.
-1.  After that, сlick the ``Menu`` button. 
+1.  After that, сlick the ``Menu`` button.
 1.  Press the ``Dump Annotation`` button.
 
     ![](static/documentation/images/image028.jpg)
 
 1.  Choose format dump annotation file. Dump annotation are available in several formats:
     - [CVAT for video](/cvat/apps/documentation/xml_format.md#interpolation)
-    is highlighted if a task has the interpolation mode
+      is highlighted if a task has the interpolation mode.
     - [CVAT for images](/cvat/apps/documentation/xml_format.md#annotation)
-    is highlighted if a task has the annotation mode
+      is highlighted if a task has the annotation mode.
 
-    ![](static/documentation/images/image029.jpg "Example XML format")
+      ![](static/documentation/images/image029.jpg "Example XML format")
 
     - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
+    - [(VOC) Segmentation mask](http://host.robots.ox.ac.uk/pascal/VOC/) —
+      archive contains class and instance masks for each frame in the png
+      format and a text file with the value of each color.
     - [YOLO](https://pjreddie.com/darknet/yolo/)
     - [COCO](http://cocodataset.org/#format-data)
-    - ``Segmentation mask`` — archive contains a mask of each frame in the png format and a text file with
-    the value of each color
     - [TFRecord](https://www.tensorflow.org/tutorials/load_data/tf_records)
     - [MOT](https://motchallenge.net/)
     - [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0/)
+    - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/)
 
 ### Task synchronization with a repository
 
@@ -593,7 +597,7 @@ quality, etc.). There are two types of attributes:
     ![](static/documentation/images/image072.jpg)
 
 ---
-**Track** is a set of shapes on different frames which corresponds to one object. 
+**Track** is a set of shapes on different frames which corresponds to one object.
 Tracks are created in ``Track mode``
 
 ![](static/documentation/images/gif003_DETRAC.gif)
