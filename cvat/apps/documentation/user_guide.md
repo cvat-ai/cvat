@@ -508,42 +508,41 @@ Usage examples:
 
 ### Attribute annotation mode (basics)
 
--   In this mode you can edit attributes with fast navigation between
-    objects and frames using keyboard. Press ``Shift+Enter`` shortcut
-    to enter the mode. After that, you can change attributes using a keyboard.
+-   In this mode you can edit attributes with fast navigation between objects and frames using a keyboard. 
+    Open the drop-down list in the top panel and select Attribute annotation Mode.
 
-    ![](static/documentation/images/image023.jpg)
+    ![](static/documentation/images/image023_Affectnet.jpg)
 
--   The active attribute will be red. It is ``gender`` in this case. Look at
-    the bottom side panel to see all possible shortcuts for changing the
-    attribute. Press ``2`` key on your keyboard to assign ``female`` value for
-    the attribute.
+-   In this mode objects panel change to a special panel :
 
-    ![](static/documentation/images/image024.jpg) ![](static/documentation/images/image025.jpg)
+    ![](static/documentation/images/image026.jpg)
 
--   Press ``Up Arrow``/``Down Arrow`` on your keyboard to go to next/previous
-    attribute. In this case, after pressing ``Down Arrow`` you will be able to
-    edit ``Age`` attribute.
+-   The active attribute will be red. In this case it is ``gender`` . Look at the bottom side panel to see all possible
+    shortcuts for changing the attribute. Press key ``2`` on your keyboard to assign a value (female) for the attribute
+    or select from the drop-down list.
 
-    ![](static/documentation/images/image026.jpg) ![](static/documentation/images/image027.jpg)
+    ![](static/documentation/images/image024_Affectnet.jpg)
+    
+-   Press ``Up Arrow``/``Down Arrow`` on your keyboard or click the buttons in the UI to go to the next/previous
+    attribute. In this case, after pressing ``Down Arrow`` you will be able to edit the ``Age`` attribute.
 
--   Use ``Right Arrow``/``Left Arrow`` keys to move on previous/next image with annotation.
+    ![](static/documentation/images/image025_Affectnet.jpg)
+
+-   Use ``Right Arrow``/``Left Arrow`` keys to move to the previous/next image with annotation.
+
+To see all the hot keys available in the attribute annotation mode, press ``F2``. 
+Read more in the section [attribute annotation mode (advanced)](#attribute-annotation-mode-advanced).
 
 ### Downloading annotations
 
-1.  To download the latest annotations, you have to save all changes first.
-    To do this, click ``Open Menu`` button. 
-
-1.  After that, press ``Save Work`` button. There is ``Ctrl+S``
-    shortcut to save annotations quickly.
+1.  To download the latest annotations, you have to save all changes first. 
+    click the ``Save`` button. There is a ``Ctrl+S`` shortcut to save annotations quickly.
+1.  After that, сlick the ``Menu`` button. 
+1.  Press the ``Dump Annotation`` button.
 
     ![](static/documentation/images/image028.jpg)
 
-1.  After that, press ``Dump Annotation`` button.
-
-    ![](static/documentation/images/image118.jpg)
-
-1.  Choose format dump annotation file. Dump annotation are available in several formats:
+1.  Choose the format dump of the annotation file. Several formats are available:
     - [CVAT XML 1.1 for video](/cvat/apps/documentation/xml_format.md#interpolation)
     is highlighted if a task has the interpolation mode
     - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
@@ -554,9 +553,11 @@ Usage examples:
     - [PASCAL VOC ZIP 1.1](http://host.robots.ox.ac.uk/pascal/VOC/)
     - [YOLO ZIP 1.1](https://pjreddie.com/darknet/yolo/)
     - [COCO JSON 1.0](http://cocodataset.org/#format-data)
-    - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file with
+    - ``MASK ZIP 1.1`` — archive contains a mask of each frame in the png format and a text file with
     the value of each color
     - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records) 
+    - [MOT ZIP 1.1](https://motchallenge.net/)
+    - [LabelMe ZIP 3.0 for image](http://labelme.csail.mit.edu/Release3.0/)
 
 ### Task synchronization with a repository
 
@@ -578,21 +579,9 @@ Usage examples:
 
 ### Vocabulary
 
-**Bounding box** is an area which defines boundaries of an object. To specify
-it, you need to define two opposite corners.
+**Label** is a type of an annotated object (e.g. person, car, vehicle, etc.)
 
-**Tight bounding box** is a bounding box where margin between the object inside
-and boundaries of the box is absent. This type of bounding box is used in most
-tasks by default, but precision completely depends on an annotation task.
-
-| Bounding box                                  | Tight bounding box                            |
-| ------------                                  | :----------------:                            |
-| ![](static/documentation/images/image031.jpg) | ![](static/documentation/images/image030.jpg) |
-
----
-**Label** is a type of an annotated object (e.g. person, car, face, etc.)
-
-![](static/documentation/images/image032.jpg)
+![](static/documentation/images/image032_DETRAC.jpg)
 
 ---
 
@@ -608,9 +597,10 @@ quality, etc.). There are two types of attributes:
     ![](static/documentation/images/image072.jpg)
 
 ---
-**Track** is a set of shapes on different frames which corresponds to one object. Tracks are created in ``Interpolation mode``
+**Track** is a set of shapes on different frames which corresponds to one object. 
+Tracks are created in ``Track mode``
 
-![](static/documentation/images/gif004.gif)
+![](static/documentation/images/gif003_DETRAC.gif)
 
 ---
 **Annotation** is a set of shapes and tracks. There are several types of annotations:
