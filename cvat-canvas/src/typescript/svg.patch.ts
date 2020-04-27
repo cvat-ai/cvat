@@ -375,6 +375,25 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.setupGrabPoints(this.face.remember('_selectHandler').drawPoint.bind(
                     {nested: this, options: this.face.remember('_selectHandler').options}
                 ));
+
+                // setup proper classes for selection points for proper cursor
+                Array.from(this.face.remember('_selectHandler').nested.node.children)
+                    .forEach((point: SVG.Circle, i: number) => {
+                        point.classList.add(`svg_select_points_${['lt', 'lb', 'rb', 'rt'][i]}`)
+                    });
+
+                if (this.cuboidModel.orientation === Orientation.LEFT) {
+                    Array.from(this.dorsalRightEdge.remember('_selectHandler').nested.node.children)
+                    .forEach((point: SVG.Circle, i: number) => {
+                        point.classList.add(`svg_select_points_${['rt', 'rb'][i]}`)
+                    });
+                } else {
+                    Array.from(this.dorsalLeftEdge.remember('_selectHandler').nested.node.children)
+                    .forEach((point: SVG.Circle, i: number) => {
+                        point.classList.add(`svg_select_points_${['lt', 'lb'][i]}`)
+                    });
+                }
+
             }
 
             return this;

@@ -134,7 +134,8 @@ polyline.cvat_canvas_shape_splitting {
     cursor: nwse-resize;
 }
 
-.svg_select_points_l:hover, .svg_select_points_r:hover {
+.svg_select_points_l:hover, .svg_select_points_r:hover,
+.svg_select_points_ew:hover {
     cursor: ew-resize;
 }
 
