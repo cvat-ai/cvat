@@ -292,7 +292,7 @@ class TrackManager(ObjectManager):
             obj["shapes"].append(shape)
             # Need to update cached interpolated shapes
             # because key shapes were changed
-            if "interpolated_shapes" in obj and obj["interpolated_shapes"]:
+            if obj.get("interpolated_shapes"):
                 last_interpolated_shape = obj["interpolated_shapes"][-1]
                 for frame in range(last_interpolated_shape["frame"] + 1, end_frame):
                     last_interpolated_shape = copy.deepcopy(last_interpolated_shape)
