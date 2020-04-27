@@ -14,10 +14,14 @@ Next steps should work on clear Ubuntu 18.04.
 
 -   Install necessary dependencies:
     ```sh
-    $ sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential nodejs npm curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
+    $ sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
     ```
     Also please make sure that you have installed ffmpeg with all necessary libav* libraries and pkg-config package.
     ```sh
+    # Node and npm (you can use default versions of these packages from apt (8.*, 3.*), but we would recommend to use newer versions)
+    curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+
     # General dependencies
     sudo apt-get install -y pkg-config
 
@@ -56,7 +60,7 @@ for development
 
 -   Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
     ```sh
-    cd cvat-data && npm install && \
+    cd cvat-core && npm install && \
     cd ../cvat-ui && npm install && npm start
     ```
 
