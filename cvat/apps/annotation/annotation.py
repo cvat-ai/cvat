@@ -5,6 +5,7 @@
 import os
 import copy
 from collections import OrderedDict, namedtuple
+import itertools
 
 from django.utils import timezone
 
@@ -94,7 +95,7 @@ class AnnotationIR:
                     return True
             prev_shape = shape
 
-        if not prev_shape["outside"] and prev_shape['frame'] <= stop:
+        if not prev_shape['outside'] and prev_shape['frame'] <= stop:
             return True
 
         return False
@@ -114,6 +115,8 @@ class AnnotationIR:
                 elif shape['frame'] == stop and \
                     (not segment_shapes or segment_shapes[-1]['frame'] < stop):
                     segment_shapes.append(shape)
+            drop_shape_count = sum(1 for _ in itertools.takewhile(lambda s: s['outside'], segment_shapes))
+            segment_shapes = segment_shapes[drop_shape_count:]
             del track['interpolated_shapes']
             for shape in segment_shapes:
                 del shape['keyframe']
