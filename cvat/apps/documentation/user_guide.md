@@ -1,5 +1,6 @@
 <!--lint disable maximum-line-length-->
 <!--lint disable list-item-spacing-->
+<!--lint disable list-item-indent-->
 
 - [User's guide](#users-guide)
   - [Getting started](#getting-started)
