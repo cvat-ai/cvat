@@ -130,14 +130,12 @@ function showOverlay(message) {
     return overlayWindow[0];
 }
 
-async function dumpAnnotationRequest(tid, taskName, format) {
+async function dumpAnnotationRequest(tid, format) {
     // URL Router on the server doesn't work correctly with slashes.
     // So, we have to replace them on the client side
-    taskName = taskName.replace(/\//g, '_');
-    const name = encodeURIComponent(`${tid}_${taskName}`);
     return new Promise((resolve, reject) => {
-        const url = `/api/v1/tasks/${tid}/annotations/${name}`;
-        let queryString = `format=${format}`;
+        const url = `/api/v1/tasks/${tid}/annotations`;
+        let queryString = `format=${encodeURIComponent(format)}`;
 
         async function request() {
             $.get(`${url}?${queryString}`)

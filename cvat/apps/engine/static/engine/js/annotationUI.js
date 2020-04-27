@@ -403,7 +403,7 @@ function setupMenu(job, task, shapeCollectionModel,
 
     const loaders = {};
 
-    for (const dumper of annotationFormats.dumpers) {
+    for (const dumper of annotationFormats.exporters) {
         const item = $(`<option>${dumper.name}</li>`);
 
         if (!isDefaultFormat(dumper.name, window.cvat.job.mode)) {
@@ -413,7 +413,7 @@ function setupMenu(job, task, shapeCollectionModel,
         item.appendTo(downloadButton);
     }
 
-    for (const loader of annotationFormats.loaders) {
+    for (const loader of annotationFormats.importers) {
         loaders[loader.name] = loader;
         $(`<option class="regular">${loader.name}</li>`).appendTo(uploadButton);
     }
@@ -423,7 +423,7 @@ function setupMenu(job, task, shapeCollectionModel,
         downloadButton.prop('value', 'Dump Annotation');
         try {
             downloadButton.prop('disabled', true);
-            await dumpAnnotationRequest(task.id, task.name, dumper);
+            await dumpAnnotationRequest(task.id, dumper);
         } catch (error) {
             showMessage(error.message);
         } finally {
