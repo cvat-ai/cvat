@@ -1232,6 +1232,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const shape = this.svgShapes[clientID];
 
             shape.removeClass('cvat_canvas_shape_activated');
+            shape.removeClass('cvat_canvas_shape_draggable');
 
             if (!drawnState.pinned) {
                 (shape as any).off('dragstart');
@@ -1332,6 +1333,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         if (!state.pinned) {
+            shape.addClass('cvat_canvas_shape_draggable');
             (shape as any).draggable().on('dragstart', (): void => {
                 this.mode = Mode.DRAG;
                 if (text) {
