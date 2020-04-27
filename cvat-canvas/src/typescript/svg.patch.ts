@@ -277,6 +277,36 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.rightBotEdge = this.line(this.cuboidModel.rb.points);
         },
 
+        setupGrabPoints(circleType) {
+            const viewModel = this.cuboidModel;
+            const circle = typeof circleType === 'function' ? circleType : this.circle;
+
+            this.flCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_l');
+            this.frCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_r');
+            this.ftCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_t');
+            this.fbCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_b');
+
+            this.drCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_ew');
+            this.dlCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_ew');
+
+            const grabPoints = this.getGrabPoints();
+            const edges = this.getEdges();
+            for (let i = 0; i < grabPoints.length; i += 1) {
+                const edge = edges[i];
+                const cx = (edge.attr('x2') + edge.attr('x1')) / 2;
+                const cy = (edge.attr('y2') + edge.attr('y1')) / 2;
+                grabPoints[i].center(cx, cy);
+            }
+
+            if (viewModel.orientation === Orientation.LEFT) {
+                this.dlCenter.hide();
+            } else {
+                this.drCenter.hide();
+            }
+
+
+        },
+
         showProjections() {
             if (this.projectionLineEnable) {
                 this.ftProj.show();
@@ -306,6 +336,17 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             return arr;
         },
 
+        getGrabPoints() {
+            const arr = [];
+            arr.push(this.flCenter);
+            arr.push(this.frCenter);
+            arr.push(this.drCenter);
+            arr.push(this.ftCenter);
+            arr.push(this.fbCenter);
+            arr.push(this.dlCenter);
+            return arr;
+        },
+
         updateProjectionLine(equation: Equation, source: Point, direction: Point) {
             const x1 = source.x;
             const y1 = equation.getY(x1);
@@ -326,6 +367,14 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.dorsalLeftEdge.selectize(value, options);
             }
 
+            if (value === false) {
+                this.getGrabPoints().forEach((point) => {point.remove()});
+            } else {
+                this.setupGrabPoints(this.face.remember('_selectHandler').drawPoint.bind(
+                    {nested: this, options: this.face.remember('_selectHandler').options}
+                ));
+            }
+
             return this;
         },
 
@@ -338,6 +387,13 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.face.off('resizing').off('resizedone').off('resizestart');
                 this.dorsalRightEdge.off('resizing').off('resizedone').off('resizestart');
                 this.dorsalLeftEdge.off('resizing').off('resizedone').off('resizestart');
+
+                this.getGrabPoints().forEach((point: SVG.Element) => {
+                    point.off('dragstart');
+                    point.off('dragmove');
+                    point.off('dragend');
+                })
+
                 return;
             }
 
@@ -525,6 +581,145 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.dorsalLeftEdge.resize(value);
                 setupDorsalEdge.call(this, this.dorsalLeftEdge, this.cuboidModel.orientation);
             }
+
+            function horizontalEdgeControl(updatingFace, midX, midY) {
+                const leftPoints = this.updatedEdge(
+                    this.cuboidModel.fl.points[0],
+                    {x: midX, y: midY},
+                    this.cuboidModel.vpl,
+                );
+                const rightPoints = this.updatedEdge(
+                    this.cuboidModel.dr.points[0],
+                    {x: midX, y: midY},
+                    this.cuboidModel.vpr,
+                );
+
+                updatingFace.points = [leftPoints, {x: midX, y: midY}, rightPoints, null];
+            }
+
+
+            this.drCenter.draggable((x: number) => {
+                let xStatus;
+                if (this.drCenter.cx() < this.cuboidModel.fr.points[0].x) {
+                    xStatus = x < this.cuboidModel.fr.points[0].x - consts.MIN_EDGE_LENGTH
+                        && x > this.cuboidModel.vpr.x + consts.MIN_EDGE_LENGTH;
+                } else {
+                    xStatus = x > this.cuboidModel.fr.points[0].x + consts.MIN_EDGE_LENGTH
+                        && x < this.cuboidModel.vpr.x - consts.MIN_EDGE_LENGTH;
+                }
+                return { x: xStatus, y: this.drCenter.attr('y1') };
+            }).on('dragstart', ((event: CustomEvent) => {
+                this.fire(new CustomEvent('resizestart', event));
+            })).on('dragmove', (event: CustomEvent) => {
+                this.dorsalRightEdge.center(this.drCenter.cx(), this.drCenter.cy());
+
+                const x = this.dorsalRightEdge.attr('x1');
+                const y1 = this.cuboidModel.rt.getEquation().getY(x);
+                const y2 = this.cuboidModel.rb.getEquation().getY(x);
+                const topPoint = { x, y: y1 };
+                const botPoint = { x, y: y2 };
+
+                this.cuboidModel.dr.points = [topPoint, botPoint];
+                this.updateViewAndVM();
+            }).on('dragend', (event: CustomEvent) => {
+                this.fire(new CustomEvent('resizedone', event));
+            });
+
+            this.dlCenter.draggable((x: number) => {
+                let xStatus;
+                if (this.dlCenter.cx() < this.cuboidModel.fl.points[0].x) {
+                    xStatus = x < this.cuboidModel.fl.points[0].x - consts.MIN_EDGE_LENGTH
+                        && x > this.cuboidModel.vpr.x + consts.MIN_EDGE_LENGTH;
+                } else {
+                    xStatus = x > this.cuboidModel.fl.points[0].x + consts.MIN_EDGE_LENGTH
+                        && x < this.cuboidModel.vpr.x - consts.MIN_EDGE_LENGTH;
+                }
+                return { x: xStatus, y: this.dlCenter.attr('y1') };
+            }).on('dragstart', ((event: CustomEvent) => {
+                this.fire(new CustomEvent('resizestart', event));
+            })).on('dragmove', (event: CustomEvent) => {
+                this.dorsalLeftEdge.center(this.dlCenter.cx(), this.dlCenter.cy());
+
+                const x = this.dorsalLeftEdge.attr('x1');
+                const y1 = this.cuboidModel.lt.getEquation().getY(x);
+                const y2 = this.cuboidModel.lb.getEquation().getY(x);
+                const topPoint = { x, y: y1 };
+                const botPoint = { x, y: y2 };
+
+                this.cuboidModel.dl.points = [topPoint, botPoint];
+                this.updateViewAndVM(true);
+            }).on('dragend', (event: CustomEvent) => {
+                this.fire(new CustomEvent('resizedone', event));
+            });;
+
+            this.flCenter.draggable((x: number) => {
+                const vpX = this.flCenter.cx() - this.cuboidModel.vpl.x > 0 ? this.cuboidModel.vpl.x : 0;
+            return { x: x < this.cuboidModel.fr.points[0].x && x > vpX + consts.MIN_EDGE_LENGTH };
+            }).on('dragstart', ((event: CustomEvent) => {
+                this.fire(new CustomEvent('resizestart', event));
+            })).on('dragmove', (event: CustomEvent) => {
+                this.frontLeftEdge.center(this.flCenter.cx(), this.flCenter.cy());
+
+                const x = this.frontLeftEdge.attr('x1');
+                const y1 = this.cuboidModel.ft.getEquation().getY(x);
+                const y2 = this.cuboidModel.fb.getEquation().getY(x);
+                const topPoint = { x, y: y1 };
+                const botPoint = { x, y: y2 };
+
+                this.cuboidModel.fl.points = [topPoint, botPoint];
+                this.updateViewAndVM();
+                this.fire(new CustomEvent('resizing', event));
+            }).on('dragend', (event: CustomEvent) => {
+                this.fire(new CustomEvent('resizedone', event));
+            });
+
+            this.frCenter.draggable((x: number) => {
+                return { x: x > this.cuboidModel.fl.points[0].x, y: this.frCenter.attr('y1') };
+            }).on('dragstart', ((event: CustomEvent) => {
+                this.fire(new CustomEvent('resizestart', event));
+            })).on('dragmove', (event: CustomEvent) => {
+                this.frontRightEdge.center(this.frCenter.cx(), this.frCenter.cy());
+
+                const x = this.frontRightEdge.attr('x1');
+                const y1 = this.cuboidModel.ft.getEquation().getY(x);
+                const y2 = this.cuboidModel.fb.getEquation().getY(x);
+                const topPoint = { x, y: y1 };
+                const botPoint = { x, y: y2 };
+
+                this.cuboidModel.fr.points = [topPoint, botPoint];
+                this.updateViewAndVM(true);
+                this.fire(new CustomEvent('resizing', event));
+            }).on('dragend', (event: CustomEvent) => {
+                this.fire(new CustomEvent('resizedone', event));
+            });
+
+            this.ftCenter.draggable((x: number, y: number) => {
+                return { x: x === this.ftCenter.cx(), y: y < this.fbCenter.cy() - consts.MIN_EDGE_LENGTH };
+            }).on('dragstart', ((event: CustomEvent) => {
+                this.fire(new CustomEvent('resizestart', event));
+            })).on('dragmove', (event: CustomEvent) => {
+                this.frontTopEdge.center(this.ftCenter.cx(), this.ftCenter.cy());
+                horizontalEdgeControl.call(this, this.cuboidModel.top, this.frontTopEdge.attr('x2'), this.frontTopEdge.attr('y2'));
+                this.updateViewAndVM();
+                this.fire(new CustomEvent('resizing', event));
+            }).on('dragend', (event: CustomEvent) => {
+                this.fire(new CustomEvent('resizedone', event));
+            });
+
+            this.fbCenter.draggable((x: number, y: number) => {
+                return { x: x === this.fbCenter.cx(), y: y > this.ftCenter.cy() + consts.MIN_EDGE_LENGTH };
+            }).on('dragstart', ((event: CustomEvent) => {
+                this.fire(new CustomEvent('resizestart', event));
+            })).on('dragmove', (event: CustomEvent) => {
+                this.frontBotEdge.center(this.fbCenter.cx(), this.fbCenter.cy());
+                horizontalEdgeControl.call(this, this.cuboidModel.bot, this.frontBotEdge.attr('x2'), this.frontBotEdge.attr('y2'));
+                this.updateViewAndVM();
+                this.fire(new CustomEvent('resizing', event));
+            }).on('dragend', (event: CustomEvent) => {
+                this.fire(new CustomEvent('resizedone', event));
+            });
+
+
             return this;
         },
 
@@ -726,36 +921,6 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 .reduce((acc: string, point: Point): string => `${acc} ${point.x},${point.y}`, '').trim());
         },
 
-        updatePolygons() {
-            this.face.plot(this.cuboidModel.front.points);
-            this.right.plot(this.cuboidModel.right.points);
-            this.dorsal.plot(this.cuboidModel.dorsal.points);
-            this.left.plot(this.cuboidModel.left.points);
-        },
-
-        updateLines() {
-            this.frontLeftEdge.plot(this.cuboidModel.fl.points);
-            this.frontRightEdge.plot(this.cuboidModel.fr.points);
-            this.dorsalRightEdge.plot(this.cuboidModel.dr.points);
-            this.dorsalLeftEdge.plot(this.cuboidModel.dl.points);
-
-            this.frontTopEdge.plot(this.cuboidModel.ft.points);
-            this.rightTopEdge.plot(this.cuboidModel.rt.points);
-            this.frontBotEdge.plot(this.cuboidModel.fb.points);
-            this.rightBotEdge.plot(this.cuboidModel.rb.points);
-        },
-
-        updateProjections() {
-            this.ftProj.plot(this.updateProjectionLine(this.cuboidModel.ft.getEquation(),
-                this.cuboidModel.ft.points[0], this.cuboidModel.vpl));
-            this.fbProj.plot(this.updateProjectionLine(this.cuboidModel.fb.getEquation(),
-                this.cuboidModel.ft.points[0], this.cuboidModel.vpl));
-            this.rtProj.plot(this.updateProjectionLine(this.cuboidModel.rt.getEquation(),
-                this.cuboidModel.rt.points[1], this.cuboidModel.vpr));
-            this.rbProj.plot(this.updateProjectionLine(this.cuboidModel.rb.getEquation(),
-                this.cuboidModel.rt.points[1], this.cuboidModel.vpr));
-        },
-
         computeHeightFace(point: Point, index: number) {
             switch (index) {
             // fl
@@ -803,6 +968,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.updateFaces();
             this.updateEdges();
             this.updateProjections();
+            this.updateGrabPoints();
         },
 
         updateFaces() {
@@ -826,6 +992,28 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.rightTopEdge.plot(viewModel.rt.points);
             this.frontBotEdge.plot(viewModel.fb.points);
             this.rightBotEdge.plot(viewModel.rb.points);
+        },
+
+        updateProjections() {
+            const viewModel = this.cuboidModel;
+
+            this.ftProj.plot(this.updateProjectionLine(viewModel.ft.getEquation(),
+                viewModel.ft.points[0], viewModel.vpl));
+            this.fbProj.plot(this.updateProjectionLine(viewModel.fb.getEquation(),
+                  viewModel.ft.points[0], viewModel.vpl));
+            this.rtProj.plot(this.updateProjectionLine(viewModel.rt.getEquation(),
+                viewModel.rt.points[1], viewModel.vpr));
+            this.rbProj.plot(this.updateProjectionLine(viewModel.rb.getEquation(),
+                viewModel.rt.points[1], viewModel.vpr));
+        },
+
+        updateGrabPoints() {
+            const centers = this.getGrabPoints();
+            const edges = this.getEdges();
+            for (let i = 0; i < centers.length; i += 1) {
+                const edge = edges[i];
+                centers[i].center(edge.cx(), edge.cy());
+            }
         },
     },
     construct: {
