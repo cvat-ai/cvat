@@ -1,5 +1,5 @@
 {
-  "name": "cvat-core.js",
+  "name": "cvat-core",
   "version": "1.0.0",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "babel.config.js",
@@ -34,6 +34,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "browser-or-node": "^1.2.1",
+    "cvat-data": "../cvat-data",
     "detect-browser": "^5.0.0",
     "error-stack-parser": "^2.0.2",
     "form-data": "^2.5.0",
@@ -41,6 +42,7 @@
     "js-cookie": "^2.2.0",
     "jsonpath": "^1.0.2",
     "platform": "^1.3.5",
-    "store": "^2.0.12"
+    "store": "^2.0.12",
+    "worker-loader": "^2.0.0"
   }
 }
