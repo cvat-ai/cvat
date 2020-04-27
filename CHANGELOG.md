@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React UI is the primary UI
 
 ### Fixed
+- Cleaned up memory in Auto Annotation to enable long running tasks on videos
 - New shape is added when press ``esc`` when drawing instead of cancellation
 - Dextr segmentation doesn't work.
 - `FileNotFoundError` during dump after moving format files

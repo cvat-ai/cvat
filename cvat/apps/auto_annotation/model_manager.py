@@ -23,7 +23,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from .models import AnnotationModel, FrameworkChoice
 from .model_loader import load_labelmap
 from .image_loader import ImageLoader
-from .inference import run_inference_engine_annotation
+from .inference import InferenceAnnotationRunner
 
 
 def _remove_old_file(model_file_field):
@@ -44,15 +44,15 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
         test_image = np.ones((1024, 1980, 3), np.uint8) * 255
         try:
             dummy_labelmap = {key: key for key in load_labelmap(labelmap_file).keys()}
-            run_inference_engine_annotation(
+            runner = InferenceAnnotationRunner(
                 data=[test_image,],
                 model_file=model_file,
                 weights_file=weights_file,
                 labels_mapping=dummy_labelmap,
                 attribute_spec={},
-                convertation_file=interpretation_file,
-                restricted=restricted
-            )
+                convertation_file=interpretation_file)
+
+            runner.run(restricted=restricted)
         except Exception as e:
             return False, str(e)
 
@@ -227,30 +227,32 @@ def run_inference_thread(tid, model_file, weights_file, labels_mapping, attribut
 
         result = None
         slogger.glob.info("auto annotation with openvino toolkit for task {}".format(tid))
-        result = run_inference_engine_annotation(
+        more_data = True
+        runner = InferenceAnnotationRunner(
             data=ImageLoader(FrameProvider(db_task.data)),
             model_file=model_file,
             weights_file=weights_file,
             labels_mapping=labels_mapping,
             attribute_spec=attributes,
-            convertation_file= convertation_file,
-            job=job,
-            update_progress=update_progress,
-            restricted=restricted
-        )
+            convertation_file= convertation_file)
+        while more_data:
+            result, more_data = runner.run(
+                job=job,
+                update_progress=update_progress,
+                restricted=restricted)
 
-        if result is None:
-            slogger.glob.info("auto annotation for task {} canceled by user".format(tid))
-            return
+            if result is None:
+                slogger.glob.info("auto annotation for task {} canceled by user".format(tid))
+                return
 
-        serializer = LabeledDataSerializer(data = result)
-        if serializer.is_valid(raise_exception=True):
-            if reset:
-                put_task_data(tid, user, result)
-            else:
-                patch_task_data(tid, user, result, "create")
+            serializer = LabeledDataSerializer(data = result)
+            if serializer.is_valid(raise_exception=True):
+                if reset:
+                    put_task_data(tid, user, result)
+                else:
+                    patch_task_data(tid, user, result, "create")
 
-        slogger.glob.info("auto annotation for task {} done".format(tid))
+            slogger.glob.info("auto annotation for task {} done".format(tid))
     except Exception as e:
         try:
             slogger.task[tid].exception("exception was occurred during auto annotation of the task", exc_info=True)
