@@ -3,16 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
-import consts from './consts';
 import 'svg.draw.js';
 import './svg.patch';
 
-import {
-    DrawData,
-    Geometry,
-    RectDrawingMethod,
-} from './canvasModel';
-
+import { AutoborderHandler } from './autoborderHandler';
 import {
     translateToSVG,
     displayShapeSize,
@@ -22,10 +16,18 @@ import {
     BBox,
     Box,
 } from './shared';
+import consts from './consts';
+import {
+    DrawData,
+    Geometry,
+    RectDrawingMethod,
+    Configuration,
+} from './canvasModel';
 
 import { cuboidFrom4Points } from './cuboid';
 
 export interface DrawHandler {
+    configurate(configuration: Configuration): void;
     draw(drawData: DrawData, geometry: Geometry): void;
     transform(geometry: Geometry): void;
     cancel(): void;
@@ -47,6 +49,8 @@ export class DrawHandlerImpl implements DrawHandler {
     };
     private drawData: DrawData;
     private geometry: Geometry;
+    private autoborderHandler: AutoborderHandler;
+    private autobordersEnabled: boolean;
 
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
@@ -207,9 +211,9 @@ export class DrawHandlerImpl implements DrawHandler {
             return;
         }
 
+        this.autoborderHandler.autoborder(false);
         this.initialized = false;
         this.canvas.off('mousedown.draw');
-        this.canvas.off('mouseup.draw');
         this.canvas.off('mousemove.draw');
         this.canvas.off('click.draw');
 
@@ -244,9 +248,7 @@ export class DrawHandlerImpl implements DrawHandler {
             this.removeCrosshair();
         }
 
-        if (!this.drawData.initialState) {
-            this.onDrawDone(null);
-        }
+        this.onDrawDone(null);
     }
 
     private initDrawing(): void {
@@ -435,6 +437,9 @@ export class DrawHandlerImpl implements DrawHandler {
             });
 
         this.drawPolyshape();
+        if (this.autobordersEnabled) {
+            this.autoborderHandler.autoborder(true, this.drawInstance, false);
+        }
     }
 
     private drawPolyline(): void {
@@ -445,6 +450,9 @@ export class DrawHandlerImpl implements DrawHandler {
             });
 
         this.drawPolyshape();
+        if (this.autobordersEnabled) {
+            this.autoborderHandler.autoborder(true, this.drawInstance, false);
+        }
     }
 
     private drawPoints(): void {
@@ -474,7 +482,11 @@ export class DrawHandlerImpl implements DrawHandler {
 
             const { points } = this.drawData.initialState.shapeType === 'cuboid' ? this.getFinalCuboidCoordinates(targetPoints)
                 : this.getFinalPolyshapeCoordinates(targetPoints);
-            this.release();
+
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
+            }
+
             this.onDrawDone({
                 shapeType: this.drawData.initialState.shapeType,
                 objectType: this.drawData.initialState.objectType,
@@ -514,7 +526,10 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance.on('done', (e: CustomEvent): void => {
             const bbox = this.drawInstance.node.getBBox();
             const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
-            this.release();
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
+            }
+
             this.onDrawDone({
                 shapeType: this.drawData.initialState.shapeType,
                 objectType: this.drawData.initialState.objectType,
@@ -608,54 +623,23 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private setupPasteEvents(): void {
-        let mouseX: number | null = null;
-        let mouseY: number | null = null;
-
         this.canvas.on('mousedown.draw', (e: MouseEvent): void => {
-            if (e.which === 1) {
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-            }
-        });
-
-        this.canvas.on('mouseup.draw', (e: MouseEvent): void => {
-            const threshold = 10; // px
-            if (e.which === 1) {
-                if (Math.sqrt( // l2 distance < threshold
-                    ((mouseX - e.clientX) ** 2)
-                    + ((mouseY - e.clientY) ** 2),
-                ) < threshold) {
-                    this.drawInstance.fire('done', { originalEvent: e });
-                }
+            if (e.button === 0 && !e.altKey) {
+                this.drawInstance.fire('done', { originalEvent: e });
             }
         });
     }
 
     private setupDrawEvents(): void {
         let initialized = false;
-        let mouseX: number | null = null;
-        let mouseY: number | null = null;
 
         this.canvas.on('mousedown.draw', (e: MouseEvent): void => {
-            if (e.which === 1) {
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-            }
-        });
-
-        this.canvas.on('mouseup.draw', (e: MouseEvent): void => {
-            const threshold = 10; // px
-            if (e.which === 1) {
-                if (Math.sqrt( // l2 distance < threshold
-                    ((mouseX - e.clientX) ** 2)
-                    + ((mouseY - e.clientY) ** 2),
-                ) < threshold) {
-                    if (!initialized) {
-                        this.drawInstance.draw(e, { snapToGrid: 0.1 });
-                        initialized = true;
-                    } else {
-                        this.drawInstance.draw(e);
-                    }
+            if (e.button === 0 && !e.altKey) {
+                if (!initialized) {
+                    this.drawInstance.draw(e, { snapToGrid: 0.1 });
+                    initialized = true;
+                } else {
+                    this.drawInstance.draw(e);
                 }
             }
         });
@@ -722,7 +706,10 @@ export class DrawHandlerImpl implements DrawHandler {
         onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean) => void,
         canvas: SVG.Container,
         text: SVG.Container,
+        autoborderHandler: AutoborderHandler,
     ) {
+        this.autoborderHandler = autoborderHandler;
+        this.autobordersEnabled = false;
         this.startTimestamp = Date.now();
         this.onDrawDone = onDrawDone;
         this.canvas = canvas;
@@ -750,6 +737,19 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.crosshair.y.attr({ x1: x, x2: x });
             }
         });
+    }
+
+    public configurate(configuration: Configuration): void {
+        if (typeof (configuration.autoborders) === 'boolean') {
+            this.autobordersEnabled = configuration.autoborders;
+            if (this.drawInstance) {
+                if (this.autobordersEnabled) {
+                    this.autoborderHandler.autoborder(true, this.drawInstance, false);
+                } else {
+                    this.autoborderHandler.autoborder(false);
+                }
+            }
+        }
     }
 
     public transform(geometry: Geometry): void {

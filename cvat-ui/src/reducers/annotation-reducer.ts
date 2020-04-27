@@ -4,7 +4,7 @@
 
 import { AnyAction } from 'redux';
 
-import { Canvas, CanvasMode } from 'cvat-canvas';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
@@ -35,6 +35,7 @@ const defaultState: AnnotationState = {
     },
     job: {
         labels: [],
+        requestedId: null,
         instance: null,
         attributes: {},
         fetching: false,
@@ -105,6 +106,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 job: {
                     ...state.job,
+                    instance: null,
+                    requestedId: action.payload.requestedId,
                     fetching: true,
                 },
             };

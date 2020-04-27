@@ -219,8 +219,10 @@
 
             this.history.do(HistoryActions.CHANGED_LOCK, () => {
                 this.lock = undoLock;
+                this.updated = Date.now();
             }, () => {
                 this.lock = redoLock;
+                this.updated = Date.now();
             }, [this.clientID], frame);
 
             this.lock = lock;
@@ -232,8 +234,10 @@
 
             this.history.do(HistoryActions.CHANGED_COLOR, () => {
                 this.color = undoColor;
+                this.updated = Date.now();
             }, () => {
                 this.color = redoColor;
+                this.updated = Date.now();
             }, [this.clientID], frame);
 
             this.color = color;
@@ -245,8 +249,10 @@
 
             this.history.do(HistoryActions.CHANGED_HIDDEN, () => {
                 this.hidden = undoHidden;
+                this.updated = Date.now();
             }, () => {
                 this.hidden = redoHidden;
+                this.updated = Date.now();
             }, [this.clientID], frame);
 
             this.hidden = hidden;
@@ -264,9 +270,11 @@
             this.history.do(HistoryActions.CHANGED_LABEL, () => {
                 this.label = undoLabel;
                 this.attributes = undoAttributes;
+                this.updated = Date.now();
             }, () => {
                 this.label = redoLabel;
                 this.attributes = redoAttributes;
+                this.updated = Date.now();
             }, [this.clientID], frame);
         }
 
@@ -281,8 +289,10 @@
 
             this.history.do(HistoryActions.CHANGED_ATTRIBUTES, () => {
                 this.attributes = undoAttributes;
+                this.updated = Date.now();
             }, () => {
                 this.attributes = redoAttributes;
+                this.updated = Date.now();
             }, [this.clientID], frame);
         }
 
@@ -385,7 +395,7 @@
         updateTimestamp(updated) {
             const anyChanges = updated.label || updated.attributes || updated.points
                 || updated.outside || updated.occluded || updated.keyframe
-                || updated.zOrder;
+                || updated.zOrder || updated.hidden || updated.lock || updated.pinned;
 
             if (anyChanges) {
                 this.updated = Date.now();
@@ -397,9 +407,12 @@
                 this.removed = true;
 
                 this.history.do(HistoryActions.REMOVED_OBJECT, () => {
+                    this.serverID = undefined;
                     this.removed = false;
+                    this.updated = Date.now();
                 }, () => {
                     this.removed = true;
+                    this.updated = Date.now();
                 }, [this.clientID], frame);
             }
 
@@ -422,8 +435,10 @@
 
             this.history.do(HistoryActions.CHANGED_PINNED, () => {
                 this.pinned = undoPinned;
+                this.updated = Date.now();
             }, () => {
                 this.pinned = redoPinned;
+                this.updated = Date.now();
             }, [this.clientID], frame);
 
             this.pinned = pinned;
@@ -513,8 +528,10 @@
 
             this.history.do(HistoryActions.CHANGED_POINTS, () => {
                 this.points = undoPoints;
+                this.updated = Date.now();
             }, () => {
                 this.points = redoPoints;
+                this.updated = Date.now();
             }, [this.clientID], frame);
 
             this.points = points;
@@ -526,8 +543,10 @@
 
             this.history.do(HistoryActions.CHANGED_OCCLUDED, () => {
                 this.occluded = undoOccluded;
+                this.updated = Date.now();
             }, () => {
                 this.occluded = redoOccluded;
+                this.updated = Date.now();
             }, [this.clientID], frame);
 
             this.occluded = occluded;
@@ -539,8 +558,10 @@
 
             this.history.do(HistoryActions.CHANGED_ZORDER, () => {
                 this.zOrder = undoZOrder;
+                this.updated = Date.now();
             }, () => {
                 this.zOrder = redoZOrder;
+                this.updated = Date.now();
             }, [this.clientID], frame);
 
             this.zOrder = zOrder;
@@ -801,12 +822,14 @@
                 for (const mutable of undoAttributes.mutable) {
                     this.shapes[mutable.frame].attributes = mutable.attributes;
                 }
+                this.updated = Date.now();
             }, () => {
                 this.label = redoLabel;
                 this.attributes = redoAttributes.unmutable;
                 for (const mutable of redoAttributes.mutable) {
                     this.shapes[mutable.frame].attributes = mutable.attributes;
                 }
+                this.updated = Date.now();
             }, [this.clientID], frame);
         }
 
@@ -877,11 +900,13 @@
                 } else if (redoShape) {
                     delete this.shapes[frame];
                 }
+                this.updated = Date.now();
             }, () => {
                 this.attributes = redoAttributes;
                 if (redoShape) {
                     this.shapes[frame] = redoShape;
                 }
+                this.updated = Date.now();
             }, [this.clientID], frame);
         }
 
@@ -892,12 +917,14 @@
                 } else {
                     this.shapes[frame] = undoShape;
                 }
+                this.updated = Date.now();
             }, () => {
                 if (!redoShape) {
                     delete this.shapes[frame];
                 } else {
                     this.shapes[frame] = redoShape;
                 }
+                this.updated = Date.now();
             }, [this.clientID], frame);
         }
 

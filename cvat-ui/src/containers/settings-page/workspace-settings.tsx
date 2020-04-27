@@ -11,6 +11,7 @@ import {
     changeAAMZoomMargin,
     switchShowingInterpolatedTracks,
     switchShowingObjectsTextAlways,
+    switchAutomaticBordering,
 } from 'actions/settings-actions';
 
 import { CombinedState } from 'reducers/interfaces';
@@ -23,6 +24,7 @@ interface StateToProps {
     aamZoomMargin: number;
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
+    automaticBordering: boolean;
 }
 
 interface DispatchToProps {
@@ -31,6 +33,7 @@ interface DispatchToProps {
     onChangeAAMZoomMargin(margin: number): void;
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
+    onSwitchAutomaticBordering(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -41,6 +44,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         aamZoomMargin,
         showAllInterpolationTracks,
         showObjectsTextAlways,
+        automaticBordering,
     } = workspace;
 
     return {
@@ -49,6 +53,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         aamZoomMargin,
         showAllInterpolationTracks,
         showObjectsTextAlways,
+        automaticBordering,
     };
 }
 
@@ -68,6 +73,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSwitchShowingObjectsTextAlways(enabled: boolean): void {
             dispatch(switchShowingObjectsTextAlways(enabled));
+        },
+        onSwitchAutomaticBordering(enabled: boolean): void {
+            dispatch(switchAutomaticBordering(enabled));
         },
     };
 }

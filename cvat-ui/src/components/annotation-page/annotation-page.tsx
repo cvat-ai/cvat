@@ -4,12 +4,9 @@
 
 import './styles.scss';
 import React, { useEffect } from 'react';
-
-import {
-    Layout,
-    Spin,
-    Result,
-} from 'antd';
+import Layout from 'antd/lib/layout';
+import Spin from 'antd/lib/spin';
+import Result from 'antd/lib/result';
 
 import { Workspace } from 'reducers/interfaces';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
@@ -36,7 +33,17 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         saveLogs();
-        return saveLogs;
+        const root = window.document.getElementById('root');
+        if (root) {
+            root.style.minHeight = '768px';
+        }
+
+        return () => {
+            saveLogs();
+            if (root) {
+                root.style.minHeight = '';
+            }
+        };
     }, []);
 
     if (job === null) {

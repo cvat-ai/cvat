@@ -9,7 +9,7 @@
     height: 100%;
 
     > div:nth-child(1) {
-        margin-bottom: 10px;
+        padding-bottom: 10px;
 
         div > {
             span {
@@ -36,11 +36,11 @@
 
     > div:nth-child(3) {
         height: 83%;
-        margin-top: 10px;
+        padding-top: 10px;
     }
 
     > div:nth-child(4) {
-        margin-top: 10px;
+        padding-top: 10px;
     }
 }
 

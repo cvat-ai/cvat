@@ -29,6 +29,7 @@ const defaultState: SettingsState = {
         autoSave: false,
         autoSaveInterval: 15 * 60 * 1000,
         aamZoomMargin: 100,
+        automaticBordering: false,
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
     },
@@ -244,6 +245,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     showObjectsTextAlways: action.payload.showObjectsTextAlways,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_AUTOMATIC_BORDERING: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    automaticBordering: action.payload.automaticBordering,
                 },
             };
         }

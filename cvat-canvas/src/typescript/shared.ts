@@ -29,6 +29,20 @@ interface Point {
     x: number;
     y: number;
 }
+export interface DrawnState {
+    clientID: number;
+    outside?: boolean;
+    occluded?: boolean;
+    hidden?: boolean;
+    lock: boolean;
+    shapeType: string;
+    points?: number[];
+    attributes: Record<number, string>;
+    zOrder?: number;
+    pinned?: boolean;
+    updated: number;
+    frame: number;
+}
 
 // Translate point array from the canvas coordinate system
 // to the coordinate system of a client

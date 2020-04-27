@@ -1,5 +1,5 @@
 
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -110,8 +110,8 @@ class _Converter:
         self._images_dir = images_dir
 
     def get_label(self, label_id):
-        return self._extractor.categories()[AnnotationType.label] \
-            .items[label_id].name
+        return self._strip_label(self._extractor. \
+            categories()[AnnotationType.label].items[label_id].name)
 
     def save_subsets(self):
         subsets = self._extractor.subsets()
@@ -426,7 +426,7 @@ class _Converter:
             label_map = OrderedDict()
             label_map['background'] = [None, [], []]
             for item in labels.items:
-                label_map[item.name] = [None, [], []]
+                label_map[self._strip_label(item.name)] = [None, [], []]
 
         elif label_map_source in [LabelmapType.guess.name, None]:
             # generate colormap for union of VOC and input dataset labels
@@ -489,7 +489,7 @@ class _Converter:
 
     def _make_label_id_map(self):
         source_labels = {
-            id: label.name for id, label in
+            id: self._strip_label(label.name) for id, label in
             enumerate(self._extractor.categories().get(
                 AnnotationType.label, LabelCategories()).items)
         }

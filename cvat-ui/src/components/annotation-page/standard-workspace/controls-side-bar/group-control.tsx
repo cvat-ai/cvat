@@ -7,7 +7,7 @@ import Tooltip from 'antd/lib/tooltip';
 import Icon from 'antd/lib/icon';
 
 import { GroupIcon } from 'icons';
-import { Canvas } from 'cvat-canvas';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl } from 'reducers/interfaces';
 
 interface Props {

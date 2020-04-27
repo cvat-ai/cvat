@@ -4,7 +4,7 @@
 
 import { connect } from 'react-redux';
 
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 import HeaderComponent from 'components/header/header';
 import { SupportedPlugins, CombinedState } from 'reducers/interfaces';
 import { logoutAsync } from 'actions/auth-actions';

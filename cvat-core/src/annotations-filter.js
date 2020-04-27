@@ -18,7 +18,7 @@ const { ArgumentError } = require('./exceptions');
 class AnnotationsFilter {
     constructor() {
         // eslint-disable-next-line security/detect-unsafe-regex
-        this.operatorRegex = /(==|!=|<=|>=|>|<|~=)(?=(?:[^"]*(["])[^"]*\2)*[^"]*$)/g;
+        this.operatorRegex = /(==|!=|<=|>=|>|<)(?=(?:[^"]*(["])[^"]*\2)*[^"]*$)/g;
     }
 
     // Method splits expression by operators that are outside of any brackets
@@ -204,7 +204,7 @@ class AnnotationsFilter {
                 serverID: state.serverID,
                 clientID: state.clientID,
                 type: state.objectType,
-                shape: state.objectShape,
+                shape: state.shapeType,
                 occluded: state.occluded,
             };
         });

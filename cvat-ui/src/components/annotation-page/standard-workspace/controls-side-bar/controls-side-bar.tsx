@@ -7,7 +7,7 @@ import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 import Layout from 'antd/lib/layout';
 
 import { ActiveControl, Rotation } from 'reducers/interfaces';
-import { Canvas } from 'cvat-canvas';
+import { Canvas } from 'cvat-canvas-wrapper';
 
 import RotateControl from './rotate-control';
 import CursorControl from './cursor-control';
