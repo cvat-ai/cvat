@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added auto trimming for trailing whitespaces style enforsement (https://github.com/opencv/cvat/pull/1352)
 - REST API: updated `GET /task/<id>/annotations`: parameters are `format`, `filename` (now optional), `action` (optional) (https://github.com/opencv/cvat/pull/1352)
 - REST API: removed `dataset/formats`, changed format of `annotation/formats` (https://github.com/opencv/cvat/pull/1352)
-- Exported annotations are stored for N hours insted of indefinitely (https://github.com/opencv/cvat/pull/1352)
+- Exported annotations are stored for N hours instead of indefinitely (https://github.com/opencv/cvat/pull/1352)
 - Formats: CVAT format now accepts ZIP and XML (https://github.com/opencv/cvat/pull/1352)
 - Formats: COCO format now accepts ZIP and JSON (https://github.com/opencv/cvat/pull/1352)
 - Formats: most of formats renamed, no extension in title (https://github.com/opencv/cvat/pull/1352)
