@@ -145,6 +145,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             workspace,
             frameFetching,
             showObjectsTextAlways,
+            automaticBordering,
             showProjections,
         } = this.props;
 

@@ -158,7 +158,6 @@
             }
 
             for (const shape of data.shapes) {
-                if (shape.type === 'cuboid') continue;
                 const clientID = ++this.count;
                 const shapeModel = shapeFactory(shape, clientID, this.injection);
                 this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
