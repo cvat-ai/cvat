@@ -370,7 +370,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             }
 
             if (value === false) {
-                this.getGrabPoints().forEach((point) => {point.remove()});
+                this.getGrabPoints().forEach((point) => {point && point.remove()});
             } else {
                 this.setupGrabPoints(this.face.remember('_selectHandler').drawPoint.bind(
                     {nested: this, options: this.face.remember('_selectHandler').options}
@@ -385,12 +385,12 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 if (this.cuboidModel.orientation === Orientation.LEFT) {
                     Array.from(this.dorsalRightEdge.remember('_selectHandler').nested.node.children)
                     .forEach((point: SVG.Circle, i: number) => {
-                        point.classList.add(`svg_select_points_${['rt', 'rb'][i]}`)
+                        point.classList.add(`svg_select_points_${['t', 'b'][i]}`)
                     });
                 } else {
                     Array.from(this.dorsalLeftEdge.remember('_selectHandler').nested.node.children)
                     .forEach((point: SVG.Circle, i: number) => {
-                        point.classList.add(`svg_select_points_${['lt', 'lb'][i]}`)
+                        point.classList.add(`svg_select_points_${['t', 'b'][i]}`)
                     });
                 }
 
@@ -530,10 +530,8 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     resizedCubePoint = getResizedPointIndex(event) + (orientation === Orientation.LEFT ? 4 : 6);
                     this.fire(new CustomEvent('resizestart', event));
                 }).on('resizing', (event: CustomEvent) => {
-                    let { dx, dy } = event.detail;
-                    let dxPortion = dx - accumulatedOffset.x;
+                    let { dy } = event.detail;
                     let dyPortion = dy - accumulatedOffset.y;
-                    accumulatedOffset.x += dxPortion;
                     accumulatedOffset.y += dyPortion;
 
                     const edge = getEdgeIndex(resizedCubePoint);
@@ -541,29 +539,6 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     let cuboidPoints = this.cuboidModel.getPoints();
 
                     if (!event.detail.event.shiftKey) {
-                        const x1 = cuboidPoints[edgeTopIndex].x + dxPortion;
-                        const x2 = cuboidPoints[edgeBottomIndex].x + dxPortion;
-                        const y1 = (orientation === Orientation.LEFT
-                            ? this.cuboidModel.rt : this.cuboidModel.lt).getEquation().getY(x1);
-                        const y2 = (orientation === Orientation.LEFT
-                            ? this.cuboidModel.rb : this.cuboidModel.lb).getEquation().getY(x2);
-
-                        const frontTopPoint = orientation === Orientation.LEFT ? 2 : 0;
-                        if (cuboidPoints[edgeTopIndex].x < cuboidPoints[frontTopPoint].x
-                            && x1 < cuboidPoints[frontTopPoint].x - consts.MIN_EDGE_LENGTH
-                            && x1 > this.cuboidModel.vpr.x + consts.MIN_EDGE_LENGTH
-                            || cuboidPoints[edgeTopIndex].x >= cuboidPoints[frontTopPoint].x
-                            && x1 > cuboidPoints[frontTopPoint].x + consts.MIN_EDGE_LENGTH
-                            && x1 < this.cuboidModel.vpr.x + consts.MIN_EDGE_LENGTH
-                        ) {
-                            const topPoint = { x: x1, y: y1 };
-                            const botPoint = { x: x2, y: y2 };
-                            (orientation === Orientation.LEFT
-                                ? this.cuboidModel.dr : this.cuboidModel.dl).points = [topPoint, botPoint];
-                            this.updateViewAndVM(edge === EdgeIndex.DL);
-                        }
-
-
                         cuboidPoints = this.cuboidModel.getPoints();
                         const midPointUp = { ...cuboidPoints[edgeTopIndex] };
                         const midPointDown = { ...cuboidPoints[edgeBottomIndex] };
@@ -1033,7 +1008,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             const edges = this.getEdges();
             for (let i = 0; i < centers.length; i += 1) {
                 const edge = edges[i];
-                centers[i].center(edge.cx(), edge.cy());
+                if (centers[i]) centers[i].center(edge.cx(), edge.cy());
             }
         },
     },
