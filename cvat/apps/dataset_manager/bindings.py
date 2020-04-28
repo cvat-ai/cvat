@@ -423,8 +423,9 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 size=(frame_data.height, frame_data.width)
             )
             dm_anno = self._read_cvat_anno(frame_data, task_data)
-            dm_item = datumaro.DatasetItem(id=frame_data.frame,
-                annotations=dm_anno, image=dm_image)
+            dm_item = datumaro.DatasetItem(id=frame_data.name,
+                annotations=dm_anno, image=dm_image,
+                attributes={'frame': frame_data.frame})
             dm_items.append(dm_item)
 
         self._items = dm_items
@@ -541,7 +542,7 @@ def match_frame(item, task_data):
             pass
     if frame_number is None:
         try:
-            frame_number = int(item.id)
+            frame_number = int(item.attributes.get('frame', item.id))
         except Exception:
             pass
     if frame_number is None and is_video and item.id.startswith('frame_'):
