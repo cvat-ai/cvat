@@ -189,17 +189,19 @@ MIDDLEWARE = [
 
 # Cross-Origin Resource Sharing settings for CVAT UI
 UI_SCHEME = os.environ.get('UI_SCHEME', 'http')
-UI_HOST = os.environ.get('UI_HOST', 'localhost')
-UI_PORT = os.environ.get('UI_PORT', '3000')
-CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = [UI_HOST]
-UI_URL = '{}://{}'.format(UI_SCHEME, UI_HOST)
+UI_HOST = os.environ.get('UI_HOST')
+UI_PORT = os.environ.get('UI_PORT')
+UI_URL = ''
+if UI_HOST:
+    CORS_ALLOW_CREDENTIALS = True
+    CSRF_TRUSTED_ORIGINS = [UI_HOST]
+    UI_URL = '{}://{}'.format(UI_SCHEME, UI_HOST)
 
-if UI_PORT and UI_PORT != '80':
-    UI_URL += ':{}'.format(UI_PORT)
+    if UI_PORT and UI_PORT != '80':
+        UI_URL += ':{}'.format(UI_PORT)
 
-CORS_ORIGIN_WHITELIST = [UI_URL]
-CORS_REPLACE_HTTPS_REFERER = True
+    CORS_ORIGIN_WHITELIST = [UI_URL]
+    CORS_REPLACE_HTTPS_REFERER = True
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
