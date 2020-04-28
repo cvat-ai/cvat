@@ -1406,6 +1406,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.CUBOID;
+            this.pinned = false;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
