@@ -331,6 +331,10 @@ class LabelMeConverter(Converter, CliPlugin):
 
         log.debug("Converting item '%s'", item.id)
 
+        if '/' in item.id:
+            raise Exception("Can't export item '%s': "
+                "LabelMe format only supports flat image layout" % item.id)
+
         image_filename = item.id + LabelMePath.IMAGE_EXT
         if self._save_images:
             if item.has_image and item.image.has_data:
@@ -403,7 +407,7 @@ class LabelMeConverter(Converter, CliPlugin):
                 mask_filename = '%s_mask_%s.png' % (item.id, obj_id)
                 save_image(osp.join(subset_dir, LabelMePath.MASKS_DIR,
                         mask_filename),
-                    self._paint_mask(ann.image), create_dir=True)
+                    self._paint_mask(ann.image))
 
                 segm_elem = ET.SubElement(obj_elem, 'segm')
                 ET.SubElement(segm_elem, 'mask').text = mask_filename
