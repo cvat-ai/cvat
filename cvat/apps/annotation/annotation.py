@@ -122,7 +122,7 @@ class AnnotationIR:
                     segment_shapes.append(scoped_shapes[-1])
 
             # Should delete 'interpolation_shapes' and 'keyframe' keys because
-            # Track and TrackedShape models doen't expect these fields
+            # Track and TrackedShape models don't expect these fields
             del track['interpolated_shapes']
             for shape in segment_shapes:
                 del shape['keyframe']
