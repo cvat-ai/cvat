@@ -385,12 +385,14 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 if (this.cuboidModel.orientation === Orientation.LEFT) {
                     Array.from(this.dorsalRightEdge.remember('_selectHandler').nested.node.children)
                     .forEach((point: SVG.Circle, i: number) => {
-                        point.classList.add(`svg_select_points_${['t', 'b'][i]}`)
+                        point.classList.add(`svg_select_points_${['t', 'b'][i]}`);
+                        point.ondblclick = this.resetPerspective.bind(this);
                     });
                 } else {
                     Array.from(this.dorsalLeftEdge.remember('_selectHandler').nested.node.children)
                     .forEach((point: SVG.Circle, i: number) => {
-                        point.classList.add(`svg_select_points_${['t', 'b'][i]}`)
+                        point.classList.add(`svg_select_points_${['t', 'b'][i]}`);
+                        point.ondblclick = this.resetPerspective.bind(this);
                     });
                 }
 
@@ -903,6 +905,22 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 return this;
             } else {
                 return this.bbox().y;
+            }
+        },
+
+        resetPerspective(){
+            if (this.cuboidModel.orientation === Orientation.LEFT) {
+                const edgePoints = this.cuboidModel.dl.points;
+                const constraints = this.cuboidModel.computeSideEdgeConstraints(this.cuboidModel.dl);
+                edgePoints[0].y = constraints.y1Range.min;
+                this.cuboidModel.dl.points = [edgePoints[0],edgePoints[1]];
+                this.updateViewAndVM(true);
+            } else {
+                const edgePoints = this.cuboidModel.dr.points;
+                const constraints = this.cuboidModel.computeSideEdgeConstraints(this.cuboidModel.dr);
+                edgePoints[0].y = constraints.y1Range.min;
+                this.cuboidModel.dr.points = [edgePoints[0],edgePoints[1]];
+                this.updateViewAndVM();
             }
         },
 

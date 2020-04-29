@@ -437,6 +437,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .filter((_state: any): boolean => (
                         _state.clientID === self.activeElement.clientID
                     ));
+                if (['cuboid', 'rectangle'].includes(state.shapeType)) {
+                    e.preventDefault();
+                    return;
+                }
                 if (e.ctrlKey) {
                     const { points } = state;
                     self.onEditDone(
