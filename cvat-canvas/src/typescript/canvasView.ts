@@ -721,7 +721,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
     public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
         this.geometry = this.controller.geometry;
         if (reason === UpdateReasons.CONFIG_UPDATED) {
+            const { activeElement } = this;
+            this.deactivate();
             this.configuration = model.configuration;
+            this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);
 

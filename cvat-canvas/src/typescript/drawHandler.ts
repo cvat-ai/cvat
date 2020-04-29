@@ -316,9 +316,7 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private drawPolyshape(): void {
-        let size = this.drawData.shapeType === 'cuboid' ? 0 : this.drawData.numberOfPoints;
-
-        if (this.drawData.shapeType === 'cuboid') this.addCrosshair();
+        let size = this.drawData.shapeType === 'cuboid' ? 4 : this.drawData.numberOfPoints;
 
         const sizeDecrement = (): void => {
             if (!--size) {
@@ -326,21 +324,9 @@ export class DrawHandlerImpl implements DrawHandler {
             }
         };
 
-        const sizeCuboidIncrement = (): void => {
-            if (++size === 4) {
-                this.drawInstance.draw('done');
-            }
-        };
-
-        if (this.drawData.shapeType === 'cuboid') {
-            this.drawInstance.on('drawstart', sizeCuboidIncrement);
-            this.drawInstance.on('drawpoint', sizeCuboidIncrement);
-            this.drawInstance.on('undopoint', (): number => size--);
-        } else if (this.drawData.numberOfPoints) {
-            this.drawInstance.on('drawstart', sizeDecrement);
-            this.drawInstance.on('drawpoint', sizeDecrement);
-            this.drawInstance.on('undopoint', (): number => size++);
-        }
+        this.drawInstance.on('drawstart', sizeDecrement);
+        this.drawInstance.on('drawpoint', sizeDecrement);
+        this.drawInstance.on('undopoint', (): number => size++);
 
         // Add ability to cancel the latest drawn point
         this.canvas.on('mousedown.draw', (e: MouseEvent): void => {
