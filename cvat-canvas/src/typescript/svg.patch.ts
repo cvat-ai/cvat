@@ -829,6 +829,10 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             } else if (a === 'stroke-width' && typeof v === "number") {
                 this._attr(a, v, n);
                 this.updateThickness();
+            } else if (a === 'data-z-order') {
+                this._attr(a, v, n);
+                [this.face, this.left, this.dorsal, this.right, ...this.getEdges(), ...this.getGrabPoints()]
+                    .forEach((el) => {if (el) el.attr(a, v, n)})
             } else {
                 return this._attr(a ,v, n);
             }
