@@ -1534,20 +1534,15 @@
         }
 
         interpolatePosition(leftPosition, rightPosition, offset) {
-            const positionOffset = [
-                rightPosition.points[0] - leftPosition.points[0],
-                rightPosition.points[1] - leftPosition.points[1],
-                rightPosition.points[2] - leftPosition.points[2],
-                rightPosition.points[3] - leftPosition.points[3],
-            ];
 
-            return { // xtl, ytl, xbr, ybr
-                points: [
-                    leftPosition.points[0] + positionOffset[0] * offset,
-                    leftPosition.points[1] + positionOffset[1] * offset,
-                    leftPosition.points[2] + positionOffset[2] * offset,
-                    leftPosition.points[3] + positionOffset[3] * offset,
-                ],
+            const positionOffset = leftPosition.points.map((point, index) => (
+                rightPosition.points[index] - point
+            ))
+
+            return {
+                points: leftPosition.points.map((point ,index) => (
+                    point + positionOffset[index] * offset
+                )),
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -1990,6 +1985,7 @@
     PolylineTrack.distance = PolylineShape.distance;
     PointsTrack.distance = PointsShape.distance;
     CuboidTrack.distance = CuboidShape.distance;
+    CuboidTrack.interpolatePosition = RectangleTrack.interpolatePosition;
 
     module.exports = {
         RectangleShape,
