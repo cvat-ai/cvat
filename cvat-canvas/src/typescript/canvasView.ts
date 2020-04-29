@@ -1619,7 +1619,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'data-z-order': state.zOrder,
             });
 
-        (window as any).cube = cube;
+        if (state.occluded) {
+            cube.addClass('cvat_canvas_shape_occluded');
+        }
+
+        if (state.hidden || state.outside) {
+            cube.style('display', 'none');
+        }
 
         return cube;
     }

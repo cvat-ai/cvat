@@ -319,7 +319,7 @@ export class DrawHandlerImpl implements DrawHandler {
         let size = this.drawData.shapeType === 'cuboid' ? 4 : this.drawData.numberOfPoints;
 
         const sizeDecrement = (): void => {
-            if (!--size) {
+            if (--size === 0) {
                 this.drawInstance.draw('done');
             }
         };

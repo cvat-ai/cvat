@@ -412,9 +412,11 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.dorsalLeftEdge.off('resizing').off('resizedone').off('resizestart');
 
                 this.getGrabPoints().forEach((point: SVG.Element) => {
-                    point.off('dragstart');
-                    point.off('dragmove');
-                    point.off('dragend');
+                    if (point) {
+                        point.off('dragstart');
+                        point.off('dragmove');
+                        point.off('dragend');
+                    }
                 })
 
                 return;
