@@ -1976,8 +1976,6 @@
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
         }
-
-        // TODO: interpolation;
     }
 
     RectangleTrack.distance = RectangleShape.distance;
