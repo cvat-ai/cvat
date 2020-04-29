@@ -423,7 +423,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 size=(frame_data.height, frame_data.width)
             )
             dm_anno = self._read_cvat_anno(frame_data, task_data)
-            dm_item = datumaro.DatasetItem(id=frame_data.name,
+            dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
                 annotations=dm_anno, image=dm_image,
                 attributes={'frame': frame_data.frame})
             dm_items.append(dm_item)
