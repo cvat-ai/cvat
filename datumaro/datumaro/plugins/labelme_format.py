@@ -402,8 +402,8 @@ class LabelMeConverter(Converter, CliPlugin):
             elif ann.type == AnnotationType.mask:
                 mask_filename = '%s_mask_%s.png' % (item.id, obj_id)
                 save_image(osp.join(subset_dir, LabelMePath.MASKS_DIR,
-                        mask_filename, create_dir=True),
-                    self._paint_mask(ann.image))
+                        mask_filename),
+                    self._paint_mask(ann.image), create_dir=True)
 
                 segm_elem = ET.SubElement(obj_elem, 'segm')
                 ET.SubElement(segm_elem, 'mask').text = mask_filename

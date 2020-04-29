@@ -505,15 +505,11 @@ class CocoConverterTest(TestCase):
                                 label=5, group=3, id=3,
                                 attributes={'is_crowd': False}),
 
-                            Polygon([0, 0, 4, 0, 4, 4], label=3,
-                                group=4, id=4,
-                                attributes={'is_crowd': False}),
-
                             Points([0, 0, 1, 2, 3, 4], [0, 1, 2],
-                                group=3, id=5,
+                                group=5, id=5,
                                 attributes={'is_crowd': False}),
                             Polygon([1, 2, 3, 2, 3, 4, 1, 4],
-                                group=3, id=5,
+                                group=5, id=5,
                                 attributes={'is_crowd': False}),
                         ], attributes={'id': 1}),
                 ])
