@@ -37,12 +37,7 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "console": "internalConsole",
-            "env": {
-                "UI_SCHEME": "http",
-                "UI_HOST": "localhost",
-                "UI_PORT": "3000",
-            }
+            "console": "internalConsole"
         },
         {
             "name": "server: chrome",
