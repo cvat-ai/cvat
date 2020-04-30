@@ -5,7 +5,6 @@
 import os
 import copy
 from collections import OrderedDict, namedtuple
-import itertools
 
 from django.utils import timezone
 
@@ -103,17 +102,25 @@ class AnnotationIR:
     @staticmethod
     def _slice_track(track_, start, stop):
         def filter_track_shapes(shapes):
-            drop_count = sum(1 for _ in itertools.takewhile(lambda s: s['outside'], shapes))
+            shapes = [s for s in shapes if AnnotationIR._is_shape_inside(s, start, stop)]
+            drop_count = 0
+            for s in shapes:
+                if s['outside']:
+                    drop_count += 1
+                else:
+                    break
+            # Need to leave the last shape if all shapes are outside
+            if drop_count == len(shapes):
+                drop_count -= 1
+
             return shapes[drop_count:]
 
         track = copy.deepcopy(track_)
-        segment_shapes = [s for s in track['shapes'] if AnnotationIR._is_shape_inside(s, start, stop)]
-        segment_shapes = filter_track_shapes(segment_shapes)
+        segment_shapes = filter_track_shapes(track['shapes'])
 
         if len(segment_shapes) < len(track['shapes']):
             interpolated_shapes = TrackManager.get_interpolated_shapes(track, start, stop)
-            scoped_shapes = [s for s in interpolated_shapes if AnnotationIR._is_shape_inside(s, start, stop)]
-            scoped_shapes = filter_track_shapes(scoped_shapes)
+            scoped_shapes = filter_track_shapes(interpolated_shapes)
 
             if scoped_shapes:
                 if not scoped_shapes[0]['keyframe']:
