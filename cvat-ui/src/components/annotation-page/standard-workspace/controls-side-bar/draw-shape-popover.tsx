@@ -48,7 +48,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
     } = props;
 
     const trackDisabled = shapeType === ShapeType.POLYGON || shapeType === ShapeType.POLYLINE
-        || (shapeType === ShapeType.POINTS && numberOfPoints !== 1);
+        || shapeType === ShapeType.CUBOID || (shapeType === ShapeType.POINTS && numberOfPoints !== 1);
 
     return (
         <div className='cvat-draw-shape-popover-content'>
