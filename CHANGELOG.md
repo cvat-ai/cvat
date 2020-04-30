@@ -80,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AttributeError: 'tuple' object has no attribute 'read' in ReID algorithm (https://github.com/opencv/cvat/issues/1403)
 - Wrong semi-automatic segmentation near edges of an image (https://github.com/opencv/cvat/issues/1403)
 - Git repos paths (https://github.com/opencv/cvat/pull/1400)
+- Uploading annotations for tasks with multiple jobs (https://github.com/opencv/cvat/pull/1396)
 
 ## [1.0.0-alpha] - 2020-03-31
 ### Added
