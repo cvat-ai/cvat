@@ -1617,7 +1617,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 stroke: state.color,
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'data-z-order': state.zOrder,
-            });
+            }).addClass('cvat_canvas_shape');
 
         if (state.occluded) {
             cube.addClass('cvat_canvas_shape_occluded');
