@@ -245,6 +245,8 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
         },
 
         setupFaces() {
+            this.bot = this.polygon(this.cuboidModel.bot.points);
+            this.top = this.polygon(this.cuboidModel.top.points);
             this.face = this.polygon(this.cuboidModel.front.points);
             this.right = this.polygon(this.cuboidModel.right.points);
             this.dorsal = this.polygon(this.cuboidModel.dorsal.points);
@@ -875,6 +877,10 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.dorsalRightEdge.stroke({ color: strokeColor });
             this.dorsalLeftEdge.stroke({ color: strokeColor });
 
+            this.bot.stroke({ color: strokeColor })
+                .fill({ color: fillColor });
+            this.top.stroke({ color: strokeColor })
+                .fill({ color: fillColor });
             this.face.stroke({ color: strokeColor, width: 0 })
                 .fill({ color: fillColor });
             this.right.stroke({ color: strokeColor })
@@ -994,6 +1000,8 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
         updateFaces() {
             const viewModel = this.cuboidModel;
 
+            this.bot.plot(viewModel.bot.points);
+            this.top.plot(viewModel.top.points);
             this.face.plot(viewModel.front.points);
             this.right.plot(viewModel.right.points);
             this.dorsal.plot(viewModel.dorsal.points);
