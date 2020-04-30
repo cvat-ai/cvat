@@ -25,6 +25,10 @@ export interface BBox {
     y: number;
 }
 
+interface Point {
+    x: number;
+    y: number;
+}
 export interface DrawnState {
     clientID: number;
     outside?: boolean;
@@ -114,4 +118,27 @@ export function displayShapeSize(
     };
 
     return shapeSize;
+}
+
+export function convertToArray(points: Point[]): number[][] {
+    const arr: number[][] = [];
+    points.forEach((point: Point): void => {
+        arr.push([point.x, point.y]);
+    });
+    return arr;
+}
+
+export function parsePoints(stringified: string): Point[] {
+    return stringified.trim().split(/\s/).map((point: string): Point => {
+        const [x, y] = point.split(',').map((coord: string): number => +coord);
+        return { x, y };
+    });
+}
+
+export function stringifyPoints(points: Point[]): string {
+    return points.map((point: Point): string => `${point.x},${point.y}`).join(' ');
+}
+
+export function clamp(x: number, min: number, max: number): number {
+    return Math.min(Math.max(x, min), max);
 }

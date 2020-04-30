@@ -23,4 +23,9 @@ __pycache__
 # Ignore development npm files
 node_modules
 
+# Ignore npm logs file
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 .DS_Store

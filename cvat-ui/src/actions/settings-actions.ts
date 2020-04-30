@@ -18,6 +18,7 @@ export enum SettingsActionTypes {
     CHANGE_SELECTED_SHAPES_OPACITY = 'CHANGE_SELECTED_SHAPES_OPACITY',
     CHANGE_SHAPES_COLOR_BY = 'CHANGE_SHAPES_COLOR_BY',
     CHANGE_SHAPES_BLACK_BORDERS = 'CHANGE_SHAPES_BLACK_BORDERS',
+    CHANGE_SHAPES_SHOW_PROJECTIONS = 'CHANGE_SHAPES_SHOW_PROJECTIONS',
     CHANGE_SHOW_UNLABELED_REGIONS = 'CHANGE_SHOW_UNLABELED_REGIONS',
     CHANGE_FRAME_STEP = 'CHANGE_FRAME_STEP',
     CHANGE_FRAME_SPEED = 'CHANGE_FRAME_SPEED',
@@ -74,6 +75,15 @@ export function changeShowBitmap(showBitmap: boolean): AnyAction {
         type: SettingsActionTypes.CHANGE_SHOW_UNLABELED_REGIONS,
         payload: {
             showBitmap,
+        },
+    };
+}
+
+export function changeShowProjections(showProjections: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_SHAPES_SHOW_PROJECTIONS,
+        payload: {
+            showProjections,
         },
     };
 }
