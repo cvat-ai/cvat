@@ -247,10 +247,10 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
         setupFaces() {
             this.bot = this.polygon(this.cuboidModel.bot.points);
             this.top = this.polygon(this.cuboidModel.top.points);
-            this.face = this.polygon(this.cuboidModel.front.points);
             this.right = this.polygon(this.cuboidModel.right.points);
             this.dorsal = this.polygon(this.cuboidModel.dorsal.points);
             this.left = this.polygon(this.cuboidModel.left.points);
+            this.face = this.polygon(this.cuboidModel.front.points);
         },
 
         setupProjections() {
@@ -833,7 +833,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             } else if (a === 'stroke-width' && typeof v === "number") {
                 this._attr(a, v, n);
                 this.updateThickness();
-            } else if (a === 'data-z-order') {
+            } else if (a === 'data-z-order' && typeof v !== 'undefined') {
                 this._attr(a, v, n);
                 [this.face, this.left, this.dorsal, this.right, ...this.getEdges(), ...this.getGrabPoints()]
                     .forEach((el) => {if (el) el.attr(a, v, n)})
@@ -866,7 +866,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
         paintOrientationLines() {
             const fillColor = this.attr('fill');
             const strokeColor = this.attr('stroke');
-            const selectedColor = this.attr('face-stroke') || '#ff007f';
+            const selectedColor = this.attr('face-stroke') || '#b0bec5';
             this.frontTopEdge.stroke({ color: selectedColor });
             this.frontLeftEdge.stroke({ color: selectedColor });
             this.frontBotEdge.stroke({ color: selectedColor });
@@ -1002,10 +1002,10 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
             this.bot.plot(viewModel.bot.points);
             this.top.plot(viewModel.top.points);
-            this.face.plot(viewModel.front.points);
             this.right.plot(viewModel.right.points);
             this.dorsal.plot(viewModel.dorsal.points);
             this.left.plot(viewModel.left.points);
+            this.face.plot(viewModel.front.points);
         },
 
         updateEdges() {
