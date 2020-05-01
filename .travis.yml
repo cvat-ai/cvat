@@ -10,7 +10,7 @@ services:
 
 env:
   - CONTAINER_COVERAGE_DATA_DIR="/coverage_data"
-  - HOST_COVERAGE_DATA_DIR="${TRAVIS_BUILD_DIR}/coverage_data"
+    HOST_COVERAGE_DATA_DIR="${TRAVIS_BUILD_DIR}/coverage_data"
 
 install:
   - gem install coveralls-lcov
