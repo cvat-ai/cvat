@@ -5,18 +5,23 @@ language: python
 python:
   - "3.5"
 
-install:
-  - pip install codecov
-
 services:
   - docker
 
+env:
+  - CONTAINER_COVERAGE_DATA_DIR="/coverage_data"
+  - HOST_COVERAGE_DATA_DIR="${TRAVIS_BUILD_DIR}/coverage_data"
+
+install:
+  - gem install coveralls-lcov
+
 before_script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml build
+  - mkdir -p ${HOST_COVERAGE_DATA_DIR}
 
 script:
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && coverage run -a --source cvat/apps/ manage.py test --pattern="_tests.py" cvat/apps/dataset_manager'
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && npm run coveralls'
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && coverage run -a --source cvat/apps/ manage.py test --pattern="_tests.py" cvat/apps/dataset_manager && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR}'
 
 after_success:
-  - codecov
+  - coveralls-lcov lcov.info

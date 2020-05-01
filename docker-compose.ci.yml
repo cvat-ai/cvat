@@ -15,3 +15,5 @@ services:
       TRAVIS_JOB_ID:
       TRAVIS_BRANCH:
       TRAVIS_PULL_REQUEST:
+    volumes:
+      - ${HOST_COVERAGE_DATA_DIR}:${CONTAINER_COVERAGE_DATA_DIR}
