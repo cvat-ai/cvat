@@ -77,13 +77,73 @@ class AnnotationIR:
         if serializer.is_valid(raise_exception=True):
             return serializer.data
 
+    @staticmethod
+    def _is_shape_inside(shape, start, stop):
+        return start <= int(shape['frame']) <= stop
+
+    @staticmethod
+    def _is_track_inside(track, start, stop):
+        # a <= b
+        def has_overlap(a, b):
+            return 0 <= min(b, stop) - max(a, start)
+
+        prev_shape = None
+        for shape in track['shapes']:
+            if prev_shape and not prev_shape['outside'] and \
+                has_overlap(prev_shape['frame'], shape['frame']):
+                    return True
+            prev_shape = shape
+
+        if not prev_shape['outside'] and prev_shape['frame'] <= stop:
+            return True
+
+        return False
+
+    @staticmethod
+    def _slice_track(track_, start, stop):
+        def filter_track_shapes(shapes):
+            shapes = [s for s in shapes if AnnotationIR._is_shape_inside(s, start, stop)]
+            drop_count = 0
+            for s in shapes:
+                if s['outside']:
+                    drop_count += 1
+                else:
+                    break
+            # Need to leave the last shape if all shapes are outside
+            if drop_count == len(shapes):
+                drop_count -= 1
+
+            return shapes[drop_count:]
+
+        track = copy.deepcopy(track_)
+        segment_shapes = filter_track_shapes(track['shapes'])
+
+        if len(segment_shapes) < len(track['shapes']):
+            interpolated_shapes = TrackManager.get_interpolated_shapes(track, start, stop)
+            scoped_shapes = filter_track_shapes(interpolated_shapes)
+
+            if scoped_shapes:
+                if not scoped_shapes[0]['keyframe']:
+                    segment_shapes.insert(0, scoped_shapes[0])
+                if not scoped_shapes[-1]['keyframe']:
+                    segment_shapes.append(scoped_shapes[-1])
+
+            # Should delete 'interpolation_shapes' and 'keyframe' keys because
+            # Track and TrackedShape models don't expect these fields
+            del track['interpolated_shapes']
+            for shape in segment_shapes:
+                del shape['keyframe']
+
+        track['shapes'] = segment_shapes
+        track['frame'] = track['shapes'][0]['frame']
+        return track
+
     #makes a data copy from specified frame interval
     def slice(self, start, stop):
-        is_frame_inside = lambda x: (start <= int(x['frame']) <= stop)
         splitted_data = AnnotationIR()
-        splitted_data.tags = copy.deepcopy(list(filter(is_frame_inside, self.tags)))
-        splitted_data.shapes = copy.deepcopy(list(filter(is_frame_inside, self.shapes)))
-        splitted_data.tracks = copy.deepcopy(list(filter(lambda y: len(list(filter(is_frame_inside, y['shapes']))), self.tracks)))
+        splitted_data.tags = [copy.deepcopy(t) for t in self.tags if self._is_shape_inside(t, start, stop)]
+        splitted_data.shapes = [copy.deepcopy(s) for s in self.shapes if self._is_shape_inside(s, start, stop)]
+        splitted_data.tracks = [self._slice_track(t, start, stop) for t in self.tracks if self._is_track_inside(t, start, stop)]
 
         return splitted_data
 

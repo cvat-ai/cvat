@@ -25,7 +25,7 @@ describe('Feature: get annotations', () => {
         const task = (await window.cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
         expect(Array.isArray(annotations)).toBeTruthy();
-        expect(annotations).toHaveLength(11);
+        expect(annotations).toHaveLength(12);
         for (const state of annotations) {
             expect(state).toBeInstanceOf(window.cvat.classes.ObjectState);
         }
@@ -692,7 +692,7 @@ describe('Feature: get statistics', () => {
         await task.annotations.clear(true);
         const statistics = await task.annotations.statistics();
         expect(statistics).toBeInstanceOf(window.cvat.classes.Statistics);
-        expect(statistics.total.total).toBe(29);
+        expect(statistics.total.total).toBe(30);
     });
 
     test('get statistics from a job', async () => {
@@ -719,6 +719,9 @@ describe('Feature: select object', () => {
         result = await task.annotations.select(annotations, 613, 811);
         expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.POLYGON);
         expect(result.state.points.length).toBe(94);
+        result = await task.annotations.select(annotations, 600, 900);
+        expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.CUBOID);
+        expect(result.state.points.length).toBe(16);
     });
 
     test('select object in a job', async () => {
@@ -733,6 +736,9 @@ describe('Feature: select object', () => {
         result = await job.annotations.select(annotations, 1490, 237);
         expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.POLYGON);
         expect(result.state.points.length).toBe(94);
+        result = await job.annotations.select(annotations, 600, 900);
+        expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.CUBOID);
+        expect(result.state.points.length).toBe(16);
     });
 
     test('trying to select from not object states', async () => {

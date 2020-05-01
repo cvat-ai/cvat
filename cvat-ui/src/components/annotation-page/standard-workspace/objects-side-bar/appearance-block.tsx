@@ -18,6 +18,7 @@ interface Props {
     selectedOpacity: number;
     blackBorders: boolean;
     showBitmap: boolean;
+    showProjections: boolean;
 
     collapseAppearance(): void;
     changeShapesColorBy(event: RadioChangeEvent): void;
@@ -25,6 +26,7 @@ interface Props {
     changeSelectedShapesOpacity(event: SliderValue): void;
     changeShapesBlackBorders(event: CheckboxChangeEvent): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
+    changeShowProjections(event: CheckboxChangeEvent): void;
 }
 
 function AppearanceBlock(props: Props): JSX.Element {
@@ -35,12 +37,14 @@ function AppearanceBlock(props: Props): JSX.Element {
         selectedOpacity,
         blackBorders,
         showBitmap,
+        showProjections,
         collapseAppearance,
         changeShapesColorBy,
         changeShapesOpacity,
         changeSelectedShapesOpacity,
         changeShapesBlackBorders,
         changeShowBitmap,
+        changeShowProjections,
     } = props;
 
     return (
@@ -87,6 +91,12 @@ function AppearanceBlock(props: Props): JSX.Element {
                         checked={showBitmap}
                     >
                         Show bitmap
+                    </Checkbox>
+                    <Checkbox
+                        onChange={changeShowProjections}
+                        checked={showProjections}
+                    >
+                        Show projections
                     </Checkbox>
                 </div>
             </Collapse.Panel>

@@ -44,6 +44,7 @@ interface Props {
     selectedOpacity: number;
     blackBorders: boolean;
     showBitmap: boolean;
+    showProjections: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -145,15 +146,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             frameFetching,
             showObjectsTextAlways,
             automaticBordering,
+            showProjections,
         } = this.props;
 
         if (prevProps.showObjectsTextAlways !== showObjectsTextAlways
             || prevProps.automaticBordering !== automaticBordering
+            || prevProps.showProjections !== showProjections
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
                 displayAllText: showObjectsTextAlways,
                 autoborders: automaticBordering,
+                showProjections,
             });
         }
 
@@ -540,7 +544,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         } = this.props;
 
         const [state] = annotations.filter((el: any) => (el.clientID === activatedStateID));
-        if (state.shapeType !== ShapeType.RECTANGLE) {
+        if (![ShapeType.CUBOID, ShapeType.RECTANGLE].includes(state.shapeType)) {
             onUpdateContextMenu(activatedStateID !== null, e.detail.mouseEvent.clientX,
                 e.detail.mouseEvent.clientY, ContextMenuType.CANVAS_SHAPE_POINT, e.detail.pointID);
         }

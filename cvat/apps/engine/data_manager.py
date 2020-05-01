@@ -290,6 +290,15 @@ class TrackManager(ObjectManager):
             shape["frame"] = end_frame
             shape["outside"] = True
             obj["shapes"].append(shape)
+            # Need to update cached interpolated shapes
+            # because key shapes were changed
+            if obj.get("interpolated_shapes"):
+                last_interpolated_shape = obj["interpolated_shapes"][-1]
+                for frame in range(last_interpolated_shape["frame"] + 1, end_frame):
+                    last_interpolated_shape = copy.deepcopy(last_interpolated_shape)
+                    last_interpolated_shape["frame"] = frame
+                    obj["interpolated_shapes"].append(last_interpolated_shape)
+                obj["interpolated_shapes"].append(shape)
 
     @staticmethod
     def normalize_shape(shape):

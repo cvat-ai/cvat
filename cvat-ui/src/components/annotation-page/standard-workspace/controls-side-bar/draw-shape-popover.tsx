@@ -48,7 +48,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
     } = props;
 
     const trackDisabled = shapeType === ShapeType.POLYGON || shapeType === ShapeType.POLYLINE
-        || (shapeType === ShapeType.POINTS && numberOfPoints !== 1);
+        || shapeType === ShapeType.CUBOID || (shapeType === ShapeType.POINTS && numberOfPoints !== 1);
 
     return (
         <div className='cvat-draw-shape-popover-content'>
@@ -85,7 +85,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                 shapeType === ShapeType.POLYGON && <DEXTRPlugin />
             }
             {
-                shapeType === ShapeType.RECTANGLE ? (
+                shapeType === ShapeType.RECTANGLE && (
                     <>
                         <Row>
                             <Col>
@@ -115,7 +115,10 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                             </Col>
                         </Row>
                     </>
-                ) : (
+                )
+            }
+            {
+                shapeType !== ShapeType.RECTANGLE && shapeType !== ShapeType.CUBOID && (
                     <Row type='flex' justify='space-around' align='middle'>
                         <Col span={14}>
                             <Text className='cvat-text-color'> Number of points: </Text>
