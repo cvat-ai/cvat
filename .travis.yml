@@ -14,6 +14,7 @@ env:
 
 install:
   - gem install coveralls-lcov
+  - pip install coveralls
 
 before_script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml build
@@ -24,4 +25,4 @@ script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR}'
 
 after_success:
-  - coveralls-lcov lcov.info
+  - coveralls-lcov -v -n lcov.info > coverage.json && coveralls --merge=coverage.json
