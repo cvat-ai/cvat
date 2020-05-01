@@ -5,6 +5,9 @@ language: python
 python:
   - "3.5"
 
+install:
+  - pip install codecov
+
 services:
   - docker
 
@@ -12,7 +15,8 @@ before_script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml build
 
 script:
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'python3 manage.py test cvat/apps utils/cli'
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'python3 manage.py test --pattern="_tests.py" cvat/apps/dataset_manager'
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'python3 manage.py test datumaro/'
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && coverage run -a --source cvat/apps/ manage.py test --pattern="_tests.py" cvat/apps/dataset_manager'
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && npm run coveralls'
+
+after_success:
+  - codecov
