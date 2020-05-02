@@ -18,7 +18,7 @@ install:
 
 before_script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml build
-  - mkdir -p ${HOST_COVERAGE_DATA_DIR}
+  - mkdir -m a=rwx -p ${HOST_COVERAGE_DATA_DIR}
 
 script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && coverage run -a --source cvat/apps/ manage.py test --pattern="_tests.py" cvat/apps/dataset_manager && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
