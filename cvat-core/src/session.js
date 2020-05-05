@@ -280,7 +280,7 @@
                 * @method put
                 * @memberof Session.annotations
                 * @param {module:API.cvat.classes.ObjectState[]} data
-                * @returns {number[]} indexes of added objects
+                * @returns {number[]} identificators of added objects
                 * array of objects on the specific frame
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.DataError}
