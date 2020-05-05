@@ -6,9 +6,9 @@ This is a client UI for Computer Vision Annotation Tool based on React, Redux an
 ## Versioning
 If you make changes in this package, please do following:
 
-- After minor changes (typos, backward compatible bug fixes do: ``npm version patch``
-- After changing API (backward compatible new features) do: ``npm version minor``
-- After changing API (changes that break backward compatibility) do: ``npm version major``
+- After not important changes (typos, bug fixes, refactoring) do: ``npm version patch``
+- After adding new features do: ``npm version minor``
+- After significant UI redesign do: ``npm version major``
 
 Important: If you have changed versions for ``cvat-core``, ``cvat-canvas``, ``cvat-data``, 
 you also need to do ``npm install`` to update ``package-lock.json``
