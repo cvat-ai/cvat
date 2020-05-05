@@ -88,8 +88,10 @@ describe('Feature: put annotations', () => {
             zOrder: 0,
         });
 
-        await task.annotations.put([state]);
+        const indexes = await task.annotations.put([state]);
         annotations = await task.annotations.get(1);
+        expect(indexes).toBeInstanceOf(Array);
+        expect(indexes).toHaveLength(1);
         expect(annotations).toHaveLength(length + 1);
     });
 
@@ -108,7 +110,9 @@ describe('Feature: put annotations', () => {
             zOrder: 0,
         });
 
-        await job.annotations.put([state]);
+        const indexes = await job.annotations.put([state]);
+        expect(indexes).toBeInstanceOf(Array);
+        expect(indexes).toHaveLength(1);
         annotations = await job.annotations.get(5);
         expect(annotations).toHaveLength(length + 1);
     });
@@ -128,7 +132,9 @@ describe('Feature: put annotations', () => {
             zOrder: 0,
         });
 
-        await task.annotations.put([state]);
+        const indexes = await task.annotations.put([state]);
+        expect(indexes).toBeInstanceOf(Array);
+        expect(indexes).toHaveLength(1);
         annotations = await task.annotations.get(1);
         expect(annotations).toHaveLength(length + 1);
     });
@@ -148,7 +154,9 @@ describe('Feature: put annotations', () => {
             zOrder: 0,
         });
 
-        await job.annotations.put([state]);
+        const indexes = await job.annotations.put([state]);
+        expect(indexes).toBeInstanceOf(Array);
+        expect(indexes).toHaveLength(1);
         annotations = await job.annotations.get(5);
         expect(annotations).toHaveLength(length + 1);
     });

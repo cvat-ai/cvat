@@ -806,6 +806,8 @@
                     object.removed = false;
                 });
             }, importedArray.map((object) => object.clientID), objectStates[0].frame);
+
+            return importedArray.map((value) => value.clientID);
         }
 
         select(objectStates, x, y) {
