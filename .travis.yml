@@ -25,4 +25,7 @@ script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR}'
 
 after_success:
-  - coveralls-lcov -v -n lcov.info > coverage.json && coveralls --merge=coverage.json
+  # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
+  - mv ${HOST_COVERAGE_DATA_DIR}/* .
+  - coveralls-lcov -v -n lcov.info > coverage.json
+  - coveralls --merge=coverage.json
