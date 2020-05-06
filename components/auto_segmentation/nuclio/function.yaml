@@ -1,38 +1,32 @@
 metadata:
-  name: dextr
+  name: tf-maskrcnn
   namespace: cvat
 
 spec:
-  description: Deep Extreme Cut
+  description: TensorFlow MASK RCNN
   runtime: "python:3.6"
   handler: main:handler
   eventTimeout: 30s
   env:
-    - name: NUCLIO_PYTHON_EXE_PATH
-      value: /opt/nuclio/python3
+    - name: MASK_RCNN_PATH
+      value: /opt/nuclio/Mask_RCNN
 
   build:
-    image: cvat/dextr
-    baseImage: openvino/ubuntu18_runtime:2020.2
+    image: cvat/tf-maskrcnn
+    baseImage: tensorflow/tensorflow:2.1.0-py3
 
     directives:
-      preCopy:
-      - kind: USER
-        value: root
+      postCopy:
       - kind: WORKDIR
         value: /opt/nuclio
       - kind: RUN
-        value: ln -s /usr/bin/pip3 /usr/bin/pip
-
-      postCopy:
+        value: apt update && apt install --no-install-recommends -y git curl
       - kind: RUN
-        value: curl -O https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip
+        value: git clone https://github.com/matterport/Mask_RCNN.git
       - kind: RUN
-        value: unzip dextr_model_v1.zip
+        value: curl -L https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o Mask_RCNN/mask_rcnn_coco.h5
       - kind: RUN
-        value: pip3 install -r requirements.txt
-      - kind: USER
-        value: openvino
+        value: pip3 install -r Mask_RCNN/requirements.txt
 
   triggers:
     myHttpTrigger:
