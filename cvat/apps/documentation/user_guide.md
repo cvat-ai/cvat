@@ -614,6 +614,7 @@ Tracks are created in ``Track mode``
 
 This is the main field in which drawing and editing objects takes place. 
 In addition the workspace also has the following functions: 
+
 - Right-clicking on an object calls up the ``Object card`` - this is an element containing 
   the necessary controls for changing the label and attributes of the object, as well as the action menu.
 
