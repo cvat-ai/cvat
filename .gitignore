@@ -19,6 +19,7 @@ docker-compose.override.yml
 __pycache__
 *.pyc
 ._*
+.coverage
 
 # Ignore development npm files
 node_modules
