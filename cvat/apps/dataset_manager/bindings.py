@@ -5,6 +5,7 @@
 
 import os.path as osp
 from collections import OrderedDict, namedtuple
+from pathlib import Path
 
 from django.utils import timezone
 
@@ -113,8 +114,7 @@ class TaskData:
             } for db_image in self._db_task.data.images.all()}
 
         self._frame_mapping = {
-            self._get_filename(info["path"]): frame
-            for frame, info in self._frame_info.items()
+            info["path"]: frame for frame, info in self._frame_info.items()
         }
 
     def _init_meta(self):
@@ -390,18 +390,24 @@ class TaskData:
     def db_task(self):
         return self._db_task
 
-    @staticmethod
-    def _get_filename(path):
-        return osp.splitext(osp.basename(path))[0]
+    def match_frame(self, path, root_hint=None):
+        match = self._frame_mapping.get(path)
+        if not match and root_hint and not path.startswith(root_hint):
+            path = osp.join(root_hint, path)
+            match = self._frame_mapping.get(path)
+        return match
 
-    def match_frame(self, filename):
-        # try to match by filename
-        _filename = self._get_filename(filename)
-        if _filename in self._frame_mapping:
-            return self._frame_mapping[_filename]
+    def match_frame_fuzzy(self, path):
+        # Preconditions:
+        # - The input dataset is full, i.e. all items present. Partial dataset
+        # matching can't be correct for all input cases.
+        # - path is the longest path of input dataset in terms of path parts
 
-        raise Exception(
-            "Cannot match filename or determine frame number for {} filename".format(filename))
+        path = Path(path).parts
+        for p, v in self._frame_mapping.items():
+            if Path(p).parts[-len(path):] == path: # endswith() for paths
+                return v
+        return None
 
 class CvatTaskDataExtractor(datumaro.SourceExtractor):
     def __init__(self, task_data, include_images=False):

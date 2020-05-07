@@ -2,34 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os.path as osp
-from pathlib import Path
-
 # from cvat.apps.dataset_manager.bindings import TaskData
 
 from unittest import TestCase
-
-
-def match_frame(dataset_paths, path, root_hint=None):
-    match = dataset_paths.get(path)
-    if not match and root_hint and not path.startswith(root_hint):
-        path = osp.join(root_hint, path)
-        match = dataset_paths.get(path)
-    return match
-
-def match_frame_fuzzy(dataset_paths, path):
-    # Preconditions:
-    # - The input dataset is full, i.e. all items present. Partial dataset
-    # matching can't be correct for all input cases.
-    # - path is the longest path of input dataset in terms of path parts
-
-    path = Path(path).parts
-    for p, v in dataset_paths.items():
-        if Path(p).parts[-len(path):] == path: # endswith() for paths
-            return v
-    return None
-
-
 
 class TaskDataTest(TestCase):
     def test_frame_matching(self):
