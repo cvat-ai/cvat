@@ -383,7 +383,7 @@ The tool consists of:
 
 ### Types of shapes (basics)
 
-There are four shapes which you can annotate your images with:
+There are five shapes which you can annotate your images with:
 - ``Rectangle`` or ``Bounding box``
 - ``Polygon``
 - ``Polyline``
