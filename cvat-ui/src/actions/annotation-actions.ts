@@ -752,7 +752,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
 export function undoActionAsync(sessionInstance: any, frame: number):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>, ): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const state = getStore().getState();
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
