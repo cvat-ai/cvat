@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - Unreleased
 ### Added
--
+- cvat-ui: added cookie policy drawer for login page (<https://github.com/opencv/cvat/pull/1511>)
 
 ### Changed
 - cvat-core: session.annotations.put() now returns identificators of added objects (<https://github.com/opencv/cvat/pull/1493>)
