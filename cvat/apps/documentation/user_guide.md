@@ -645,41 +645,34 @@ Applying ``split`` into an interpolated track divides it into two separate track
 ---
 ### Settings
 
-Press ``F2`` to access settings menu.
+To open the settings open the user menu in the header and select the settings item or press ``F3``.
 
 ![](static/documentation/images/image067.jpg)
 
-There is ``Player Settings`` which adjusts ``Workspace`` and ``Other Settings``.
+``Settings`` have two tabs:
 
-In ``Player Settings`` you can:
--   Control step of ``C`` and ``V`` shortcuts
--   Control speed of ``Space``/``Play`` button
--   Show every image in full or zoomed out like previous
-    (it is enabled by default for interpolation mode and disabled for annotation mode)
--   Enable ``Grid`` when you don't need small objects. ``Grid`` can have
-    different opacity, color and cells' size — use ``F2`` to configure settings.
+In tab ``Player`` you can:
+-   Control step of ``C`` and ``V`` shortcuts.
+-   Control speed of ``Space``/``Play`` button.
+-   Show ``Grid``, change grid size, choose color and transparency:
 
-    ![](static/documentation/images/image068.jpg)
+    ![](static/documentation/images/image068_mapillary_vistas.jpg)
 
--   Adjust ``Brightness``/``Contrast``/``Saturation`` of too exposing or too
-    dark images using ``F2`` — color settings (changes displaying and not the
+-   Show every image in full size or zoomed out like previous
+    (it is enabled by default for interpolation mode and disabled for annotation mode).
+- ``Rotate all images``  checkbox — switch the rotation of all frames /an individual frame.
+-   Adjust ``Brightness``/``Contrast``/``Saturation`` of too exposed or too
+    dark images using ``F3`` — color settings (changes displaying settings and not the
     image itself).
 
 Shortcuts:
--   ``Shift+B``/``Alt+B`` for brightness
--   ``Shift+C``/``Alt+C`` for contrast
--   ``Shift+S``/``Alt+S`` for saturation
--   ``F2`` —> ``Reset Color Settings`` to default values
+-   ``Shift+B+=``/``Shift+B+-`` for brightness.
+-   ``Shift+C+=``/``Shift+C+-`` for contrast.
+-   ``Shift+S+=``/``Shift+S+-`` for saturation.
 
-    ![](static/documentation/images/image069.jpg)
+    ![](static/documentation/images/image164_mapillary_vistas.jpg)
 
-``Other Settings`` contains:
-- ``Show All Interpolation Tracks`` checkbox — shows hidden object on the
-  side panel for every interpolated object (turned off by default)
-- ``AAM Zoom Margin`` slider — defines margins for shape in attribute annotation mode
-- ``Enable AutoSaving`` checkbox — turned off by default
-- ``AutoSaving Interval (min)`` input box — 15 minutes by default
-- ``Rotate all images``  checkbox — switch the rotation of all frames / individual frame
+-   ``Reset Color Settings`` to default values.
 
 ---
 ### Bottom Panel
