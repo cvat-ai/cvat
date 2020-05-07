@@ -699,38 +699,35 @@ Go to the next/previous frame with a predefined step. Shortcuts:
 ![](static/documentation/images/image037.jpg)
 
 ---
-Go to the next/previous frame with step equals to 1. Shortcuts: ``D`` — previous, ``F`` — next.
 
-![](static/documentation/images/image040.jpg)
 ### Top Panel
 
 ![](static/documentation/images/image035.jpg)
 
 ---
-**Main functions**
 
-**Menu** button
+#### Menu button
 
-It is the main menu of the annotation tool. It can be used to download, upload and remove annotations. 
+It is the main menu of the annotation tool. It can be used to download, upload and remove annotations.
 
 ![](static/documentation/images/image051.jpg)
 
 Button assignment:
 
 - ``Dump Annotations`` — downloads annotations from a task.
-- ``Upload Annotations`` — uploads annotations from a task.
-- ``Remove Annotations`` — removes annotations from current job.
-- ``Open the task`` — opens the task page.
-- ``Run ReID merge`` —  automatic merge of shapes or tracks. 
-  It is used to combine individual objects - created by automatic annotation in a single track. 
+- ``Upload Annotations`` — uploads annotations into a task.
+- ``Remove Annotations`` — removes annotations from the current job.
+- ``Open the task`` — opens a page with details about the task.
+- ``Run ReID merge`` —  automatic merge of shapes or tracks.
+  It is used to combine individual objects - created by automatic annotation in a single track.
   For more information click [here](cvat/apps/reid/README.md).
 
-**Save Work** — saves annotations for the current job. The button has an
-  indication of the saving process.
+#### Save Work
+Saves annotations for the current job. The button has an indication of the saving process.
 
   ![](static/documentation/images/image141.jpg)
 
-**Undo-redo** buttons
+#### Undo-redo buttons
 
   Use buttons to undo actions or redo them.
 
@@ -738,7 +735,7 @@ Button assignment:
 
 ---
 
-**Player**
+#### Player
 
   Go to the first /the latest frames.
 
@@ -754,7 +751,7 @@ Go to the next/previous frame (the step is 1 frame). Shortcuts: ``D`` — previo
 
   ![](static/documentation/images/image040.jpg)
 
-Play the sequence of frames or the set of images. 
+Play the sequence of frames or the set of images.
 Shortcut: ``Space`` (change at ``Account Menu`` —> ``Settings`` —> ``Player Speed``).
 
   ![](static/documentation/images/image041.jpg)
@@ -764,13 +761,14 @@ Go to a specific frame. Press ``~`` to focus on the element.
   ![](static/documentation/images/image060.jpg)
 
 ---
-**UI Switches**
 
-**Fullscreen Player** — the fullscreen player mode. The keyboard shortcut is ``F11``.
+#### Fullscreen Player
+The fullscreen player mode. The keyboard shortcut is ``F11``.
 
   ![](static/documentation/images/image143.jpg)
 
-**Info** — open the job info.
+#### Info
+Open the job info.
 
   ![](static/documentation/images/image144_DETRAC.jpg)
 
@@ -786,10 +784,11 @@ _Overview_:
 
 _Annotations statistics_:
 
-  This is a table number of created shapes, sorted by labels (e.g. vehicle, person) 
+  This is a table number of created shapes, sorted by labels (e.g. vehicle, person)
   and type of annotation (shape, track). As well as the number of manual and interpolated frames.
 
-**UI switcher** — switching between user interface modes.
+#### UI switcher
+Switching between user interface modes.
 
   ![](static/documentation/images/image145.jpg)
 
