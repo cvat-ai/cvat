@@ -67,7 +67,8 @@ function blurAllElements() {
 
 function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationSaverModel,
     uploadAnnotationButton, format) {
-    $('#annotationFileSelector').attr('accept', `.${format.format}`);
+    $('#annotationFileSelector').attr('accept',
+        format.ext.split(',').map(x => '.' + x.trimStart()).join(', '));
     $('#annotationFileSelector').one('change', async (changedFileEvent) => {
         const file = changedFileEvent.target.files['0'];
         changedFileEvent.target.value = '';
@@ -76,7 +77,7 @@ function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationS
         const annotationData = new FormData();
         annotationData.append('annotation_file', file);
         try {
-            await uploadJobAnnotationRequest(jobId, annotationData, format.display_name);
+            await uploadJobAnnotationRequest(jobId, annotationData, format.name);
             historyModel.empty();
             shapeCollectionModel.empty();
             const data = await $.get(`/api/v1/jobs/${jobId}/annotations`);
