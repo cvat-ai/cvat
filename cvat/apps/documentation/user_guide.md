@@ -675,26 +675,27 @@ Shortcuts:
 -   ``Reset Color Settings`` to default values.
 
 ---
-### Bottom Panel
 
-![](static/documentation/images/image035.jpg)
+In tab ``Workspace`` you can:
+
+![](static/documentation/images/image155.jpg)
+
+- ``Enable Autosaving`` checkbox — turned off by default.
+- ``Autosaving Interval (min)`` input box — 15 minutes by default.
+- ``Show All Interpolation Tracks`` checkbox — shows hidden objects on the
+  side panel for every interpolated object (turned off by default).
+- ``Always show object details`` - show text for an object on the canvas not only when the object is activated:
+
+   ![](static/documentation/images/image152_DETRAC.jpg)
+
+- ``Automatic bordering`` - enable automatic bordering for polygons and polylines during drawing/editing. 
+  For more information To find out more, go to the section [annotation with polygons](#Annotation-with-polygons).
+- ``Attribute annotation mode (AAM) Zoom Margin`` input box — defines margins (in px) 
+  for shape in the attribute annotation mode.
+- Press `` Go back`` or ``F3`` to return to the annotation.
 
 ---
-Go to the first and latest frames.
 
-![](static/documentation/images/image036.jpg)
-
----
-Go to the next/previous frame with a predefined step. Shortcuts:
-``V`` — step backward, ``C`` — step forward. By default the step is ``10``
-(change at ``Open Menu`` —> ``Settings`` —> ``Player Step``).
-
-![](static/documentation/images/image037.jpg)
-
----
-Go to the next/previous frame with step equals to 1. Shortcuts: ``D`` — previous, ``F`` — next.
-
-![](static/documentation/images/image040.jpg)
 
 ---
 Play the sequence of frames or the set of images. Shortcut: ``Space`` (change at ``Open Menu`` —> ``Settings`` —> ``Player Speed``).
