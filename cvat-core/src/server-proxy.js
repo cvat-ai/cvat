@@ -185,7 +185,7 @@
                 return response.data;
             }
 
-            async function register(username, firstName, lastName, email, password1, password2, userAgreements) {
+            async function register(username, firstName, lastName, email, password1, password2, confirmations) {
                 let response = null;
                 try {
                     const data = JSON.stringify({
@@ -195,7 +195,7 @@
                         email,
                         password1,
                         password2,
-                        user_agreements: userAgreements,
+                        confirmations,
                     });
                     response = await Axios.post(`${config.backendAPI}/auth/register`, data, {
                         proxy: config.proxy,

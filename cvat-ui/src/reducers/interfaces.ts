@@ -105,8 +105,15 @@ export interface AboutState {
     initialized: boolean;
 }
 
+export interface UserAgreement {
+    name: string;
+    displayText: string;
+    url: string;
+    required: boolean;
+}
+
 export interface UserAgreementsState {
-    userAgreements: any[];
+    list: UserAgreement[];
     fetching: boolean;
     initialized: boolean;
 }

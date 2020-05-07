@@ -7,26 +7,20 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
+from rest_framework.renderers import TemplateHTMLRenderer
 from drf_yasg.utils import swagger_auto_schema
 
 from cvat.apps.restrictions.serializers import UserAgreementSerializer
 
 class RestrictionsViewSet(viewsets.ViewSet):
     serializer_class = None
-    permission_classes_by_action = {
-        'user_agreements': [AllowAny],
-    }
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.
     def get_serializer(self, *args, **kwargs):
         pass
-
-    def get_permissions(self):
-        try:
-            return [permission() for permission in self.permission_classes_by_action[self.action]]
-        except KeyError:
-            return [permission() for permission in self.permission_classes]
 
     @staticmethod
     @swagger_auto_schema(
@@ -39,3 +33,8 @@ class RestrictionsViewSet(viewsets.ViewSet):
         serializer = UserAgreementSerializer(data=user_agreements, many=True)
         serializer.is_valid(raise_exception=True)
         return Response(data=serializer.data)
+
+    @staticmethod
+    @action(detail=False, methods=['GET'], renderer_classes=(TemplateHTMLRenderer,))
+    def terms_of_use(request):
+        return Response(template_name='restrictions/terms_of_use.html')

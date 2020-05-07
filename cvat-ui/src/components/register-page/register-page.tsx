@@ -9,15 +9,16 @@ import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
-import RegisterForm, { RegisterData, UserAgreement } from './register-form';
+import { UserAgreement } from 'reducers/interfaces'
+import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 
 interface RegisterPageComponentProps {
     fetching: boolean;
-    userAgreements: any[];
+    userAgreements: UserAgreement[];
     onRegister: (username: string, firstName: string,
         lastName: string, email: string,
         password1: string, password2: string,
-        userAgreements: UserAgreement[]) => void;
+        confirmations: UserConfirmation[]) => void;
 }
 
 function RegisterPageComponent(
@@ -52,7 +53,7 @@ function RegisterPageComponent(
                             registerData.email,
                             registerData.password1,
                             registerData.password2,
-                            registerData.userAgreements,
+                            registerData.confirmations,
                         );
                     }}
                 />

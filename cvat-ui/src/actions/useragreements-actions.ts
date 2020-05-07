@@ -4,6 +4,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import getCore from 'cvat-core-wrapper';
+import { UserAgreement } from 'reducers/interfaces'
 
 const core = getCore();
 
@@ -15,7 +16,7 @@ export enum UserAgreementsActionTypes {
 
 const userAgreementsActions = {
     getUserAgreements: () => createAction(UserAgreementsActionTypes.GET_USER_AGREEMENTS),
-    getUserAgreementsSuccess: (userAgreements: any[]) =>
+    getUserAgreementsSuccess: (userAgreements: UserAgreement[]) =>
         createAction(UserAgreementsActionTypes.GET_USER_AGREEMENTS_SUCCESS, userAgreements),
     getUserAgreementsFailed: (error: any) =>
         createAction(UserAgreementsActionTypes.GET_USER_AGREEMENTS_FAILED, { error }),

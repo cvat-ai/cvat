@@ -15,21 +15,29 @@ class UserAgreementSerializer(serializers.Serializer):
     required = serializers.BooleanField(default=False)
     value = serializers.BooleanField(default=False)
 
+    # pylint: disable=no-self-use
+    def to_representation(self, instance):
+        instance_ = instance.copy()
+        instance_['displayText'] = instance_.pop('display_text')
+        return instance_
+
 class RestrictedRegisterSerializer(RegisterSerializerEx):
-    user_agreements = UserAgreementSerializer(many=True, required=False)
+    confirmations = UserAgreementSerializer(many=True, required=False)
 
     def validate(self, data):
         validated_data = super().validate(data)
         server_user_agreements = settings.RESTRICTIONS['user_agreements']
         for server_agreement in server_user_agreements:
             if server_agreement['required']:
-                for user_agreement in validated_data['user_agreements']:
-                    if user_agreement['name'] == server_agreement['name'] \
-                        and not user_agreement['value']:
-                        raise serializers.ValidationError(
-                            'Agreement {} must be accepted'.format(server_agreement['display_text'])
-                        )
+                is_confirmed = False
+                for confirmation in validated_data['confirmations']:
+                    if confirmation['name'] == server_agreement['name'] \
+                        and confirmation['value']:
+                        is_confirmed = True
+
+                if not is_confirmed:
+                    raise serializers.ValidationError(
+                        'Agreement {} must be accepted'.format(server_agreement['name'])
+                    )
 
         return validated_data
-
-

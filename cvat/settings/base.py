@@ -99,6 +99,7 @@ INSTALLED_APPS = [
     'cvat.apps.git',
     'cvat.apps.dataset_manager',
     'cvat.apps.annotation',
+    'cvat.apps.restrictions',
     'django_rq',
     'compressor',
     'cacheops',
@@ -421,4 +422,10 @@ sys.path.append(DATUMARO_PATH)
 
 RESTRICTIONS = {
     "user_agreements": [],
+
+    # this setting limits the number of tasks for the user
+    "task_limit": None,
+
+    # this settings reduse task visibility to owner and assignee only
+    "reduce_task_visibility": False,
 }

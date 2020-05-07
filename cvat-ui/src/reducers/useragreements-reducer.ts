@@ -8,7 +8,7 @@ import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { UserAgreementsState } from './interfaces';
 
 const defaultState: UserAgreementsState = {
-    userAgreements: [],
+    list: [],
     fetching: false,
     initialized: false,
 };
@@ -30,7 +30,7 @@ export default function (
                 ...state,
                 fetching: false,
                 initialized: true,
-                userAgreements: action.payload,
+                list: action.payload,
             };
         case UserAgreementsActionTypes.GET_USER_AGREEMENTS_FAILED:
             return {

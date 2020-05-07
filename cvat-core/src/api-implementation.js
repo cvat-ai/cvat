@@ -80,9 +80,9 @@
         };
 
         cvat.server.register.implementation = async (username, firstName, lastName,
-            email, password1, password2, userAgreements) => {
+            email, password1, password2, userConfirmations) => {
             await serverProxy.server.register(username, firstName, lastName, email,
-                password1, password2, userAgreements);
+                password1, password2, userConfirmations);
         };
 
         cvat.server.login.implementation = async (username, password) => {

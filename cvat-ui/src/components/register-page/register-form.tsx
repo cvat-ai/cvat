@@ -11,7 +11,9 @@ import Checkbox from 'antd/lib/checkbox';
 
 import patterns from 'utils/validation-patterns';
 
-export interface UserAgreement {
+import { UserAgreement } from 'reducers/interfaces'
+
+export interface UserConfirmation {
     name: string;
     value: boolean;
 }
@@ -23,12 +25,12 @@ export interface RegisterData {
     email: string;
     password1: string;
     password2: string;
-    userAgreements: UserAgreement[];
+    confirmations: UserConfirmation[];
 }
 
 type RegisterFormProps = {
     fetching: boolean;
-    userAgreements: any[],
+    userAgreements: UserAgreement[],
     onSubmit(registerData: RegisterData): void;
 } & FormComponentProps;
 
@@ -85,7 +87,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
             if (agreement.field === userAgreement.name
                 && userAgreement.required && !value) {
                 isValid = false;
-                callback(`You must accept the ${userAgreement.display_text}!`);
+                callback(`You must accept the ${userAgreement.displayText} to continue!`);
                 break;
             }
         }
@@ -104,11 +106,11 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
 
         form.validateFields((error, values): void => {
             if (!error) {
-                values.userAgreements = []
+                values.confirmations = []
                 
                 for (const userAgreement of userAgreements) {
                     
-                    values.userAgreements.push({
+                    values.confirmations.push({
                         name: userAgreement.name,
                         value: values[userAgreement.name]
                     });
@@ -258,19 +260,19 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
             for (const userAgreement of userAgreements) {
                 agreementsList.push(
                     <Form.Item key={userAgreement.name}>
-                        {form.getFieldDecorator(userAgreement.name as string, {
+                        {form.getFieldDecorator(userAgreement.name, {
                             initialValue: false,
                             valuePropName: 'checked',
                             rules: [{
                                 required: true,
-                                message: 'You must accept!',
+                                message: 'You must accept to continue!',
                             }, {
                                 validator: this.validateAgrement,
                             }]
                         })(
                             <Checkbox>
-                                I accept the <a rel='noopener noreferrer' target='_blank'
-                                     href={ userAgreement.url }>{ userAgreement.display_text }</a>
+                                I read and accept the <a rel='noopener noreferrer' target='_blank'
+                                     href={ userAgreement.url }>{ userAgreement.displayText }</a>
                             </Checkbox>
                         )}
                     </Form.Item>
