@@ -14,7 +14,7 @@
     - [Downloading annotations](#downloading-annotations)
     - [Task synchronization with a repository](#task-synchronization-with-a-repository)
     - [Vocabulary](#vocabulary)
-    - [Workspace — Context menu](#workspace--context-menu)
+    - [Workspace](#workspace)
     - [Settings](#settings)
     - [Bottom Panel](#bottom-panel)
     - [Side panel](#side-panel)
@@ -383,11 +383,12 @@ The tool consists of:
 
 ### Types of shapes (basics)
 
-There are four shapes which you can annotate your images with:
+There are five shapes which you can annotate your images with:
 - ``Rectangle`` or ``Bounding box``
 - ``Polygon``
 - ``Polyline``
 - ``Points``
+- ``Cuboid``
 - ``Tag``
 
 And there is how they all look like:
@@ -396,7 +397,7 @@ And there is how they all look like:
 
 ![](static/documentation/images/image009_mapillary_vistas.jpg "Polyline") ![](static/documentation/images/image010_Affectnet.jpg "Points")
 
-![](static/documentation/images/image135.jpg "Tag")
+![](static/documentation/images/image015_DETRAC.jpg "Cuboid") ![](static/documentation/images/image135.jpg "Tag") 
 
 ``Tag`` - has no shape in the workspace, but is displayed in objects sidebar.
 
@@ -609,38 +610,25 @@ Tracks are created in ``Track mode``
 - _Automatic_ which is created automatically without a person in the loop
 
 ---
-### Workspace — Context menu
+### Workspace
 
-Press the ``Right mouse button`` to see the context menu.
+This is the main field in which drawing and editing objects takes place. 
+In addition the workspace also has the following functions: 
+-   Right-clicking on an object calls up the ``Object card`` - this is an element containing 
+    the necessary controls for changing the label and attributes of the object, as well as the action menu.
 
-Next options are available clicking inside bounding box:
-- ``Copy Object URL`` — copying to the buffer address of an object on the frame
-in the task
-- ``Change Color`` — change color of active shape
-- ``Remove Shape`` — deleting the shape
-- ``Switch Occluded`` — attribute is used if an object is occluded by another
-object or isn't fully visible on the frame. Use the ``Q`` shortcut to set the
-property quickly.
-- ``Switch Lock`` — block editing the active shape
-- ``Enable Dragging`` — (only for polygons) allows to adjust polygons position
-- ``Split`` — allows to split an interpolated track into two separate tracks. This function is the opposite
-of the merge function.
+    ![](static/documentation/images/image138_mapillary_vistas.jpg)
 
-![](static/documentation/images/image089.jpg)
-![](static/documentation/images/image090.jpg)
-![](static/documentation/images/image103.jpg)
+-   Right-clicking a point deletes it.
 
-Clicking on the points of poly-shapes, ``Remove`` option is available.
+    ![](static/documentation/images/image139_mapillary_vistas.jpg)
 
-![](static/documentation/images/image092.jpg)
+-   ``Z-axis slider`` - Allows you to switch annotation layers hiding the upper layers 
+    (slider is enabled if several z layers are on a frame). 
+    This element has a button for adding a new layer. When pressed, a new layer is added and switched to it.
+    You can move objects in layers using the ``+`` and ``-`` keys.
 
-Clicking outside any shapes, you can copy ``Frame URL`` (link to present frame) or ``Job URL`` (link from address bar)
-
-![](static/documentation/images/image091.jpg)
-
-Applying ``split`` into an interpolated track divides it into two separate tracks.
-
-![](static/documentation/images/gif010.gif)
+    ![](static/documentation/images/image140.jpg)
 
 ---
 ### Settings
