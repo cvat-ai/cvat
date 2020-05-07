@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Updated Rest API document, Swagger document serving instruction issue (https://github.com/opencv/cvat/issues/1495)
 
 ### Security
 -
