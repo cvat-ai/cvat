@@ -410,8 +410,8 @@ def dump_as_cvat_interpolation(file_object, annotations):
     dumper.close_root()
 
 def load(file_object, annotations):
-    import xml.etree.ElementTree as et
-    context = et.iterparse(file_object, events=("start", "end"))
+    from defusedxml import ElementTree
+    context = ElementTree.iterparse(file_object, events=("start", "end"))
     context = iter(context)
     ev, _ = next(context)
 
@@ -546,7 +546,9 @@ def _export_images(dst_file, task_data, save_images=False):
 
 @importer(name='CVAT', ext='XML, ZIP', version='1.1')
 def _import(src_file, task_data):
-    if zipfile.is_zipfile(src_file):
+    is_zip = zipfile.is_zipfile(src_file)
+    src_file.seek(0)
+    if is_zip:
         with TemporaryDirectory() as tmp_dir:
             zipfile.ZipFile(src_file).extractall(tmp_dir)
 
