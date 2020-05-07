@@ -4,6 +4,13 @@
 This CVAT module is a clien-side JavaScipt library to management of objects, frames, logs, etc.
 It contains the core logic of the Computer Vision Annotation Tool.
 
+## Versioning
+If you make changes in this package, please do following:
+
+- After not important changes (typos, backward compatible bug fixes, refactoring) do: ``npm version patch``
+- After changing API (backward compatible new features) do: ``npm version minor``
+- After changing API (changes that break backward compatibility) do: ``npm version major``
+
 ### Commands
 
 - Dependencies installation
