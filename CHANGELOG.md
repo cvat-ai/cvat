@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added debug error message on incorrect XPath (https://github.com/opencv/cvat/pull/1352)
 - Exporting frame stepped task (https://github.com/opencv/cvat/issues/1294, https://github.com/opencv/cvat/issues/1334)
 - Fixed broken command line interface for `cvat` export format in Datumaro (https://github.com/opencv/cvat/issues/1494)
+- Updated Rest API document, Swagger document serving instruction issue (https://github.com/opencv/cvat/issues/1495)
 
 ### Security
 -
