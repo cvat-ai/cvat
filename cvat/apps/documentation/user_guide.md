@@ -851,8 +851,8 @@ The action menu contains:
 
 - ``Create object URL`` - puts a link to an object on the clipboard. After you open the link, this object will be filtered.
 - ``Make a copy``- copies an object. The keyboard shortcut is ``Ctrl + C`` ``Ctrl + V``.
-- ``Propagate`` - Сopies the form to several frames, 
-  invokes a dialog box in which you can specify the number of copies 
+- ``Propagate`` - Сopies the form to several frames,
+  invokes a dialog box in which you can specify the number of copies
   or the frame onto which you want to copy the object. The keyboard shortcut ``Ctrl + B``.
 
   ![](static/documentation/images/image053.jpg)
@@ -879,7 +879,7 @@ You can change the way an object is displayed on a frame (show or hide).
 
 ![](static/documentation/images/image052.jpg)
 
-You can change an object's color. 
+You can change an object's color.
 To do so, click on the color bar of the object and select a color from the palette that appears.
 
 ![](static/documentation/images/image153.jpg)
@@ -891,8 +891,8 @@ By clicking on the ``Details`` button you can collapse or expand the field with 
 ---
 
 #### Labels
-You can also change the color of any object to random, to do so just hover 
-the mouse over the object on the frame and highlight them by clicking on a label you need. 
+You can also change the color of any object to random, to do so just hover
+the mouse over the object on the frame and highlight them by clicking on a label you need.
 In this tab, you can lock or hide objects of a certain label.
 
 ![](static/documentation/images/image062.jpg)
@@ -937,13 +937,13 @@ Changes the shape border from colored to black.
 
 ![](static/documentation/images/image088_DETRAC.jpg)
 
-**Show bitmap** checkbox 
+**Show bitmap** checkbox
 
 If enabled all shapes are displayed in white and the background is black.
 
 ![](static/documentation/images/image087_DETRAC.jpg)
 
-**Show projections** checkbox 
+**Show projections** checkbox
 
 Enables / disables the display of auxiliary perspective lines. Only relevant for cuboids
 
