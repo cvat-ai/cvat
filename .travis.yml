@@ -20,7 +20,7 @@ before_script:
   - mkdir -m a=rwx -p ${HOST_COVERAGE_DATA_DIR}
 
 script:
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && coverage run -a --source cvat/apps/ manage.py test --pattern="_tests.py" cvat/apps/dataset_manager && chmod a+rwx .coverage && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && coverage run -a --source cvat/apps/ manage.py test --pattern="_tests.py" cvat/apps/dataset_manager && chown travis:travis .coverage && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && coveralls-lcov -v -n ./reports/coverage/lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
 
 after_success:
