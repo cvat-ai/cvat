@@ -9,7 +9,7 @@ from tempfile import TemporaryDirectory
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
-    import_dm_annotations, match_dm_item)
+    import_dm_annotations, match_dm_item, find_dataset_root)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.extractor import DatasetItem
 from datumaro.components.project import Dataset
@@ -34,10 +34,13 @@ def _import(src_file, task_data):
 
         image_info = {}
         anno_files = glob(osp.join(tmp_dir, '**', '*.txt'), recursive=True)
+        root_hint = find_dataset_root(
+            [DatasetItem(id=filename) for filename in anno_files], task_data)
         for filename in anno_files:
             frame_info = None
             try:
-                frame_id = match_dm_item(DatasetItem(id=filename), task_data)
+                frame_id = match_dm_item(DatasetItem(id=filename), task_data,
+                    root_hint=root_hint)
                 frame_info = task_data.frame_info[frame_id]
             except Exception:
                 pass
