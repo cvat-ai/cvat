@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MIT
+import csv
 import json
 import logging
 import os
@@ -136,6 +137,14 @@ class CLI():
         logger_string = "Upload job for Task ID {} ".format(task_id) +\
             "with annotation file {} finished".format(filename)
         log.info(logger_string)
+    
+    def tasks_bulk_create(self, csv_path, labels, annotation_format, cooldown_period_in_secs, **kwargs):
+        with open(path, 'r') as f:
+            reader = csv.DictReader(f)
+            tasks = [dict(row) for row in reader]
+            for task in tasks:
+                self.tasks_create(task['name'], labels, '', 'local', [task['images_path']],
+                     task['annotations_path'], annotation_format, cooldown_period_in_secs, **kwargs)
 
 
 class CVAT_API_V1():
