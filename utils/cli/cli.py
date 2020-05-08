@@ -24,7 +24,8 @@ def main():
                'ls': CLI.tasks_list,
                'frames': CLI.tasks_frame,
                'dump': CLI.tasks_dump,
-               'upload': CLI.tasks_upload}
+               'upload': CLI.tasks_upload,
+               'bulk_create': CLI.tasks_bulk_create}
     args = parser.parse_args()
     config_log(args.loglevel)
     with requests.Session() as session:

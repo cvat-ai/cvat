@@ -139,12 +139,12 @@ class CLI():
         log.info(logger_string)
     
     def tasks_bulk_create(self, csv_path, labels, annotation_format, cooldown_period_in_secs, **kwargs):
-        with open(path, 'r') as f:
+        with open(csv_path, 'r') as f:
             reader = csv.DictReader(f)
             tasks = [dict(row) for row in reader]
             for task in tasks:
                 self.tasks_create(task['name'], labels, '', 'local', [task['images_path']],
-                     task['annotations_path'], annotation_format, cooldown_period_in_secs, **kwargs)
+                     task['annotation_path'], annotation_format, cooldown_period_in_secs, **kwargs)
 
 
 class CVAT_API_V1():

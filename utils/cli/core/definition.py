@@ -258,8 +258,6 @@ upload_parser.add_argument(
 # Create
 #######################################################################
 
-tasks_bulk_create(self, csv_path, labels, annotation_format, cooldown_period_in_secs, **kwargs)
-
 task_bulk_create_parser = task_subparser.add_parser(
     'bulk_create',
     description='Create many cvat tasks from a .csv file'
