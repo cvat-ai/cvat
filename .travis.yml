@@ -10,13 +10,14 @@ services:
 
 env:
   - CONTAINER_COVERAGE_DATA_DIR="/coverage_data"
-    HOST_COVERAGE_DATA_DIR="${TRAVIS_BUILD_DIR}"
+    HOST_COVERAGE_DATA_DIR="${TRAVIS_BUILD_DIR}/coverage_data"
 
 install:
   - pip install coveralls
 
 before_script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml build
+  - mkdir -m a=rwx -p ${HOST_COVERAGE_DATA_DIR}
 
 script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && coverage run -a --source cvat/apps/ manage.py test --pattern="_tests.py" cvat/apps/dataset_manager && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
@@ -24,4 +25,5 @@ script:
 
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
-  - coveralls debug --merge=coverage.json
+  - cd ${HOST_COVERAGE_DATA_DIR}
+  - coveralls debug --rcfile="${TRAVIS_BUILD_DIR}/.coveragerc" --merge=coverage.json
