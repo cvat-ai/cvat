@@ -12,18 +12,11 @@ from xml.sax.saxutils import XMLGenerator
 from datumaro.components.cli_plugin import CliPlugin
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import DEFAULT_SUBSET_NAME, AnnotationType
+from datumaro.util import cast
 from datumaro.util.image import save_image
 
 from .format import CvatPath
 
-
-def _cast(value, type_conv, default=None):
-    if value is None:
-        return default
-    try:
-        return type_conv(value)
-    except Exception:
-        return default
 
 def pairwise(iterable):
     a = iter(iterable)
@@ -188,7 +181,7 @@ class _SubsetWriter:
 
     def _write_item(self, item, index):
         image_info = OrderedDict([
-            ("id", str(_cast(item.id, int, index))),
+            ("id", str(cast(item.id, int, index))),
         ])
         if item.has_image:
             size = item.image.size

@@ -4,28 +4,19 @@
 
 import React from 'react';
 
-import {
-    Row,
-    Col,
-    Checkbox,
-    Slider,
-    Select,
-    InputNumber,
-    Icon,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import Button from 'antd/lib/button';
+import Slider from 'antd/lib/slider';
+import Select from 'antd/lib/select';
+import InputNumber from 'antd/lib/input-number';
+import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 
-import {
-    BackJumpIcon,
-    ForwardJumpIcon,
-} from 'icons';
+import { clamp } from 'utils/math';
+import { BackJumpIcon, ForwardJumpIcon } from 'icons';
+import { FrameSpeed, GridColor } from 'reducers/interfaces';
 
-import {
-    FrameSpeed,
-    GridColor,
-} from 'reducers/interfaces';
 
 interface Props {
     frameStep: number;
@@ -78,18 +69,28 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         onChangeSaturationLevel,
     } = props;
 
+    const minFrameStep = 2;
+    const maxFrameStep = 1000;
+    const minGridSize = 5;
+    const maxGridSize = 1000;
+
+
     return (
         <div className='cvat-player-settings'>
             <Row type='flex' align='bottom' className='cvat-player-settings-step'>
                 <Col>
                     <Text className='cvat-text-color'> Player step </Text>
                     <InputNumber
-                        min={2}
-                        max={1000}
+                        min={minFrameStep}
+                        max={maxFrameStep}
                         value={frameStep}
                         onChange={(value: number | undefined): void => {
-                            if (value) {
-                                onChangeFrameStep(value);
+                            if (typeof (value) === 'number') {
+                                onChangeFrameStep(
+                                    Math.floor(
+                                        clamp(value, minFrameStep, maxFrameStep),
+                                    ),
+                                );
                             }
                         }}
                     />
@@ -138,14 +139,15 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 <Col span={8} className='cvat-player-settings-grid-size'>
                     <Text className='cvat-text-color'> Grid size </Text>
                     <InputNumber
-                        min={5}
-                        max={1000}
-                        step={1}
+                        min={minGridSize}
+                        max={maxGridSize}
                         value={gridSize}
                         disabled={!grid}
                         onChange={(value: number | undefined): void => {
-                            if (value) {
-                                onChangeGridSize(value);
+                            if (typeof (value) === 'number') {
+                                onChangeGridSize(Math.floor(
+                                    clamp(value, minGridSize, maxGridSize),
+                                ));
                             }
                         }}
                     />
@@ -261,6 +263,19 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                             onChangeSaturationLevel(value as number);
                         }}
                     />
+                </Col>
+            </Row>
+            <Row className='cvat-player-reset-color-settings'>
+                <Col>
+                    <Button
+                        onClick={() => {
+                            onChangeBrightnessLevel(100);
+                            onChangeContrastLevel(100);
+                            onChangeSaturationLevel(100);
+                        }}
+                    >
+                        Reset color settings
+                    </Button>
                 </Col>
             </Row>
         </div>

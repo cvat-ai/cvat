@@ -38,7 +38,7 @@ class ImageDirExtractor(SourceExtractor):
     def __init__(self, url):
         super().__init__()
 
-        assert osp.isdir(url)
+        assert osp.isdir(url), url
 
         items = []
         for name in os.listdir(url):
@@ -52,17 +52,12 @@ class ImageDirExtractor(SourceExtractor):
         items = OrderedDict(items)
         self._items = items
 
-        self._subsets = None
-
     def __iter__(self):
         for item in self._items.values():
             yield item
 
     def __len__(self):
         return len(self._items)
-
-    def subsets(self):
-        return self._subsets
 
     def get(self, item_id, subset=None, path=None):
         if path or subset:

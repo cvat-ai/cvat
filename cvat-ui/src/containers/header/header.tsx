@@ -4,13 +4,9 @@
 
 import { connect } from 'react-redux';
 
-import {
-    SupportedPlugins,
-    CombinedState,
-} from 'reducers/interfaces';
-
 import getCore from 'cvat-core';
 import HeaderComponent from 'components/header/header';
+import { SupportedPlugins, CombinedState } from 'reducers/interfaces';
 import { logoutAsync } from 'actions/auth-actions';
 
 const core = getCore();
@@ -29,6 +25,7 @@ interface StateToProps {
     coreVersion: string;
     canvasVersion: string;
     uiVersion: string;
+    switchSettingsShortcut: string;
 }
 
 interface DispatchToProps {
@@ -50,6 +47,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
             server,
             packageVersion,
         },
+        shortcuts: {
+            normalizedKeyMap,
+        },
     } = state;
 
     return {
@@ -66,6 +66,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         coreVersion: packageVersion.core,
         canvasVersion: packageVersion.canvas,
         uiVersion: packageVersion.ui,
+        switchSettingsShortcut: normalizedKeyMap.OPEN_SETTINGS,
     };
 }
 

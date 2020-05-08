@@ -136,6 +136,12 @@ class CocoImporterTest(TestCase):
 
             compare_datasets(self, DstExtractor(), dataset)
 
+    def test_can_detect(self):
+        with TestDir() as test_dir:
+            self.COCO_dataset_generate(test_dir)
+
+            self.assertTrue(CocoImporter.detect(test_dir))
+
 class CocoConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
             target_dataset=None, importer_args=None):
@@ -550,10 +556,13 @@ class CocoConverterTest(TestCase):
                             Points([1, 2, 3, 4, 2, 3], group=2, id=2),
                             Bbox(1, 2, 2, 2, group=2, id=2),
                         ]),
-                    DatasetItem(id=2, subset='train',
+                    DatasetItem(id=2, subset='train', image=np.zeros((5, 4, 3)),
                         annotations=[
                             # Solitary keypoints
                             Points([1, 2, 0, 2, 4, 1], label=5, id=3),
+
+                            # Some other solitary annotations (bug #1387)
+                            Polygon([0, 0, 4, 0, 4, 4], label=3, id=4),
                         ]),
 
                     DatasetItem(id=3, subset='val',

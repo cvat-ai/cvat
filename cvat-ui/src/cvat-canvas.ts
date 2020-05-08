@@ -9,9 +9,15 @@ import {
     RectDrawingMethod,
 } from '../../cvat-canvas/src/typescript/canvas';
 
+function isAbleToChangeFrame(canvas: Canvas): boolean {
+    return ![CanvasMode.DRAG, CanvasMode.EDIT, CanvasMode.RESIZE]
+        .includes(canvas.mode());
+}
+
 export {
     Canvas,
     CanvasMode,
     CanvasVersion,
     RectDrawingMethod,
+    isAbleToChangeFrame,
 };

@@ -342,10 +342,12 @@ class AnnotationSaverController {
         this._autoSaveInterval = null;
 
         const { shortkeys } = window.cvat.config;
-        Mousetrap.bind(shortkeys.save_work.value, () => {
-            this.save();
-            return false;
-        }, 'keydown');
+        Mousetrap.bind(shortkeys.save_work.value, Logger.shortkeyLogDecorator(
+            () => {
+                this.save();
+                return false;
+            },
+        ), 'keydown');
     }
 
     autoSave(enabled, time) {

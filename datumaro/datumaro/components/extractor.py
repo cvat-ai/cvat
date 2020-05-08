@@ -104,6 +104,7 @@ class LabelCategories(Categories):
         index = len(self.items)
         self.items.append(self.Category(name, parent, attributes))
         self._indices[name] = index
+        return index
 
     def find(self, name):
         index = self._indices.get(name)
@@ -740,9 +741,28 @@ DEFAULT_SUBSET_NAME = 'default'
 
 
 class SourceExtractor(Extractor):
-    pass
+    def __init__(self, length=None, subset=None):
+        super().__init__(length=length)
+
+        if subset == DEFAULT_SUBSET_NAME:
+            subset = None
+        self._subset = subset
+
+    def subsets(self):
+        if self._subset:
+            return [self._subset]
+        return None
+
+    def get_subset(self, name):
+        if name != self._subset:
+            return None
+        return self
 
 class Importer:
+    @classmethod
+    def detect(cls, path):
+        raise NotImplementedError()
+
     def __call__(self, path, **extra_params):
         raise NotImplementedError()
 

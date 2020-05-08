@@ -2,27 +2,26 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-import {
-    Row,
-    Col,
-    Icon,
-    Slider,
-    Tooltip,
-    InputNumber,
-} from 'antd';
-
-import { SliderValue } from 'antd/lib/slider';
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Slider, { SliderValue } from 'antd/lib/slider';
+import Tooltip from 'antd/lib/tooltip';
+import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
+
+import { clamp } from 'utils/math';
 
 interface Props {
     startFrame: number;
     stopFrame: number;
     frameNumber: number;
+    frameFilename: string;
+    focusFrameInputShortcut: string;
     inputFrameRef: React.RefObject<InputNumber>;
     onSliderChange(value: SliderValue): void;
-    onInputChange(value: number | undefined): void;
+    onInputChange(value: number): void;
     onURLIconClick(): void;
 }
 
@@ -31,11 +30,21 @@ function PlayerNavigation(props: Props): JSX.Element {
         startFrame,
         stopFrame,
         frameNumber,
+        frameFilename,
+        focusFrameInputShortcut,
         inputFrameRef,
         onSliderChange,
         onInputChange,
         onURLIconClick,
     } = props;
+
+    const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
+
+    useEffect(() => {
+        if (frameNumber !== frameInputValue) {
+            setFrameInputValue(frameNumber);
+        }
+    }, [frameNumber]);
 
     return (
         <>
@@ -53,8 +62,8 @@ function PlayerNavigation(props: Props): JSX.Element {
                 </Row>
                 <Row type='flex' justify='center'>
                     <Col className='cvat-player-filename-wrapper'>
-                        <Tooltip title='filename.png'>
-                            <Text type='secondary'>filename.png</Text>
+                        <Tooltip title={frameFilename}>
+                            <Text type='secondary'>{frameFilename}</Text>
                         </Tooltip>
                     </Col>
                     <Col offset={1}>
@@ -65,14 +74,27 @@ function PlayerNavigation(props: Props): JSX.Element {
                 </Row>
             </Col>
             <Col>
-                <InputNumber
-                    className='cvat-player-frame-selector'
-                    type='number'
-                    value={frameNumber || 0}
-                    // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
-                    onChange={onInputChange}
-                    ref={inputFrameRef}
-                />
+                <Tooltip title={`Press ${focusFrameInputShortcut} to focus here`}>
+                    <InputNumber
+                        className='cvat-player-frame-selector'
+                        type='number'
+                        value={frameInputValue}
+                        onChange={(value: number | undefined) => {
+                            if (typeof (value) === 'number') {
+                                setFrameInputValue(Math.floor(
+                                    clamp(value, startFrame, stopFrame),
+                                ));
+                            }
+                        }}
+                        onBlur={() => {
+                            onInputChange(frameInputValue);
+                        }}
+                        onPressEnter={() => {
+                            onInputChange(frameInputValue);
+                        }}
+                        ref={inputFrameRef}
+                    />
+                </Tooltip>
             </Col>
         </>
     );

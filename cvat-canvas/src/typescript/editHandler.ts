@@ -6,29 +6,27 @@ import * as SVG from 'svg.js';
 import 'svg.select.js';
 
 import consts from './consts';
-import {
-    translateFromSVG,
-    pointsToArray,
-} from './shared';
-import {
-    EditData,
-    Geometry,
-} from './canvasModel';
+import { translateFromSVG, pointsToArray } from './shared';
+import { EditData, Geometry, Configuration } from './canvasModel';
+import { AutoborderHandler } from './autoborderHandler';
 
 export interface EditHandler {
     edit(editData: EditData): void;
     transform(geometry: Geometry): void;
+    configurate(configuration: Configuration): void;
     cancel(): void;
 }
 
 export class EditHandlerImpl implements EditHandler {
     private onEditDone: (state: any, points: number[]) => void;
+    private autoborderHandler: AutoborderHandler;
     private geometry: Geometry;
     private canvas: SVG.Container;
     private editData: EditData;
     private editedShape: SVG.Shape;
     private editLine: SVG.PolyLine;
     private clones: SVG.Polygon[];
+    private autobordersEnabled: boolean;
 
     private startEdit(): void {
         // get started coordinates
@@ -77,6 +75,8 @@ export class EditHandlerImpl implements EditHandler {
         (this.editLine as any).addClass('cvat_canvas_shape_drawing').style({
             'pointer-events': 'none',
             'fill-opacity': 0,
+        }).attr({
+            'data-origin-client-id': this.editData.state.clientID,
         }).on('drawstart drawpoint', (e: CustomEvent): void => {
             this.transform(this.geometry);
             lastDrawnPoint.x = e.detail.event.clientX;
@@ -89,27 +89,20 @@ export class EditHandlerImpl implements EditHandler {
         }
 
         this.setupEditEvents();
+        if (this.autobordersEnabled) {
+            this.autoborderHandler.autoborder(true, this.editLine, true);
+        }
     }
 
     private setupEditEvents(): void {
-        let mouseX: number | null = null;
-        let mouseY: number | null = null;
-
         this.canvas.on('mousedown.edit', (e: MouseEvent): void => {
-            if (e.which === 1) {
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-            }
-        });
-
-        this.canvas.on('mouseup.edit', (e: MouseEvent): void => {
-            const threshold = 10; // px
-            if (e.which === 1) {
-                if (Math.sqrt( // l2 distance < threshold
-                    ((mouseX - e.clientX) ** 2)
-                    + ((mouseY - e.clientY) ** 2),
-                ) < threshold) {
-                    (this.editLine as any).draw('point', e);
+            if (e.button === 0 && !e.altKey) {
+                (this.editLine as any).draw('point', e);
+            } else if (e.button === 2 && this.editLine) {
+                if (this.editData.state.shapeType === 'points'
+                    || this.editLine.attr('points').split(' ').length > 2
+                ) {
+                    (this.editLine as any).draw('undo');
                 }
             }
         });
@@ -183,7 +176,6 @@ export class EditHandlerImpl implements EditHandler {
 
             // We do not need these events any more
             this.canvas.off('mousedown.edit');
-            this.canvas.off('mouseup.edit');
             this.canvas.off('mousemove.edit');
 
             (this.editLine as any).draw('stop');
@@ -265,8 +257,8 @@ export class EditHandlerImpl implements EditHandler {
 
     private release(): void {
         this.canvas.off('mousedown.edit');
-        this.canvas.off('mouseup.edit');
         this.canvas.off('mousemove.edit');
+        this.autoborderHandler.autoborder(false);
 
         if (this.editedShape) {
             this.setupPoints(false);
@@ -308,7 +300,10 @@ export class EditHandlerImpl implements EditHandler {
     public constructor(
         onEditDone: (state: any, points: number[]) => void,
         canvas: SVG.Container,
+        autoborderHandler: AutoborderHandler,
     ) {
+        this.autoborderHandler = autoborderHandler;
+        this.autobordersEnabled = false;
         this.onEditDone = onEditDone;
         this.canvas = canvas;
         this.editData = null;
@@ -335,6 +330,19 @@ export class EditHandlerImpl implements EditHandler {
     public cancel(): void {
         this.release();
         this.onEditDone(null, null);
+    }
+
+    public configurate(configuration: Configuration): void {
+        if (typeof (configuration.autoborders) === 'boolean') {
+            this.autobordersEnabled = configuration.autoborders;
+            if (this.editLine) {
+                if (this.autobordersEnabled) {
+                    this.autoborderHandler.autoborder(true, this.editLine, true);
+                } else {
+                    this.autoborderHandler.autoborder(false);
+                }
+            }
+        }
     }
 
     public transform(geometry: Geometry): void {
