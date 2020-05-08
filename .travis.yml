@@ -26,4 +26,4 @@ script:
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
   - mv ${HOST_COVERAGE_DATA_DIR}/* .
-  - coveralls --merge=coverage.json
+  - coveralls debug --merge=coverage.json
