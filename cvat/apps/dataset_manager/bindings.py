@@ -12,6 +12,7 @@ from django.utils import timezone
 import datumaro.components.extractor as datumaro
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import AttributeType, ShapeType
+from datumaro.util import cast
 from datumaro.util.image import Image
 
 from .annotation import AnnotationManager, TrackManager
@@ -114,7 +115,8 @@ class TaskData:
             } for db_image in self._db_task.data.images.all()}
 
         self._frame_mapping = {
-            info["path"]: frame for frame, info in self._frame_info.items()
+            self._get_filename(info["path"]): frame_number
+            for frame_number, info in self._frame_info.items()
         }
 
     def _init_meta(self):
@@ -390,7 +392,12 @@ class TaskData:
     def db_task(self):
         return self._db_task
 
+    @staticmethod
+    def _get_filename(path):
+        return osp.splitext(path)[0]
+
     def match_frame(self, path, root_hint=None):
+        path = self._get_filename(path)
         match = self._frame_mapping.get(path)
         if not match and root_hint and not path.startswith(root_hint):
             path = osp.join(root_hint, path)
@@ -403,7 +410,7 @@ class TaskData:
         # matching can't be correct for all input cases.
         # - path is the longest path of input dataset in terms of path parts
 
-        path = Path(path).parts
+        path = Path(self._get_filename(path)).parts
         for p, v in self._frame_mapping.items():
             if Path(p).parts[-len(path):] == path: # endswith() for paths
                 return v
@@ -532,31 +539,32 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
         return item_anno
 
-def match_frame(item, task_data):
+def match_dm_item(item, task_data, root_hint=None):
     is_video = task_data.meta['task']['mode'] == 'interpolation'
 
     frame_number = None
-    if frame_number is None:
-        try:
-            frame_number = task_data.match_frame(item.id)
-        except Exception:
-            pass
     if frame_number is None and item.has_image:
-        try:
-            frame_number = task_data.match_frame(item.image.filename)
-        except Exception:
-            pass
+        frame_number = task_data.match_frame(item.image.path, root_hint)
     if frame_number is None:
-        try:
-            frame_number = int(item.attributes.get('frame', item.id))
-        except Exception:
-            pass
-    if frame_number is None and is_video and item.id.startswith('frame_'):
-        frame_number = int(item.id[len('frame_'):])
+        frame_number = task_data.match_frame(item.id, root_hint)
+    if frame_number is None:
+        frame_number = cast(item.attributes.get('frame', item.id), int)
+    if frame_number is None and is_video:
+        frame_number = cast(osp.basename(item.id)[len('frame_'):], int)
+
     if not frame_number in task_data.frame_info:
         raise Exception("Could not match item id: '%s' with any task frame" %
             item.id)
     return frame_number
+
+def find_dataset_root(dm_dataset, task_data):
+    longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts))
+    longest_match = task_data.match_frame_fuzzy(longest_path)
+    if longest_match is None:
+        return None
+
+    longest_match = task_data.frame_info[longest_match]['path']
+    return longest_match[:-len(longest_path)] # cut prefix
 
 def import_dm_annotations(dm_dataset, task_data):
     shapes = {
@@ -568,8 +576,10 @@ def import_dm_annotations(dm_dataset, task_data):
 
     label_cat = dm_dataset.categories()[datumaro.AnnotationType.label]
 
+    root_hint = find_dataset_root(dm_dataset, task_data)
+
     for item in dm_dataset:
-        frame_number = match_frame(item, task_data)
+        frame_number = match_dm_item(item, task_data, root_hint=root_hint)
 
         # do not store one-item groups
         group_map = {0: 0}
