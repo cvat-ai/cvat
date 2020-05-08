@@ -25,5 +25,6 @@ script:
 
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
-  - cp ${HOST_COVERAGE_DATA_DIR}/* .
+  - find ${HOST_COVERAGE_DATA_DIR}/* -exec ln -s {} . \;
+  - ls -la
   - coveralls debug
