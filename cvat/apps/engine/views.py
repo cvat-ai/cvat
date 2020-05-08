@@ -368,7 +368,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         def validate_task_limit(owner):
-            if settings.RESTRICTIONS['task_limit'] is not None and \
+            admin_perm = auth.AdminRolePermission()
+            is_admin = admin_perm.has_permission(self.request, self)
+            if not is_admin and settings.RESTRICTIONS['task_limit'] is not None and \
                 Task.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['task_limit']:
                 raise serializers.ValidationError('The user has the maximum number of tasks')
 

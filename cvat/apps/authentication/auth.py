@@ -213,9 +213,9 @@ def filter_task_queryset(queryset, user):
     # Don't filter queryset for admin, observer
     if has_admin_role(user) or has_observer_role(user):
         return queryset
-    
+
     query_filter = Q(owner=user) | Q(assignee=user) | \
-        Q(segment__job__assignee=user) 
+        Q(segment__job__assignee=user)
     if not settings.RESTRICTIONS['reduce_task_visibility']:
         query_filter |= Q(assignee=None)
 
