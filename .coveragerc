@@ -34,16 +34,6 @@ exclude_lines =
     if __name__ == .__main__.:
 
 # don't fail on the code that can be found
-ignore_errors = true
+# ignore_errors = true
 
 skip_empty = true
-
-[paths]
-# merge CI paths
-cvat =
-    cvat/
-    /home/django/cvat
-
-dm =
-    datumaro/
-    /home/django/datumaro
