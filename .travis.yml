@@ -25,5 +25,4 @@ script:
 
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
-  - cd ${HOST_COVERAGE_DATA_DIR}
-  - coveralls debug --rcfile="${TRAVIS_BUILD_DIR}/.coveragerc" --merge=coverage.json
+  - cd ${HOST_COVERAGE_DATA_DIR} && ls -la . && coveralls debug --rcfile="${TRAVIS_BUILD_DIR}/.coveragerc" --merge=coverage.json
