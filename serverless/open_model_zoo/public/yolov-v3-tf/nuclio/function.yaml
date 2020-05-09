@@ -1,0 +1,37 @@
+metadata:
+  name: open_model_zoo/public/faster_rcnn_inception_v2_coco
+  namespace: cvat
+
+spec:
+  description: Faster RCNN inception v2 COCO from Intel Open Model Zoo
+  runtime: "python:3.6"
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: NUCLIO_PYTHON_EXE_PATH
+      value: /opt/nuclio/python3
+
+  build:
+    image: cvat/open_model_zoo/public/faster_rcnn_inception_v2_coco
+    baseImage: openvino/ubuntu18_runtime:2020.2
+
+    directives:
+      preCopy:
+      - kind: USER
+        value: root
+      - kind: WORKDIR
+        value: /opt/nuclio
+      - kind: RUN
+        value: ln -s /usr/bin/pip3 /usr/bin/pip
+
+      postCopy:
+      - kind: RUN
+        value: pip3 install -r requirements.txt
+      - kind: USER
+        value: openvino
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: "http"
+      workerAvailabilityTimeoutMilliseconds: 10000
