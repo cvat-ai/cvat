@@ -3,8 +3,7 @@ import base64
 from PIL import Image
 import io
 from model_loader import ModelLoader
-import sys
-import time
+import numpy as np
 
 def init_context(context):
     context.logger.info("Init context...  0%")
@@ -104,13 +103,14 @@ def handler(context, event):
     threshold = float(data.get("threshold", 0.5))
     image = Image.open(buf)
 
-    output_layer = context.user_data.model_handler.infer(image)
+    output_layer = context.user_data.model_handler.infer(np.array(image))
 
     results = []
     prediction = output_layer[0][0]
     for obj in prediction:
-        obj_class = context.labels[int(obj[1])]
+        obj_class = int(obj[1])
         obj_value = obj[2]
+        obj_label = context.user_data.labels.get(obj_class, "unknown")
         if obj_value >= threshold:
             xtl = obj[3] * image.width
             ytl = obj[4] * image.height
@@ -118,10 +118,10 @@ def handler(context, event):
             ybr = obj[6] * image.height
 
             results.append({
-                "label": obj_class,
+                "confidence": str(obj_value),
+                "label": obj_label,
                 "points": [xtl, ytl, xbr, ybr],
                 "type": "rectangle",
-                "attributes": {}
             })
 
     return context.Response(body=json.dumps(results), headers={},
