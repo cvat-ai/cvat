@@ -1,5 +1,6 @@
 [run]
 branch = true
+# relative_files = true # does not work?
 
 source =
     datumaro/datumaro/
@@ -34,6 +35,6 @@ exclude_lines =
     if __name__ == .__main__.:
 
 # don't fail on the code that can be found
-# ignore_errors = true
+ignore_errors = true
 
 skip_empty = true

@@ -21,6 +21,8 @@ RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGUR
     python3 -m pip install --no-cache-dir coveralls
 RUN gem install coveralls-lcov
 
+COPY .coveragerc .
+
 # RUN all commands below as 'django' user
 USER ${USER}
 
