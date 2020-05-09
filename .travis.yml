@@ -14,7 +14,7 @@ env:
 
 before_script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml build
-  - chmod -m a+rwx -p ${HOST_COVERAGE_DATA_DIR}
+  - chmod a+rwx -p ${HOST_COVERAGE_DATA_DIR}
 
 script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && coverage run -a manage.py test --pattern="_tests.py" cvat/apps/dataset_manager && coverage run -a manage.py test datumaro/ && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
