@@ -22,4 +22,4 @@ script:
 
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls debug'
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls --merge=coverage.json'
