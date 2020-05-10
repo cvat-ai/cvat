@@ -6,7 +6,7 @@
 import cv2
 import numpy as np
 
-from .inference_engine import make_plugin_or_core, make_network
+from inference_engine import make_plugin_or_core, make_network
 
 class ModelLoader:
     def __init__(self, model, weights):

@@ -1,19 +1,19 @@
 metadata:
-  name: open_model_zoo/public/mask_rcnn_inception_resnet_v2_atrous_coco
+  name: omz.public.mask_rcnn_inception_resnet_v2_atrous_coco
   namespace: cvat
 
 spec:
-  description: Mask RCNN inception resnet v2 from Intel Open Model Zoo
+  description: Mask RCNN inception resnet v2 COCO from Intel Open Model Zoo
   runtime: "python:3.6"
   handler: main:handler
-  eventTimeout: 30s
+  eventTimeout: 60s
   env:
     - name: NUCLIO_PYTHON_EXE_PATH
       value: /opt/nuclio/python3
 
   build:
     image: cvat/open_model_zoo/public/mask_rcnn_inception_resnet_v2_atrous_coco
-    baseImage: openvino/ubuntu18_runtime:2020.2
+    baseImage: openvino/ubuntu18_dev:2020.2
 
     directives:
       preCopy:
@@ -23,10 +23,16 @@ spec:
         value: /opt/nuclio
       - kind: RUN
         value: ln -s /usr/bin/pip3 /usr/bin/pip
+      - kind: RUN
+        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name mask_rcnn_inception_resnet_v2_atrous_coco -o /opt/nuclio/open_model_zoo
+      - kind: RUN
+        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/converter.py --name mask_rcnn_inception_resnet_v2_atrous_coco --precisions FP32 -d /opt/nuclio/open_model_zoo -o /opt/nuclio/open_model_zoo
 
       postCopy:
       - kind: RUN
-        value: pip3 install -r requirements.txt
+        value: apt update && DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y python3-skimage
+      - kind: RUN
+        value: pip3 install "numpy<1.16.0" # workaround for skimage
       - kind: USER
         value: openvino
 
