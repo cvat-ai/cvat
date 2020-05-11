@@ -5,13 +5,8 @@
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
-
-import {
-    Col,
-    Row,
-    Button,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
 type Props = {

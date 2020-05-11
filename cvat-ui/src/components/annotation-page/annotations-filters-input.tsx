@@ -93,7 +93,7 @@ function filtersHelpModalContent(
                 width, height, label, serverID, clientID, type, shape, occluded
                 <br />
                 <Text strong>Supported operators: </Text>
-                    ==, !=, &gt;, &gt;=, &lt;, &lt;=, ~=, (), &amp; and |
+                    ==, !=, &gt;, &gt;=, &lt;, &lt;=, (), &amp; and |
                 <br />
                 <Text strong>
                     If you have double quotes in your query string,
@@ -107,6 +107,7 @@ function filtersHelpModalContent(
                 <Title level={3}>Examples</Title>
                 <ul>
                     <li>label==&quot;car&quot; | label==[&quot;road sign&quot;]</li>
+                    <li>shape == &quot;polygon&quot;</li>
                     <li>width &gt;= height</li>
                     <li>attr[&quot;Attribute 1&quot;] == attr[&quot;Attribute 2&quot;]</li>
                     <li>clientID == 50</li>

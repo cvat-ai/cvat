@@ -4,13 +4,8 @@
 
 import './styles.scss';
 import React from 'react';
-
-import {
-    Menu,
-    Modal,
-} from 'antd';
-
-import { ClickParam } from 'antd/lib/menu/index';
+import Menu, { ClickParam } from 'antd/lib/menu';
+import Modal from 'antd/lib/modal';
 
 import DumpSubmenu from './dump-submenu';
 import LoadSubmenu from './load-submenu';

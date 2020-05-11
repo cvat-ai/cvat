@@ -6,7 +6,6 @@ import os
 from enum import Enum
 from collections import OrderedDict
 from django.utils import timezone
-from PIL import Image
 
 from django.conf import settings
 from django.db import transaction

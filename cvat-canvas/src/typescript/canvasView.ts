@@ -99,7 +99,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             this.canvas.dispatchEvent(event);
-        } else {
+        } else if (!continueDraw) {
             const event: CustomEvent = new CustomEvent('canvas.canceled', {
                 bubbles: false,
                 cancelable: true,
@@ -108,12 +108,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
         }
 
-        if (continueDraw) {
-            this.drawHandler.draw(
-                this.controller.drawData,
-                this.geometry,
-            );
-        } else {
+        if (!continueDraw) {
             this.mode = Mode.IDLE;
             this.controller.draw({
                 enabled: false,
@@ -444,6 +439,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .filter((_state: any): boolean => (
                         _state.clientID === self.activeElement.clientID
                     ));
+                if (['cuboid', 'rectangle'].includes(state.shapeType)) {
+                    e.preventDefault();
+                    return;
+                }
                 if (e.ctrlKey) {
                     const { points } = state;
                     const annotation_type = 'Manual';
@@ -676,8 +675,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.content.addEventListener('mousedown', (event): void => {
-            if ([1, 2].includes(event.which)) {
-                if (![Mode.ZOOM_CANVAS, Mode.GROUP].includes(this.mode) || event.which === 2) {
+            if ([0, 1].includes(event.button)) {
+                if ([Mode.IDLE, Mode.DRAG, Mode.MERGE, Mode.SPLIT].includes(this.mode)
+                    || event.button === 1 || event.altKey
+                ) {
                     self.controller.enableDrag(event.clientX, event.clientY);
                 }
             }
@@ -728,7 +729,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
     public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
         this.geometry = this.controller.geometry;
         if (reason === UpdateReasons.CONFIG_UPDATED) {
+            const { activeElement } = this;
+            this.deactivate();
             this.configuration = model.configuration;
+            this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);
 
@@ -946,26 +950,63 @@ export class CanvasViewImpl implements CanvasView, Listener {
             for (const state of states) {
                 if (state.hidden || state.outside) continue;
                 ctx.fillStyle = 'white';
-                if (['rectangle', 'polygon'].includes(state.shapeType)) {
-                    const points = state.shapeType === 'rectangle' ? [
-                        state.points[0], // xtl
-                        state.points[1], // ytl
-                        state.points[2], // xbr
-                        state.points[1], // ytl
-                        state.points[2], // xbr
-                        state.points[3], // ybr
-                        state.points[0], // xtl
-                        state.points[3], // ybr
-                    ] : state.points;
+                if (['rectangle', 'polygon', 'cuboid'].includes(state.shapeType)) {
+                    let points = [];
+                    if (state.shapeType === 'rectangle') {
+                        points = [
+                            state.points[0], // xtl
+                            state.points[1], // ytl
+                            state.points[2], // xbr
+                            state.points[1], // ytl
+                            state.points[2], // xbr
+                            state.points[3], // ybr
+                            state.points[0], // xtl
+                            state.points[3], // ybr
+                        ];
+                    } else if (state.shapeType === 'cuboid') {
+                        points = [
+                            state.points[0],
+                            state.points[1],
+                            state.points[4],
+                            state.points[5],
+                            state.points[8],
+                            state.points[9],
+                            state.points[12],
+                            state.points[13],
+                        ];
+                    } else {
+                        points = [...state.points];
+                    }
                     ctx.beginPath();
                     ctx.moveTo(points[0], points[1]);
                     for (let i = 0; i < points.length; i += 2) {
                         ctx.lineTo(points[i], points[i + 1]);
                     }
                     ctx.closePath();
+                    ctx.fill();
                 }
 
-                ctx.fill();
+                if (state.shapeType === 'cuboid') {
+                    for (let i = 0; i < 5; i++) {
+                        const points = [
+                            state.points[(0 + i * 4) % 16],
+                            state.points[(1 + i * 4) % 16],
+                            state.points[(2 + i * 4) % 16],
+                            state.points[(3 + i * 4) % 16],
+                            state.points[(6 + i * 4) % 16],
+                            state.points[(7 + i * 4) % 16],
+                            state.points[(4 + i * 4) % 16],
+                            state.points[(5 + i * 4) % 16],
+                        ];
+                        ctx.beginPath();
+                        ctx.moveTo(points[0], points[1]);
+                        for (let j = 0; j < points.length; j += 2) {
+                            ctx.lineTo(points[j], points[j + 1]);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
             }
         }
     }
@@ -1063,7 +1104,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             return `${acc}${val},`;
                         }, '',
                     );
-                    (shape as any).clear();
+                    if (state.shapeType !== 'cuboid') {
+                        (shape as any).clear();
+                    }
                     shape.attr('points', stringified);
 
                     if (state.shapeType === 'points' && !isInvisible) {
@@ -1124,6 +1167,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     } else if (state.shapeType === 'points') {
                         this.svgShapes[state.clientID] = this
                             .addPoints(stringified, state);
+                    } else if (state.shapeType === 'cuboid') {
+                        this.svgShapes[state.clientID] = this
+                            .addCuboid(stringified, state);
                     }
                 }
 
@@ -1198,6 +1244,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const shape = this.svgShapes[clientID];
 
             shape.removeClass('cvat_canvas_shape_activated');
+            shape.removeClass('cvat_canvas_shape_draggable');
 
             if (!drawnState.pinned) {
                 (shape as any).off('dragstart');
@@ -1207,6 +1254,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             if (drawnState.shapeType !== 'points') {
                 this.selectize(false, shape);
+            }
+
+            if (drawnState.shapeType === 'cuboid') {
+                (shape as any).attr('projections', false);
             }
 
             (shape as any).off('resizestart');
@@ -1288,7 +1339,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.content.append(shape.node);
         }
 
+        const { showProjections } = this.configuration;
+        if (state.shapeType === 'cuboid' && showProjections) {
+            (shape as any).attr('projections', true);
+        }
+
         if (!state.pinned) {
+            shape.addClass('cvat_canvas_shape_draggable');
             (shape as any).draggable().on('dragstart', (): void => {
                 this.mode = Mode.DRAG;
                 if (text) {
@@ -1386,11 +1443,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         });
 
-        this.activeElement = {
-            ...this.activeElement,
-            clientID,
-        };
-
         this.canvas.dispatchEvent(new CustomEvent('canvas.activated', {
             bubbles: false,
             cancelable: true,
@@ -1414,6 +1466,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const { clientID, attributeID } = activeElement;
         if (clientID !== null && this.activeElement.clientID !== clientID) {
             this.activateShape(clientID);
+            this.activeElement = {
+                ...this.activeElement,
+                clientID,
+            };
         }
 
         if (clientID !== null
@@ -1567,6 +1623,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         return polyline;
+    }
+
+    private addCuboid(points: string, state: any): any {
+        const cube = (this.adoptedContent as any).cube(points)
+            .fill(state.color).attr({
+                clientID: state.clientID,
+                'color-rendering': 'optimizeQuality',
+                id: `cvat_canvas_shape_${state.clientID}`,
+                fill: state.color,
+                'shape-rendering': 'geometricprecision',
+                stroke: state.color,
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'data-z-order': state.zOrder,
+            }).addClass('cvat_canvas_shape');
+
+        if (state.occluded) {
+            cube.addClass('cvat_canvas_shape_occluded');
+        }
+
+        if (state.hidden || state.outside) {
+            cube.style('display', 'none');
+        }
+
+        return cube;
     }
 
     private setupPoints(basicPolyline: SVG.PolyLine, state: any): any {

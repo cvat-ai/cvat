@@ -25,7 +25,7 @@ import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import HeaderContainer from 'containers/header/header';
 
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from 'reducers/interfaces';
 
 interface CVATAppProps {

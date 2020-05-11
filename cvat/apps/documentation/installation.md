@@ -59,7 +59,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
     ```bash
     sudo apt-get --no-install-recommends install -y python3-pip
-    sudo python3 -m pip install docker-compose
+    sudo python3 -m pip install setuptools docker-compose
     ```
 
 -   Clone _CVAT_ source code from the
@@ -539,34 +539,33 @@ server {
 server {
     listen       443 ssl;
     server_name  ${CVAT_HOST};
+
+    proxy_pass_header       X-CSRFToken;
+    proxy_set_header        Host $http_host;
+    proxy_pass_header       Set-Cookie;
+
     ssl_certificate /cert/certificate.cer;
     ssl_certificate_key /cert/certificate.key;
 
     location ~* /api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*  {
         proxy_pass              http://cvat:8080;
-        proxy_pass_header       X-CSRFToken;
-        proxy_set_header        Host $http_host;
-        proxy_pass_header       Set-Cookie;
     }
 
-    location / {
-        # workaround for match location by arguments
+    # workaround for match location by arguments
+    location = / {
         error_page 418 = @annotation_ui;
 
         if ( $query_string ~ "^id=\d+.*" ) { return 418; }
-
         proxy_pass              http://cvat_ui;
-        proxy_pass_header       X-CSRFToken;
-        proxy_set_header        Host $http_host;
-        proxy_pass_header       Set-Cookie;
+    }
+
+    location / {
+        proxy_pass              http://cvat_ui;
     }
 
     # old annotation ui, will be removed in the future.
     location @annotation_ui {
         proxy_pass              http://cvat:8080;
-        proxy_pass_header       X-CSRFToken;
-        proxy_set_header        Host $http_host;
-        proxy_pass_header       Set-Cookie;
     }
 }
 ```

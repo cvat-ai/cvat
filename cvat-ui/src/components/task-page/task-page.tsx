@@ -6,13 +6,9 @@ import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
-
-import {
-    Col,
-    Row,
-    Spin,
-    Result,
-} from 'antd';
+import { Row, Col } from 'antd/lib/grid';
+import Spin from 'antd/lib/spin';
+import Result from 'antd/lib/result';
 
 import DetailsContainer from 'containers/task-page/details';
 import JobListContainer from 'containers/task-page/job-list';

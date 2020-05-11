@@ -50,6 +50,7 @@ export interface Configuration {
     autoborders?: boolean;
     displayAllText?: boolean;
     undefinedAttrValue?: string;
+    showProjections?: boolean;
 }
 
 export interface DrawData {
@@ -369,7 +370,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public activate(clientID: number | null, attributeID: number | null): void {
-        if (this.data.activeElement.clientID === clientID) {
+        if (this.data.activeElement.clientID === clientID
+            && this.data.activeElement.attributeID === attributeID
+        ) {
             return;
         }
 
@@ -526,6 +529,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.displayAllText = configuration.displayAllText;
         }
 
+        if (typeof (configuration.showProjections) !== 'undefined') {
+            this.data.configuration.showProjections = configuration.showProjections;
+        }
         if (typeof (configuration.autoborders) !== 'undefined') {
             this.data.configuration.autoborders = configuration.autoborders;
         }

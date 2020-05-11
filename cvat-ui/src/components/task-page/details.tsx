@@ -3,23 +3,17 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Tag,
-    Icon,
-    Modal,
-    Button,
-    notification,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Tag from 'antd/lib/tag';
+import Icon from 'antd/lib/icon';
+import Modal from 'antd/lib/modal';
+import Button from 'antd/lib/button';
+import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
-
 import moment from 'moment';
 
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 import patterns from 'utils/validation-patterns';
 import { getReposData, syncRepos } from 'utils/git-utils';
 import UserSelector from './user-selector';

@@ -3,3 +3,4 @@
 // SPDX-License-Identifier: MIT
 
 declare module '*.svg';
+declare module 'cvat-core/src/api';

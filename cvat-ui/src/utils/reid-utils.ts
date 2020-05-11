@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 import { ShapeType, RQStatus } from 'reducers/interfaces';
 
 

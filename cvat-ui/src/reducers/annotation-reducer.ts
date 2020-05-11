@@ -4,7 +4,7 @@
 
 import { AnyAction } from 'redux';
 
-import { Canvas, CanvasMode } from 'cvat-canvas';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
