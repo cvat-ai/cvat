@@ -6,7 +6,7 @@
 import cv2
 import numpy as np
 
-from .inference_engine import make_plugin_or_core, make_network
+from inference_engine import make_plugin_or_core, make_network
 
 class ModelLoader:
     def __init__(self, model, weights):
@@ -48,6 +48,7 @@ class ModelLoader:
             self._net = core_or_plugin.load(network=network, num_requests=2)
         input_type = network.inputs[self._input_blob_name]
         self._input_layout = input_type if isinstance(input_type, list) else input_type.shape
+        self._network = network
 
     def infer(self, image):
         _, _, h, w = self._input_layout
@@ -67,3 +68,10 @@ class ModelLoader:
             return results[self._output_blob_name].copy()
         else:
             return results.copy()
+
+    def input_size(self):
+        return self._input_layout[2:]
+
+    @property
+    def layers(self):
+        return self._network.layers
