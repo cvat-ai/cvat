@@ -22,7 +22,7 @@
             * </br> Necessary fields: objectType, shapeType, frame, updated, group
             * </br> Optional fields: keyframes, clientID, serverID
             * </br> Optional fields which can be set later: points, zOrder, outside,
-            * occluded, hidden, attributes, lock, label, color, keyframe, annotation_type
+            * occluded, hidden, attributes, lock, label, color, keyframe, annotationType
         */
         constructor(serialized) {
             const data = {
@@ -39,7 +39,7 @@
                 color: null,
                 hidden: null,
                 pinned: null,
-                annotation_type: null,
+                annotationType: null,
                 keyframes: serialized.keyframes,
                 group: serialized.group,
                 updated: serialized.updated,
@@ -69,7 +69,7 @@
                     this.lock = false;
                     this.color = false;
                     this.hidden = false;
-                    this.annotation_type = false;
+                    this.annotationType = false;
 
                     return reset;
                 },
@@ -111,18 +111,18 @@
                     */
                     get: () => data.shapeType,
                 },
-                annotation_type: {
+                annotationType: {
                     /**
-                        * @name annotation_type
+                        * @name annotationType
                         * @type {module:API.cvat.enums.AnnotationType} 
                         * @memberof module:API.cvat.classes.ObjectState
                         * @readonly
                         * @instance
                     */
-                    get: () => data.annotation_type,
-                    set: (annotation_type) => {
-                        data.updateFlags.annotation_type = true;
-                        data.annotation_type = annotation_type;
+                    get: () => data.annotationType,
+                    set: (annotationType) => {
+                        data.updateFlags.annotationType = true;
+                        data.annotationType = annotationType;
                     },
                 },
                 clientID: {
@@ -359,7 +359,7 @@
 
             this.label = serialized.label;
             this.lock = serialized.lock;
-            this.annotation_type = serialized.annotation_type;
+            this.annotationType = serialized.annotationType;
 
             if (typeof (serialized.zOrder) === 'number') {
                 this.zOrder = serialized.zOrder;

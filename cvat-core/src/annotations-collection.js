@@ -763,7 +763,7 @@
                             points: [...state.points],
                             type: state.shapeType,
                             z_order: state.zOrder,
-                            annotation_type: state.annotation_type,
+                            annotation_type: state.annotationType,
                         });
                     } else if (state.objectType === 'track') {
                         constructed.tracks.push({
@@ -771,6 +771,7 @@
                                 .filter((attr) => !labelAttributes[attr.spec_id].mutable),
                             frame: state.frame,
                             group: 0,
+                            annotation_type: state.annotationType,
                             label_id: state.label.id,
                             shapes: [{
                                 attributes: attributes
@@ -781,7 +782,6 @@
                                 points: [...state.points],
                                 type: state.shapeType,
                                 z_order: state.zOrder,
-                                annotation_type: state.annotation_type,
                             }],
                         });
                     } else {

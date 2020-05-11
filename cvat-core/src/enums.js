@@ -204,7 +204,7 @@
         * @property {string} CHANGED_LOCK Changed lock
         * @property {string} CHANGED_COLOR Changed color
         * @property {string} CHANGED_HIDDEN Changed hidden
-        * @property {string} CHANGED_ANNOTATIONTYPE Changed annotation_type
+        * @property {string} CHANGED_ANNOTATION_TYPE Changed annotation type
         * @property {string} MERGED_OBJECTS Merged objects
         * @property {string} SPLITTED_TRACK Splitted track
         * @property {string} GROUPED_OBJECTS Grouped objects
@@ -224,7 +224,7 @@
         CHANGED_PINNED: 'Changed pinned',
         CHANGED_COLOR: 'Changed color',
         CHANGED_HIDDEN: 'Changed hidden',
-        CHANGED_ANNOTATIONTYPE: 'Changed annotation_type',
+        CHANGED_ANNOTATION_TYPE: 'Changed annotation type',
         MERGED_OBJECTS: 'Merged objects',
         SPLITTED_TRACK: 'Splitted track',
         GROUPED_OBJECTS: 'Grouped objects',

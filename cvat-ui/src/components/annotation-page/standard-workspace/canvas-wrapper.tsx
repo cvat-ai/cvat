@@ -307,6 +307,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             .filter((label: any) => label.id === activeLabelID)[0];
         state.occluded = state.occluded || false;
         state.frame = frame;
+        state.annotationType = 'Manual';
         const objectState = new cvat.classes.ObjectState(state);
         onCreateAnnotations(jobInstance, frame, [objectState]);
     };
@@ -482,10 +483,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             state,
             points,
-            annotation_type,
+            // annotation_type,
         } = event.detail;
         state.points = points;
-        state.annotation_type = annotation_type;
+        state.annotation_type = 'Manual'
         onUpdateAnnotations([state]);
     };
 
