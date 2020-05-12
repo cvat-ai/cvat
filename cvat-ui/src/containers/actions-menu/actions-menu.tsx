@@ -41,6 +41,7 @@ interface DispatchToProps {
     exportDataset: (taskInstance: any, exporter: any) => void;
     deleteTask: (taskInstance: any) => void;
     openRunModelWindow: (taskInstance: any) => void;
+    openNewAnnotationModel: (taskInstance: any) => void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -101,6 +102,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         openRunModelWindow: (taskInstance: any): void => {
             dispatch(modelsActions.showRunModelDialog(taskInstance));
         },
+        openNewAnnotationModel: (taskInstance: any): void => {
+            dispatch(modelsActions.openNewAnnotationDialog(taskInstance));
+        },
     };
 }
 
@@ -122,6 +126,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         exportDataset,
         deleteTask,
         openRunModelWindow,
+        openNewAnnotationModel
     } = props;
 
 
@@ -165,6 +170,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
                 window.open(`${taskInstance.bugTracker}`, '_blank');
             } else if (action === Actions.RUN_AUTO_ANNOTATION) {
                 openRunModelWindow(taskInstance);
+            } else if (action === Actions.NEW_ANNOTATION) {
+                openNewAnnotationModel(taskInstance);
             }
         }
     }

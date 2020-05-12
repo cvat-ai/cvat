@@ -91,6 +91,13 @@
     width: 100%;
 }
 
+.cvat-track-setting-popover-content {
+    padding: 10px;
+    border-radius: 5px;
+    background: $background-color-2;
+    width: 400px;
+}
+
 .cvat-draw-shape-popover-content {
     padding: 10px;
     border-radius: 5px;

@@ -189,6 +189,8 @@ export enum AnnotationActionTypes {
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
+    TRACKER_SETTINGS = 'TRACKER_SETTINGS',
+    RESET_TRACKER_SETTINGS = 'RESET_TRACKER_SETTINGS',
 }
 
 export function saveLogsAsync():
@@ -1481,5 +1483,20 @@ export function repeatDrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAc
                 crosshair: activeShapeType === ShapeType.RECTANGLE,
             });
         }
+    };
+}
+export function trackerSettings(name: string, value: string | number): AnyAction {
+    return {
+        type: AnnotationActionTypes.TRACKER_SETTINGS,
+        payload: {
+            name,
+            value,
+        },
+    };
+}
+
+export function resetTrackerSettings(): AnyAction {
+    return {
+        type: AnnotationActionTypes.RESET_TRACKER_SETTINGS,
     };
 }

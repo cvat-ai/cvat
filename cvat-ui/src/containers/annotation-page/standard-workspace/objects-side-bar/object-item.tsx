@@ -21,9 +21,11 @@ import {
     activateObject as activateObjectAction,
     propagateObject as propagateObjectAction,
     pasteShapeAsync,
+    resetTrackerSettings,
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
+import getCore from 'cvat-core-wrapper';
 
 interface OwnProps {
     clientID: number;
@@ -45,6 +47,9 @@ interface StateToProps {
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
+    tracker_type: string;
+    tracker_until: string;
+    tracker_frame_number: number;
 }
 
 interface DispatchToProps {
@@ -58,6 +63,7 @@ interface DispatchToProps {
     propagateObject: (objectState: any) => void;
     changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
     changeGroupColor(group: number, color: string): void;
+    resetTracker(): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -86,6 +92,11 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 ready,
                 activeControl,
                 instance: canvasInstance,
+            },
+            tracker: {
+                tracker_type,
+                tracker_until,
+                tracker_frame_number,
             },
             colors,
         },
@@ -122,6 +133,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         maxZLayer,
         normalizedKeyMap,
         canvasInstance,
+        tracker_type,
+        tracker_until,
+        tracker_frame_number,
     };
 }
 
@@ -163,6 +177,39 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
         },
+        resetTracker(): void {
+            dispatch(resetTrackerSettings());
+        },
+    };
+}
+
+interface TrackerPayload {
+    jobId: number;
+    trackinJob: {
+        startFrame: number;
+        stopFrame: number;
+        track: {
+            attributes: any;
+            frame: number;
+            group: number;
+            id: number;
+            label_id: number;
+        }
+    };
+    shapes: [
+        {
+            frame: number;
+            attributes: any;
+            occluded: boolean;
+            outside: boolean;
+            points: number[];
+            type: string;
+            z_order: number;
+        }
+    ];
+    trackId: number;
+    trackerOptions: {
+        trackerType: string;
     };
 }
 
@@ -413,6 +460,69 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         updateState(objectState);
     }
 
+    private createTrackerPayload = (): TrackerPayload => {
+        const {
+            tracker_type,
+            tracker_until,
+            tracker_frame_number,
+            resetTracker,
+            jobInstance,
+            objectState,
+        } = this.props;
+
+        return {
+            jobId: jobInstance.id,
+            trackinJob: {
+                startFrame: 0,
+                stopFrame: 10,
+                track: {
+                    attributes: objectState.attributes,
+                    frame: objectState.frame,
+                    group: objectState.group,
+                    id: 4,
+                    label_id: objectState.label.id
+                }
+            },
+            shapes: [
+                {
+                    frame: objectState.frame,
+                    attributes: objectState.attributes,
+                    occluded: objectState.occluded,
+                    outside: objectState.outside,
+                    points: objectState.points,
+                    type: objectState.shapeType,
+                    z_order: objectState.zOrder,
+                }
+            ],
+            trackId: 4,
+            trackerOptions: {
+                trackerType: tracker_type
+            }
+        }
+    }
+
+    private onTrackerClick = (): void => {
+        const {
+            resetTracker,
+        } = this.props;
+        console.log(this.props);
+        let payload: TrackerPayload = this.createTrackerPayload();
+        const core = getCore();
+        const baseUrl = core.config.backendAPI.slice(0, -7);
+        try {
+            core.server.request(`${baseUrl}/tracking/track`, {
+                method: 'POST',
+                data: JSON.stringify(payload),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }).then((response: any) => console.log(response));
+        } catch(error) {
+
+        }
+        resetTracker();
+    }
+
     public render(): JSX.Element {
         const {
             objectState,
@@ -507,6 +617,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 changeLabel={this.changeLabel}
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
+                onTrackerClick={this.onTrackerClick}
             />
         );
     }

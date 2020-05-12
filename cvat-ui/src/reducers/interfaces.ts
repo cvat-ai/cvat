@@ -161,6 +161,15 @@ export interface ModelsState {
     };
     visibleRunWindows: boolean;
     activeRunTask: any;
+    visibleNewAnnotationWindows: boolean;
+    activeNewAnnotationTask: any;
+}
+
+export interface CsvModelFiles {
+    [key: string]: string | File;
+    csv: string | File;
+    pb: string | File;
+    h5: string | File;
 }
 
 export interface ModelFiles {
@@ -379,11 +388,22 @@ export interface AnnotationState {
         visible: boolean;
         data: any;
     };
+    tracker: {
+        tracker_type: string;
+        tracker_until: string;
+        tracker_frame_number: number;
+    };
     colors: any[];
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     tabContentHeight: number;
     workspace: Workspace;
+}
+
+export enum TrackerInputs {
+    tracker_type = 'tracker_type',
+    tracker_until = 'tracker_until',
+    tracker_frame_number = 'tracker_frame_number',
 }
 
 export enum Workspace {

@@ -15,6 +15,8 @@ const defaultState: ModelsState = {
     visibleRunWindows: false,
     activeRunTask: null,
     inferences: {},
+    visibleNewAnnotationWindows: false,
+    activeNewAnnotationTask: null,
 };
 
 export default function (
@@ -89,6 +91,20 @@ export default function (
                 ...state,
                 visibleRunWindows: false,
                 activeRunTask: null,
+            };
+        }
+        case ModelsActionTypes.OPEN_NEW_ANNOTATION_DIALOG: {
+            return {
+                ...state,
+                visibleNewAnnotationWindows: true,
+                activeNewAnnotationTask: action.payload.taskInstance,
+            }
+        }
+        case ModelsActionTypes.CLOSE_NEW_ANNOTATION_DIALOG: {
+            return {
+                ...state,
+                visibleNewAnnotationWindows: false,
+                activeNewAnnotationTask: null,
             };
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {

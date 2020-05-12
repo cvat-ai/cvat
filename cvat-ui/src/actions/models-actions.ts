@@ -36,6 +36,8 @@ export enum ModelsActionTypes {
     CLOSE_RUN_MODEL_DIALOG = 'CLOSE_RUN_MODEL_DIALOG',
     CANCEL_INFERENCE_SUCCESS = 'CANCEL_INFERENCE_SUCCESS',
     CANCEL_INFERENCE_FAILED = 'CANCEL_INFERENCE_FAILED',
+    OPEN_NEW_ANNOTATION_DIALOG = 'SHOW_NEW_ANNOTATION_DIALOG',
+    CLOSE_NEW_ANNOTATION_DIALOG = 'CLOSE_NEW_ANNOTATION_DIALOG'
 }
 
 export const modelsActions = {
@@ -108,6 +110,10 @@ export const modelsActions = {
             taskInstance,
         },
     ),
+    openNewAnnotationDialog: (taskInstance: any) => createAction(
+        ModelsActionTypes.OPEN_NEW_ANNOTATION_DIALOG, { taskInstance },
+    ),
+    closeNewAnnotationDialog: () => createAction(ModelsActionTypes.CLOSE_NEW_ANNOTATION_DIALOG),
 };
 
 export type ModelsActions = ActionUnion<typeof modelsActions>;

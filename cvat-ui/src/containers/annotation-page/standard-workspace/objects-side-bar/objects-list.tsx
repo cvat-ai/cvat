@@ -14,6 +14,7 @@ import {
     collapseObjectItems,
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
+    resetTrackerSettings,
 } from 'actions/annotation-actions';
 import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
 import { CombinedState, StatesOrdering, ObjectType } from 'reducers/interfaces';
@@ -34,6 +35,9 @@ interface StateToProps {
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
+    tracker_type: string;
+    tracker_until: string;
+    tracker_frame_number: number;
 }
 
 interface DispatchToProps {
@@ -43,6 +47,7 @@ interface DispatchToProps {
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeFrame(frame: number): void;
+    resetTracker(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -66,6 +71,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 frame: {
                     number: frameNumber,
                 },
+            },
+            tracker: {
+                tracker_type,
+                tracker_until,
+                tracker_frame_number,
             },
             canvas: {
                 instance: canvasInstance,
@@ -110,6 +120,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         canvasInstance,
+        tracker_type,
+        tracker_until,
+        tracker_frame_number,
     };
 }
 
@@ -132,6 +145,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         changeFrame(frame: number): void {
             dispatch(changeFrameAsync(frame));
+        },
+        resetTracker(): void {
+            dispatch(resetTrackerSettings());
         },
     };
 }
@@ -242,6 +258,17 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         } = this.props;
 
         collapseStates(objectStates, collapsed);
+    }
+
+    private onTrackerClick(): void {
+        const {
+            tracker_type,
+            tracker_until,
+            tracker_frame_number,
+            resetTracker
+        } = this.props;
+        console.log(tracker_type, tracker_until, tracker_frame_number);
+        resetTracker();
     }
 
     public render(): JSX.Element {

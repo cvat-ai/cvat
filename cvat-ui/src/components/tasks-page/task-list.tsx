@@ -7,6 +7,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import ModelRunnerModalContainer from 'containers/model-runner-dialog/model-runner-dialog';
+import ModelNewAnnotationModalContainer from  'containers/model-new-annotation-dialog/model-new-annotation-dialog';
 import TaskItem from 'containers/tasks-page/task-item';
 
 export interface ContentListProps {
@@ -47,6 +48,7 @@ export default function TaskListComponent(props: ContentListProps): JSX.Element 
                 </Col>
             </Row>
             <ModelRunnerModalContainer />
+            <ModelNewAnnotationModalContainer />
         </>
     );
 }

@@ -50,6 +50,7 @@ function ItemMenu(
     createURL: (() => void),
     toBackground: (() => void),
     toForeground: (() => void),
+    onTrackerClick: (() => void),
 ): JSX.Element {
     return (
         <Menu className='cvat-object-item-menu'>
@@ -92,6 +93,18 @@ function ItemMenu(
                     </Tooltip>
                 </Menu.Item>
             )}
+            <Menu.Item>
+                <Button type='link' onClick={onTrackerClick}>
+                    <Icon component={ForegroundIcon} />
+                    Track
+                </Button>
+            </Menu.Item>
+            <Menu.Item>
+                <Button type='link' onClick={onTrackerClick}>
+                    <Icon component={ForegroundIcon} />
+                    Track
+                </Button>
+            </Menu.Item>
             <Menu.Item>
                 <Tooltip title={`${removeShortcut}`}>
                     <Button
@@ -140,6 +153,7 @@ interface ItemTopComponentProps {
     createURL(): void;
     toBackground(): void;
     toForeground(): void;
+    onTrackerClick(): void;
 }
 
 function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
@@ -164,6 +178,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         createURL,
         toBackground,
         toForeground,
+        onTrackerClick
     } = props;
 
     return (
@@ -203,6 +218,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                         createURL,
                         toBackground,
                         toForeground,
+                        onTrackerClick,
                     )}
                 >
                     <Icon type='more' />
@@ -727,6 +743,7 @@ interface Props {
     changeAttribute(attrID: number, value: string): void;
     changeColor(color: string): void;
     collapse(): void;
+    onTrackerClick(): void
 }
 
 function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
@@ -804,6 +821,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeAttribute,
         changeColor,
         collapse,
+        onTrackerClick
     } = props;
 
     const type = objectType === ObjectType.TAG ? ObjectType.TAG.toUpperCase()
@@ -856,6 +874,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     createURL={createURL}
                     toBackground={toBackground}
                     toForeground={toForeground}
+                    onTrackerClick={onTrackerClick}
                 />
                 <ItemButtons
                     shapeType={shapeType}

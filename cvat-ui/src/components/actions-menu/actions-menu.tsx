@@ -38,6 +38,7 @@ export enum Actions {
     DELETE_TASK = 'delete_task',
     RUN_AUTO_ANNOTATION = 'run_auto_annotation',
     OPEN_BUG_TRACKER = 'open_bug_tracker',
+    NEW_ANNOTATION = 'new_annotation',
 }
 
 export default function ActionsMenuComponent(props: Props): JSX.Element {
@@ -147,6 +148,17 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                             key={Actions.RUN_AUTO_ANNOTATION}
                         >
                             Automatic annotation
+                        </Menu.Item>
+                    )
+            }
+            {
+                renderModelRunner
+                    && (
+                        <Menu.Item
+                            disabled={inferenceIsActive}
+                            key={Actions.NEW_ANNOTATION}
+                        >
+                            Create new annotation
                         </Menu.Item>
                     )
             }

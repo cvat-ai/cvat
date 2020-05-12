@@ -1,0 +1,437 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import './styles.scss';
+import React from 'react';
+
+import {
+    Row,
+    Col,
+    Modal,
+    Select,
+    notification,
+    Input,
+    Button
+} from 'antd';
+
+const {TextArea} = Input;
+
+import {
+    Model,
+    StringObject,
+} from 'reducers/interfaces';
+import getCore from 'cvat-core-wrapper';
+
+interface Props {
+    visible: boolean;
+    taskInstance: any;
+    closeDialog(): void;
+}
+
+interface State {
+    selectedModelType: string;
+    selectedModel: string;
+    showModelsOptions: boolean;
+    machineType: {
+        label: string;
+        value: string;
+    };
+    argumentS: string;
+}
+
+interface CreateAnnotationSubmitData {
+    project_uid: string;
+    machine_type: string;
+    arguments: string;
+    ref_model: string;
+    dump_format: string;
+}
+
+const core = getCore();
+
+const models = [
+    {
+        label: 'frcnn-nas-coco',
+    },
+    {
+        label: 'frcnn-res101-coco',
+    },
+    {
+        label: 'frcnn-res101-low',
+    },
+    {
+        label: 'frcnn-res50-coco',
+    },
+    {
+        label: 'frcnn-res50-lowp',
+    },
+    {
+        label: 'ssd-mobilenet-v2-coco',
+    },
+    {
+        label: 'ssd-mobilenet-v1-coco2',
+    },
+    {
+        label: 'ssdlite-mobilenet-coco',
+    }
+]
+
+const machines = [
+    {
+        label: 'GPU: 1 (Tesla K80), CPU: 4, RAM: 26GB ($0.750/hr)',
+        value: 'gpu-4-26-1k80'
+    },
+    {
+        label: 'GPU: 1 (Tesla K80), CPU: 8, RAM: 52GB ($1.009/hr)',
+        value: 'gpu-8-52-1k80'
+    },
+    {
+        label: 'GPU: 1 (Tesla T4), CPU: 4, RAM: 26GB ($1.296/hr)',
+        value: 'gpu-4-26-1t4'
+    },
+    {
+        label: 'GPU: 1 (Tesla T4), CPU: 8, RAM: 52GB ($1.555/hr)',
+        value: 'gpu-8-52-1t4'
+    },
+    {
+        label: 'GPU: 1 (Tesla V100), CPU: 8, RAM: 52GB ($3.226/hr)',
+        value: 'gpu-8-52-1v100'
+    },
+    {
+        label: 'GPU: 2 (Tesla V100), CPU: 16, RAM: 104GB ($6.452/hr)',
+        value: 'gpu-16-104-2v100'
+    },
+    {
+        label: 'GPU: 4 (Tesla V100), CPU: 32 RAM: 208GB ($12.902/hr)',
+        value: 'gpu-32-208-4v100'
+    },
+    {
+        label: 'GPU: 8 (Tesla V100), CPU: 64 RAM: 416GB ($25.803/hr)',
+        value: 'gpu-64-416-8v100'
+    }
+]
+
+export default class ModelNewAnnotationModalComponent extends React.PureComponent<Props, State> {
+    public constructor(props: Props) {
+        super(props);
+        this.state = {
+            selectedModelType: '',
+            selectedModel: models[0].label,
+            showModelsOptions: false,
+            machineType: machines[0],
+            argumentS: '',
+        };
+    }
+
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
+        const {
+            visible,
+        } = this.props;
+
+
+        if (!prevProps.visible && visible) {
+            this.setState({
+                selectedModelType: '',
+                selectedModel: models[0].label,
+                machineType: machines[0],
+                showModelsOptions: false,
+                argumentS: '',
+            });
+        }
+    }
+
+    private async createNewAnnotation(): Promise<Boolean> {
+        const {
+            taskInstance,
+            closeDialog,
+        } = this.props;
+
+        let {
+            selectedModelType,
+            selectedModel,
+            machineType: {
+                value,
+            },
+            argumentS,
+        } = this.state;
+
+        const baseUrl: string = core.config.backendAPI.slice(0, -7);
+        let formData: CreateAnnotationSubmitData = {
+            project_uid: '1',
+            arguments: argumentS,
+            dump_format: selectedModelType,
+            machine_type: value,
+            ref_model: selectedModelType !!== "MASK ZIP 1.0" ? selectedModel : "",
+        }
+        
+        console.log(formData);
+        try {
+            let resp = await core.server.request(`${baseUrl}/api/v1/tasks/${taskInstance.id}/create_annotation_model`, {
+                method: 'POST',
+                form: formData,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            })
+            console.log(resp);
+        } catch (error) {
+            notification.error({
+                message: 'Create New Annotation failed.',
+                description: `Create New Annotation failed (Error code: ${error.code}). Please try again later`,
+                duration: 5,
+            });
+        } finally {
+            closeDialog();
+            return true;
+        }
+    }
+
+    private onSubmitNotifications(count: number): Boolean {
+        const {
+            closeDialog,
+        } = this.props;
+        const key = `open${Date.now()}`;
+        const btn = (
+            <div className="cvat-new-anno-modal-submit-notification-btn">
+                <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => {
+                        notification.close(key);
+                        closeDialog();
+                    }}
+                >
+                    cancel
+                </Button>
+                <Button 
+                    type="primary"
+                    size="small"
+                    onClick={() => {
+                        this.createNewAnnotation();
+                        notification.close(key);
+                    }}
+                >
+                    Confirm
+                </Button>
+            </div>
+        );
+        if(count == 0) {
+            notification.error({
+                message: 'Could not create new annotation.',
+                description: `You don't have any annotated images.
+                    Please annotate few images before training your model.`,
+            });
+            closeDialog();
+            return true;
+        }
+        if(count < 100) {
+            notification.open({
+                message: 'Are you sure?',
+                description: `'Number of annotations is less than 100. 
+                    We recommend you annotate at least few hundreds to get good results.`,
+                duration: 0,
+                btn,
+                key,
+            });
+        } else {
+            this.createNewAnnotation();
+        }
+        return true;
+    }
+
+    private async handleSubmit(): Promise<Boolean> {
+        const baseUrl: string = core.config.backendAPI.slice(0, -7);
+        const {
+            taskInstance,
+        } = this.props;
+        const {
+            selectedModelType,
+        } = this.state;
+        let resp = await core.server.request(`${baseUrl}/api/v1/jobs/${taskInstance.id}/annotations`, {
+            method: 'GET',
+        })
+        const requiredShape: String = selectedModelType === "MASK ZIP 1.0" ? "polygon" : "rectangle";
+        const {
+            shapes
+        } = resp;
+        let count = shapes.reduce((acc: number, shape: any) => {
+            if(shape.type === requiredShape) {
+                acc++;
+            }
+            return acc;
+        }, 0)
+        return this.onSubmitNotifications(count);
+    }
+
+    private renderModelSelector(): JSX.Element {
+
+        return (
+            <React.Fragment>
+                <Row type='flex' align='middle'>
+                    <Col span={6}>Select Model Type:</Col>
+                    <Col span={17}>
+                        <Select
+                            placeholder='Select a model type'
+                            style={{ width: '100%' }}
+                            onChange={(value: string): void => {
+                                this.setState({
+                                    selectedModelType: value,
+                                    showModelsOptions: value === "TFRecord ZIP 1.0",
+                                })}
+                            }
+                        >
+                            <Select.Option value="TFRecord ZIP 1.0">
+                                Tensorflow OD API
+                            </Select.Option>
+                            <Select.Option value="MASK ZIP 1.0">
+                                MaskRCNN
+                            </Select.Option>
+                        </Select>
+                    </Col>
+                </Row>
+                {
+                    this.state.showModelsOptions && 
+                    <Row type='flex' align='middle'>
+                        <Col span={6}>Select Model:</Col>
+                        <Col span={17}>
+                            <Select
+                                placeholder='Select a model'
+                                style={{ width: '100%' }}
+                                onChange={(value: string): void => {
+                                    this.setState({
+                                        selectedModel: value,
+                                    })}
+                                }
+                                defaultValue={this.state.selectedModel}
+                            >
+                                {models.map((model): JSX.Element => (
+                                    <Select.Option key={model.label} value={model.label}>
+                                        {model.label}
+                                    </Select.Option>
+                                ))}
+                            </Select>
+                        </Col>
+                    </Row>
+                }
+                {
+                    this.state.showModelsOptions && 
+                    <Row type='flex'>
+                        <Col>
+                            <div>
+                                (Learn more about this base model by clicking the 'show more' link after clicking here:&nbsp; 
+                                <a 
+                                    href={`https://c.onepanel.io/onepanel-demo/datasets/${this.state.selectedModel}/details`}
+                                    target='_blank'
+                                    className="cvat-create-anno-modal-link"
+                                >
+                                    {this.state.selectedModel}
+                                </a>
+                                )
+                            </div>
+                        </Col>
+                    </Row>
+                }
+                <Row type='flex' align='middle'>
+                    <Col span={6}>Select Machine Type:</Col>
+                    <Col span={17}>
+                        <Select
+                            placeholder='Select a machine type'
+                            style={{ width: '100%' }}
+                            onChange={(value: string): void => {
+                                let machine = machines.find(machine => machine.value === value)
+                                this.setState({
+                                    machineType: machine ? machine : machines[0]
+                                })}
+                            }
+                            defaultValue={this.state.machineType.label}
+                        >
+                            {machines.map((machine): JSX.Element => (
+                                <Select.Option value={machine.value} key={machine.value}>
+                                    {machine.label}
+                                </Select.Option>
+                            ))}
+                        </Select>
+                    </Col>
+                </Row>
+                <Row type='flex'>
+                    <Col span={6}> Arguments: </Col>
+                    <Col span={17}>
+                        <TextArea
+                            autoSize={{minRows: 1 , maxRows: 4}}
+                        />
+                    </Col>
+                </Row>
+                <Row type='flex'>
+                    <Col>
+                        <div>
+                            (Learn how to add model &nbsp;
+                            <a 
+                                href={`https://docs.onepanel.io/CVAT/create_annotation_model/
+                                    ?utm_source=cvatmodelarguments`}
+                                target='_blank'
+                                className="cvat-create-anno-modal-link"
+                            >
+                                training
+                            </a>
+                            )
+                        </div>
+                    </Col>
+                </Row>
+            </React.Fragment>
+        );
+    }
+
+    private renderContent(): JSX.Element {
+        return (
+            <div className='cvat-run-model-dialog'>
+                <div className="cvat-create-anno-modal-link cvat-create-anno-text-align" >
+                    <a 
+                        href={`https://docs.onepanel.io/CVAT/create_annotation_model/
+                            ?utm_source=cvatmodelhowtouse#training-model-through-cvat`}
+                        target='_blank'>
+                        How to use
+                    </a>
+                </div>
+                { this.renderModelSelector() }
+            </div>
+        );
+    }
+
+    public render(): JSX.Element | false {
+        const {
+            visible,
+            closeDialog,
+        } = this.props;
+
+
+        return (
+            visible && (
+                <Modal
+                    closable={false}
+                    okType='primary'
+                    okText='Submit'
+                    onOk={(): void => {
+                        this.handleSubmit();
+                    }}
+                    onCancel={(): void => {
+                        this.setState({
+                            selectedModelType: '',
+                            selectedModel: models[0].label,
+                            machineType: machines[0],
+                            showModelsOptions: false,
+                            argumentS: ''
+                        });
+                        closeDialog();
+                    }}
+                    okButtonProps={{ disabled: !!!this.state.selectedModelType }}
+                    title='Create new annotation'
+                    visible
+                    width="50%"
+                >
+                    {this.renderContent()}
+                </Modal>
+            )
+        );
+    }
+}
