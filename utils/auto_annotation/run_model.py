@@ -39,6 +39,10 @@ def _get_kwargs():
 
     return vars(parser.parse_args())
 
+def _init_django(settings):
+    import django
+    os.environ['DJANGO_SETTINGS_MODULE'] = settings
+    django.setup()
 
 def random_color():
     rgbl=[255,0,0]
@@ -63,10 +67,7 @@ def find_min_y(array):
     return array[index]
 
 def _get_docker_files(model_name: str, task_id: int):
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'cvat.settings.development'
-
-    import django
-    django.setup()
+    _init_django('cvat.settings.development')
 
     from cvat.apps.auto_annotation.models import AnnotationModel
     from cvat.apps.engine.models import Task as TaskModel
@@ -95,7 +96,7 @@ def main():
 
     py_file = kwargs.get('py')
     bin_file = kwargs.get('bin')
-    mapping_file = kwargs.get('json')
+    mapping_file = os.path.abspath(kwargs.get('json'))
     xml_file = kwargs.get('xml')
 
     model_name = kwargs.get('model_name')
@@ -149,7 +150,6 @@ def main():
         logging.critical('JSON file is not found! Check path!')
         return
 
-    mapping_file = os.path.abspath(mapping_file)
     with open(mapping_file) as json_file:
         try:
             mapping = json.load(json_file)
@@ -235,9 +235,7 @@ def main():
             cv2.destroyWindow(str(index))
 
     if kwargs['serialize']:
-        os.environ['DJANGO_SETTINGS_MODULE'] = 'cvat.settings.production'
-        import django
-        django.setup()
+        _init_django('cvat.settings.production')
 
         from cvat.apps.engine.serializers import LabeledDataSerializer
 

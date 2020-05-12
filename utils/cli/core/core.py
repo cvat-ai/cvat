@@ -14,9 +14,10 @@ log = logging.getLogger(__name__)
 
 class CLI():
 
-    def __init__(self, session, api):
+    def __init__(self, credentials, api):
         self.api = api
-        self.session = session
+        self.session = requests.Session()
+        self.login(credentials)
 
     def tasks_data(self, task_id, resource_type, resources):
         """ Add local, remote, or shared files to an existing task. """
@@ -141,6 +142,13 @@ class CLI():
             "with annotation file {} finished".format(filename)
         log.info(logger_string)
 
+    def login(self, credentials):
+        url = self.api.login
+        auth = {'username': credentials[0], 'password': credentials[1]}
+        response = requests.post(url, auth)
+        response.raise_for_status()
+        self.session.cookies = response.cookies
+
 
 class CVAT_API_V1():
     """ Build parameterized API URLs """
@@ -171,3 +179,7 @@ class CVAT_API_V1():
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
         return self.tasks_id(task_id) + '/annotations/{}?format={}' \
             .format(name, fileformat)
+
+    @property
+    def login(self):
+        return self.base + 'auth/login'
