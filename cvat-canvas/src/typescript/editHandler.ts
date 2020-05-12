@@ -6,7 +6,7 @@ import * as SVG from 'svg.js';
 import 'svg.select.js';
 
 import consts from './consts';
-import { translateFromSVG, pointsToArray } from './shared';
+import { translateFromSVG, pointsToNumberArray } from './shared';
 import { EditData, Geometry, Configuration } from './canvasModel';
 import { AutoborderHandler } from './autoborderHandler';
 
@@ -110,7 +110,7 @@ export class EditHandlerImpl implements EditHandler {
 
     private selectPolygon(shape: SVG.Polygon): void {
         const { offset } = this.geometry;
-        const points = pointsToArray(shape.attr('points'))
+        const points = pointsToNumberArray(shape.attr('points'))
             .map((coord: number): number => coord - offset);
 
         const { state } = this.editData;
@@ -198,7 +198,7 @@ export class EditHandlerImpl implements EditHandler {
             points = oldPoints.concat(linePoints.slice(0, -1));
         }
 
-        points = pointsToArray(points.join(' '))
+        points = pointsToNumberArray(points.join(' '))
             .map((coord: number): number => coord - offset);
 
         const { state } = this.editData;

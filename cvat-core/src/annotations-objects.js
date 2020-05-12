@@ -1621,7 +1621,7 @@
                 const leftPoints = [..._leftPoints];
                 const rightPoints = [..._rightPoints];
 
-                if (_leftPoints.length > _rightPoints.length) {
+                if (Array.from(new Set(Object.values(_matching))).length === _rightPoints.length) {
                     const matching = { ..._matching };
                     let latestRight = 0;
 

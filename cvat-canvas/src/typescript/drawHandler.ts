@@ -11,8 +11,8 @@ import {
     translateToSVG,
     displayShapeSize,
     ShapeSizeElement,
-    pointsToString,
-    pointsToArray,
+    stringifyPoints,
+    pointsToNumberArray,
     BBox,
     Box,
 } from './shared';
@@ -354,6 +354,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 if (lastDrawnPoint.x === null || lastDrawnPoint.y === null) {
                     this.drawInstance.draw('point', e);
                 } else {
+                    this.drawInstance.draw('update', e);
                     const deltaTreshold = 15;
                     const delta = Math.sqrt(
                         ((e.clientX - lastDrawnPoint.x) ** 2)
@@ -377,7 +378,7 @@ export class DrawHandlerImpl implements DrawHandler {
         });
 
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
-            const targetPoints = pointsToArray((e.target as SVGElement).getAttribute('points'));
+            const targetPoints = pointsToNumberArray((e.target as SVGElement).getAttribute('points'));
             const { shapeType } = this.drawData;
             const { points, box } = shapeType === 'cuboid' ? this.getFinalCuboidCoordinates(targetPoints)
                 : this.getFinalPolyshapeCoordinates(targetPoints);
@@ -648,7 +649,7 @@ export class DrawHandlerImpl implements DrawHandler {
             } else {
                 const points = this.drawData.initialState.points
                     .map((coord: number): number => coord + offset);
-                const stringifiedPoints = pointsToString(points);
+                const stringifiedPoints = stringifyPoints(points);
 
                 if (this.drawData.shapeType === 'polygon') {
                     this.pastePolygon(stringifiedPoints);
