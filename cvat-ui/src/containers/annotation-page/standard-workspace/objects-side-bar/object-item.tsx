@@ -503,6 +503,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private onTrackerClick = (): void => {
         const {
+            
             resetTracker,
         } = this.props;
         console.log(this.props);

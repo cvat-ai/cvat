@@ -589,6 +589,18 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_202_ACCEPTED)
 
+
+    @action(detail=True, methods=['POST'], serializer_class=None, url_path='create_annotation_model')
+    def create_annotation_model(self, request, pk):
+        return Response(data=20, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
     @swagger_auto_schema(method='get', operation_summary='When task is being created the method returns information about a status of the creation process')
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
