@@ -8,19 +8,21 @@ import Drawer from 'antd/lib/drawer';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Button from 'antd/lib/button/button';
 
+import {isPublic} from 'utils/enviroment';
+
 
 function CookieDrawer(): JSX.Element {
     const [drawerVisiable, setDrawerVisiable] = useState(false);
 
     useEffect(() => {
-        const policyWasShown = localStorage.getItem('cookiePolicyShown');
-        if (policyWasShown === null) {
+        const cookiePolicyAccepted = localStorage.getItem('cookiePolicyAccepted');
+        if (cookiePolicyAccepted === null && isPublic()) {
             setDrawerVisiable(true);
         }
-    }, [])
+    }, [isPublic])
 
     const onClose = () => {
-        localStorage.setItem('cookiePolicyShown', 'true');
+        localStorage.setItem('cookiePolicyAccepted', 'true');
         setDrawerVisiable(false);
     }
 
@@ -29,7 +31,6 @@ function CookieDrawer(): JSX.Element {
             title='About Cookies on this site:'
             placement='bottom'
             closable={false}
-            onClose={onClose}
             visible={drawerVisiable}
             height={200}
             destroyOnClose
