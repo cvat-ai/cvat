@@ -456,7 +456,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private showDirection(state: any, shape: SVG.Polygon | SVG.PolyLine): void {
-        const path = 'M21.937 10.473l-20.8-9.6a.804.804 0 0 0-.957.224.796.796 0 0 0-.02.983L7 11.2.16 20.32A.798.798 0 0 0 .8 21.6a.794.794 0 0 0 .335-.074l20.8-9.6a.799.799 0 0 0 .002-1.453z';
+        const path = 'M21.937 10.473l-20.8-9.6a.804.804 0 0 0-.957.224.796.796 '
+            + '0 0 0-.02.983L7 11.2.16 20.32A.798.798 0 0 0 .8 21.6a.794.794 0 '
+            + '0 0 .335-.074l20.8-9.6a.799.799 0 0 0 .002-1.453z';
 
         const points = parsePoints(state.points);
         const handler = shape.remember('_selectHandler');
