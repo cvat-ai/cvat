@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 import logging
+import requests
 import sys
 from http.client import HTTPConnection
 from core.core import CLI, CVAT_API_V1
@@ -26,14 +27,15 @@ def main():
                'upload': CLI.tasks_upload}
     args = parser.parse_args()
     config_log(args.loglevel)
-    api = CVAT_API_V1(args.server_host, args.server_port)
-    cli = CLI(args.auth, api)
-    try:
-        actions[args.action](cli, **args.__dict__)
-    except (requests.exceptions.HTTPError,
-            requests.exceptions.ConnectionError,
-            requests.exceptions.RequestException) as e:
-        log.critical(e)
+    with requests.Session() as session:
+        api = CVAT_API_V1(args.server_host, args.server_port)
+        cli = CLI(session, api, args.auth)
+        try:
+            actions[args.action](cli, **args.__dict__)
+        except (requests.exceptions.HTTPError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.RequestException) as e:
+            log.critical(e)
 
 
 if __name__ == '__main__':

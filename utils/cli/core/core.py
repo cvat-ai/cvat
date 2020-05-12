@@ -14,9 +14,9 @@ log = logging.getLogger(__name__)
 
 class CLI():
 
-    def __init__(self, credentials, api):
+    def __init__(self, session, api, credentials):
         self.api = api
-        self.session = requests.Session()
+        self.session = session
         self.login(credentials)
 
     def tasks_data(self, task_id, resource_type, resources):
@@ -145,9 +145,10 @@ class CLI():
     def login(self, credentials):
         url = self.api.login
         auth = {'username': credentials[0], 'password': credentials[1]}
-        response = requests.post(url, auth)
+        response = self.session.post(url, auth)
         response.raise_for_status()
-        self.session.cookies = response.cookies
+        if 'csrftoken' in response.cookies:
+            self.session.headers['X-CSRFToken'] = response.cookies['csrftoken']
 
 
 class CVAT_API_V1():
