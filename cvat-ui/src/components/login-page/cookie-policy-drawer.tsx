@@ -12,18 +12,18 @@ import {isPublic} from 'utils/enviroment';
 
 
 function CookieDrawer(): JSX.Element {
-    const [drawerVisiable, setDrawerVisiable] = useState(false);
+    const [drawerVisible, setDrawerVisible] = useState(false);
 
     useEffect(() => {
         const cookiePolicyAccepted = localStorage.getItem('cookiePolicyAccepted');
         if (cookiePolicyAccepted === null && isPublic()) {
-            setDrawerVisiable(true);
+            setDrawerVisible(true);
         }
     }, [isPublic])
 
     const onClose = () => {
         localStorage.setItem('cookiePolicyAccepted', 'true');
-        setDrawerVisiable(false);
+        setDrawerVisible(false);
     }
 
     return (
@@ -31,7 +31,7 @@ function CookieDrawer(): JSX.Element {
             title='About Cookies on this site:'
             placement='bottom'
             closable={false}
-            visible={drawerVisiable}
+            visible={drawerVisible}
             height={200}
             destroyOnClose
         >
