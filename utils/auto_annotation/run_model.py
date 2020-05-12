@@ -36,7 +36,7 @@ def _get_kwargs():
     parser.add_argument('--show-image-delay', default=0, type=int, help='Displays the images for a set duration in milliseconds, default is until a key is pressed')
     parser.add_argument('--serialize', default=False, action='store_true', help='Try to serialize the result')
     parser.add_argument('--show-labels', action='store_true', help='Show the labels on the window')
-    
+
     return vars(parser.parse_args())
 
 
@@ -74,7 +74,7 @@ def _get_docker_files(model_name: str, task_id: int):
     task = TaskModel(pk=task_id)
     model = AnnotationModel.objects.get(name=model_name)
 
-    images_dir = task.get_data_dirname()
+    images_dir = task.data.get_data_dirname()
 
     py_file = model.interpretation_file.name
     mapping_file = model.labelmap_file.name
@@ -82,6 +82,7 @@ def _get_docker_files(model_name: str, task_id: int):
     bin_file = model.weights_file.name
 
     image_files = []
+    images_dir = os.path.abspath(images_dir)
     for root, _, filenames in os.walk(images_dir):
         for filename in fnmatch.filter(filenames, '*.jpg'):
             image_files.append(os.path.join(root, filename))
@@ -148,6 +149,7 @@ def main():
         logging.critical('JSON file is not found! Check path!')
         return
 
+    mapping_file = os.path.abspath(mapping_file)
     with open(mapping_file) as json_file:
         try:
             mapping = json.load(json_file)
