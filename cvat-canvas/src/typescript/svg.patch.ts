@@ -388,13 +388,21 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     Array.from(this.dorsalRightEdge.remember('_selectHandler').nested.node.children)
                     .forEach((point: SVG.LinkedHTMLElement, i: number) => {
                         point.classList.add(`svg_select_points_${['t', 'b'][i]}`);
-                        point.ondblclick = this.resetPerspective.bind(this);
+                        point.ondblclick = (e: MouseEvent) => {
+                            if (e.shiftKey) {
+                                this.resetPerspective()
+                            }
+                        };
                     });
                 } else {
                     Array.from(this.dorsalLeftEdge.remember('_selectHandler').nested.node.children)
                     .forEach((point: SVG.LinkedHTMLElement, i: number) => {
                         point.classList.add(`svg_select_points_${['t', 'b'][i]}`);
-                        point.ondblclick = this.resetPerspective.bind(this);
+                        point.ondblclick = (e: MouseEvent) => {
+                            if (e.shiftKey) {
+                                this.resetPerspective()
+                            }
+                        };
                     });
                 }
 
@@ -921,7 +929,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             }
         },
 
-        resetPerspective(){
+        resetPerspective(e: any){
             if (this.cuboidModel.orientation === Orientation.LEFT) {
                 const edgePoints = this.cuboidModel.dl.points;
                 const constraints = this.cuboidModel.computeSideEdgeConstraints(this.cuboidModel.dl);
