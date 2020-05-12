@@ -263,10 +263,10 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.rbProj = this.line(this.updateProjectionLine(this.cuboidModel.rb.getEquation(),
                 this.cuboidModel.rb.points[1], this.cuboidModel.vpr));
 
-            this.ftProj.stroke({ color: '#C0C0C0' });
-            this.fbProj.stroke({ color: '#C0C0C0' });
-            this.rtProj.stroke({ color: '#C0C0C0' });
-            this.rbProj.stroke({ color: '#C0C0C0' });
+            this.ftProj.stroke({ color: '#C0C0C0' }).addClass('cvat_canvas_shape_projections');
+            this.fbProj.stroke({ color: '#C0C0C0' }).addClass('cvat_canvas_shape_projections');
+            this.rtProj.stroke({ color: '#C0C0C0' }).addClass('cvat_canvas_shape_projections');
+            this.rbProj.stroke({ color: '#C0C0C0' }).addClass('cvat_canvas_shape_projections');
         },
 
         setupEdges() {
