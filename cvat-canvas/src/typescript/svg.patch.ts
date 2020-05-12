@@ -929,7 +929,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             }
         },
 
-        resetPerspective(e: any){
+        resetPerspective(){
             if (this.cuboidModel.orientation === Orientation.LEFT) {
                 const edgePoints = this.cuboidModel.dl.points;
                 const constraints = this.cuboidModel.computeSideEdgeConstraints(this.cuboidModel.dl);
