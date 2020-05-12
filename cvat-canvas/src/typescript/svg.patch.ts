@@ -281,7 +281,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.rightBotEdge = this.line(this.cuboidModel.rb.points);
         },
 
-        setupGrabPoints(circleType) {
+        setupGrabPoints(circleType: Function | string) {
             const viewModel = this.cuboidModel;
             const circle = typeof circleType === 'function' ? circleType : this.circle;
 
@@ -372,7 +372,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             }
 
             if (value === false) {
-                this.getGrabPoints().forEach((point) => {point && point.remove()});
+                this.getGrabPoints().forEach((point: SVG.Element) => {point && point.remove()});
             } else {
                 this.setupGrabPoints(this.face.remember('_selectHandler').drawPoint.bind(
                     {nested: this, options: this.face.remember('_selectHandler').options}
@@ -380,19 +380,19 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
                 // setup proper classes for selection points for proper cursor
                 Array.from(this.face.remember('_selectHandler').nested.node.children)
-                    .forEach((point: SVG.Circle, i: number) => {
+                    .forEach((point: SVG.LinkedHTMLElement, i: number) => {
                         point.classList.add(`svg_select_points_${['lt', 'lb', 'rb', 'rt'][i]}`)
                     });
 
                 if (this.cuboidModel.orientation === Orientation.LEFT) {
                     Array.from(this.dorsalRightEdge.remember('_selectHandler').nested.node.children)
-                    .forEach((point: SVG.Circle, i: number) => {
+                    .forEach((point: SVG.LinkedHTMLElement, i: number) => {
                         point.classList.add(`svg_select_points_${['t', 'b'][i]}`);
                         point.ondblclick = this.resetPerspective.bind(this);
                     });
                 } else {
                     Array.from(this.dorsalLeftEdge.remember('_selectHandler').nested.node.children)
-                    .forEach((point: SVG.Circle, i: number) => {
+                    .forEach((point: SVG.LinkedHTMLElement, i: number) => {
                         point.classList.add(`svg_select_points_${['t', 'b'][i]}`);
                         point.ondblclick = this.resetPerspective.bind(this);
                     });
@@ -442,6 +442,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 accumulatedOffset.x = 0;
                 accumulatedOffset.y = 0;
                 const resizedFacePoint = getResizedPointIndex(event);
+                // @ts-ignore: ts(2339)
                 resizedCubePoint = [0, 1].includes(resizedFacePoint) ? resizedFacePoint
                     : 5 - resizedFacePoint; // 2,3 -> 3,2
                 this.fire(new CustomEvent('resizestart', event));
@@ -584,7 +585,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 setupDorsalEdge.call(this, this.dorsalLeftEdge, this.cuboidModel.orientation);
             }
 
-            function horizontalEdgeControl(updatingFace, midX, midY) {
+            function horizontalEdgeControl(updatingFace: any, midX: number, midY: number) {
                 const leftPoints = this.updatedEdge(
                     this.cuboidModel.fl.points[0],
                     {x: midX, y: midY},
