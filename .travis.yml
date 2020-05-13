@@ -21,7 +21,8 @@ before_script:
   - mkdir -m a=rwx -p ${HOST_COVERAGE_DATA_DIR}
 
 script:
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && coverage run -a --source cvat/apps/ manage.py test --pattern="_tests.py" cvat/apps/dataset_manager && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
+  # FIXME: Git package and application name conflict in PATH
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps && coverage run -a manage.py test --pattern="_test*.py" cvat/apps/dataset_manager/tests cvat/apps/engine/tests utils/cli && coverage run -a manage.py test datumaro/ && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR}'
 
 after_success:

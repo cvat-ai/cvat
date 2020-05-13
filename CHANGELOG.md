@@ -6,18 +6,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - Unreleased
 ### Added
--
+- Added `datumaro_project` export format (https://github.com/opencv/cvat/pull/1352)
 
 ### Changed
-- cvat-core: session.annotations.put() now returns identificators of added objects (<https://github.com/opencv/cvat/pull/1493>)
+- Downloaded file name in annotations export became more informative (https://github.com/opencv/cvat/pull/1352)
+- Added auto trimming for trailing whitespaces style enforsement (https://github.com/opencv/cvat/pull/1352)
+- REST API: updated `GET /task/<id>/annotations`: parameters are `format`, `filename` (now optional), `action` (optional) (https://github.com/opencv/cvat/pull/1352)
+- REST API: removed `dataset/formats`, changed format of `annotation/formats` (https://github.com/opencv/cvat/pull/1352)
+- Exported annotations are stored for N hours instead of indefinitely (https://github.com/opencv/cvat/pull/1352)
+- Formats: CVAT format now accepts ZIP and XML (https://github.com/opencv/cvat/pull/1352)
+- Formats: COCO format now accepts ZIP and JSON (https://github.com/opencv/cvat/pull/1352)
+- Formats: most of formats renamed, no extension in title (https://github.com/opencv/cvat/pull/1352)
+- Formats: definitions are changed, are not stored in DB anymore (https://github.com/opencv/cvat/pull/1352)
+- cvat-core: session.annotations.put() now returns identificators of added objects (https://github.com/opencv/cvat/pull/1493)
 
 ### Deprecated
 -
 
 ### Removed
--
+- `annotation` application is replaced with `dataset_manager` (https://github.com/opencv/cvat/pull/1352)
 
 ### Fixed
+- Categories for empty projects with no sources are taken from own dataset (https://github.com/opencv/cvat/pull/1352)
+- Added directory removal on error during `extract` command (https://github.com/opencv/cvat/pull/1352)
+- Added debug error message on incorrect XPath (https://github.com/opencv/cvat/pull/1352)
+- Exporting frame stepped task (https://github.com/opencv/cvat/issues/1294, https://github.com/opencv/cvat/issues/1334)
+- Fixed broken command line interface for `cvat` export format in Datumaro (https://github.com/opencv/cvat/issues/1494)
 - Updated Rest API document, Swagger document serving instruction issue (https://github.com/opencv/cvat/issues/1495)
 
 ### Security

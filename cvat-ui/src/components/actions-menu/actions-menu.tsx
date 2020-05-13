@@ -18,7 +18,6 @@ interface Props {
 
     loaders: string[];
     dumpers: string[];
-    exporters: string[];
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
@@ -53,7 +52,6 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
 
         dumpers,
         loaders,
-        exporters,
         onClickMenu,
         dumpActivities,
         exportActivities,
@@ -133,7 +131,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
             }
             {
                 ExportSubmenu({
-                    exporters,
+                    exporters: dumpers,
                     exportActivities,
                     menuKey: Actions.EXPORT_TASK_DATASET,
                 })

@@ -9,8 +9,7 @@ import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import { FormatsState } from './interfaces';
 
 const defaultState: FormatsState = {
-    annotationFormats: [],
-    datasetFormats: [],
+    annotationFormats: null,
     initialized: false,
     fetching: false,
 };
@@ -33,7 +32,6 @@ export default (
                 initialized: true,
                 fetching: false,
                 annotationFormats: action.payload.annotationFormats,
-                datasetFormats: action.payload.datasetFormats,
             };
         case FormatsActionTypes.GET_FORMATS_FAILED:
             return {

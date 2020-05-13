@@ -7,7 +7,10 @@
 [![codebeat badge](https://codebeat.co/badges/53cd0d16-fddc-46f8-903c-f43ed9abb6dd)](https://codebeat.co/projects/github-com-opencv-cvat-develop)
 [![DOI](https://zenodo.org/badge/139156354.svg)](https://zenodo.org/badge/latestdoi/139156354)
 
-CVAT is free, online, interactive video and image annotation tool for computer vision. It is being used by our team to annotate million of objects with different properties. Many UI and UX decisions are based on feedbacks from professional data annotation team.
+CVAT is free, online, interactive video and image annotation
+tool for computer vision. It is being used by our team to
+annotate million of objects with different properties. Many UI
+and UX decisions are based on feedbacks from professional data annotation team.
 
 ![CVAT screenshot](cvat/apps/documentation/static/documentation/images/cvat.jpg)
 
@@ -34,21 +37,23 @@ CVAT is free, online, interactive video and image annotation tool for computer v
 
 ## Supported annotation formats
 
-Format selection is possible after clicking on the Upload annotation / Dump annotation button.
-[Datumaro](datumaro/README.md) dataset framework allows additional dataset transformations
-via its command line tool.
+Format selection is possible after clicking on the Upload annotation
+and Dump annotation buttons. [Datumaro](datumaro/README.md) dataset
+framework allows additional dataset transformations
+via its command line tool and Python library.
 
-| Annotation format                                                                          | Dumper | Loader |
+| Annotation format                                                                          | Import | Export |
 | ------------------------------------------------------------------------------------------ | ------ | ------ |
-| [CVAT XML v1.1 for images](cvat/apps/documentation/xml_format.md#annotation)               | X      | X      |
-| [CVAT XML v1.1 for a video](cvat/apps/documentation/xml_format.md#interpolation)           | X      | X      |
-| [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                      | X      | X      |
+| [CVAT for images](cvat/apps/documentation/xml_format.md#annotation)                        | X      | X      |
+| [CVAT for a video](cvat/apps/documentation/xml_format.md#interpolation)                    | X      | X      |
+| [Datumaro](datumaro/README.md)                                                             |        | X      |
+| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                      | X      | X      |
+| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)              | X      | X      |
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                                 | X      | X      |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)                            | X      | X      |
-| PNG class mask + instance mask as in [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/) | X      | X      |
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)                      | X      | X      |
 | [MOT](https://motchallenge.net/)                                                           | X      | X      |
-| [LabelMe](http://labelme.csail.mit.edu/Release3.0)                                         | X      | X      |
+| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                     | X      | X      |
 
 ## Links
 - [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
@@ -57,14 +62,19 @@ via its command line tool.
 
 ## Online Demo
 
-[Onepanel](https://www.onepanel.io/) has added CVAT as an environment into their platform and a running demo of CVAT can be accessed at [CVAT Public Demo](https://c.onepanel.io/onepanel-demo/projects/cvat-public-demo/workspaces?utm_source=cvat).
+[Onepanel](https://www.onepanel.io/) has added CVAT as an environment
+into their platform and a running demo of CVAT can be accessed at
+[CVAT Public Demo](https://c.onepanel.io/onepanel-demo/projects/cvat-public-demo/workspaces?utm_source=cvat).
 
-If you have any questions, please contact Onepanel directly at support@onepanel.io. If you are in the Onepanel application, you can also use the chat icon in the bottom right corner.
+If you have any questions, please contact Onepanel directly at
+support@onepanel.io. If you are in the Onepanel application, you can also
+use the chat icon in the bottom right corner.
 
 ## REST API
 
 Automatically generated Swagger documentation for Django REST API is
-available on ``<cvat_origin>/api/swagger`` (default: ``localhost:8080/api/swagger``).
+available on ``<cvat_origin>/api/swagger``
+(default: ``localhost:8080/api/swagger``).
 
 Swagger documentation is visiable on allowed hostes, Update environement variable in docker-compose.yml file with cvat hosted machine IP or domain name. Example - ``ALLOWED_HOSTS: 'localhost, 127.0.0.1'``)
 
