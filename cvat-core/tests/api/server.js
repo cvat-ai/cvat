@@ -18,10 +18,10 @@ jest.mock('../../src/server-proxy', () => {
 // Initialize api
 window.cvat = require('../../src/api');
 const {
-    AnnotationFormat,
+    AnnotationFormats,
     Loader,
     Dumper,
-} = require('../../src/annotation-format');
+} = require('../../src/annotation-formats');
 
 // Test cases
 describe('Feature: get info about cvat', () => {
@@ -58,24 +58,18 @@ describe('Feature: get share storage info', () => {
 describe('Feature: get annotation formats', () => {
     test('get annotation formats from a server', async () => {
         const result = await window.cvat.server.formats();
-        expect(Array.isArray(result)).toBeTruthy();
-        for (const format of result) {
-            expect(format).toBeInstanceOf(AnnotationFormat);
-        }
+        expect(result).toBeInstanceOf(AnnotationFormats);
     });
 });
 
 describe('Feature: get annotation loaders', () => {
     test('get annotation formats from a server', async () => {
         const result = await window.cvat.server.formats();
-        expect(Array.isArray(result)).toBeTruthy();
-        for (const format of result) {
-            expect(format).toBeInstanceOf(AnnotationFormat);
-            const { loaders } = format;
-            expect(Array.isArray(loaders)).toBeTruthy();
-            for (const loader of loaders) {
-                expect(loader).toBeInstanceOf(Loader);
-            }
+        expect(result).toBeInstanceOf(AnnotationFormats);
+        const { loaders } = result;
+        expect(Array.isArray(loaders)).toBeTruthy();
+        for (const loader of loaders) {
+            expect(loader).toBeInstanceOf(Loader);
         }
     });
 });
@@ -83,14 +77,11 @@ describe('Feature: get annotation loaders', () => {
 describe('Feature: get annotation dumpers', () => {
     test('get annotation formats from a server', async () => {
         const result = await window.cvat.server.formats();
-        expect(Array.isArray(result)).toBeTruthy();
-        for (const format of result) {
-            expect(format).toBeInstanceOf(AnnotationFormat);
-            const { dumpers } = format;
-            expect(Array.isArray(dumpers)).toBeTruthy();
-            for (const dumper of dumpers) {
-                expect(dumper).toBeInstanceOf(Dumper);
-            }
+        expect(result).toBeInstanceOf(AnnotationFormats);
+        const { dumpers } = result;
+        expect(Array.isArray(dumpers)).toBeTruthy();
+        for (const dumper of dumpers) {
+            expect(dumper).toBeInstanceOf(Dumper);
         }
     });
 });

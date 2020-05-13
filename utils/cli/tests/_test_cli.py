@@ -1,25 +1,29 @@
+# Copyright (C) 2020 Intel Corporation
+#
 # SPDX-License-Identifier: MIT
-import logging
+
 import io
+import logging
 import os
 import sys
 import unittest
+
 from django.conf import settings
-from requests.auth import HTTPBasicAuth
-from utils.cli.core import CLI, CVAT_API_V1, ResourceType
-from rest_framework.test import APITestCase, RequestsClient
-from cvat.apps.engine.tests.test_rest_api import create_db_users
-from cvat.apps.engine.tests.test_rest_api import generate_image_file
 from PIL import Image
+from requests.auth import HTTPBasicAuth
+from rest_framework.test import APITestCase, RequestsClient
+
+from cvat.apps.engine.tests._test_rest_api import (create_db_users,
+    generate_image_file)
+from utils.cli.core import CLI, CVAT_API_V1, ResourceType
 
 
 class TestCLI(APITestCase):
-
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     def setUp(self, mock_stdout):
         self.client = RequestsClient()
         self.client.auth = HTTPBasicAuth('admin', 'admin')
-        self.api = CVAT_API_V1('testserver', '')
+        self.api = CVAT_API_V1('testserver')
         self.cli = CLI(self.client, self.api)
         self.taskname = 'test_task'
         self.cli.tasks_create(self.taskname,
@@ -61,7 +65,7 @@ class TestCLI(APITestCase):
 
     def test_tasks_dump(self):
         path = os.path.join(settings.SHARE_ROOT, 'test_cli.xml')
-        self.cli.tasks_dump(1, 'CVAT XML 1.1 for images', path)
+        self.cli.tasks_dump(1, 'CVAT for images 1.1', path)
         self.assertTrue(os.path.exists(path))
         os.remove(path)
 
@@ -132,6 +136,6 @@ class TestCLI(APITestCase):
         path = os.path.join(settings.SHARE_ROOT, 'test_cli.json')
         with open(path, "wb") as coco:
             coco.write(content)
-        self.cli.tasks_upload(1, 'COCO JSON 1.0', path)
+        self.cli.tasks_upload(1, 'COCO 1.0', path)
         self.assertRegex(self.mock_stdout.getvalue(), '.*{}.*'.format("annotation file"))
         os.remove(path)

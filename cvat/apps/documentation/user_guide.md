@@ -223,28 +223,24 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 1.  The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
     Each element contains: task name, preview, progress bar, button ``Open``, and menu ``Actions``.
     Each button is responsible for a in menu ``Actions`` specific function:
-    - ``Dump Annotation`` — download an annotation file from a task. Several formats are available:
-      - [CVAT XML 1.1 for video](/cvat/apps/documentation/xml_format.md#interpolation)
+    - ``Dump Annotation`` and ``Export as a dataset`` — download annotations or
+        annotations and images in a specific format. The following formats are available:
+      - [CVAT for video](/cvat/apps/documentation/xml_format.md#interpolation)
       is highlighted if a task has the interpolation mode.
-      - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
+      - [CVAT for images](/cvat/apps/documentation/xml_format.md#annotation)
       is highlighted if a task has the annotation mode. 
-      - [PASCAL VOC ZIP 1.1](http://host.robots.ox.ac.uk/pascal/VOC/)
-      - [YOLO ZIP 1.1](https://pjreddie.com/darknet/yolo/)
-      - [COCO JSON 1.0](http://cocodataset.org/#format-data)
-      - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file
-      with the value of each color.
-      - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records)
-      - [MOT CSV 1.0](https://motchallenge.net/)
-      - [LabelMe ZIP 3.0 for image](http://labelme.csail.mit.edu/Release3.0/)
-    - ``Upload annotation`` is possible in same format as ``Dump annotation``, with exception of ``MASK ZIP 1.0``
-      format and without choosing whether [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md) 
-      and [LabelMe ZIP 3.0](http://labelme.csail.mit.edu/Release3.0/)
-      refers to an image or video.
-    - ``Export as a dataset`` — download a data set from a task. Several formats are available:
-      - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/docs/design.md)
-      - [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/)
-      - [MS COCO](http://cocodataset.org/#format-data)
+      - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
+      - [(VOC) Segmentation mask](http://host.robots.ox.ac.uk/pascal/VOC/) —
+          archive contains class and instance masks for each frame in the png
+          format and a text file with the value of each color.
       - [YOLO](https://pjreddie.com/darknet/yolo/)
+      - [COCO](http://cocodataset.org/#format-data)
+      - [TFRecord](https://www.tensorflow.org/tutorials/load_data/tf_records)
+      - [MOT](https://motchallenge.net/)
+      - [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0/)
+      - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/)
+    - ``Upload annotation`` is available in the same formats as in ``Dump annotation``.
+      - [CVAT](/cvat/apps/documentation/xml_format.md) accepts both video and image sub-formats.
     - ``Automatic Annotation`` — automatic annotation with  OpenVINO toolkit.
       Presence depends on how you build CVAT instance.
     - ``Open bug tracker`` — opens a link to Issue tracker.
@@ -543,22 +539,24 @@ Read more in the section [attribute annotation mode (advanced)](#attribute-annot
 
     ![](static/documentation/images/image028.jpg)
 
-1.  Choose the format dump of the annotation file. Several formats are available:
-    - [CVAT XML 1.1 for video](/cvat/apps/documentation/xml_format.md#interpolation)
-    is highlighted if a task has the interpolation mode
-    - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
-    is highlighted if a task has the annotation mode
+1.  Choose format dump annotation file. Dump annotation are available in several formats:
+    - [CVAT for video](/cvat/apps/documentation/xml_format.md#interpolation)
+      is highlighted if a task has the interpolation mode.
+    - [CVAT for images](/cvat/apps/documentation/xml_format.md#annotation)
+      is highlighted if a task has the annotation mode.
 
     ![](static/documentation/images/image029.jpg "Example XML format") 
 
-    - [PASCAL VOC ZIP 1.1](http://host.robots.ox.ac.uk/pascal/VOC/)
-    - [YOLO ZIP 1.1](https://pjreddie.com/darknet/yolo/)
-    - [COCO JSON 1.0](http://cocodataset.org/#format-data)
-    - ``MASK ZIP 1.1`` — archive contains a mask of each frame in the png format and a text file with
-    the value of each color
-    - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records) 
-    - [MOT ZIP 1.1](https://motchallenge.net/)
-    - [LabelMe ZIP 3.0 for image](http://labelme.csail.mit.edu/Release3.0/)
+    - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
+    - [(VOC) Segmentation mask](http://host.robots.ox.ac.uk/pascal/VOC/) —
+      archive contains class and instance masks for each frame in the png
+      format and a text file with the value of each color.
+    - [YOLO](https://pjreddie.com/darknet/yolo/)
+    - [COCO](http://cocodataset.org/#format-data)
+    - [TFRecord](https://www.tensorflow.org/tutorials/load_data/tf_records)
+    - [MOT](https://motchallenge.net/)
+    - [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0/)
+    - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/)
 
 ### Task synchronization with a repository
 

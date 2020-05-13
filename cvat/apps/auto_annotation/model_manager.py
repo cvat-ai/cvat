@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,7 +17,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.authentication.auth import has_admin_role
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from cvat.apps.engine.annotation import put_task_data, patch_task_data
+from cvat.apps.dataset_manager.task import put_task_data, patch_task_data
 from cvat.apps.engine.frame_provider import FrameProvider
 
 from .models import AnnotationModel, FrameworkChoice
@@ -248,9 +248,9 @@ def run_inference_thread(tid, model_file, weights_file, labels_mapping, attribut
             serializer = LabeledDataSerializer(data = result)
             if serializer.is_valid(raise_exception=True):
                 if reset:
-                    put_task_data(tid, user, result)
+                    put_task_data(tid, result)
                 else:
-                    patch_task_data(tid, user, result, "create")
+                    patch_task_data(tid, result, "create")
 
             slogger.glob.info("auto annotation for task {} done".format(tid))
     except Exception as e:
