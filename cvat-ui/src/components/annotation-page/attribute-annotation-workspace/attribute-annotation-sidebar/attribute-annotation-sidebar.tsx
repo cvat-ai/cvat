@@ -233,7 +233,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                         : <Icon type='menu-unfold' title='Hide' />}
                 </span>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
-                <Row>
+                <Row className='cvat-objects-sidebar-filter-input'>
                     <Col>
                         <AnnotationsFiltersInput />
                     </Col>

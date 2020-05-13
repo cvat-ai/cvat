@@ -20,7 +20,7 @@ interface Props {
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
     installedReID: boolean;
-    taskID: number
+    taskID: number;
     onClickMenu(params: ClickParam, file?: File): void;
 }
 
