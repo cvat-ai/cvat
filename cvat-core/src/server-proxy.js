@@ -154,22 +154,6 @@
                 return response.data;
             }
 
-            async function datasetFormats() {
-                const { backendAPI } = config;
-
-                let response = null;
-                try {
-                    response = await Axios.get(`${backendAPI}/server/dataset/formats`, {
-                        proxy: config.proxy,
-                    });
-                    response = JSON.parse(response.data);
-                } catch (errorData) {
-                    throw generateError(errorData);
-                }
-
-                return response;
-            }
-
             async function register(username, firstName, lastName, email, password1, password2) {
                 let response = null;
                 try {
@@ -617,9 +601,12 @@
             // Session is 'task' or 'job'
             async function dumpAnnotations(id, name, format) {
                 const { backendAPI } = config;
-                const filename = name.replace(/\//g, '_');
-                const baseURL = `${backendAPI}/tasks/${id}/annotations/${encodeURIComponent(filename)}`;
+                const baseURL = `${backendAPI}/tasks/${id}/annotations`;
                 let query = `format=${encodeURIComponent(format)}`;
+                if (name) {
+                    const filename = name.replace(/\//g, '_');
+                    query += `&filename=${encodeURIComponent(filename)}`;
+                }
                 let url = `${baseURL}?${query}`;
 
                 return new Promise((resolve, reject) => {
@@ -664,7 +651,6 @@
                         about,
                         share,
                         formats,
-                        datasetFormats,
                         exception,
                         login,
                         logout,

@@ -1,34 +1,28 @@
 
-# Copyright (C) 2019-2020 Intel Corporation
+# Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict
 import getpass
 import json
-import os, os.path as osp
+import os
+import os.path as osp
+from collections import OrderedDict
+
 import requests
 
-from datumaro.components.config import (Config,
-    SchemaBuilder as _SchemaBuilder,
-)
-import datumaro.components.extractor as datumaro
-from datumaro.util.image import lazy_image, load_image, Image
+from cvat.utils.cli.core import CLI as CVAT_CLI
+from cvat.utils.cli.core import CVAT_API_V1
+from datumaro.components.config import Config, SchemaBuilder
+from datumaro.components.extractor import SourceExtractor, DatasetItem
+from datumaro.util.image import Image, lazy_image, load_image
 
-from cvat.utils.cli.core import CLI as CVAT_CLI, CVAT_API_V1
-
-
-CONFIG_SCHEMA = _SchemaBuilder() \
+CONFIG_SCHEMA = SchemaBuilder() \
     .add('task_id', int) \
-    .add('server_host', str) \
-    .add('server_port', int) \
+    .add('server_url', str) \
     .build()
 
-DEFAULT_CONFIG = Config({
-    'server_port': 80
-}, schema=CONFIG_SCHEMA, mutable=False)
-
-class cvat_rest_api_task_images(datumaro.SourceExtractor):
+class cvat_rest_api_task_images(SourceExtractor):
     def _image_local_path(self, item_id):
         task_id = self._config.task_id
         return osp.join(self._cache_dir,
@@ -53,16 +47,15 @@ class cvat_rest_api_task_images(datumaro.SourceExtractor):
 
         session = None
         try:
-            print("Enter credentials for '%s:%s' to read task data:" % \
-                (self._config.server_host, self._config.server_port))
+            print("Enter credentials for '%s' to read task data:" % \
+                (self._config.server_url))
             username = input('User: ')
             password = getpass.getpass()
 
             session = requests.Session()
             session.auth = (username, password)
 
-            api = CVAT_API_V1(self._config.server_host,
-                self._config.server_port)
+            api = CVAT_API_V1(self._config.server_url)
             cli = CVAT_CLI(session, api)
 
             self._session = session
@@ -92,8 +85,7 @@ class cvat_rest_api_task_images(datumaro.SourceExtractor):
 
         with open(osp.join(url, 'config.json'), 'r') as config_file:
             config = json.load(config_file)
-            config = Config(config,
-                fallback=DEFAULT_CONFIG, schema=CONFIG_SCHEMA)
+            config = Config(config, schema=CONFIG_SCHEMA)
         self._config = config
 
         with open(osp.join(url, 'images_meta.json'), 'r') as images_file:
@@ -109,7 +101,7 @@ class cvat_rest_api_task_images(datumaro.SourceExtractor):
                 size = (entry['height'], entry['width'])
             image = Image(data=self._make_image_loader(item_id),
                 path=item_filename, size=size)
-            item = datumaro.DatasetItem(id=item_id, image=image)
+            item = DatasetItem(id=item_id, image=image)
             items.append((item.id, item))
 
         items = sorted(items, key=lambda e: int(e[0]))
@@ -125,12 +117,3 @@ class cvat_rest_api_task_images(datumaro.SourceExtractor):
 
     def __len__(self):
         return len(self._items)
-
-    # pylint: disable=no-self-use
-    def subsets(self):
-        return None
-
-    def get(self, item_id, subset=None, path=None):
-        if path or subset:
-            raise KeyError()
-        return self._items[item_id]

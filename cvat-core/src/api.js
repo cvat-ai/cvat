@@ -109,27 +109,13 @@ function build() {
                 * @method formats
                 * @async
                 * @memberof module:API.cvat.server
-                * @returns {module:API.cvat.classes.AnnotationFormat[]}
+                * @returns {module:API.cvat.classes.AnnotationFormats}
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
             async formats() {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.server.formats);
-                return result;
-            },
-            /**
-                * Method returns available dataset export formats
-                * @method exportFormats
-                * @async
-                * @memberof module:API.cvat.server
-                * @returns {module:String[]}
-                * @throws {module:API.cvat.exceptions.PluginError}
-                * @throws {module:API.cvat.exceptions.ServerError}
-            */
-            async datasetFormats() {
-                const result = await PluginRegistry
-                    .apiWrapper(cvat.server.datasetFormats);
                 return result;
             },
             /**

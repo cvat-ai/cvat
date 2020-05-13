@@ -15,7 +15,6 @@ interface Props {
     taskMode: string;
     loaders: string[];
     dumpers: string[];
-    exporters: string[];
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
@@ -36,7 +35,6 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         taskMode,
         loaders,
         dumpers,
-        exporters,
         onClickMenu,
         loadActivity,
         dumpActivities,
@@ -111,7 +109,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             }
             {
                 ExportSubmenu({
-                    exporters,
+                    exporters: dumpers,
                     exportActivities,
                     menuKey: Actions.EXPORT_TASK_DATASET,
                 })

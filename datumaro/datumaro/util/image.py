@@ -45,20 +45,30 @@ def load_image(path):
         assert image.shape[2] in {3, 4}
     return image
 
-def save_image(path, image, params=None):
+def save_image(path, image, **kwargs):
+    if not kwargs:
+        kwargs = {}
+
     if _IMAGE_BACKEND == _IMAGE_BACKENDS.cv2:
         import cv2
+
+        params = []
+
         ext = path[-4:]
         if ext.upper() == '.JPG':
-            params = [ int(cv2.IMWRITE_JPEG_QUALITY), 75 ]
+            params = [
+                int(cv2.IMWRITE_JPEG_QUALITY), kwargs.get('jpeg_quality', 75)
+            ]
 
         image = image.astype(np.uint8)
         cv2.imwrite(path, image, params=params)
     elif _IMAGE_BACKEND == _IMAGE_BACKENDS.PIL:
         from PIL import Image
 
-        if not params:
-            params = {}
+        params = {}
+        params['quality'] = kwargs.get('jpeg_quality')
+        if kwargs.get('jpeg_quality') == 100:
+            params['subsampling'] = 0
 
         image = image.astype(np.uint8)
         if len(image.shape) == 3 and image.shape[2] in {3, 4}:
@@ -68,15 +78,22 @@ def save_image(path, image, params=None):
     else:
         raise NotImplementedError()
 
-def encode_image(image, ext, params=None):
+def encode_image(image, ext, **kwargs):
+    if not kwargs:
+        kwargs = {}
+
     if _IMAGE_BACKEND == _IMAGE_BACKENDS.cv2:
         import cv2
+
+        params = []
 
         if not ext.startswith('.'):
             ext = '.' + ext
 
         if ext.upper() == '.JPG':
-            params = [ int(cv2.IMWRITE_JPEG_QUALITY), 75 ]
+            params = [
+                int(cv2.IMWRITE_JPEG_QUALITY), kwargs.get('jpeg_quality', 75)
+            ]
 
         image = image.astype(np.uint8)
         success, result = cv2.imencode(ext, image, params=params)
@@ -89,8 +106,10 @@ def encode_image(image, ext, params=None):
         if ext.startswith('.'):
             ext = ext[1:]
 
-        if not params:
-            params = {}
+        params = {}
+        params['quality'] = kwargs.get('jpeg_quality')
+        if kwargs.get('jpeg_quality') == 100:
+            params['subsampling'] = 0
 
         image = image.astype(np.uint8)
         if len(image.shape) == 3 and image.shape[2] in {3, 4}:
@@ -176,9 +195,9 @@ class Image:
             path = ''
         self._path = path
 
-        assert data is not None or path, "Image can not be empty"
-        if data is None and path:
-            if osp.isfile(path):
+        assert data is not None or path or loader, "Image can not be empty"
+        if data is None and (path or loader):
+            if osp.isfile(path) or loader:
                 data = lazy_image(path, loader=loader, cache=cache)
         self._data = data
 
