@@ -1,60 +1,45 @@
+# Copyright (C) 2019 Intel Corporation
+#
 # SPDX-License-Identifier: MIT
-format_spec = {
-    "name": "MOT",
-    "dumpers": [
-        {
-            "display_name": "{name} {format} {version}",
-            "format": "ZIP",
-            "version": "1.1",
-            "handler": "dump"
-        },
-    ],
-    "loaders": [
-        {
-            "display_name": "{name} {format} {version}",
-            "format": "ZIP",
-            "version": "1.1",
-            "handler": "load",
-        }
-    ],
-}
+
+from tempfile import TemporaryDirectory
+
+from pyunpack import Archive
+
+import datumaro.components.extractor as datumaro
+from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+    match_frame)
+from cvat.apps.dataset_manager.util import make_zip_archive
+from datumaro.components.project import Dataset
+
+from .registry import dm_env, exporter, importer
 
 
-from datumaro.plugins.mot_format import \
-    MotSeqGtConverter as _MotConverter
-class CvatMotConverter(_MotConverter):
-    NAME = 'cvat_mot'
-
-def dump(file_object, annotations):
-    from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor
-    from cvat.apps.dataset_manager.util import make_zip_archive
-    from tempfile import TemporaryDirectory
-
-    extractor = CvatAnnotationsExtractor('', annotations)
-    converter = CvatMotConverter()
+@exporter(name='MOT', ext='ZIP', version='1.1')
+def _export(dst_file, task_data, save_images=False):
+    extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
+    envt = dm_env.transforms
+    extractor = extractor.transform(envt.get('id_from_image_name'))
+    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
+        converter = dm_env.make_converter('mot_seq_gt',
+            save_images=save_images)
         converter(extractor, save_dir=temp_dir)
-        make_zip_archive(temp_dir, file_object)
 
+        make_zip_archive(temp_dir, dst_file)
 
-def load(file_object, annotations):
-    from pyunpack import Archive
-    from tempfile import TemporaryDirectory
-    from datumaro.plugins.mot_format import MotSeqImporter
-    import datumaro.components.extractor as datumaro
-    from cvat.apps.dataset_manager.bindings import match_frame
-
-    archive_file = file_object if isinstance(file_object, str) else getattr(file_object, "name")
+@importer(name='MOT', ext='ZIP', version='1.1')
+def _import(src_file, task_data):
     with TemporaryDirectory() as tmp_dir:
-        Archive(archive_file).extractall(tmp_dir)
+        Archive(src_file.name).extractall(tmp_dir)
+
+        dataset = dm_env.make_importer('mot_seq')(tmp_dir).make_dataset()
 
         tracks = {}
+        label_cat = dataset.categories()[datumaro.AnnotationType.label]
 
-        dm_dataset = MotSeqImporter()(tmp_dir).make_dataset()
-        label_cat = dm_dataset.categories()[datumaro.AnnotationType.label]
-
-        for item in dm_dataset:
-            frame_id = match_frame(item, annotations)
+        for item in dataset:
+            frame_id = match_frame(item, task_data)
 
             for ann in item.annotations:
                 if ann.type != datumaro.AnnotationType.bbox:
@@ -64,7 +49,7 @@ def load(file_object, annotations):
                 if track_id is None:
                     continue
 
-                shape = annotations.TrackedShape(
+                shape = task_data.TrackedShape(
                     type='rectangle',
                     points=ann.points,
                     occluded=ann.attributes.get('occluded') == True,
@@ -77,7 +62,7 @@ def load(file_object, annotations):
 
                 # build trajectories as lists of shapes in track dict
                 if track_id not in tracks:
-                    tracks[track_id] = annotations.Track(
+                    tracks[track_id] = task_data.Track(
                         label_cat.items[ann.label].name, 0, [])
                 tracks[track_id].shapes.append(shape)
 
@@ -86,4 +71,4 @@ def load(file_object, annotations):
             track.shapes.sort(key=lambda t: t.frame)
             # Set outside=True for the last shape in a track to finish the track
             track.shapes[-1] = track.shapes[-1]._replace(outside=True)
-            annotations.add_track(track)
+            task_data.add_track(track)

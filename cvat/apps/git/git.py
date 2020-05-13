@@ -2,28 +2,27 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.db import transaction
-from django.utils import timezone
-
-from cvat.apps.engine.log import slogger
-from cvat.apps.engine.models import Task, Job, User
-from cvat.apps.engine.annotation import dump_task_data
-from cvat.apps.engine.plugins import add_plugin
-from cvat.apps.git.models import GitStatusChoice
-from cvat.apps.annotation.models import AnnotationDumper
-
-from cvat.apps.git.models import GitData
-from collections import OrderedDict
-
-import subprocess
-import django_rq
 import datetime
-import shutil
 import json
 import math
-import git
 import os
 import re
+import shutil
+import subprocess
+from glob import glob
+from tempfile import TemporaryDirectory
+
+import django_rq
+import git
+from django.db import transaction
+from django.utils import timezone
+from pyunpack import Archive
+
+from cvat.apps.dataset_manager.task import export_task
+from cvat.apps.engine.log import slogger
+from cvat.apps.engine.models import Job, Task, User
+from cvat.apps.engine.plugins import add_plugin
+from cvat.apps.git.models import GitData, GitStatusChoice
 
 
 def _have_no_access_exception(ex):
@@ -267,25 +266,30 @@ class Git:
 
         # Dump an annotation
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        display_name = "CVAT XML 1.1"
-        display_name += " for images" if self._task_mode == "annotation" else " for videos"
-        cvat_dumper = AnnotationDumper.objects.get(display_name=display_name)
+        if self._task_mode == "annotation":
+            format_name = "CVAT for images 1.1"
+        else:
+            format_name = "CVAT for video 1.1"
         dump_name = os.path.join(db_task.get_task_dirname(),
-            "git_annotation_{}.xml".format(timestamp))
-        dump_task_data(
-            pk=self._tid,
-            user=user,
-            filename=dump_name,
-            dumper=cvat_dumper,
-            scheme=scheme,
-            host=host,
+            "git_annotation_{}.zip".format(timestamp))
+        export_task(
+            task_id=self._tid,
+            dst_file=dump_name,
+            format_name=format_name,
+            server_url=scheme + host,
+            save_images=False,
         )
 
         ext = os.path.splitext(self._path)[1]
         if ext == '.zip':
-            subprocess.run(args=['7z', 'a', self._annotation_file, dump_name])
+            shutil.move(dump_name, self._annotation_file)
         elif ext == '.xml':
-            shutil.copyfile(dump_name, self._annotation_file)
+            with TemporaryDirectory() as tmp_dir:
+                # TODO: remove extra packing-unpacking
+                Archive(src_path).extractall(tmp_dir)
+                anno_paths = glob(osp.join(tmp_dir, '**', '*.xml'),
+                    recursive=True)
+                shutil.move(anno_paths[0], self._annotation_file)
         else:
             raise Exception("Got unknown annotation file type")
 
@@ -455,7 +459,7 @@ def update_states():
             slogger.glob("Exception occured during a status updating for db_git with tid: {}".format(db_git.task_id))
 
 @transaction.atomic
-def _onsave(jid, user, data, action):
+def _onsave(jid, data, action):
     db_task = Job.objects.select_related('segment__task').get(pk = jid).segment.task
     try:
         db_git = GitData.objects.select_for_update().get(pk = db_task.id)
@@ -493,18 +497,18 @@ def _onsave(jid, user, data, action):
     except GitData.DoesNotExist:
         pass
 
-def _ondump(tid, user, data_format, scheme, host, plugin_meta_data):
-    db_task = Task.objects.get(pk = tid)
-    try:
-        db_git = GitData.objects.get(pk = db_task)
-        plugin_meta_data['git'] = OrderedDict({
-            "url": db_git.url,
-            "path": db_git.path,
-        })
-    except GitData.DoesNotExist:
-        pass
-
 add_plugin("patch_job_data", _onsave, "after", exc_ok = False)
 
 # TODO: Append git repository into dump file
+# def _ondump(task_id, dst_file, format_name,
+#         server_url=None, save_images=False, plugin_meta_data):
+#     db_task = Task.objects.get(pk = tid)
+#     try:
+#         db_git = GitData.objects.get(pk = db_task)
+#         plugin_meta_data['git'] = OrderedDict({
+#             "url": db_git.url,
+#             "path": db_git.path,
+#         })
+#     except GitData.DoesNotExist:
+#         pass
 # add_plugin("_dump", _ondump, "before", exc_ok = False)

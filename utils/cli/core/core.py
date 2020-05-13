@@ -1,4 +1,7 @@
+# Copyright (C) 2020 Intel Corporation
+#
 # SPDX-License-Identifier: MIT
+
 import json
 import logging
 import os
@@ -145,8 +148,8 @@ class CLI():
 class CVAT_API_V1():
     """ Build parameterized API URLs """
 
-    def __init__(self, host, port):
-        self.base = 'http://{}:{}/api/v1/'.format(host, port)
+    def __init__(self, host):
+        self.base = 'http://{}/api/v1/'.format(host)
 
     @property
     def tasks(self):
@@ -169,5 +172,5 @@ class CVAT_API_V1():
             .format(fileformat)
 
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
-        return self.tasks_id(task_id) + '/annotations/{}?format={}' \
-            .format(name, fileformat)
+        return self.tasks_id(task_id) + '/annotations?format={}&filename={}' \
+            .format(fileformat, name)

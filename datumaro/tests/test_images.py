@@ -55,8 +55,7 @@ class ImageTest(TestCase):
         self.assertEqual((2, 4), image_lazy.size)
         self.assertEqual((5, 6), image_eager.size)
 
-    @staticmethod
-    def test_ctors():
+    def test_ctors(self):
         with TestDir() as test_dir:
             path = osp.join(test_dir, 'path.png')
             image = np.ones([2, 4, 3])
@@ -69,11 +68,14 @@ class ImageTest(TestCase):
                 { 'data': image, 'path': path, 'loader': load_image, 'size': (2, 4) },
                 { 'path': path },
                 { 'path': path, 'loader': load_image },
+                { 'path': 'somepath', 'loader': lambda p: image },
+                { 'loader': lambda p: image },
                 { 'path': path, 'size': (2, 4) },
             ]:
-                img = Image(**args)
-                # pylint: disable=pointless-statement
-                if img.has_data:
-                    img.data
-                img.size
-                # pylint: enable=pointless-statement
+                with self.subTest(**args):
+                    img = Image(**args)
+                    # pylint: disable=pointless-statement
+                    if img.has_data:
+                        img.data
+                    img.size
+                    # pylint: enable=pointless-statement
