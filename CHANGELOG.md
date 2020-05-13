@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - Unreleased
 ### Added
+- cvat-ui: added cookie policy drawer for login page (<https://github.com/opencv/cvat/pull/1511>)
 - Added `datumaro_project` export format (https://github.com/opencv/cvat/pull/1352)
 
 ### Changed
