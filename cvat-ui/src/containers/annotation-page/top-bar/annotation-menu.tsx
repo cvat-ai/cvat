@@ -157,6 +157,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             exportActivities={exportActivities}
             installedReID={installedReID}
             onClickMenu={onClickMenu}
+            taskID={jobInstance.task.id}
         />
     );
 }
