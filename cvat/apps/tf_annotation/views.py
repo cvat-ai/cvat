@@ -1,5 +1,5 @@
 
-# Copyright (C) 2018-2019 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,9 +7,9 @@ from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from rest_framework.decorators import api_view
 from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
+from cvat.apps.dataset_manager.task import put_task_data
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from cvat.apps.engine.annotation import put_task_data
 from cvat.apps.engine.frame_provider import FrameProvider
 
 import django_rq
@@ -203,7 +203,7 @@ def create_thread(tid, labels_mapping, user):
         result = convert_to_cvat_format(result)
         serializer = LabeledDataSerializer(data = result)
         if serializer.is_valid(raise_exception=True):
-            put_task_data(tid, user, result)
+            put_task_data(tid, result)
         slogger.glob.info('tf annotation for task {} done'.format(tid))
     except Exception as ex:
         try:
