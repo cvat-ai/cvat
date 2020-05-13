@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+# FIXME: Git application and package name clash in tests
 class _GitImportFix:
     import sys
     former_path = sys.path[:]
@@ -47,19 +48,17 @@ class _GitImportFix:
 
 def _setUpModule():
     _GitImportFix.apply()
-    import cvat.apps.dataset_manager.task as dm
-    from cvat.apps.engine.models import Task
+    import cvat.apps.dataset_manager as dm
     globals()['dm'] = dm
-    globals()['Task'] = Task
 
     import sys
     sys.path.insert(0, __file__[:__file__.rfind('/dataset_manager/')])
 
-def tearDownModule():
-    _GitImportFix.restore()
+# def tearDownModule():
+    # _GitImportFix.restore()
 
 from io import BytesIO
-import os
+import os.path as osp
 import random
 import tempfile
 
@@ -184,6 +183,24 @@ class TaskExportTest(APITestCase):
                     "type": "polygon",
                     "occluded": False
                 },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 1,
+                    "attributes": [],
+                    "points": [100, 300.222, 400, 500, 1, 3],
+                    "type": "points",
+                    "occluded": False
+                },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 1,
+                    "attributes": [],
+                    "points": [2.0, 2.1, 400, 500, 1, 3],
+                    "type": "polyline",
+                    "occluded": False
+                },
             ],
             "tracks": [
                 {
@@ -269,41 +286,52 @@ class TaskExportTest(APITestCase):
         return response
 
     def _test_export(self, format_name, save_images=False):
-        self.assertTrue(format_name in [f['tag'] for f in dm.EXPORT_FORMATS])
-
         task, _ = self._generate_task()
-        project = dm.TaskProject.from_task(
-            Task.objects.get(pk=task["id"]), self.user.username)
 
-        with tempfile.TemporaryDirectory() as test_dir:
-            project.export(format_name, test_dir, save_images=save_images)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = osp.join(temp_dir, format_name)
+            dm.task.export_task(task["id"], file_path,
+                format_name, save_images=save_images)
 
-            self.assertTrue(os.listdir(test_dir))
+            with open(file_path, 'rb') as f:
+                self.assertTrue(len(f.read()) != 0)
 
     def test_datumaro(self):
-        self._test_export(dm.EXPORT_FORMAT_DATUMARO_PROJECT, save_images=False)
+        self._test_export('Datumaro 1.0', save_images=False)
 
     def test_coco(self):
-        self._test_export('cvat_coco', save_images=True)
+        self._test_export('COCO 1.0', save_images=True)
 
     def test_voc(self):
-        self._test_export('cvat_voc', save_images=True)
+        self._test_export('PASCAL VOC 1.1', save_images=True)
 
-    def test_tf_detection_api(self):
-        self._test_export('cvat_tfrecord', save_images=True)
+    def test_tf_record(self):
+        self._test_export('TFRecord 1.0', save_images=True)
 
     def test_yolo(self):
-        self._test_export('cvat_yolo', save_images=True)
+        self._test_export('YOLO 1.1', save_images=True)
 
     def test_mot(self):
-        self._test_export('cvat_mot', save_images=True)
+        self._test_export('MOT 1.1', save_images=True)
 
     def test_labelme(self):
-        self._test_export('cvat_label_me', save_images=True)
+        self._test_export('LabelMe 3.0', save_images=True)
 
-    def test_formats_query(self):
-        formats = dm.get_export_formats()
+    def test_mask(self):
+        self._test_export('Segmentation mask 1.1', save_images=True)
 
-        expected = set(f['tag'] for f in dm.EXPORT_FORMATS)
-        actual = set(f['tag'] for f in formats)
-        self.assertSetEqual(expected, actual)
+    def test_cvat_video(self):
+        self._test_export('CVAT for video 1.1', save_images=True)
+
+    def test_cvat_images(self):
+        self._test_export('CVAT for images 1.1', save_images=True)
+
+    def test_export_formats_query(self):
+        formats = dm.views.get_export_formats()
+
+        self.assertEqual(len(formats), 10)
+
+    def test_import_formats_query(self):
+        formats = dm.views.get_import_formats()
+
+        self.assertEqual(len(formats), 8)
