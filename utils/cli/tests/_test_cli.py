@@ -10,7 +10,6 @@ import unittest
 
 from django.conf import settings
 from PIL import Image
-from requests.auth import HTTPBasicAuth
 from rest_framework.test import APITestCase, RequestsClient
 
 from cvat.apps.engine.tests._test_rest_api import (create_db_users,
@@ -22,9 +21,9 @@ class TestCLI(APITestCase):
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     def setUp(self, mock_stdout):
         self.client = RequestsClient()
-        self.client.auth = HTTPBasicAuth('admin', 'admin')
+        self.credentials = ('admin', 'admin')
         self.api = CVAT_API_V1('testserver')
-        self.cli = CLI(self.client, self.api)
+        self.cli = CLI(self.client, self.api, self.credentials)
         self.taskname = 'test_task'
         self.cli.tasks_create(self.taskname,
                               [{'name' : 'car'}, {'name': 'person'}],
