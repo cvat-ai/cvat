@@ -19,7 +19,7 @@ function CookieDrawer(): JSX.Element {
         if (cookiePolicyAccepted === null && isPublic()) {
             setDrawerVisible(true);
         }
-    }, [isPublic])
+    }, [])
 
     const onClose = () => {
         localStorage.setItem('cookiePolicyAccepted', 'true');
