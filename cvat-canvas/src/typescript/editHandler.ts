@@ -165,6 +165,11 @@ export class EditHandlerImpl implements EditHandler {
                     .addClass('cvat_canvas_shape'));
             }
 
+            // если начинается или кончается на первой точке
+            // если дуга не касается первой точки
+            // дуга заменяет фрагмент с первой точкой
+
+            // еще нужно сохранить направление
             for (const clone of this.clones) {
                 clone.on('click', (): void => this.selectPolygon(clone));
                 clone.on('mouseenter', (): void => {

@@ -12,10 +12,16 @@ RUN curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - &
         build-essential \
         google-chrome-stable \
         nodejs \
-        python3-dev && \
+        python3-dev \
+        ruby \
+        && \
     rm -rf /var/lib/apt/lists/*;
 
-RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
+RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt && \
+    python3 -m pip install --no-cache-dir coveralls
+RUN gem install coveralls-lcov
+
+COPY .coveragerc .
 
 # RUN all commands below as 'django' user
 USER ${USER}

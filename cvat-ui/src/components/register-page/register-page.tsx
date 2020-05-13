@@ -10,6 +10,7 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
 import RegisterForm, { RegisterData } from './register-form';
+import CookieDrawer from 'components/login-page/cookie-policy-drawer';
 
 interface RegisterPageComponentProps {
     fetching: boolean;
@@ -35,32 +36,35 @@ function RegisterPageComponent(
     } = props;
 
     return (
-        <Row type='flex' justify='center' align='middle'>
-            <Col {...sizes}>
-                <Title level={2}> Create an account </Title>
-                <RegisterForm
-                    fetching={fetching}
-                    onSubmit={(registerData: RegisterData): void => {
-                        onRegister(
-                            registerData.username,
-                            registerData.firstName,
-                            registerData.lastName,
-                            registerData.email,
-                            registerData.password1,
-                            registerData.password2,
-                        );
-                    }}
-                />
-                <Row type='flex' justify='start' align='top'>
-                    <Col>
-                        <Text strong>
-                            Already have an account?
-                            <Link to='/auth/login'> Login </Link>
-                        </Text>
-                    </Col>
-                </Row>
-            </Col>
-        </Row>
+        <>
+            <Row type='flex' justify='center' align='middle'>
+                <Col {...sizes}>
+                    <Title level={2}> Create an account </Title>
+                    <RegisterForm
+                        fetching={fetching}
+                        onSubmit={(registerData: RegisterData): void => {
+                            onRegister(
+                                registerData.username,
+                                registerData.firstName,
+                                registerData.lastName,
+                                registerData.email,
+                                registerData.password1,
+                                registerData.password2,
+                            );
+                        }}
+                    />
+                    <Row type='flex' justify='start' align='top'>
+                        <Col>
+                            <Text strong>
+                                Already have an account?
+                                <Link to='/auth/login'> Login </Link>
+                            </Text>
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
+            <CookieDrawer />
+        </>
     );
 }
 

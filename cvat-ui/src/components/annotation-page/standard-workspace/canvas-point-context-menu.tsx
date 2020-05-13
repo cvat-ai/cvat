@@ -5,6 +5,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Button from 'antd/lib/button';
+import Tooltip from 'antd/lib/tooltip';
 
 interface Props {
     activatedStateID: number | null;
@@ -29,9 +30,11 @@ export default function CanvasPointContextMenu(props: Props): JSX.Element | null
 
     return ReactDOM.createPortal(
         <div className='cvat-canvas-point-context-menu' style={{ top, left }}>
-            <Button type='link' icon='delete' onClick={onPointDelete}>
-                Delete point
-            </Button>
+            <Tooltip title='Delete point [Ctrl + dblclick]'>
+                <Button type='link' icon='delete' onClick={onPointDelete}>
+                    Delete point
+                </Button>
+            </Tooltip>
         </div>,
         window.document.body,
     );

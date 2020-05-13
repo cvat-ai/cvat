@@ -97,7 +97,7 @@ function ObjectListHeader(props: Props): JSX.Element {
                 <Col span={2}>
                     <Tooltip title={`Switch lock property for all ${switchLockAllShortcut}`}>
                         { statesLocked
-                            ? <Icon type='lock' onClick={unlockAllStates} />
+                            ? <Icon type='lock' onClick={unlockAllStates} theme='filled' />
                             : <Icon type='unlock' onClick={lockAllStates} />}
                     </Tooltip>
                 </Col>
