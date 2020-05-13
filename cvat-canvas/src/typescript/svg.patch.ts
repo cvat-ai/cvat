@@ -450,7 +450,6 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 accumulatedOffset.x = 0;
                 accumulatedOffset.y = 0;
                 const resizedFacePoint = getResizedPointIndex(event);
-                // @ts-ignore: ts(2339)
                 resizedCubePoint = [0, 1].includes(resizedFacePoint) ? resizedFacePoint
                     : 5 - resizedFacePoint; // 2,3 -> 3,2
                 this.fire(new CustomEvent('resizestart', event));
