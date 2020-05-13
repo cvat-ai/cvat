@@ -10,23 +10,17 @@ services:
 
 env:
   - CONTAINER_COVERAGE_DATA_DIR="/coverage_data"
-    HOST_COVERAGE_DATA_DIR="${TRAVIS_BUILD_DIR}/coverage_data"
-
-install:
-  - gem install coveralls-lcov
-  - pip install coveralls
+    HOST_COVERAGE_DATA_DIR="${TRAVIS_BUILD_DIR}"
 
 before_script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml build
-  - mkdir -m a=rwx -p ${HOST_COVERAGE_DATA_DIR}
+  - chmod a+rwx ${HOST_COVERAGE_DATA_DIR}
 
 script:
-  # FIXME: Git package and application name conflict in PATH
+  # FIXME: Git package and application name conflict in PATH and try to leave only one python test execution
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps && coverage run -a manage.py test --pattern="_test*.py" cvat/apps/dataset_manager/tests cvat/apps/engine/tests utils/cli && coverage run -a manage.py test datumaro/ && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR}'
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && coveralls-lcov -v -n ./reports/coverage/lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
 
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
-  - mv ${HOST_COVERAGE_DATA_DIR}/* .
-  - coveralls-lcov -v -n lcov.info > coverage.json
-  - coveralls --merge=coverage.json
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . && coveralls --merge=coverage.json'
