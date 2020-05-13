@@ -11,7 +11,7 @@ from cvat.apps.authentication.serializers import RegisterSerializerEx
 class UserAgreementSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=256)
     display_text = serializers.CharField(max_length=2048, default='')
-    url = serializers.URLField(default='')
+    url = serializers.CharField(max_length=2048, default='')
     required = serializers.BooleanField(default=False)
     value = serializers.BooleanField(default=False)
 
