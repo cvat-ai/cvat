@@ -9,6 +9,12 @@ from datumaro.util.image import lazy_image, load_image
 
 
 def generate_colormap(length=256):
+    """
+    Generates colors using PASCAL VOC algorithm.
+
+    Returns index -> (R, G, B) mapping.
+    """
+
     def get_bit(number, index):
         return (number >> index) & 1
 
