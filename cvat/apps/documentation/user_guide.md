@@ -813,6 +813,9 @@ Change the color scheme of annotation:
 
     You can change any random color pointing on needed box on a frame or on a
     side panel and press ``Enter``.
+
+---
+
 ### Controls sidebar
 
 **Navigation block** - contains tools for moving and rotating images.
