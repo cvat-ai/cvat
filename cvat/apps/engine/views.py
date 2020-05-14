@@ -10,6 +10,7 @@ import json
 import shutil
 from datetime import datetime
 from tempfile import mkstemp
+import requests
 
 from django.views.generic import RedirectView
 from django.http import HttpResponse, HttpResponseNotFound
@@ -601,7 +602,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         # return Response(data=20, status=status.HTTP_200_OK)
         form_data = request.data
         form_data = json.loads(next(iter(form_data.dict().keys())))
-        
+        slogger.glob.info("form data {}".format(form_data))
         # Parse any extra arguments
         form_args = form_data['arguments']
         list_of_args = form_args.split(';')
@@ -611,7 +612,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 continue
             arg = i.split('=')
             args_and_vals[arg[0]] = arg[1]
-        print(args_and_vals)
+        # print(args_and_vals)
+
+
+
+
         #check if datasets folder exists on aws bucket
         s3_client = boto3.client('s3')
         # print(os.getenv('AWS_BUCKET_NAME'))
@@ -632,6 +637,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         # TODO: create dataset and dump locally and push to s3
         # TODO: folder name should have timestamp
+        #project_uid is actually a task id
+        # if "TFRecord" in form_data['dump_format']:
+        #     r = requests.get(form_data['base_url']+"/api/v1/tasks/"+str(form_data['project_uid'])+'/dataset?format=cvat_tfrecord')
+        # else:
+        #     r = requests.get(form_data['base_url']+"/api/v1/tasks/"+str(form_data['project_uid'])+'/dataset?format=cvat_coco')
         dataset_path_aws = os.path.join("datasets","savan/cspire-demo-250-jpgs")
 
         #execute workflow

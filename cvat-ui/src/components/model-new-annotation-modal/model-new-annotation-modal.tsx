@@ -46,6 +46,7 @@ interface CreateAnnotationSubmitData {
     arguments: string;
     ref_model: string;
     dump_format: string;
+    base_url: string;
 }
 
 const core = getCore();
@@ -158,14 +159,32 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
 
         const baseUrl: string = core.config.backendAPI.slice(0, -7);
         let formData: CreateAnnotationSubmitData = {
-            project_uid: '1',
+            project_uid: taskInstance.id,
             arguments: argumentS,
             dump_format: selectedModelType,
             machine_type: value,
             ref_model: selectedModelType !!== "MASK ZIP 1.0" ? selectedModel : "",
+            base_url: baseUrl,
         }
         
         console.log(formData);
+        // try {
+        //     let resp = await core.server.request(`${baseUrl}/api/v1/tasks/${taskInstance.id}/dataset?format=cvat_coco`, {
+        //         method: 'GET',
+        //         // data: formData,
+        //         // form: formData,
+        //         headers: {
+        //             'Content-Type': 'application/x-www-form-urlencoded',
+        //         },
+        //     })
+        //     console.log(resp);
+        // } catch (error) {
+        //     notification.error({
+        //         message: 'data dump  failed.',
+        //         description: `Create New Annotation failed (Error code: ${error.code}). Please try again later`,
+        //         duration: 5,
+        //     });
+
         try {
             let resp = await core.server.request(`${baseUrl}/api/v1/tasks/${taskInstance.id}/create_annotation_model`, {
                 method: 'POST',
