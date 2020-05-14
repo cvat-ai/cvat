@@ -8,13 +8,13 @@
   - [Interface of the annotation tool](#interface-of-the-annotation-tool)
     - [Basic navigation](#basic-navigation)
     - [Types of shapes (basics)](#types-of-shapes-basics)
-    - [Annotation mode (basics)](#annotation-mode-basics)
-    - [Interpolation mode (basics)](#interpolation-mode-basics)
+    - [Shape mode (basics)](#shape-mode-basics)
+    - [Track mode (basics)](#track-mode-basics)
     - [Attribute annotation mode (basics)](#attribute-annotation-mode-basics)
     - [Downloading annotations](#downloading-annotations)
     - [Task synchronization with a repository](#task-synchronization-with-a-repository)
     - [Vocabulary](#vocabulary)
-    - [Workspace — Context menu](#workspace--context-menu)
+    - [Workspace](#workspace)
     - [Settings](#settings)
     - [Bottom Panel](#bottom-panel)
     - [Side panel](#side-panel)
@@ -100,7 +100,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Labels**. There are two ways of working with labels:
     -   The ``Constructor`` is a simple way to add and adjust labels. To add a new label click the ``Add label`` button.
           ![](static/documentation/images/image123.jpg)
-    
+
         You can set a name of the label in the ``Label name`` field.
 
           ![](static/documentation/images/image124.jpg)
@@ -109,49 +109,49 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
           ![](static/documentation/images/image125.jpg)
 
-        The following actions are available here: 
-        1. Set the attribute’s name. 
-        1. Choose the way to display the attribute: 
-           - Select — drop down list of value 
-           - Radio — is used when it is necessary to choose just one option out of few suggested. 
-           - Checkbox — is used when it is necessary to choose any number of options out of suggested. 
-           - Text — is used when an attribute is entered as a text. 
-           - Number — is used when an attribute is entered as a number. 
-        1. Set values for the attribute. The values could be separated by pressing ``Enter``. 
-        The entered value is displayed as a separate element which could be deleted 
-        by pressing ``Backspace`` or clicking the close button (x). 
-        If the specified way of displaying the attribute is Text or Number, 
+        The following actions are available here:
+        1. Set the attribute’s name.
+        1. Choose the way to display the attribute:
+           - Select — drop down list of value
+           - Radio — is used when it is necessary to choose just one option out of few suggested.
+           - Checkbox — is used when it is necessary to choose any number of options out of suggested.
+           - Text — is used when an attribute is entered as a text.
+           - Number — is used when an attribute is entered as a number.
+        1. Set values for the attribute. The values could be separated by pressing ``Enter``.
+        The entered value is displayed as a separate element which could be deleted
+        by pressing ``Backspace`` or clicking the close button (x).
+        If the specified way of displaying the attribute is Text or Number,
         the entered value will be displayed as text by default (e.g. you can specify the text format).
-        1. Checkbox ``Mutable`` determines if an attribute would be changed frame to frame. 
+        1. Checkbox ``Mutable`` determines if an attribute would be changed frame to frame.
         1. You can delete the attribute by clicking the close button (x).
 
-        Click the ``Continue`` button to add more labels. 
-        If you need to cancel adding a label - press the ``Cancel`` button. 
-        After all the necessary labels are added click the ``Done`` button.  
-        After clicking ``Done`` the added labels would be displayed as separate elements of different colour. 
-        You can edit or delete labels by clicking ``Update attributes`` or ``Delete label``. 
+        Click the ``Continue`` button to add more labels.
+        If you need to cancel adding a label - press the ``Cancel`` button.
+        After all the necessary labels are added click the ``Done`` button.
+        After clicking ``Done`` the added labels would be displayed as separate elements of different colour.
+        You can edit or delete labels by clicking ``Update attributes`` or ``Delete label``.
 
-    -   The ``Raw`` is a way of working with labels for an advanced user. 
-    Raw presents label data in _json_ format with an option of editing and copying labels as a text. 
-    The ``Done`` button applies the changes and the ``Reset`` button cancels the changes. 
+    -   The ``Raw`` is a way of working with labels for an advanced user.
+    Raw presents label data in _json_ format with an option of editing and copying labels as a text.
+    The ``Done`` button applies the changes and the ``Reset`` button cancels the changes.
           ![](static/documentation/images/image126.jpg)
 
     In ``Raw`` and ``Constructor`` mode, you can press the ``Copy`` button to copy the list of labels.
 
-    **Select files**. Press tab ``My computer`` to choose some files for annotation from your PC. 
-    If you select tab ``Connected file share`` you can choose files for annotation from your network. 
+    **Select files**. Press tab ``My computer`` to choose some files for annotation from your PC.
+    If you select tab ``Connected file share`` you can choose files for annotation from your network.
     If you select `` Remote source`` , you'll see a field where you can enter a list of URLs (one URL per line).
-    
+
       ![](static/documentation/images/image127.jpg)
 
     #### Advanced configuration
 
-      ![](static/documentation/images/image128.jpg)  
+      ![](static/documentation/images/image128.jpg)
 
     **Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
 
     **Use zip chunks**. Force to use zip chunks as compressed data. Actual for videos only.
-    
+
     **Image Quality**. Use this option to specify quality of uploaded images.
     The option helps to load high resolution datasets faster.
     Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
@@ -190,8 +190,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     For example, enter ``25`` to leave every twenty fifth frame in the video or every twenty fifth image. 
 
     **Chunk size**. Defines a number of frames to be packed in a chunk when send from client to server.
-    Server defines automatically if empty. 
-    
+    Server defines automatically if empty.
+
     Recommended values:
     - 1080p or less: 36
     - 2k or less: 8 - 16
@@ -223,28 +223,24 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 1.  The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
     Each element contains: task name, preview, progress bar, button ``Open``, and menu ``Actions``.
     Each button is responsible for a in menu ``Actions`` specific function:
-    - ``Dump Annotation`` — download an annotation file from a task. Several formats are available:
-      - [CVAT XML 1.1 for video](/cvat/apps/documentation/xml_format.md#interpolation)
+    - ``Dump Annotation`` and ``Export as a dataset`` — download annotations or
+        annotations and images in a specific format. The following formats are available:
+      - [CVAT for video](/cvat/apps/documentation/xml_format.md#interpolation)
       is highlighted if a task has the interpolation mode.
-      - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
+      - [CVAT for images](/cvat/apps/documentation/xml_format.md#annotation)
       is highlighted if a task has the annotation mode. 
-      - [PASCAL VOC ZIP 1.1](http://host.robots.ox.ac.uk/pascal/VOC/)
-      - [YOLO ZIP 1.1](https://pjreddie.com/darknet/yolo/)
-      - [COCO JSON 1.0](http://cocodataset.org/#format-data)
-      - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file
-      with the value of each color.
-      - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records)
-      - [MOT CSV 1.0](https://motchallenge.net/)
-      - [LabelMe ZIP 3.0 for image](http://labelme.csail.mit.edu/Release3.0/)
-    - ``Upload annotation`` is possible in same format as ``Dump annotation``, with exception of ``MASK ZIP 1.0``
-      format and without choosing whether [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md) 
-      and [LabelMe ZIP 3.0](http://labelme.csail.mit.edu/Release3.0/)
-      refers to an image or video.
-    - ``Export as a dataset`` — download a data set from a task. Several formats are available:
-      - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/docs/design.md)
-      - [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/)
-      - [MS COCO](http://cocodataset.org/#format-data)
+      - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
+      - [(VOC) Segmentation mask](http://host.robots.ox.ac.uk/pascal/VOC/) —
+          archive contains class and instance masks for each frame in the png
+          format and a text file with the value of each color.
       - [YOLO](https://pjreddie.com/darknet/yolo/)
+      - [COCO](http://cocodataset.org/#format-data)
+      - [TFRecord](https://www.tensorflow.org/tutorials/load_data/tf_records)
+      - [MOT](https://motchallenge.net/)
+      - [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0/)
+      - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/)
+    - ``Upload annotation`` is available in the same formats as in ``Dump annotation``.
+      - [CVAT](/cvat/apps/documentation/xml_format.md) accepts both video and image sub-formats.
     - ``Automatic Annotation`` — automatic annotation with  OpenVINO toolkit.
       Presence depends on how you build CVAT instance.
     - ``Open bug tracker`` — opens a link to Issue tracker.
@@ -252,32 +248,32 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     Push ``Open`` button to go to task details.
 
-1.  Task details is a task page which contains a preview, a progress bar 
+1.  Task details is a task page which contains a preview, a progress bar
     and the details of the task (specified when the task was created) and the jobs section.
-  
-    ![](static/documentation/images/image131.jpg)
+
+    ![](static/documentation/images/image131_DETRAC.jpg)
 
     - The next actions are available on this page:
       1. Change the task’s title.
-      1. Open ``Actions`` menu.  
+      1. Open ``Actions`` menu.
       1. Change issue tracker or open issue tracker if it is specified.
       1. Change labels.
-      You can add new labels or add attributes for the existing labels in the Raw mode or the        Constructor mode. 
+      You can add new labels or add attributes for the existing labels in the Raw mode or the        Constructor mode.
       By clicking ``Copy`` you will copy the labels to the clipboard.
-      1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or 
+      1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or
       choose the right person out of the dropdown list.
     - ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
-      - Jobs name whit a hyperlink to it.
-      - Frames — the frame interval. 
-      - A status of the job. The status is specified by the user in the menu inside the job. 
-      There are three types of status: annotation, validation or completed. 
+      - Jobs name with a hyperlink to it.
+      - Frames — the frame interval.
+      - A status of the job. The status is specified by the user in the menu inside the job.
+      There are three types of status: annotation, validation or completed.
       The status of the job is changes the progress bar of the task.
       - Started on — start date of this job.
       - Duration — is the amount of time the job is being worked.
-      - Assignee is the user who is working on the job. 
+      - Assignee is the user who is working on the job.
       You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
-      - ``Copy``. By clicking Copy you will copy the job list to the clipboard. 
-      The job list contains direct links to jobs. 
+      - ``Copy``. By clicking Copy you will copy the job list to the clipboard.
+      The job list contains direct links to jobs.
 
 1.  Follow a link inside ``Jobs`` section to start annotation process.
     In some cases, you can have several links. It depends on size of your
@@ -289,33 +285,33 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
 ### Models
 
-On the ``Models`` page allows you to manage your deep learning (DL) models uploaded for auto annotation. 
-Using the functionality you can upload, update or delete a specific DL model.  
-To open the model manager, click the ``Models`` button on the navigation bar. 
+On the ``Models`` page allows you to manage your deep learning (DL) models uploaded for auto annotation.
+Using the functionality you can upload, update or delete a specific DL model.
+To open the model manager, click the ``Models`` button on the navigation bar.
 The ``Models`` page contains information about all the existing models. The list of models is divided into two sections:
-- Primary — contains default CVAT models. Each model is a separate element. 
-It contains the model’s name, a framework on which the model was based on and 
+- Primary — contains default CVAT models. Each model is a separate element.
+It contains the model’s name, a framework on which the model was based on and
 ``Supported labels`` (a dropdown list of all supported labels).
-- Uploaded by a user — Contains models uploaded by a user. 
-The list of user models has additional columns with the following information: 
-name of the user who uploaded the model and the upload date. 
+- Uploaded by a user — Contains models uploaded by a user.
+The list of user models has additional columns with the following information:
+name of the user who uploaded the model and the upload date.
 Here you can delete models in the ``Actions`` menu.
 
 ![](static/documentation/images/image099.jpg)
 
-In order to add your model, click `` Create new model``. 
-Enter model name, and select model file using "Select files" button. 
+In order to add your model, click `` Create new model``.
+Enter model name, and select model file using "Select files" button.
 To annotate a task with a custom model you need to prepare 4 files:
-- ``Model config`` (*.xml) - a text file with network configuration. 
-- ``Model weights`` (*.bin) - a binary file with trained weights. 
-- ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with 
+- ``Model config`` (*.xml) - a text file with network configuration.
+- ``Model weights`` (*.bin) - a binary file with trained weights.
+- ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with
 string values for label numbers.
-- ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
-which can be processed by CVAT. 
+- ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure
+which can be processed by CVAT.
 
 You can learn more about creating model files by pressing [(?)](/cvat/apps/auto_annotation).
-Check the box `` Load globally`` if you want everyone to be able to use the model. 
-Click the ``Submit`` button to submit  a model. 
+Check the box `` Load globally`` if you want everyone to be able to use the model.
+Click the ``Submit`` button to submit  a model.
 
 ![](static/documentation/images/image104.jpg)
 
@@ -352,7 +348,7 @@ The tool consists of:
 - ``Workspace`` — space where images are shown;
 - ``Controls sidebar`` — contains tools for navigating the image, zoom,
   creating shapes and editing tracks (merge, split, group)
-- ``Objects sidebar`` — contains label filter, two lists: 
+- ``Objects sidebar`` — contains label filter, two lists:
   objects (on the frame) and labels (of objects on the frame) and appearance settings.
 
 ![](static/documentation/images/image034_DETRAC.jpg)
@@ -366,28 +362,29 @@ The tool consists of:
 
     ![](static/documentation/images/image008.jpg)
 
-1.  To navigate the image, use the button on the controls sidebar. 
-    Another way an image can be moved/shifted is by holding the left mouse button inside 
-    an area without annotated objects. 
+1.  To navigate the image, use the button on the controls sidebar.
+    Another way an image can be moved/shifted is by holding the left mouse button inside
+    an area without annotated objects.
     If the ``Mouse Wheel`` is pressed, then all annotated objects are ignored. Otherwise the
     a highlighted bounding box will be moved instead of the image itself.
 
     ![](static/documentation/images/image136.jpg)
 
-1.  You can use the button on the sidebar controls to zoom on a region of interest. 
+1.  You can use the button on the sidebar controls to zoom on a region of interest.
     Use the button ``Fit the image`` to fit the image in the workspace.
-    You can also use the mouse wheel to scale the image 
+    You can also use the mouse wheel to scale the image
     (the image will be zoomed relatively to your current cursor position).
 
     ![](static/documentation/images/image137.jpg)
 
 ### Types of shapes (basics)
 
-There are four shapes which you can annotate your images with:
+There are five shapes which you can annotate your images with:
 - ``Rectangle`` or ``Bounding box``
 - ``Polygon``
 - ``Polyline``
 - ``Points``
+- ``Cuboid``
 - ``Tag``
 
 And there is how they all look like:
@@ -396,7 +393,7 @@ And there is how they all look like:
 
 ![](static/documentation/images/image009_mapillary_vistas.jpg "Polyline") ![](static/documentation/images/image010_Affectnet.jpg "Points")
 
-![](static/documentation/images/image135.jpg "Tag")
+![](static/documentation/images/image015_DETRAC.jpg "Cuboid") ![](static/documentation/images/image135.jpg "Tag") 
 
 ``Tag`` - has no shape in the workspace, but is displayed in objects sidebar.
 
@@ -409,16 +406,16 @@ Usage examples:
 
     ![](static/documentation/images/image082.jpg)
 
-    Before you start, select the correct `` Label`` (should be specified by you when creating the task) 
+    Before you start, select the correct `` Label`` (should be specified by you when creating the task)
     and `` Drawing Method`` (by 2 points or by 4 points):
 
-    ![](static/documentation/images/image080.jpg) 
+    ![](static/documentation/images/image080.jpg)
 
 1.  Creating a new annotation in ``Shape mode``:
 
-    -   Create a separate ``Rectangle`` by clicking on ``Shape``. 
+    -   Create a separate ``Rectangle`` by clicking on ``Shape``.
 
-        ![](static/documentation/images/image081.jpg) 
+        ![](static/documentation/images/image081.jpg)
 
     -   Choose the opposite points. Your first rectangle is ready!
 
@@ -431,7 +428,7 @@ Usage examples:
         You can also undo your actions using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
 
 1.  You can see the ``Object card`` in the objects sidebar or open it by right-clicking on the object.
-    You can change the attributes in the details section. 
+    You can change the attributes in the details section.
     You can perform basic operations or delete an object by clicking on the action menu button.
 
     ![](static/documentation/images/image012.jpg)
@@ -442,39 +439,38 @@ Usage examples:
 
     Read more in the section [shape mode (advanced)](#shape-mode-advanced).
 
-### Interpolation mode (basics)
+### Track mode (basics)
 Usage examples:
 - Create new annotations for a sequence of frames.
 - Add/modify/delete objects for existing annotations.
-- Edit tracks, merge a lot of bounding boxes into one track.
+- Edit tracks, merge several rectangles into one track.
 
-1.  Before starting, you have to be sure that ``Interpolation`` is selected.
+1.  Like in the ``Shape mode``, you need to select a ``Rectangle`` on the sidebar,
+    in the appearing form, select the desired ``Label`` and the ``Drawing method``.
 
-    ![](static/documentation/images/image014.jpg)
+    ![](static/documentation/images/image083.jpg)
 
-1.  Create a track for an object (look at the selected car as an example):
-    - Annotate a bounding box on the first frame for the object.
-    - In ``Interpolation`` mode the bounding box will be interpolated on next frames automatically.
+1.  Creating a track for an object (look at the selected car as an example):
+    - Create a ``Rectangle`` in ``Track mode`` by clicking on ``Track``.
 
-    ![](static/documentation/images/image015_DETRAC.jpg)
+      ![](static/documentation/images/image014.jpg)
 
-1.  If the object starts to change its position, you need to modify bounding
-    boxes where it happens. It isn't necessary to change bounding boxes on each
-    frame. It is enough to update several key frames and frames between them
-    will be interpolated automatically. See an example below:
-    -   The car starts moving on frame #630. Let's mark the frame as a key frame.
-        You can press ``K`` for that or push ``star`` button (see the screenshot below)
+    - In ``Track mode`` the rectangle will be automatically interpolated on the next frames.
+    - The cyclist starts moving on frame #2270. Let's mark the frame as a key frame.
+      You can press ``K`` for that or click the ``star`` button (see the screenshot below).
 
         ![](static/documentation/images/image016.jpg)
 
-    -   Let's jump 30 frames forward and adjust boundaries of the object.
+    - If the object starts to change its position, you need to modify the rectangle where it happens.
+      It isn't necessary to change the rectangle on each frame, simply update several keyframes
+      and the frames between them will be interpolated automatically.
+    - Let's jump 30 frames forward and adjust the boundaries of the object. See an example below:
 
         ![](static/documentation/images/image017_DETRAC.jpg)
 
-    -   After that, bounding boxes of the object between 630 and 660 frames
-        will be changed automatically. For example, frame #645 looks like on the figure below:
+    -   After that the rectangle of the object will be changed automatically on frames 2270 to 2300:
 
-        ![](static/documentation/images/image018.jpg)
+        ![](static/documentation/images/gif019_DETRAC.gif)
 
 1.  When the annotated object disappears or becomes too small, you need to
     finish the track. You have to choose ``Outside Property``, shortcut ``O``.
@@ -482,84 +478,85 @@ Usage examples:
     ![](static/documentation/images/image019.jpg)
 
 1.  If the object isn't visible on a couple of frames and then appears again,
-    you can use ``Merge Tracks`` feature to merge several individual tracks
+    you can use the ``Merge`` feature to merge several individual tracks
     into one.
 
     ![](static/documentation/images/image020.jpg)
 
-    -   Let's create a track for the bus.
+    -   Create tracks for moments when the cyclist is visible:
 
-        ![](static/documentation/images/gif001.gif)
+        ![](static/documentation/images/gif001_DETRAC.gif)
 
-        After that, you should create a track when it appears again on the sequence of frames.
+    -   Click ``Merge`` button or press key ``M`` and click on any rectangle of the first track
+        and on any rectangle of the second track and so on:
 
-        ![](static/documentation/images/gif002.gif)
+        ![](static/documentation/images/image162_DETRAC.jpg)
 
-    -   Press ``Merge Tracks`` button and click on any bounding box of the
-        first track and on any bounding box of the second track.
+    -   Click ``Merge`` button or press ``M`` to apply changes.
 
-        ![](static/documentation/images/image021.jpg)
-
-    -   Press ``Apply Merge`` button to apply changes.
-
-        ![](static/documentation/images/image022.jpg)
+        ![](static/documentation/images/image020.jpg)
 
     -   The final annotated sequence of frames in ``Interpolation`` mode can
         look like the clip below:
 
-        ![](static/documentation/images/gif003.gif)
+        ![](static/documentation/images/gif003_DETRAC.gif)
+
+        Read more in the section [track mode (advanced)](#track-mode-advanced).
 
 ### Attribute annotation mode (basics)
 
--   In this mode you can edit attributes with fast navigation between
-    objects and frames using keyboard. Press ``Shift+Enter`` shortcut
-    to enter the mode. After that, you can change attributes using a keyboard.
+-   In this mode you can edit attributes with fast navigation between objects and frames using a keyboard.
+    Open the drop-down list in the top panel and select Attribute annotation Mode.
 
-    ![](static/documentation/images/image023.jpg)
+    ![](static/documentation/images/image023_Affectnet.jpg)
 
--   The active attribute will be red. It is ``gender`` in this case. Look at
-    the bottom side panel to see all possible shortcuts for changing the
-    attribute. Press ``2`` key on your keyboard to assign ``female`` value for
-    the attribute.
+-   In this mode objects panel change to a special panel :
 
-    ![](static/documentation/images/image024.jpg) ![](static/documentation/images/image025.jpg)
+    ![](static/documentation/images/image026.jpg)
 
--   Press ``Up Arrow``/``Down Arrow`` on your keyboard to go to next/previous
-    attribute. In this case, after pressing ``Down Arrow`` you will be able to
-    edit ``Age`` attribute.
+-   The active attribute will be red. In this case it is ``gender`` . Look at the bottom side panel to see all possible
+    shortcuts for changing the attribute. Press key ``2`` on your keyboard to assign a value (female) for the attribute
+    or select from the drop-down list.
 
-    ![](static/documentation/images/image026.jpg) ![](static/documentation/images/image027.jpg)
+    ![](static/documentation/images/image024_Affectnet.jpg)
 
--   Use ``Right Arrow``/``Left Arrow`` keys to move on previous/next image with annotation.
+-   Press ``Up Arrow``/``Down Arrow`` on your keyboard or click the buttons in the UI to go to the next/previous
+    attribute. In this case, after pressing ``Down Arrow`` you will be able to edit the ``Age`` attribute.
+
+    ![](static/documentation/images/image025_Affectnet.jpg)
+
+-   Use ``Right Arrow``/``Left Arrow`` keys to move to the previous/next image with annotation.
+
+To see all the hot keys available in the attribute annotation mode, press ``F2``.
+Read more in the section [attribute annotation mode (advanced)](#attribute-annotation-mode-advanced).
 
 ### Downloading annotations
 
 1.  To download the latest annotations, you have to save all changes first.
-    To do this, click ``Open Menu`` button. 
-
-1.  After that, press ``Save Work`` button. There is ``Ctrl+S``
-    shortcut to save annotations quickly.
+    click the ``Save`` button. There is a ``Ctrl+S`` shortcut to save annotations quickly.
+1.  After that, сlick the ``Menu`` button.
+1.  Press the ``Dump Annotation`` button.
 
     ![](static/documentation/images/image028.jpg)
 
-1.  After that, press ``Dump Annotation`` button.
-
-    ![](static/documentation/images/image118.jpg)
-
 1.  Choose format dump annotation file. Dump annotation are available in several formats:
-    - [CVAT XML 1.1 for video](/cvat/apps/documentation/xml_format.md#interpolation)
-    is highlighted if a task has the interpolation mode
-    - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
-    is highlighted if a task has the annotation mode
+    - [CVAT for video](/cvat/apps/documentation/xml_format.md#interpolation)
+      is highlighted if a task has the interpolation mode.
+    - [CVAT for images](/cvat/apps/documentation/xml_format.md#annotation)
+      is highlighted if a task has the annotation mode.
 
-    ![](static/documentation/images/image029.jpg "Example XML format") 
+    ![](static/documentation/images/image029.jpg "Example XML format")
 
-    - [PASCAL VOC ZIP 1.1](http://host.robots.ox.ac.uk/pascal/VOC/)
-    - [YOLO ZIP 1.1](https://pjreddie.com/darknet/yolo/)
-    - [COCO JSON 1.0](http://cocodataset.org/#format-data)
-    - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file with
-    the value of each color
-    - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records) 
+    - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
+    - [(VOC) Segmentation mask](http://host.robots.ox.ac.uk/pascal/VOC/) —
+      archive contains class and instance masks for each frame in the png
+      format and a text file with the value of each color.
+    - [YOLO](https://pjreddie.com/darknet/yolo/)
+    - [COCO](http://cocodataset.org/#format-data)
+    - [TFRecord](https://www.tensorflow.org/tutorials/load_data/tf_records)
+    - [MOT](https://motchallenge.net/)
+    - [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0/)
+    - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/)
 
 ### Task synchronization with a repository
 
@@ -581,21 +578,9 @@ Usage examples:
 
 ### Vocabulary
 
-**Bounding box** is an area which defines boundaries of an object. To specify
-it, you need to define two opposite corners.
+**Label** is a type of an annotated object (e.g. person, car, vehicle, etc.)
 
-**Tight bounding box** is a bounding box where margin between the object inside
-and boundaries of the box is absent. This type of bounding box is used in most
-tasks by default, but precision completely depends on an annotation task.
-
-| Bounding box                                  | Tight bounding box                            |
-| ------------                                  | :----------------:                            |
-| ![](static/documentation/images/image031.jpg) | ![](static/documentation/images/image030.jpg) |
-
----
-**Label** is a type of an annotated object (e.g. person, car, face, etc.)
-
-![](static/documentation/images/image032.jpg)
+![](static/documentation/images/image032_DETRAC.jpg)
 
 ---
 
@@ -611,9 +596,10 @@ quality, etc.). There are two types of attributes:
     ![](static/documentation/images/image072.jpg)
 
 ---
-**Track** is a set of shapes on different frames which corresponds to one object. Tracks are created in ``Interpolation mode``
+**Track** is a set of shapes on different frames which corresponds to one object.
+Tracks are created in ``Track mode``
 
-![](static/documentation/images/gif004.gif)
+![](static/documentation/images/gif003_DETRAC.gif)
 
 ---
 **Annotation** is a set of shapes and tracks. There are several types of annotations:
@@ -622,94 +608,77 @@ quality, etc.). There are two types of attributes:
 - _Automatic_ which is created automatically without a person in the loop
 
 ---
-### Workspace — Context menu
+### Workspace
 
-Press the ``Right mouse button`` to see the context menu.
+This is the main field in which drawing and editing objects takes place. 
+In addition the workspace also has the following functions: 
+-   Right-clicking on an object calls up the ``Object card`` - this is an element containing 
+    the necessary controls for changing the label and attributes of the object, as well as the action menu.
 
-Next options are available clicking inside bounding box:
-- ``Copy Object URL`` — copying to the buffer address of an object on the frame
-in the task
-- ``Change Color`` — change color of active shape
-- ``Remove Shape`` — deleting the shape
-- ``Switch Occluded`` — attribute is used if an object is occluded by another
-object or isn't fully visible on the frame. Use the ``Q`` shortcut to set the
-property quickly.
-- ``Switch Lock`` — block editing the active shape
-- ``Enable Dragging`` — (only for polygons) allows to adjust polygons position
-- ``Split`` — allows to split an interpolated track into two separate tracks. This function is the opposite
-of the merge function.
+    ![](static/documentation/images/image138_mapillary_vistas.jpg)
 
-![](static/documentation/images/image089.jpg)
-![](static/documentation/images/image090.jpg)
-![](static/documentation/images/image103.jpg)
+-   Right-clicking a point deletes it.
 
-Clicking on the points of poly-shapes, ``Remove`` option is available.
+    ![](static/documentation/images/image139_mapillary_vistas.jpg)
 
-![](static/documentation/images/image092.jpg)
+-   ``Z-axis slider`` - Allows you to switch annotation layers hiding the upper layers 
+    (slider is enabled if several z layers are on a frame). 
+    This element has a button for adding a new layer. When pressed, a new layer is added and switched to it.
+    You can move objects in layers using the ``+`` and ``-`` keys.
 
-Clicking outside any shapes, you can copy ``Frame URL`` (link to present frame) or ``Job URL`` (link from address bar)
-
-![](static/documentation/images/image091.jpg)
-
-Applying ``split`` into an interpolated track divides it into two separate tracks.
-
-![](static/documentation/images/gif010.gif)
+    ![](static/documentation/images/image140.jpg)
 
 ---
 ### Settings
 
-Press ``F2`` to access settings menu.
+To open the settings open the user menu in the header and select the settings item or press ``F3``.
 
 ![](static/documentation/images/image067.jpg)
 
-There is ``Player Settings`` which adjusts ``Workspace`` and ``Other Settings``.
+``Settings`` have two tabs:
 
-In ``Player Settings`` you can:
--   Control step of ``C`` and ``V`` shortcuts
--   Control speed of ``Space``/``Play`` button
--   Show every image in full or zoomed out like previous
-    (it is enabled by default for interpolation mode and disabled for annotation mode)
--   Enable ``Grid`` when you don't need small objects. ``Grid`` can have
-    different opacity, color and cells' size — use ``F2`` to configure settings.
+In tab ``Player`` you can:
+-   Control step of ``C`` and ``V`` shortcuts.
+-   Control speed of ``Space``/``Play`` button.
+-   Show ``Grid``, change grid size, choose color and transparency:
 
-    ![](static/documentation/images/image068.jpg)
+    ![](static/documentation/images/image068_mapillary_vistas.jpg)
 
--   Adjust ``Brightness``/``Contrast``/``Saturation`` of too exposing or too
-    dark images using ``F2`` — color settings (changes displaying and not the
+-   Show every image in full size or zoomed out like previous
+    (it is enabled by default for interpolation mode and disabled for annotation mode).
+- ``Rotate all images``  checkbox — switch the rotation of all frames or an individual frame.
+-   Adjust ``Brightness``/``Contrast``/``Saturation`` of too exposed or too
+    dark images using ``F3`` — color settings (changes displaying settings and not the
     image itself).
 
 Shortcuts:
--   ``Shift+B``/``Alt+B`` for brightness
--   ``Shift+C``/``Alt+C`` for contrast
--   ``Shift+S``/``Alt+S`` for saturation
--   ``F2`` —> ``Reset Color Settings`` to default values
+-   ``Shift+B+=``/``Shift+B+-`` for brightness.
+-   ``Shift+C+=``/``Shift+C+-`` for contrast.
+-   ``Shift+S+=``/``Shift+S+-`` for saturation.
 
-    ![](static/documentation/images/image069.jpg)
+    ![](static/documentation/images/image164_mapillary_vistas.jpg)
 
-``Other Settings`` contains:
-- ``Show All Interpolation Tracks`` checkbox — shows hidden object on the
-  side panel for every interpolated object (turned off by default)
-- ``AAM Zoom Margin`` slider — defines margins for shape in attribute annotation mode
-- ``Enable AutoSaving`` checkbox — turned off by default
-- ``AutoSaving Interval (min)`` input box — 15 minutes by default
-- ``Rotate all images``  checkbox — switch the rotation of all frames / individual frame
+-   ``Reset color settings`` to default values.
 
 ---
-### Bottom Panel
 
-![](static/documentation/images/image035.jpg)
+In tab ``Workspace`` you can:
 
----
-Go to the first and latest frames.
+![](static/documentation/images/image155.jpg)
 
-![](static/documentation/images/image036.jpg)
+- ``Enable auto save`` checkbox — turned off by default.
+- ``Auto save interval (min)`` input box — 15 minutes by default.
+- ``Show all interpolation tracks`` checkbox — shows hidden objects on the
+  side panel for every interpolated object (turned off by default).
+- ``Always show object details`` - show text for an object on the canvas not only when the object is activated:
 
----
-Go to the next/previous frame with a predefined step. Shortcuts:
-``V`` — step backward, ``C`` — step forward. By default the step is ``10``
-(change at ``Open Menu`` —> ``Settings`` —> ``Player Step``).
+   ![](static/documentation/images/image152_DETRAC.jpg)
 
-![](static/documentation/images/image037.jpg)
+- ``Automatic bordering`` - enable automatic bordering for polygons and polylines during drawing/editing.
+  For more information To find out more, go to the section [annotation with polygons](#Annotation-with-polygons).
+- ``Attribute annotation mode (AAM) zoom margin`` input box — defines margins (in px)
+  for shape in the attribute annotation mode.
+- Press `` Go back`` or ``F3`` to return to the annotation.
 
 ---
 Go to the next/previous frame with step equals to 1. Shortcuts: ``D`` — previous, ``F`` — next.
@@ -967,15 +936,15 @@ By default, objects in the mode are zoomed. Check
 ``Open Menu`` —> ``Settings`` —> ``AAM Zoom Margin`` to adjust that.
 
 ## Annotation with box by 4 points
-It is an efficient method of bounding box annotation, proposed 
-[here](https://arxiv.org/pdf/1708.02750.pdf). 
+It is an efficient method of bounding box annotation, proposed
+[here](https://arxiv.org/pdf/1708.02750.pdf).
 Before starting, you need to be sure that ``Box by 4 points`` is selected.
 
 ![](static/documentation/images/image134.jpg)
 
-Press ``N`` for entering drawing mode. Click exactly four extreme points: 
-the top, bottom, left- and right-most physical points on the object. 
-Drawing is automatically completed right after clicking the fourth point. 
+Press ``N`` for entering drawing mode. Click exactly four extreme points:
+the top, bottom, left- and right-most physical points on the object.
+Drawing is automatically completed right after clicking the fourth point.
 Press ``Esc`` to cancel editing.
 
 ![](static/documentation/images/gif016.gif)
@@ -1050,9 +1019,9 @@ automatically. You can adjust the polyline after it has been drawn.
 
 ## Annotation with cuboids
 
-It is used to annotate 3 dimensional objects such as cars, boxes, etc... 
+It is used to annotate 3 dimensional objects such as cars, boxes, etc...
 Currently the feature supports one point perspective and has the contraint
-where the vertical edges are exactly parallel to the sides. 
+where the vertical edges are exactly parallel to the sides.
 
 ### Creating the cuboid
 
@@ -1063,9 +1032,9 @@ You may draw the cuboid by placing 4 points, after which the drawing completes a
 The first 3 points will represent a plane of the cuboid
 while the last point represents the depth of that plane.
 For the first 3 points, it is recomended to only draw the 2 closest side faces,
-as well as the top and bottom face. 
+as well as the top and bottom face.
 
-A few examples:  
+A few examples:
 ![](static/documentation/images/CuboidDrawing1.gif)
 
 ![](static/documentation/images/CuboidDrawing2.gif)
@@ -1074,12 +1043,12 @@ A few examples:
 
 ### Editing the cuboid
 
-The cuboid can be edited in multiple ways, by dragging points or by dragging certain faces. 
-First notice that there is a face that is painted with pink lines only, let us call it the front face. 
+The cuboid can be edited in multiple ways, by dragging points or by dragging certain faces.
+First notice that there is a face that is painted with pink lines only, let us call it the front face.
 
-The cuboid can be moved by simply dragging the shape as normal. 
-The cuboid can be extended by dragging on the point in the middle of the edges. 
-The cuboid can also be extended up and down by dragging the point at the vertices. 
+The cuboid can be moved by simply dragging the shape as normal.
+The cuboid can be extended by dragging on the point in the middle of the edges.
+The cuboid can also be extended up and down by dragging the point at the vertices.
 
 ![](static/documentation/images/CuboidEditing1.gif)
 
@@ -1090,17 +1059,17 @@ The cuboid can then be edited as usual.
 ![](static/documentation/images/EditingPerspective.gif)
 
 If you wish to reset perspective effects, you may right click on cuboid,
-and select ``Reset Perspective`` to return to a regular cuboid. 
+and select ``Reset Perspective`` to return to a regular cuboid.
 
 The location of the pink face can be swapped with the adjacent visible side face.
 This is done by right clicking on the cuboid and selecting ``Switch Perspective Orientation``.
-Note that this will also reset the perspective effects. 
+Note that this will also reset the perspective effects.
 
 ![](static/documentation/images/ResetPerspective.gif)
 
 Certain faces of the cuboid can also be edited,
-these faces are the left, right and dorsal faces, relative to the pink face. 
-Simply drag the faces to move them independently from the rest of the cuboid. 
+these faces are the left, right and dorsal faces, relative to the pink face.
+Simply drag the faces to move them independently from the rest of the cuboid.
 
 ![](static/documentation/images/CuboidEditing2.gif)
 
@@ -1132,14 +1101,14 @@ You can add/delete points after finishing.
 
 You can use linear interpolation for points to annotate a moving object:
 
-1.  Before starting, you have to be sure that ``Points`` is selected. 
-1.  Linear interpolation works only with one point, so you need to set ``Poly Shapes Size``: 1. 
+1.  Before starting, you have to be sure that ``Points`` is selected.
+1.  Linear interpolation works only with one point, so you need to set ``Poly Shapes Size``: 1.
 1.  After that select the interpolation mode.
-    
+
     ![](static/documentation/images/image122.jpg)
 
 1.  Press ``N`` or click ``Create Shape`` for entering drawing mode.
-    Click LMB to create a point and shape will be automatically completed. 
+    Click LMB to create a point and shape will be automatically completed.
 
     ![](static/documentation/images/gif011_DETRAC.gif)
 
@@ -1173,25 +1142,25 @@ a shape is created and you can work with it as a polygon.
 
 ## Automatic annotation
 
-Automatic Annotation is used for creating preliminary annotations. 
-To use Automatic Annotation you need a DL model. You can use primary models or models uploaded by a user. 
+Automatic Annotation is used for creating preliminary annotations.
+To use Automatic Annotation you need a DL model. You can use primary models or models uploaded by a user.
 You can find the list of available models in the ``Models`` section.
 
-1.  To launch automatic annotation, you should open the dashboard and find a task which you want to annotate. 
+1.  To launch automatic annotation, you should open the dashboard and find a task which you want to annotate.
     Then click the ``Actions`` button and choose option ``Automatic Annotation`` from the dropdown menu.
 
     ![](static/documentation/images/image119_DETRAC.jpg)
 
-1.  In the dialog window select a model you need. DL models are created for specific labels, e.g. 
-    the Crossroad model was taught using footage from cameras located above the highway and it is best to 
-    use this model for the tasks with similar camera angles. 
-    If it's necessary select the ``Clean old annotations`` checkbox. 
-    Adjust the labels so that the task labels will correspond to the labels of the DL model. 
-    For example, let’s consider a task where you have to annotate labels “car” and “person”. 
-    You should connect the “person” label from the model to the “person” label in the task. 
-    As for the “car” label, you should choose the most fitting label available in the model - the “vehicle” label. 
-    The task requires to annotate cars only and choosing the “vehicle” label implies annotation of all vehicles, 
-    in this case using auto annotation will help you complete the task faster. 
+1.  In the dialog window select a model you need. DL models are created for specific labels, e.g.
+    the Crossroad model was taught using footage from cameras located above the highway and it is best to
+    use this model for the tasks with similar camera angles.
+    If it's necessary select the ``Clean old annotations`` checkbox.
+    Adjust the labels so that the task labels will correspond to the labels of the DL model.
+    For example, let’s consider a task where you have to annotate labels “car” and “person”.
+    You should connect the “person” label from the model to the “person” label in the task.
+    As for the “car” label, you should choose the most fitting label available in the model - the “vehicle” label.
+    The task requires to annotate cars only and choosing the “vehicle” label implies annotation of all vehicles,
+    in this case using auto annotation will help you complete the task faster.
     Click ``Submit`` to begin the automatic annotation process.
 
     ![](static/documentation/images/image120.jpg)
@@ -1205,9 +1174,9 @@ You can find the list of available models in the ``Models`` section.
     ![](static/documentation/images/gif014_DETRAC.gif)
 
 1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects and
-    merging into tracks using ``ReID merge`` function. Click the ``ReID merge`` button in the menu. 
-    You can use the default settings (for more information click [here](cvat/apps/reid/README.md)). 
-    To launch the merging process click ``Merge``. Each frame of the track will be a key frame. 
+    merging into tracks using ``ReID merge`` function. Click the ``ReID merge`` button in the menu.
+    You can use the default settings (for more information click [here](cvat/apps/reid/README.md)).
+    To launch the merging process click ``Merge``. Each frame of the track will be a key frame.
 
     ![](static/documentation/images/image133.jpg)
 

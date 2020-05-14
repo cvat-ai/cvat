@@ -12,12 +12,18 @@
     background-color: $background-color-1;
 }
 
+.cvat-objects-sidebar-filter-input {
+    width: calc(100% - 35px);
+}
+
 .cvat-objects-sidebar-sider {
     top: 0px;
     right: 0px;
     left: auto;
     background-color: $background-color-2;
     border-left: 1px solid $border-color-1;
+    border-bottom: 1px solid $border-color-1;
+    border-radius: 4px 0 0 4px;
     z-index: 2;
 }
 

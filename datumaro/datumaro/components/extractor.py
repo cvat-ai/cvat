@@ -749,9 +749,7 @@ class SourceExtractor(Extractor):
         self._subset = subset
 
     def subsets(self):
-        if self._subset:
-            return [self._subset]
-        return None
+        return [self._subset]
 
     def get_subset(self, name):
         if name != self._subset:

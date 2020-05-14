@@ -4,20 +4,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0-beta.2] - Unreleased
+## [1.0.0] - Unreleased
 ### Added
-- Re-Identification algorithm to merging bounding boxes automatically to the new UI (<https://github.com/opencv/cvat/pull/1406>)
-- Methods ``import`` and ``export`` to import/export raw annotations for Job and Task in ``cvat-core`` (<https://github.com/opencv/cvat/pull/1406>)
-- Versioning of client packages (``cvat-core``, ``cvat-canvas``, ``cvat-ui``). Initial versions are set to 1.0.0  (<https://github.com/opencv/cvat/pull/1448>)
+- cvat-ui: added cookie policy drawer for login page (<https://github.com/opencv/cvat/pull/1511>)
+- Added `datumaro_project` export format (https://github.com/opencv/cvat/pull/1352)
 
 ### Changed
--
+- Downloaded file name in annotations export became more informative (https://github.com/opencv/cvat/pull/1352)
+- Added auto trimming for trailing whitespaces style enforsement (https://github.com/opencv/cvat/pull/1352)
+- REST API: updated `GET /task/<id>/annotations`: parameters are `format`, `filename` (now optional), `action` (optional) (https://github.com/opencv/cvat/pull/1352)
+- REST API: removed `dataset/formats`, changed format of `annotation/formats` (https://github.com/opencv/cvat/pull/1352)
+- Exported annotations are stored for N hours instead of indefinitely (https://github.com/opencv/cvat/pull/1352)
+- Formats: CVAT format now accepts ZIP and XML (https://github.com/opencv/cvat/pull/1352)
+- Formats: COCO format now accepts ZIP and JSON (https://github.com/opencv/cvat/pull/1352)
+- Formats: most of formats renamed, no extension in title (https://github.com/opencv/cvat/pull/1352)
+- Formats: definitions are changed, are not stored in DB anymore (https://github.com/opencv/cvat/pull/1352)
+- cvat-core: session.annotations.put() now returns identificators of added objects (https://github.com/opencv/cvat/pull/1493)
 
 ### Deprecated
 -
 
 ### Removed
+- `annotation` application is replaced with `dataset_manager` (https://github.com/opencv/cvat/pull/1352)
+
+### Fixed
+- Categories for empty projects with no sources are taken from own dataset (https://github.com/opencv/cvat/pull/1352)
+- Added directory removal on error during `extract` command (https://github.com/opencv/cvat/pull/1352)
+- Added debug error message on incorrect XPath (https://github.com/opencv/cvat/pull/1352)
+- Exporting frame stepped task (https://github.com/opencv/cvat/issues/1294, https://github.com/opencv/cvat/issues/1334)
+- Fixed broken command line interface for `cvat` export format in Datumaro (https://github.com/opencv/cvat/issues/1494)
+- Updated Rest API document, Swagger document serving instruction issue (https://github.com/opencv/cvat/issues/1495)
+- Fixed cuboid occluded view (<https://github.com/opencv/cvat/pull/1500>)
+- Non-informative lock icon (<https://github.com/opencv/cvat/pull/1434>)
+- Sidebar in AAM has no hide/show button (<https://github.com/opencv/cvat/pull/1420>)
+- Task/Job buttons has no "Open in new tab" option (<https://github.com/opencv/cvat/pull/1419>)
+- Delete point context menu option has no shortcut hint (<https://github.com/opencv/cvat/pull/1416>)
+
+### Security
 -
+
+## [1.0.0-beta.2] - 2020-04-30
+### Added
+- Re-Identification algorithm to merging bounding boxes automatically to the new UI (<https://github.com/opencv/cvat/pull/1406>)
+- Methods ``import`` and ``export`` to import/export raw annotations for Job and Task in ``cvat-core`` (<https://github.com/opencv/cvat/pull/1406>)
+- Versioning of client packages (``cvat-core``, ``cvat-canvas``, ``cvat-ui``). Initial versions are set to 1.0.0  (<https://github.com/opencv/cvat/pull/1448>)
+- Cuboids feature was migrated from old UI to new one. (<https://github.com/opencv/cvat/pull/1451>)
+
+### Removed
+- Annotation convertation utils, currently supported natively via Datumaro framework (https://github.com/opencv/cvat/pull/1477)
 
 ### Fixed
 - Auto annotation, TF annotation and Auto segmentation apps (https://github.com/opencv/cvat/pull/1409)
@@ -30,9 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Annotation uploading fails in annotation view (<https://github.com/opencv/cvat/pull/1445>)
 - UI freezes after canceling pasting with escape (<https://github.com/opencv/cvat/pull/1445>)
 - Duplicating keypoints in COCO export (https://github.com/opencv/cvat/pull/1435)
-
-### Security
--
+- CVAT new UI: add arrows on a mouse cursor (<https://github.com/opencv/cvat/pull/1391>)
+- Delete point bug (in new UI) (<https://github.com/opencv/cvat/pull/1440>)
+- Fix apache startup after PC restart (https://github.com/opencv/cvat/pull/1467)
+- Open task button doesn't work (https://github.com/opencv/cvat/pull/1474)
 
 ## [1.0.0-beta.1] - 2020-04-15
 ### Added
@@ -53,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React UI is the primary UI
 
 ### Fixed
+- Cleaned up memory in Auto Annotation to enable long running tasks on videos
 - New shape is added when press ``esc`` when drawing instead of cancellation
 - Dextr segmentation doesn't work.
 - `FileNotFoundError` during dump after moving format files
@@ -75,6 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AttributeError: 'tuple' object has no attribute 'read' in ReID algorithm (https://github.com/opencv/cvat/issues/1403)
 - Wrong semi-automatic segmentation near edges of an image (https://github.com/opencv/cvat/issues/1403)
 - Git repos paths (https://github.com/opencv/cvat/pull/1400)
+- Uploading annotations for tasks with multiple jobs (https://github.com/opencv/cvat/pull/1396)
 
 ## [1.0.0-alpha] - 2020-03-31
 ### Added

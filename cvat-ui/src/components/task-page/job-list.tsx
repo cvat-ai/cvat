@@ -46,9 +46,11 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             <div>
                 <Button
                     type='link'
-                    onClick={(): void => {
+                    onClick={(e: React.MouseEvent): void => {
+                        e.preventDefault();
                         push(`/tasks/${taskId}/jobs/${id}`);
                     }}
+                    href={`/tasks/${taskId}/jobs/${id}`}
                 >
                     {`Job #${id}`}
                 </Button>

@@ -2,67 +2,36 @@
 #
 # SPDX-License-Identifier: MIT
 
-format_spec = {
-    "name": "LabelMe",
-    "dumpers": [
-        {
-            "display_name": "{name} {format} {version}",
-            "format": "ZIP",
-            "version": "3.0",
-            "handler": "dump"
-        }
-    ],
-    "loaders": [
-        {
-            "display_name": "{name} {format} {version}",
-            "format": "ZIP",
-            "version": "3.0",
-            "handler": "load",
-        }
-    ],
-}
+from tempfile import TemporaryDirectory
+
+from pyunpack import Archive
+
+from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+    import_dm_annotations)
+from cvat.apps.dataset_manager.util import make_zip_archive
+from datumaro.components.project import Dataset
+
+from .registry import dm_env, exporter, importer
 
 
-from datumaro.components.converter import Converter
-class CvatLabelMeConverter(Converter):
-    def __init__(self, save_images=False):
-        self._save_images = save_images
-
-    def __call__(self, extractor, save_dir):
-        from datumaro.components.project import Environment, Dataset
-
-        env = Environment()
-        id_from_image = env.transforms.get('id_from_image_name')
-
-        extractor = extractor.transform(id_from_image)
-        extractor = Dataset.from_extractors(extractor) # apply lazy transforms
-
-        converter = env.make_converter('label_me', save_images=self._save_images)
-        converter(extractor, save_dir=save_dir)
-
-def dump(file_object, annotations):
-    from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor
-    from cvat.apps.dataset_manager.util import make_zip_archive
-    from tempfile import TemporaryDirectory
-
-    extractor = CvatAnnotationsExtractor('', annotations)
-    converter = CvatLabelMeConverter()
+@exporter(name='LabelMe', ext='ZIP', version='3.0')
+def _export(dst_file, task_data, save_images=False):
+    extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
+    envt = dm_env.transforms
+    extractor = extractor.transform(envt.get('id_from_image_name'))
+    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
+        converter = dm_env.make_converter('label_me', save_images=save_images)
         converter(extractor, save_dir=temp_dir)
-        make_zip_archive(temp_dir, file_object)
 
-def load(file_object, annotations):
-    from pyunpack import Archive
-    from tempfile import TemporaryDirectory
-    from datumaro.plugins.labelme_format import LabelMeImporter
-    from datumaro.components.project import Environment
-    from cvat.apps.dataset_manager.bindings import import_dm_annotations
+        make_zip_archive(temp_dir, dst_file)
 
-    archive_file = file_object if isinstance(file_object, str) else getattr(file_object, "name")
+@importer(name='LabelMe', ext='ZIP', version='3.0')
+def _import(src_file, task_data):
     with TemporaryDirectory() as tmp_dir:
-        Archive(archive_file).extractall(tmp_dir)
+        Archive(src_file.name).extractall(tmp_dir)
 
-        dm_dataset = LabelMeImporter()(tmp_dir).make_dataset()
-        masks_to_polygons = Environment().transforms.get('masks_to_polygons')
-        dm_dataset = dm_dataset.transform(masks_to_polygons)
-        import_dm_annotations(dm_dataset, annotations)
+        dataset = dm_env.make_importer('label_me')(tmp_dir).make_dataset()
+        masks_to_polygons = dm_env.transforms.get('masks_to_polygons')
+        dataset = dataset.transform(masks_to_polygons)
+        import_dm_annotations(dataset, task_data)

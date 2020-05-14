@@ -98,12 +98,14 @@ async function jobInfoGenerator(job: any): Promise<Record<string, number>> {
         'track count': total.rectangle.shape + total.rectangle.track
             + total.polygon.shape + total.polygon.track
             + total.polyline.shape + total.polyline.track
-            + total.points.shape + total.points.track,
+            + total.points.shape + total.points.track
+            + total.cuboid.shape + total.cuboid.track,
         'object count': total.total,
         'box count': total.rectangle.shape + total.rectangle.track,
         'polygon count': total.polygon.shape + total.polygon.track,
         'polyline count': total.polyline.shape + total.polyline.track,
         'points count': total.points.shape + total.points.track,
+        'cuboids count': total.cuboid.shape + total.cuboid.track,
         'tag count': total.tags,
     };
 }
@@ -1059,6 +1061,8 @@ export function rememberObject(
         activeControl = ActiveControl.DRAW_POLYLINE;
     } else if (shapeType === ShapeType.POINTS) {
         activeControl = ActiveControl.DRAW_POINTS;
+    } else if (shapeType === ShapeType.CUBOID) {
+        activeControl = ActiveControl.DRAW_CUBOID;
     }
 
     return {
@@ -1386,6 +1390,8 @@ export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction>
                 activeControl = ActiveControl.DRAW_POLYGON;
             } else if (initialState.shapeType === ShapeType.POLYLINE) {
                 activeControl = ActiveControl.DRAW_POLYLINE;
+            } else if (initialState.shapeType === ShapeType.CUBOID) {
+                activeControl = ActiveControl.DRAW_CUBOID;
             }
 
             dispatch({
@@ -1447,6 +1453,8 @@ export function repeatDrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAc
             activeControl = ActiveControl.DRAW_POLYGON;
         } else if (activeShapeType === ShapeType.POLYLINE) {
             activeControl = ActiveControl.DRAW_POLYLINE;
+        } else if (activeShapeType === ShapeType.CUBOID) {
+            activeControl = ActiveControl.DRAW_CUBOID;
         }
 
         dispatch({
