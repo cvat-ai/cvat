@@ -810,8 +810,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 ...state,
                 errors: {
                     ...state.errors,
-                    formats: {
-                        ...state.errors.formats,
+                    userAgreements: {
+                        ...state.errors.userAgreements,
                         fetching: {
                             message: 'Could not get user agreements from the server',
                             reason: action.payload.error.toString(),

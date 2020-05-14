@@ -251,6 +251,9 @@ export interface NotificationsState {
         boundaries: {
             resetError: null | ErrorState;
         };
+        userAgreements: {
+            fetching: null | ErrorState;
+        };
 
         [index: string]: any;
     };
