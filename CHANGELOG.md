@@ -6,11 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - Unreleased
 ### Added
-- Added `datumaro_project` export format (https://github.com/opencv/cvat/pull/1352)
-- Re-Identification algorithm to merging bounding boxes automatically to the new UI (<https://github.com/opencv/cvat/pull/1406>)
-- Methods ``import`` and ``export`` to import/export raw annotations for Job and Task in ``cvat-core`` (<https://github.com/opencv/cvat/pull/1406>)
-- Versioning of client packages (``cvat-core``, ``cvat-canvas``, ``cvat-ui``). Initial versions are set to 1.0.0  (<https://github.com/opencv/cvat/pull/1448>)
 - cvat-ui: added cookie policy drawer for login page (<https://github.com/opencv/cvat/pull/1511>)
+- Added `datumaro_project` export format (https://github.com/opencv/cvat/pull/1352)
 
 ### Changed
 - Downloaded file name in annotations export became more informative (https://github.com/opencv/cvat/pull/1352)
@@ -30,6 +27,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - `annotation` application is replaced with `dataset_manager` (https://github.com/opencv/cvat/pull/1352)
 
+### Fixed
+- Categories for empty projects with no sources are taken from own dataset (https://github.com/opencv/cvat/pull/1352)
+- Added directory removal on error during `extract` command (https://github.com/opencv/cvat/pull/1352)
+- Added debug error message on incorrect XPath (https://github.com/opencv/cvat/pull/1352)
+- Exporting frame stepped task (https://github.com/opencv/cvat/issues/1294, https://github.com/opencv/cvat/issues/1334)
+- Fixed broken command line interface for `cvat` export format in Datumaro (https://github.com/opencv/cvat/issues/1494)
+- Updated Rest API document, Swagger document serving instruction issue (https://github.com/opencv/cvat/issues/1495)
+- Fixed cuboid occluded view (<https://github.com/opencv/cvat/pull/1500>)
+- Non-informative lock icon (<https://github.com/opencv/cvat/pull/1434>)
+- Sidebar in AAM has no hide/show button (<https://github.com/opencv/cvat/pull/1420>)
+- Task/Job buttons has no "Open in new tab" option (<https://github.com/opencv/cvat/pull/1419>)
+- Delete point context menu option has no shortcut hint (<https://github.com/opencv/cvat/pull/1416>)
+
+### Security
+-
+
 ## [1.0.0-beta.2] - 2020-04-30
 ### Added
 - Re-Identification algorithm to merging bounding boxes automatically to the new UI (<https://github.com/opencv/cvat/pull/1406>)
@@ -41,10 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Annotation convertation utils, currently supported natively via Datumaro framework (https://github.com/opencv/cvat/pull/1477)
 
 ### Fixed
-- Categories for empty projects with no sources are taken from own dataset (https://github.com/opencv/cvat/pull/1352)
-- Added directory removal on error during `extract` command (https://github.com/opencv/cvat/pull/1352)
-- Added debug error message on incorrect XPath (https://github.com/opencv/cvat/pull/1352)
-- Exporting frame stepped task (https://github.com/opencv/cvat/issues/1294, https://github.com/opencv/cvat/issues/1334)
 - Auto annotation, TF annotation and Auto segmentation apps (https://github.com/opencv/cvat/pull/1409)
 - Import works with truncated images now: "OSError:broken data stream" on corrupt images (https://github.com/opencv/cvat/pull/1430)
 - Hide functionality (H) doesn't work (<https://github.com/opencv/cvat/pull/1445>)

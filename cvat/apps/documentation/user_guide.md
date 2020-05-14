@@ -1,7 +1,3 @@
-<!--lint disable maximum-line-length-->
-<!--lint disable list-item-spacing-->
-<!--lint disable list-item-indent-->
-
 - [User's guide](#users-guide)
   - [Getting started](#getting-started)
     - [Authorization](#authorization)
@@ -191,7 +187,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Stop frame**. Frame on which video in task ends.
 
     **Frame Step**. Use this option to filter video frames.
-    For example, enter ``25`` to leave every twenty fifth frame in the video or every twenty fifth image.
+    For example, enter ``25`` to leave every twenty fifth frame in the video or every twenty fifth image. 
 
     **Chunk size**. Defines a number of frames to be packed in a chunk when send from client to server.
     Server defines automatically if empty.
@@ -230,9 +226,9 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     - ``Dump Annotation`` and ``Export as a dataset`` — download annotations or
         annotations and images in a specific format. The following formats are available:
       - [CVAT for video](/cvat/apps/documentation/xml_format.md#interpolation)
-          is highlighted if a task has the interpolation mode.
+      is highlighted if a task has the interpolation mode.
       - [CVAT for images](/cvat/apps/documentation/xml_format.md#annotation)
-          is highlighted if a task has the annotation mode.
+      is highlighted if a task has the annotation mode. 
       - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [(VOC) Segmentation mask](http://host.robots.ox.ac.uk/pascal/VOC/) —
           archive contains class and instance masks for each frame in the png
@@ -246,7 +242,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     - ``Upload annotation`` is available in the same formats as in ``Dump annotation``.
       - [CVAT](/cvat/apps/documentation/xml_format.md) accepts both video and image sub-formats.
     - ``Automatic Annotation`` — automatic annotation with  OpenVINO toolkit.
-      Its presence depends on how you build CVAT instance.
+      Presence depends on how you build CVAT instance.
     - ``Open bug tracker`` — opens a link to Issue tracker.
     - ``Delete`` — delete task.
 
@@ -397,7 +393,7 @@ And there is how they all look like:
 
 ![](static/documentation/images/image009_mapillary_vistas.jpg "Polyline") ![](static/documentation/images/image010_Affectnet.jpg "Points")
 
-![](static/documentation/images/image015_DETRAC.jpg "Cuboid") ![](static/documentation/images/image135.jpg "Tag")
+![](static/documentation/images/image015_DETRAC.jpg "Cuboid") ![](static/documentation/images/image135.jpg "Tag") 
 
 ``Tag`` - has no shape in the workspace, but is displayed in objects sidebar.
 
@@ -549,7 +545,7 @@ Read more in the section [attribute annotation mode (advanced)](#attribute-annot
     - [CVAT for images](/cvat/apps/documentation/xml_format.md#annotation)
       is highlighted if a task has the annotation mode.
 
-      ![](static/documentation/images/image029.jpg "Example XML format")
+    ![](static/documentation/images/image029.jpg "Example XML format")
 
     - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
     - [(VOC) Segmentation mask](http://host.robots.ox.ac.uk/pascal/VOC/) —
@@ -614,9 +610,9 @@ Tracks are created in ``Track mode``
 ---
 ### Workspace
 
-This is the main field in which drawing and editing objects takes place.
-In addition the workspace also has the following functions:
--   Right-clicking on an object calls up the ``Object card`` - this is an element containing
+This is the main field in which drawing and editing objects takes place. 
+In addition the workspace also has the following functions: 
+-   Right-clicking on an object calls up the ``Object card`` - this is an element containing 
     the necessary controls for changing the label and attributes of the object, as well as the action menu.
 
     ![](static/documentation/images/image138_mapillary_vistas.jpg)
@@ -625,8 +621,8 @@ In addition the workspace also has the following functions:
 
     ![](static/documentation/images/image139_mapillary_vistas.jpg)
 
--   ``Z-axis slider`` - Allows you to switch annotation layers hiding the upper layers
-    (slider is enabled if several z layers are on a frame).
+-   ``Z-axis slider`` - Allows you to switch annotation layers hiding the upper layers 
+    (slider is enabled if several z layers are on a frame). 
     This element has a button for adding a new layer. When pressed, a new layer is added and switched to it.
     You can move objects in layers using the ``+`` and ``-`` keys.
 
