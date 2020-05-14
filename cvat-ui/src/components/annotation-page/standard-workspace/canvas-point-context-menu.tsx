@@ -83,7 +83,7 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
 
     if (activatedState !== contextMenuFor) {
         setContextMenuFor(activatedState);
-        if (visible) {
+        if (visible && type === ContextMenuType.CANVAS_SHAPE_POINT) {
             onCloseContextMenu();
         }
     }
