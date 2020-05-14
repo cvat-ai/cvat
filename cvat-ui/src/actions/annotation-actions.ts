@@ -1499,7 +1499,7 @@ export function redrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction
         if (activatedStateID !== null) {
             const [state] = states
                 .filter((_state: any): boolean => _state.clientID === activatedStateID);
-            if (state) {
+            if (state && state.objectType !== ObjectType.TAG) {
                 let activeControl = ActiveControl.CURSOR;
                 if (state.shapeType === ShapeType.RECTANGLE) {
                     activeControl = ActiveControl.DRAW_RECTANGLE;
