@@ -19,6 +19,7 @@ interface Props {
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
     installedReID: boolean;
+    taskID: number;
     onClickMenu(params: ClickParam, file?: File): void;
 }
 
@@ -40,6 +41,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         dumpActivities,
         exportActivities,
         installedReID,
+        taskID,
     } = props;
 
     let latestParams: ClickParam | null = null;
@@ -119,7 +121,9 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 Remove annotations
             </Menu.Item>
             <Menu.Item key={Actions.OPEN_TASK}>
-                Open the task
+                <a href={`/tasks/${taskID}`} onClick={(e: React.MouseEvent) => e.preventDefault()}>
+                    Open the task
+                </a>
             </Menu.Item>
             { installedReID && <ReIDPlugin /> }
         </Menu>

@@ -1458,8 +1458,9 @@ class TaskCreateAPITestCase(APITestCase):
 
 def generate_image_file(filename):
     f = BytesIO()
-    width = random.randint(100, 800)
-    height = random.randint(100, 800)
+    gen = random.SystemRandom()
+    width = gen.randint(100, 800)
+    height = gen.randint(100, 800)
     image = Image.new('RGB', size=(width, height))
     image.save(f, 'jpeg')
     f.name = filename
