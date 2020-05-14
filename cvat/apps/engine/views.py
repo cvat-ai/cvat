@@ -6,6 +6,7 @@ import os
 import os.path as osp
 import re
 import traceback
+import json
 import shutil
 from datetime import datetime
 from tempfile import mkstemp
@@ -598,10 +599,22 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='create_annotation_model')
     def create_annotation_model(self, request, pk):
         # return Response(data=20, status=status.HTTP_200_OK)
-
+        form_data = request.data
+        form_data = json.loads(next(iter(form_data.dict().keys())))
+        
+        # Parse any extra arguments
+        form_args = form_data['arguments']
+        list_of_args = form_args.split(';')
+        args_and_vals = {}
+        for i in list_of_args:
+            if i == "":
+                continue
+            arg = i.split('=')
+            args_and_vals[arg[0]] = arg[1]
+        print(args_and_vals)
         #check if datasets folder exists on aws bucket
         s3_client = boto3.client('s3')
-        print(os.getenv('AWS_BUCKET_NAME'))
+        # print(os.getenv('AWS_BUCKET_NAME'))
         if os.getenv("AWS_BUCKET_NAME", None) is None:
             msg = "AWS_BUCKET_NAME environment var does not exist. Please add ENV var with bucket name."
             slogger.glob.info("AWS_BUCKET_NAME environment var does not exist. Please add ENV var with bucket name.")
@@ -620,24 +633,31 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         # TODO: create dataset and dump locally and push to s3
         # TODO: folder name should have timestamp
         dataset_path_aws = os.path.join("datasets","savan/cspire-demo-250-jpgs")
+
+        #execute workflow
         configuration = onepanel.core.api.Configuration()
         # # Configure API key authorization: Bearer
         configuration.api_key['authorization'] = os.getenv('ONEPANEL_AUTHORIZATION')
         # Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
         configuration.api_key_prefix['authorization'] = 'Bearer'
         # Defining host is optional and default to http://localhost:8888
-        configuration.host = os.getenv('ONEPANEL_API')
+        configuration.host = os.getenv('ONEPANEL_API_URL')
         # Enter a context with an instance of the API client
         with onepanel.core.api.ApiClient(configuration) as api_client:
             # Create an instance of the API class
             api_instance = onepanel.core.api.WorkflowServiceApi(api_client)
             namespace = os.getenv('ONEPANEL_NAMESPACE') # str | 
             params = []
-            params.append(Parameter(name="source", value="https://github.com/onepanelio/Mask_RNN.git"))
+            # params.append(Parameter(name="source", value="https://github.com/onepanelio/Mask_RNN.git"))
             params.append(Parameter(name="dataset-path", value=dataset_path_aws))
             params.append(Parameter(name="bucket-name", value=os.getenv('AWS_BUCKET_NAME')))
-            body = onepanel.core.api.CreateWorkflowExecutionBody(parameters=params,
-                workflow_template_uid = os.getenv('ONEPANEL_TEMPLATE_ID')) 
+            if 'TFRecord' in form_data['dump_format']:
+                params.append(Parameter(name="ref_model", value=form_data['ref_model']))
+                body = onepanel.core.api.CreateWorkflowExecutionBody(parameters=params,
+                workflow_template_uid = os.getenv('ONEPANEL_OD_TEMPLATE_ID')) 
+            else:
+                body = onepanel.core.api.CreateWorkflowExecutionBody(parameters=params,
+                workflow_template_uid = os.getenv('ONEPANEL_MASKRCNN_TEMPLATE_ID')) 
             try:
                 api_response = api_instance.create_workflow_execution(namespace, body)
                 return Response(data="Workflow executed", status=status.HTTP_200_OK)

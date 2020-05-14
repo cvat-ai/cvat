@@ -169,7 +169,8 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
         try {
             let resp = await core.server.request(`${baseUrl}/api/v1/tasks/${taskInstance.id}/create_annotation_model`, {
                 method: 'POST',
-                form: formData,
+                data: formData,
+                // form: formData,
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
