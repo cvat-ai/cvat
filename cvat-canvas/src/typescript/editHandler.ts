@@ -149,9 +149,8 @@ export class EditHandlerImpl implements EditHandler {
                 .concat(linePoints)
                 .concat(oldPoints.slice(stop + 1));
 
-            linePoints.reverse();
-            const secondPart = oldPoints.slice(start + 1, stop)
-                .concat(linePoints);
+            const secondPart = oldPoints.slice(start, stop)
+                .concat(linePoints.slice(1).reverse());
 
             if (firstPart.length < 3 || secondPart.length < 3) {
                 this.cancel();
@@ -165,11 +164,6 @@ export class EditHandlerImpl implements EditHandler {
                     .addClass('cvat_canvas_shape'));
             }
 
-            // если начинается или кончается на первой точке
-            // если дуга не касается первой точки
-            // дуга заменяет фрагмент с первой точкой
-
-            // еще нужно сохранить направление
             for (const clone of this.clones) {
                 clone.on('click', (): void => this.selectPolygon(clone));
                 clone.on('mouseenter', (): void => {
