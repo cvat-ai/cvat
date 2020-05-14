@@ -28,6 +28,11 @@ from django_filters import rest_framework as filters
 import django_rq
 from django.db import IntegrityError
 from django.utils import timezone
+import boto3
+from botocore.exceptions import ClientError
+import onepanel.core.api
+from onepanel.core.api.rest import ApiException
+from onepanel.core.api.models import Parameter
 
 
 from . import annotation, task, models
@@ -592,6 +597,53 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='create_annotation_model')
     def create_annotation_model(self, request, pk):
+        # return Response(data=20, status=status.HTTP_200_OK)
+
+        #check if datasets folder exists on aws bucket
+        s3_client = boto3.client('s3')
+        print(os.getenv('AWS_BUCKET_NAME'))
+        if os.getenv("AWS_BUCKET_NAME", None) is None:
+            msg = "AWS_BUCKET_NAME environment var does not exist. Please add ENV var with bucket name."
+            slogger.glob.info("AWS_BUCKET_NAME environment var does not exist. Please add ENV var with bucket name.")
+            return Response(data=msg, status=status.HTTP_400_BAD_REQUEST)
+
+
+        try:
+            s3_client.head_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key='datasets/')
+            # print("exists")
+            #add logging
+        except ClientError:
+            # Not found
+            slogger.glob.info("Datasets folder does not exist in the bucket, creating a new one.")
+            s3_client.put_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key=('datasets'+'/'))
+
+        # TODO: create dataset and dump locally and push to s3
+        # TODO: folder name should have timestamp
+        dataset_path_aws = os.path.join("datasets","savan/cspire-demo-250-jpgs")
+        configuration = onepanel.core.api.Configuration()
+        # # Configure API key authorization: Bearer
+        configuration.api_key['authorization'] = os.getenv('ONEPANEL_AUTHORIZATION')
+        # Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+        configuration.api_key_prefix['authorization'] = 'Bearer'
+        # Defining host is optional and default to http://localhost:8888
+        configuration.host = os.getenv('ONEPANEL_API')
+        # Enter a context with an instance of the API client
+        with onepanel.core.api.ApiClient(configuration) as api_client:
+            # Create an instance of the API class
+            api_instance = onepanel.core.api.WorkflowServiceApi(api_client)
+            namespace = os.getenv('ONEPANEL_NAMESPACE') # str | 
+            params = []
+            params.append(Parameter(name="source", value="https://github.com/onepanelio/Mask_RNN.git"))
+            params.append(Parameter(name="dataset-path", value=dataset_path_aws))
+            params.append(Parameter(name="bucket-name", value=os.getenv('AWS_BUCKET_NAME')))
+            body = onepanel.core.api.CreateWorkflowExecutionBody(parameters=params,
+                workflow_template_uid = os.getenv('ONEPANEL_TEMPLATE_ID')) 
+            try:
+                api_response = api_instance.create_workflow_execution(namespace, body)
+                return Response(data="Workflow executed", status=status.HTTP_200_OK)
+            except ApiException as e:
+                slogger.glob.exception("Exception when calling WorkflowServiceApi->create_workflow_execution: {}\n".format(e))
+                return Response(data="error occured", status=HTTP_500_INTERNAL_SERVER_ERROR)
         return Response(data=20, status=status.HTTP_200_OK)
 
 
