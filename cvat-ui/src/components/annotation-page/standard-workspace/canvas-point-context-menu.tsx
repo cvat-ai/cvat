@@ -90,7 +90,7 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
 
     const onPointDelete = (): void => {
         const { selectedPoint } = props;
-        if (contextMenuFor && selectedPoint) {
+        if (contextMenuFor && selectedPoint !== null) {
             contextMenuFor.points = contextMenuFor.points.slice(0, selectedPoint * 2)
                 .concat(contextMenuFor.points.slice(selectedPoint * 2 + 2));
             onUpdateAnnotations([contextMenuFor]);
@@ -100,7 +100,7 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
 
     const onSetStartPoint = (): void => {
         const { selectedPoint } = props;
-        if (contextMenuFor && selectedPoint && contextMenuFor.shapeType === 'polygon') {
+        if (contextMenuFor && selectedPoint !== null && contextMenuFor.shapeType === 'polygon') {
             contextMenuFor.points = contextMenuFor.points.slice(selectedPoint * 2)
                 .concat(contextMenuFor.points.slice(0, selectedPoint * 2));
             onUpdateAnnotations([contextMenuFor]);
@@ -110,9 +110,9 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
 
     const onInversePoints = (): void => {
         const { selectedPoint } = props;
-        if (contextMenuFor && selectedPoint && ['polygon', 'polyline'].includes(contextMenuFor.shapeType)) {
+        if (contextMenuFor && selectedPoint !== null && ['polygon', 'polyline'].includes(contextMenuFor.shapeType)) {
             const reducedPoints = contextMenuFor.points.reduce(
-                (acc: number[][], _, index: number, array: number[]): number[][] => {
+                (acc: number[][], _: number, index: number, array: number[]): number[][] => {
                     if (index % 2) {
                         acc.push([array[index - 1], array[index]]);
                     }
