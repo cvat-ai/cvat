@@ -427,6 +427,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private selectize(value: boolean, shape: SVG.Element): void {
         const self = this;
+        const { offset } = this.controller.geometry;
+        const translate = (points: number[]): number[] => points
+            .map((coord: number): number => coord - offset);
 
         function dblClickHandler(e: MouseEvent): void {
             const pointID = Array.prototype.indexOf
@@ -437,9 +440,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .filter((_state: any): boolean => (
                         _state.clientID === self.activeElement.clientID
                     ));
-                if (['cuboid', 'rectangle'].includes(state.shapeType)) {
+                if (state.shapeType === 'rectangle') {
                     e.preventDefault();
                     return;
+                }
+                if (state.shapeType === 'cuboid') {
+                    if (e.shiftKey) {
+                        const points = translate(pointsToArray((e.target as any)
+                            .parentElement.parentElement.instance.attr('points')));
+                        self.onEditDone(
+                            state,
+                            points,
+                        )
+                        e.preventDefault();
+                        return;
+                    }
                 }
                 if (e.ctrlKey) {
                     const { points } = state;

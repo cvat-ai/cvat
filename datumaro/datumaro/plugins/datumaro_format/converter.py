@@ -286,3 +286,27 @@ class DatumaroConverter(Converter, CliPlugin):
     def __call__(self, extractor, save_dir):
         converter = _Converter(extractor, save_dir, **self._options)
         converter.convert()
+
+
+class DatumaroProjectConverter(Converter):
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
+        parser.add_argument('--save-images', action='store_true',
+            help="Save images (default: %(default)s)")
+        return parser
+
+    def __init__(self, config=None, save_images=False):
+        self._config = config
+        self._save_images = save_images
+
+    def __call__(self, extractor, save_dir):
+        os.makedirs(save_dir, exist_ok=True)
+
+        from datumaro.components.project import Project
+        project = Project.generate(save_dir, config=self._config)
+
+        converter = project.env.make_converter('datumaro',
+            save_images=self._save_images)
+        converter(extractor, save_dir=osp.join(
+            project.config.project_dir, project.config.dataset_dir))

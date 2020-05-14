@@ -8,8 +8,8 @@ import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 
 function isDefaultFormat(dumperName: string, taskMode: string): boolean {
-    return (dumperName === 'CVAT XML 1.1 for videos' && taskMode === 'interpolation')
-    || (dumperName === 'CVAT XML 1.1 for images' && taskMode === 'annotation');
+    return (dumperName === 'CVAT for video 1.1' && taskMode === 'interpolation')
+    || (dumperName === 'CVAT for images 1.1' && taskMode === 'annotation');
 }
 
 interface Props {

@@ -26,7 +26,7 @@ class ImageOperationsTest(TestCase):
                 path = osp.join(test_dir, 'img.png') # lossless
 
                 image_module._IMAGE_BACKEND = save_backend
-                image_module.save_image(path, src_image)
+                image_module.save_image(path, src_image, jpeg_quality=100)
 
                 image_module._IMAGE_BACKEND = load_backend
                 dst_image = image_module.load_image(path)
@@ -43,7 +43,8 @@ class ImageOperationsTest(TestCase):
                 src_image = np.random.randint(0, 255 + 1, (2, 4, c))
 
             image_module._IMAGE_BACKEND = save_backend
-            buffer = image_module.encode_image(src_image, '.png') # lossless
+            buffer = image_module.encode_image(src_image, '.png',
+                jpeg_quality=100) # lossless
 
             image_module._IMAGE_BACKEND = load_backend
             dst_image = image_module.decode_image(buffer)

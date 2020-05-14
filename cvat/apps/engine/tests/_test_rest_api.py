@@ -1,28 +1,86 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
-import os
-import shutil
-from PIL import Image
-from io import BytesIO
-from enum import Enum
-import random
-from rest_framework.test import APITestCase, APIClient
-from rest_framework import status
-from django.conf import settings
-from django.contrib.auth.models import User, Group
-from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
-    AttributeType, Project, Data)
-from unittest import mock
+# FIXME: Git application and package name clash in tests
+class _GitImportFix:
+    import sys
+    former_path = sys.path[:]
+
+    @classmethod
+    def apply(cls):
+        # HACK: fix application and module name clash
+        # 'git' app is found earlier than a library in the path.
+        # The clash is introduced by unittest discover
+        import sys
+        print('apply')
+
+        apps_dir = __file__[:__file__.rfind('/engine/')]
+        assert 'apps' in apps_dir
+        try:
+            sys.path.remove(apps_dir)
+        except ValueError:
+            pass
+
+        for name in list(sys.modules):
+            if name.startswith('git.') or name == 'git':
+                m = sys.modules.pop(name, None)
+                del m
+
+        import git
+        assert apps_dir not in git.__file__
+
+    @classmethod
+    def restore(cls):
+        import sys
+        print('restore')
+
+        for name in list(sys.modules):
+            if name.startswith('git.') or name == 'git':
+                m = sys.modules.pop(name)
+                del m
+
+        sys.path.insert(0, __file__[:__file__.rfind('/engine/')])
+
+        import importlib
+        importlib.invalidate_caches()
+
+def _setUpModule():
+    _GitImportFix.apply()
+
+    import sys
+    sys.path.insert(0, __file__[:__file__.rfind('/engine/')])
+
+# def tearDownModule():
+    # _GitImportFix.restore()
+
 import io
-import xml.etree.ElementTree as ET
-from collections import defaultdict
-import zipfile
-from pycocotools import coco as coco_loader
+import os
+import os.path as osp
+import random
+import shutil
 import tempfile
+import xml.etree.ElementTree as ET
+import zipfile
+from collections import defaultdict
+from enum import Enum
+from glob import glob
+from io import BytesIO
+from unittest import mock
+
 import av
 import numpy as np
+from django.conf import settings
+from django.contrib.auth.models import Group, User
+from PIL import Image
+from pycocotools import coco as coco_loader
+from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
+
+from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
+    Segment, StatusChoice, Task)
+
+_setUpModule()
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -2448,7 +2506,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
     def _dump_api_v1_tasks_id_annotations(self, pk, user, query_params=""):
         with ForceLogin(user, self.client):
             response = self.client.get(
-                "/api/v1/tasks/{0}/annotations/my_task_{0}?{1}".format(pk, query_params))
+                "/api/v1/tasks/{0}/annotations{1}".format(pk, query_params))
 
         return response
 
@@ -2470,7 +2528,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         return response
 
-    def _get_annotation_formats(self, user):
+    def _get_formats(self, user):
         with ForceLogin(user, self.client):
             response = self.client.get(
                 path="/api/v1/server/annotation/formats"
@@ -3036,65 +3094,85 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "shapes": [],
                     "tracks": [],
                 }
-            if annotation_format == "CVAT XML 1.1 for videos":
+            if annotation_format == "CVAT for video 1.1":
                 annotations["tracks"] = rectangle_tracks_with_attrs + rectangle_tracks_wo_attrs
 
-            elif annotation_format == "CVAT XML 1.1 for images":
+            elif annotation_format == "CVAT for images 1.1":
                 annotations["shapes"] = rectangle_shapes_with_attrs + rectangle_shapes_wo_attrs \
                     + polygon_shapes_wo_attrs + polygon_shapes_with_attrs
                 annotations["tags"] = tags_with_attrs + tags_wo_attrs
 
-            elif annotation_format == "PASCAL VOC ZIP 1.1":
+            elif annotation_format == "PASCAL VOC 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
                 annotations["tags"] = tags_wo_attrs
 
-            elif annotation_format == "YOLO ZIP 1.1" or \
-                 annotation_format == "TFRecord ZIP 1.0":
+            elif annotation_format == "YOLO 1.1" or \
+                 annotation_format == "TFRecord 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
-            elif annotation_format == "COCO JSON 1.0":
+            elif annotation_format == "COCO 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
-            elif annotation_format == "MASK ZIP 1.1":
+            elif annotation_format == "Segmentation mask 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs + polygon_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
-            elif annotation_format == "MOT ZIP 1.1":
+            elif annotation_format == "MOT 1.1":
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
-            elif annotation_format == "LabelMe ZIP 3.0":
+            elif annotation_format == "LabelMe 3.0":
                 annotations["shapes"] = rectangle_shapes_with_attrs + \
                                         rectangle_shapes_wo_attrs + \
                                         polygon_shapes_wo_attrs + \
                                         polygon_shapes_with_attrs
 
+            elif annotation_format == "Datumaro 1.0":
+                annotations["shapes"] = rectangle_shapes_with_attrs + \
+                                        rectangle_shapes_wo_attrs + \
+                                        polygon_shapes_wo_attrs + \
+                                        polygon_shapes_with_attrs
+                annotations["tags"] = tags_with_attrs + tags_wo_attrs
+
+            else:
+                raise Exception("Unknown format {}".format(annotation_format))
+
             return annotations
 
-        response = self._get_annotation_formats(annotator)
+        response = self._get_formats(annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
-
         if annotator is not None:
-            supported_formats = response.data
+            data = response.data
         else:
-            supported_formats = [{
-                "name": "CVAT",
-                "dumpers": [{
-                    "display_name": "CVAT XML 1.1 for images"
-                }],
-                "loaders": [{
-                    "display_name": "CVAT XML 1.1"
-                }]
-            }]
+            data = self._get_formats(owner).data
+        import_formats = data['importers']
+        export_formats = data['exporters']
+        self.assertTrue(isinstance(import_formats, list) and import_formats)
+        self.assertTrue(isinstance(export_formats, list) and export_formats)
+        import_formats = { v['name'] for v in import_formats }
+        export_formats = { v['name'] for v in export_formats }
 
-        self.assertTrue(isinstance(supported_formats, list) and supported_formats)
+        formats = { exp: exp if exp in import_formats else None
+            for exp in export_formats }
+        if 'CVAT 1.1' in import_formats:
+            if 'CVAT for video 1.1' in export_formats:
+                formats['CVAT for video 1.1'] = 'CVAT 1.1'
+            if 'CVAT for images 1.1' in export_formats:
+                formats['CVAT for images 1.1'] = 'CVAT 1.1'
+        if import_formats ^ export_formats:
+            # NOTE: this may not be an error, so we should not fail
+            print("The following import formats have no pair:",
+                import_formats - export_formats)
+            print("The following export formats have no pair:",
+                export_formats - import_formats)
 
-        for annotation_format in supported_formats:
-            for dumper in annotation_format["dumpers"]:
+        for export_format, import_format in formats.items():
+            with self.subTest(export_format=export_format,
+                    import_format=import_format):
                 # 1. create task
                 task, jobs = self._create_task(owner, assignee)
 
                 # 2. add annotation
-                data = _get_initial_annotation(dumper["display_name"])
+                data = _get_initial_annotation(export_format)
                 response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
                 data["version"] += 1
 
@@ -3103,49 +3181,60 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
                 # 3. download annotation
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
-                    "format={}".format(dumper["display_name"]))
+                    "?format={}".format(export_format))
                 self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
-                    "format={}".format(dumper["display_name"]))
+                    "?format={}".format(export_format))
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
-                    "action=download&format={}".format(dumper["display_name"]))
+                    "?format={}&action=download".format(export_format))
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 # 4. check downloaded data
-                if response.status_code == status.HTTP_200_OK:
+                if annotator is not None:
                     self.assertTrue(response.streaming)
                     content = io.BytesIO(b"".join(response.streaming_content))
-                    self._check_dump_content(content, task, jobs, data, annotation_format["name"])
+                    self._check_dump_content(content, task, jobs, data, export_format)
                     content.seek(0)
+                else:
+                    content = io.BytesIO()
 
-                    # 5. remove annotation form the task
-                    response = self._delete_api_v1_tasks_id_annotations(task["id"], annotator)
-                    data["version"] += 1
-                    self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
+                # 5. remove annotation form the task
+                response = self._delete_api_v1_tasks_id_annotations(task["id"], annotator)
+                data["version"] += 1
+                self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
 
-                    # 6. upload annotation and check annotation
-                    uploaded_data = {
-                        "annotation_file": content,
-                    }
+                # 6. upload annotation
+                if not import_format:
+                    continue
 
-                    for loader in annotation_format["loaders"]:
-                        if loader["display_name"] == "MASK ZIP 1.1":
-                            continue # can't really predict the result and check
-                        response = self._upload_api_v1_tasks_id_annotations(task["id"], annotator, uploaded_data, "format={}".format(loader["display_name"]))
-                        self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+                uploaded_data = {
+                    "annotation_file": content,
+                }
+                response = self._upload_api_v1_tasks_id_annotations(
+                    task["id"], annotator, uploaded_data,
+                    "format={}".format(import_format))
+                self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
-                        response = self._upload_api_v1_tasks_id_annotations(task["id"], annotator, {}, "format={}".format(loader["display_name"]))
-                        self.assertEqual(response.status_code, HTTP_201_CREATED)
+                response = self._upload_api_v1_tasks_id_annotations(
+                    task["id"], annotator, {},
+                    "format={}".format(import_format))
+                self.assertEqual(response.status_code, HTTP_201_CREATED)
 
-                        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
-                        self.assertEqual(response.status_code, HTTP_200_OK)
-                        data["version"] += 2 # upload is delete + put
-                        self._check_response(response, data)
+                # 7. check annotation
+                if import_format == "Segmentation mask 1.1":
+                    continue # can't really predict the result to check
+                response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+                self.assertEqual(response.status_code, HTTP_200_OK)
 
-    def _check_dump_content(self, content, task, jobs, data, annotation_format_name):
+                if annotator is None:
+                    continue
+                data["version"] += 2 # upload is delete + put
+                self._check_response(response, data)
+
+    def _check_dump_content(self, content, task, jobs, data, format_name):
         def etree_to_dict(t):
             d = {t.tag: {} if t.attrib else None}
             children = list(t)
@@ -3164,26 +3253,33 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     d[t.tag] = text
             return d
 
-        if annotation_format_name == "CVAT":
-            xmldump = ET.fromstring(content.read())
-            self.assertEqual(xmldump.tag, "annotations")
-            tags = xmldump.findall("./meta")
-            self.assertEqual(len(tags), 1)
-            meta = etree_to_dict(tags[0])["meta"]
-            self.assertEqual(meta["task"]["name"], task["name"])
-        elif annotation_format_name == "PASCAL VOC":
+        if format_name in {"CVAT for video 1.1", "CVAT for images 1.1"}:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                zipfile.ZipFile(content).extractall(tmp_dir)
+                xmls = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
+                self.assertTrue(xmls)
+                for xml in xmls:
+                    xmlroot = ET.parse(xml).getroot()
+                    self.assertEqual(xmlroot.tag, "annotations")
+                    tags = xmlroot.findall("./meta")
+                    self.assertEqual(len(tags), 1)
+                    meta = etree_to_dict(tags[0])["meta"]
+                    self.assertEqual(meta["task"]["name"], task["name"])
+        elif format_name == "PASCAL VOC 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif annotation_format_name == "YOLO":
+        elif format_name == "YOLO 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif annotation_format_name == "COCO":
-            with tempfile.NamedTemporaryFile() as tmp_file:
-                tmp_file.write(content.read())
-                tmp_file.flush()
-                coco = coco_loader.COCO(tmp_file.name)
-                self.assertTrue(coco.getAnnIds())
-        elif annotation_format_name == "TFRecord":
+        elif format_name == "COCO 1.0":
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                zipfile.ZipFile(content).extractall(tmp_dir)
+                jsons = glob(osp.join(tmp_dir, '**', '*.json'), recursive=True)
+                self.assertTrue(jsons)
+                for json in jsons:
+                    coco = coco_loader.COCO(json)
+                    self.assertTrue(coco.getAnnIds())
+        elif format_name == "TFRecord 1.0":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif annotation_format_name == "MASK":
+        elif format_name == "Segmentation mask 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
 
 
@@ -3234,31 +3330,22 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             ]
             }"""
 
-        response = self._get_annotation_formats(user)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        supported_formats = response.data
-        self.assertTrue(isinstance(supported_formats, list) and supported_formats)
-
-        coco_format = None
-        for f in response.data:
-            if f["name"] == "COCO":
-                coco_format = f
-                break
-        self.assertTrue(coco_format)
-        loader = coco_format["loaders"][0]
-
         task, _ = self._create_task(user, user)
 
         content = io.BytesIO(generate_coco_anno())
         content.seek(0)
 
+        format_name = "COCO 1.0"
         uploaded_data = {
             "annotation_file": content,
         }
-        response = self._upload_api_v1_tasks_id_annotations(task["id"], user, uploaded_data, "format={}".format(loader["display_name"]))
+        response = self._upload_api_v1_tasks_id_annotations(
+            task["id"], user, uploaded_data,
+            "format={}".format(format_name))
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
-        response = self._upload_api_v1_tasks_id_annotations(task["id"], user, {}, "format={}".format(loader["display_name"]))
+        response = self._upload_api_v1_tasks_id_annotations(
+            task["id"], user, {}, "format={}".format(format_name))
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         response = self._get_api_v1_tasks_id_annotations(task["id"], user)
