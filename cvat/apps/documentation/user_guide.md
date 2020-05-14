@@ -717,6 +717,11 @@ Button assignment:
 - ``Dump Annotations`` — downloads annotations from a task.
 - ``Upload Annotations`` — uploads annotations into a task.
 - ``Remove Annotations`` — removes annotations from the current job.
+- ``Export as a dataset`` — download a data set from a task. Several formats are available:
+  - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/docs/design.md)
+  - [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/)
+  - [MS COCO](http://cocodataset.org/#format-data)
+  - [YOLO](https://pjreddie.com/darknet/yolo/)
 - ``Open the task`` — opens a page with details about the task.
 - ``Run ReID merge`` —  automatic merge of shapes or tracks.
   It is used to combine individual objects - created by automatic annotation in a single track.
@@ -791,9 +796,6 @@ _Annotations statistics_:
 Switching between user interface modes.
 
   ![](static/documentation/images/image145.jpg)
-
----
-
 
 ---
 ### Side panel
