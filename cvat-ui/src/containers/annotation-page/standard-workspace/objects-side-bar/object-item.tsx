@@ -5,6 +5,9 @@
 import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
+import {withRouter} from 'react-router-dom';
+import { RouteComponentProps } from 'react-router';
+
 
 import { LogType } from 'cvat-logger';
 import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
@@ -51,6 +54,8 @@ interface StateToProps {
     tracker_until: string;
     tracker_frame_number: number;
 }
+
+type PathProps = RouteComponentProps<{tid: string}>;
 
 interface DispatchToProps {
     changeFrame(frame: number): void;
@@ -213,8 +218,9 @@ interface TrackerPayload {
     };
 }
 
-type Props = StateToProps & DispatchToProps;
+type Props = StateToProps & DispatchToProps & PathProps & OwnProps;
 class ObjectItemContainer extends React.PureComponent<Props> {
+
     private navigateFirstKeyframe = (): void => {
         const { objectState, frameNumber } = this.props;
         const { first } = objectState.keyframes;
@@ -468,7 +474,10 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             resetTracker,
             jobInstance,
             objectState,
+            match
         } = this.props;
+
+        console.log(match.params.tid);
 
         return {
             jobId: jobInstance.id,
@@ -511,7 +520,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const core = getCore();
         const baseUrl = core.config.backendAPI.slice(0, -7);
         try {
-            core.server.request(`${baseUrl}/tracking/track`, {
+            core.server.request(`${baseUrl}/api/v1/tasks/${this.props.match.params.tid}/tracking`, {
                 method: 'POST',
                 data: JSON.stringify(payload),
                 headers: {
@@ -624,7 +633,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     }
 }
 
-export default connect<StateToProps, DispatchToProps, OwnProps, CombinedState>(
+export default withRouter(connect<StateToProps, DispatchToProps, OwnProps, CombinedState>(
     mapStateToProps,
     mapDispatchToProps,
-)(ObjectItemContainer);
+)(ObjectItemContainer));

@@ -648,6 +648,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
 
 
+    @action(detail=True, methods=['POST'], serializer_class=None, url_path='tracking')
+    def tracking(self, request, pk):
+        return Response(data=20, status=status.HTTP_200_OK)
 
 
 
