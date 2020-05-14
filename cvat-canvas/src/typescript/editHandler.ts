@@ -28,6 +28,37 @@ export class EditHandlerImpl implements EditHandler {
     private clones: SVG.Polygon[];
     private autobordersEnabled: boolean;
 
+    private setupTrailingPoint(circle: SVG.Circle): void {
+        circle.on('mouseenter', (): void => {
+            circle.attr({
+                'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
+            });
+        });
+
+        circle.on('mouseleave', (): void => {
+            circle.attr({
+                'stroke-width': consts.POINTS_STROKE_WIDTH / this.geometry.scale,
+            });
+        });
+
+        const minimumPoints = this.editData.state.shapeType === 'polygon' ? 3 : 2;
+        circle.on('mousedown', (e: MouseEvent): void => {
+            if (e.button !== 0) return;
+            const { offset } = this.geometry;
+            const points = pointsToNumberArray(this.editLine.node
+                .getAttribute('points')).slice(0, -2)
+                .map((coord: number): number => coord - offset);
+
+            if (points.length >= minimumPoints * 2) {
+                const { state } = this.editData;
+                this.edit({
+                    enabled: false,
+                });
+                this.onEditDone(state, points);
+            }
+        });
+    }
+
     private startEdit(): void {
         // get started coordinates
         const [clientX, clientY] = translateFromSVG(
@@ -81,7 +112,23 @@ export class EditHandlerImpl implements EditHandler {
             this.transform(this.geometry);
             lastDrawnPoint.x = e.detail.event.clientX;
             lastDrawnPoint.y = e.detail.event.clientY;
-        }).draw(dummyEvent, { snapToGrid: 0.1 });
+        });
+
+        if (this.editData.state.shapeType === 'polygon') {
+            (this.editLine as any).on('drawpoint', (e: CustomEvent): void => {
+                const circle = (e.target as any).instance.remember('_paintHandler').set.first();
+                if (circle) this.setupTrailingPoint(circle);
+            });
+        }
+
+        if (this.editData.state.shapeType === 'polyline') {
+            (this.editLine as any).on('drawpoint', (e: CustomEvent): void => {
+                const circle = (e.target as any).instance.remember('_paintHandler').set.last();
+                if (circle) this.setupTrailingPoint(circle);
+            });
+        }
+
+        (this.editLine as any).draw(dummyEvent, { snapToGrid: 0.1 });
 
         if (this.editData.state.shapeType === 'points') {
             this.editLine.attr('stroke-width', 0);
