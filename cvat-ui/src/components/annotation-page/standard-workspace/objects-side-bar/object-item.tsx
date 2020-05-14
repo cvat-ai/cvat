@@ -29,6 +29,7 @@ import {
     NextIcon,
     BackgroundIcon,
     ForegroundIcon,
+    ResetPerspectiveIcon,
 } from 'icons';
 import { ObjectType, ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
@@ -38,6 +39,7 @@ function ItemMenu(
     serverID: number | undefined,
     locked: boolean,
     objectType: ObjectType,
+    shapeType: ShapeType,
     copyShortcut: string,
     pasteShortcut: string,
     propagateShortcut: string,
@@ -72,25 +74,40 @@ function ItemMenu(
                     </Button>
                 </Tooltip>
             </Menu.Item>
-            { objectType !== ObjectType.TAG && (
-                <Menu.Item>
-                    <Tooltip title={`${toBackgroundShortcut}`}>
-                        <Button type='link' onClick={toBackground}>
-                            <Icon component={BackgroundIcon} />
-                            To background
+            {shapeType === ShapeType.CUBOID && (
+                <>
+                    <Menu.Item>
+                        <Button type='link' icon='retweet'>
+                            Switch orientation
                         </Button>
-                    </Tooltip>
-                </Menu.Item>
+                    </Menu.Item>
+                    <Menu.Item>
+                        <Button type='link'>
+                            <Icon component={ResetPerspectiveIcon}/>
+                            Reset perspective
+                        </Button>
+                    </Menu.Item>
+                </>
             )}
-            { objectType !== ObjectType.TAG && (
-                <Menu.Item>
-                    <Tooltip title={`${toForegroundShortcut}`}>
-                        <Button type='link' onClick={toForeground}>
-                            <Icon component={ForegroundIcon} />
-                            To foreground
-                        </Button>
-                    </Tooltip>
-                </Menu.Item>
+            {objectType !== ObjectType.TAG && (
+                <>
+                    <Menu.Item>
+                        <Tooltip title={`${toBackgroundShortcut}`}>
+                            <Button type='link' onClick={toBackground}>
+                                <Icon component={BackgroundIcon} />
+                                To background
+                            </Button>
+                        </Tooltip>
+                    </Menu.Item>
+                    <Menu.Item>
+                        <Tooltip title={`${toForegroundShortcut}`}>
+                            <Button type='link' onClick={toForeground}>
+                                <Icon component={ForegroundIcon} />
+                                To foreground
+                            </Button>
+                        </Tooltip>
+                    </Menu.Item>
+                </>
             )}
             <Menu.Item>
                 <Tooltip title={`${removeShortcut}`}>
@@ -125,6 +142,7 @@ interface ItemTopComponentProps {
     labelID: number;
     labels: any[];
     objectType: ObjectType;
+    shapeType: ShapeType;
     type: string;
     locked: boolean;
     copyShortcut: string;
@@ -149,6 +167,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         labelID,
         labels,
         objectType,
+        shapeType,
         type,
         locked,
         copyShortcut,
@@ -191,6 +210,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                         serverID,
                         locked,
                         objectType,
+                        shapeType,
                         copyShortcut,
                         pasteShortcut,
                         propagateShortcut,
@@ -842,6 +862,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     labels={labels}
                     objectType={objectType}
                     type={type}
+                    shapeType={shapeType}
                     locked={locked}
                     copyShortcut={normalizedKeyMap.COPY_SHAPE}
                     pasteShortcut={normalizedKeyMap.PASTE_SHAPE}

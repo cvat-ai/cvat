@@ -40,6 +40,7 @@ import SVGObjectInsideIcon from './assets/object-inside-icon.svg';
 import SVGBackgroundIcon from './assets/background-icon.svg';
 import SVGForegroundIcon from './assets/foreground-icon.svg';
 import SVGCubeIcon from './assets/cube-icon.svg';
+import SVGResetPerspectiveIcon from './assets/reset-perspective.svg';
 
 export const CVATLogo = React.memo(
     (): JSX.Element => <SVGCVATLogo />,
@@ -148,4 +149,7 @@ export const ForegroundIcon = React.memo(
 );
 export const CubeIcon = React.memo(
     (): JSX.Element => <SVGCubeIcon />,
+);
+export const ResetPerspectiveIcon = React.memo(
+    (): JSX.Element => <SVGResetPerspectiveIcon />,
 );

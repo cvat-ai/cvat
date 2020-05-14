@@ -404,6 +404,14 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
     }
 
+    private switchCuboidOrientation = (): void => {
+
+    }
+
+    private resetCuboidPerspective = (): void => {
+
+    }
+
     private commit(): void {
         const {
             objectState,
@@ -507,6 +515,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 changeLabel={this.changeLabel}
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
+                switchCuboidOrientation={this.switchCuboidOrientation}
+                resetCuboidPerspective={this.resetCuboidPerspective}
             />
         );
     }
