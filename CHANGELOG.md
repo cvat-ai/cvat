@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sidebar in AAM has no hide/show button (<https://github.com/opencv/cvat/pull/1420>)
 - Task/Job buttons has no "Open in new tab" option (<https://github.com/opencv/cvat/pull/1419>)
 - Delete point context menu option has no shortcut hint (<https://github.com/opencv/cvat/pull/1416>)
+- Fixed issue with unnecessary tag activation in cvat-canvas (<https://github.com/opencv/cvat/issues/1540>)
 
 ### Security
 -
