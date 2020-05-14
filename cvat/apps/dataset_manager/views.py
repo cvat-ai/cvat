@@ -30,7 +30,11 @@ def log_exception(logger=None, exc_info=True):
 
 
 def get_export_cache_dir(db_task):
-    return osp.join(db_task.get_task_dirname(), 'export_cache')
+    task_dir = osp.abspath(db_task.get_task_dirname())
+    if osp.isdir(task_dir):
+        return osp.join(task_dir, 'export_cache')
+    else:
+        raise Exception('Task dir {} does not exist'.format(task_dir))
 
 DEFAULT_CACHE_TTL = timedelta(hours=10)
 CACHE_TTL = DEFAULT_CACHE_TTL
