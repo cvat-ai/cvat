@@ -60,6 +60,7 @@ export interface DrawData {
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
+    redraw?: number;
 }
 
 export interface EditData {
@@ -459,10 +460,24 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             }
         }
 
-        this.data.drawData = { ...drawData };
-        if (this.data.drawData.initialState) {
-            this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
+        if (typeof (drawData.redraw) === 'number') {
+            const clientID = drawData.redraw;
+            const [state] = this.data.objects
+                .filter((_state: any): boolean => _state.clientID === clientID);
+
+            if (state) {
+                this.data.drawData = { ...drawData };
+                this.data.drawData.shapeType = state.shapeType;
+            } else {
+                return;
+            }
+        } else {
+            this.data.drawData = { ...drawData };
+            if (this.data.drawData.initialState) {
+                this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
+            }
         }
+
         this.notify(UpdateReasons.DRAW);
     }
 

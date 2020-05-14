@@ -85,6 +85,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onDrawDone(data: object | null, duration: number, continueDraw?: boolean): void {
         if (data) {
+            const { clientID, points } = data as any;
+            if (typeof (clientID) === 'number') {
+                const event: CustomEvent = new CustomEvent('canvas.canceled', {
+                    bubbles: false,
+                    cancelable: true,
+                });
+
+                this.canvas.dispatchEvent(event);
+
+                const [state] = this.controller.objects
+                    .filter((_state: any): boolean => (
+                        _state.clientID === clientID
+                    ));
+
+                this.onEditDone(state, points);
+                return;
+            }
+
             const { zLayer } = this.controller;
             const event: CustomEvent = new CustomEvent('canvas.drawn', {
                 bubbles: false,
@@ -516,7 +534,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const translate = (points: number[]): number[] => points
             .map((coord: number): number => coord - offset);
 
-        function dblClickHandler(e: MouseEvent): void {
+        function mousedownHandler(e: MouseEvent): void {
+            e.preventDefault();
+
             const pointID = Array.prototype.indexOf
                 .call(((e.target as HTMLElement).parentElement as HTMLElement).children, e.target);
 
@@ -525,10 +545,41 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .filter((_state: any): boolean => (
                         _state.clientID === self.activeElement.clientID
                     ));
-                if (state.shapeType === 'rectangle') {
-                    e.preventDefault();
-                    return;
+
+                if (['polygon', 'polyline', 'points'].includes(state.shapeType)) {
+                    if (e.ctrlKey) {
+                        const { points } = state;
+                        self.onEditDone(
+                            state,
+                            points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)),
+                        );
+                    } else if (e.shiftKey) {
+                        self.canvas.dispatchEvent(new CustomEvent('canvas.editstart', {
+                            bubbles: false,
+                            cancelable: true,
+                        }));
+
+                        self.mode = Mode.EDIT;
+                        self.deactivate();
+                        self.editHandler.edit({
+                            enabled: true,
+                            state,
+                            pointID,
+                        });
+                    }
                 }
+            }
+        }
+
+        function dblClickHandler(e: MouseEvent): void {
+            e.preventDefault();
+
+            if (self.activeElement.clientID !== null) {
+                const [state] = self.controller.objects
+                    .filter((_state: any): boolean => (
+                        _state.clientID === self.activeElement.clientID
+                    ));
+
                 if (state.shapeType === 'cuboid') {
                     if (e.shiftKey) {
                         const points = translate(pointsToNumberArray((e.target as any)
@@ -537,33 +588,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             state,
                             points,
                         );
-                        e.preventDefault();
-                        return;
                     }
                 }
-                if (e.ctrlKey) {
-                    const { points } = state;
-                    self.onEditDone(
-                        state,
-                        points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)),
-                    );
-                } else if (e.shiftKey) {
-                    self.canvas.dispatchEvent(new CustomEvent('canvas.editstart', {
-                        bubbles: false,
-                        cancelable: true,
-                    }));
-
-                    self.mode = Mode.EDIT;
-                    self.deactivate();
-                    self.editHandler.edit({
-                        enabled: true,
-                        state,
-                        pointID,
-                    });
-                }
             }
-
-            e.preventDefault();
         }
 
         function contextMenuHandler(e: MouseEvent): void {
@@ -609,6 +636,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         });
 
                         circle.on('dblclick', dblClickHandler);
+                        circle.on('mousedown', mousedownHandler);
                         circle.on('contextmenu', contextMenuHandler);
                         circle.addClass('cvat_canvas_selected_point');
                     });
@@ -619,6 +647,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         });
 
                         circle.off('dblclick', dblClickHandler);
+                        circle.off('mousedown', mousedownHandler);
                         circle.off('contextmenu', contextMenuHandler);
                         circle.removeClass('cvat_canvas_selected_point');
                     });

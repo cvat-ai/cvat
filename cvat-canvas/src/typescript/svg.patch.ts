@@ -17,7 +17,7 @@ import {
     Orientation,
     Edge,
 } from './cuboid';
-import { parsePoints, stringifyPoints, clamp } from './shared';
+import { parsePoints, clamp } from './shared';
 
 // Update constructor
 const originalDraw = SVG.Element.prototype.draw;
@@ -174,7 +174,8 @@ SVG.Element.prototype.resize = function constructor(...args: any): any {
         originalResize.call(this, ...args);
         handler = this.remember('_resizeHandler');
         handler.resize = function(e: any) {
-            if (e.detail.event.button === 0) {
+            const { event } = e.detail;
+            if (event.button === 0 && !event.shiftKey && !event.ctrlKey) {
                 return handler.constructor.prototype.resize.call(this, e);
             }
         }

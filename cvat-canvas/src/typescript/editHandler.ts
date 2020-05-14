@@ -103,16 +103,6 @@ export class EditHandlerImpl implements EditHandler {
         });
 
         this.editLine = (this.canvas as any).polyline();
-        (this.editLine as any).addClass('cvat_canvas_shape_drawing').style({
-            'pointer-events': 'none',
-            'fill-opacity': 0,
-        }).attr({
-            'data-origin-client-id': this.editData.state.clientID,
-        }).on('drawstart drawpoint', (e: CustomEvent): void => {
-            this.transform(this.geometry);
-            lastDrawnPoint.x = e.detail.event.clientX;
-            lastDrawnPoint.y = e.detail.event.clientY;
-        });
 
         if (this.editData.state.shapeType === 'polygon') {
             (this.editLine as any).on('drawpoint', (e: CustomEvent): void => {
@@ -128,7 +118,16 @@ export class EditHandlerImpl implements EditHandler {
             });
         }
 
-        (this.editLine as any).draw(dummyEvent, { snapToGrid: 0.1 });
+        (this.editLine as any).addClass('cvat_canvas_shape_drawing').style({
+            'pointer-events': 'none',
+            'fill-opacity': 0,
+        }).attr({
+            'data-origin-client-id': this.editData.state.clientID,
+        }).on('drawstart drawpoint', (e: CustomEvent): void => {
+            this.transform(this.geometry);
+            lastDrawnPoint.x = e.detail.event.clientX;
+            lastDrawnPoint.y = e.detail.event.clientY;
+        }).draw(dummyEvent, { snapToGrid: 0.1 });
 
         if (this.editData.state.shapeType === 'points') {
             this.editLine.attr('stroke-width', 0);
