@@ -41,7 +41,7 @@ export class EditHandlerImpl implements EditHandler {
             });
         });
 
-        const minimumPoints = this.editData.state.shapeType === 'polygon' ? 3 : 2;
+        const minimumPoints = 2;
         circle.on('mousedown', (e: MouseEvent): void => {
             if (e.button !== 0) return;
             const { offset } = this.geometry;
@@ -103,13 +103,6 @@ export class EditHandlerImpl implements EditHandler {
         });
 
         this.editLine = (this.canvas as any).polyline();
-
-        if (this.editData.state.shapeType === 'polygon') {
-            (this.editLine as any).on('drawpoint', (e: CustomEvent): void => {
-                const circle = (e.target as any).instance.remember('_paintHandler').set.first();
-                if (circle) this.setupTrailingPoint(circle);
-            });
-        }
 
         if (this.editData.state.shapeType === 'polyline') {
             (this.editLine as any).on('drawpoint', (e: CustomEvent): void => {
