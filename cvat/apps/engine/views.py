@@ -600,6 +600,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='create_annotation_model')
     def create_annotation_model(self, request, pk):
         # return Response(data=20, status=status.HTTP_200_OK)
+        db_task = self.get_object()
+        slogger.glob.info("Createing annotation model for task: {}".format(db_task.name))
+
         form_data = request.data
         form_data = json.loads(next(iter(form_data.dict().keys())))
         slogger.glob.info("form data {}".format(form_data))
@@ -661,6 +664,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             # params.append(Parameter(name="source", value="https://github.com/onepanelio/Mask_RNN.git"))
             params.append(Parameter(name="dataset-path", value=dataset_path_aws))
             params.append(Parameter(name="bucket-name", value=os.getenv('AWS_BUCKET_NAME')))
+            params.append(Parameter(name='task-name', value=db_task.name))
             if 'TFRecord' in form_data['dump_format']:
                 params.append(Parameter(name="ref_model", value=form_data['ref_model']))
                 body = onepanel.core.api.CreateWorkflowExecutionBody(parameters=params,
