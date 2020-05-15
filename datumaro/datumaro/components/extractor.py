@@ -311,14 +311,12 @@ class CompiledMask:
         return int(self.instance_mask.max())
 
     def get_instance_labels(self, class_count=None):
-        if class_count is None:
-            class_count = np.max(self.class_mask) + 1
-
-        m = self.class_mask * class_count + self.instance_mask
-        m = m.astype(int)
+        class_shift = 16
+        m = (self.class_mask.astype(np.uint32) << class_shift) \
+            + self.instance_mask.astype(np.uint32)
         keys = np.unique(m)
-        instance_labels = {k % class_count: k // class_count
-            for k in keys if k % class_count != 0
+        instance_labels = {k & ((1 << class_shift) - 1): k >> class_shift
+            for k in keys if k & ((1 << class_shift) - 1) != 0
         }
         return instance_labels
 
