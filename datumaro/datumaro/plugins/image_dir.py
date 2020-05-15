@@ -47,8 +47,7 @@ class ImageDirExtractor(SourceExtractor):
                     continue
 
                 item_id = osp.relpath(osp.splitext(path)[0], url)
-                item = DatasetItem(id=item_id, image=path)
-                items.append(item)
+                items.append(DatasetItem(id=item_id, image=path))
 
         self._items = items
 

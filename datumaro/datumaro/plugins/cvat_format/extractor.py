@@ -310,8 +310,7 @@ class CvatExtractor(SourceExtractor):
 
     def _load_items(self, parsed):
         for frame_id, item_desc in parsed.items():
-            path = item_desc.get('name',
-                'frame_%06d.png' % int(frame_id))
+            path = item_desc.get('name', 'frame_%06d.png' % int(frame_id))
             image_size = (item_desc.get('height'), item_desc.get('width'))
             if all(image_size):
                 image_size = (int(image_size[0]), int(image_size[1]))
