@@ -38,7 +38,7 @@ class CocoImporter(Importer):
             raise Exception("Failed to find 'coco' dataset at '%s'" % path)
 
         # TODO: should be removed when proper label merging is implemented
-        conflicting_types = {CocoTask.instances, 
+        conflicting_types = {CocoTask.instances,
             CocoTask.person_keypoints, CocoTask.labels}
         ann_types = set(t for s in subsets.values() for t in s) \
             & conflicting_types
@@ -73,7 +73,7 @@ class CocoImporter(Importer):
         if path.endswith('.json') and osp.isfile(path):
             subset_paths = [path]
         else:
-            subset_paths = glob(osp.join(path, 'annotations', '*_*.json'),
+            subset_paths = glob(osp.join(path, '**', '*_*.json'),
                 recursive=True)
 
         subsets = defaultdict(dict)
@@ -89,7 +89,7 @@ class CocoImporter(Importer):
                     "type '%s', the only known are: %s" % \
                     (subset_path, ann_type,
                         ', '.join([e.name for e in CocoTask])))
-                continue    
+                continue
             subset_name = name_parts[1]
             subsets[subset_name][ann_type] = subset_path
         return dict(subsets)
