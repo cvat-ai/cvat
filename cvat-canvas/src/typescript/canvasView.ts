@@ -74,6 +74,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private autoborderHandler: AutoborderHandler;
     private activeElement: ActiveElement;
     private configuration: Configuration;
+    private serviceFlags: {
+        drawHidden: Record<number, boolean>;
+    };
 
     private set mode(value: Mode) {
         this.controller.mode = value;
@@ -83,7 +86,56 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.controller.mode;
     }
 
+    private isServiceHidden(clientID: number): boolean {
+        return this.serviceFlags.drawHidden[clientID] || false;
+    }
+
+    private setupServiceHidden(clientID: number, value: boolean): void {
+        this.serviceFlags.drawHidden[clientID] = value;
+        const shape = this.svgShapes[clientID];
+        const text = this.svgTexts[clientID];
+        const state = this.drawnStates[clientID];
+
+        if (value) {
+            if (shape) {
+                (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
+                    .style('display', 'none');
+            }
+
+            if (text) {
+                text.addClass('cvat_canvas_hidden');
+            }
+        } else {
+            delete this.serviceFlags.drawHidden[clientID];
+
+            if (state) {
+                if (!state.outside && !state.hidden) {
+                    if (shape) {
+                        (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
+                            .style('display', '');
+                    }
+
+                    if (text) {
+                        text.removeClass('cvat_canvas_hidden');
+                        this.updateTextPosition(
+                            text,
+                            shape,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     private onDrawDone(data: object | null, duration: number, continueDraw?: boolean): void {
+        const hiddenBecauseOfDraw = Object.keys(this.serviceFlags.drawHidden)
+            .map((_clientID): number => +_clientID);
+        if (hiddenBecauseOfDraw.length) {
+            for (const hidden of hiddenBecauseOfDraw) {
+                this.setupServiceHidden(hidden, false);
+            }
+        }
+
         if (data) {
             const { clientID, points } = data as any;
             if (typeof (clientID) === 'number') {
@@ -679,6 +731,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
         this.configuration = model.configuration;
         this.mode = Mode.IDLE;
+        this.serviceFlags = {
+            drawHidden: {},
+        };
 
         // Create HTML elements
         this.loadingAnimation = window.document
@@ -978,6 +1033,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (data.enabled && this.mode === Mode.IDLE) {
                 this.canvas.style.cursor = 'crosshair';
                 this.mode = Mode.DRAW;
+                if (typeof (data.redraw) === 'number') {
+                    this.setupServiceHidden(data.redraw, true);
+                }
                 this.drawHandler.draw(data, this.geometry);
             } else {
                 this.canvas.style.cursor = '';
@@ -1159,7 +1217,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const drawnState = this.drawnStates[clientID];
             const shape = this.svgShapes[state.clientID];
             const text = this.svgTexts[state.clientID];
-            const isInvisible = state.hidden || state.outside;
+            const isInvisible = state.hidden || state.outside
+                || this.isServiceHidden(state.clientID);
 
             if (drawnState.hidden !== state.hidden || drawnState.outside !== state.outside) {
                 if (isInvisible) {
@@ -1261,59 +1320,57 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const { displayAllText } = this.configuration;
 
         for (const state of states) {
-            if (state.objectType === 'tag') {
-                this.addTag(state);
+            const points: number[] = (state.points as number[]);
+            const translatedPoints: number[] = translate(points);
+
+            // TODO: Use enums after typification cvat-core
+            if (state.shapeType === 'rectangle') {
+                this.svgShapes[state.clientID] = this
+                    .addRect(translatedPoints, state);
             } else {
-                const points: number[] = (state.points as number[]);
-                const translatedPoints: number[] = translate(points);
+                const stringified = translatedPoints.reduce(
+                    (acc: string, val: number, idx: number): string => {
+                        if (idx % 2) {
+                            return `${acc}${val} `;
+                        }
 
-                // TODO: Use enums after typification cvat-core
-                if (state.shapeType === 'rectangle') {
+                        return `${acc}${val},`;
+                    }, '',
+                );
+
+                if (state.shapeType === 'polygon') {
                     this.svgShapes[state.clientID] = this
-                        .addRect(translatedPoints, state);
+                        .addPolygon(stringified, state);
+                } else if (state.shapeType === 'polyline') {
+                    this.svgShapes[state.clientID] = this
+                        .addPolyline(stringified, state);
+                } else if (state.shapeType === 'points') {
+                    this.svgShapes[state.clientID] = this
+                        .addPoints(stringified, state);
+                } else if (state.shapeType === 'cuboid') {
+                    this.svgShapes[state.clientID] = this
+                        .addCuboid(stringified, state);
                 } else {
-                    const stringified = translatedPoints.reduce(
-                        (acc: string, val: number, idx: number): string => {
-                            if (idx % 2) {
-                                return `${acc}${val} `;
-                            }
-
-                            return `${acc}${val},`;
-                        }, '',
-                    );
-
-                    if (state.shapeType === 'polygon') {
-                        this.svgShapes[state.clientID] = this
-                            .addPolygon(stringified, state);
-                    } else if (state.shapeType === 'polyline') {
-                        this.svgShapes[state.clientID] = this
-                            .addPolyline(stringified, state);
-                    } else if (state.shapeType === 'points') {
-                        this.svgShapes[state.clientID] = this
-                            .addPoints(stringified, state);
-                    } else if (state.shapeType === 'cuboid') {
-                        this.svgShapes[state.clientID] = this
-                            .addCuboid(stringified, state);
-                    }
+                    continue;
                 }
+            }
 
-                this.svgShapes[state.clientID].on('click.canvas', (): void => {
-                    this.canvas.dispatchEvent(new CustomEvent('canvas.clicked', {
-                        bubbles: false,
-                        cancelable: true,
-                        detail: {
-                            state,
-                        },
-                    }));
-                });
+            this.svgShapes[state.clientID].on('click.canvas', (): void => {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.clicked', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        state,
+                    },
+                }));
+            });
 
-                if (displayAllText) {
-                    this.svgTexts[state.clientID] = this.addText(state);
-                    this.updateTextPosition(
-                        this.svgTexts[state.clientID],
-                        this.svgShapes[state.clientID],
-                    );
-                }
+            if (displayAllText) {
+                this.svgTexts[state.clientID] = this.addText(state);
+                this.updateTextPosition(
+                    this.svgTexts[state.clientID],
+                    this.svgShapes[state.clientID],
+                );
             }
 
             this.saveState(state);
@@ -1691,8 +1748,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_shape_occluded');
         }
 
-        if (state.hidden || state.outside) {
-            rect.style('display', 'none');
+        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+            rect.addClass('cvat_canvas_hidden');
         }
 
         return rect;
@@ -1714,8 +1771,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             polygon.addClass('cvat_canvas_shape_occluded');
         }
 
-        if (state.hidden || state.outside) {
-            polygon.style('display', 'none');
+        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+            polygon.addClass('cvat_canvas_hidden');
         }
 
         return polygon;
@@ -1737,8 +1794,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             polyline.addClass('cvat_canvas_shape_occluded');
         }
 
-        if (state.hidden || state.outside) {
-            polyline.style('display', 'none');
+        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+            polyline.addClass('cvat_canvas_hidden');
         }
 
         return polyline;
@@ -1761,8 +1818,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             cube.addClass('cvat_canvas_shape_occluded');
         }
 
-        if (state.hidden || state.outside) {
-            cube.style('display', 'none');
+        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+            cube.addClass('cvat_canvas_hidden');
         }
 
         return cube;
@@ -1805,8 +1862,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const group = this.setupPoints(shape, state);
 
-        if (state.hidden || state.outside) {
-            group.style('display', 'none');
+        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+            group.addClass('cvat_canvas_hidden');
         }
 
         shape.remove = (): SVG.PolyLine => {
@@ -1816,10 +1873,5 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         return shape;
-    }
-
-    /* eslint-disable-next-line */
-    private addTag(state: any): void {
-        console.log(state);
     }
 }

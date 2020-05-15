@@ -7,7 +7,7 @@ import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
 import { LogType } from 'cvat-logger';
-import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl, CombinedState, ColorBy } from 'reducers/interfaces';
 import {
     collapseObjectItems,
@@ -399,7 +399,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private changeFrame(frame: number): void {
         const { changeFrame, canvasInstance } = this.props;
-        if (isAbleToChangeFrame(canvasInstance)) {
+        if (canvasInstance.isAbleToChangeFrame()) {
             changeFrame(frame);
         }
     }

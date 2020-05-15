@@ -148,7 +148,7 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
                 )}
                 {contextMenuFor && ['polygon', 'polyline'].includes(contextMenuFor.shapeType) && (
                     <Button type='link' icon='reload' onClick={onInversePoints}>
-                        Reverse points
+                        Change orientation
                     </Button>
                 )}
             </div>,

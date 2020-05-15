@@ -164,6 +164,7 @@ export interface CanvasModel {
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
+    isAbleToChangeFrame(): boolean;
     configure(configuration: Configuration): void;
     cancel(): void;
 }
@@ -377,8 +378,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (this.data.mode !== Mode.IDLE && clientID !== null) {
-            // Exception or just return?
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (typeof (clientID) === 'number') {
+            const [state] = this.data.objects
+                .filter((_state: any): boolean => _state.clientID === clientID);
+            if (!['rectangle', 'polygon', 'polyline', 'points', 'cuboid'].includes(state.shapeType)) {
+                return;
+            }
         }
 
         this.data.activeElement = {
@@ -555,6 +563,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);
+    }
+
+    public isAbleToChangeFrame(): boolean {
+        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE].includes(this.data.mode)
+            || (this.data.mode === Mode.DRAW && typeof (this.data.drawData.redraw) === 'number');
+
+        return !isUnable;
     }
 
     public cancel(): void {
