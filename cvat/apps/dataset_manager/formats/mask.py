@@ -48,7 +48,8 @@ def _import(src_file, task_data):
 DEFAULT_COLORMAP_CAPACITY = 2000
 DEFAULT_COLORMAP_PATH = osp.join(osp.dirname(__file__), 'default_colors.txt')
 def parse_default_colors(file_path=None):
-    file_path = file_path or DEFAULT_COLORMAP_PATH
+    if file_path is None:
+        file_path = DEFAULT_COLORMAP_PATH
 
     colors = {}
     with open(file_path) as f:
@@ -66,7 +67,11 @@ def normalize_label(label):
     return label
 
 def make_colormap(task_data):
-    labels = sorted(get_labels(task_data))
+    labels = sorted([label['name']
+        for _, label in task_data.meta['task']['labels']])
+    if 'background' not in labels:
+        labels[0] = 'background'
+
     predefined = parse_default_colors()
 
     # NOTE: using pop() to avoid collisions
