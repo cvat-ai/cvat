@@ -649,7 +649,7 @@ class VocConverterTest(TestCase):
 
             def categories(self):
                 label_cat = LabelCategories()
-                label_cat.add('Label_1') # should become lowercase
+                label_cat.add('Label_1')
                 label_cat.add('label_2')
                 return {
                     AnnotationType.label: label_cat,
@@ -658,7 +658,7 @@ class VocConverterTest(TestCase):
         class DstExtractor(TestExtractorBase):
             def __iter__(self):
                 yield DatasetItem(id=1, annotations=[
-                    Bbox(2, 3, 4, 5, label=self._label('label_1'),
+                    Bbox(2, 3, 4, 5, label=self._label('Label_1'),
                         id=1, group=1, attributes={
                             'truncated': False,
                             'difficult': False,
@@ -677,7 +677,7 @@ class VocConverterTest(TestCase):
             def categories(self):
                 label_map = OrderedDict()
                 label_map['background'] = [None, [], []]
-                label_map['label_1'] = [None, [], []]
+                label_map['Label_1'] = [None, [], []]
                 label_map['label_2'] = [None, [], []]
                 return VOC.make_voc_categories(label_map)
 
