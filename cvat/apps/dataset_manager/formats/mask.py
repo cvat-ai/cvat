@@ -70,7 +70,7 @@ def make_colormap(task_data):
     labels = sorted([label['name']
         for _, label in task_data.meta['task']['labels']])
     if 'background' not in labels:
-        labels[0] = 'background'
+        labels.insert(0, 'background')
 
     predefined = parse_default_colors()
 
