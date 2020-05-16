@@ -46,7 +46,7 @@ def _import(src_file, task_data):
 
 
 DEFAULT_COLORMAP_CAPACITY = 2000
-DEFAULT_COLORMAP_PATH = osp.join(osp.dirname(__file__), 'default_colors.txt')
+DEFAULT_COLORMAP_PATH = osp.join(osp.dirname(__file__), 'predefined_colors.txt')
 def parse_default_colors(file_path=None):
     if file_path is None:
         file_path = DEFAULT_COLORMAP_PATH
