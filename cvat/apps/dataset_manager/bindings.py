@@ -558,7 +558,7 @@ def match_dm_item(item, task_data, root_hint=None):
     return frame_number
 
 def find_dataset_root(dm_dataset, task_data):
-    longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts))
+    longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts)).id
     longest_match = task_data.match_frame_fuzzy(longest_path)
     if longest_match is None:
         return None
@@ -573,6 +573,9 @@ def import_dm_annotations(dm_dataset, task_data):
         datumaro.AnnotationType.polyline: ShapeType.POLYLINE,
         datumaro.AnnotationType.points: ShapeType.POINTS,
     }
+
+    if len(dm_dataset) == 0:
+        return
 
     label_cat = dm_dataset.categories()[datumaro.AnnotationType.label]
 
