@@ -70,7 +70,7 @@ class _CocoExtractor(SourceExtractor):
         self._categories = {}
 
         if self._task in [CocoTask.instances, CocoTask.labels,
-                CocoTask.person_keypoints, 
+                CocoTask.person_keypoints,
                 # TODO: Task.stuff, CocoTask.panoptic
                 ]:
             label_categories, label_map = self._load_label_categories(loader)
@@ -103,8 +103,7 @@ class _CocoExtractor(SourceExtractor):
         for cat in cats:
             label_id = self._label_map[cat['id']]
             categories.add(label_id=label_id,
-                labels=cat['keypoints'], 
-                adjacent=list(map(tuple, cat['skeleton']))
+                labels=cat['keypoints'], joints=cat['skeleton']
             )
 
         return categories

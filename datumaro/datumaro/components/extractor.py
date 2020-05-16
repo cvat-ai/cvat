@@ -481,7 +481,7 @@ class Bbox(_Shape):
         return compute_iou(self.get_bbox(), other.get_bbox())
 
 class PointsCategories(Categories):
-    Category = namedtuple('Category', ['labels', 'adjacent'])
+    Category = namedtuple('Category', ['labels', 'joints'])
 
     def __init__(self, items=None, attributes=None):
         super().__init__(attributes=attributes)
@@ -490,12 +490,13 @@ class PointsCategories(Categories):
             items = {}
         self.items = items
 
-    def add(self, label_id, labels=None, adjacent=None):
+    def add(self, label_id, labels=None, joints=None):
         if labels is None:
             labels = []
-        if adjacent is None:
-            adjacent = []
-        self.items[label_id] = self.Category(labels, set(adjacent))
+        if joints is None:
+            joints = []
+        joints = set(map(tuple, joints))
+        self.items[label_id] = self.Category(labels, joints)
 
     def __eq__(self, other):
         if not super().__eq__(other):

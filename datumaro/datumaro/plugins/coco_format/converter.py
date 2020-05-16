@@ -337,7 +337,7 @@ class _KeypointsConverter(_InstancesConverter):
                 if kp_cat is not None:
                     cat.update({
                         'keypoints': [str(l) for l in kp_cat.labels],
-                        'skeleton': [int(i) for i in kp_cat.adjacent],
+                        'skeleton': [list(map(int, j)) for j in kp_cat.joints],
                     })
             self.categories.append(cat)
 
