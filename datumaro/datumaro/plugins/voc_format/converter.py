@@ -411,17 +411,35 @@ class _Converter:
 
     def _load_categories(self, label_map_source=None):
         if label_map_source == LabelmapType.voc.name:
-            # strictly use VOC default labelmap
+            # use the default VOC colormap
             label_map = make_voc_label_map()
 
-        elif label_map_source == LabelmapType.source.name:
-            # generate colormap from the input dataset
+        elif label_map_source == LabelmapType.source.name and \
+                AnnotationType.mask not in self._extractor.categories():
+            # generate colormap for input labels
             labels = self._extractor.categories() \
                 .get(AnnotationType.label, LabelCategories())
             label_map = OrderedDict()
             label_map['background'] = [None, [], []]
             for item in labels.items:
                 label_map[item.name] = [None, [], []]
+
+        elif label_map_source == LabelmapType.source.name and \
+                AnnotationType.mask in self._extractor.categories():
+            # use source colormap
+            labels = self._extractor.categories()[AnnotationType.label]
+            colors = self._extractor.categories()[AnnotationType.mask]
+            label_map = OrderedDict()
+            has_black = False
+            for idx, item in enumerate(labels.items):
+                color = colors.colormap.get(idx)
+                if idx is not None:
+                    if color == (0, 0, 0):
+                        has_black = True
+                    label_map[item.name] = [color, [], []]
+            if not has_black and 'background' not in label_map:
+                label_map['background'] = [(0, 0, 0), [], []]
+                label_map.move_to_end('background', last=False)
 
         elif label_map_source in [LabelmapType.guess.name, None]:
             # generate colormap for union of VOC and input dataset labels
