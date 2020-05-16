@@ -270,7 +270,7 @@ class CompiledMask:
         if instance_ids is not None:
             assert len(instance_ids) == len(instance_masks)
         else:
-            instance_ids = [1 + i for i in range(len(instance_masks))]
+            instance_ids = range(1, len(instance_masks) + 1)
 
         if instance_labels is not None:
             assert len(instance_labels) == len(instance_masks)

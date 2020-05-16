@@ -3,6 +3,7 @@ import numpy as np
 from unittest import TestCase
 
 import datumaro.util.mask_tools as mask_tools
+from datumaro.components.extractor import CompiledMask
 
 
 class PolygonConversionsTest(TestCase):
@@ -184,3 +185,13 @@ class ColormapOperationsTest(TestCase):
 
         self.assertTrue(np.array_equal(expected, actual),
             '%s\nvs.\n%s' % (expected, actual))
+
+    def test_can_decode_compiled_mask(self):
+        class_idx = 1000
+        instance_idx = 10000
+        mask = np.array([1])
+        compiled_mask = CompiledMask(mask * class_idx, mask * instance_idx)
+
+        labels = compiled_mask.get_instance_labels()
+
+        self.assertEqual({instance_idx: class_idx}, labels)
