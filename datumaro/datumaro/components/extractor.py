@@ -310,7 +310,7 @@ class CompiledMask:
     def instance_count(self):
         return int(self.instance_mask.max())
 
-    def get_instance_labels(self, class_count=None):
+    def get_instance_labels(self):
         class_shift = 16
         m = (self.class_mask.astype(np.uint32) << class_shift) \
             + self.instance_mask.astype(np.uint32)

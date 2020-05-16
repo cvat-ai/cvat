@@ -247,7 +247,11 @@ class VocExtractorTest(TestCase):
                                 label=self._label(VOC.VocLabel(2).name),
                                 group=1,
                             ),
-                        ]
+                        ] + [
+                            Mask(image=np.ones([5, 10]),
+                                label=self._label(VOC.VocLabel(3).name),
+                            ),
+                        ] * 100
                     ),
                 ])
 
