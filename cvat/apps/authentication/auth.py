@@ -116,7 +116,7 @@ def is_job_annotator(db_user, db_job):
     db_task = db_job.segment.task
     # A job can be annotated by any user if the task's assignee is None.
     has_rights = (db_task.assignee is None and not settings.RESTRICTIONS['reduce_task_visibility']) or is_task_assignee(db_user, db_task)
-    if db_job.assignee is not None and not settings.RESTRICTIONS['reduce_task_visibility']:
+    if db_job.assignee is not None:
         has_rights |= (db_user == db_job.assignee)
 
     return has_rights

@@ -37,7 +37,7 @@ class UserAgreementsTest(APITestCase):
         settings.RESTRICTIONS['user_agreements'] = self.user_agreements
 
     def _get_user_agreements(self):
-        response = self.client.get('/api/v1/restrictions/user_agreements')
+        response = self.client.get('/api/v1/restrictions/user-agreements')
         assert response.status_code == status.HTTP_200_OK
         for agreements in response.data:
             assert 'name' in agreements, agreements['name']

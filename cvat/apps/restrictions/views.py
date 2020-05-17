@@ -27,7 +27,7 @@ class RestrictionsViewSet(viewsets.ViewSet):
         method='get',
         operation_summary='Method provides user agreements that the user must accept to register',
         responses={'200': UserAgreementSerializer})
-    @action(detail=False, methods=['GET'], serializer_class=UserAgreementSerializer)
+    @action(detail=False, methods=['GET'], serializer_class=UserAgreementSerializer, url_path='user-agreements')
     def user_agreements(request):
         user_agreements = settings.RESTRICTIONS['user_agreements']
         serializer = UserAgreementSerializer(data=user_agreements, many=True)
@@ -35,6 +35,7 @@ class RestrictionsViewSet(viewsets.ViewSet):
         return Response(data=serializer.data)
 
     @staticmethod
-    @action(detail=False, methods=['GET'], renderer_classes=(TemplateHTMLRenderer,))
+    @action(detail=False, methods=['GET'], renderer_classes=(TemplateHTMLRenderer,),
+        url_path='terms-of-use')
     def terms_of_use(request):
         return Response(template_name='restrictions/terms_of_use.html')

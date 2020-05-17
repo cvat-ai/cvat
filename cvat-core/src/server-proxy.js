@@ -159,7 +159,7 @@
                 const { backendAPI } = config;
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/restrictions/user_agreements`, {
+                    response = await Axios.get(`${backendAPI}/restrictions/user-agreements`, {
                         proxy: config.proxy,
                     });
 
