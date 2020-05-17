@@ -63,7 +63,7 @@ class DatumaroConverterTest(TestCase):
 
             points_categories = PointsCategories()
             for index, _ in enumerate(label_categories.items):
-                points_categories.add(index, ['cat1', 'cat2'], adjacent=[0, 1])
+                points_categories.add(index, ['cat1', 'cat2'], joints=[[0, 1]])
 
             return {
                 AnnotationType.label: label_categories,
