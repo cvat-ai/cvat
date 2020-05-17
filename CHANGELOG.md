@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Task/Job buttons has no "Open in new tab" option (<https://github.com/opencv/cvat/pull/1419>)
 - Delete point context menu option has no shortcut hint (<https://github.com/opencv/cvat/pull/1416>)
 - Fixed issue with unnecessary tag activation in cvat-canvas (<https://github.com/opencv/cvat/issues/1540>)
+- Fixed full COCO dataset import error with conflicting labels in keypoints and detection (https://github.com/opencv/cvat/pull/1548)
+- Fixed COCO keypoints skeleton parsing and saving (https://github.com/opencv/cvat/issues/1539)
 
 ### Security
 -
