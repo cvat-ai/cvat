@@ -444,6 +444,41 @@ class VocConverterTest(TestCase):
                 VocSegmentationConverter(label_map='voc'), test_dir,
                 target_dataset=DstExtractor())
 
+    def test_can_save_voc_segm_with_many_instances(self):
+        def bit(x, y, shape):
+            mask = np.zeros(shape)
+            mask[y, x] = 1
+            return mask
+
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Mask(image=bit(x, y, shape=[10, 10]),
+                            label=self._label(VOC.VocLabel(3).name),
+                            z_order=10 * y + x + 1
+                        )
+                        for y in range(10) for x in range(10)
+                    ]),
+                ])
+
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Mask(image=bit(x, y, shape=[10, 10]),
+                            label=self._label(VOC.VocLabel(3).name),
+                            group=10 * y + x + 1
+                        )
+                        for y in range(10) for x in range(10)
+                    ]),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                VocSegmentationConverter(label_map='voc'), test_dir,
+                target_dataset=DstExtractor())
+
     def test_can_save_voc_layout(self):
         class TestExtractor(TestExtractorBase):
             def __iter__(self):
