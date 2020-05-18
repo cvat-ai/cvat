@@ -1,6 +1,8 @@
 metadata:
-  name: dextr
+  name: public.dextr
   namespace: cvat
+  labels:
+    type: interactor
 
 spec:
   description: Deep Extreme Cut
@@ -12,7 +14,7 @@ spec:
       value: /opt/nuclio/python3
 
   build:
-    image: cvat/dextr
+    image: cvat/public.dextr
     baseImage: openvino/ubuntu18_runtime:2020.2
 
     directives:
@@ -30,7 +32,7 @@ spec:
       - kind: RUN
         value: unzip dextr_model_v1.zip
       - kind: RUN
-        value: pip3 install -r requirements.txt
+        value: pip3 install Pillow
       - kind: USER
         value: openvino
 

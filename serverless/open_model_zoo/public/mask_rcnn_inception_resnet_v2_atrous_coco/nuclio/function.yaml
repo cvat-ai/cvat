@@ -1,6 +1,8 @@
 metadata:
   name: omz.public.mask_rcnn_inception_resnet_v2_atrous_coco
   namespace: cvat
+  labels:
+    type: detector
 
 spec:
   description: Mask RCNN inception resnet v2 COCO from Intel Open Model Zoo

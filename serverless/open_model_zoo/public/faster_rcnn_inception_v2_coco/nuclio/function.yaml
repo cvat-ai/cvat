@@ -1,6 +1,8 @@
 metadata:
   name: omz.public.faster_rcnn_inception_v2_coco
   namespace: cvat
+  labels:
+    type: detector
 
 spec:
   description: Faster RCNN inception v2 COCO from Intel Open Model Zoo

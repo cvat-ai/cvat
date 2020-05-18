@@ -1,6 +1,8 @@
 metadata:
   name: omz.public.yolo-v3-tf
   namespace: cvat
+  labels:
+    type: detector
 
 spec:
   description: YOLO v3 from Intel Open Model Zoo
