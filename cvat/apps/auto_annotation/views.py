@@ -179,7 +179,7 @@ def get_meta_info(request):
             print(dl_model.framework)
             print(dl_model.labelmap_file.name)
             if dl_model.labelmap_file and os.path.exists(dl_model.labelmap_file.name):
-                if dl_model.framework == "custom":
+                if dl_model.framework == "tensorflow":
                     print("reading csv file")
                     with open(dl_model.labelmap_file.name,"r") as f:
                         labels = [label.strip("\n").strip("") for label in f.readlines() if "labels" not in label]

@@ -44,7 +44,7 @@ class AnnotationModel(models.Model):
     interpretation_file = models.FileField(upload_to=upload_path_handler, storage=fs)
     shared = models.BooleanField(default=False)
     primary = models.BooleanField(default=False)
-    framework = models.CharField(max_length=32,default="custom")
+    framework = models.CharField(max_length=32,default="tensorflow")
 
     class Meta:
         default_permissions = ()
