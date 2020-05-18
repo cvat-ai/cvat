@@ -413,7 +413,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
         if include_images:
             frame_provider = FrameProvider(task_data.db_task.data)
 
-        for frame_data in task_data.group_by_frame(include_empty=include_images):
+        for frame_data in task_data.group_by_frame(include_empty=True):
             loader = None
             if include_images:
                 loader = lambda p, i=frame_data.idx: frame_provider.get_frame(i,
