@@ -23,7 +23,7 @@ import CreateModelForm, {
 } from './create-model-form';
 
 interface Props {
-    createModel(name: string, files: ModelFiles, global: boolean): void;
+    createModel(name: string, files: ModelFiles | CsvModelFiles, global: boolean): void;
     isAdmin: boolean;
     modelCreatingStatus: string;
 }
@@ -105,14 +105,16 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                         csvFileStatus = true;
                     }
 
-                if(groupedFileStatus || csvFileStatus) {
-                    createModel(data.name, grouppedFiles, data.global);
-                } else {
-                    notification.error({
-                        message: 'Could not upload a model',
-                        description: 'Please, specify correct files',
-                    });
-                }
+                    if(groupedFileStatus) {
+                        createModel(data.name, grouppedFiles, data.global);
+                    } else if(csvFileStatus) {
+                        createModel(data.name, csvGroupFiles, data.global);
+                    } else {
+                        notification.error({
+                            message: 'Could not upload a model',
+                            description: 'Please, specify correct files',
+                        });
+                    }
             }).catch(() => {
                 notification.error({
                     message: 'Could not upload a model',

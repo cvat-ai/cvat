@@ -9,6 +9,7 @@ import {
     ModelFiles,
     ActiveInference,
     CombinedState,
+    CsvModelFiles
 } from 'reducers/interfaces';
 import getCore from 'cvat-core-wrapper';
 
@@ -237,7 +238,7 @@ export function deleteModelAsync(id: number): ThunkAction {
     };
 }
 
-export function createModelAsync(name: string, files: ModelFiles, global: boolean): ThunkAction {
+export function createModelAsync(name: string, files: ModelFiles | CsvModelFiles, global: boolean): ThunkAction {
     return async (dispatch): Promise<void> => {
         async function checkCallback(id: string): Promise<void> {
             try {
