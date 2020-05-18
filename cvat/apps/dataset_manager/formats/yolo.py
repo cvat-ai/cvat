@@ -13,6 +13,7 @@ from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.extractor import DatasetItem
 from datumaro.components.project import Dataset
+from datumaro.plugins.yolo_format.extractor import YoloExtractor
 
 from .registry import dm_env, exporter, importer
 
@@ -33,19 +34,20 @@ def _import(src_file, task_data):
         Archive(src_file.name).extractall(tmp_dir)
 
         image_info = {}
-        anno_files = glob(osp.join(tmp_dir, '**', '*.txt'), recursive=True)
+        frames = [YoloExtractor.name_from_path(osp.relpath(p, tmp_dir))
+            for p in glob(osp.join(tmp_dir, '**', '*.txt'), recursive=True)]
         root_hint = find_dataset_root(
-            [DatasetItem(id=filename) for filename in anno_files], task_data)
-        for filename in anno_files:
+            [DatasetItem(id=frame) for frame in frames], task_data)
+        for frame in frames:
             frame_info = None
             try:
-                frame_id = match_dm_item(DatasetItem(id=filename), task_data,
+                frame_id = match_dm_item(DatasetItem(id=frame), task_data,
                     root_hint=root_hint)
                 frame_info = task_data.frame_info[frame_id]
             except Exception:
                 pass
             if frame_info is not None:
-                image_info[filename] = (frame_info['height'], frame_info['width'])
+                image_info[frame] = (frame_info['height'], frame_info['width'])
 
         dataset = dm_env.make_importer('yolo')(tmp_dir, image_info=image_info) \
             .make_dataset()
