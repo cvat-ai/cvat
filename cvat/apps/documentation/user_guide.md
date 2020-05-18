@@ -681,22 +681,14 @@ In tab ``Workspace`` you can:
 - Press `` Go back`` or ``F3`` to return to the annotation.
 
 ---
-Go to the next/previous frame with step equals to 1. Shortcuts: ``D`` — previous, ``F`` — next.
 
-![](static/documentation/images/image040.jpg)
+### Top Panel
 
----
-Play the sequence of frames or the set of images. Shortcut: ``Space`` (change at ``Open Menu`` —> ``Settings`` —> ``Player Speed``).
-
-![](static/documentation/images/image041.jpg)
+![](static/documentation/images/image035.jpg)
 
 ---
-Go to specified frame. Press ``~`` to focus on the element.
 
-![](static/documentation/images/image060.jpg)
-
----
-**Open Menu** button
+#### Menu button
 
 It is the main menu of the annotation tool. It can be used to download, upload and remove annotations.
 
@@ -704,97 +696,88 @@ It is the main menu of the annotation tool. It can be used to download, upload a
 
 Button assignment:
 
-- ``Open Task`` — open task in cvat dashboard
-- ``RunReID Merge`` — The ReID application uses deep learning model to perform
-  an automatic merging of bounding boxes between neighbor frames. You can use
-  "Merge" and "Split" functionality to edit automatically generated annotation
-  [read more](/cvat/apps/reid).
-- ``Dump Annotation`` — download annotations from the task
-- ``Upload Annotation`` — uploading annotations to the task
-- ``Remove Annotation`` — remove annotations from current task
-- ``Settings`` — open the settings menu
-- ``Fullscreen Player`` — fullscreen player mode
-- ``Switch AAM`` — switch to attribute annotation mode
-- ``Help`` — open the shortkeys
-- ``Save Work`` — save annotations for the current job. The button has an
-  indication of the saving process
+- ``Dump Annotations`` — downloads annotations from a task.
+- ``Upload Annotations`` — uploads annotations into a task.
+- ``Remove Annotations`` — removes annotations from the current job.
+- ``Export as a dataset`` — download a data set from a task. Several formats are available:
+  - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/docs/design.md)
+  - [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/)
+  - [MS COCO](http://cocodataset.org/#format-data)
+  - [YOLO](https://pjreddie.com/darknet/yolo/)
+- ``Open the task`` — opens a page with details about the task.
+- ``Run ReID merge`` —  automatic merge of shapes or tracks.
+  It is used to combine individual objects - created by automatic annotation in a single track.
+  For more information click [here](cvat/apps/reid/README.md).
 
-It also shows statistics about the current task, for example:
-- task name
-- status of the task: ``annotation``, ``validation`` or ``completed task``
-- technical information about task
-- number of created bounding boxes, sorted by labels (e.g. vehicle, person) and
-type of annotation (polygons, boxes, etc.)
+#### Save Work
+Saves annotations for the current job. The button has an indication of the saving process.
 
----
-**Filter** input box
+  ![](static/documentation/images/image141.jpg)
 
-The way how to use filters is described in the advanced guide (below).
+#### Undo-redo buttons
 
-![](static/documentation/images/image059.jpg)
+  Use buttons to undo actions or redo them.
+
+  ![](static/documentation/images/image061.jpg)
 
 ---
-**History / Undo-redo** panel
 
-Use ``Ctrl+Z`` for undo actions and  ``Ctrl+Shift+Z`` or ``Ctrl+Y`` to redo them.
+#### Player
 
-![](static/documentation/images/image061.jpg)
+  Go to the first /the latest frames.
+
+  ![](static/documentation/images/image036.jpg)
+
+Go to the next/previous frame with a predefined step. Shortcuts:
+``V`` — step backward, ``C`` — step forward. By default the step is ``10`` frames
+(change at ``Account Menu`` —> ``Settings`` —> ``Player Step``).
+
+  ![](static/documentation/images/image037.jpg)
+
+Go to the next/previous frame (the step is 1 frame). Shortcuts: ``D`` — previous, ``F`` — next.
+
+  ![](static/documentation/images/image040.jpg)
+
+Play the sequence of frames or the set of images.
+Shortcut: ``Space`` (change at ``Account Menu`` —> ``Settings`` —> ``Player Speed``).
+
+  ![](static/documentation/images/image041.jpg)
+
+Go to a specific frame. Press ``~`` to focus on the element.
+
+  ![](static/documentation/images/image060.jpg)
 
 ---
-**Propagation** input box
 
-Allows you to select how many frames of the selected object will be copied clicking ``Ctrl+B`` (50 by default)
+#### Fullscreen Player
+The fullscreen player mode. The keyboard shortcut is ``F11``.
 
-![](static/documentation/images/image101.jpg)
+  ![](static/documentation/images/image143.jpg)
 
----
-**Rotation** of an image
+#### Info
+Open the job info.
 
-Buttons are used to rotate the image clockwise / counterclockwise or use ``Ctrl+R``/``Ctrl+Shift+R``
+  ![](static/documentation/images/image144_DETRAC.jpg)
 
-![](static/documentation/images/image102.jpg)
+- Job status: ``annotation``, ``validation`` or ``completed`` task
 
----
-**Fill Opacity** slider
+_Overview_:
 
-Change opacity of every bounding box in the annotation.
+-  ``Assinger`` - the one to whom the job is assigned.
+-  ``Start Frame`` - the number of the first frame in this job.
+-  ``End Frame`` - the number of the last frame in this job.
+-  ``Frames`` - the total number of all frames in the job.
+-  ``Z-Order`` - z-order enable indicator.
 
-![](static/documentation/images/image086.jpg)
+_Annotations statistics_:
 
-Opacity can be changed from 0% to 100% and by random colors or white. If any
-white option is chosen, ``Color By`` scheme won't work.
+  This is a table number of created shapes, sorted by labels (e.g. vehicle, person)
+  and type of annotation (shape, track). As well as the number of manual and interpolated frames.
 
-**Selected Fill Opacity** slider
+#### UI switcher
+Switching between user interface modes.
 
-Change the opacity of the selected object's fill.
-
-![](static/documentation/images/image087.jpg)
-
-Opacity can be changed from 0% to 100%.
-
-**Black Stroke** checkbox
-
-Change bounding box border from white/colored to black.
-
-![](static/documentation/images/image088.jpg)
-
-**Color By** options
-
-Change the color scheme of annotation:
--   ``Instance`` — every bounding box has random color
-
-    ![](static/documentation/images/image095.jpg)
-
--   ``Group`` — every group of boxes has its own random color, ungrouped boxes are white
-
-    ![](static/documentation/images/image094.jpg)
-
--   ``Label`` — every label (e.g. vehicle, pedestrian, road marks) has its own random color
-
-    ![](static/documentation/images/image093.jpg)
-
-    You can change any random color pointing on needed box on a frame or on a
-    side panel and press ``Enter``.
+  ![](static/documentation/images/image145.jpg)
 
 ---
 ### Side panel
