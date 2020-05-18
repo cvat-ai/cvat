@@ -52,6 +52,8 @@ function ItemMenu(
     createURL: (() => void),
     toBackground: (() => void),
     toForeground: (() => void),
+    switchCuboidOrientation: (() => void),
+    resetCuboidPerspective: (() => void),
 ): JSX.Element {
     return (
         <Menu className='cvat-object-item-menu'>
@@ -75,39 +77,39 @@ function ItemMenu(
                 </Tooltip>
             </Menu.Item>
             {shapeType === ShapeType.CUBOID && (
-                <>
-                    <Menu.Item>
-                        <Button type='link' icon='retweet'>
-                            Switch orientation
-                        </Button>
-                    </Menu.Item>
-                    <Menu.Item>
-                        <Button type='link'>
-                            <Icon component={ResetPerspectiveIcon}/>
-                            Reset perspective
-                        </Button>
-                    </Menu.Item>
-                </>
+                <Menu.Item>
+                    <Button type='link' icon='retweet' onClick={switchCuboidOrientation}>
+                        Switch orientation
+                    </Button>
+                </Menu.Item>
+            )}
+            {shapeType === ShapeType.CUBOID && (
+                <Menu.Item>
+                    <Button type='link' onClick={resetCuboidPerspective}>
+                        <Icon component={ResetPerspectiveIcon}/>
+                        Reset perspective
+                    </Button>
+                </Menu.Item>
             )}
             {objectType !== ObjectType.TAG && (
-                <>
-                    <Menu.Item>
-                        <Tooltip title={`${toBackgroundShortcut}`}>
-                            <Button type='link' onClick={toBackground}>
-                                <Icon component={BackgroundIcon} />
-                                To background
-                            </Button>
-                        </Tooltip>
-                    </Menu.Item>
-                    <Menu.Item>
-                        <Tooltip title={`${toForegroundShortcut}`}>
-                            <Button type='link' onClick={toForeground}>
-                                <Icon component={ForegroundIcon} />
-                                To foreground
-                            </Button>
-                        </Tooltip>
-                    </Menu.Item>
-                </>
+                <Menu.Item>
+                    <Tooltip title={`${toBackgroundShortcut}`}>
+                        <Button type='link' onClick={toBackground}>
+                            <Icon component={BackgroundIcon} />
+                            To background
+                        </Button>
+                    </Tooltip>
+                </Menu.Item>
+            )}
+            {objectType !== ObjectType.TAG && (
+                <Menu.Item>
+                    <Tooltip title={`${toForegroundShortcut}`}>
+                        <Button type='link' onClick={toForeground}>
+                            <Icon component={ForegroundIcon} />
+                            To foreground
+                        </Button>
+                    </Tooltip>
+                </Menu.Item>
             )}
             <Menu.Item>
                 <Tooltip title={`${removeShortcut}`}>
@@ -158,6 +160,8 @@ interface ItemTopComponentProps {
     createURL(): void;
     toBackground(): void;
     toForeground(): void;
+    switchCuboidOrientation(): void;
+    resetCuboidPerspective(): void;
 }
 
 function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
@@ -183,6 +187,8 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         createURL,
         toBackground,
         toForeground,
+        switchCuboidOrientation,
+        resetCuboidPerspective,
     } = props;
 
     return (
@@ -223,6 +229,8 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                         createURL,
                         toBackground,
                         toForeground,
+                        switchCuboidOrientation,
+                        resetCuboidPerspective,
                     )}
                 >
                     <Icon type='more' />
@@ -747,6 +755,8 @@ interface Props {
     changeAttribute(attrID: number, value: string): void;
     changeColor(color: string): void;
     collapse(): void;
+    switchCuboidOrientation(): void;
+    resetCuboidPerspective(): void;
 }
 
 function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
@@ -824,6 +834,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeAttribute,
         changeColor,
         collapse,
+        switchCuboidOrientation,
+        resetCuboidPerspective,
     } = props;
 
     const type = objectType === ObjectType.TAG ? ObjectType.TAG.toUpperCase()
@@ -877,6 +889,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     createURL={createURL}
                     toBackground={toBackground}
                     toForeground={toForeground}
+                    switchCuboidOrientation={switchCuboidOrientation}
+                    resetCuboidPerspective={resetCuboidPerspective}
                 />
                 <ItemButtons
                     shapeType={shapeType}
