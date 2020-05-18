@@ -32,6 +32,7 @@ def _remove_old_file(model_file_field):
 
 def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_file, labelmap_file,
         interpretation_file, run_tests, is_local_storage, delete_if_test_fails, is_custom, restricted=True):
+    print("isnide update_dl_model")
     def _get_file_content(filename):
         return os.path.basename(filename), open(filename, "rb")
 
@@ -57,7 +58,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
             return False, str(e)
 
         return True, ""
-
+    print("iiinside")
     job = rq.get_current_job()
     job.meta["progress"] = "Saving data"
     job.save_meta()
@@ -92,21 +93,26 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
             if model_file:
                 _remove_old_file(dl_model.model_file)
                 dl_model.model_file.save(*_get_file_content(model_file))
-            if weights_file:
-                _remove_old_file(dl_model.weights_file)
-                dl_model.weights_file.save(*_get_file_content(weights_file))
+            
             if labelmap_file:
                 _remove_old_file(dl_model.labelmap_file)
                 dl_model.labelmap_file.save(*_get_file_content(labelmap_file))
-            if interpretation_file:
-                _remove_old_file(dl_model.interpretation_file)
-                dl_model.interpretation_file.save(*_get_file_content(interpretation_file))
+            if not is_custom:
+                if interpretation_file:
+                    _remove_old_file(dl_model.interpretation_file)
+                    dl_model.interpretation_file.save(*_get_file_content(interpretation_file))
+                if weights_file:
+                    _remove_old_file(dl_model.weights_file)
+                    dl_model.weights_file.save(*_get_file_content(weights_file))
+            
 
             if name:
                 dl_model.name = name
 
             if is_shared != None:
                 dl_model.shared = is_shared
+            if not is_custom:
+                dl_model.framework = "openvino"
 
             dl_model.updated_date = timezone.now()
             dl_model.save()
@@ -118,6 +124,8 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
         raise Exception("Model was not properly created/updated. Test failed: {}".format(message))
 
 def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file, interpretation_file, owner, storage, is_shared, is_custom):
+    print("isnide create or upload")
+    print(is_custom)
     def get_abs_path(share_path):
         if not share_path:
             return share_path
@@ -131,6 +139,7 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
         return abspath
 
     def save_file_as_tmp(data):
+        print(data.chunks())
         if not data:
             return None
         fd, filename = tempfile.mkstemp()
@@ -156,9 +165,12 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
             labelmap_file = get_abs_path(labelmap_file)
             interpretation_file = get_abs_path(interpretation_file)
     else:
+        print("inside save file as tmp")
         if is_custom:
             model_file = save_file_as_tmp(model_file)
-            interpretation_file = save_file_as_tmp(interpretation_file)
+            labelmap_file = save_file_as_tmp(labelmap_file)
+            # weights_file = None
+            # interpretation_file = None
         else:
             model_file = save_file_as_tmp(model_file)
             weights_file = save_file_as_tmp(weights_file)
@@ -169,7 +181,7 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
         restricted = not has_admin_role(owner)
     else:
         restricted = not has_admin_role(AnnotationModel.objects.get(pk=dl_model_id).owner)
-
+    print("calling func")
     rq_id = "auto_annotation.create.{}".format(dl_model_id)
     queue = django_rq.get_queue("default")
     queue.enqueue_call(

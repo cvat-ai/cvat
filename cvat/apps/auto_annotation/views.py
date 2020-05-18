@@ -174,9 +174,14 @@ def get_meta_info(request):
         dl_model_list = list(AnnotationModel.objects.filter(Q(owner=request.user) | Q(primary=True) | Q(shared=True)).order_by('-created_date'))
         for dl_model in dl_model_list:
             labels = []
+            print(dl_model)
+            print(dl_model.primary)
+            print(dl_model.framework)
+            print(dl_model.labelmap_file.name)
             if dl_model.labelmap_file and os.path.exists(dl_model.labelmap_file.name):
-                if dl_model.labelmap_file.endswith("csv"):
-                    with dl_model.labelmap_file.open("r") as f:
+                if dl_model.framework == "custom":
+                    print("reading csv file")
+                    with open(dl_model.labelmap_file.name,"r") as f:
                         labels = [label.strip("\n").strip("") for label in f.readlines() if "labels" not in label]
                 else:
                     with dl_model.labelmap_file.open('r') as f:
