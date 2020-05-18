@@ -70,7 +70,7 @@ class DatumaroExtractor(SourceExtractor):
             point_categories = PointsCategories()
             for item in parsed_points_cat['items']:
                 point_categories.add(int(item['label_id']),
-                    item['labels'], adjacent=item['adjacent'])
+                    item['labels'], joints=item['joints'])
 
             categories[AnnotationType.points] = point_categories
 
