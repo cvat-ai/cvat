@@ -535,7 +535,7 @@ class CocoConverterTest(TestCase):
         points_categories = PointsCategories()
         for i in range(10):
             label_categories.add(str(i))
-            points_categories.add(i, [])
+            points_categories.add(i, joints=[[0, 1], [1, 2]])
         categories = {
             AnnotationType.label: label_categories,
             AnnotationType.points: points_categories,
@@ -624,25 +624,12 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, annotations=[
-                        Label(2, id=1, group=1),
-                    ]),
-
-                    DatasetItem(id=2, annotations=[
-                        Label(3, id=2, group=2),
-                    ]),
+                    DatasetItem(id=1),
+                    DatasetItem(id=2),
                 ])
 
             def categories(self):
-                label_cat = LabelCategories()
-                point_cat = PointsCategories()
-                for label in range(10):
-                    label_cat.add('label_' + str(label))
-                    point_cat.add(label)
-                return {
-                    AnnotationType.label: label_cat,
-                    AnnotationType.points: point_cat,
-                }
+                return { AnnotationType.label: LabelCategories() }
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),

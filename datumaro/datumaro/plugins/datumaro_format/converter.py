@@ -212,7 +212,7 @@ class _SubsetWriter:
             converted['items'].append({
                 'label_id': int(label_id),
                 'labels': [cast(label, str) for label in item.labels],
-                'adjacent': [int(v) for v in item.adjacent],
+                'joints': [list(map(int, j)) for j in item.joints],
             })
         return converted
 
