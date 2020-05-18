@@ -7,7 +7,14 @@
     - [Stop all containers](#stop-all-containers)
     - [Advanced settings](#advanced-settings)
     - [Share path](#share-path)
-	- [Serving over HTTPS](#serving-over-https)
+    - [Serving over HTTPS](#serving-over-https)
+      - [Prerequisites](#prerequisites)
+      - [Roadmap](#roadmap)
+      - [Step-by-step instructions](#step-by-step-instructions)
+        - [1. Move the CVAT access port](#1-move-the-cvat-access-port)
+        - [2. Configure Nginx for the ACME challenge](#2-configure-nginx-for-the-acme-challenge)
+        - [3. Create certificate files using an ACME challenge](#3-create-certificate-files-using-an-acme-challenge)
+        - [4. Reconfigure Nginx for HTTPS access](#4-reconfigure-nginx-for-https-access)
 
 # Quick installation guide
 
@@ -240,7 +247,6 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - [Analytics: management and monitoring of data annotation team](/components/analytics/README.md)
 - [TF Object Detection API: auto annotation](/components/tf_annotation/README.md)
 - [Support for NVIDIA GPUs](/components/cuda/README.md)
-- [Semi-automatic segmentation with Deep Extreme Cut](/cvat/apps/dextr_segmentation/README.md)
 - [Auto segmentation: Keras+Tensorflow Mask R-CNN Segmentation](/components/auto_segmentation/README.md)
 
 ```bash
@@ -311,16 +317,16 @@ contains a text (url for example) which is shown in the client-share browser.
 ### Serving over HTTPS
 
 We will add [letsencrypt.org](https://letsencrypt.org/) issued certificate to secure
-our server connection. 
+our server connection.
 
 #### Prerequisites
 
-We assume that 
+We assume that
 
--   you have sudo access on your server machine, 
+-   you have sudo access on your server machine,
 -   you have an IP address to use for remote access, and
 -   that the local CVAT installation works on your server.
-  
+
 If this is not the case, please complete the steps in the installation manual first.
 
 #### Roadmap
@@ -336,7 +342,7 @@ We will go through the following sequence of steps to get CVAT over HTTPS:
 
 ##### 1. Move the CVAT access port
 
-Let's assume the server will be at `my-cvat-server.org`. 
+Let's assume the server will be at `my-cvat-server.org`.
 
 ```bash
 # on the server
@@ -351,7 +357,7 @@ Add the following into your `docker-compose.override.yml`, replacing `my-cvat-se
 This file lives in the same directory as `docker-compose.yml`.
 
 ```yaml
-# docker-compose.override.yml 
+# docker-compose.override.yml
 version: "2.3"
 
 services:
@@ -360,7 +366,7 @@ services:
       CVAT_HOST: my-cvat-server.org
     ports:
     - "80:80"
-    
+
   cvat:
     environment:
       ALLOWED_HOSTS: '*'
@@ -370,8 +376,8 @@ You should now see an unsecured version of CVAT at `http://my-cvat-server.org`.
 
 ##### 2. Configure Nginx for the ACME challenge
 
-Temporarily, enable serving `http://my-cvat-server.org/.well-known/acme-challenge/` 
-route from `/letsencrypt` directory on the server's filesystem. 
+Temporarily, enable serving `http://my-cvat-server.org/.well-known/acme-challenge/`
+route from `/letsencrypt` directory on the server's filesystem.
 You can use the [Nginx quickstart guide](http://nginx.org/en/docs/beginners_guide.html) for reference.
 
 ```bash
@@ -393,7 +399,7 @@ server {
       root /letsencrypt;
     }
 
-    location ~* /api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*  {
+    location ~* /api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|reid/.*  {
         proxy_pass              http://cvat:8080;
         proxy_pass_header       X-CSRFToken;
         proxy_set_header        Host $http_host;
@@ -426,7 +432,7 @@ Now create the `/letsencrypt` directory and mount it into `cvat_proxy` container
 Edit your `docker-compose.override.yml` to look like the following:
 
 ```yaml
-# docker-compose.override.yml 
+# docker-compose.override.yml
 version: "2.3"
 
 services:
@@ -437,7 +443,7 @@ services:
     - "80:80"
     volumes:
     - ./letsencrypt:/letsencrypt
-    
+
   cvat:
     environment:
       ALLOWED_HOSTS: '*'
@@ -453,7 +459,7 @@ docker-compose down
 docker-compose up -d
 ```
 
-Your server should still be visible (and unsecured) at `http://my-cvat-server.org` 
+Your server should still be visible (and unsecured) at `http://my-cvat-server.org`
 but you won't see any behavior changes.
 
 ##### 3. Create certificate files using an ACME challenge
@@ -488,10 +494,10 @@ admin@tempVM:~/cvat$ docker exec -ti cvat_proxy /bin/sh
 [Fri Apr  3 20:49:06 UTC 2020] ACCOUNT_THUMBPRINT='tril8-LdJgM8xg6mnN1pMa7vIMdFizVCE0NImNmyZY4'
 [Fri Apr  3 20:49:06 UTC 2020] Creating domain key
 [ ... many more lines ...]
-[Fri Apr  3 20:49:10 UTC 2020] Your cert is in  /root/.acme.sh/my-cvat-server.org/my-cvat-server.org.cer 
-[Fri Apr  3 20:49:10 UTC 2020] Your cert key is in  /root/.acme.sh/my-cvat-server.org/my-cvat-server.org.key 
-[Fri Apr  3 20:49:10 UTC 2020] The intermediate CA cert is in  /root/.acme.sh/my-cvat-server.org/ca.cer 
-[Fri Apr  3 20:49:10 UTC 2020] And the full chain certs is there:  /root/.acme.sh/my-cvat-server.org/fullchain.cer 
+[Fri Apr  3 20:49:10 UTC 2020] Your cert is in  /root/.acme.sh/my-cvat-server.org/my-cvat-server.org.cer
+[Fri Apr  3 20:49:10 UTC 2020] Your cert key is in  /root/.acme.sh/my-cvat-server.org/my-cvat-server.org.key
+[Fri Apr  3 20:49:10 UTC 2020] The intermediate CA cert is in  /root/.acme.sh/my-cvat-server.org/ca.cer
+[Fri Apr  3 20:49:10 UTC 2020] And the full chain certs is there:  /root/.acme.sh/my-cvat-server.org/fullchain.cer
 
 / # cp ~/.acme.sh/my-cvat-server.org/my-cvat-server.org.cer /letsencrypt/certificate.cer
 / # cp ~/.acme.sh/my-cvat-server.org/my-cvat-server.org.key /letsencrypt/certificate.key
@@ -521,7 +527,7 @@ services:
     volumes:
     - ./letsencrypt:/letsencrypt
     - ./cert:/cert:ro # this is new
-    
+
   cvat:
     environment:
       ALLOWED_HOSTS: '*'
@@ -547,7 +553,7 @@ server {
     ssl_certificate /cert/certificate.cer;
     ssl_certificate_key /cert/certificate.key;
 
-    location ~* /api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*  {
+    location ~* /api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|reid/.*  {
         proxy_pass              http://cvat:8080;
     }
 

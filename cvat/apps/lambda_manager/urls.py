@@ -12,10 +12,8 @@ router.register('functions', views.FunctionViewSet)
 router.register('requests', views.RequestViewSet)
 
 # GET  /api/v1/lambda/functions - get list of functions
-# POST /api/v1/lambda/functions - add one more function
 # GET  /api/v1/lambda/functions/<int:fid> - get information about the function
-# DEL  /api/v1/lambda/functions/<int:fid> - delete a function
-# POST /api/v1/labmda/online-requests - call a function
+# POST /api/v1/labmda/requests - call a function
 # { "function": "<id>", "mode": "online|offline", "job": "<jid>", "frame": "<n>",
 #   "points": [...], }
 # GET  /api/v1/lambda/requests - get list of requests

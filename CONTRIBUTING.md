@@ -115,19 +115,6 @@ to changes in ``.env/bin/activate`` file are active.
     export REID_MODEL_DIR="/path/to/dir" # dir must contain .xml and .bin files
 ```
 
-### Deep Extreme Cut
-- Perform all steps in the automatic annotation section
-- Download Deep Extreme Cut model, unpack it, and save somewhere:
-```sh
-curl https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip -o dextr.zip
-unzip dextr.zip
-```
-- Add next lines to ``.env/bin/activate``:
-```sh
-    export WITH_DEXTR="yes"
-    export DEXTR_MODEL_DIR="/path/to/dir" # dir must contain .xml and .bin files
-```
-
 ### Tensorflow RCNN
 - Download RCNN model, unpack it, and save it somewhere:
 ```sh
