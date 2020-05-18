@@ -916,7 +916,7 @@ Change the color scheme of annotation:
 
     ![](static/documentation/images/image093_DETRAC.jpg)
 
-    You can change any random color pointing to a needed box on a frame or on a
+    You can change any random color pointing to a needed box on a frame or on an
     object sidebar.
 
 **Fill Opacity** slider
