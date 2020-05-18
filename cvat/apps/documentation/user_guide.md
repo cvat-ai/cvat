@@ -908,7 +908,7 @@ Change the color scheme of annotation:
 
     ![](static/documentation/images/image095_DETRAC.jpg)
 
--   ``Group`` — every group of shape has its own random color, ungrouped shape are white
+-   ``Group`` — every group of shape has its own random color, ungrouped shapes are white
 
     ![](static/documentation/images/image094_DETRAC.jpg)
 
