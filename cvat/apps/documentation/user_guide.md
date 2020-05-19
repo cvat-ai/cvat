@@ -16,8 +16,9 @@
     - [Vocabulary](#vocabulary)
     - [Workspace](#workspace)
     - [Settings](#settings)
-    - [Bottom Panel](#bottom-panel)
-    - [Side panel](#side-panel)
+    - [Top Panel](#top-panel)
+    - [Controls sidebar](#controls-sidebar)
+    - [Objects sidebar](#objects-sidebar)
       - [Objects](#objects)
       - [Labels](#labels)
     - [Bottom side panel](#bottom-side-panel)
@@ -780,106 +781,170 @@ Switching between user interface modes.
   ![](static/documentation/images/image145.jpg)
 
 ---
-### Side panel
+### Objects sidebar
+
+``Hide`` - the button hides the object's sidebar.
+
+![](static/documentation/images/image146.jpg)
 
 #### Objects
-In the side panel you can see the list of available objects on the current
-frame. The following figure is an example of how a list might look like:
 
-| Annotation mode                               | Interpolation mode                            |
+**Filter** input box
+
+![](static/documentation/images/image059.jpg)
+
+The way how to use filters is described in the advanced guide [here](#filter).
+
+**List of objects**
+
+![](static/documentation/images/image147.jpg)
+
+  - Switch lock property for all - switches  lock property of all objects in the frame.
+  - Switch hidden property for all - switches hide property of all objects in the frame.
+  - Expand/collapse all - collapses/expands the details field of all objects in the frame.
+  - Sorting - sort the list of objects: updated time, ID - accent, ID -  descent
+
+In the objects sidebar you can see the list of available objects on the current
+frame. The following figure is an example of how the list might look like:
+
+| Shape mode                                    | Track mode                                    |
 |--                                             |--                                             |
 | ![](static/documentation/images/image044.jpg) | ![](static/documentation/images/image045.jpg) |
-
-#### Labels
-You can also see all labels that were used on this frame and highlight them clicking on a label you need
-
-![](static/documentation/images/image062.jpg)
 
 ---
 **Objects** on the side bar
 
-A shape can be removed. Shortcut: ``Delete``. You can delete a locked shape using the ``Shift+Delete`` shortcut.
+The type of a shape can be changed by selecting **Label** property. For instance, it can look like shown on the figure below:
 
-![](static/documentation/images/image047.jpg)
+![](static/documentation/images/image050.jpg)
 
----
+**Object action menu**
+
+The action menu calls up the button:
+
+  ![](static/documentation/images/image047.jpg)
+
+The action menu contains:
+
+- ``Create object URL`` - puts a link to an object on the clipboard. After you open the link, this object will be filtered.
+- ``Make a copy``- copies an object. The keyboard shortcut is ``Ctrl + C`` ``Ctrl + V``.
+- ``Propagate`` - Сopies the form to several frames,
+  invokes a dialog box in which you can specify the number of copies
+  or the frame onto which you want to copy the object. The keyboard shortcut ``Ctrl + B``.
+
+  ![](static/documentation/images/image053.jpg)
+
+- ``To background`` - moves the object to the background. The keyboard shortcut ``-``,``_``.
+- ``To foreground`` - moves the object to the foreground. The keyboard shortcut ``+``,``=``.
+- ``Remove`` - removes the object. The keyboard shortcut ``Del``,``Shift+Del``.
+
 A shape can be locked to prevent its modification or moving by an accident. Shortcut to lock an object: ``L``.
 
 ![](static/documentation/images/image046.jpg)
 
----
 A shape can be **Occluded**. Shortcut: ``Q``. Such shapes have dashed boundaries.
 
 ![](static/documentation/images/image048.jpg)
 
-![](static/documentation/images/image049.jpg)
+![](static/documentation/images/image049_DETRAC.jpg)
 
----
-You can copy and paste an object in a particular frame. The keyboard
-shortcuts ``Ctrl + C`` / ``Ctrl + V`` work when you hover over an object
-
-![](static/documentation/images/image052.jpg)
-
----
-You can propagate an object in the following X frames. The keyboard
-shortcut ``Ctrl + B`` works when you hover the mouse over an object. You can
-change the number of propagating frames in the bottom panel.
-
-![](static/documentation/images/image053.jpg)
-
----
-You can change the way an object is displayed on a frame.
-It could be hide, shows only box, shows box and title. ``H`` is for this
-object, ``T+H`` for all objects on this frame.
+You can change the way an object is displayed on a frame (show or hide).
 
 ![](static/documentation/images/image055.jpg)
 
+``Switch pinned property`` - when enabled, a shape cannot be moved by dragging or dropping.
+
+![](static/documentation/images/image052.jpg)
+
+You can change an object's color.
+To do so, click on the color bar of the object and select a color from the palette that appears.
+
+![](static/documentation/images/image153.jpg)
+
+By clicking on the ``Details`` button you can collapse or expand the field with all the attributes of the object.
+
+![](static/documentation/images/image154.jpg)
+
 ---
-The type of a shape can be changed selecting **Label** property. For instance, it can look like on the figure below:
 
-![](static/documentation/images/image050.jpg)
+#### Labels
+You can also change the color of any object to random, to do so just hover
+the mouse over the object on the frame and highlight them by clicking on a label you need.
+In this tab, you can lock or hide objects of a certain label.
 
-To change a type of a highlighted shape using keyboard, you need to press ``Shift+<number>``.
+![](static/documentation/images/image062.jpg)
 
-### Bottom side panel
+---
 
-- ``Create Shape`` (``N``) — start/stop drawing new shape mode
-- ``Merge Shapes`` (``M``) — start/stop merging shapes mode
-- ``Group Shapes`` (``G``) — start/stop grouping shapes mode
-- ``Label Type`` — (e.g. face, person, vehicle)
-- ``Working Mode`` — Annotation or Interpolation modes. You can't interpolate
-polygons/polylines/points, but you can propagate them using ``Ctrl+B`` or
-merge into a track
-- ``Shape Type`` — (e.g. box, polygon, polyline, points)
-- ``Poly Shape Size`` — (optional) hard number of dots for creating polygon, polyline and points shapes
+#### Appearance
 
-![](static/documentation/images/image082.jpg)
+**Color By** options
 
-### Fullscreen player mode
+Change the color scheme of annotation:
+-   ``Instance`` — every  shape has random color
 
-Go to ``Open Menu`` —> ``Fullscreen Player``
-Exit with ``F11`` or ``Ecs``.
+    ![](static/documentation/images/image095_DETRAC.jpg)
 
-This is how it looks like.
+-   ``Group`` — every group of shape has its own random color, ungrouped shapes are white
 
-![](static/documentation/images/image043.jpg)
+    ![](static/documentation/images/image094_DETRAC.jpg)
 
-## Annotation mode (advanced)
+-   ``Label`` — every label (e.g. car, person) has its own random color
 
-Basic operations in the mode were described above.
+    ![](static/documentation/images/image093_DETRAC.jpg)
 
-**Occluded** attribute is used if an object is occluded by another object or
+    You can change any random color pointing to a needed box on a frame or on an
+    object sidebar.
+
+**Fill Opacity** slider
+
+Change the opacity of every shape in the annotation.
+
+![](static/documentation/images/image086_DETRAC.jpg)
+
+**Selected Fill Opacity** slider
+
+Change the opacity of the selected object's fill.
+
+![](static/documentation/images/image089_DETRAC.jpg)
+
+**Black Stroke** checkbox
+
+Changes the shape border from colored to black.
+
+![](static/documentation/images/image088_DETRAC.jpg)
+
+**Show bitmap** checkbox
+
+If enabled all shapes are displayed in white and the background is black.
+
+![](static/documentation/images/image087_DETRAC.jpg)
+
+**Show projections** checkbox
+
+Enables / disables the display of auxiliary perspective lines. Only relevant for cuboids
+
+![](static/documentation/images/image090_DETRAC.jpg)
+
+---
+
+## Shape mode (advanced)
+
+Basic operations in the mode were described in section [shape mode (basics)](#shape-mode-basics).
+
+**Occluded** 
+Occlusion is an attribute used if an object is occluded by another object or
 isn't fully visible on the frame. Use ``Q`` shortcut to set the property
 quickly.
 
 ![](static/documentation/images/image065.jpg)
 
-Example: both cars on the figure below should be labeled as **occluded**.
+Example: the three cars on the figure below should be labeled as **occluded**.
 
-![](static/documentation/images/image054.jpg)
+![](static/documentation/images/image054_mapillary_vistas.jpg)
 
 If a frame contains too many objects and it is difficult to annotate them
-due to many shapes that are placed mostly in the same place, it makes sense
+due to many shapes placed mostly in the same place, it makes sense
 to lock them. Shapes for locked objects are transparent, and it is easy to
 annotate new objects. Besides, you can't change previously annotated objects
 by accident. Shortcut: ``L``.
