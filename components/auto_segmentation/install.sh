@@ -3,7 +3,7 @@
 
 set -e
 
-MASK_RCNN_URL=https://github.com/matterport/Mask_RCNN
+MASK_RCNN_URL=https://github.com/onepanelio/Mask_RCNN
 
 cd ${HOME} && \
 git clone ${MASK_RCNN_URL}.git && \

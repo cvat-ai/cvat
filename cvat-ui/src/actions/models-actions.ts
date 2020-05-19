@@ -505,7 +505,12 @@ export function startInferenceAsync(
                 );
             } else if (model.name === PreinstalledModels.MaskRCNN || model.framework === "maskrcnn") {
                 await core.server.request(
-                    `${baseURL}/tensorflow/segmentation/create/task/${taskInstance.id}`,
+                    `${baseURL}/tensorflow/segmentation/create/task/${taskInstance.id}/${model.id}`,{
+                        method: 'POST',
+                        data: JSON.stringify({
+                            labels: mapping,
+                        })
+                    }
                 );
             } else {
                 await core.server.request(

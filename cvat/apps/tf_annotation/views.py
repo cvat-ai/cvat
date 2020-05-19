@@ -270,7 +270,10 @@ def create_thread(tid, labels_mapping, user, tf_annotation_model_path):
 def get_meta_info(request):
     try:
         queue = django_rq.get_queue('low')
+        print(request.body)
+        print(request.body.decode('utf-8'))
         tids = json.loads(request.body.decode('utf-8'))
+        print("tods",tids)
         result = {}
         for tid in tids:
             job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
@@ -299,6 +302,7 @@ def create(request, tid, mid):
         data = json.loads(request.body.decode('utf-8'))
 
         user_label_mapping = data["labels"]
+        slogger.glob.info("user defined mapping {}".format(user_label_mapping))
         db_task = TaskModel.objects.get(pk=tid)
         dl_model = AnnotationModel.objects.get(pk=mid)
 
