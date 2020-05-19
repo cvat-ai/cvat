@@ -1222,23 +1222,6 @@ You can use linear interpolation for points to annotate a moving object:
 
     ![](static/documentation/images/gif013_DETRAC.gif)
 
-## Annotation with Auto Segmentation
-
-Used to create a polygon semi-automatically. Before starting, you have to be
-sure that ``Auto Segmentation`` is selected.
-
-![](static/documentation/images/image114.jpg)
-
-Press ``N`` for entering drawing mode. Now you can start annotating the necessary area.
-Press ``N`` again for finishing marking an area. A shape must consist of 4
-points minimum. You can set a fixed number of points in the field
-"poly shape size", then drawing will be stopped automatically. You can zoom
-in/out (when scrolling the mouse wheel) and move (when clicking the mouse
-wheel and moving the mouse) while drawing. At the end of Auto Segmentation,
-a shape is created and you can work with it as a polygon.
-
-![](static/documentation/images/gif009_DETRAC.gif)
-
 ## Automatic annotation
 
 Automatic Annotation is used for creating preliminary annotations.
