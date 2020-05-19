@@ -848,9 +848,6 @@ Change the color scheme of annotation:
 |![](static/documentation/images/image173.jpg)|``Group Shapes`` (``G``) — starts/stops the grouping shapes mode.|[Shape grouping](#shape-grouping)|
 |![](static/documentation/images/image174.jpg)|``Split`` — splits a track.                                      |[Track mode (advanced)](#track-mode-advanced)|
 
----
-### Side panel
-
 #### Objects
 In the side panel you can see the list of available objects on the current
 frame. The following figure is an example of how a list might look like:
