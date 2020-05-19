@@ -830,10 +830,7 @@ Switching between user interface modes.
 
 The way how to use filters is described in the advanced guide [here](#filter).
 
-
-=======
 **List of objects**
-
 
 ![](static/documentation/images/image147.jpg)
 
