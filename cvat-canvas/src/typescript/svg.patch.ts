@@ -248,8 +248,8 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.bot = this.polygon(this.cuboidModel.bot.points);
             this.top = this.polygon(this.cuboidModel.top.points);
             this.right = this.polygon(this.cuboidModel.right.points);
-            this.dorsal = this.polygon(this.cuboidModel.dorsal.points);
             this.left = this.polygon(this.cuboidModel.left.points);
+            this.dorsal = this.polygon(this.cuboidModel.dorsal.points);
             this.face = this.polygon(this.cuboidModel.front.points);
         },
 
