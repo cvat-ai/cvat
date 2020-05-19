@@ -564,7 +564,11 @@ def find_dataset_root(dm_dataset, task_data):
         return None
 
     longest_match = osp.dirname(task_data.frame_info[longest_match]['path'])
-    return longest_match[:-len(osp.dirname(longest_path))] # cut prefix
+    prefix = longest_match[:-len(osp.dirname(longest_path)) or None]
+    if prefix.endswith('/'):
+        prefix = prefix[:-1]
+    return prefix
+
 
 def import_dm_annotations(dm_dataset, task_data):
     shapes = {
