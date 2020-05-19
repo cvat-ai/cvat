@@ -142,7 +142,7 @@ def load_project_as_dataset(url):
 
 class Environment:
     _builtin_plugins = None
-    PROJECT_EXTRACTOR_NAME = 'project'
+    PROJECT_EXTRACTOR_NAME = 'datumaro_project'
 
     def __init__(self, config=None):
         config = Config(config,
@@ -498,7 +498,7 @@ class ProjectDataset(Dataset):
                 if not categories[cat_type] == source_cat:
                     raise NotImplementedError(
                         "Merging different categories is not implemented yet")
-        if own_source is not None and len(own_source) != 0:
+        if own_source is not None and (not categories or len(own_source) != 0):
             categories.update(own_source.categories())
         self._categories = categories
 

@@ -26,7 +26,7 @@
     } = require('./enums');
 
     const User = require('./user');
-    const { AnnotationFormat } = require('./annotation-format.js');
+    const { AnnotationFormats } = require('./annotation-formats.js');
     const { ArgumentError } = require('./exceptions');
     const { Task } = require('./session');
 
@@ -66,18 +66,18 @@
 
         cvat.server.formats.implementation = async () => {
             const result = await serverProxy.server.formats();
-            return result.map((el) => new AnnotationFormat(el));
+            return new AnnotationFormats(result);
         };
 
-        cvat.server.datasetFormats.implementation = async () => {
-            const result = await serverProxy.server.datasetFormats();
+        cvat.server.userAgreements.implementation = async () => {
+            const result = await serverProxy.server.userAgreements();
             return result;
         };
 
         cvat.server.register.implementation = async (username, firstName, lastName,
-            email, password1, password2) => {
+            email, password1, password2, userConfirmations) => {
             await serverProxy.server.register(username, firstName, lastName, email,
-                password1, password2);
+                password1, password2, userConfirmations);
         };
 
         cvat.server.login.implementation = async (username, password) => {
