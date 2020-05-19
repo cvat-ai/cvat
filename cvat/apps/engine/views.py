@@ -640,15 +640,15 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             slogger.glob.info("AWS_BUCKET_NAME environment var does not exist. Please add ENV var with bucket name.")
             return Response(data=msg, status=status.HTTP_400_BAD_REQUEST)
 
-
+        aws_s3_prefix = os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/datasets/'
         try:
-            s3_client.head_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key='datasets/')
+            s3_client.head_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key=aws_s3_prefix)
             # print("exists")
             #add logging
         except ClientError:
             # Not found
             slogger.glob.info("Datasets folder does not exist in the bucket, creating a new one.")
-            s3_client.put_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key=('datasets'+'/'))
+            s3_client.put_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key=(aws_s3_prefix))
 
         # TODO: create dataset and dump locally and push to s3
         # TODO: folder name should have timestamp
@@ -662,21 +662,21 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 dataset_name = db_task.name+"_tfrecords_"+stamp
                 dataset_path_aws = os.path.join("datasets",dataset_name)
                 project.export("cvat_tfrecord", test_dir, save_images=True)
-                s3_client.put_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key=('datasets/'+dataset_name+'/'))
-                s3_client.upload_file(os.path.join(test_dir, 'default.tfrecord'), os.getenv('AWS_BUCKET_NAME'),'datasets/'+dataset_name+'/default.tfrecord')
-                s3_client.upload_file(os.path.join(test_dir, 'label_map.pbtxt'), os.getenv('AWS_BUCKET_NAME'),'datasets/'+dataset_name+'/label_map.pbtxt')
+                s3_client.put_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key=(aws_s3_prefix+dataset_name+'/'))
+                s3_client.upload_file(os.path.join(test_dir, 'default.tfrecord'), os.getenv('AWS_BUCKET_NAME'),aws_s3_prefix+dataset_name+'/default.tfrecord')
+                s3_client.upload_file(os.path.join(test_dir, 'label_map.pbtxt'), os.getenv('AWS_BUCKET_NAME'),aws_s3_prefix+dataset_name+'/label_map.pbtxt')
             else:
                 dataset_name = db_task.name+"_coco_"+stamp
                 dataset_path_aws = os.path.join("datasets",dataset_name)
                 project.export("cvat_coco", test_dir, save_images=True)
-                s3_client.put_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key=('datasets/'+dataset_name+'/annotations/'))
-                s3_client.put_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key=('datasets/'+dataset_name+'/images/'))
-                s3_client.upload_file(os.path.join(test_dir, "annotations/instances_default.json"),os.getenv('AWS_BUCKET_NAME'),"datasets/"+dataset_name+"/annotations/instances_default.json")
+                s3_client.put_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key=(aws_s3_prefix+dataset_name+'/annotations/'))
+                s3_client.put_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key=(aws_s3_prefix+dataset_name+'/images/'))
+                s3_client.upload_file(os.path.join(test_dir, "annotations/instances_default.json"),os.getenv('AWS_BUCKET_NAME'),aws_s3_prefix+dataset_name+"/annotations/instances_default.json")
 
                 for root,dirs,files in os.walk(os.path.join(test_dir, "images")):
                     for file in files:
                         print(os.path.join(root, file))
-                        s3_client.upload_file(os.path.join(test_dir,"images",file),os.getenv('AWS_BUCKET_NAME'),os.path.join("datasets/"+dataset_name+"/images/", file))
+                        s3_client.upload_file(os.path.join(test_dir,"images",file),os.getenv('AWS_BUCKET_NAME'),os.path.join(aws_s3_prefix+dataset_name+"/images/", file))
         
             print(os.listdir(test_dir))
         #execute workflow
@@ -694,7 +694,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             namespace = os.getenv('ONEPANEL_NAMESPACE') # str | 
             params = []
             # params.append(Parameter(name="source", value="https://github.com/onepanelio/Mask_RNN.git"))
-            params.append(Parameter(name="dataset-path", value=dataset_path_aws))
+            params.append(Parameter(name="dataset-path", value=aws_s3_prefix+dataset_name))
             params.append(Parameter(name="bucket-name", value=os.getenv('AWS_BUCKET_NAME')))
             params.append(Parameter(name='task-name', value=db_task.name))
             if 'TFRecord' in form_data['dump_format']:
