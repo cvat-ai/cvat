@@ -800,7 +800,7 @@ Switching between user interface modes.
 **Shapes block** - contains all the tools for creating shapes.
 |Icon                                         |Description   |Links to section  |
 |--                                           |--            |--                |
-|![](static/documentation/images/image167.jpg)|``Rectangle``|[Shape mode](#shape-mode-basics); [Track mode](#track-mode-basics);<br/> [Drawing by 4 points](#annotation-with-rectangle-by-4-points)|
+|![](static/documentation/images/image167.jpg)|``Rectangle``|[Shape mode](#shape-mode-basics); [Track mode](#track-mode-basics);<br/> [Drawing by 4 points](#annotation-with-box-by-4-points)|
 |![](static/documentation/images/image168.jpg)|``Polygon``  |[Annotation with polygons](#annotation-with-polygons)  |
 |![](static/documentation/images/image169.jpg)|``Polyline`` |[Annotation with polylines](#annotation-with-polylines)|
 |![](static/documentation/images/image170.jpg)|``Points``   |[Annotation with points](#annotation-with-points)      |
@@ -812,7 +812,7 @@ Switching between user interface modes.
 |--                                           |--                                                 |--                |
 |![](static/documentation/images/image172.jpg)|``Merge Shapes``(``M``) — starts/stops the merging shapes mode.  |[Track mode (basics)](#track-mode-basics)|
 |![](static/documentation/images/image173.jpg)|``Group Shapes`` (``G``) — starts/stops the grouping shapes mode.|[Shape grouping](#shape-grouping)|
-|![](static/documentation/images/image174.jpg)|``Split`` — splits a track.                                      |[Track mode (advanced)](#track-mode-advanced)|
+|![](static/documentation/images/image174.jpg)|``Split`` — splits a track.                                      |[Track mode (advanced)](#interpolation-mode-advanced)|
 
 ---
 
