@@ -19,6 +19,7 @@ import { getFormatsAsync } from 'actions/formats-actions';
 import { checkPluginsAsync } from 'actions/plugins-actions';
 import { getUsersAsync } from 'actions/users-actions';
 import { getAboutAsync } from 'actions/about-actions';
+import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import {
     resetErrors,
@@ -44,6 +45,8 @@ interface StateToProps {
     aboutFetching: boolean;
     formatsInitialized: boolean;
     formatsFetching: boolean;
+    userAgreementsInitialized: boolean;
+    userAgreementsFetching: boolean;
     installedAutoAnnotation: boolean;
     installedTFSegmentation: boolean;
     installedTFAnnotation: boolean;
@@ -61,6 +64,7 @@ interface DispatchToProps {
     resetErrors: () => void;
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
+    loadUserAgreements: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -70,6 +74,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { users } = state;
     const { about } = state;
     const { shortcuts } = state;
+    const { userAgreements } = state;
 
     return {
         userInitialized: auth.initialized,
@@ -82,6 +87,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         aboutFetching: about.fetching,
         formatsInitialized: formats.initialized,
         formatsFetching: formats.fetching,
+        userAgreementsInitialized: userAgreements.initialized,
+        userAgreementsFetching: userAgreements.fetching,
         installedAutoAnnotation: plugins.list.AUTO_ANNOTATION,
         installedTFSegmentation: plugins.list.TF_SEGMENTATION,
         installedTFAnnotation: plugins.list.TF_ANNOTATION,
@@ -95,6 +102,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         loadFormats: (): void => dispatch(getFormatsAsync()),
         verifyAuthorized: (): void => dispatch(authorizedAsync()),
+        loadUserAgreements: (): void => dispatch(getUserAgreementsAsync()),
         initPlugins: (): void => dispatch(checkPluginsAsync()),
         loadUsers: (): void => dispatch(getUsersAsync()),
         loadAbout: (): void => dispatch(getAboutAsync()),
