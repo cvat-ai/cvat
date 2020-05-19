@@ -154,7 +154,23 @@
                 return response.data;
             }
 
-            async function register(username, firstName, lastName, email, password1, password2) {
+
+            async function userAgreements() {
+                const { backendAPI } = config;
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/restrictions/user-agreements`, {
+                        proxy: config.proxy,
+                    });
+
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function register(username, firstName, lastName, email, password1, password2, confirmations) {
                 let response = null;
                 try {
                     const data = JSON.stringify({
@@ -164,6 +180,7 @@
                         email,
                         password1,
                         password2,
+                        confirmations,
                     });
                     response = await Axios.post(`${config.backendAPI}/auth/register`, data, {
                         proxy: config.proxy,
@@ -657,6 +674,7 @@
                         authorized,
                         register,
                         request: serverRequest,
+                        userAgreements,
                     }),
                     writable: false,
                 },
