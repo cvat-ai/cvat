@@ -640,7 +640,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             slogger.glob.info("AWS_BUCKET_NAME environment var does not exist. Please add ENV var with bucket name.")
             return Response(data=msg, status=status.HTTP_400_BAD_REQUEST)
 
-        aws_s3_prefix = os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/datasets/'
+        aws_s3_prefix = os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/datasets/'
         try:
             s3_client.head_object(Bucket=os.getenv('AWS_BUCKET_NAME'), Key=aws_s3_prefix)
             # print("exists")
@@ -691,7 +691,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         with onepanel.core.api.ApiClient(configuration) as api_client:
             # Create an instance of the API class
             api_instance = onepanel.core.api.WorkflowServiceApi(api_client)
-            namespace = os.getenv('ONEPANEL_NAMESPACE') # str | 
+            namespace = os.getenv('ONEPANEL_RESOURCE_NAMESPACE') # str | 
             params = []
             # params.append(Parameter(name="source", value="https://github.com/onepanelio/Mask_RNN.git"))
             params.append(Parameter(name="dataset-path", value=aws_s3_prefix+dataset_name))

@@ -59,20 +59,20 @@ def create_model(request):
 
         files = request.FILES if storage == "local" else params
         print("uploading files", files)
-        is_custom = False
+        is_custom = "openvino"
         if "pb" in files:
             print("pb is in the file")
             labelmap = files["csv"]
             model = files["pb"]
             weights = None
             interpretation_script = None
-            is_custom=True
+            is_custom="tensorflow"
         elif "h5" in files:
             labelmap = files["csv"]
             model = files["h5"]
             weights = None
             interpretation_script = None
-            is_custom = True
+            is_custom = "maskrcnn"
         else:
 
             model = files["xml"]
@@ -114,20 +114,20 @@ def update_model(request, mid):
         if is_shared and not has_admin_role(request.user):
             raise Exception("Only admin can create shared models")
         files = request.FILES
-        is_custom=False
+        is_custom="openvino"
         if "pb" in files:
             print("pb is in the file")
             labelmap = files.get("csv")
             model = files.get("pb")
             weights = None
             interpretation_script = None
-            is_custom=True
+            is_custom="tensorflow"
         elif "h5" in files:
             labelmap = files.get("csv")
             model = files.get("h5")
             weights = None
             interpretation_script = None
-            is_custom=True
+            is_custom="maskrcnn"
         else:
 
             model = files.get("xml")
@@ -180,8 +180,8 @@ def get_meta_info(request):
             # print(dl_model.framework)
             # print(dl_model.labelmap_file.name)
             if dl_model.labelmap_file and os.path.exists(dl_model.labelmap_file.name):
-                if dl_model.framework == "tensorflow":
-                    print("reading csv file")
+                if dl_model.framework == "tensorflow" or dl_model.framework == "maskrcnn":
+                    # print("reading csv file")
                     with open(dl_model.labelmap_file.name,"r") as f:
                         labels = [label.strip("\n").strip("") for label in f.readlines() if "labels" not in label]
                 else:
@@ -196,6 +196,7 @@ def get_meta_info(request):
                 "updateDate": dl_model.updated_date,
                 "labels": labels,
                 "owner": dl_model.owner.id,
+                "framework":dl_model.framework,
             })
 
         queue = django_rq.get_queue("low")

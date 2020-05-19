@@ -97,7 +97,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
             if labelmap_file:
                 _remove_old_file(dl_model.labelmap_file)
                 dl_model.labelmap_file.save(*_get_file_content(labelmap_file))
-            if not is_custom:
+            if is_custom == "openvino":
                 if interpretation_file:
                     _remove_old_file(dl_model.interpretation_file)
                     dl_model.interpretation_file.save(*_get_file_content(interpretation_file))
@@ -111,8 +111,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
 
             if is_shared != None:
                 dl_model.shared = is_shared
-            if not is_custom:
-                dl_model.framework = "openvino"
+            dl_model.framework = is_custom
 
             dl_model.updated_date = timezone.now()
             dl_model.save()
@@ -139,7 +138,7 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
         return abspath
 
     def save_file_as_tmp(data):
-        print(data.chunks())
+        # print(data.chunks())
         if not data:
             return None
         fd, filename = tempfile.mkstemp()
@@ -153,10 +152,10 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
         dl_model_id = create_empty(owner=owner)
 
     run_tests = bool(model_file or weights_file or labelmap_file or interpretation_file)
-    if is_custom:
+    if is_custom in ["tensorflow","maskrcnn"]:
         run_tests = False
     if storage != "local":
-        if is_custom:
+        if is_custom in ["tensorflow","maskrcnn"]:
             model_file = get_abs_path(model_file)
             labelmap_file = get_abs_path(labelmap_file)
         else:
@@ -166,7 +165,7 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
             interpretation_file = get_abs_path(interpretation_file)
     else:
         print("inside save file as tmp")
-        if is_custom:
+        if is_custom in ["tensorflow", "maskrcnn"]:
             model_file = save_file_as_tmp(model_file)
             labelmap_file = save_file_as_tmp(labelmap_file)
             # weights_file = None

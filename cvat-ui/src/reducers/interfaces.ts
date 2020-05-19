@@ -128,6 +128,7 @@ export interface Model {
     uploadDate: string;
     updateDate: string;
     labels: string[];
+    framework: string;
 }
 
 export enum RQStatus {

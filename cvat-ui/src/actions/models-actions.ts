@@ -154,6 +154,7 @@ export function getModelsAsync(): ThunkAction {
                         uploadDate: model.uploadDate,
                         updateDate: model.updateDate,
                         labels: [...model.labels],
+                        framework: model.framework,
                     });
                 }
             }
@@ -185,6 +186,7 @@ export function getModelsAsync(): ThunkAction {
                         'airplane', 'hair_drier', 'hot_dog', 'remote',
                         'sink', 'dog', 'bird', 'giraffe', 'chair',
                     ],
+                    framework: "tensorflow",
                 });
             }
 
@@ -212,6 +214,7 @@ export function getModelsAsync(): ThunkAction {
                         'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
                         'teddy bear', 'hair drier', 'toothbrush',
                     ],
+                    framework: "maskrcnn",
                 });
             }
         } catch (error) {
@@ -491,11 +494,11 @@ export function startInferenceAsync(
 ): ThunkAction {
     return async (dispatch): Promise<void> => {
         try {
-            if (model.name === PreinstalledModels.RCNN) {
+            if (model.name === PreinstalledModels.RCNN || model.framework === "tensorflow") {
                 await core.server.request(
                     `${baseURL}/tensorflow/annotation/create/task/${taskInstance.id}`,
                 );
-            } else if (model.name === PreinstalledModels.MaskRCNN) {
+            } else if (model.name === PreinstalledModels.MaskRCNN || model.framework === "maskrcnn") {
                 await core.server.request(
                     `${baseURL}/tensorflow/segmentation/create/task/${taskInstance.id}`,
                 );

@@ -100,6 +100,7 @@ def run_tensorflow_annotation(frame_provider, labels_mapping, treshold):
 
     result = {}
     model_path = os.environ.get('TF_ANNOTATION_MODEL_PATH')
+    slogger.glob.info("model found at {}".format(model_path))
     if model_path is None:
         raise OSError('Model path env not found in the system.')
     job = rq.get_current_job()
@@ -193,6 +194,7 @@ def create_thread(tid, labels_mapping, user):
         # Run auto annotation by tf
         result = None
         slogger.glob.info("tf annotation with tensorflow framework for task {}".format(tid))
+        print("inside create thread")
         result = run_tensorflow_annotation(image_list, labels_mapping, TRESHOLD)
 
         if result is None:
@@ -266,12 +268,12 @@ def create(request, tid):
             "book": 84, "clock": 85, "vase": 86, "scissors": 87, "teddy_bear": 88, "hair_drier": 89,
             "toothbrush": 90
             }
-
+        print("db labesl",db_labels.items())
         labels_mapping = {}
         for key, labels in db_labels.items():
             if labels in tf_annotation_labels.keys():
                 labels_mapping[tf_annotation_labels[labels]] = key
-
+        print("labels_mapping", labels_mapping)
         if not len(labels_mapping.values()):
             raise Exception('No labels found for tf annotation')
 
