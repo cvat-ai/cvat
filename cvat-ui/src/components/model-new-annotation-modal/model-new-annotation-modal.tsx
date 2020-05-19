@@ -249,7 +249,7 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
             notification.open({
                 message: 'Are you sure?',
                 description: `'Number of annotations is less than 100. 
-                    We recommend you annotate at least few hundreds to get good results.`,
+                    We recommend you annotate at least a few hundred to get good results.`,
                 duration: 0,
                 btn,
                 key,

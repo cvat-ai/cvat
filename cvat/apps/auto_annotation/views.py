@@ -175,6 +175,7 @@ def get_meta_info(request):
         for dl_model in dl_model_list:
             labels = []
             print(dl_model)
+            print(dl_model.id)
             print(dl_model.primary)
             print(dl_model.framework)
             print(dl_model.labelmap_file.name)
