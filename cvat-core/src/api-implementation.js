@@ -69,10 +69,15 @@
             return new AnnotationFormats(result);
         };
 
+        cvat.server.userAgreements.implementation = async () => {
+            const result = await serverProxy.server.userAgreements();
+            return result;
+        };
+
         cvat.server.register.implementation = async (username, firstName, lastName,
-            email, password1, password2) => {
+            email, password1, password2, userConfirmations) => {
             await serverProxy.server.register(username, firstName, lastName, email,
-                password1, password2);
+                password1, password2, userConfirmations);
         };
 
         cvat.server.login.implementation = async (username, password) => {

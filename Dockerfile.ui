@@ -4,6 +4,7 @@ ARG http_proxy
 ARG https_proxy
 ARG no_proxy
 ARG socks_proxy
+ARG PUBLIC_INSTANCE
 
 ENV TERM=xterm \
     http_proxy=${http_proxy}   \

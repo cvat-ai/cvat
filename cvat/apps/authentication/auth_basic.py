@@ -10,3 +10,6 @@ def create_user(sender, instance, created, **kwargs):
     if instance.is_superuser and instance.is_staff:
         db_group = Group.objects.get(name=AUTH_ROLE.ADMIN)
         instance.groups.add(db_group)
+    for group_name in settings.DJANGO_AUTH_DEFAULT_GROUPS:
+        db_group = Group.objects.get(name=getattr(AUTH_ROLE, group_name))
+        instance.groups.add(db_group)
