@@ -8,10 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - cvat-ui: added cookie policy drawer for login page (<https://github.com/opencv/cvat/pull/1511>)
 - Added `datumaro_project` export format (https://github.com/opencv/cvat/pull/1352)
+- Ability to configure user agreements for the user registration form (https://github.com/opencv/cvat/pull/1464)
 
 ### Changed
 - Downloaded file name in annotations export became more informative (https://github.com/opencv/cvat/pull/1352)
-- Added auto trimming for trailing whitespaces style enforsement (https://github.com/opencv/cvat/pull/1352)
+- Added auto trimming for trailing whitespaces style enforcement (https://github.com/opencv/cvat/pull/1352)
 - REST API: updated `GET /task/<id>/annotations`: parameters are `format`, `filename` (now optional), `action` (optional) (https://github.com/opencv/cvat/pull/1352)
 - REST API: removed `dataset/formats`, changed format of `annotation/formats` (https://github.com/opencv/cvat/pull/1352)
 - Exported annotations are stored for N hours instead of indefinitely (https://github.com/opencv/cvat/pull/1352)
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Formats: most of formats renamed, no extension in title (https://github.com/opencv/cvat/pull/1352)
 - Formats: definitions are changed, are not stored in DB anymore (https://github.com/opencv/cvat/pull/1352)
 - cvat-core: session.annotations.put() now returns identificators of added objects (https://github.com/opencv/cvat/pull/1493)
+- Images without annotations now also included in dataset/annotations export (https://github.com/opencv/cvat/issues/525)
 
 ### Deprecated
 -
@@ -40,6 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Task/Job buttons has no "Open in new tab" option (<https://github.com/opencv/cvat/pull/1419>)
 - Delete point context menu option has no shortcut hint (<https://github.com/opencv/cvat/pull/1416>)
 - Fixed issue with unnecessary tag activation in cvat-canvas (<https://github.com/opencv/cvat/issues/1540>)
+- Fixed an issue with large number of instances in instance mask (https://github.com/opencv/cvat/issues/1539)
+- Fixed full COCO dataset import error with conflicting labels in keypoints and detection (https://github.com/opencv/cvat/pull/1548)
+- Fixed COCO keypoints skeleton parsing and saving (https://github.com/opencv/cvat/issues/1539)
 
 ### Security
 -
