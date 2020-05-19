@@ -496,7 +496,12 @@ export function startInferenceAsync(
         try {
             if (model.name === PreinstalledModels.RCNN || model.framework === "tensorflow") {
                 await core.server.request(
-                    `${baseURL}/tensorflow/annotation/create/task/${taskInstance.id}`,
+                    `${baseURL}/tensorflow/annotation/create/task/${taskInstance.id}/${model.id}`,{
+                        method: 'POST',
+                        data: JSON.stringify({
+                            labels: mapping,
+                        })
+                    }
                 );
             } else if (model.name === PreinstalledModels.MaskRCNN || model.framework === "maskrcnn") {
                 await core.server.request(
