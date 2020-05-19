@@ -860,7 +860,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             });
             this.on('mouseover', () => {
                 edges.forEach((edge: SVG.Element) => {
-                    this.strokeOffset = 2.5;
+                    this.strokeOffset = this.node.classList.contains('cvat_canvas_shape_activated') ? 2.5 : 1.75;
                     edge.attr('stroke-width', width * this.strokeOffset);
                 })
             }).on('mouseout', () => {
