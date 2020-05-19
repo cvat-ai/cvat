@@ -823,7 +823,7 @@ Change the color scheme of annotation:
 |--                                           |--                                                                    |
 |![](static/documentation/images/image148.jpg)|``Cursor`` (``Esc``)- a basic annotation pedacting tool.              |
 |![](static/documentation/images/image149.jpg)|``Move the image``- a tool for moving around the image without<br/> the possibility of editing.|
-|![](static/documentation/images/image150.jpg)|``Rotate``- two buttons to rotate the current frame<br/> a clockwise (``Ctrl+R``) and anticlockwise (``Ctrl+Shift+R``).<br/> You can enable ``Rotate all images`` in the settings to rotate all the images in the job
+|![](static/documentation/images/image102.jpg)|``Rotate``- two buttons to rotate the current frame<br/> a clockwise (``Ctrl+R``) and anticlockwise (``Ctrl+Shift+R``).<br/> You can enable ``Rotate all images`` in the settings to rotate all the images in the job
 
 **Zoom block** - contains tools for image zoom.
 |Icon                                         |Description                                                           |
@@ -838,8 +838,8 @@ Change the color scheme of annotation:
 |![](static/documentation/images/image168.jpg)|``Polygon``  |[Annotation with polygons](#annotation-with-polygons)  |
 |![](static/documentation/images/image169.jpg)|``Polyline`` |[Annotation with polylines](#annotation-with-polylines)|
 |![](static/documentation/images/image170.jpg)|``Points``   |[Annotation with points](#annotation-with-points)      |
-|![](static/documentation/images/image176.jpg)|``Cuboid``   |[Annotation with cuboids](#annotation-with-cuboids)      |
-|![](static/documentation/images/image171.jpg)|``Tag``      |                                                       |
+|![](static/documentation/images/image176.jpg)|``Cuboid``   |[Annotation with cuboids](#annotation-with-cuboids)    |
+|![](static/documentation/images/image171.jpg)|``Tag``      |[Annotation with tag](#annotation-with-tag)            |
 
 **Edit block** - contains tools for editing tracks and shapes.
 |Icon                                         |Description                                        |Links to section  |
