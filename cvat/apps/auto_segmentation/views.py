@@ -11,8 +11,12 @@ from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.auto_annotation.models import AnnotationModel
+from cvat.apps.engine.frame_provider import FrameProvider
+
 from cvat.apps.engine.annotation import put_task_data
 from tensorflow.python.client import device_lib
+from cvat.settings.base import DATA_ROOT
+
 from tensorflow.python.client import device_lib
 import django_rq
 import fnmatch
@@ -72,9 +76,12 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold, model
 
 	# Directory to save logs and trained model
 	MODEL_DIR = os.path.join(ROOT_DIR, "logs")
-
+	slogger.glob.info("running segmentation infernece using {}".format(model_path))
+	if "mask" in model_path.lower() and not model_path.endswith("h5"):
+		model_path = os.path.join(model_path,"mask_rcnn_coco.h5")
 	# Local path to trained weights file
 	# COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
+	slogger.glob.info("final sementation model path {}".format(model_path))
 	COCO_MODEL_PATH = model_path
 	if COCO_MODEL_PATH is None:
 		raise OSError('Model path env not found in the system.')
@@ -160,11 +167,11 @@ def make_image_list(path_to_data):
 		return int(os.path.splitext(os.path.basename(item))[0])
 
 	image_list = []
-	for root, _, filenames in os.walk(path_to_data):
-		for filename in fnmatch.filter(filenames, '*.jpg'):
-				image_list.append(os.path.join(root, filename))
+	for root, dirnames, filenames in os.walk(path_to_data):
+		for filename in fnmatch.filter(filenames, '*.png') + fnmatch.filter(filenames, '*.jpg') + fnmatch.filter(filenames, '*.jpeg'):
+			image_list.append(os.path.join(root, filename))
 
-	image_list.sort(key=get_image_key)
+	image_list.sort()
 	return image_list
 
 
@@ -203,8 +210,11 @@ def create_thread(tid, labels_mapping, user, model_path, num_c):
 		# Get job indexes and segment length
 		db_task = TaskModel.objects.get(pk=tid)
 		# Get image list
-		image_list = make_image_list(db_task.get_data_dirname())
-
+		# image_list = make_image_list(db_task.get_data_dirname())
+		# image_list = FrameProvider(db_task.data)
+		slogger.glob.info("getting data from DATA_ROOT: {}".format(DATA_ROOT))
+		path_to_task_data = os.path.join(DATA_ROOT,"data",str(tid),'raw')
+		image_list = make_image_list(path_to_task_data)
 		# Run auto segmentation by tf
 		result = None
 		slogger.glob.info("auto segmentation with tensorflow framework for task {}".format(tid))
@@ -272,11 +282,15 @@ def create(request, tid, mid):
 
 		classes_file_path = dl_model.labelmap_file.name
 		seg_model_file_path = dl_model.model_file.name
-
+		slogger.glob.info("reading segmentation label file {}".format(classes_file_path))
 		auto_segmentation_labels = {"BG":0}
 		with open(classes_file_path, "r") as f:
 			data = f.readlines()
+			slogger.glob.info("class file data {}".format(data))
 			for line in data[1:]:
+				if "," not in line:
+					continue
+				slogger.glob.info("classes line {}".format(line))
 				label, num = line.strip().split(',')
 				auto_segmentation_labels[label] = int(num.strip())
 		slogger.glob.info("auto seg labels {}".format(auto_segmentation_labels))
@@ -329,6 +343,66 @@ def create(request, tid, mid):
 
 	return HttpResponse()
 
+
+@login_required
+@permission_required(perm=['engine.task.change'],
+	fn=objectgetter(TaskModel, 'tid'), raise_exception=True)
+def createold(request, tid):
+	slogger.glob.info('auto segmentation create request for task {}'.format(tid))
+	try:
+		db_task = TaskModel.objects.get(pk=tid)
+		queue = django_rq.get_queue('low')
+		job = queue.fetch_job('auto_segmentation.create/{}'.format(tid))
+		if job is not None and (job.is_started or job.is_queued):
+			raise Exception("The process is already running")
+
+		db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
+		db_labels = {db_label.id:db_label.name for db_label in db_labels}
+
+		# COCO Labels
+		auto_segmentation_labels = { "BG": 0,
+			"person": 1, "bicycle": 2, "car": 3, "motorcycle": 4, "airplane": 5,
+			"bus": 6, "train": 7, "truck": 8, "boat": 9, "traffic_light": 10,
+			"fire_hydrant": 11, "stop_sign": 12, "parking_meter": 13, "bench": 14,
+			"bird": 15, "cat": 16, "dog": 17, "horse": 18, "sheep": 19, "cow": 20,
+			"elephant": 21, "bear": 22, "zebra": 23, "giraffe": 24, "backpack": 25,
+			"umbrella": 26, "handbag": 27, "tie": 28, "suitcase": 29, "frisbee": 30,
+			"skis": 31, "snowboard": 32, "sports_ball": 33, "kite": 34, "baseball_bat": 35,
+			"baseball_glove": 36, "skateboard": 37, "surfboard": 38, "tennis_racket": 39,
+			"bottle": 40, "wine_glass": 41, "cup": 42, "fork": 43, "knife": 44, "spoon": 45,
+			"bowl": 46, "banana": 47, "apple": 48, "sandwich": 49, "orange": 50, "broccoli": 51,
+			"carrot": 52, "hot_dog": 53, "pizza": 54, "donut": 55, "cake": 56, "chair": 57,
+			"couch": 58, "potted_plant": 59, "bed": 60, "dining_table": 61, "toilet": 62,
+			"tv": 63, "laptop": 64, "mouse": 65, "remote": 66, "keyboard": 67, "cell_phone": 68,
+			"microwave": 69, "oven": 70, "toaster": 71, "sink": 72, "refrigerator": 73,
+			"book": 74, "clock": 75, "vase": 76, "scissors": 77, "teddy_bear": 78, "hair_drier": 79,
+			"toothbrush": 80
+			}
+
+		labels_mapping = {}
+		for key, labels in db_labels.items():
+			if labels in auto_segmentation_labels.keys():
+				labels_mapping[auto_segmentation_labels[labels]] = key
+
+		if not len(labels_mapping.values()):
+			raise Exception('No labels found for auto segmentation')
+
+		# Run auto segmentation job
+		queue.enqueue_call(func=create_thread,
+			args=(tid, labels_mapping, request.user, os.getenv('AUTO_SEGMENTATION_PATH'), len(auto_segmentation_labels.keys())),
+			job_id='auto_segmentation.create/{}'.format(tid),
+			timeout=604800)     # 7 days
+
+		slogger.task[tid].info('tensorflow segmentation job enqueued with labels {}'.format(labels_mapping))
+
+	except Exception as ex:
+		try:
+			slogger.task[tid].exception("exception was occured during tensorflow segmentation request", exc_info=True)
+		except Exception:
+			pass
+		return HttpResponseBadRequest(str(ex))
+
+	return HttpResponse()
 
 
 
