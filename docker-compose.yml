@@ -106,6 +106,8 @@ services:
     volumes:
       - /tmp:/tmp
       - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8070:8070"
 
 volumes:
   cvat_db:
