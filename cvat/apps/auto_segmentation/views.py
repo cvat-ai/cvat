@@ -157,6 +157,7 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold, model
 							[image_num, segmentation])
 			image_num += 1
 		slogger.glob.info("result {}".format(result))
+		slogger.glob.info("l;abel mapping {}".format(labels_mapping))
 
 
 	return result

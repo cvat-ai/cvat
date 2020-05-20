@@ -43,14 +43,14 @@ def load_image_into_numpy(image):
 
 def run_thread(task_id, model_path, label_mapping, threshold, split,
                start_of_image_list, end_of_image_list, split_size, is_cpu_instance,image_list):
-    cmd = 'python3 run_inference.py "{}::{}::{}::{}::{}::{}::{}::{}::{}::{}"' \
+    cmd = 'python3 /home/rush/cvat/cvat/apps/tf_annotation/run_inference.py "{}::{}::{}::{}::{}::{}::{}::{}::{}::{}"' \
         .format(task_id, model_path, label_mapping, threshold, split,
                 start_of_image_list, end_of_image_list, split_size, is_cpu_instance, image_list)
     os.system(cmd)
 
 
 def run_progress_thread(task_id, num_gpus):
-    cmd = 'python3 progress_indicator_multi_gpu.py "{}::{}"' \
+    cmd = 'python3 /home/rush/cvat/cvat/apps/tf_annotation/progress_indicator_multi_gpu.py "{}::{}"' \
         .format(task_id, num_gpus)
     os.system(cmd)
 
@@ -204,6 +204,8 @@ def run_tensorflow_annotation(tid, image_list_length, labels_mapping, treshold, 
         for index, file_removed in progress_files_gone.items():
             if file_removed == False:
                 continue_reading_progress = True
+    slogger.glob.info("resulot: {}".format(result))
+    slogger.glob.info("label mapping {}".format(labels_mapping))
     return result
 
 
