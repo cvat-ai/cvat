@@ -38,7 +38,7 @@ Canvas itself handles:
     }
 
     enum CuboidDrawingMethod {
-        CLASSIC = 'Classic cuboid draw method',
+        CLASSIC = 'From rectangle',
         CORNER_POINTS = 'By 4 points',
     }
 

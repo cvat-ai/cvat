@@ -47,7 +47,7 @@ export enum RectDrawingMethod {
 }
 
 export enum CuboidDrawingMethod {
-    CLASSIC = 'Classic cuboid draw method',
+    CLASSIC = 'From rectangle',
     CORNER_POINTS = 'By 4 points',
 }
 

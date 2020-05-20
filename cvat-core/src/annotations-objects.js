@@ -1402,7 +1402,7 @@
         }
     }
 
-    class CuboidShape extends PolyShape {
+    class CuboidShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.CUBOID;
