@@ -10,11 +10,11 @@ import numpy as np
 import os
 import os.path as osp
 import platform
-import subprocess
 
 from openvino.inference_engine import IENetwork, IEPlugin
 
 from datumaro.components.launcher import Launcher
+from datumaro.util.os_util import check_instruction_set
 
 
 class InterpreterScript:
@@ -46,27 +46,16 @@ class OpenVinoLauncher(Launcher):
     _IE_PLUGINS_PATH = os.getenv("IE_PLUGINS_PATH", _DEFAULT_IE_PLUGINS_PATH)
 
     @staticmethod
-    def _check_instruction_set(instruction):
-        return instruction == str.strip(
-            # Let's ignore a warning from bandit about using shell=True.
-            # In this case it isn't a security issue and we use some
-            # shell features like pipes.
-            subprocess.check_output(
-                'lscpu | grep -o "{}" | head -1'.format(instruction),
-                shell=True).decode('utf-8') # nosec
-        )
-
-    @staticmethod
     def make_plugin(device='cpu', plugins_path=_IE_PLUGINS_PATH):
         if plugins_path is None or not osp.isdir(plugins_path):
             raise Exception('Inference engine plugins directory "%s" not found' % \
                 (plugins_path))
 
         plugin = IEPlugin(device='CPU', plugin_dirs=[plugins_path])
-        if (OpenVinoLauncher._check_instruction_set('avx2')):
+        if (check_instruction_set('avx2')):
             plugin.add_cpu_extension(os.path.join(plugins_path,
                 'libcpu_extension_avx2.so'))
-        elif (OpenVinoLauncher._check_instruction_set('sse4')):
+        elif (check_instruction_set('sse4')):
             plugin.add_cpu_extension(os.path.join(plugins_path,
                 'libcpu_extension_sse4.so'))
         elif platform.system() == 'Darwin':
