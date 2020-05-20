@@ -707,6 +707,7 @@ export class DrawHandlerImpl implements DrawHandler {
                     this.drawCuboidBy4Points();
                 } else {
                     this.drawCuboid();
+                    this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
                 }
             }
             this.setupDrawEvents();

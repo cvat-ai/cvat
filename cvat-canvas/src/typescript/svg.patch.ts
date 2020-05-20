@@ -631,6 +631,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
                 this.cuboidModel.dr.points = [topPoint, botPoint];
                 this.updateViewAndVM();
+                this.fire(new CustomEvent('resizing', event));
             }).on('dragend', (event: CustomEvent) => {
                 this.fire(new CustomEvent('resizedone', event));
             });
@@ -658,6 +659,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
                 this.cuboidModel.dl.points = [topPoint, botPoint];
                 this.updateViewAndVM(true);
+                this.fire(new CustomEvent('resizing', event));
             }).on('dragend', (event: CustomEvent) => {
                 this.fire(new CustomEvent('resizedone', event));
             });;
