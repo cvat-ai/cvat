@@ -43,14 +43,14 @@ def load_image_into_numpy(image):
 
 def run_thread(task_id, model_path, label_mapping, threshold, split,
                start_of_image_list, end_of_image_list, split_size, is_cpu_instance):
-    cmd = 'python /home/onepanel/cvat/apps/tf_annotation/run_inference.py "{}::{}::{}::{}::{}::{}::{}::{}::{}"' \
+    cmd = 'python3 /home/rush/cvat/cvat/apps/tf_annotation/run_inference.py "{}::{}::{}::{}::{}::{}::{}::{}::{}"' \
         .format(task_id, model_path, label_mapping, threshold, split,
                 start_of_image_list, end_of_image_list, split_size, is_cpu_instance)
     os.system(cmd)
 
 
 def run_progress_thread(task_id, num_gpus):
-    cmd = 'python /home/onepanel/cvat/apps/tf_annotation/progress_indicator_multi_gpu.py "{}::{}"' \
+    cmd = 'python3 /home/rush/cvat/cvat/apps/tf_annotation/progress_indicator_multi_gpu.py "{}::{}"' \
         .format(task_id, num_gpus)
     os.system(cmd)
 
@@ -65,7 +65,7 @@ def run_tensorflow_annotation(tid, image_list_length, labels_mapping, treshold, 
     print("final", model_path)
     if not os.path.isfile(model_path):
         raise OSError('TF Annotation Model path does not point to a file.')
-    source_task_path = os.path.join(DATA_ROOT, str(tid))
+    source_task_path = os.path.join(DATA_ROOT,"data", str(tid))
     job = rq.get_current_job()
     threads = []
     is_cpu_instance = 'no'
