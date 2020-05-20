@@ -42,10 +42,10 @@ def load_image_into_numpy(image):
 
 
 def run_thread(task_id, model_path, label_mapping, threshold, split,
-               start_of_image_list, end_of_image_list, split_size, is_cpu_instance):
-    cmd = 'python3 /home/rush/cvat/cvat/apps/tf_annotation/run_inference.py "{}::{}::{}::{}::{}::{}::{}::{}::{}"' \
+               start_of_image_list, end_of_image_list, split_size, is_cpu_instance,image_list):
+    cmd = 'python3 /home/rush/cvat/cvat/apps/tf_annotation/run_inference.py "{}::{}::{}::{}::{}::{}::{}::{}::{}::{}"' \
         .format(task_id, model_path, label_mapping, threshold, split,
-                start_of_image_list, end_of_image_list, split_size, is_cpu_instance)
+                start_of_image_list, end_of_image_list, split_size, is_cpu_instance, image_list)
     os.system(cmd)
 
 
@@ -59,16 +59,22 @@ def run_tensorflow_annotation(tid, image_list_length, labels_mapping, treshold, 
     local_device_protos = device_lib.list_local_devices()
     num_gpus = len([x.name for x in local_device_protos if x.device_type == 'GPU'])
     print("model path",model_path)
-    if model_path != "" and not model_path.endswith("pb"):
+    if "frozen" in model_path:
         print("inside")
         model_path += ".pb"
     print("final", model_path)
     if not os.path.isfile(model_path):
         raise OSError('TF Annotation Model path does not point to a file.')
+    # if not model_path.endswith("pb"):
+    #     model_path += ""
     source_task_path = os.path.join(DATA_ROOT,"data", str(tid))
     job = rq.get_current_job()
     threads = []
     is_cpu_instance = 'no'
+    db_task = TaskModel.objects.get(pk=tid)
+        # Get image list
+    image_list = FrameProvider(db_task.data)
+    slogger.glob.info("images list run {}".format(image_list))
     if num_gpus == 0:
         # todo check if this supports multi cpus
         split_size = image_list_length
@@ -80,7 +86,7 @@ def run_tensorflow_annotation(tid, image_list_length, labels_mapping, treshold, 
     if num_gpus == 0:
         end = -1
         t = threading.Thread(target=run_thread, args=(tid, model_path, labels_mapping, treshold, 0,
-                                                      start, end, split_size, is_cpu_instance))
+                                                      start, end, split_size, is_cpu_instance, image_list))
         t.start()
         threads.append(t)
     else:
@@ -88,10 +94,10 @@ def run_tensorflow_annotation(tid, image_list_length, labels_mapping, treshold, 
             if i == num_gpus - 1:
                 end = -1
                 t = threading.Thread(target=run_thread, args=(tid, model_path, labels_mapping, treshold, i,
-                                                              start, end, split_size, is_cpu_instance))
+                                                              start, end, split_size, is_cpu_instance, image_list))
             else:
                 t = threading.Thread(target=run_thread, args=(tid, model_path, labels_mapping, treshold, i,
-                                                              start, end, split_size, is_cpu_instance))
+                                                              start, end, split_size, is_cpu_instance,image_list))
             start += split_size
             end += split_size
             t.start()
@@ -116,7 +122,7 @@ def run_tensorflow_annotation(tid, image_list_length, labels_mapping, treshold, 
         output_file_path = os.path.join(source_task_path, output_filename)
         while not os.path.isfile(output_file_path):
             time.sleep(3)
-            slogger.glob.info("run_tensorflow_annotation, waiting for file {}".format(output_file_path))
+            # slogger.glob.info("run_tensorflow_annotation, waiting for file {}".format(output_file_path))
         data = ast.literal_eval(open(output_file_path, "r").read())
         for key, val in data.items():
             if key in result:
@@ -130,7 +136,7 @@ def run_tensorflow_annotation(tid, image_list_length, labels_mapping, treshold, 
             output_file_path = os.path.join(source_task_path, output_filename)
             while not os.path.isfile(output_file_path):
                 time.sleep(3)
-                slogger.glob.info("run_tensorflow_annotation, waiting for file {}".format(output_file_path))
+                # slogger.glob.info("run_tensorflow_annotation, waiting for file {}".format(output_file_path))
             data = ast.literal_eval(open(output_file_path, "r").read())
             for key, val in data.items():
                 if key in result:

@@ -20,7 +20,7 @@ def track_progress(task_id_tf, num_gpus):
             progress_file_path = os.path.join(source_task_path, progress_filename)
             if not os.path.isfile(progress_file_path):
                 wait_for_progress_files = True
-                print("run_tensorflow_annotation, waiting for file {}".format(progress_file_path))
+                # print("run_tensorflow_annotation, waiting for file {}".format(progress_file_path))
                 continue
             else:
                 progress_indicators = update_progress_indicators(progress_file_path, progress_indicators, i)
@@ -30,7 +30,7 @@ def track_progress(task_id_tf, num_gpus):
                 progress_file_path = os.path.join(source_task_path, progress_filename)
                 if not os.path.isfile(progress_file_path):
                     wait_for_progress_files = True
-                    print("run_tensorflow_annotation, waiting for file {}".format(progress_file_path))
+                    # print("run_tensorflow_annotation, waiting for file {}".format(progress_file_path))
                     continue
                 else:
                     progress_indicators = update_progress_indicators(progress_file_path, progress_indicators, i)

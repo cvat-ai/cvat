@@ -6,6 +6,9 @@ import threading
 import numpy as np
 import json
 import ast
+# from cvat.apps.engine.models import Task as TaskModel
+# from cvat.apps.engine.frame_provider import FrameProvider
+
 import fnmatch
 import django_rq
 from cvat.settings.base import DATA_ROOT
@@ -17,17 +20,21 @@ def load_image_into_numpy(image):
 
 
 def run_tf_model(task_id_tf, model_path_tf, label_mapping_tf, threshold_tf,
-                 split_tf, start_of_image_list_tf, end_of_image_list_tf, split_size):
+                 split_tf, start_of_image_list_tf, end_of_image_list_tf, split_size, images_list):
     def _normalize_box(box, w, h):
         xmin = int(box[1] * w)
         ymin = int(box[0] * h)
         xmax = int(box[3] * w)
         ymax = int(box[2] * h)
         return xmin, ymin, xmax, ymax
-
-    source_task_path = os.path.join(DATA_ROOT, str(task_id_tf))
-    path_to_task_data = os.path.join(DATA_ROOT,task_id_tf,'data')
+    print("running run_infrence")
+    print("image list", images_list)
+    source_task_path = os.path.join(DATA_ROOT,"data", str(task_id_tf))
+    path_to_task_data = os.path.join(DATA_ROOT,"data",task_id_tf,'raw')
     image_list_all = make_image_list(path_to_task_data)
+    # db_task = TaskModel.objects.get(pk=task_id_tf)
+        # Get image list
+    # image_list_all = images_list
     start_of_image_list_tf = int(start_of_image_list_tf)
     end_of_image_list_tf = int(end_of_image_list_tf)
     detection_graph = tf.Graph()
@@ -111,10 +118,10 @@ def make_image_list(path_to_data):
 
     image_list = []
     for root, dirnames, filenames in os.walk(path_to_data):
-        for filename in fnmatch.filter(filenames, '*.jpg'):
-                image_list.append(os.path.join(root, filename))
+        for filename in fnmatch.filter(filenames, '*.png') + fnmatch.filter(filenames, '*.jpg') + fnmatch.filter(filenames, '*.jpeg'):
+            image_list.append(os.path.join(root, filename))
 
-    image_list.sort(key=get_image_key)
+    image_list.sort()
     return image_list
 
 
@@ -130,7 +137,8 @@ if __name__ == "__main__":
     end_of_image_list = data[6]
     split_size = data[7]
     is_cpu_workspace = data[8]
+    images_list = data[9]
     if is_cpu_workspace == 'no':
         os.environ['CUDA_VISIBLE_DEVICES'] = str(split)
     run_tf_model(task_id, model_path, label_mapping, threshold, split,
-                 start_of_image_list, end_of_image_list, split_size)
+                 start_of_image_list, end_of_image_list, split_size, images_list)
