@@ -102,6 +102,7 @@ class YoloConverter(Converter, CliPlugin):
                     yolo_annotation += '%s %s\n' % (bbox.label, yolo_bb)
 
                 annotation_path = osp.join(subset_dir, '%s.txt' % item.id)
+                os.makedirs(osp.dirname(annotation_path), exist_ok=True)
                 with open(annotation_path, 'w') as f:
                     f.write(yolo_annotation)
 

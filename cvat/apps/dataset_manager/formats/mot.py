@@ -7,8 +7,7 @@ from tempfile import TemporaryDirectory
 from pyunpack import Archive
 
 import datumaro.components.extractor as datumaro
-from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
-    match_dm_item)
+from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.project import Dataset
 
@@ -37,8 +36,7 @@ def _import(src_file, task_data):
         label_cat = dataset.categories()[datumaro.AnnotationType.label]
 
         for item in dataset:
-            item = item.wrap(id=int(item.id) - 1) # NOTE: MOT frames start from 1
-            frame_id = match_dm_item(item, task_data)
+            frame_id = int(item.id) - 1 # NOTE: MOT frames start from 1
 
             for ann in item.annotations:
                 if ann.type != datumaro.AnnotationType.bbox:

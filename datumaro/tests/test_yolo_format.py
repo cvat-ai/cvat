@@ -131,13 +131,16 @@ class YoloFormatTest(TestCase):
             def categories(self):
                 return { AnnotationType.label: LabelCategories() }
 
-        with TestDir() as test_dir:
-            source_dataset = TestExtractor()
+        for save_images in {True, False}:
+            with self.subTest(save_images=save_images):
+                with TestDir() as test_dir:
+                    source_dataset = TestExtractor()
 
-            YoloConverter(save_images=True)(source_dataset, test_dir)
-            parsed_dataset = YoloImporter()(test_dir).make_dataset()
+                    YoloConverter(save_images=save_images)(
+                        source_dataset, test_dir)
+                    parsed_dataset = YoloImporter()(test_dir).make_dataset()
 
-            compare_datasets(self, source_dataset, parsed_dataset)
+                    compare_datasets(self, source_dataset, parsed_dataset)
 
 
 DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__), 'assets', 'yolo_dataset')
