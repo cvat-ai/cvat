@@ -44,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue with large number of instances in instance mask (https://github.com/opencv/cvat/issues/1539)
 - Fixed full COCO dataset import error with conflicting labels in keypoints and detection (https://github.com/opencv/cvat/pull/1548)
 - Fixed COCO keypoints skeleton parsing and saving (https://github.com/opencv/cvat/issues/1539)
+- Properly implemented filename matching when importing annotations to a task with relative paths to images (https://github.com/opencv/cvat/pull/1463)
+- Implemented exporting of relative image paths in annotations (https://github.com/opencv/cvat/pull/1463)
 
 ### Security
 -
