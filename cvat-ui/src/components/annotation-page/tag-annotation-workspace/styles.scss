@@ -1,0 +1,37 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base.scss';
+
+.tag-annotation-workspace.ant-layout {
+    height: 100%;
+}
+
+.tag-annotation-sidebar {
+    background: $background-color-2;
+    padding: 5px;
+
+    > div > .ant-row-flex > .ant-col > .ant-tag {
+        margin: 4px;
+    }
+}
+
+.tag-annotation-sidebar-label-select {
+    padding-top: 40px;
+    padding-bottom: 15px;
+
+    > .ant-col > .ant-select {
+        padding-left: 5px;
+        width: 230px;
+    }
+}
+
+.tag-annotation-sidebar-shortcut-help {
+    padding-top: 15px;
+    text-align: center;
+}
+
+.tag-annotation-sidebar-buttons {
+    padding-bottom: 15px;
+}
