@@ -8,7 +8,12 @@ import { connect } from 'react-redux';
 
 import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { ActiveControl, CombinedState, ColorBy } from 'reducers/interfaces';
+import {
+    ActiveControl,
+    CombinedState,
+    ColorBy,
+    ShapeType,
+} from 'reducers/interfaces';
 import {
     collapseObjectItems,
     changeLabelColorAsync,
@@ -234,6 +239,29 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const search = `frame=${frameNumber}&type=${objectState.objectType}&serverID=${objectState.serverID}`;
         const url = `${origin}${pathname}?${search}`;
         copy(url);
+    };
+
+    private switchOrientation = (): void => {
+        const { objectState, updateState } = this.props;
+
+        const reducedPoints = objectState.points.reduce(
+            (acc: number[][], _: number, index: number, array: number[]): number[][] => {
+                if (index % 2) {
+                    acc.push([array[index - 1], array[index]]);
+                }
+
+                return acc;
+            }, [],
+        );
+
+        if (objectState.shapeType === ShapeType.POLYGON) {
+            objectState.points = reducedPoints.slice(0, 1)
+                .concat(reducedPoints.reverse().slice(0, -1)).flat();
+            updateState(objectState);
+        } else if (objectState.shapeType === ShapeType.POLYLINE) {
+            objectState.points = reducedPoints.reverse().flat();
+            updateState(objectState);
+        }
     };
 
     private toBackground = (): void => {
@@ -489,6 +517,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 copy={this.copy}
                 propagate={this.propagate}
                 createURL={this.createURL}
+                switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}
                 toForeground={this.toForeground}
                 setOccluded={this.setOccluded}

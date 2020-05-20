@@ -37,6 +37,7 @@ import { clamp } from 'utils/math';
 function ItemMenu(
     serverID: number | undefined,
     locked: boolean,
+    shapeType: ShapeType,
     objectType: ObjectType,
     copyShortcut: string,
     pasteShortcut: string,
@@ -48,6 +49,7 @@ function ItemMenu(
     remove: (() => void),
     propagate: (() => void),
     createURL: (() => void),
+    switchOrientation: (() => void),
     toBackground: (() => void),
     toForeground: (() => void),
 ): JSX.Element {
@@ -72,6 +74,14 @@ function ItemMenu(
                     </Button>
                 </Tooltip>
             </Menu.Item>
+            { [ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType) && (
+                <Menu.Item>
+                    <Button type='link' onClick={switchOrientation}>
+                        <Icon type='retweet' />
+                        Switch orientation
+                    </Button>
+                </Menu.Item>
+            )}
             { objectType !== ObjectType.TAG && (
                 <Menu.Item>
                     <Tooltip title={`${toBackgroundShortcut}`}>
@@ -124,6 +134,7 @@ interface ItemTopComponentProps {
     serverID: number | undefined;
     labelID: number;
     labels: any[];
+    shapeType: ShapeType;
     objectType: ObjectType;
     type: string;
     locked: boolean;
@@ -138,6 +149,7 @@ interface ItemTopComponentProps {
     remove(): void;
     propagate(): void;
     createURL(): void;
+    switchOrientation(): void;
     toBackground(): void;
     toForeground(): void;
 }
@@ -148,6 +160,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         serverID,
         labelID,
         labels,
+        shapeType,
         objectType,
         type,
         locked,
@@ -162,6 +175,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         remove,
         propagate,
         createURL,
+        switchOrientation,
         toBackground,
         toForeground,
     } = props;
@@ -190,6 +204,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                     overlay={ItemMenu(
                         serverID,
                         locked,
+                        shapeType,
                         objectType,
                         copyShortcut,
                         pasteShortcut,
@@ -201,6 +216,7 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                         remove,
                         propagate,
                         createURL,
+                        switchOrientation,
                         toBackground,
                         toForeground,
                     )}
@@ -708,6 +724,7 @@ interface Props {
     copy(): void;
     propagate(): void;
     createURL(): void;
+    switchOrientation(): void;
     toBackground(): void;
     toForeground(): void;
     remove(): void;
@@ -785,6 +802,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         copy,
         propagate,
         createURL,
+        switchOrientation,
         toBackground,
         toForeground,
         remove,
@@ -840,6 +858,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     clientID={clientID}
                     labelID={labelID}
                     labels={labels}
+                    shapeType={shapeType}
                     objectType={objectType}
                     type={type}
                     locked={locked}
@@ -854,6 +873,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     remove={remove}
                     propagate={propagate}
                     createURL={createURL}
+                    switchOrientation={switchOrientation}
                     toBackground={toBackground}
                     toForeground={toForeground}
                 />

@@ -108,31 +108,6 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
         }
     };
 
-    const onInversePoints = (): void => {
-        const { selectedPoint } = props;
-        if (contextMenuFor && selectedPoint !== null && ['polygon', 'polyline'].includes(contextMenuFor.shapeType)) {
-            const reducedPoints = contextMenuFor.points.reduce(
-                (acc: number[][], _: number, index: number, array: number[]): number[][] => {
-                    if (index % 2) {
-                        acc.push([array[index - 1], array[index]]);
-                    }
-
-                    return acc;
-                }, [],
-            );
-
-            if (contextMenuFor.shapeType === 'polygon') {
-                contextMenuFor.points = reducedPoints.slice(0, 1)
-                    .concat(reducedPoints.reverse().slice(0, -1)).flat();
-            } else {
-                contextMenuFor.points = reducedPoints.reverse().flat();
-            }
-
-            onUpdateAnnotations([contextMenuFor]);
-            onCloseContextMenu();
-        }
-    };
-
     return visible && contextMenuFor && type === ContextMenuType.CANVAS_SHAPE_POINT
         ? (ReactDOM.createPortal(
             <div className='cvat-canvas-point-context-menu' style={{ top, left }}>
@@ -144,11 +119,6 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
                 {contextMenuFor && contextMenuFor.shapeType === 'polygon' && (
                     <Button type='link' icon='environment' onClick={onSetStartPoint}>
                         Set start point
-                    </Button>
-                )}
-                {contextMenuFor && ['polygon', 'polyline'].includes(contextMenuFor.shapeType) && (
-                    <Button type='link' icon='reload' onClick={onInversePoints}>
-                        Change orientation
                     </Button>
                 )}
             </div>,
