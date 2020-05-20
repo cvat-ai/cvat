@@ -57,7 +57,7 @@ export default function UploadedModelItem(props: Props): JSX.Element {
                 >
                     {model.labels.map(
                         (label): JSX.Element => (
-                            <Select.Option key={label}>
+                            <Select.Option key={label} value={label}>
                                 {label}
                             </Select.Option>
                         ),
