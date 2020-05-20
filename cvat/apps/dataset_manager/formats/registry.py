@@ -13,6 +13,7 @@ class _Format:
     EXT = ''
     VERSION = ''
     DISPLAY_NAME = '{NAME} {VERSION}'
+    ENABLED = True
 
 class Exporter(_Format):
     def __call__(self, dst_file, task_data, **options):
@@ -22,7 +23,7 @@ class Importer(_Format):
     def __call__(self, src_file, task_data, **options):
         raise NotImplementedError()
 
-def _wrap_format(f_or_cls, klass, name, version, ext, display_name):
+def _wrap_format(f_or_cls, klass, name, version, ext, display_name, enabled):
     import inspect
     assert inspect.isclass(f_or_cls) or inspect.isfunction(f_or_cls)
     if inspect.isclass(f_or_cls):
@@ -44,14 +45,17 @@ def _wrap_format(f_or_cls, klass, name, version, ext, display_name):
     target.DISPLAY_NAME = (display_name or klass.DISPLAY_NAME).format(
         NAME=name, VERSION=version, EXT=ext)
     assert all([target.NAME, target.VERSION, target.EXT, target.DISPLAY_NAME])
+    target.ENABLED = enabled
+
     return target
 
 EXPORT_FORMATS = {}
-def exporter(name, version, ext, display_name=None):
+def exporter(name, version, ext, display_name=None, enabled=True):
     assert name not in EXPORT_FORMATS, "Export format '%s' already registered" % name
     def wrap_with_params(f_or_cls):
         t = _wrap_format(f_or_cls, Exporter,
-            name=name, ext=ext, version=version, display_name=display_name)
+            name=name, ext=ext, version=version, display_name=display_name,
+            enabled=enabled)
         key = t.DISPLAY_NAME
         assert key not in EXPORT_FORMATS, "Export format '%s' already registered" % name
         EXPORT_FORMATS[key] = t
@@ -59,10 +63,11 @@ def exporter(name, version, ext, display_name=None):
     return wrap_with_params
 
 IMPORT_FORMATS = {}
-def importer(name, version, ext, display_name=None):
+def importer(name, version, ext, display_name=None, enabled=True):
     def wrap_with_params(f_or_cls):
         t = _wrap_format(f_or_cls, Importer,
-            name=name, ext=ext, version=version, display_name=display_name)
+            name=name, ext=ext, version=version, display_name=display_name,
+            enabled=enabled)
         key = t.DISPLAY_NAME
         assert key not in IMPORT_FORMATS, "Import format '%s' already registered" % name
         IMPORT_FORMATS[key] = t
