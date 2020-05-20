@@ -29,6 +29,7 @@ export class EditHandlerImpl implements EditHandler {
     private autobordersEnabled: boolean;
 
     private setupTrailingPoint(circle: SVG.Circle): void {
+        const head = this.editedShape.attr('points').split(' ').slice(0, this.editData.pointID).join(' ');
         circle.on('mouseenter', (): void => {
             circle.attr({
                 'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
@@ -45,8 +46,8 @@ export class EditHandlerImpl implements EditHandler {
         circle.on('mousedown', (e: MouseEvent): void => {
             if (e.button !== 0) return;
             const { offset } = this.geometry;
-            const points = pointsToNumberArray(this.editLine.node
-                .getAttribute('points')).slice(0, -2)
+            const stringifiedPoints = `${head} ${this.editLine.node.getAttribute('points').slice(0, -2)}`;
+            const points = pointsToNumberArray(stringifiedPoints).slice(0, -2)
                 .map((coord: number): number => coord - offset);
 
             if (points.length >= minimumPoints * 2) {

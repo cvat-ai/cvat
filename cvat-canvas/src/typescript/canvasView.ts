@@ -587,6 +587,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .map((coord: number): number => coord - offset);
 
         function mousedownHandler(e: MouseEvent): void {
+            if (e.button !== 0) return;
             e.preventDefault();
 
             const pointID = Array.prototype.indexOf

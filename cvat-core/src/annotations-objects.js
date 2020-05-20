@@ -1565,6 +1565,14 @@
                     zOrder: leftPosition.zOrder,
                 };
             }
+
+            function toArray(points) {
+                return points.reduce((acc, val) => {
+                    acc.push(val.x, val.y);
+                    return acc;
+                }, []);
+            }
+
             function toPoints(array) {
                 return array.reduce((acc, _, index) => {
                     if (index % 2) {
@@ -1582,19 +1590,18 @@
                 return points.slice(1).reduce((acc, _, index) => {
                     const dx = points[index + 1].x - points[index].x;
                     const dy = points[index + 1].y - points[index].y;
-                    return acc + Math.sqrt((dx + dy) ** 2);
+                    return acc + Math.sqrt(dx ** 2 + dy ** 2);
                 }, 0);
             }
 
-            function curveToOffsetVec(points) {
-                const length = curveLength(points);
+            function curveToOffsetVec(points, length) {
                 const offsetVector = [0]; // with initial value
                 let accumulatedLength = 0;
 
                 points.slice(1).forEach((_, index) => {
                     const dx = points[index + 1].x - points[index].x;
                     const dy = points[index + 1].y - points[index].y;
-                    accumulatedLength += Math.sqrt((dx + dy) ** 2);
+                    accumulatedLength += Math.sqrt(dx ** 2 + dy ** 2);
                     offsetVector.push(accumulatedLength / length);
                 });
 
@@ -1621,27 +1628,6 @@
                 const leftPoints = [..._leftPoints];
                 const rightPoints = [..._rightPoints];
 
-                if (Array.from(new Set(Object.values(_matching))).length === _rightPoints.length) {
-                    const matching = { ..._matching };
-                    let latestRight = 0;
-
-                    // for each repeated point at right create a copy and update the matching
-                    for (let i = 1; i < _leftPoints.length; i++) {
-                        if (matching[i] === latestRight) {
-                            for (const key of Object.keys(matching)) {
-                                if (+key >= i) {
-                                    matching[key]++;
-                                }
-                            }
-
-                            rightPoints.splice(latestRight + 1, 0, rightPoints[latestRight]);
-                            latestRight += 1;
-                        }
-                    }
-
-                    return [leftPoints, rightPoints, matching];
-                }
-
                 // get reverse matching (right => left)
                 const reverseMatching = {};
                 for (const key of Object.keys(_matching)) {
@@ -1652,18 +1638,28 @@
                     reverseMatching[reverseKey].push(+key);
                 }
 
+                const isAppended = {};
                 for (let i = 1; i < rightPoints.length - 1; i++) {
                     if (!(i in reverseMatching)) {
                         // for each point not in matching search neightbors in mapping
+                        let previousAnchorFound = false; // anchor wasn't appended in this loop
+                        let previousAnchor = i - 1;
                         let previousFound = false;
                         let previous = i - 1;
-                        while (!previousFound) {
+                        while (!previousAnchorFound) {
                             if (previous in reverseMatching) {
                                 previousFound = true;
-                                break;
+
+                                if (!isAppended[previousAnchor]) {
+                                    previousAnchorFound = true;
+                                    break;
+                                }
                             }
 
-                            previous -= 1;
+                            if (!previousFound) {
+                                previous -= 1;
+                            }
+                            previousAnchor -= 1;
                         }
 
                         let nextFound = false;
@@ -1678,22 +1674,24 @@
                         }
 
                         // search an offset at right
-                        const rightOffset = curveLength(rightPoints.slice(previous, i + 1))
-                            / curveLength(rightPoints.slice(previous, next + 1));
+                        const rightOffset = curveLength(rightPoints.slice(previousAnchor, i + 1))
+                            / curveLength(rightPoints.slice(previousAnchor, next + 1));
 
                         // for these neightbors search corresponded points at left
+                        const previousAnchorInLeft = Math.max(...reverseMatching[previousAnchor]);
                         const previousInLeft = Math.max(...reverseMatching[previous]);
                         const nextInLeft = Math.min(...reverseMatching[next]);
 
                         // create corresponded point on left with the same offset
-                        leftPoints.splice(previousInLeft + 1, 0, {
-                            x: leftPoints[previousInLeft].x
-                                + (leftPoints[nextInLeft].x - leftPoints[previousInLeft].x)
-                                * rightOffset,
-                            y: leftPoints[previousInLeft].y
-                                + (leftPoints[nextInLeft].y - leftPoints[previousInLeft].y)
-                                * rightOffset,
-                        });
+                        if (rightOffset > 0.5) {
+                            leftPoints.splice(
+                                previousInLeft + 1, 0, leftPoints[nextInLeft],
+                            );
+                        } else {
+                            leftPoints.splice(
+                                previousInLeft + 1, 0, leftPoints[previousAnchorInLeft],
+                            );
+                        }
 
                         // update matching
                         for (const reverseKey of Object.keys(reverseMatching)) {
@@ -1705,12 +1703,13 @@
                         }
 
                         reverseMatching[i] = [previousInLeft + 1];
+                        isAppended[i] = true;
                     }
                 }
 
                 const matching = Object.keys(reverseMatching).reduce((acc, reverseKey) => {
                     for (const key of reverseMatching[reverseKey]) {
-                        acc[key] = reverseKey;
+                        acc[key] = +reverseKey;
                     }
                     return acc;
                 }, {});
@@ -1718,31 +1717,137 @@
                 return [leftPoints, rightPoints, matching];
             }
 
+            function reduceInterpolation(interpolatedPoints, matching, leftPoints, rightPoints) {
+                function averagePoint(points) {
+                    let sumX = 0;
+                    let sumY = 0;
+                    for (const point of points) {
+                        sumX += point.x;
+                        sumY += point.y;
+                    }
+
+                    return {
+                        x: sumX / points.length,
+                        y: sumY / points.length,
+                    };
+                }
+
+                function equal(point1, point2) {
+                    return point1.x === point2.x && point1.y === point2.y;
+                }
+
+                let latestRight = 0;
+                let latestLeft = leftPoints[0];
+                const leftSegments = [];
+                const rightSegments = [];
+                const left = {
+                    start: 0,
+                    stop: 0,
+                    active: false,
+                };
+                const right = { ...left };
+
+                for (let i = 1; i < leftPoints.length; i++) {
+                    if (matching[i] === latestRight && !left.active) {
+                        left.active = true;
+                        left.start = i - 1;
+                    } else if (matching[i] !== latestRight || i === leftPoints.length - 1) {
+                        if (left.active) {
+                            left.active = false;
+                            left.stop = i - 1;
+                            leftSegments.push({
+                                type: 'left',
+                                start: left.start,
+                                stop: left.stop,
+                            });
+                        }
+
+                        latestRight = matching[i];
+                    }
+
+                    if (equal(leftPoints[i], latestLeft) && !right.active) {
+                        right.active = true;
+                        right.start = i - 1;
+                    } else if (!equal(leftPoints[i], latestLeft) || i === leftPoints.length - 1) {
+                        if (right.active) {
+                            right.active = false;
+                            right.stop = i - 1;
+                            rightSegments.push({
+                                type: 'right',
+                                start: right.start,
+                                stop: right.stop,
+                            });
+                        }
+
+                        latestLeft = leftPoints[i];
+                    }
+                }
+
+                const allSegments = leftSegments.concat(rightSegments).sort((a, b) => a.start - b.start);
+                const reduced = interpolatedPoints.slice(0, allSegments.length ? allSegments[0].start : undefined);
+                for (const segment of allSegments) {
+                    const { start, stop, type } = segment;
+                    const baseCurve = type === 'left' ? leftPoints.slice(start, stop + 1) : rightPoints.slice(matching[start], matching[stop] + 1);
+                    const interpolatedSegment = interpolatedPoints.slice(start, stop + 1);
+                    const reduceFactor = Math.floor(
+                        curveLength(baseCurve) / curveLength(interpolatedSegment),
+                    );
+                    if (reduceFactor >= 2) {
+                        for (let i = 0; i < interpolatedSegment.length; i += reduceFactor) {
+                            const average = averagePoint(interpolatedSegment.slice(i, i + reduceFactor));
+                            reduced.push(average);
+                        }
+                    } else {
+                        reduced.push(...interpolatedSegment);
+                    }
+                }
+                if (allSegments.length) {
+                    Array.prototype.push.apply(
+                        reduced,
+                        interpolatedPoints.slice(allSegments[allSegments.length - 1].stop),
+                    );
+                }
+
+                return reduced;
+            }
+
             // the algorithm below is based on fact that both left and right
             // polyshapes have the same start point and the same draw direction
             const leftPoints = toPoints(leftPosition.points);
             const rightPoints = toPoints(rightPosition.points);
-            const leftOffsetVec = curveToOffsetVec(leftPoints);
-            const rightOffsetVec = curveToOffsetVec(rightPoints);
+            const leftCurveLength = curveLength(leftPoints);
+            const rightCurveLength = curveLength(rightPoints);
+            const leftOffsetVec = curveToOffsetVec(leftPoints, leftCurveLength);
+            const rightOffsetVec = curveToOffsetVec(rightPoints, rightCurveLength);
 
             const matching = matchCurves(leftOffsetVec, rightOffsetVec);
             const [
-                completeddLeftPoints,
+                completedLeftPoints,
                 completedRightPoints,
                 completedMatching,
             ] = completeMatching(leftPoints, rightPoints, matching);
 
+            const interpolatedPoints = Object.keys(completedMatching)
+                .map((key) => +key).sort((a, b) => a - b)
+                .reduce((acc, key) => {
+                    const left = completedLeftPoints[key];
+                    const right = completedRightPoints[+completedMatching[key]];
+                    acc.push({
+                        x: left.x + (right.x - left.x) * offset,
+                        y: left.y + (right.y - left.y) * offset,
+                    });
+                    return acc;
+                }, []);
+
+            const reducedInterpolation = reduceInterpolation(
+                interpolatedPoints,
+                completedMatching,
+                completedLeftPoints,
+                completedRightPoints,
+            );
+
             return {
-                points: Object.keys(completedMatching).map((key) => +key).sort((a, b) => a - b)
-                    .reduce((acc, key) => {
-                        const left = completeddLeftPoints[key];
-                        const right = completedRightPoints[+completedMatching[key]];
-                        acc.push(
-                            left.x + (right.x - left.x) * offset,
-                            left.y + (right.y - left.y) * offset,
-                        );
-                        return acc;
-                    }, []),
+                points: toArray(reducedInterpolation),
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
