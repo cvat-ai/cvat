@@ -5,7 +5,7 @@ import time
 
 def track_progress(task_id_tf, num_gpus):
     num_gpus = int(num_gpus)
-    source_task_path = os.path.join(DATA_ROOT, str(task_id_tf))
+    source_task_path = os.path.join(DATA_ROOT,"data", str(task_id_tf))
     queue = django_rq.get_queue('low')
     job = queue.fetch_job('tf_annotation.create/{}'.format(task_id_tf))
 
