@@ -99,6 +99,7 @@ INSTALLED_APPS = [
     'cvat.apps.engine',
     'cvat.apps.git',
     'cvat.apps.restrictions',
+    'cvat.apps.lambda_manager',
     'django_rq',
     'compressor',
     'cacheops',

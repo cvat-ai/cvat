@@ -4,11 +4,14 @@ from rest_framework.response import Response
 import requests
 import django_rq
 
-NUCLIO_GATEWAY = 'http://serverless:8070/api/functions'
+# FIXME: need to define the host in settings
+NUCLIO_GATEWAY = 'http://localhost:8070/api/functions'
 NUCLIO_HEADERS = {'x-nuclio-project-name': 'cvat'}
 NUCLIO_TIMEOUT = 10
 
 class FunctionViewSet(viewsets.ViewSet):
+    lookup_value_regex = '[a-zA-Z0-9_.]+'
+
     def list(self, request):
         response = []
         try:
@@ -17,16 +20,16 @@ class FunctionViewSet(viewsets.ViewSet):
             reply.raise_for_status()
             output = reply.json()
             for name in output:
-                response.append(_extract_function_info(output[name]))
+                response.append(self._extract_function_info(output[name]))
         except requests.RequestException as err:
             return Response(str(err), status=reply.status_code)
 
         return Response(data=response)
 
 
-    def retrieve(self, request, name):
+    def retrieve(self, request, pk):
         try:
-            reply = requests.get(NUCLIO_GATEWAY + '/' + name,
+            reply = requests.get(NUCLIO_GATEWAY + '/' + pk,
                 headers=NUCLIO_HEADERS, timeout=NUCLIO_TIMEOUT)
             reply.raise_for_status()
             output = reply.json()
@@ -36,8 +39,7 @@ class FunctionViewSet(viewsets.ViewSet):
 
         return Response(data=response)
 
-    @retrieve.mapping.post
-    def call(self, request, name):
+    def call(self, request, pk):
         try:
             tid = request.data['task']
             frame = request.data['frame']
@@ -46,7 +48,7 @@ class FunctionViewSet(viewsets.ViewSet):
                 'image': _get_image(tid, frame),
                 'extra': extra
             }
-            reply = requests.post(NUCLIO_GATEWAY + '/' + name,
+            reply = requests.post(NUCLIO_GATEWAY + '/' + pk,
                 headers=NUCLIO_HEADERS, json=data, timeout=NUCLIO_TIMEOUT)
             reply.raise_for_status()
 
