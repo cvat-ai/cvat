@@ -100,12 +100,6 @@ function ItemMenu(
                 </Button>
             </Menu.Item>
             <Menu.Item>
-                <Button type='link' onClick={onTrackerClick}>
-                    <Icon component={ForegroundIcon} />
-                    Track
-                </Button>
-            </Menu.Item>
-            <Menu.Item>
                 <Tooltip title={`${removeShortcut}`}>
                     <Button
                         type='link'
