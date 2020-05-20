@@ -14,6 +14,8 @@ from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.auto_annotation.models import AnnotationModel
 from cvat.apps.engine.models import Task as TaskModel
+from cvat.apps.engine.frame_provider import FrameProvider
+
 from cvat.apps.engine import annotation, task
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data
@@ -56,6 +58,11 @@ def run_tensorflow_annotation(tid, image_list_length, labels_mapping, treshold, 
     result = {}
     local_device_protos = device_lib.list_local_devices()
     num_gpus = len([x.name for x in local_device_protos if x.device_type == 'GPU'])
+    print("model path",model_path)
+    if model_path != "" and not model_path.endswith("pb"):
+        print("inside")
+        model_path += ".pb"
+    print("final", model_path)
     if not os.path.isfile(model_path):
         raise OSError('TF Annotation Model path does not point to a file.')
     source_task_path = os.path.join(DATA_ROOT, str(tid))
@@ -242,7 +249,7 @@ def create_thread(tid, labels_mapping, user, tf_annotation_model_path):
         # Get job indexes and segment length
         db_task = TaskModel.objects.get(pk=tid)
         # Get image list
-        image_list = make_image_list(db_task.get_data_dirname())
+        image_list = FrameProvider(db_task.data)
 
         # Run auto annotation by tf
         result = None
@@ -405,6 +412,67 @@ def cancel(request, tid):
     except Exception as ex:
         try:
             slogger.task[tid].exception("cannot cancel tensorflow annotation for task #{}".format(tid), exc_info=True)
+        except:
+            pass
+        return HttpResponseBadRequest(str(ex))
+
+    return HttpResponse()
+
+
+
+@login_required
+@permission_required(perm=['engine.task.change'],
+    fn=objectgetter(TaskModel, 'tid'), raise_exception=True)
+def createold(request, tid):
+    slogger.glob.info('tf annotation create request for task {}'.format(tid))
+    try:
+        db_task = TaskModel.objects.get(pk=tid)
+        queue = django_rq.get_queue('low')
+        job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
+        if job is not None and (job.is_started or job.is_queued):
+            raise Exception("The process is already running")
+
+        db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
+        db_labels = {db_label.id:db_label.name for db_label in db_labels}
+
+        tf_annotation_labels = {
+            "person": 1, "bicycle": 2, "car": 3, "motorcycle": 4, "airplane": 5,
+            "bus": 6, "train": 7, "truck": 8, "boat": 9, "traffic_light": 10,
+            "fire_hydrant": 11, "stop_sign": 13, "parking_meter": 14, "bench": 15,
+            "bird": 16, "cat": 17, "dog": 18, "horse": 19, "sheep": 20, "cow": 21,
+            "elephant": 22, "bear": 23, "zebra": 24, "giraffe": 25, "backpack": 27,
+            "umbrella": 28, "handbag": 31, "tie": 32, "suitcase": 33, "frisbee": 34,
+            "skis": 35, "snowboard": 36, "sports_ball": 37, "kite": 38, "baseball_bat": 39,
+            "baseball_glove": 40, "skateboard": 41, "surfboard": 42, "tennis_racket": 43,
+            "bottle": 44, "wine_glass": 46, "cup": 47, "fork": 48, "knife": 49, "spoon": 50,
+            "bowl": 51, "banana": 52, "apple": 53, "sandwich": 54, "orange": 55, "broccoli": 56,
+            "carrot": 57, "hot_dog": 58, "pizza": 59, "donut": 60, "cake": 61, "chair": 62,
+            "couch": 63, "potted_plant": 64, "bed": 65, "dining_table": 67, "toilet": 70,
+            "tv": 72, "laptop": 73, "mouse": 74, "remote": 75, "keyboard": 76, "cell_phone": 77,
+            "microwave": 78, "oven": 79, "toaster": 80, "sink": 81, "refrigerator": 83,
+            "book": 84, "clock": 85, "vase": 86, "scissors": 87, "teddy_bear": 88, "hair_drier": 89,
+            "toothbrush": 90
+            }
+
+        labels_mapping = {}
+        for key, labels in db_labels.items():
+            if labels in tf_annotation_labels.keys():
+                labels_mapping[tf_annotation_labels[labels]] = key
+
+        if not len(labels_mapping.values()):
+            raise Exception('No labels found for tf annotation')
+
+        # Run tf annotation job
+        queue.enqueue_call(func=create_thread,
+            args=(tid, labels_mapping, request.user, os.getenv('TF_ANNOTATION_MODEL_PATH')),
+            job_id='tf_annotation.create/{}'.format(tid),
+            timeout=604800)     # 7 days
+
+        slogger.task[tid].info('tensorflow old annotation job enqueued with labels {}'.format(labels_mapping))
+
+    except Exception as ex:
+        try:
+            slogger.task[tid].exception("exception was occured during tensorflow annotation request", exc_info=True)
         except:
             pass
         return HttpResponseBadRequest(str(ex))

@@ -494,7 +494,17 @@ export function startInferenceAsync(
 ): ThunkAction {
     return async (dispatch): Promise<void> => {
         try {
-            if (model.name === PreinstalledModels.RCNN || model.framework === "tensorflow") {
+            if (model.name === PreinstalledModels.RCNN) {
+                // var unique_no = 9999
+                await core.server.request(
+                    `${baseURL}/tensorflow/annotation/create/task/${taskInstance.id}`
+                );
+            } else if (model.name === PreinstalledModels.MaskRCNN) {
+                // const unique_no = 9999
+                await core.server.request(
+                    `${baseURL}/tensorflow/segmentation/create/task/${taskInstance.id}`
+                );
+            }else  if (model.framework === "tensorflow") {
                 await core.server.request(
                     `${baseURL}/tensorflow/annotation/create/task/${taskInstance.id}/${model.id}`,{
                         method: 'POST',
@@ -503,7 +513,7 @@ export function startInferenceAsync(
                         })
                     }
                 );
-            } else if (model.name === PreinstalledModels.MaskRCNN || model.framework === "maskrcnn") {
+            } else if (model.framework === "maskrcnn") {
                 await core.server.request(
                     `${baseURL}/tensorflow/segmentation/create/task/${taskInstance.id}/${model.id}`,{
                         method: 'POST',
