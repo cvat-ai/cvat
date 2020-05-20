@@ -228,7 +228,8 @@ export class DrawHandlerImpl implements DrawHandler {
         // Or when no drawn points, but we call cancel() drawing
         // We check if it is activated with remember function
         if (this.drawInstance.remember('_paintHandler')) {
-            if (this.drawData.shapeType !== 'rectangle') {
+            if (this.drawData.shapeType !== 'rectangle'
+            && this.drawData.cuboidDrawingMethod !== CuboidDrawingMethod.CLASSIC) {
                 // Check for unsaved drawn shapes
                 this.drawInstance.draw('done');
             }
