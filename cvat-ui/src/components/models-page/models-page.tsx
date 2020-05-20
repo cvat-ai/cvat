@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation } from "react-router-dom";
 import Spin from 'antd/lib/spin';
 
 import TopBarComponent from './top-bar';
@@ -12,6 +13,7 @@ import BuiltModelsList from './built-models-list';
 import EmptyListComponent from './empty-list';
 import FeedbackComponent from '../feedback/feedback';
 import { Model } from '../../reducers/interfaces';
+import { customWaViewHit } from 'utils/enviroment';
 
 interface Props {
     installedAutoAnnotation: boolean;
@@ -37,6 +39,12 @@ export default function ModelsPageComponent(props: Props): JSX.Element {
 
         deleteModel,
     } = props;
+
+    const location = useLocation();
+
+    useEffect(() => {
+        customWaViewHit(location.pathname);
+    });
 
     if (!modelsInitialized) {
         if (!modelsFetching) {

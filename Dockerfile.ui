@@ -5,6 +5,7 @@ ARG https_proxy
 ARG no_proxy
 ARG socks_proxy
 ARG PUBLIC_INSTANCE
+ARG WA_PAGE_VIEW_HIT
 
 ENV TERM=xterm \
     http_proxy=${http_proxy}   \

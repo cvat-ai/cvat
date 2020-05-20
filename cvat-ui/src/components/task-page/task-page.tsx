@@ -15,6 +15,7 @@ import JobListContainer from 'containers/task-page/job-list';
 import ModelRunnerModalContainer from 'containers/model-runner-dialog/model-runner-dialog';
 import { Task } from 'reducers/interfaces';
 import TopBarComponent from './top-bar';
+import { customWaViewHit } from 'utils/enviroment';
 
 interface TaskPageComponentProps {
     task: Task | null | undefined;
@@ -27,6 +28,11 @@ interface TaskPageComponentProps {
 type Props = TaskPageComponentProps & RouteComponentProps<{id: string}>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
+    public componentDidMount(): void {
+        const { location } = this.props;
+
+        customWaViewHit(location.pathname);
+    }
     public componentDidUpdate(): void {
         const {
             deleteActivity,

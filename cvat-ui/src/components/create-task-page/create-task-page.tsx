@@ -4,6 +4,7 @@
 
 import './styles.scss';
 import React, { useEffect } from 'react';
+import { useLocation } from "react-router-dom";
 import { Row, Col } from 'antd/lib/grid';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
@@ -11,6 +12,7 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import TextArea from 'antd/lib/input/TextArea';
 
 import CreateTaskContent, { CreateTaskData } from './create-task-content';
+import { customWaViewHit } from 'utils/enviroment';
 
 
 interface Props {
@@ -27,8 +29,11 @@ export default function CreateTaskPage(props: Props): JSX.Element {
         onCreate,
         installedGit,
     } = props;
+    const location = useLocation();
 
     useEffect(() => {
+        customWaViewHit(location.pathname);
+
         if (error) {
             let errorCopy = error;
             const sshKeys: string[] = [];
