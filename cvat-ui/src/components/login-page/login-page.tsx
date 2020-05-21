@@ -9,9 +9,9 @@ import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
+import { customWaViewHit } from 'utils/enviroment';
 import LoginForm, { LoginData } from './login-form';
 import CookieDrawer from './cookie-policy-drawer';
-import { customWaViewHit } from 'utils/enviroment';
 
 interface LoginPageComponentProps {
     fetching: boolean;

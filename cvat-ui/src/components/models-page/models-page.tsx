@@ -4,16 +4,16 @@
 
 import './styles.scss';
 import React, { useEffect } from 'react';
-import { useLocation } from "react-router-dom";
+import { useLocation } from 'react-router-dom';
 import Spin from 'antd/lib/spin';
 
+import { customWaViewHit } from 'utils/enviroment';
 import TopBarComponent from './top-bar';
 import UploadedModelsList from './uploaded-models-list';
 import BuiltModelsList from './built-models-list';
 import EmptyListComponent from './empty-list';
 import FeedbackComponent from '../feedback/feedback';
 import { Model } from '../../reducers/interfaces';
-import { customWaViewHit } from 'utils/enviroment';
 
 interface Props {
     installedAutoAnnotation: boolean;

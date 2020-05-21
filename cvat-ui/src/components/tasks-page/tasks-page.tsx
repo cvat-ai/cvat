@@ -12,12 +12,11 @@ import message from 'antd/lib/message';
 import Text from 'antd/lib/typography/Text';
 
 import { TasksQuery } from 'reducers/interfaces';
+import { customWaViewHit } from 'utils/enviroment';
 import FeedbackComponent from 'components/feedback/feedback';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
-import { customWaViewHit } from 'utils/enviroment';
-
 
 interface TasksPageProps {
     tasksFetching: boolean;

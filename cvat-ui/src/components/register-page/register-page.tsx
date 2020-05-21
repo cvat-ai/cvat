@@ -10,9 +10,9 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
 import { UserAgreement } from 'reducers/interfaces'
-import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
-import CookieDrawer from 'components/login-page/cookie-policy-drawer';
 import { customWaViewHit } from 'utils/enviroment';
+import CookieDrawer from 'components/login-page/cookie-policy-drawer';
+import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 
 interface RegisterPageComponentProps {
     fetching: boolean;

@@ -4,13 +4,13 @@
 
 import './styles.scss';
 import React, { useEffect } from 'react';
-import { useLocation } from "react-router-dom";
+import { useLocation } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
 import { ModelFiles } from 'reducers/interfaces';
-import CreateModelContent from './create-model-content';
 import { customWaViewHit } from 'utils/enviroment';
+import CreateModelContent from './create-model-content';
 
 interface Props {
     createModel(name: string, files: ModelFiles, global: boolean): void;
