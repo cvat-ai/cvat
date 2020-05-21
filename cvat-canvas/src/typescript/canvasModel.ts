@@ -46,6 +46,11 @@ export enum RectDrawingMethod {
     EXTREME_POINTS = 'By 4 points'
 }
 
+export enum CuboidDrawingMethod {
+    CLASSIC = 'From rectangle',
+    CORNER_POINTS = 'By 4 points',
+}
+
 export interface Configuration {
     autoborders?: boolean;
     displayAllText?: boolean;
@@ -57,6 +62,7 @@ export interface DrawData {
     enabled: boolean;
     shapeType?: string;
     rectDrawingMethod?: RectDrawingMethod;
+    cuboidDrawingMethod?: CuboidDrawingMethod;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
