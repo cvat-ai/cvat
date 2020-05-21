@@ -228,6 +228,7 @@ def create_thread(tid, labels_mapping, user, model_path, num_c):
 		# Modify data format and save
 		result = convert_to_cvat_format(result)
 		serializer = LabeledDataSerializer(data = result)
+		slogger.glob.info("serializer valid segmentation {}".format(serializer.is_valid(raise_exception=True)))
 		if serializer.is_valid(raise_exception=True):
 			put_task_data(tid, user, result)
 		slogger.glob.info('auto segmentation for task {} done'.format(tid))
@@ -273,6 +274,7 @@ def create(request, tid, mid):
 
 		queue = django_rq.get_queue('low')
 		job = queue.fetch_job('auto_segmentation.create/{}'.format(tid))
+		slogger.glob.info("seg job {}".format(job))
 		if job is not None and (job.is_started or job.is_queued):
 			raise Exception("The process is already running")
 
@@ -353,7 +355,7 @@ def createold(request, tid):
 	try:
 		db_task = TaskModel.objects.get(pk=tid)
 		queue = django_rq.get_queue('low')
-		job = queue.fetch_job('auto_segmentation.create/{}'.format(tid))
+		job = queue.fetch_job('auto_segmentation.createold/{}'.format(tid))
 		if job is not None and (job.is_started or job.is_queued):
 			raise Exception("The process is already running")
 
@@ -414,8 +416,12 @@ def check(request, tid):
 	try:
 		queue = django_rq.get_queue('low')
 		job = queue.fetch_job('auto_segmentation.create/{}'.format(tid))
+		jobold = queue.fetch_job('auto_segmentation.createold/{}'.format(tid))
 		if job is not None and 'cancel' in job.meta:
-			return JsonResponse({'status': 'finished'})
+			if jobold is not None and 'cancel' in jobold.meta:
+				return JsonResponse({'status': 'finished'})
+		if job is None:
+			job = jobold
 		data = {}
 		if job is None:
 			data['status'] = 'unknown'
@@ -445,11 +451,16 @@ def cancel(request, tid):
 	try:
 		queue = django_rq.get_queue('low')
 		job = queue.fetch_job('auto_segmentation.create/{}'.format(tid))
+		jobold = queue.fetch_job('auto_segmentation.createold/{}'.format(tid))
 		if job is None or job.is_finished or job.is_failed:
-			raise Exception('Task is not being segmented currently')
-		elif 'cancel' not in job.meta:
+			if jobold is None or jobold.is_finished or jobold.is_failed:
+				raise Exception('Task is not being segmented currently')
+		elif job is not None and 'cancel' not in job.meta:
 			job.meta['cancel'] = True
 			job.save()
+		elif jobold is not None and 'cancel' not in jobold.meta:
+			jobold.meta['cancel'] = True
+			jobold.save()
 
 	except Exception as ex:
 		try:
