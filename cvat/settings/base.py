@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     'cvat.apps.dataset_manager',
     'cvat.apps.engine',
     'cvat.apps.git',
+    'cvat.apps.restrictions',
     'django_rq',
     'compressor',
     'cacheops',
@@ -150,7 +151,7 @@ REST_FRAMEWORK = {
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
-    'REGISTER_SERIALIZER': 'cvat.apps.authentication.serializers.RegisterSerializerEx'
+    'REGISTER_SERIALIZER': 'cvat.apps.restrictions.serializers.RestrictedRegisterSerializer'
 }
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
@@ -216,6 +217,7 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 
 # Django Auth
 DJANGO_AUTH_TYPE = 'BASIC'
+DJANGO_AUTH_DEFAULT_GROUPS = []
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
 AUTH_LOGIN_NOTE = '<p>Have not registered yet? <a href="/auth/register">Register here</a>.</p>'
@@ -405,3 +407,13 @@ LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 
 DATUMARO_PATH = os.path.join(BASE_DIR, 'datumaro')
 sys.path.append(DATUMARO_PATH)
+
+RESTRICTIONS = {
+    "user_agreements": [],
+
+    # this setting limits the number of tasks for the user
+    "task_limit": None,
+
+    # this settings reduse task visibility to owner and assignee only
+    "reduce_task_visibility": False,
+}

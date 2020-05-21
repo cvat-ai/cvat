@@ -7,6 +7,7 @@ import {
     CanvasMode,
     CanvasVersion,
     RectDrawingMethod,
+    CuboidDrawingMethod,
 } from 'cvat-canvas/src/typescript/canvas';
 
 function isAbleToChangeFrame(canvas: Canvas): boolean {
@@ -19,5 +20,6 @@ export {
     CanvasMode,
     CanvasVersion,
     RectDrawingMethod,
+    CuboidDrawingMethod,
     isAbleToChangeFrame,
 };

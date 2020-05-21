@@ -33,6 +33,7 @@ interface CVATAppProps {
     loadUsers: () => void;
     loadAbout: () => void;
     verifyAuthorized: () => void;
+    loadUserAgreements: () => void;
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
@@ -51,6 +52,8 @@ interface CVATAppProps {
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
+    userAgreementsFetching: boolean,
+    userAgreementsInitialized: boolean,
     notifications: NotificationsState;
     user: any;
 }
@@ -58,7 +61,7 @@ interface CVATAppProps {
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
         const core = getCore();
-        const { verifyAuthorized } = this.props;
+        const { verifyAuthorized, loadUserAgreements } = this.props;
         configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
@@ -77,6 +80,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadFormats,
             loadUsers,
             loadAbout,
+            loadUserAgreements,
             initPlugins,
             userInitialized,
             userFetching,
@@ -89,6 +93,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             pluginsInitialized,
             pluginsFetching,
             user,
+            userAgreementsFetching,
+            userAgreementsInitialized,
         } = this.props;
 
         this.showErrors();
@@ -96,6 +102,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!userInitialized && !userFetching) {
             verifyAuthorized();
+            return;
+        }
+
+        if (!userAgreementsInitialized && !userAgreementsFetching) {
+            loadUserAgreements();
             return;
         }
 

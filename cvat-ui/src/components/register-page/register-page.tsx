@@ -9,14 +9,17 @@ import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
-import RegisterForm, { RegisterData } from './register-form';
+import { UserAgreement } from 'reducers/interfaces'
+import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 import CookieDrawer from 'components/login-page/cookie-policy-drawer';
 
 interface RegisterPageComponentProps {
     fetching: boolean;
+    userAgreements: UserAgreement[];
     onRegister: (username: string, firstName: string,
         lastName: string, email: string,
-        password1: string, password2: string) => void;
+        password1: string, password2: string,
+        confirmations: UserConfirmation[]) => void;
 }
 
 function RegisterPageComponent(
@@ -32,6 +35,7 @@ function RegisterPageComponent(
 
     const {
         fetching,
+        userAgreements,
         onRegister,
     } = props;
 
@@ -42,6 +46,7 @@ function RegisterPageComponent(
                     <Title level={2}> Create an account </Title>
                     <RegisterForm
                         fetching={fetching}
+                        userAgreements={userAgreements}
                         onSubmit={(registerData: RegisterData): void => {
                             onRegister(
                                 registerData.username,
@@ -50,6 +55,7 @@ function RegisterPageComponent(
                                 registerData.email,
                                 registerData.password1,
                                 registerData.password2,
+                                registerData.confirmations,
                             );
                         }}
                     />

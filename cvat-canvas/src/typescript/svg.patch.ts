@@ -248,8 +248,8 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.bot = this.polygon(this.cuboidModel.bot.points);
             this.top = this.polygon(this.cuboidModel.top.points);
             this.right = this.polygon(this.cuboidModel.right.points);
-            this.dorsal = this.polygon(this.cuboidModel.dorsal.points);
             this.left = this.polygon(this.cuboidModel.left.points);
+            this.dorsal = this.polygon(this.cuboidModel.dorsal.points);
             this.face = this.polygon(this.cuboidModel.front.points);
         },
 
@@ -858,16 +858,17 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             const edges = [this.frontLeftEdge, this.frontRightEdge, this.frontTopEdge, this.frontBotEdge]
             const width = this.attr('stroke-width');
             edges.forEach((edge: SVG.Element) => {
-                edge.attr('stroke-width', width * (this.strokeOffset || 1.75));
+                edge.attr('stroke-width', width * (this.strokeOffset || consts.CUBOID_UNACTIVE_EDGE_STROKE_WIDTH));
             });
             this.on('mouseover', () => {
                 edges.forEach((edge: SVG.Element) => {
-                    this.strokeOffset = 2.5;
+                    this.strokeOffset = this.node.classList.contains('cvat_canvas_shape_activated')
+                        ? consts.CUBOID_ACTIVE_EDGE_STROKE_WIDTH : consts.CUBOID_UNACTIVE_EDGE_STROKE_WIDTH;
                     edge.attr('stroke-width', width * this.strokeOffset);
                 })
             }).on('mouseout', () => {
                 edges.forEach((edge: SVG.Element) => {
-                    this.strokeOffset = 1.75;
+                    this.strokeOffset = consts.CUBOID_UNACTIVE_EDGE_STROKE_WIDTH;
                     edge.attr('stroke-width', width * this.strokeOffset);
                 })
             });

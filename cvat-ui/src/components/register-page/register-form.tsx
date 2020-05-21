@@ -7,8 +7,16 @@ import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Button from 'antd/lib/button';
 import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
+import Checkbox from 'antd/lib/checkbox';
 
 import patterns from 'utils/validation-patterns';
+
+import { UserAgreement } from 'reducers/interfaces'
+
+export interface UserConfirmation {
+    name: string;
+    value: boolean;
+}
 
 export interface RegisterData {
     username: string;
@@ -17,10 +25,12 @@ export interface RegisterData {
     email: string;
     password1: string;
     password2: string;
+    confirmations: UserConfirmation[];
 }
 
 type RegisterFormProps = {
     fetching: boolean;
+    userAgreements: UserAgreement[],
     onSubmit(registerData: RegisterData): void;
 } & FormComponentProps;
 
@@ -70,15 +80,43 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
         callback();
     };
 
+    private validateAgrement = (agreement: any, value: any, callback: any): void => {
+        const { userAgreements } = this.props;
+        let isValid: boolean = true;
+        for (const userAgreement of userAgreements) {
+            if (agreement.field === userAgreement.name
+                && userAgreement.required && !value) {
+                isValid = false;
+                callback(`You must accept the ${userAgreement.displayText} to continue!`);
+                break;
+            }
+        }
+        if (isValid) {
+            callback();
+        }
+    };
+
     private handleSubmit = (e: React.FormEvent): void => {
         e.preventDefault();
         const {
             form,
             onSubmit,
+            userAgreements,
         } = this.props;
 
         form.validateFields((error, values): void => {
             if (!error) {
+                values.confirmations = []
+                
+                for (const userAgreement of userAgreements) {
+                    
+                    values.confirmations.push({
+                        name: userAgreement.name,
+                        value: values[userAgreement.name]
+                    });
+                    delete values[userAgreement.name];
+                }
+
                 onSubmit(values);
             }
         });
@@ -214,6 +252,38 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
         );
     }
 
+    private renderUserAgreements(): JSX.Element[] {
+        const { form, userAgreements } = this.props;
+        const getUserAgreementsElements = () =>
+        {
+            const agreementsList: JSX.Element[] = [];
+            for (const userAgreement of userAgreements) {
+                agreementsList.push(
+                    <Form.Item key={userAgreement.name}>
+                        {form.getFieldDecorator(userAgreement.name, {
+                            initialValue: false,
+                            valuePropName: 'checked',
+                            rules: [{
+                                required: true,
+                                message: 'You must accept to continue!',
+                            }, {
+                                validator: this.validateAgrement,
+                            }]
+                        })(
+                            <Checkbox>
+                                I read and accept the <a rel='noopener noreferrer' target='_blank'
+                                     href={ userAgreement.url }>{ userAgreement.displayText }</a>
+                            </Checkbox>
+                        )}
+                    </Form.Item>
+                );
+            }
+            return agreementsList;
+        }
+
+        return getUserAgreementsElements();
+    }
+
     public render(): JSX.Element {
         const { fetching } = this.props;
 
@@ -225,6 +295,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                 {this.renderEmailField()}
                 {this.renderPasswordField()}
                 {this.renderPasswordConfirmationField()}
+                {this.renderUserAgreements()}
 
                 <Form.Item>
                     <Button

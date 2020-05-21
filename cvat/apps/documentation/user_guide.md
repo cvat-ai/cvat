@@ -16,8 +16,9 @@
     - [Vocabulary](#vocabulary)
     - [Workspace](#workspace)
     - [Settings](#settings)
-    - [Bottom Panel](#bottom-panel)
-    - [Side panel](#side-panel)
+    - [Top Panel](#top-panel)
+    - [Controls sidebar](#controls-sidebar)
+    - [Objects sidebar](#objects-sidebar)
       - [Objects](#objects)
       - [Labels](#labels)
     - [Bottom side panel](#bottom-side-panel)
@@ -681,22 +682,14 @@ In tab ``Workspace`` you can:
 - Press `` Go back`` or ``F3`` to return to the annotation.
 
 ---
-Go to the next/previous frame with step equals to 1. Shortcuts: ``D`` — previous, ``F`` — next.
 
-![](static/documentation/images/image040.jpg)
+### Top Panel
 
----
-Play the sequence of frames or the set of images. Shortcut: ``Space`` (change at ``Open Menu`` —> ``Settings`` —> ``Player Speed``).
-
-![](static/documentation/images/image041.jpg)
+![](static/documentation/images/image035.jpg)
 
 ---
-Go to specified frame. Press ``~`` to focus on the element.
 
-![](static/documentation/images/image060.jpg)
-
----
-**Open Menu** button
+#### Menu button
 
 It is the main menu of the annotation tool. It can be used to download, upload and remove annotations.
 
@@ -704,199 +697,254 @@ It is the main menu of the annotation tool. It can be used to download, upload a
 
 Button assignment:
 
-- ``Open Task`` — open task in cvat dashboard
-- ``RunReID Merge`` — The ReID application uses deep learning model to perform
-  an automatic merging of bounding boxes between neighbor frames. You can use
-  "Merge" and "Split" functionality to edit automatically generated annotation
-  [read more](/cvat/apps/reid).
-- ``Dump Annotation`` — download annotations from the task
-- ``Upload Annotation`` — uploading annotations to the task
-- ``Remove Annotation`` — remove annotations from current task
-- ``Settings`` — open the settings menu
-- ``Fullscreen Player`` — fullscreen player mode
-- ``Switch AAM`` — switch to attribute annotation mode
-- ``Help`` — open the shortkeys
-- ``Save Work`` — save annotations for the current job. The button has an
-  indication of the saving process
+- ``Dump Annotations`` — downloads annotations from a task.
+- ``Upload Annotations`` — uploads annotations into a task.
+- ``Remove Annotations`` — removes annotations from the current job.
+- ``Export as a dataset`` — download a data set from a task. Several formats are available:
+  - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/docs/design.md)
+  - [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/)
+  - [MS COCO](http://cocodataset.org/#format-data)
+  - [YOLO](https://pjreddie.com/darknet/yolo/)
+- ``Open the task`` — opens a page with details about the task.
+- ``Run ReID merge`` —  automatic merge of shapes or tracks.
+  It is used to combine individual objects - created by automatic annotation in a single track.
+  For more information click [here](cvat/apps/reid/README.md).
 
-It also shows statistics about the current task, for example:
-- task name
-- status of the task: ``annotation``, ``validation`` or ``completed task``
-- technical information about task
-- number of created bounding boxes, sorted by labels (e.g. vehicle, person) and
-type of annotation (polygons, boxes, etc.)
+#### Save Work
+Saves annotations for the current job. The button has an indication of the saving process.
+
+  ![](static/documentation/images/image141.jpg)
+
+#### Undo-redo buttons
+
+  Use buttons to undo actions or redo them.
+
+  ![](static/documentation/images/image061.jpg)
 
 ---
-**Filter** input box
 
-The way how to use filters is described in the advanced guide (below).
+#### Player
+
+  Go to the first /the latest frames.
+
+  ![](static/documentation/images/image036.jpg)
+
+Go to the next/previous frame with a predefined step. Shortcuts:
+``V`` — step backward, ``C`` — step forward. By default the step is ``10`` frames
+(change at ``Account Menu`` —> ``Settings`` —> ``Player Step``).
+
+  ![](static/documentation/images/image037.jpg)
+
+Go to the next/previous frame (the step is 1 frame). Shortcuts: ``D`` — previous, ``F`` — next.
+
+  ![](static/documentation/images/image040.jpg)
+
+Play the sequence of frames or the set of images.
+Shortcut: ``Space`` (change at ``Account Menu`` —> ``Settings`` —> ``Player Speed``).
+
+  ![](static/documentation/images/image041.jpg)
+
+Go to a specific frame. Press ``~`` to focus on the element.
+
+  ![](static/documentation/images/image060.jpg)
+
+---
+
+#### Fullscreen Player
+The fullscreen player mode. The keyboard shortcut is ``F11``.
+
+  ![](static/documentation/images/image143.jpg)
+
+#### Info
+Open the job info.
+
+  ![](static/documentation/images/image144_DETRAC.jpg)
+
+- Job status: ``annotation``, ``validation`` or ``completed`` task
+
+_Overview_:
+
+-  ``Assinger`` - the one to whom the job is assigned.
+-  ``Start Frame`` - the number of the first frame in this job.
+-  ``End Frame`` - the number of the last frame in this job.
+-  ``Frames`` - the total number of all frames in the job.
+-  ``Z-Order`` - z-order enable indicator.
+
+_Annotations statistics_:
+
+  This is a table number of created shapes, sorted by labels (e.g. vehicle, person)
+  and type of annotation (shape, track). As well as the number of manual and interpolated frames.
+
+#### UI switcher
+Switching between user interface modes.
+
+  ![](static/documentation/images/image145.jpg)
+
+---
+### Objects sidebar
+
+``Hide`` - the button hides the object's sidebar.
+
+![](static/documentation/images/image146.jpg)
+
+#### Objects
+
+**Filter** input box
 
 ![](static/documentation/images/image059.jpg)
 
----
-**History / Undo-redo** panel
+The way how to use filters is described in the advanced guide [here](#filter).
 
-Use ``Ctrl+Z`` for undo actions and  ``Ctrl+Shift+Z`` or ``Ctrl+Y`` to redo them.
+**List of objects**
 
-![](static/documentation/images/image061.jpg)
+![](static/documentation/images/image147.jpg)
 
----
-**Propagation** input box
+  - Switch lock property for all - switches  lock property of all objects in the frame.
+  - Switch hidden property for all - switches hide property of all objects in the frame.
+  - Expand/collapse all - collapses/expands the details field of all objects in the frame.
+  - Sorting - sort the list of objects: updated time, ID - accent, ID -  descent
 
-Allows you to select how many frames of the selected object will be copied clicking ``Ctrl+B`` (50 by default)
+In the objects sidebar you can see the list of available objects on the current
+frame. The following figure is an example of how the list might look like:
 
-![](static/documentation/images/image101.jpg)
-
----
-**Rotation** of an image
-
-Buttons are used to rotate the image clockwise / counterclockwise or use ``Ctrl+R``/``Ctrl+Shift+R``
-
-![](static/documentation/images/image102.jpg)
+| Shape mode                                    | Track mode                                    |
+|--                                             |--                                             |
+| ![](static/documentation/images/image044.jpg) | ![](static/documentation/images/image045.jpg) |
 
 ---
+**Objects** on the side bar
+
+The type of a shape can be changed by selecting **Label** property. For instance, it can look like shown on the figure below:
+
+![](static/documentation/images/image050.jpg)
+
+**Object action menu**
+
+The action menu calls up the button:
+
+  ![](static/documentation/images/image047.jpg)
+
+The action menu contains:
+
+- ``Create object URL`` - puts a link to an object on the clipboard. After you open the link, this object will be filtered.
+- ``Make a copy``- copies an object. The keyboard shortcut is ``Ctrl + C`` ``Ctrl + V``.
+- ``Propagate`` - Сopies the form to several frames,
+  invokes a dialog box in which you can specify the number of copies
+  or the frame onto which you want to copy the object. The keyboard shortcut ``Ctrl + B``.
+
+  ![](static/documentation/images/image053.jpg)
+
+- ``To background`` - moves the object to the background. The keyboard shortcut ``-``,``_``.
+- ``To foreground`` - moves the object to the foreground. The keyboard shortcut ``+``,``=``.
+- ``Remove`` - removes the object. The keyboard shortcut ``Del``,``Shift+Del``.
+
+A shape can be locked to prevent its modification or moving by an accident. Shortcut to lock an object: ``L``.
+
+![](static/documentation/images/image046.jpg)
+
+A shape can be **Occluded**. Shortcut: ``Q``. Such shapes have dashed boundaries.
+
+![](static/documentation/images/image048.jpg)
+
+![](static/documentation/images/image049_DETRAC.jpg)
+
+You can change the way an object is displayed on a frame (show or hide).
+
+![](static/documentation/images/image055.jpg)
+
+``Switch pinned property`` - when enabled, a shape cannot be moved by dragging or dropping.
+
+![](static/documentation/images/image052.jpg)
+
+You can change an object's color.
+To do so, click on the color bar of the object and select a color from the palette that appears.
+
+![](static/documentation/images/image153.jpg)
+
+By clicking on the ``Details`` button you can collapse or expand the field with all the attributes of the object.
+
+![](static/documentation/images/image154.jpg)
+
+---
+
+#### Labels
+You can also change the color of any object to random, to do so just hover
+the mouse over the object on the frame and highlight them by clicking on a label you need.
+In this tab, you can lock or hide objects of a certain label.
+
+![](static/documentation/images/image062.jpg)
+
+---
+
+#### Appearance
+
+**Color By** options
+
+Change the color scheme of annotation:
+-   ``Instance`` — every  shape has random color
+
+    ![](static/documentation/images/image095_DETRAC.jpg)
+
+-   ``Group`` — every group of shape has its own random color, ungrouped shapes are white
+
+    ![](static/documentation/images/image094_DETRAC.jpg)
+
+-   ``Label`` — every label (e.g. car, person) has its own random color
+
+    ![](static/documentation/images/image093_DETRAC.jpg)
+
+    You can change any random color pointing to a needed box on a frame or on an
+    object sidebar.
+
 **Fill Opacity** slider
 
-Change opacity of every bounding box in the annotation.
+Change the opacity of every shape in the annotation.
 
-![](static/documentation/images/image086.jpg)
-
-Opacity can be changed from 0% to 100% and by random colors or white. If any
-white option is chosen, ``Color By`` scheme won't work.
+![](static/documentation/images/image086_DETRAC.jpg)
 
 **Selected Fill Opacity** slider
 
 Change the opacity of the selected object's fill.
 
-![](static/documentation/images/image087.jpg)
-
-Opacity can be changed from 0% to 100%.
+![](static/documentation/images/image089_DETRAC.jpg)
 
 **Black Stroke** checkbox
 
-Change bounding box border from white/colored to black.
+Changes the shape border from colored to black.
 
-![](static/documentation/images/image088.jpg)
+![](static/documentation/images/image088_DETRAC.jpg)
 
-**Color By** options
+**Show bitmap** checkbox
 
-Change the color scheme of annotation:
--   ``Instance`` — every bounding box has random color
+If enabled all shapes are displayed in white and the background is black.
 
-    ![](static/documentation/images/image095.jpg)
+![](static/documentation/images/image087_DETRAC.jpg)
 
--   ``Group`` — every group of boxes has its own random color, ungrouped boxes are white
+**Show projections** checkbox
 
-    ![](static/documentation/images/image094.jpg)
+Enables / disables the display of auxiliary perspective lines. Only relevant for cuboids
 
--   ``Label`` — every label (e.g. vehicle, pedestrian, road marks) has its own random color
-
-    ![](static/documentation/images/image093.jpg)
-
-    You can change any random color pointing on needed box on a frame or on a
-    side panel and press ``Enter``.
+![](static/documentation/images/image090_DETRAC.jpg)
 
 ---
-### Side panel
 
-#### Objects
-In the side panel you can see the list of available objects on the current
-frame. The following figure is an example of how a list might look like:
+## Shape mode (advanced)
 
-| Annotation mode                               | Interpolation mode                            |
-|--                                             |--                                             |
-| ![](static/documentation/images/image044.jpg) | ![](static/documentation/images/image045.jpg) |
+Basic operations in the mode were described in section [shape mode (basics)](#shape-mode-basics).
 
-#### Labels
-You can also see all labels that were used on this frame and highlight them clicking on a label you need
-
-![](static/documentation/images/image062.jpg)
-
----
-**Objects** on the side bar
-
-A shape can be removed. Shortcut: ``Delete``. You can delete a locked shape using the ``Shift+Delete`` shortcut.
-
-![](static/documentation/images/image047.jpg)
-
----
-A shape can be locked to prevent its modification or moving by an accident. Shortcut to lock an object: ``L``.
-
-![](static/documentation/images/image046.jpg)
-
----
-A shape can be **Occluded**. Shortcut: ``Q``. Such shapes have dashed boundaries.
-
-![](static/documentation/images/image048.jpg)
-
-![](static/documentation/images/image049.jpg)
-
----
-You can copy and paste an object in a particular frame. The keyboard
-shortcuts ``Ctrl + C`` / ``Ctrl + V`` work when you hover over an object
-
-![](static/documentation/images/image052.jpg)
-
----
-You can propagate an object in the following X frames. The keyboard
-shortcut ``Ctrl + B`` works when you hover the mouse over an object. You can
-change the number of propagating frames in the bottom panel.
-
-![](static/documentation/images/image053.jpg)
-
----
-You can change the way an object is displayed on a frame.
-It could be hide, shows only box, shows box and title. ``H`` is for this
-object, ``T+H`` for all objects on this frame.
-
-![](static/documentation/images/image055.jpg)
-
----
-The type of a shape can be changed selecting **Label** property. For instance, it can look like on the figure below:
-
-![](static/documentation/images/image050.jpg)
-
-To change a type of a highlighted shape using keyboard, you need to press ``Shift+<number>``.
-
-### Bottom side panel
-
-- ``Create Shape`` (``N``) — start/stop drawing new shape mode
-- ``Merge Shapes`` (``M``) — start/stop merging shapes mode
-- ``Group Shapes`` (``G``) — start/stop grouping shapes mode
-- ``Label Type`` — (e.g. face, person, vehicle)
-- ``Working Mode`` — Annotation or Interpolation modes. You can't interpolate
-polygons/polylines/points, but you can propagate them using ``Ctrl+B`` or
-merge into a track
-- ``Shape Type`` — (e.g. box, polygon, polyline, points)
-- ``Poly Shape Size`` — (optional) hard number of dots for creating polygon, polyline and points shapes
-
-![](static/documentation/images/image082.jpg)
-
-### Fullscreen player mode
-
-Go to ``Open Menu`` —> ``Fullscreen Player``
-Exit with ``F11`` or ``Ecs``.
-
-This is how it looks like.
-
-![](static/documentation/images/image043.jpg)
-
-## Annotation mode (advanced)
-
-Basic operations in the mode were described above.
-
-**Occluded** attribute is used if an object is occluded by another object or
+**Occluded** 
+Occlusion is an attribute used if an object is occluded by another object or
 isn't fully visible on the frame. Use ``Q`` shortcut to set the property
 quickly.
 
 ![](static/documentation/images/image065.jpg)
 
-Example: both cars on the figure below should be labeled as **occluded**.
+Example: the three cars on the figure below should be labeled as **occluded**.
 
-![](static/documentation/images/image054.jpg)
+![](static/documentation/images/image054_mapillary_vistas.jpg)
 
 If a frame contains too many objects and it is difficult to annotate them
-due to many shapes that are placed mostly in the same place, it makes sense
+due to many shapes placed mostly in the same place, it makes sense
 to lock them. Shapes for locked objects are transparent, and it is easy to
 annotate new objects. Besides, you can't change previously annotated objects
 by accident. Shortcut: ``L``.
