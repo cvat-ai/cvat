@@ -22,6 +22,7 @@ import {
     Geometry,
     RectDrawingMethod,
     Configuration,
+    CuboidDrawingMethod,
 } from './canvasModel';
 
 import { cuboidFrom4Points } from './cuboid';
@@ -227,7 +228,8 @@ export class DrawHandlerImpl implements DrawHandler {
         // Or when no drawn points, but we call cancel() drawing
         // We check if it is activated with remember function
         if (this.drawInstance.remember('_paintHandler')) {
-            if (this.drawData.shapeType !== 'rectangle') {
+            if (this.drawData.shapeType !== 'rectangle'
+            && this.drawData.cuboidDrawingMethod !== CuboidDrawingMethod.CLASSIC) {
                 // Check for unsaved drawn shapes
                 this.drawInstance.draw('done');
             }
@@ -451,12 +453,35 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawPolyshape();
     }
 
-    private drawCuboid(): void {
+    private drawCuboidBy4Points(): void {
         this.drawInstance = (this.canvas as any).polyline()
             .addClass('cvat_canvas_shape_drawing').attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             });
         this.drawPolyshape();
+    }
+
+    private drawCuboid(): void {
+        this.drawInstance = this.canvas.rect();
+        this.drawInstance.on('drawstop', (e: Event): void => {
+            const bbox = (e.target as SVGRectElement).getBBox();
+            const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+            const { shapeType } = this.drawData;
+            this.release();
+
+            if (this.canceled) return;
+            if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
+                const d = { x: (xbr - xtl) * 0.1, y: (ybr - ytl)*0.1}
+                this.onDrawDone({
+                    shapeType,
+                    points: cuboidFrom4Points([xtl, ybr, xbr, ybr, xbr, ytl, xbr + d.x, ytl - d.y]),
+                }, Date.now() - this.startTimestamp);
+            }
+        }).on('drawupdate', (): void => {
+            this.shapeSizeElement.update(this.drawInstance);
+        }).addClass('cvat_canvas_shape_drawing').attr({
+            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+        });
     }
 
     private pastePolyshape(): void {
@@ -679,7 +704,12 @@ export class DrawHandlerImpl implements DrawHandler {
             } else if (this.drawData.shapeType === 'points') {
                 this.drawPoints();
             } else if (this.drawData.shapeType === 'cuboid') {
-                this.drawCuboid();
+                if (this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS) {
+                    this.drawCuboidBy4Points();
+                } else {
+                    this.drawCuboid();
+                    this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
+                }
             }
             this.setupDrawEvents();
         }
