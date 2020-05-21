@@ -11,7 +11,7 @@ import Text from 'antd/lib/typography/Text';
 
 interface Props {
     menuKey: string;
-    loaders: string[];
+    loaders: any[];
     loadActivity: string | null;
     onFileUpload(file: File): void;
 }
@@ -27,12 +27,16 @@ export default function LoadSubmenu(props: Props): JSX.Element {
     return (
         <Menu.SubMenu key={menuKey} title='Upload annotations'>
             {
-                loaders.map((_loader: string): JSX.Element => {
-                    const [loader, accept] = _loader.split('::');
-                    const pending = loadActivity === loader;
+                loaders.map((loader: any): JSX.Element => {
+                    const accept = loader.format
+                        .split(',')
+                        .map((x: string) => '.' + x.trimStart())
+                        .join(', '); // add '.' to each extension in a list
+                    const pending = loadActivity === loader.name;
+                    const disabled = !loader.enabled || pending;
                     return (
                         <Menu.Item
-                            key={loader}
+                            key={loader.name}
                             disabled={!!loadActivity}
                             className='cvat-menu-load-submenu-item'
                         >
@@ -45,9 +49,9 @@ export default function LoadSubmenu(props: Props): JSX.Element {
                                     return false;
                                 }}
                             >
-                                <Button block type='link' disabled={!!loadActivity}>
+                                <Button block type='link' disabled={!!loadActivity || disabled}>
                                     <Icon type='upload' />
-                                    <Text>{loader}</Text>
+                                    <Text>{loader.name}</Text>
                                     {pending && <Icon style={{ marginLeft: 10 }} type='loading' />}
                                 </Button>
                             </Upload>
