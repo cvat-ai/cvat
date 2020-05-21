@@ -946,35 +946,6 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             }
         },
 
-        switchOrientation(){
-            function rotate(array: Point[], times: number){
-                if(times>0){
-                    while(times--){
-                        array.push(array.shift());
-                    }
-                }else{
-                    while(times++ < 0){
-                        array.unshift(array.pop());
-                        times++;
-                    }
-                }
-            }
-            this.resetPerspective();
-
-            let top = this.cuboidModel.top.points;
-            let bot =  this.cuboidModel.bot.points;
-            if(this.cuboidModel.orientation === Orientation.LEFT){
-                rotate(top, 1);
-                rotate(bot, 1);
-            }else{
-                rotate(top, -1);
-                rotate(bot, -1);
-            }
-            this.cuboidModel.top.points = top;
-            this.cuboidModel.bot.points = bot;
-            this.updateViewAndVM();
-        },
-
         updateViewAndVM(build: boolean) {
             this.cuboidModel.updateOrientation();
             this.cuboidModel.buildBackEdge(build);

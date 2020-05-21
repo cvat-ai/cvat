@@ -1642,9 +1642,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             cube.style('display', 'none');
         }
 
-        // TODO: remove it
-        (window as any).cube = cube;
-
         return cube;
     }
 

@@ -413,7 +413,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
         const {objectState} = this.props;
 
-        this.resetCuboidPerspective(true);
+        this.resetCuboidPerspective(false);
 
         objectState.points = shift(objectState.points,
             orientation(objectState.points) ? 4: -4);
@@ -421,7 +421,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         this.commit();
     }
 
-    private resetCuboidPerspective = (notCommit?: boolean): void => {
+    private resetCuboidPerspective = (commit: boolean = true): void => {
         function orientation(points: number[]): boolean {
             return points[12] > points[0];
         }
@@ -450,7 +450,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
 
         objectState.points = points;
-        if (!notCommit) this.commit();
+        if (commit) this.commit();
     }
 
     private commit(): void {
@@ -557,7 +557,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
                 switchCuboidOrientation={this.switchCuboidOrientation}
-                resetCuboidPerspective={this.resetCuboidPerspective}
+                resetCuboidPerspective={() => this.resetCuboidPerspective()}
             />
         );
     }
