@@ -312,8 +312,7 @@ def get_meta_info(request):
 @login_required
 @permission_required(perm=['engine.task.change'],
                      fn=objectgetter(TaskModel, 'tid'), raise_exception=True)
-@permission_required(perm=["auto_annotation.model.access"],
-                     fn=objectgetter(AnnotationModel, "mid"), raise_exception=True)
+
 def create(request, tid, mid):
     slogger.glob.info('tf annotation create request for task {}'.format(tid))
     try:
