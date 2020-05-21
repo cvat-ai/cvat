@@ -47,8 +47,10 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         onChangeRectDrawingMethod,
     } = props;
 
-    const trackDisabled = shapeType === ShapeType.POLYGON || shapeType === ShapeType.POLYLINE
-        || shapeType === ShapeType.CUBOID || (shapeType === ShapeType.POINTS && numberOfPoints !== 1);
+    const trackDisabled = shapeType === ShapeType.POLYGON
+        || shapeType === ShapeType.POLYLINE
+        || shapeType === ShapeType.CUBOID
+        || (shapeType === ShapeType.POINTS && numberOfPoints !== 1);
 
     return (
         <div className='cvat-draw-shape-popover-content'>
@@ -81,9 +83,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            {
-                shapeType === ShapeType.POLYGON && <DEXTRPlugin />
-            }
+            { shapeType === ShapeType.POLYGON && <DEXTRPlugin /> }
             {
                 shapeType === ShapeType.RECTANGLE && (
                     <>
@@ -146,19 +146,14 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             <Row type='flex' justify='space-around'>
                 <Col span={12}>
                     <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
-                        <Button
-                            onClick={onDrawShape}
-                        >
+                        <Button onClick={onDrawShape}>
                             Shape
                         </Button>
                     </Tooltip>
                 </Col>
                 <Col span={12}>
                     <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
-                        <Button
-                            onClick={onDrawTrack}
-                            disabled={trackDisabled}
-                        >
+                        <Button onClick={onDrawTrack} disabled={trackDisabled}>
                             Track
                         </Button>
                     </Tooltip>

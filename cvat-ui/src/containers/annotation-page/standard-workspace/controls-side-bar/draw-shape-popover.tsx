@@ -103,17 +103,8 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     }
 
     private onDraw(objectType: ObjectType): void {
-        const {
-            canvasInstance,
-            shapeType,
-            onDrawStart,
-        } = this.props;
-
-        const {
-            rectDrawingMethod,
-            numberOfPoints,
-            selectedLabelID,
-        } = this.state;
+        const { canvasInstance, shapeType, onDrawStart } = this.props;
+        const { rectDrawingMethod, numberOfPoints, selectedLabelID } = this.state;
 
         canvasInstance.cancel();
         canvasInstance.draw({

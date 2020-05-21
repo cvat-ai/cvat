@@ -10,7 +10,7 @@ import {
     Reducer,
 } from 'redux';
 import { createLogger } from 'redux-logger';
-import {isDev} from 'utils/enviroment';
+import { isDev } from 'utils/enviroment';
 
 
 const logger = createLogger({
