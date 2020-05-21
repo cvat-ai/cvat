@@ -52,6 +52,7 @@ function TopBarComponent(props: VisibleTopBarProps & RouteComponentProps): JSX.E
                         onClick={
                             (): void => history.push('/tasks/create')
                         }
+                        icon='plus'
                     >
                          Create new task
                     </Button>
