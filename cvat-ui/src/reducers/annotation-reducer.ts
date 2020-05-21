@@ -1106,6 +1106,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.CHECK_ANNOTATION: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    states: [
+                        ...action.payload,
+                    ],
+                },
+            };
+        }
         default: {
             return state;
         }

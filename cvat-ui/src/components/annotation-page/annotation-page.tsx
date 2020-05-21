@@ -20,6 +20,8 @@ interface Props {
     getJob(): void;
     saveLogs(): void;
     workspace: Workspace;
+    taskID: number;
+    checkAnnotation(taskId: number): void;
 }
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
@@ -29,10 +31,13 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         getJob,
         saveLogs,
         workspace,
+        taskID,
+        checkAnnotation
     } = props;
 
     useEffect(() => {
         saveLogs();
+        // checkAnnotation(taskID);
         const root = window.document.getElementById('root');
         if (root) {
             root.style.minHeight = '768px';

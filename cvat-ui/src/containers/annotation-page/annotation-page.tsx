@@ -7,7 +7,7 @@ import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
 
 import AnnotationPageComponent from 'components/annotation-page/annotation-page';
-import { getJobAsync, saveLogsAsync } from 'actions/annotation-actions';
+import { getJobAsync, saveLogsAsync, checkAnnotationsAsync } from 'actions/annotation-actions';
 
 import { CombinedState, Workspace } from 'reducers/interfaces';
 
@@ -20,16 +20,19 @@ interface StateToProps {
     job: any | null | undefined;
     fetching: boolean;
     workspace: Workspace;
+    taskID: number;
 }
 
 interface DispatchToProps {
     getJob(): void;
     saveLogs(): void;
+    checkAnnotation(taskID: number): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const { params } = own.match;
     const jobID = +params.jid;
+    const taskID = +params.tid;
     const {
         annotation: {
             job: {
@@ -45,6 +48,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         job: jobID === requestedId ? job : null,
         fetching,
         workspace,
+        taskID,
     };
 }
 
@@ -82,6 +86,9 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
         },
         saveLogs(): void {
             dispatch(saveLogsAsync());
+        },
+        checkAnnotation(taskId: number): void {
+            dispatch(checkAnnotationsAsync(taskID));
         },
     };
 }

@@ -191,6 +191,7 @@ export enum AnnotationActionTypes {
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
     TRACKER_SETTINGS = 'TRACKER_SETTINGS',
     RESET_TRACKER_SETTINGS = 'RESET_TRACKER_SETTINGS',
+    CHECK_ANNOTATION = 'CHECK_ANNOTATION',
 }
 
 export function saveLogsAsync():
@@ -993,6 +994,37 @@ export function getJobAsync(
                 },
             });
         }
+    };
+}
+
+export function checkAnnotationsAsync(taskId: number):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const baseUrl: string = cvat.config.backendAPI.slice(0, -7);
+        let {shapes} = await cvat.server.request(`${baseUrl}/api/v1/jobs/${taskId}/annotations`, {
+            method: 'GET',
+        });
+        let shapeObjects = shapes.map((shp: any) => {
+            return new cvat.classes.ObjectState(shp);
+        })
+        const state: CombinedState = getStore().getState();
+        const {
+            annotation: {
+                annotations: {
+                    states,
+                },
+            },
+        } = state;
+        states.forEach((shapeState: any) => {
+            let shapeExist = shapeObjects.find((shape: any) => shape.serverID == shapeState.serverID);
+            if(!!shapeExist) {
+                shapeObjects.push(shapeState);
+            }
+        });
+        dispatch({
+            type: AnnotationActionTypes.CHECK_ANNOTATION,
+            payload: shapeObjects,
+        });
     };
 }
 
