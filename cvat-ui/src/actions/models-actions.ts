@@ -161,7 +161,7 @@ export function getModelsAsync(): ThunkAction {
 
             if (RCNN) {
                 models.push({
-                    id: null,
+                    id: 989898,
                     ownerID: null,
                     primary: true,
                     name: PreinstalledModels.RCNN,
@@ -192,7 +192,7 @@ export function getModelsAsync(): ThunkAction {
 
             if (MaskRCNN) {
                 models.push({
-                    id: null,
+                    id: 989898,
                     ownerID: null,
                     primary: true,
                     name: PreinstalledModels.MaskRCNN,
@@ -497,18 +497,31 @@ export function startInferenceAsync(
             if (model.name === PreinstalledModels.RCNN) {
                 // var unique_no = 9999
                 await core.server.request(
-                    `${baseURL}/tensorflow/annotation/create/task/${taskInstance.id}`
+                    `${baseURL}/tensorflow/annotation/create/task/${taskInstance.id}/${model.id}`,{
+                        method: 'POST',
+                        data: JSON.stringify({
+                            reset: cleanOut,
+                            labels:mapping,
+                        })
+                    }
                 );
             } else if (model.name === PreinstalledModels.MaskRCNN) {
                 // const unique_no = 9999
                 await core.server.request(
-                    `${baseURL}/tensorflow/segmentation/create/task/${taskInstance.id}`
+                    `${baseURL}/tensorflow/segmentation/create/task/${taskInstance.id}/${model.id}`,{
+                        method: 'POST',
+                        data: JSON.stringify({
+                            reset: cleanOut,
+                            labels:mapping,
+                        })
+                    }
                 );
             }else  if (model.framework === "tensorflow") {
                 await core.server.request(
                     `${baseURL}/tensorflow/annotation/create/task/${taskInstance.id}/${model.id}`,{
                         method: 'POST',
                         data: JSON.stringify({
+                            reset: cleanOut,
                             labels: mapping,
                         })
                     }
@@ -518,6 +531,7 @@ export function startInferenceAsync(
                     `${baseURL}/tensorflow/segmentation/create/task/${taskInstance.id}/${model.id}`,{
                         method: 'POST',
                         data: JSON.stringify({
+                            reset: cleanOut,
                             labels: mapping,
                         })
                     }
