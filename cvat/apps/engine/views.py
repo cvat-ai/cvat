@@ -802,20 +802,20 @@ def rq_handler(job, exc_type, exc_value, tb):
 #     tags=['tasks'])
 # @api_view(['PUT'])
 def _import_annotations(request, rq_id, rq_func, pk, format_name):
+    format_desc = {f.DISPLAY_NAME: f
+        for f in dm.views.get_import_formats()}.get(format_name)
+    if format_desc is None:
+        raise serializers.ValidationError(
+            "Unknown input format '{}'".format(format_name))
+    elif not format_desc.ENABLED:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
         serializer = AnnotationFileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            format_desc = {f.DISPLAY_NAME
-                for f in dm.views.get_import_formats()}.get(format_name)
-            if format_desc is None:
-                raise serializers.ValidationError(
-                    "Unknown input format '{}'".format(format_name))
-            elif not format_desc.ENABLED:
-                return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
             anno_file = serializer.validated_data['annotation_file']
             fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
             with open(filename, 'wb+') as f:
@@ -849,7 +849,7 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
 
-    format_desc = {f.DISPLAY_NAME
+    format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_export_formats()}.get(format_name)
     if format_desc is None:
         raise serializers.ValidationError(

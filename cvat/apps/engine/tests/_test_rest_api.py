@@ -3183,7 +3183,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 # 3. download annotation
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
                     "?format={}".format(export_format))
-                if export_formats[export_format]['enabled']:
+                if annotator and not export_formats[export_format]['enabled']:
                     self.assertEqual(response.status_code,
                         status.HTTP_405_METHOD_NOT_ALLOWED)
                     continue
