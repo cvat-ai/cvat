@@ -199,19 +199,20 @@ interface TrackerPayload {
             group: number;
             id: number;
             label_id: number;
+            shapes: [
+                {
+                    frame: number;
+                    attributes: any;
+                    occluded: boolean;
+                    outside: boolean;
+                    points: number[];
+                    type: string;
+                    z_order: number;
+                }
+            ];
         }
     };
-    shapes: [
-        {
-            frame: number;
-            attributes: any;
-            occluded: boolean;
-            outside: boolean;
-            points: number[];
-            type: string;
-            z_order: number;
-        }
-    ];
+   
     trackId: number;
     trackerOptions: {
         trackerType: string;
@@ -489,20 +490,21 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                     frame: objectState.frame,
                     group: objectState.group,
                     id: 4,
-                    label_id: objectState.label.id
+                    label_id: objectState.label.id,
+                    shapes: [
+                        {
+                            frame: objectState.frame,
+                            attributes: objectState.attributes,
+                            occluded: objectState.occluded,
+                            outside: objectState.outside,
+                            points: objectState.points,
+                            type: objectState.shapeType,
+                            z_order: objectState.zOrder,
+                        }
+                    ],
                 }
+                
             },
-            shapes: [
-                {
-                    frame: objectState.frame,
-                    attributes: objectState.attributes,
-                    occluded: objectState.occluded,
-                    outside: objectState.outside,
-                    points: objectState.points,
-                    type: objectState.shapeType,
-                    z_order: objectState.zOrder,
-                }
-            ],
             trackId: 4,
             trackerOptions: {
                 trackerType: tracker_type

@@ -716,13 +716,16 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 			params.append(Parameter(name='extras', value=str(args_and_vals)))
 			params.append(Parameter(name="tf-image", value=tf_image))
 			params.append(Parameter(name="sys-node-pool", value=machine))
-			params.append(Parameter(name='model-path',value=os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/models/'))
 			if 'TFRecord' in form_data['dump_format']:
+				params.append(Parameter(name='model-path',value=os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/models/'+db_task.name+"_tfod_"+stamp+'/'))
+
 				params.append(Parameter(name='num-classes', value=str(num_classes)))
 				params.append(Parameter(name="ref_model", value=form_data['ref_model']))
 				body = onepanel.core.api.CreateWorkflowExecutionBody(parameters=params,
 				workflow_template_uid = os.getenv('ONEPANEL_OD_TEMPLATE_ID')) 
 			else:
+				params.append(Parameter(name='model-path',value=os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/models/'+db_task.name+"_maskrcnn_"+stamp+'/'))
+
 				params.append(Parameter(name='num-classes', value=str(num_classes+1)))
 				params.append(Parameter(name='stage-1-epochs', value=str(args_and_vals['--stage1_epochs'])))
 				params.append(Parameter(name='stage-2-epochs', value=str(args_and_vals['--stage2_epochs'])))
