@@ -521,6 +521,8 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 anno = datumaro.Bbox(x0, y0, x1 - x0, y1 - y0,
                     label=anno_label, attributes=anno_attr, group=anno_group,
                     z_order=shape_obj.z_order)
+            elif shape_obj.type == ShapeType.CUBOID:
+                continue # Datumaro does not support cuboids
             else:
                 raise Exception("Unknown shape type '%s'" % shape_obj.type)
 

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { Link, withRouter } from 'react-router-dom';
@@ -10,8 +11,8 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
 import { UserAgreement } from 'reducers/interfaces'
-import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 import CookieDrawer from 'components/login-page/cookie-policy-drawer';
+import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 
 interface RegisterPageComponentProps {
     fetching: boolean;
@@ -29,8 +30,8 @@ function RegisterPageComponent(
         xs: { span: 14 },
         sm: { span: 14 },
         md: { span: 10 },
-        lg: { span: 4 },
-        xl: { span: 4 },
+        lg: { span: 6 },
+        xl: { span: 5 },
     };
 
     const {

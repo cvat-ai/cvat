@@ -24,6 +24,7 @@ import AnnotationPageContainer from 'containers/annotation-page/annotation-page'
 import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import HeaderContainer from 'containers/header/header';
+import { customWaViewHit } from 'utils/enviroment';
 
 import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from 'reducers/interfaces';
@@ -61,7 +62,7 @@ interface CVATAppProps {
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
         const core = getCore();
-        const { verifyAuthorized, loadUserAgreements } = this.props;
+        const { verifyAuthorized, history } = this.props;
         configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
@@ -70,6 +71,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             userActivityCallback.forEach((handler) => handler());
         });
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
+
+        customWaViewHit(location.pathname, location.search, location.hash);
+        history.listen((location) => {
+            customWaViewHit(location.pathname, location.search, location.hash);
+        });
 
         verifyAuthorized();
     }

@@ -51,7 +51,8 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         onChangeCuboidDrawingMethod,
     } = props;
 
-    const trackDisabled = shapeType === ShapeType.POLYGON || shapeType === ShapeType.POLYLINE
+    const trackDisabled = shapeType === ShapeType.POLYGON
+        || shapeType === ShapeType.POLYLINE
         || (shapeType === ShapeType.POINTS && numberOfPoints !== 1);
 
     return (
@@ -85,9 +86,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            {
-                shapeType === ShapeType.POLYGON && <DEXTRPlugin />
-            }
+            { shapeType === ShapeType.POLYGON && <DEXTRPlugin /> }
             {
                 shapeType === ShapeType.RECTANGLE && (
                     <>
@@ -183,19 +182,14 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             <Row type='flex' justify='space-around'>
                 <Col span={12}>
                     <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
-                        <Button
-                            onClick={onDrawShape}
-                        >
+                        <Button onClick={onDrawShape}>
                             Shape
                         </Button>
                     </Tooltip>
                 </Col>
                 <Col span={12}>
                     <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
-                        <Button
-                            onClick={onDrawTrack}
-                            disabled={trackDisabled}
-                        >
+                        <Button onClick={onDrawTrack} disabled={trackDisabled}>
                             Track
                         </Button>
                     </Tooltip>
