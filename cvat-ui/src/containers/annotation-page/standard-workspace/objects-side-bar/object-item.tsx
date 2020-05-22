@@ -407,7 +407,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     }
 
     private switchCuboidOrientation = (): void => {
-        function orientation(points: number[]): boolean {
+        function cuboidOrientationIsLeft(points: number[]): boolean {
             return points[12] > points[0];
         }
 
@@ -416,13 +416,13 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         this.resetCuboidPerspective(false);
 
         objectState.points = shift(objectState.points,
-            orientation(objectState.points) ? 4: -4);
+            cuboidOrientationIsLeft(objectState.points) ? 4: -4);
 
         this.commit();
     }
 
     private resetCuboidPerspective = (commit: boolean = true): void => {
-        function orientation(points: number[]): boolean {
+        function cuboidOrientationIsLeft(points: number[]): boolean {
             return points[12] > points[0];
         }
 
@@ -433,7 +433,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             y: (points[3] - points[1])*0.001,
         }
 
-        if (orientation(points)) {
+        if (cuboidOrientationIsLeft(points)) {
             points[10] = points[14] + points[6] - points[2] - minD.x;
             points[11] = points[15] + points[7] - points[3];
             points[12] = points[14] + points[0] - points[2];
