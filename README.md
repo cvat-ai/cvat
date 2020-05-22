@@ -62,13 +62,17 @@ via its command line tool and Python library.
 
 ## Online Demo
 
-[Onepanel](https://www.onepanel.io/) has added CVAT as an environment
-into their platform and a running demo of CVAT can be accessed at
-[CVAT Public Demo](https://c.onepanel.io/onepanel-demo/projects/cvat-public-demo/workspaces?utm_source=cvat).
+This is an online demo for users to try the latest version of CVAT.
+### [cvat.org](https://cvat.org)
+This demo is designed to give you an understanding of the features and capabilities within CVAT without installation.
 
-If you have any questions, please contact Onepanel directly at
-support@onepanel.io. If you are in the Onepanel application, you can also
-use the chat icon in the bottom right corner.
+The following functions are disabled in the online demo
+- Analytics
+- Cuda support
+
+User limitations:
+- No more than 10 tasks for each user
+- The maximum size of the uploaded data is 500Mb
 
 ## REST API
 
