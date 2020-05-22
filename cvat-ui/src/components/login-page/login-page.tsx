@@ -2,14 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { Link, withRouter } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
-import { customWaViewHit } from 'utils/enviroment';
 import LoginForm, { LoginData } from './login-form';
 import CookieDrawer from './cookie-policy-drawer';
 
@@ -30,12 +29,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     const {
         fetching,
         onLogin,
-        location,
     } = props;
-
-    useEffect(() => {
-        customWaViewHit(location.pathname);
-    });
 
     return (
         <>

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { Link, withRouter } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
@@ -11,7 +11,6 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
 import { UserAgreement } from 'reducers/interfaces'
-import { customWaViewHit } from 'utils/enviroment';
 import CookieDrawer from 'components/login-page/cookie-policy-drawer';
 import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 
@@ -39,12 +38,7 @@ function RegisterPageComponent(
         fetching,
         userAgreements,
         onRegister,
-        location,
     } = props;
-
-    useEffect(() => {
-        customWaViewHit(location.pathname);
-    });
 
     return (
         <>

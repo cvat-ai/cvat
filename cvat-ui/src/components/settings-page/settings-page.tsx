@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
 import Icon from 'antd/lib/icon';
@@ -14,15 +14,8 @@ import { RouteComponentProps } from 'react-router';
 
 import WorkspaceSettingsContainer from 'containers/settings-page/workspace-settings';
 import PlayerSettingsContainer from 'containers/settings-page/player-settings';
-import { customWaViewHit } from 'utils/enviroment';
 
 function SettingsPage(props: RouteComponentProps): JSX.Element {
-    const { location } = props;
-
-    useEffect(() => {
-        customWaViewHit(location.pathname);
-    });
-
     return (
         <div className='cvat-settings-page'>
             <Row type='flex' justify='center'>

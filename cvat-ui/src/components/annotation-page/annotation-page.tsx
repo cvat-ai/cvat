@@ -4,13 +4,11 @@
 
 import './styles.scss';
 import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import Layout from 'antd/lib/layout';
 import Spin from 'antd/lib/spin';
 import Result from 'antd/lib/result';
 
 import { Workspace } from 'reducers/interfaces';
-import { customWaViewHit } from 'utils/enviroment';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import StatisticsModalContainer from 'containers/annotation-page/top-bar/statistics-modal';
 import StandardWorkspaceComponent from './standard-workspace/standard-workspace';
@@ -33,12 +31,9 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         workspace,
     } = props;
 
-    const location = useLocation();
-
     useEffect(() => {
         saveLogs();
         const root = window.document.getElementById('root');
-        customWaViewHit(location.pathname);
         if (root) {
             root.style.minHeight = '768px';
         }

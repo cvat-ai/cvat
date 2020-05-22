@@ -3,11 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import React from 'react';
 import Spin from 'antd/lib/spin';
 
-import { customWaViewHit } from 'utils/enviroment';
 import TopBarComponent from './top-bar';
 import UploadedModelsList from './uploaded-models-list';
 import BuiltModelsList from './built-models-list';
@@ -39,12 +37,6 @@ export default function ModelsPageComponent(props: Props): JSX.Element {
 
         deleteModel,
     } = props;
-
-    const location = useLocation();
-
-    useEffect(() => {
-        customWaViewHit(location.pathname);
-    });
 
     if (!modelsInitialized) {
         if (!modelsFetching) {
