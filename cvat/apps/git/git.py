@@ -10,13 +10,12 @@ import re
 import shutil
 import subprocess
 from glob import glob
-from tempfile import TemporaryDirectory
+import zipfile
 
 import django_rq
 import git
 from django.db import transaction
 from django.utils import timezone
-from pyunpack import Archive
 
 from cvat.apps.dataset_manager.task import export_task
 from cvat.apps.engine.log import slogger
@@ -284,16 +283,16 @@ class Git:
         if ext == '.zip':
             shutil.move(dump_name, self._annotation_file)
         elif ext == '.xml':
-            with TemporaryDirectory() as tmp_dir:
-                # TODO: remove extra packing-unpacking
-                Archive(src_path).extractall(tmp_dir)
-                anno_paths = glob(osp.join(tmp_dir, '**', '*.xml'),
-                    recursive=True)
-                shutil.move(anno_paths[0], self._annotation_file)
+            with zipfile.ZipFile(dump_name) as archive:
+                for f in archive.namelist():
+                    if f.endswith('.xml'):
+                        with open(self._annotation_file, 'wb') as output:
+                            output.write(archive.read(f))
+                        break
+            os.remove(dump_name)
         else:
             raise Exception("Got unknown annotation file type")
 
-        os.remove(dump_name)
         self._rep.git.add(self._annotation_file)
 
         # Merge diffs

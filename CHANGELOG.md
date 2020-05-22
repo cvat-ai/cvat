@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - `annotation` application is replaced with `dataset_manager` (https://github.com/opencv/cvat/pull/1352)
+- `_DATUMARO_INIT_LOGLEVEL` env. variable is removed in favor of regular `--loglevel` cli parameter (https://github.com/opencv/cvat/pull/1583)
 
 ### Fixed
 - Categories for empty projects with no sources are taken from own dataset (https://github.com/opencv/cvat/pull/1352)
@@ -49,6 +50,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tf.placeholder() is not compatible with eager execution` exception for auto_segmentation (<https://github.com/opencv/cvat/pull/1562>)
 - Canvas cannot be moved with move functionality on left mouse key (<https://github.com/opencv/cvat/pull/1573>)
 - Deep extreme cut request is sent when draw any shape with Make AI polygon option enabled  (<https://github.com/opencv/cvat/pull/1573>)
+- Fixed an error when exporting a task with cuboids to any format except CVAT (<https://github.com/opencv/cvat/pull/1577>)
+- Synchronization with remote git repo (<https://github.com/opencv/cvat/pull/1582>)
+- A problem with mask to polygons conversion when polygons are too small (<https://github.com/opencv/cvat/pull/1581>)
 
 ### Security
 -
