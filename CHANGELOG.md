@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - `annotation` application is replaced with `dataset_manager` (https://github.com/opencv/cvat/pull/1352)
+- `_DATUMARO_INIT_LOGLEVEL` env. variable is removed in favor of regular `--loglevel` cli parameter (https://github.com/opencv/cvat/pull/1583)
 
 ### Fixed
 - Categories for empty projects with no sources are taken from own dataset (https://github.com/opencv/cvat/pull/1352)
