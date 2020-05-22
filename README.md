@@ -11,6 +11,7 @@ CVAT is free, online, interactive video and image annotation
 tool for computer vision. It is being used by our team to
 annotate million of objects with different properties. Many UI
 and UX decisions are based on feedbacks from professional data annotation team.
+Try it online [cvat.org](https://cvat.org).
 
 ![CVAT screenshot](cvat/apps/documentation/static/documentation/images/cvat.jpg)
 
@@ -60,19 +61,19 @@ via its command line tool and Python library.
 - [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
 - [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
 
-## Online Demo
+## Online demo: [cvat.org](https://cvat.org)
 
-This is an online demo for users to try the latest version of CVAT.
-### [cvat.org](https://cvat.org)
-This demo is designed to give you an understanding of the features and capabilities within CVAT without installation.
+This is an online demo with the latest version of the annotation tool.
+Try it online without local installation. Only own or assigned tasks
+are visible to users.
 
-The following functions are disabled in the online demo
-- Analytics
-- Cuda support
+Disabled features:
+- [Analytics: management and monitoring of data annotation team](/components/analytics/README.md)
+- [Support for NVIDIA GPUs](/components/cuda/README.md)
 
-User limitations:
-- No more than 10 tasks for each user
-- The maximum size of the uploaded data is 500Mb
+Limitations:
+- No more than 10 tasks per user
+- Uploaded data is limited to 500Mb
 
 ## REST API
 
