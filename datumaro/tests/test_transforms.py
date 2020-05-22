@@ -1,3 +1,4 @@
+import logging as log
 import numpy as np
 
 from unittest import TestCase
@@ -64,6 +65,33 @@ class TransformsTest(TestCase):
 
         actual = transforms.MasksToPolygons(SrcExtractor())
         compare_datasets(self, DstExtractor(), actual)
+
+    def test_mask_to_polygons_small_polygons_message(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                items = [
+                    DatasetItem(id=1, image=np.zeros((5, 10, 3)),
+                        annotations=[
+                            Mask(np.array([
+                                    [0, 0, 0],
+                                    [0, 1, 0],
+                                    [0, 0, 0],
+                                ]),
+                            ),
+                        ]
+                    ),
+                ]
+                return iter(items)
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([ DatasetItem(id=1, image=np.zeros((5, 10, 3))), ])
+
+        with self.assertLogs(level=log.DEBUG) as logs:
+            actual = transforms.MasksToPolygons(SrcExtractor())
+
+            compare_datasets(self, DstExtractor(), actual)
+            self.assertRegex('\n'.join(logs.output), 'too small polygons')
 
     def test_polygons_to_masks(self):
         class SrcExtractor(Extractor):

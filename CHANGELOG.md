@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed full COCO dataset import error with conflicting labels in keypoints and detection (https://github.com/opencv/cvat/pull/1548)
 - Fixed COCO keypoints skeleton parsing and saving (https://github.com/opencv/cvat/issues/1539)
 - `tf.placeholder() is not compatible with eager execution` exception for auto_segmentation (https://github.com/opencv/cvat/pull/1562)
+- Fixed a problem with mask to polygons conversion when polygons are too small (https://github.com/opencv/cvat/pull/1581)
 
 ### Security
 -
