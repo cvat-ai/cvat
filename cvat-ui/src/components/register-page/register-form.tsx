@@ -12,6 +12,7 @@ import Checkbox from 'antd/lib/checkbox';
 import patterns from 'utils/validation-patterns';
 
 import { UserAgreement } from 'reducers/interfaces'
+import { Row, Col } from 'antd/lib/grid';
 
 export interface UserConfirmation {
     name: string;
@@ -107,9 +108,9 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
         form.validateFields((error, values): void => {
             if (!error) {
                 values.confirmations = []
-                
+
                 for (const userAgreement of userAgreements) {
-                    
+
                     values.confirmations.push({
                         name: userAgreement.name,
                         value: values[userAgreement.name]
@@ -289,8 +290,14 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
 
         return (
             <Form onSubmit={this.handleSubmit} className='login-form'>
-                {this.renderFirstNameField()}
-                {this.renderLastNameField()}
+                <Row gutter={8}>
+                    <Col span={12}>
+                        {this.renderFirstNameField()}
+                    </Col>
+                    <Col span={12}>
+                        {this.renderLastNameField()}
+                    </Col>
+                </Row>
                 {this.renderUsernameField()}
                 {this.renderEmailField()}
                 {this.renderPasswordField()}
