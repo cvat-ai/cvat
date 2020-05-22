@@ -80,6 +80,10 @@ const models = [
 
 const machines = [
     {
+        label: 'CPU',
+        value: 'cpu'
+    },
+    {
         label: 'GPU: 1 (Tesla K80), CPU: 4, RAM: 26GB ($0.750/hr)',
         value: 'gpu-4-26-1k80'
     },
