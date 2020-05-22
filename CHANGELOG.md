@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cvat-ui: added cookie policy drawer for login page (<https://github.com/opencv/cvat/pull/1511>)
 - Added `datumaro_project` export format (https://github.com/opencv/cvat/pull/1352)
 - Ability to configure user agreements for the user registration form (https://github.com/opencv/cvat/pull/1464)
+- Added visual identification for unavailable formats (https://github.com/opencv/cvat/pull/1567)
 
 ### Changed
 - Downloaded file name in annotations export became more informative (https://github.com/opencv/cvat/pull/1352)
@@ -45,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue with large number of instances in instance mask (https://github.com/opencv/cvat/issues/1539)
 - Fixed full COCO dataset import error with conflicting labels in keypoints and detection (https://github.com/opencv/cvat/pull/1548)
 - Fixed COCO keypoints skeleton parsing and saving (https://github.com/opencv/cvat/issues/1539)
+- Fixed interpreter crash when trying to import `tensorflow` with no AVX instructions available (https://github.com/opencv/cvat/pull/1567)
 
 ### Security
 -
