@@ -322,6 +322,26 @@ Uploaded file: a zip archive of the following structure:
       └── image2.png
   ```
 
+It is also possible to import grayscale (1-channel) PNG masks.
+For grayscale masks provide a list of labels with the number of lines equal
+to the maximum color index on images. The lines must be in the right order
+so that line index is equal to the color index. Lines can have arbitrary,
+but different, colors. If there are gaps in the used color
+indices in the annotations, they must be filled with arbitrary dummy labels.
+Example:
+```
+q:0,128,0:: # color index 0
+aeroplane:10,10,128:: # color index 1
+_dummy2:2,2,2:: # filler for color index 2
+_dummy3:3,3,3:: # filler for color index 3
+boat:108,0,100:: # color index 3
+...
+_dummy198:198,198,198:: # filler for color index 198
+_dummy199:199,199,199:: # filler for color index 199
+...
+the last label:12,28,0:: # color index 200
+```
+
 - supported shapes: Polygons
 
 #### How to create a task from Pascal VOC dataset
