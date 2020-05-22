@@ -49,7 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed COCO keypoints skeleton parsing and saving (https://github.com/opencv/cvat/issues/1539)
 - Fixed an error when exporting a task with cuboids to any format except CVAT (https://github.com/opencv/cvat/pull/1577)
 - `tf.placeholder() is not compatible with eager execution` exception for auto_segmentation (https://github.com/opencv/cvat/pull/1562)
-- Fixed a problem with mask to polygons conversion when polygons are too small (https://github.com/opencv/cvat/pull/1581)
+- Synchronization with remote git repo (https://github.com/opencv/cvat/pull/1582)
+- A problem with mask to polygons conversion when polygons are too small (https://github.com/opencv/cvat/pull/1581)
 
 ### Security
 -
