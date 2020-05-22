@@ -44,13 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Task/Job buttons has no "Open in new tab" option (<https://github.com/opencv/cvat/pull/1419>)
 - Delete point context menu option has no shortcut hint (<https://github.com/opencv/cvat/pull/1416>)
 - Fixed issue with unnecessary tag activation in cvat-canvas (<https://github.com/opencv/cvat/issues/1540>)
-- Fixed an issue with large number of instances in instance mask (https://github.com/opencv/cvat/issues/1539)
-- Fixed full COCO dataset import error with conflicting labels in keypoints and detection (https://github.com/opencv/cvat/pull/1548)
-- Fixed COCO keypoints skeleton parsing and saving (https://github.com/opencv/cvat/issues/1539)
-- Fixed an error when exporting a task with cuboids to any format except CVAT (https://github.com/opencv/cvat/pull/1577)
-- `tf.placeholder() is not compatible with eager execution` exception for auto_segmentation (https://github.com/opencv/cvat/pull/1562)
-- Synchronization with remote git repo (https://github.com/opencv/cvat/pull/1582)
-- A problem with mask to polygons conversion when polygons are too small (https://github.com/opencv/cvat/pull/1581)
+- Fixed an issue with large number of instances in instance mask (<https://github.com/opencv/cvat/issues/1539>)
+- Fixed full COCO dataset import error with conflicting labels in keypoints and detection (<https://github.com/opencv/cvat/pull/1548>)
+- Fixed COCO keypoints skeleton parsing and saving (<https://github.com/opencv/cvat/issues/1539>)
+- `tf.placeholder() is not compatible with eager execution` exception for auto_segmentation (<https://github.com/opencv/cvat/pull/1562>)
+- Canvas cannot be moved with move functionality on left mouse key (<https://github.com/opencv/cvat/pull/1573>)
+- Deep extreme cut request is sent when draw any shape with Make AI polygon option enabled  (<https://github.com/opencv/cvat/pull/1573>)
+- Fixed an error when exporting a task with cuboids to any format except CVAT (<https://github.com/opencv/cvat/pull/1577>)
+- Synchronization with remote git repo (<https://github.com/opencv/cvat/pull/1582>)
+- A problem with mask to polygons conversion when polygons are too small (<https://github.com/opencv/cvat/pull/1581>)
 
 ### Security
 -
