@@ -64,7 +64,7 @@ from cvat.apps.annotation.models import AnnotationDumper, AnnotationLoader
 from cvat.apps.annotation.format import get_annotation_formats
 from cvat.apps.engine.frame_provider import FrameProvider
 import cvat.apps.dataset_manager.task as DatumaroTask
-
+import copy
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.utils.decorators import method_decorator
@@ -760,6 +760,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 		slogger.glob.info("task {}".format(task))
 		# If we in a large task this creates unnessary many shapes
 		# We only need them between start_frame and stop_frame
+		tracking_job['track']['attributes'] = []
+		tracking_job['track']['shapes'][0]['attributes'] = []
 		shapes_of_track = TrackManager([tracking_job['track']]).to_shapes(
 			stop_frame)
 		first_frame_in_track = shapes_of_track[0]['frame']
