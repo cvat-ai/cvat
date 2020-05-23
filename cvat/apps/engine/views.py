@@ -15,7 +15,10 @@ import requests
 
 time = datetime.now()
 stamp = time.strftime("%m%d%Y%H%M%S")
-
+from cvat.apps.engine.data_manager import TrackManager
+from cvat.apps.engine.models import (Job, TrackedShape)
+from cvat.apps.engine.serializers import (TrackedShapeSerializer)
+from .tracker import RectangleTracker
 from django.views.generic import RedirectView
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
@@ -744,7 +747,46 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
 	@action(detail=True, methods=['POST'], serializer_class=None, url_path='tracking')
 	def tracking(self, request, pk):
-		return Response(data=20, status=status.HTTP_200_OK)
+		slogger.glob.info("tracking payload {}".format(request.data))
+		tracking_job = request.data['trackinJob']
+		job_id = request.data['jobId']
+		track = tracking_job['track'] #already in server model
+		# Start the tracking with the bounding box in this frame
+		start_frame = tracking_job['startFrame']
+		# Until track this bounding box until this frame (excluded)
+		stop_frame = tracking_job['stopFrame']
+		# Track the bounding boxes in images from this track
+		task = Job.objects.get(pk=job_id).segment.task
+		slogger.glob.info("task {}".format(task))
+		# If we in a large task this creates unnessary many shapes
+		# We only need them between start_frame and stop_frame
+		shapes_of_track = TrackManager([tracking_job['track']]).to_shapes(
+			stop_frame)
+		first_frame_in_track = shapes_of_track[0]['frame']
+		slogger.glob.info("shapes of track {}".format(shapes_of_track))
+		def shape_to_db(tracked_shape_on_wire):
+			s = copy.copy(tracked_shape_on_wire)
+			s.pop('group', 0)
+			s.pop('attributes', 0)
+			s.pop('label_id', 0)
+			s.pop('byMachine', 0)
+			s.pop('keyframe')
+			return TrackedShape(**s)
+
+		# This bounding box is used as a reference for tracking
+		start_shape = shape_to_db(shapes_of_track[start_frame-first_frame_in_track])
+		slogger.glob.info("start shape {}".format(start_shape))
+		# Do the actual tracking and serializee back
+		tracker = RectangleTracker()
+		new_shapes = tracker.track_rectangles(task, start_shape, stop_frame)
+		new_shapes = [TrackedShapeSerializer(s).data for s in new_shapes]
+
+		# Pack recognized shape in a track onto the wire
+		track_with_new_shapes = copy.copy(track)
+		track_with_new_shapes['shapes'] = new_shapes
+
+		return JsonResponse(track_with_new_shapes)
+		# return Response(data=20, status=status.HTTP_200_OK)
 
 	@action(detail=True, methods=['GET'], serializer_class=None)
 	def export_annotations_for_model(self,pk, form_data):
