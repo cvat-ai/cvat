@@ -15,6 +15,10 @@ from cvat.apps.authentication.decorators import login_required
 from cvat.apps.auto_annotation.models import AnnotationModel
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.data_manager import TrackManager
+from cvat.apps.engine.models import (Job, TrackedShape)
+from cvat.apps.engine.serializers import (TrackedShapeSerializer)
+from .tracker import RectangleTracker
 
 from cvat.apps.engine import annotation, task
 from cvat.apps.engine.serializers import LabeledDataSerializer
@@ -24,6 +28,7 @@ from tensorflow.python.client import device_lib
 import django_rq
 import fnmatch
 import logging
+import copy
 import json
 import os
 import rq
@@ -487,4 +492,63 @@ def cancel(request, tid):
             pass
         return HttpResponseBadRequest(str(ex))
 
+    return HttpResponse()
+
+
+@login_required
+@permission_required(perm=['engine.task.access'],
+                     fn=objectgetter(TaskModel, 'tid'), raise_exception=True)
+def tracking(request, tid):
+    data = json.loads(request.body.decode('utf-8'))
+    # slogger.glob.info("data {}".format(data))
+    slogger.glob.info("tracking payload {}".format(data))
+    tracking_job = data['trackinJob']
+    job_id = data['jobId']
+    track = tracking_job['track'] #already in server model
+    # Start the tracking with the bounding box in this frame
+    start_frame = tracking_job['startFrame']
+    # Until track this bounding box until this frame (excluded)
+    stop_frame = tracking_job['stopFrame']
+    # Track the bounding boxes in images from this track
+    # task = Job.objects.get(pk=job_id).segment.task
+    slogger.glob.info("task {}".format(task))
+    # If we in a large task this creates unnessary many shapes
+    # We only need them between start_frame and stop_frame
+    tracking_job['track']['attributes'] = []
+    tracking_job['track']['shapes'][0]['attributes'] = []
+    shapes_of_track = TrackManager([tracking_job['track']]).to_shapes(
+        stop_frame)
+    first_frame_in_track = shapes_of_track[0]['frame']
+    slogger.glob.info("shapes of track {}".format(shapes_of_track))
+    def shape_to_db(tracked_shape_on_wire):
+        s = copy.copy(tracked_shape_on_wire)
+        s.pop('group', 0)
+        s.pop('attributes', 0)
+        s.pop('label_id', 0)
+        s.pop('byMachine', 0)
+        s.pop('keyframe')
+        return TrackedShape(**s)
+
+    # This bounding box is used as a reference for tracking
+    start_shape = shape_to_db(shapes_of_track[start_frame-first_frame_in_track])
+    slogger.glob.info("start shape {}".format(start_shape))
+    # Do the actual tracking and serializee back
+    tracker = RectangleTracker()
+    new_shapes, result = tracker.track_rectangles(job_id, start_shape, stop_frame, track['label_id'])
+    new_shapes = [TrackedShapeSerializer(s).data for s in new_shapes]
+
+    # Pack recognized shape in a track onto the wire
+    track_with_new_shapes = copy.copy(track)
+    track_with_new_shapes['shapes'] = new_shapes
+    reset= True
+    result = convert_to_cvat_format(result)
+    serializer = LabeledDataSerializer(data=result)
+    print("serializing tracked points")
+    print(serializer.is_valid(raise_exception=True))
+    if serializer.is_valid(raise_exception=True):
+        if reset:
+            put_task_data(tid, request.user, result)
+        else:
+            patch_task_data(tid, request.user, result, "create")
+    print("tracking done")
     return HttpResponse()

@@ -16,6 +16,8 @@ import requests
 time = datetime.now()
 stamp = time.strftime("%m%d%Y%H%M%S")
 from cvat.apps.engine.data_manager import TrackManager
+from rules.contrib.views import permission_required, objectgetter
+
 from cvat.apps.engine.models import (Job, TrackedShape)
 from cvat.apps.engine.serializers import (TrackedShapeSerializer)
 from .tracker import RectangleTracker
@@ -745,8 +747,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 		return Response(data=20, status=status.HTTP_200_OK)
 
 
-
-	@action(detail=True, methods=['POST'], serializer_class=None, url_path='tracking')
+	# @permission_required(perm=['engine.task.change'],
+	# fn=objectgetter(TaskModel, 'tid'), raise_exception=True)
+	@action(detail=True, methods=['POST'], url_path='tracking')
 	def tracking(self, request, pk):
 		slogger.glob.info("tracking payload {}".format(request.data))
 		tracking_job = request.data['trackinJob']
@@ -789,12 +792,14 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 		track_with_new_shapes['shapes'] = new_shapes
 		reset= True
 		serializer = LabeledDataSerializer(data=result)
+		print("serializing tracked points")
+		print(serializer.is_valid(raise_exception=True))
 		if serializer.is_valid(raise_exception=True):
 			if reset:
 				put_task_data(job_id, request.user, result)
 			else:
 				patch_task_data(job_id, request.user, result, "create")
-
+		print("tracking done")
 		return Response(status=status.HTTP_200_OK)
 		# return Response(data=20, status=status.HTTP_200_OK)
 

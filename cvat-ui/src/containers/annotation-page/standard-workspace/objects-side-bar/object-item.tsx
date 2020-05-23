@@ -522,7 +522,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const core = getCore();
         const baseUrl = core.config.backendAPI.slice(0, -7);
         try {
-            core.server.request(`${baseUrl}/api/v1/tasks/${this.props.match.params.tid}/tracking`, {
+            core.server.request(`${baseUrl}/tensorflow/annotation/tracking/task/${this.props.match.params.tid}`, {
                 method: 'POST',
                 data: JSON.stringify(payload),
                 headers: {

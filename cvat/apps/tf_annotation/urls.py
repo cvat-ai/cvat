@@ -11,4 +11,5 @@ urlpatterns = [
     path('check/task/<int:tid>', views.check),
     path('cancel/task/<int:tid>', views.cancel),
     path('meta/get', views.get_meta_info),
+    path('tracking/task/<int:tid>', views.tracking)
 ]
