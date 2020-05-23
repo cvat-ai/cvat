@@ -637,11 +637,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 			args_and_vals[arg[0]] = arg[1]
 
 		if '--stage1_epochs' not in args_and_vals:
-			args_and_vals['--stage1_epochs'] = 1
+			args_and_vals["--stage1_epochs"] = 1
 		if '--stage2_epochs' not in args_and_vals:
-			args_and_vals['--stage2_epochs'] = 1
+			args_and_vals["--stage2_epochs"] = 1
 		if '--stage3_epochs' not in args_and_vals:
-			args_and_vals['--stage3_epochs'] = 1
+			args_and_vals["--stage3_epochs"] = 1
 		# print(args_and_vals)
 		# print("db",db_task)
 		# print(db_task.owner.username,"name")
@@ -716,7 +716,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 			params.append(Parameter(name="bucket-name", value=os.getenv('AWS_BUCKET_NAME')))
 			params.append(Parameter(name='task-name', value=db_task.name))
 			# params.append(Parameter(name='num-classes', value=str(num_classes)))
-			params.append(Parameter(name='extras', value=str(args_and_vals)))
+			params.append(Parameter(name='extras', value=json.dumps(args_and_vals).replace(" ","").replace("{","").replace("}","").replace(":","=")))
 			params.append(Parameter(name="tf-image", value=tf_image))
 			params.append(Parameter(name="sys-node-pool", value=machine))
 			if 'TFRecord' in form_data['dump_format']:
@@ -780,14 +780,14 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 		slogger.glob.info("start shape {}".format(start_shape))
 		# Do the actual tracking and serializee back
 		tracker = RectangleTracker()
-		new_shapes = tracker.track_rectangles(task, start_shape, stop_frame)
+		new_shapes = tracker.track_rectangles(job_id, start_shape, stop_frame)
 		new_shapes = [TrackedShapeSerializer(s).data for s in new_shapes]
 
 		# Pack recognized shape in a track onto the wire
 		track_with_new_shapes = copy.copy(track)
 		track_with_new_shapes['shapes'] = new_shapes
 
-		return JsonResponse(track_with_new_shapes)
+		return Response(status=status.HTTP_200_OK)
 		# return Response(data=20, status=status.HTTP_200_OK)
 
 	@action(detail=True, methods=['GET'], serializer_class=None)

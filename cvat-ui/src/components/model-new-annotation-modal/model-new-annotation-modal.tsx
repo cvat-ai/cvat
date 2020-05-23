@@ -383,6 +383,11 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
                     <Col span={17}>
                         <TextArea
                             autoSize={{minRows: 1 , maxRows: 4}}
+                            // onChange={(value: string): void => {
+                            //     this.setState({
+                            //         argumentS: value,
+                            //     });
+                            // }}
                         />
                     </Col>
                 </Row>
