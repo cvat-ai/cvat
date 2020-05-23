@@ -64,6 +64,7 @@ from cvat.apps.annotation.models import AnnotationDumper, AnnotationLoader
 from cvat.apps.annotation.format import get_annotation_formats
 from cvat.apps.engine.frame_provider import FrameProvider
 import cvat.apps.dataset_manager.task as DatumaroTask
+from cvat.apps.engine.annotation import put_task_data,patch_task_data
 import copy
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -780,12 +781,19 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 		slogger.glob.info("start shape {}".format(start_shape))
 		# Do the actual tracking and serializee back
 		tracker = RectangleTracker()
-		new_shapes = tracker.track_rectangles(job_id, start_shape, stop_frame)
+		new_shapes, result = tracker.track_rectangles(job_id, start_shape, stop_frame, track['label_id'])
 		new_shapes = [TrackedShapeSerializer(s).data for s in new_shapes]
 
 		# Pack recognized shape in a track onto the wire
 		track_with_new_shapes = copy.copy(track)
 		track_with_new_shapes['shapes'] = new_shapes
+		reset= True
+		serializer = LabeledDataSerializer(data=result)
+		if serializer.is_valid(raise_exception=True):
+			if reset:
+				put_task_data(job_id, request.user, result)
+			else:
+				patch_task_data(job_id, request.user, result, "create")
 
 		return Response(status=status.HTTP_200_OK)
 		# return Response(data=20, status=status.HTTP_200_OK)

@@ -34,8 +34,8 @@ def make_image_list(jid, start_frame, stop_frame):
 	# image_list = []
 	# for root, dirnames, filenames in os.walk(path_to_data):
 	#     # for file in fnmatch.filter(filenames, "*.mp4") + fnmatch.filter(filenames, '')
-	# 	for filename in fnmatch.filter(filenames, '*.png') + fnmatch.filter(filenames, '*.jpg') + fnmatch.filter(filenames, '*.jpeg'):
-	# 		image_list.append(os.path.join(root, filename))
+	#   for filename in fnmatch.filter(filenames, '*.png') + fnmatch.filter(filenames, '*.jpg') + fnmatch.filter(filenames, '*.jpeg'):
+	#     image_list.append(os.path.join(root, filename))
 	db_task = TaskModel.objects.get(pk=jid)
 	# Get image list
 	image_list = FrameProvider(db_task.data)
@@ -76,7 +76,7 @@ class RectangleTracker:
 			raise Exception("Tracker type not known:" + trackerType)    
 		self._tracker = trackerTypes_constructor[trackerType]()
 
-	def track_rectangles(self, jobid, start_shape, stop_frame):
+	def track_rectangles(self, jobid, start_shape, stop_frame, label_id):
 		"""
 		Follow an the rectangle in consecutive frames of a task.
 		:param jobid: The Django jobid with the images
@@ -105,13 +105,21 @@ class RectangleTracker:
 		#Generated shapes
 		shapes_by_tracking = []
 		print("Running tracker in loop...")
+		result = {}
+		result[label_id] = [[start_frame, start_shape.points[0], start_shape.points[1], start_shape.points[2], start_shape.points[3]]]
+
 		for frame, img  in images:
 			print("Frame: ",frame)
 			print("Image Size: ", img.shape)
 			# Let the tracker find the bounding box in the next image(s)
 			no_error, bbox = self._tracker.update(img)
-
+			print("predicted bbox", bbox)
+			print("error", no_error)
 			if no_error:
+				# print()
+				print("cv", cv_bbox_to_rectangle(bbox))
+				cv_box = cv_bbox_to_rectangle(bbox)
+				result[label_id].append([frame, cv_box[0],cv_box[1],cv_box[2],cv_box[3]])
 				new_shape = copy.copy(start_shape)
 				new_shape.pk = None
 				new_shape.points = cv_bbox_to_rectangle(bbox)
@@ -121,4 +129,4 @@ class RectangleTracker:
 			else:
 				break
 		print(shapes_by_tracking)
-		return shapes_by_tracking
+		return shapes_by_tracking, result
