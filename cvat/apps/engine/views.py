@@ -721,9 +721,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 			params.append(Parameter(name="sys-node-pool", value=machine))
 			if 'TFRecord' in form_data['dump_format']:
 				params.append(Parameter(name='model-path',value=os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/models/'+db_task.name+"_tfod_"+stamp+'/'))
-
+				params.append(Parameter(name='ref-model-path', value="models/savan/"+form_data['ref_model']))
 				params.append(Parameter(name='num-classes', value=str(num_classes)))
-				params.append(Parameter(name="ref_model", value=form_data['ref_model']))
+				params.append(Parameter(name="ref-model", value=form_data['ref_model']))
 				body = onepanel.core.api.CreateWorkflowExecutionBody(parameters=params,
 				workflow_template_uid = os.getenv('ONEPANEL_OD_TEMPLATE_ID')) 
 			else:
