@@ -512,10 +512,11 @@ def tracking(request, tid):
     # Track the bounding boxes in images from this track
     # task = Job.objects.get(pk=job_id).segment.task
     slogger.glob.info("task {}".format(task))
+    slogger.glob.info("temp task test")
     # If we in a large task this creates unnessary many shapes
     # We only need them between start_frame and stop_frame
-    tracking_job['track']['attributes'] = []
-    tracking_job['track']['shapes'][0]['attributes'] = []
+    # tracking_job['track']['attributes'] = []
+    # tracking_job['track']['shapes'][0]['attributes'] = []
     # shapes_of_track = TrackManager([tracking_job['track']]).to_shapes(
         # stop_frame)
     # first_frame_in_track = shapes_of_track[0]['frame']
@@ -540,7 +541,7 @@ def tracking(request, tid):
     # Pack recognized shape in a track onto the wire
     track_with_new_shapes = copy.copy(track)
     track_with_new_shapes['shapes'] = new_shapes
-    reset= True
+    reset= False
     result = convert_to_cvat_format(result)
     serializer = LabeledDataSerializer(data=result)
     print("serializing tracked points")

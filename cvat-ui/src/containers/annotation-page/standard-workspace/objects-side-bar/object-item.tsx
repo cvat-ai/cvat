@@ -492,7 +492,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             jobId: jobInstance.id,
             trackinJob: {
                 startFrame: jobInstance.startFrame,
-                stopFrame: jobInstance.stopFrame,
+                stopFrame: jobInstance.startFrame + 50,
                 track: {
                     attributes: objectState.attributes,
                     frame: objectState.frame,
