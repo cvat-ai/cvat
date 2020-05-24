@@ -18,6 +18,7 @@ import Modal from 'antd/lib/modal';
 import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
+import { Spin } from 'antd';
 
 import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
 import consts from 'consts';
@@ -705,6 +706,7 @@ interface Props {
     attrValues: Record<number, string>;
     color: string;
     colors: string[];
+    tracking: boolean;
 
     labels: any[];
     attributes: any[];
@@ -758,6 +760,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         && nextProps.labels === prevProps.labels
         && nextProps.attributes === prevProps.attributes
         && nextProps.normalizedKeyMap === prevProps.normalizedKeyMap
+        && nextProps.tracking === prevProps.tracking
         && nextProps.navigateFirstKeyframe === prevProps.navigateFirstKeyframe
         && nextProps.navigatePrevKeyframe === prevProps.navigatePrevKeyframe
         && nextProps.navigateNextKeyframe === prevProps.navigateNextKeyframe
@@ -782,6 +785,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         labelID,
         color,
         colors,
+        tracking,
 
         attributes,
         labels,
@@ -815,8 +819,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeAttribute,
         changeColor,
         collapse,
-        onTrackerClick
+        onTrackerClick,
     } = props;
+
+    console.log(tracking);
 
     const type = objectType === ObjectType.TAG ? ObjectType.TAG.toUpperCase()
         : `${shapeType.toUpperCase()} ${objectType.toUpperCase()}`;
@@ -826,6 +832,21 @@ function ObjectItemComponent(props: Props): JSX.Element {
 
     return (
         <div style={{ display: 'flex' }}>
+            <Modal
+                title='Tracking'
+                visible={tracking}
+                footer={[]}
+                closable={false}
+            >
+                <Row type='flex'>
+                    <Col span={3}>
+                        <Spin />
+                    </Col>
+                    <Col span={20}>
+                        Generating tracking results...
+                    </Col>
+                </Row>
+            </Modal>
             <Popover
                 placement='left'
                 trigger='click'

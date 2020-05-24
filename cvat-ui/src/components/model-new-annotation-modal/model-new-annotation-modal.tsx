@@ -16,6 +16,7 @@ import {
 } from 'antd';
 
 const {TextArea} = Input;
+import {TextAreaProps} from 'antd/lib/input'
 
 import {
     Model,
@@ -288,6 +289,18 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
         return this.onSubmitNotifications(count);
     }
 
+    private onArgumenstChange = (event: any): void => {
+        console.log(event);
+        const {
+            target: {
+                value,
+            },
+        } = event;
+        this.setState({
+            argumentS: value,
+        })
+    };
+
     private renderModelSelector(): JSX.Element {
 
         return (
@@ -383,11 +396,7 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
                     <Col span={17}>
                         <TextArea
                             autoSize={{minRows: 1 , maxRows: 4}}
-                            // onChange={(value: string): void => {
-                            //     this.setState({
-                            //         argumentS: value,
-                            //     });
-                            // }}
+                            onChange={this.onArgumenstChange}
                         />
                     </Col>
                 </Row>

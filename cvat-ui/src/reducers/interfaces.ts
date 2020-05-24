@@ -393,6 +393,7 @@ export interface AnnotationState {
         tracker_type: string;
         tracker_until: string;
         tracker_frame_number: number;
+        tracking: boolean;
     };
     colors: any[];
     sidebarCollapsed: boolean;

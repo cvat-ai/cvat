@@ -620,6 +620,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 		slogger.glob.info("Createing annotation model for task: {} with num_classes {}".format(db_task.name,num_classes))
 
 		form_data = request.data
+		slogger.glob.info("Form data without preprocessing {} {}".format(form_data, type(form_data)))
 		form_data = json.loads(next(iter(form_data.dict().keys())))
 		slogger.glob.info("form data {}".format(form_data))
 		# Parse any extra arguments

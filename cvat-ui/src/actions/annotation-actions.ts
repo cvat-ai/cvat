@@ -192,6 +192,9 @@ export enum AnnotationActionTypes {
     TRACKER_SETTINGS = 'TRACKER_SETTINGS',
     RESET_TRACKER_SETTINGS = 'RESET_TRACKER_SETTINGS',
     CHECK_ANNOTATION = 'CHECK_ANNOTATION',
+    DO_TRACKING = 'DO_TRACKING',
+    DO_TRACKING_SUCCESS = 'DO_TRACKING_SUCCESS',
+    DO_TRACKING_FAILURE = 'DO_TRACKING_FAILURE',
 }
 
 export function saveLogsAsync():
@@ -1530,5 +1533,37 @@ export function trackerSettings(name: string, value: string | number): AnyAction
 export function resetTrackerSettings(): AnyAction {
     return {
         type: AnnotationActionTypes.RESET_TRACKER_SETTINGS,
+    };
+}
+
+export function doTracking(body: any, taskId: string): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch({
+            type: AnnotationActionTypes.DO_TRACKING,
+        });
+        const baseUrl = cvat.config.backendAPI.slice(0, -7);
+        try {
+            cvat.server.request(`${baseUrl}/api/v1/tasks/${taskId}/tracking`, {
+                method: 'POST',
+                data: JSON.stringify(body),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }).then((response: any) => {
+                console.log(response)
+                dispatch({
+                    type: AnnotationActionTypes.DO_TRACKING_SUCCESS,
+                });
+            })
+            .catch((err: any) => {
+                dispatch({
+                    type: AnnotationActionTypes.DO_TRACKING_FAILURE,
+                });
+            })
+        } catch(error) {
+            dispatch({
+                type: AnnotationActionTypes.DO_TRACKING_FAILURE,
+            });
+        }
     };
 }

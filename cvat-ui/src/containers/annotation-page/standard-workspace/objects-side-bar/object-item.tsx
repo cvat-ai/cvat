@@ -25,6 +25,7 @@ import {
     propagateObject as propagateObjectAction,
     pasteShapeAsync,
     resetTrackerSettings,
+    doTracking,
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
@@ -53,6 +54,7 @@ interface StateToProps {
     tracker_type: string;
     tracker_until: string;
     tracker_frame_number: number;
+    tracking: boolean;
 }
 
 type PathProps = RouteComponentProps<{tid: string}>;
@@ -69,6 +71,7 @@ interface DispatchToProps {
     changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
     changeGroupColor(group: number, color: string): void;
     resetTracker(): void;
+    handleTracking(data: TrackerPayload, taskId: string): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -102,6 +105,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 tracker_type,
                 tracker_until,
                 tracker_frame_number,
+                tracking,
             },
             colors,
         },
@@ -141,6 +145,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         tracker_type,
         tracker_until,
         tracker_frame_number,
+        tracking,
     };
 }
 
@@ -184,6 +189,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         resetTracker(): void {
             dispatch(resetTrackerSettings());
+        },
+        handleTracking(data: TrackerPayload, taskId: string): void {
+            dispatch(doTracking(data, taskId));
         },
     };
 }
@@ -483,8 +491,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         return {
             jobId: jobInstance.id,
             trackinJob: {
-                startFrame: 0,
-                stopFrame: 10,
+                startFrame: jobInstance.startFrame,
+                stopFrame: jobInstance.stopFrame,
                 track: {
                     attributes: objectState.attributes,
                     frame: objectState.frame,
@@ -514,25 +522,14 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private onTrackerClick = (): void => {
         const {
-            
+            match,
+            handleTracking,
             resetTracker,
         } = this.props;
         console.log(this.props);
         let payload: TrackerPayload = this.createTrackerPayload();
-        const core = getCore();
-        const baseUrl = core.config.backendAPI.slice(0, -7);
-        try {
-            core.server.request(`${baseUrl}/tensorflow/annotation/tracking/task/${this.props.match.params.tid}`, {
-                method: 'POST',
-                data: JSON.stringify(payload),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            }).then((response: any) => console.log(response));
-        } catch(error) {
-
-        }
-        resetTracker();
+        handleTracking(payload, match.params.tid);
+        // resetTracker();
     }
 
     public render(): JSX.Element {
@@ -546,6 +543,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             colorBy,
             colors,
             normalizedKeyMap,
+            tracking
         } = this.props;
 
         const {
@@ -630,6 +628,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
                 onTrackerClick={this.onTrackerClick}
+                tracking={tracking}
             />
         );
     }
