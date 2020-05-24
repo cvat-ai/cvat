@@ -516,10 +516,10 @@ def tracking(request, tid):
     # We only need them between start_frame and stop_frame
     tracking_job['track']['attributes'] = []
     tracking_job['track']['shapes'][0]['attributes'] = []
-    shapes_of_track = TrackManager([tracking_job['track']]).to_shapes(
-        stop_frame)
-    first_frame_in_track = shapes_of_track[0]['frame']
-    slogger.glob.info("shapes of track {}".format(shapes_of_track))
+    # shapes_of_track = TrackManager([tracking_job['track']]).to_shapes(
+        # stop_frame)
+    # first_frame_in_track = shapes_of_track[0]['frame']
+    # slogger.glob.info("shapes of track {}".format(shapes_of_track))
     def shape_to_db(tracked_shape_on_wire):
         s = copy.copy(tracked_shape_on_wire)
         s.pop('group', 0)
@@ -530,12 +530,12 @@ def tracking(request, tid):
         return TrackedShape(**s)
 
     # This bounding box is used as a reference for tracking
-    start_shape = shape_to_db(shapes_of_track[start_frame-first_frame_in_track])
-    slogger.glob.info("start shape {}".format(start_shape))
+    # start_shape = shape_to_db(shapes_of_track[start_frame-first_frame_in_track])
+    # slogger.glob.info("start shape {}".format(start_shape))
     # Do the actual tracking and serializee back
     tracker = RectangleTracker()
-    new_shapes, result = tracker.track_rectangles(job_id, start_shape, stop_frame, track['label_id'])
-    new_shapes = [TrackedShapeSerializer(s).data for s in new_shapes]
+    new_shapes, result = tracker.track_rectangles(job_id, track['shapes'][0]['points'], start_frame, stop_frame, track['label_id'])
+    # new_shapes = [TrackedShapeSerializer(s).data for s in new_shapes]
 
     # Pack recognized shape in a track onto the wire
     track_with_new_shapes = copy.copy(track)

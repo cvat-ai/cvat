@@ -48,9 +48,10 @@ def make_image_list(jid, start_frame, stop_frame):
 		print("reading Image Num", count)
 		pil_image = Image.open(img[0])
 		opencvImage = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
-		count += 1
+		# count += 1
 		if count >= start_frame and count <= stop_frame:
 			yield count, opencvImage
+		count +=1
 		if count > stop_frame:
 			break
 
@@ -76,7 +77,7 @@ class RectangleTracker:
 			raise Exception("Tracker type not known:" + trackerType)    
 		self._tracker = trackerTypes_constructor[trackerType]()
 
-	def track_rectangles(self, jobid, start_shape, stop_frame, label_id):
+	def track_rectangles(self, jobid, start_shape, start_frame, stop_frame, label_id):
 		"""
 		Follow an the rectangle in consecutive frames of a task.
 		:param jobid: The Django jobid with the images
@@ -85,11 +86,11 @@ class RectangleTracker:
 		:param int stop_frame: Stop tracking at this frame (excluded).
 		:return: List of Shapes (Rectangles) with new shapes.
 		"""
-		if not isinstance(start_shape, TrackedShape):
-			 raise Exception("start_shape must be of type TrackedShape")    
+		# if not isinstance(start_shape, TrackedShape):
+		# 	 raise Exception("start_shape must be of type TrackedShape")    
 
 		# Only track in to future.
-		start_frame = start_shape.frame
+		# start_frame = start_shape.frame
 		if stop_frame < start_frame:
 			return []
 
@@ -98,7 +99,7 @@ class RectangleTracker:
 		images = make_image_list(jobid, start_frame, stop_frame)
 		img0 = next(images)[1]
 		print("Image 0 Shape and Type", img0.shape, type(img0))
-		bbox = rectanlge_to_cv_bbox(start_shape.points)
+		bbox = rectanlge_to_cv_bbox(start_shape)
 		print("First Bounding box : ", bbox)
 		no_error = self._tracker.init(img0, bbox)
 
@@ -106,7 +107,7 @@ class RectangleTracker:
 		shapes_by_tracking = []
 		print("Running tracker in loop...")
 		result = {}
-		result[label_id] = [[start_frame, start_shape.points[0], start_shape.points[1], start_shape.points[2], start_shape.points[3]]]
+		result[label_id] = [[start_frame, start_shape[0], start_shape[1], start_shape[2], start_shape[3]]]
 
 		for frame, img  in images:
 			print("Frame: ",frame)
@@ -120,12 +121,12 @@ class RectangleTracker:
 				print("cv", cv_bbox_to_rectangle(bbox))
 				cv_box = cv_bbox_to_rectangle(bbox)
 				result[label_id].append([frame, cv_box[0],cv_box[1],cv_box[2],cv_box[3]])
-				new_shape = copy.copy(start_shape)
-				new_shape.pk = None
-				new_shape.points = cv_bbox_to_rectangle(bbox)
-				new_shape.frame = frame
-				print("new shape", new_shape)
-				shapes_by_tracking.append(new_shape)
+				# new_shape = copy.copy(start_shape)
+				# new_shape.pk = None
+				# new_shape.points = cv_bbox_to_rectangle(bbox)
+				# new_shape.frame = frame
+				# print("new shape", new_shape)
+				# shapes_by_tracking.append(new_shape)
 			else:
 				break
 		print(shapes_by_tracking)
