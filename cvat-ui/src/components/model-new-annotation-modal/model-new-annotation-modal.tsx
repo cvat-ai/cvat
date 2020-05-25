@@ -81,41 +81,15 @@ const models = [
 
 const machines = [
     {
-        label: 'CPU',
+        label: 'CPU: 4, RAM: 16GB',
         value: 'cpu'
     },
     {
-        label: 'GPU: 1 (Tesla K80), CPU: 4, RAM: 26GB ($0.750/hr)',
+        label: 'GPU: 1 (Tesla K80), CPU: 4, RAM: 26GB',
         value: 'gpu-4-26-1k80'
     },
-    {
-        label: 'GPU: 1 (Tesla K80), CPU: 8, RAM: 52GB ($1.009/hr)',
-        value: 'gpu-8-52-1k80'
-    },
-    {
-        label: 'GPU: 1 (Tesla T4), CPU: 4, RAM: 26GB ($1.296/hr)',
-        value: 'gpu-4-26-1t4'
-    },
-    {
-        label: 'GPU: 1 (Tesla T4), CPU: 8, RAM: 52GB ($1.555/hr)',
-        value: 'gpu-8-52-1t4'
-    },
-    {
-        label: 'GPU: 1 (Tesla V100), CPU: 8, RAM: 52GB ($3.226/hr)',
-        value: 'gpu-8-52-1v100'
-    },
-    {
-        label: 'GPU: 2 (Tesla V100), CPU: 16, RAM: 104GB ($6.452/hr)',
-        value: 'gpu-16-104-2v100'
-    },
-    {
-        label: 'GPU: 4 (Tesla V100), CPU: 32 RAM: 208GB ($12.902/hr)',
-        value: 'gpu-32-208-4v100'
-    },
-    {
-        label: 'GPU: 8 (Tesla V100), CPU: 64 RAM: 416GB ($25.803/hr)',
-        value: 'gpu-64-416-8v100'
-    }
+    
+    
 ]
 
 export default class ModelNewAnnotationModalComponent extends React.PureComponent<Props, State> {
@@ -196,7 +170,7 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
                 data: formData,
                 // form: formData,
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
             })
             console.log(resp);
@@ -290,7 +264,6 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
     }
 
     private onArgumenstChange = (event: any): void => {
-        console.log(event);
         const {
             target: {
                 value,

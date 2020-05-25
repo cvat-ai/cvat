@@ -483,7 +483,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             resetTracker,
             jobInstance,
             objectState,
-            match
+            match,
+            frameNumber
         } = this.props;
 
         console.log(match.params.tid);
@@ -491,8 +492,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         return {
             jobId: jobInstance.id,
             trackinJob: {
-                startFrame: jobInstance.startFrame,
-                stopFrame: jobInstance.startFrame + 50,
+                startFrame: frameNumber,
+                stopFrame: tracker_frame_number ? frameNumber + tracker_frame_number : frameNumber + 50,
                 track: {
                     attributes: objectState.attributes,
                     frame: objectState.frame,

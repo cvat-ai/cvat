@@ -535,7 +535,7 @@ def tracking(request, tid):
     # slogger.glob.info("start shape {}".format(start_shape))
     # Do the actual tracking and serializee back
     tracker = RectangleTracker()
-    new_shapes, result = tracker.track_rectangles(job_id, track['shapes'][0]['points'], start_frame, stop_frame, track['label_id'])
+    new_shapes, result = tracker.track_rectangles(tid, track['shapes'][0]['points'], start_frame, stop_frame, track['label_id'])
     # new_shapes = [TrackedShapeSerializer(s).data for s in new_shapes]
 
     # Pack recognized shape in a track onto the wire

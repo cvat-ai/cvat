@@ -621,8 +621,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
 		form_data = request.data
 		slogger.glob.info("Form data without preprocessing {} {}".format(form_data, type(form_data)))
-		form_data = json.loads(next(iter(form_data.dict().keys())))
-		slogger.glob.info("form data {}".format(form_data))
+		# form_data = json.loads(next(iter(form_data.dict().keys())))
+		# slogger.glob.info("form data {}".format(form_data))
 		# Parse any extra arguments
 		form_args = form_data['arguments']
 		if "cpu" in form_data['machine_type']:

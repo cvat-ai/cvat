@@ -40,16 +40,17 @@ def make_image_list(jid, start_frame, stop_frame):
 	# Get image list
 	image_list = FrameProvider(db_task.data)
 	image_list = image_list.get_frames(image_list.Quality.ORIGINAL)
-	print(type(image_list))
-	# print(len(list(image_list)))
+	print("type inside func",type(image_list))
+	# print("len of generator", len(list(image_list)))
 	count = 0
 	for img in image_list:
-		# if count 
+		print("img", img)
 		print("reading Image Num", count)
-		pil_image = Image.open(img[0])
-		opencvImage = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+		print(start_frame, stop_frame)
 		# count += 1
 		if count >= start_frame and count <= stop_frame:
+			pil_image = Image.open(img[0])
+			opencvImage = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 			yield count, opencvImage
 		count +=1
 		if count > stop_frame:
@@ -96,7 +97,10 @@ class RectangleTracker:
 
 		# Load the image iterable for range of frames
 		# and init the tracker with the bounding box from the user given shape
+		print("inside tracker.py start and sto[ frame", start_frame, stop_frame)
 		images = make_image_list(jobid, start_frame, stop_frame)
+		print("type outside func",type(images))
+		# print("len outside",len(list(images)))
 		img0 = next(images)[1]
 		print("Image 0 Shape and Type", img0.shape, type(img0))
 		bbox = rectanlge_to_cv_bbox(start_shape)
