@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to configure user agreements for the user registration form (https://github.com/opencv/cvat/pull/1464)
 - Added cuboid interpolation and cuboid drawing from rectangles (<https://github.com/opencv/cvat/pull/1560>)
 - Ability to configure custom pageViewHit, which can be useful for web analytics integration (https://github.com/opencv/cvat/pull/1566)
+- Ability to configure access to the analytics page based on roles (https://github.com/opencv/cvat/pull/1592)
 
 ### Changed
 - Downloaded file name in annotations export became more informative (https://github.com/opencv/cvat/pull/1352)
