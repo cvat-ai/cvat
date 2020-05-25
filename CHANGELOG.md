@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Formats: definitions are changed, are not stored in DB anymore (https://github.com/opencv/cvat/pull/1352)
 - cvat-core: session.annotations.put() now returns identificators of added objects (https://github.com/opencv/cvat/pull/1493)
 - Images without annotations now also included in dataset/annotations export (https://github.com/opencv/cvat/issues/525)
+- Update https install manual. Makes it easier and more robust. Includes automatic renewing of lets encrypt certificates.
 
 ### Deprecated
 -
