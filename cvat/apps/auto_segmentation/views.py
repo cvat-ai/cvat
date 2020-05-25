@@ -23,6 +23,7 @@ import fnmatch
 import json
 import os
 import rq
+from PIL import Image
 
 import numpy as np
 
@@ -37,7 +38,7 @@ class CocoConfig(Config):
 	"""Configuration for training on MS COCO.
 	Derives from the base Config class and overrides values specific
 	to the COCO dataset.
-   
+	 
 	"""
 	# Give the configuration a recognizable name
 	NAME = "cvat"
@@ -130,7 +131,7 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold, model
 
 		
 		for i in range(config.GPU_COUNT):
-			images_org.append(skimage.io.imread(images[i]))
+			images_org.append(np.array(Image.open(images[i][0])))
 		
 		slogger.glob.info("images_org {}".format(images_org))
 
@@ -212,10 +213,11 @@ def create_thread(tid, labels_mapping, user, model_path, num_c, reset):
 		db_task = TaskModel.objects.get(pk=tid)
 		# Get image list
 		# image_list = make_image_list(db_task.get_data_dirname())
-		# image_list = FrameProvider(db_task.data)
+		image_list = FrameProvider(db_task.data)
+		image_list = list(image_list.get_frames(image_list.Quality.ORIGINAL))
 		slogger.glob.info("getting data from DATA_ROOT: {}".format(DATA_ROOT))
 		path_to_task_data = os.path.join(DATA_ROOT,"data",str(tid),'raw')
-		image_list = make_image_list(path_to_task_data)
+		# image_list = make_image_list(path_to_task_data)
 		# Run auto segmentation by tf
 		result = None
 		slogger.glob.info("auto segmentation with tensorflow framework for task {}".format(tid))
