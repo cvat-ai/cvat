@@ -48,14 +48,14 @@ def load_image_into_numpy(image):
 
 def run_thread(task_id, model_path, label_mapping, threshold, split,
                start_of_image_list, end_of_image_list, split_size, is_cpu_instance,image_list):
-    cmd = 'python3 /home/rush/cvat/cvat/apps/tf_annotation/run_inference.py "{}::{}::{}::{}::{}::{}::{}::{}::{}::{}"' \
+    cmd = 'python3 /home/django/cvat/apps/tf_annotation/run_inference.py "{}::{}::{}::{}::{}::{}::{}::{}::{}::{}"' \
         .format(task_id, model_path, label_mapping, threshold, split,
                 start_of_image_list, end_of_image_list, split_size, is_cpu_instance, image_list)
     os.system(cmd)
 
 
 def run_progress_thread(task_id, num_gpus):
-    cmd = 'python3 /home/rush/cvat/cvat/apps/tf_annotation/progress_indicator_multi_gpu.py "{}::{}"' \
+    cmd = 'python3 /home/django/cvat/apps/tf_annotation/progress_indicator_multi_gpu.py "{}::{}"' \
         .format(task_id, num_gpus)
     os.system(cmd)
 

@@ -50,5 +50,4 @@ av==6.2.0
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
 boto3
-onepanel-core-sdk
 opencv-contrib-python

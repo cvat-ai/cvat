@@ -47,8 +47,8 @@ export default function ModelsPageComponent(props: Props): JSX.Element {
         );
     }
 
-    const uploadedModels = models.filter((model): boolean => model.id !== null);
-    const integratedModels = models.filter((model): boolean => model.id === null);
+    const uploadedModels = models.filter((model): boolean => model.ownerID !== null);
+    const integratedModels = models.filter((model): boolean => model.ownerID === null);
 
     return (
         <div className='cvat-models-page'>
