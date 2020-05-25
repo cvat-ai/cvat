@@ -137,7 +137,8 @@ class YoloExtractor(SourceExtractor):
 
         annotations = []
         if lines:
-            image_height, image_width = image.size # use image info late
+            # use image info as late as possible
+            image_height, image_width = image.size
         for line in lines:
             label_id, xc, yc, w, h = line.split()
             label_id = int(label_id)
