@@ -331,7 +331,7 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
                             <div>
                                 (Learn more about this base model by clicking the 'show more' link after clicking here:&nbsp; 
                                 <a 
-                                    href={`https://c.onepanel.io/onepanel-demo/datasets/${this.state.selectedModel}/details`}
+                                    href={`https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#${this.state.selectedModel}`}
                                     target='_blank'
                                     className="cvat-create-anno-modal-link"
                                 >
@@ -378,8 +378,7 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
                         <div>
                             (Learn how to add model &nbsp;
                             <a 
-                                href={`https://docs.onepanel.io/CVAT/create_annotation_model/
-                                    ?utm_source=cvatmodelarguments`}
+                                href={`https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#arguments-optional`}
                                 target='_blank'
                                 className="cvat-create-anno-modal-link"
                             >
@@ -398,8 +397,7 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
             <div className='cvat-run-model-dialog'>
                 <div className="cvat-create-anno-modal-link cvat-create-anno-text-align" >
                     <a 
-                        href={`https://docs.onepanel.io/CVAT/create_annotation_model/
-                            ?utm_source=cvatmodelhowtouse#training-model-through-cvat`}
+                        href={`https://docs.onepanel.ai/docs/getting-started/use-cases/computervision/annotation/cvat/cvat_annotation_model#training-object-detection-model-through-cvat`}
                         target='_blank'>
                         How to use
                     </a>
