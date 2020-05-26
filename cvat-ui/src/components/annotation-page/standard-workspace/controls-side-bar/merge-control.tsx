@@ -3,28 +3,23 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import Tooltip from 'antd/lib/tooltip';
+import Icon from 'antd/lib/icon';
 
-import {
-    Tooltip,
-    Icon,
-} from 'antd';
-
-import {
-    MergeIcon,
-} from 'icons';
-
-import { Canvas } from 'cvat-canvas';
+import { MergeIcon } from 'icons';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl } from 'reducers/interfaces';
 
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
-
+    switchMergeShortcut: string;
     mergeObjects(enabled: boolean): void;
 }
 
 function MergeControl(props: Props): JSX.Element {
     const {
+        switchMergeShortcut,
         activeControl,
         canvasInstance,
         mergeObjects,
@@ -46,7 +41,7 @@ function MergeControl(props: Props): JSX.Element {
         };
 
     return (
-        <Tooltip title='Merge shapes/tracks' placement='right'>
+        <Tooltip title={`Merge shapes/tracks ${switchMergeShortcut}`} placement='right'>
             <Icon {...dynamicIconProps} component={MergeIcon} />
         </Tooltip>
     );

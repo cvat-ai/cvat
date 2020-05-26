@@ -3,23 +3,12 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import Icon from 'antd/lib/icon';
+import Tooltip from 'antd/lib/tooltip';
 
-import {
-    Icon,
-    Tooltip,
-} from 'antd';
-
-import {
-    MoveIcon,
-} from 'icons';
-
-import {
-    ActiveControl,
-} from 'reducers/interfaces';
-
-import {
-    Canvas,
-} from 'cvat-canvas';
+import { MoveIcon } from 'icons';
+import { ActiveControl } from 'reducers/interfaces';
+import { Canvas } from 'cvat-canvas-wrapper';
 
 interface Props {
     canvasInstance: Canvas;
@@ -27,10 +16,7 @@ interface Props {
 }
 
 function MoveControl(props: Props): JSX.Element {
-    const {
-        canvasInstance,
-        activeControl,
-    } = props;
+    const { canvasInstance, activeControl } = props;
 
     return (
         <Tooltip title='Move the image' placement='right'>

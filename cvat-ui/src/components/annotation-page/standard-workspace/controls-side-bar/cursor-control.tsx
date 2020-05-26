@@ -3,26 +3,16 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import Icon from 'antd/lib/icon';
+import Tooltip from 'antd/lib/tooltip';
 
-import {
-    Icon,
-    Tooltip,
-} from 'antd';
-
-import {
-    CursorIcon,
-} from 'icons';
-
-import {
-    ActiveControl,
-} from 'reducers/interfaces';
-
-import {
-    Canvas,
-} from 'cvat-canvas';
+import { CursorIcon } from 'icons';
+import { ActiveControl } from 'reducers/interfaces';
+import { Canvas } from 'cvat-canvas-wrapper';
 
 interface Props {
     canvasInstance: Canvas;
+    cursorShortkey: string;
     activeControl: ActiveControl;
 }
 
@@ -30,10 +20,11 @@ function CursorControl(props: Props): JSX.Element {
     const {
         canvasInstance,
         activeControl,
+        cursorShortkey,
     } = props;
 
     return (
-        <Tooltip title='Cursor' placement='right'>
+        <Tooltip title={`Cursor ${cursorShortkey}`} placement='right'>
             <Icon
                 component={CursorIcon}
                 className={activeControl === ActiveControl.CURSOR

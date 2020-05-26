@@ -14,7 +14,8 @@
 
 function build() {
     const PluginRegistry = require('./plugins');
-    const User = require('./user');
+    const loggerStorage = require('./logger-storage');
+    const Log = require('./log');
     const ObjectState = require('./object-state');
     const Statistics = require('./statistics');
     const { Job, Task } = require('./session');
@@ -41,6 +42,7 @@ function build() {
         ServerError,
     } = require('./exceptions');
 
+    const User = require('./user');
     const pjson = require('../package.json');
     const config = require('./config');
 
@@ -107,7 +109,7 @@ function build() {
                 * @method formats
                 * @async
                 * @memberof module:API.cvat.server
-                * @returns {module:API.cvat.classes.AnnotationFormat[]}
+                * @returns {module:API.cvat.classes.AnnotationFormats}
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
@@ -117,20 +119,21 @@ function build() {
                 return result;
             },
             /**
-                * Method returns available dataset export formats
-                * @method exportFormats
+                * Method returns user agreements that the user must accept
+                * @method userAgreements
                 * @async
                 * @memberof module:API.cvat.server
-                * @returns {module:String[]}
+                * @returns {Object[]}
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
-            async datasetFormats() {
-                const result = await PluginRegistry
-                    .apiWrapper(cvat.server.datasetFormats);
-                return result;
+           async userAgreements() {
+            const result = await PluginRegistry
+                .apiWrapper(cvat.server.userAgreements);
+            return result;
             },
             /**
+
                 * Method allows to register on a server
                 * @method register
                 * @async
@@ -141,13 +144,14 @@ function build() {
                 * @param {string} email A email address for the new account
                 * @param {string} password1 A password for the new account
                 * @param {string} password2 The confirmation password for the new account
+                * @param {Object} userConfirmations An user confirmations of terms of use if needed
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
-            async register(username, firstName, lastName, email, password1, password2) {
+            async register(username, firstName, lastName, email, password1, password2, userConfirmations) {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.server.register, username, firstName,
-                        lastName, email, password1, password2);
+                        lastName, email, password1, password2, userConfirmations);
                 return result;
             },
             /**
@@ -420,6 +424,53 @@ function build() {
             },
         },
         /**
+            * Namespace to working with logs
+            * @namespace logger
+            * @memberof module:API.cvat
+        */
+        /**
+             * Method to logger configuration
+             * @method configure
+             * @memberof module:API.cvat.logger
+             * @param {function} isActiveChecker - callback to know if logger
+             * should increase working time or not
+             * @param {object} userActivityCallback - container for a callback <br>
+             * Logger put here a callback to update user activity timer <br>
+             * You can call it outside
+             * @instance
+             * @async
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ArgumentError}
+         */
+
+        /**
+            * Append log to a log collection <br>
+            * Durable logs will have been added after "close" method is called for them <br>
+            * Ignore rules exist for some logs (e.g. zoomImage, changeAttribute) <br>
+            * Payload of ignored logs are shallowly combined to previous logs of the same type
+            * @method log
+            * @memberof module:API.cvat.logger
+            * @param {module:API.cvat.enums.LogType | string} type - log type
+            * @param {Object} [payload = {}] - any other data that will be appended to the log
+            * @param {boolean} [wait = false] - specifies if log is durable
+            * @returns {module:API.cvat.classes.Log}
+            * @instance
+            * @async
+            * @throws {module:API.cvat.exceptions.PluginError}
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+
+        /**
+            * Save accumulated logs on a server
+            * @method save
+            * @memberof module:API.cvat.logger
+            * @throws {module:API.cvat.exceptions.PluginError}
+            * @throws {module:API.cvat.exceptions.ServerError}
+            * @instance
+            * @async
+        */
+        logger: loggerStorage,
+        /**
             * Namespace contains some changeable configurations
             * @namespace config
             * @memberof module:API.cvat
@@ -432,12 +483,6 @@ function build() {
                 * @property {string} proxy Axios proxy settings.
                 * For more details please read <a href="https://github.com/axios/axios"> here </a>
                 * @memberof module:API.cvat.config
-                * @property {integer} taskID this value is displayed in a logs if available
-                * @memberof module:API.cvat.config
-                * @property {integer} jobID this value is displayed in a logs if available
-                * @memberof module:API.cvat.config
-                * @property {integer} clientID read only auto-generated
-                * value which is displayed in a logs
                 * @memberof module:API.cvat.config
             */
             get backendAPI() {
@@ -451,21 +496,6 @@ function build() {
             },
             set proxy(value) {
                 config.proxy = value;
-            },
-            get taskID() {
-                return config.taskID;
-            },
-            set taskID(value) {
-                config.taskID = value;
-            },
-            get jobID() {
-                return config.jobID;
-            },
-            set jobID(value) {
-                config.jobID = value;
-            },
-            get clientID() {
-                return config.clientID;
             },
         },
         /**
@@ -524,6 +554,7 @@ function build() {
             Task,
             User,
             Job,
+            Log,
             Attribute,
             Label,
             Statistics,

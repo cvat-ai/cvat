@@ -3,16 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Alert,
-    Button,
-    Collapse,
-    notification,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Alert from 'antd/lib/alert';
+import Button from 'antd/lib/button';
+import Collapse from 'antd/lib/collapse';
+import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 
 import FileManagerContainer from 'containers/file-manager/file-manager';
@@ -43,6 +38,7 @@ const defaultState = {
     advanced: {
         zOrder: false,
         lfs: false,
+        useZipChunks: true,
     },
     labels: [],
     files: {
@@ -141,10 +137,10 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
             }).then((): void => {
                 const { onCreate } = this.props;
                 onCreate(this.state);
-            }).catch((): void => {
+            }).catch((error: Error): void => {
                 notification.error({
                     message: 'Could not create a task',
-                    description: 'Please, check configuration you specified',
+                    description: error.toString(),
                 });
             });
     };

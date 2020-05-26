@@ -1,6 +1,7 @@
 import React from 'react';
 import { getApplicationKeyMap } from 'react-hotkeys';
-import { Modal, Table } from 'antd';
+import Modal from 'antd/lib/modal';
+import Table from 'antd/lib/table';
 import { connect } from 'react-redux';
 
 import { shortcutsActions } from 'actions/shortcuts-actions';

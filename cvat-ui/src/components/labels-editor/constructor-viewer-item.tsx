@@ -3,12 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Icon,
-    Tooltip,
-} from 'antd';
-
+import Icon from 'antd/lib/icon';
+import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 
 import { Label } from './common';

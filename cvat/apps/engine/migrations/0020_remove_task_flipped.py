@@ -3,12 +3,53 @@
 from django.db import migrations
 from django.conf import settings
 
-from cvat.apps.engine.task import get_image_meta_cache
 from cvat.apps.engine.models import Job, ShapeType
+from cvat.apps.engine.media_extractors import get_mime
 
 from PIL import Image
-
+from ast import literal_eval
 import os
+
+def make_image_meta_cache(db_task):
+    with open(db_task.get_image_meta_cache_path(), 'w') as meta_file:
+        cache = {
+            'original_size': []
+        }
+
+        if db_task.mode == 'interpolation':
+            image = Image.open(db_task.get_frame_path(0))
+            cache['original_size'].append({
+                'width': image.size[0],
+                'height': image.size[1]
+            })
+            image.close()
+        else:
+            filenames = []
+            for root, _, files in os.walk(db_task.get_upload_dirname()):
+                fullnames = map(lambda f: os.path.join(root, f), files)
+                images = filter(lambda x: get_mime(x) == 'image', fullnames)
+                filenames.extend(images)
+            filenames.sort()
+
+            for image_path in filenames:
+                image = Image.open(image_path)
+                cache['original_size'].append({
+                    'width': image.size[0],
+                    'height': image.size[1]
+                })
+                image.close()
+
+        meta_file.write(str(cache))
+
+
+def get_image_meta_cache(db_task):
+    try:
+        with open(db_task.get_image_meta_cache_path()) as meta_cache_file:
+            return literal_eval(meta_cache_file.read())
+    except Exception:
+        make_image_meta_cache(db_task)
+        with open(db_task.get_image_meta_cache_path()) as meta_cache_file:
+            return literal_eval(meta_cache_file.read())
 
 
 def _flip_shape(shape, size):

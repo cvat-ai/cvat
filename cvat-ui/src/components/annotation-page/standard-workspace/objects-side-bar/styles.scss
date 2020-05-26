@@ -23,6 +23,11 @@
             background: $background-color-2;
             border-bottom: none;
             height: 230px;
+
+            > .ant-collapse-content-box {
+                padding: 10px;
+            }
+
         }
     }
 }
@@ -69,16 +74,6 @@
 
     > div:nth-child(1) > div:nth-child(1) {
         height: 32px;
-        > .ant-select > div {
-            height: 32px;
-            > div {
-                height: 32px;
-
-                ul {
-                    display: flex;
-                }
-            }
-        }
     }
 
     > div:nth-child(2) {
@@ -263,6 +258,10 @@
             text-align: center;
             width: 33%;
         }
+    }
+
+    .ant-checkbox-wrapper {
+        margin-left: 0px;
     }
 }
 

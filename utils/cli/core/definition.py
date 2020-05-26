@@ -180,7 +180,14 @@ frames_parser.add_argument(
     '--outdir',
     type=str,
     default='',
-    help='directory to save images'
+    help='directory to save images (default: CWD)'
+)
+frames_parser.add_argument(
+    '--quality',
+    type=str,
+    choices=('original', 'compressed'),
+    default='original',
+    help='choose quality of images (default: %(default)s)'
 )
 
 #######################################################################
@@ -205,7 +212,7 @@ dump_parser.add_argument(
     '--format',
     dest='fileformat',
     type=str,
-    default='CVAT XML 1.1 for images',
+    default='CVAT for images 1.1',
     help='annotation format (default: %(default)s)'
 )
 
@@ -231,6 +238,6 @@ upload_parser.add_argument(
     '--format',
     dest='fileformat',
     type=str,
-    default='CVAT XML 1.1',
+    default='CVAT 1.1',
     help='annotation format (default: %(default)s)'
 )

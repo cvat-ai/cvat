@@ -3,17 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import Tooltip from 'antd/lib/tooltip';
+import Icon from 'antd/lib/icon';
 
-import {
-    Tooltip,
-    Icon,
-} from 'antd';
-
-import {
-    SplitIcon,
-} from 'icons';
-
-import { Canvas } from 'cvat-canvas';
+import { SplitIcon } from 'icons';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl } from 'reducers/interfaces';
 
 interface Props {

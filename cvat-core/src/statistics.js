@@ -34,6 +34,10 @@
                     *             tracks: 19,
                     *             shapes: 20,
                     *         },
+                    *         cuboids: {
+                    *             tracks: 21,
+                    *             shapes: 22,
+                    *         },
                     *         tags: 66,
                     *         manually: 186,
                     *         interpolated: 500,
@@ -68,6 +72,10 @@
                     *    points: {
                     *        tracks: 19,
                     *        shapes: 20,
+                    *    },
+                    *    cuboids: {
+                    *        tracks: 21,
+                    *        shapes: 22,
                     *    },
                     *    tags: 66,
                     *    manually: 186,

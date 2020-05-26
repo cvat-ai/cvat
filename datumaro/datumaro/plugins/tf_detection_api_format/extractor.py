@@ -8,8 +8,7 @@ import numpy as np
 import os.path as osp
 import re
 
-from datumaro.components.extractor import (SourceExtractor,
-    DEFAULT_SUBSET_NAME, DatasetItem,
+from datumaro.components.extractor import (SourceExtractor, DatasetItem,
     AnnotationType, Bbox, Mask, LabelCategories
 )
 from datumaro.util.image import Image, decode_image, lazy_image
@@ -24,9 +23,7 @@ def clamp(value, _min, _max):
 
 class TfDetectionApiExtractor(SourceExtractor):
     def __init__(self, path):
-        super().__init__()
-
-        assert osp.isfile(path)
+        assert osp.isfile(path), path
         images_dir = ''
         root_dir = osp.dirname(osp.abspath(path))
         if osp.basename(root_dir) == DetectionApiPath.ANNOTATIONS_DIR:
@@ -35,12 +32,9 @@ class TfDetectionApiExtractor(SourceExtractor):
             if not osp.isdir(images_dir):
                 images_dir = ''
 
-        subset_name = osp.splitext(osp.basename(path))[0]
-        if subset_name == DEFAULT_SUBSET_NAME:
-            subset_name = None
-        self._subset_name = subset_name
+        super().__init__(subset=osp.splitext(osp.basename(path))[0])
 
-        items, labels = self._parse_tfrecord_file(path, subset_name, images_dir)
+        items, labels = self._parse_tfrecord_file(path, self._subset, images_dir)
         self._items = items
         self._categories = self._load_categories(labels)
 
@@ -53,16 +47,6 @@ class TfDetectionApiExtractor(SourceExtractor):
 
     def __len__(self):
         return len(self._items)
-
-    def subsets(self):
-        if self._subset_name:
-            return [self._subset_name]
-        return None
-
-    def get_subset(self, name):
-        if name != self._subset_name:
-            return None
-        return self
 
     @staticmethod
     def _load_categories(labels):
@@ -92,7 +76,7 @@ class TfDetectionApiExtractor(SourceExtractor):
         return labelmap
 
     @classmethod
-    def _parse_tfrecord_file(cls, filepath, subset_name, images_dir):
+    def _parse_tfrecord_file(cls, filepath, subset, images_dir):
         dataset = tf.data.TFRecordDataset(filepath)
         features = {
             'image/filename': tf.io.FixedLenFeature([], tf.string),
@@ -203,7 +187,7 @@ class TfDetectionApiExtractor(SourceExtractor):
             if image_params:
                 image = Image(**image_params, size=image_size)
 
-            dataset_items.append(DatasetItem(id=item_id, subset=subset_name,
+            dataset_items.append(DatasetItem(id=item_id, subset=subset,
                 image=image, annotations=annotations))
 
         return dataset_items, dataset_labels

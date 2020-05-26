@@ -114,3 +114,29 @@ class YoloFormatTest(TestCase):
                 image_info={'1': (10, 15)}).make_dataset()
 
             compare_datasets(self, source_dataset, parsed_dataset)
+
+class YoloImporterTest(TestCase):
+    def test_can_detect(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='train',
+                        image=Image(path='1.jpg', size=(10, 15)),
+                        annotations=[
+                            Bbox(0, 2, 4, 2, label=2),
+                            Bbox(3, 3, 2, 3, label=4),
+                        ]),
+                ])
+
+            def categories(self):
+                label_categories = LabelCategories()
+                for i in range(10):
+                    label_categories.add('label_' + str(i))
+                return {
+                    AnnotationType.label: label_categories,
+                }
+
+        with TestDir() as test_dir:
+            YoloConverter()(TestExtractor(), save_dir=test_dir)
+
+            self.assertTrue(YoloImporter.detect(test_dir))

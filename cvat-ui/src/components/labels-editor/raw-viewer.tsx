@@ -3,17 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Form,
-    Input,
-    Button,
-    Tooltip,
-} from 'antd';
-
-import { FormComponentProps } from 'antd/lib/form/Form';
+import { Row, Col } from 'antd/lib/grid';
+import Input from 'antd/lib/input';
+import Button from 'antd/lib/button';
+import Tooltip from 'antd/lib/tooltip';
+import Form, { FormComponentProps } from 'antd/lib/form/Form';
 
 import {
     Label,

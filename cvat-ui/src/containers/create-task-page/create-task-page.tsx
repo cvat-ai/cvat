@@ -12,6 +12,7 @@ import { createTaskAsync } from 'actions/tasks-actions';
 
 interface StateToProps {
     status: string;
+    error: string;
     installedGit: boolean;
 }
 

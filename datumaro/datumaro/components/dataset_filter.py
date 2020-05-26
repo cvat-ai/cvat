@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging as log
 from lxml import etree as ET # NOTE: lxml has proper XPath implementation
 from datumaro.components.extractor import (Transform,
     Annotation, AnnotationType,
@@ -48,7 +49,7 @@ class DatasetItemEncoder:
         ET.SubElement(ann_elem, 'type').text = str(annotation.type.name)
 
         for k, v in annotation.attributes.items():
-            ET.SubElement(ann_elem, k).text = str(v)
+            ET.SubElement(ann_elem, k.replace(' ', '-')).text = str(v)
 
         ET.SubElement(ann_elem, 'group').text = str(annotation.group)
 
@@ -210,7 +211,11 @@ class DatasetItemEncoder:
 def XPathDatasetFilter(extractor, xpath=None):
     if xpath is None:
         return extractor
-    xpath = ET.XPath(xpath)
+    try:
+        xpath = ET.XPath(xpath)
+    except Exception:
+        log.error("Failed to create XPath from expression '%s'", xpath)
+        raise
     f = lambda item: bool(xpath(
         DatasetItemEncoder.encode(item, extractor.categories())))
     return extractor.select(f)
@@ -220,7 +225,11 @@ class XPathAnnotationsFilter(Transform):
         super().__init__(extractor)
 
         if xpath is not None:
-            xpath = ET.XPath(xpath)
+            try:
+                xpath = ET.XPath(xpath)
+            except Exception:
+                log.error("Failed to create XPath from expression '%s'", xpath)
+                raise
         self._filter = xpath
 
         self._remove_empty = remove_empty

@@ -6,7 +6,4 @@
 module.exports = {
     backendAPI: 'http://localhost:7000/api/v1',
     proxy: false,
-    taskID: undefined,
-    jobID: undefined,
-    clientID: +Date.now().toString().substr(-6),
 };

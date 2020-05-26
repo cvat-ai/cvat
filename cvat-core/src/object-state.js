@@ -398,14 +398,16 @@
             * @memberof module:API.cvat.classes.ObjectState
             * @readonly
             * @instance
+            * @param {integer} frame current frame number
             * @param {boolean} [force=false] delete object even if it is locked
             * @async
             * @returns {boolean} true if object has been deleted
             * @throws {module:API.cvat.exceptions.PluginError}
+            * @throws {module:API.cvat.exceptions.ArgumentError}
         */
-        async delete(force = false) {
+        async delete(frame, force = false) {
             const result = await PluginRegistry
-                .apiWrapper.call(this, ObjectState.prototype.delete, force);
+                .apiWrapper.call(this, ObjectState.prototype.delete, frame, force);
             return result;
         }
     }
@@ -420,9 +422,13 @@
     };
 
     // Delete element from a collection which contains it
-    ObjectState.prototype.delete.implementation = async function (force) {
+    ObjectState.prototype.delete.implementation = async function (frame, force) {
         if (this.__internal && this.__internal.delete) {
-            return this.__internal.delete(force);
+            if (!Number.isInteger(+frame) || +frame < 0) {
+                throw new ArgumentError('Frame argument must be a non negative integer');
+            }
+
+            return this.__internal.delete(frame, force);
         }
 
         return false;

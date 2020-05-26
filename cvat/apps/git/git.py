@@ -1,29 +1,27 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
+import datetime
+import json
+import math
+import os
+import re
+import shutil
+import subprocess
+from glob import glob
+import zipfile
+
+import django_rq
+import git
 from django.db import transaction
 from django.utils import timezone
 
+from cvat.apps.dataset_manager.task import export_task
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.models import Task, Job, User
-from cvat.apps.engine.annotation import dump_task_data
+from cvat.apps.engine.models import Job, Task, User
 from cvat.apps.engine.plugins import add_plugin
-from cvat.apps.git.models import GitStatusChoice
-from cvat.apps.annotation.models import AnnotationDumper
-
-from cvat.apps.git.models import GitData
-from collections import OrderedDict
-
-import subprocess
-import django_rq
-import datetime
-import shutil
-import json
-import math
-import git
-import os
-import re
+from cvat.apps.git.models import GitData, GitStatusChoice
 
 
 def _have_no_access_exception(ex):
@@ -52,20 +50,20 @@ def _read_old_diffs(diff_dir, summary):
 
 
 class Git:
-    def __init__(self, db_git, tid, user):
+    def __init__(self, db_git, db_task, user):
         self._db_git = db_git
         self._url = db_git.url
         self._path = db_git.path
-        self._tid = tid
+        self._tid = db_task.id
         self._user = {
             "name": user.username,
             "email": user.email or "dummy@cvat.com"
         }
-        self._cwd = os.path.join(os.getcwd(), "data", str(tid), "repos")
-        self._diffs_dir = os.path.join(os.getcwd(), "data", str(tid), "repos_diffs_v2")
-        self._task_mode = Task.objects.get(pk = tid).mode
-        self._task_name = re.sub(r'[\\/*?:"<>|\s]', '_', Task.objects.get(pk = tid).name)[:100]
-        self._branch_name = 'cvat_{}_{}'.format(tid, self._task_name)
+        self._cwd = os.path.join(db_task.get_task_artifacts_dirname(), "repos")
+        self._diffs_dir = os.path.join(db_task.get_task_artifacts_dirname(), "repos_diffs_v2")
+        self._task_mode = db_task.mode
+        self._task_name = re.sub(r'[\\/*?:"<>|\s]', '_', db_task.name)[:100]
+        self._branch_name = 'cvat_{}_{}'.format(db_task.id, self._task_name)
         self._annotation_file = os.path.join(self._cwd, self._path)
         self._sync_date = db_git.sync_date
         self._lfs = db_git.lfs
@@ -267,29 +265,34 @@ class Git:
 
         # Dump an annotation
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        display_name = "CVAT XML 1.1"
-        display_name += " for images" if self._task_mode == "annotation" else " for videos"
-        cvat_dumper = AnnotationDumper.objects.get(display_name=display_name)
+        if self._task_mode == "annotation":
+            format_name = "CVAT for images 1.1"
+        else:
+            format_name = "CVAT for video 1.1"
         dump_name = os.path.join(db_task.get_task_dirname(),
-            "git_annotation_{}.".format(timestamp) + "dump")
-        dump_task_data(
-            pk=self._tid,
-            user=user,
-            filename=dump_name,
-            dumper=cvat_dumper,
-            scheme=scheme,
-            host=host,
+            "git_annotation_{}.zip".format(timestamp))
+        export_task(
+            task_id=self._tid,
+            dst_file=dump_name,
+            format_name=format_name,
+            server_url=scheme + host,
+            save_images=False,
         )
 
         ext = os.path.splitext(self._path)[1]
         if ext == '.zip':
-            subprocess.call('zip -j -r "{}" "{}"'.format(self._annotation_file, dump_name), shell=True)
+            shutil.move(dump_name, self._annotation_file)
         elif ext == '.xml':
-            shutil.copyfile(dump_name, self._annotation_file)
+            with zipfile.ZipFile(dump_name) as archive:
+                for f in archive.namelist():
+                    if f.endswith('.xml'):
+                        with open(self._annotation_file, 'wb') as output:
+                            output.write(archive.read(f))
+                        break
+            os.remove(dump_name)
         else:
             raise Exception("Got unknown annotation file type")
 
-        os.remove(dump_name)
         self._rep.git.add(self._annotation_file)
 
         # Merge diffs
@@ -377,7 +380,7 @@ def initial_create(tid, git_path, lfs, user):
         db_git.lfs = lfs
 
         try:
-            _git = Git(db_git, tid, db_task.owner)
+            _git = Git(db_git, db_task, db_task.owner)
             _git.init_repos()
             db_git.save()
         except git.exc.GitCommandError as ex:
@@ -393,7 +396,7 @@ def push(tid, user, scheme, host):
         db_task = Task.objects.get(pk = tid)
         db_git = GitData.objects.select_for_update().get(pk = db_task)
         try:
-            _git = Git(db_git, tid, user)
+            _git = Git(db_git, db_task, user)
             _git.init_repos()
             _git.push(user, scheme, host, db_task, db_task.updated_date)
 
@@ -427,7 +430,7 @@ def get(tid, user):
                 response['status']['value'] = str(db_git.status)
             else:
                 try:
-                    _git = Git(db_git, tid, user)
+                    _git = Git(db_git, db_task, user)
                     _git.init_repos(True)
                     db_git.status = _git.remote_status(db_task.updated_date)
                     response['status']['value'] = str(db_git.status)
@@ -455,12 +458,12 @@ def update_states():
             slogger.glob("Exception occured during a status updating for db_git with tid: {}".format(db_git.task_id))
 
 @transaction.atomic
-def _onsave(jid, user, data, action):
+def _onsave(jid, data, action):
     db_task = Job.objects.select_related('segment__task').get(pk = jid).segment.task
     try:
         db_git = GitData.objects.select_for_update().get(pk = db_task.id)
-        diff_dir = os.path.join(os.getcwd(), "data", str(db_task.id), "repos_diffs")
-        diff_dir_v2 = os.path.join(os.getcwd(), "data", str(db_task.id), "repos_diffs_v2")
+        diff_dir = os.path.join(db_task.get_task_artifacts_dirname(), "repos_diffs")
+        diff_dir_v2 = os.path.join(db_task.get_task_artifacts_dirname(), "repos_diffs_v2")
 
         summary = {
             "update": 0,
@@ -493,18 +496,18 @@ def _onsave(jid, user, data, action):
     except GitData.DoesNotExist:
         pass
 
-def _ondump(tid, user, data_format, scheme, host, plugin_meta_data):
-    db_task = Task.objects.get(pk = tid)
-    try:
-        db_git = GitData.objects.get(pk = db_task)
-        plugin_meta_data['git'] = OrderedDict({
-            "url": db_git.url,
-            "path": db_git.path,
-        })
-    except GitData.DoesNotExist:
-        pass
-
 add_plugin("patch_job_data", _onsave, "after", exc_ok = False)
 
 # TODO: Append git repository into dump file
+# def _ondump(task_id, dst_file, format_name,
+#         server_url=None, save_images=False, plugin_meta_data):
+#     db_task = Task.objects.get(pk = tid)
+#     try:
+#         db_git = GitData.objects.get(pk = db_task)
+#         plugin_meta_data['git'] = OrderedDict({
+#             "url": db_git.url,
+#             "path": db_git.path,
+#         })
+#     except GitData.DoesNotExist:
+#         pass
 # add_plugin("_dump", _ondump, "before", exc_ok = False)

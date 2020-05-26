@@ -13,10 +13,12 @@
         PolygonShape,
         PolylineShape,
         PointsShape,
+        CuboidShape,
         RectangleTrack,
         PolygonTrack,
         PolylineTrack,
         PointsTrack,
+        CuboidTrack,
         Track,
         Shape,
         Tag,
@@ -58,6 +60,9 @@
         case 'points':
             shapeModel = new PointsShape(shapeData, clientID, color, injection);
             break;
+        case 'cuboid':
+            shapeModel = new CuboidShape(shapeData, clientID, color, injection);
+            break;
         default:
             throw new DataError(
                 `An unexpected type of shape "${type}"`,
@@ -86,6 +91,9 @@
                 break;
             case 'points':
                 trackModel = new PointsTrack(trackData, clientID, color, injection);
+                break;
+            case 'cuboid':
+                trackModel = new CuboidTrack(trackData, clientID, color, injection);
                 break;
             default:
                 throw new DataError(
@@ -317,7 +325,7 @@
 
                     // Push outside shape after each annotation shape
                     // Any not outside shape rewrites it
-                    if (!((object.frame + 1) in keyframes)) {
+                    if (!((object.frame + 1) in keyframes) && object.frame + 1 <= this.stopFrame) {
                         keyframes[object.frame + 1] = JSON
                             .parse(JSON.stringify(keyframes[object.frame]));
                         keyframes[object.frame + 1].outside = true;
@@ -427,7 +435,10 @@
                 for (const object of objectsForMerge) {
                     object.removed = true;
                 }
-            }, [...objectsForMerge.map((object) => object.clientID), trackModel.clientID]);
+            }, [
+                ...objectsForMerge
+                    .map((object) => object.clientID), trackModel.clientID,
+            ], objectStates[0].frame);
         }
 
         split(objectState, frame) {
@@ -522,7 +533,7 @@
                 object.removed = true;
                 prevTrack.removed = false;
                 nextTrack.removed = false;
-            }, [object.clientID, prevTrack.clientID, nextTrack.clientID]);
+            }, [object.clientID, prevTrack.clientID, nextTrack.clientID], frame);
         }
 
         group(objectStates, reset) {
@@ -554,7 +565,7 @@
                 objectsForGroup.forEach((object, idx) => {
                     object.group = redoGroups[idx];
                 });
-            }, objectsForGroup.map((object) => object.clientID));
+            }, objectsForGroup.map((object) => object.clientID), objectStates[0].frame);
 
             return groupIdx;
         }
@@ -585,6 +596,10 @@
                     track: 0,
                 },
                 points: {
+                    shape: 0,
+                    track: 0,
+                },
+                cuboid: {
                     shape: 0,
                     track: 0,
                 },
@@ -790,7 +805,9 @@
                 importedArray.forEach((object) => {
                     object.removed = false;
                 });
-            }, importedArray.map((object) => object.clientID));
+            }, importedArray.map((object) => object.clientID), objectStates[0].frame);
+
+            return importedArray.map((value) => value.clientID);
         }
 
         select(objectStates, x, y) {
@@ -802,7 +819,9 @@
             let minimumState = null;
             for (const state of objectStates) {
                 checkObjectType('object state', state, null, ObjectState);
-                if (state.outside || state.hidden) continue;
+                if (state.outside || state.hidden || state.objectType === ObjectType.TAG) {
+                    continue;
+                }
 
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
@@ -810,9 +829,9 @@
                         'The object has not been saved yet. Call annotations.put([state]) before',
                     );
                 }
-
                 const distance = object.constructor.distance(state.points, x, y);
-                if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
+                if (distance !== null && (minimumDistance === null
+                    || distance < minimumDistance)) {
                     minimumDistance = distance;
                     minimumState = state;
                 }
@@ -866,8 +885,10 @@
                 // In particular consider first and last frame as keyframes for all frames
                 const statesData = [].concat(
                     (frame in this.shapes ? this.shapes[frame] : [])
+                        .filter((shape) => !shape.removed)
                         .map((shape) => shape.get(frame)),
                     (frame in this.tags ? this.tags[frame] : [])
+                        .filter((tag) => !tag.removed)
                         .map((tag) => tag.get(frame)),
                 );
                 const tracks = Object.values(this.tracks)
@@ -875,7 +896,7 @@
                         frame in track.shapes
                         || frame === frameFrom
                         || frame === frameTo
-                    ));
+                    )).filter((track) => !track.removed);
                 statesData.push(
                     ...tracks.map((track) => track.get(frame))
                         .filter((state) => !state.outside),

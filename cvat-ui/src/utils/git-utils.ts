@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 
 const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);
@@ -180,10 +180,10 @@ export function syncRepos(tid: number): Promise<void> {
                     resolve();
                 } else if (response.status === 'failed') {
                     const message = `Can not push to remote repository. Message: ${response.stderr}`;
-                    throw new Error(message);
+                    reject(new Error(message));
                 } else {
                     const message = `Check returned status "${response.status}".`;
-                    throw new Error(message);
+                    reject(new Error(message));
                 }
             }
 

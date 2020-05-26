@@ -3,20 +3,16 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Icon,
-    Alert,
-    Button,
-    Tooltip,
-    message,
-    notification,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Alert from 'antd/lib/alert';
+import Button from 'antd/lib/button';
+import Tooltip from 'antd/lib/tooltip';
+import message from 'antd/lib/message';
+import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 
+import consts from 'consts';
 import ConnectedFileManager, {
     FileManagerContainer,
 } from 'containers/file-manager/file-manager';
@@ -107,7 +103,7 @@ export default class CreateModelContent extends React.PureComponent<Props> {
         const status = modelCreatingStatus
             && modelCreatingStatus !== 'CREATED' ? modelCreatingStatus : '';
 
-        const guideLink = 'https://github.com/opencv/cvat/blob/develop/cvat/apps/auto_annotation/README.md';
+        const { AUTO_ANNOTATION_GUIDE_URL } = consts;
         return (
             <Row type='flex' justify='start' align='middle' className='cvat-create-model-content'>
                 <Col span={24}>
@@ -116,7 +112,7 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                             onClick={(): void => {
                                 // false positive
                                 // eslint-disable-next-line
-                                window.open(guideLink, '_blank');
+                                window.open(AUTO_ANNOTATION_GUIDE_URL, '_blank');
                             }}
                             type='question-circle'
                         />
