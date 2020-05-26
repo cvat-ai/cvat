@@ -154,6 +154,6 @@ USER ${USER}
 
 RUN mkdir data share media keys logs /tmp/supervisord
 RUN python3 manage.py collectstatic
-
+RUN python3 manage.py shell --command="import default_superuser"
 EXPOSE 8080 8443
 ENTRYPOINT ["/usr/bin/supervisord"]
