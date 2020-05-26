@@ -108,6 +108,11 @@ RUN if [ "$AUTO_SEGMENTATION" = "yes" ]; then \
 COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
+WORKDIR "/opt/intel/openvino_2020.2.120/python/python3/"
+RUN rm -rf *
+RUN python3 -m pip uninstall -y opencv-contrib-python
+RUN python3 -m pip install --no-cache-dir opencv-contrib-python
+WORKDIR ${HOME}
 # pycocotools package is impossible to install with its dependencies by one pip install command
 RUN python3 -m pip install --no-cache-dir pycocotools==2.0.0
 
