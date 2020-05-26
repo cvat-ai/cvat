@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an error when exporting a task with cuboids to any format except CVAT (<https://github.com/opencv/cvat/pull/1577>)
 - Synchronization with remote git repo (<https://github.com/opencv/cvat/pull/1582>)
 - A problem with mask to polygons conversion when polygons are too small (<https://github.com/opencv/cvat/pull/1581>)
+- Unable to upload video with uneven size (<https://github.com/opencv/cvat/pull/1594>)
 
 ### Security
 -
