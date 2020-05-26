@@ -9,7 +9,7 @@ from cvat.apps.authentication.decorators import login_required
 
 @method_decorator(login_required, name='dispatch')
 class LogViewerProxy(PermissionRequiredMixin, ProxyView):
-    permission_required = settings.RESTRICTIONS['analitycs_access']
+    permission_required = settings.RESTRICTIONS['analytics_access']
 
     upstream = 'http://{}:{}'.format(os.getenv('DJANGO_LOG_VIEWER_HOST'),
         os.getenv('DJANGO_LOG_VIEWER_PORT'))

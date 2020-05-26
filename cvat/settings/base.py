@@ -418,7 +418,7 @@ RESTRICTIONS = {
     'reduce_task_visibility': False,
 
     # allow access to analytics component to users with the following roles
-    'analitycs_access': (
+    'analytics_access': (
         'engine.role.observer',
         'engine.role.annotator',
         'engine.role.user',
