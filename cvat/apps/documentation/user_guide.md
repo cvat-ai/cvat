@@ -24,7 +24,7 @@
   - [Shape mode (advanced)](#shape-mode-advanced)
   - [Interpolation mode (advanced)](#interpolation-mode-advanced)
   - [Attribute annotation mode (advanced)](#attribute-annotation-mode-advanced)
-  - [Annotation with box by 4 points](#annotation-with-box-by-4-points)
+  - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
   - [Annotation with cuboids](#annotation-with-cuboids)
@@ -999,36 +999,41 @@ Bounding boxes that were created in the mode, have extra navigation buttons.
 
 ## Attribute annotation mode (advanced)
 
-Basic operations in the mode was described above.
+Basic operations in the mode were described in section [attribute annotation mode (basics)](#attribute-annotation-mode-basics).
 
 It is possible to handle lots of objects on the same frame in the mode.
 
-![](static/documentation/images/image058.jpg)
+![](static/documentation/images/image058_DETRAC.jpg)
 
-It is more convenient to annotate objects of the same type. You can specify
-the appropriate filter in this case. For example, the following filter will
-hide all objects except pedestrians: ``pedestrian``.
+It is more convenient to annotate objects of the same type. In this case you can apply
+the appropriate filter. For example, the following filter will
+hide all objects except person: ``label=="Person"``.
 
-To navigate between objects (pedestrians in the case), use the following shortcuts:
+To navigate between objects (person in this case),
+use the following buttons ``switch between objects in the frame`` on the special panel:
+
+![](static/documentation/images/image026.jpg)
+
+or shortcuts:
 - ``Tab`` — go to the next object
 - ``Shift+Tab`` — go to the previous object.
 
-By default, objects in the mode are zoomed. Check
-``Open Menu`` —> ``Settings`` —> ``AAM Zoom Margin`` to adjust that.
+In order to change the zoom level, go to settings (press ``F3``)
+in the workspace tab and set the value Attribute annotation mode (AAM) zoom margin in px.
 
-## Annotation with box by 4 points
+## Annotation with rectangle by 4 points
 It is an efficient method of bounding box annotation, proposed
 [here](https://arxiv.org/pdf/1708.02750.pdf).
-Before starting, you need to be sure that ``Box by 4 points`` is selected.
+Before starting, you need to make sure that the drawing method by 4 points is selected.
 
 ![](static/documentation/images/image134.jpg)
 
-Press ``N`` for entering drawing mode. Click exactly four extreme points:
+Press ``Shape`` or ``Track`` for entering drawing mode. Click on four extreme points:
 the top, bottom, left- and right-most physical points on the object.
-Drawing is automatically completed right after clicking the fourth point.
+Drawing will be automatically completed right after clicking the fourth point.
 Press ``Esc`` to cancel editing.
 
-![](static/documentation/images/gif016.gif)
+![](static/documentation/images/gif016_mapillary_vistas.gif)
 
 ## Annotation with polygons
 
