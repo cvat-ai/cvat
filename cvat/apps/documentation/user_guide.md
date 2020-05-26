@@ -22,7 +22,7 @@
       - [Objects](#objects)
       - [Labels](#labels)
   - [Shape mode (advanced)](#shape-mode-advanced)
-  - [Interpolation mode (advanced)](#interpolation-mode-advanced)
+  - [Track mode (advanced)](#track-mode-advanced)
   - [Attribute annotation mode (advanced)](#attribute-annotation-mode-advanced)
   - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
@@ -965,7 +965,7 @@ Enables / disables the display of auxiliary perspective lines. Only relevant for
 
 Basic operations in the mode were described in section [shape mode (basics)](#shape-mode-basics).
 
-**Occluded** 
+**Occluded**
 Occlusion is an attribute used if an object is occluded by another object or
 isn't fully visible on the frame. Use ``Q`` shortcut to set the property
 quickly.
@@ -984,18 +984,22 @@ by accident. Shortcut: ``L``.
 
 ![](static/documentation/images/image066.jpg)
 
-## Interpolation mode (advanced)
+## Track mode (advanced)
 
-Basic operations in the mode were described above.
+Basic operations in the mode were described in section [track mode (basics)](#track-mode-basics).
 
-Bounding boxes that were created in the mode, have extra navigation buttons.
--   These buttons help to jump to previous/next key frame.
+Shapes that were created in the track mode, have extra navigation buttons.
+-   These buttons help to jump to the previous/next keyframe.
 
     ![](static/documentation/images/image056.jpg)
 
--   The button helps to jump to initial frame for the object (first bounding box for the track).
+-   The button helps to jump to the initial frame and to the last keyframe.
 
     ![](static/documentation/images/image057.jpg)
+
+You can use the `` Split '' function to split one track into two tracks:
+
+![](static/documentation/images/gif010_DETRAC.gif)
 
 ## Attribute annotation mode (advanced)
 
