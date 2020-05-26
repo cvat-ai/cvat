@@ -21,9 +21,7 @@
     - [Objects sidebar](#objects-sidebar)
       - [Objects](#objects)
       - [Labels](#labels)
-    - [Bottom side panel](#bottom-side-panel)
-    - [Fullscreen player mode](#fullscreen-player-mode)
-  - [Annotation mode (advanced)](#annotation-mode-advanced)
+  - [Shape mode (advanced)](#shape-mode-advanced)
   - [Interpolation mode (advanced)](#interpolation-mode-advanced)
   - [Attribute annotation mode (advanced)](#attribute-annotation-mode-advanced)
   - [Annotation with box by 4 points](#annotation-with-box-by-4-points)
@@ -781,6 +779,41 @@ Switching between user interface modes.
   ![](static/documentation/images/image145.jpg)
 
 ---
+
+### Controls sidebar
+
+**Navigation block** - contains tools for moving and rotating images.
+|Icon                                         |Description                                                           |
+|--                                           |--                                                                    |
+|![](static/documentation/images/image148.jpg)|``Cursor`` (``Esc``)- a basic annotation pedacting tool.              |
+|![](static/documentation/images/image149.jpg)|``Move the image``- a tool for moving around the image without<br/> the possibility of editing.|
+|![](static/documentation/images/image102.jpg)|``Rotate``- two buttons to rotate the current frame<br/> a clockwise (``Ctrl+R``) and anticlockwise (``Ctrl+Shift+R``).<br/> You can enable ``Rotate all images`` in the settings to rotate all the images in the job
+
+**Zoom block** - contains tools for image zoom.
+|Icon                                         |Description                                                           |
+|--                                           |--                                                                    |
+|![](static/documentation/images/image151.jpg)|``Fit image``- fits image into the workspace size.<br/> Shortcut - double click on an image|
+|![](static/documentation/images/image166.jpg)|``Select a region of interest``- zooms in on a selected region.<br/> You can use this tool to quickly zoom in on a specific part of the frame.|
+
+**Shapes block** - contains all the tools for creating shapes.
+|Icon                                         |Description   |Links to section  |
+|--                                           |--            |--                |
+|![](static/documentation/images/image167.jpg)|``Rectangle``|[Shape mode](#shape-mode-basics); [Track mode](#track-mode-basics);<br/> [Drawing by 4 points](#annotation-with-box-by-4-points)|
+|![](static/documentation/images/image168.jpg)|``Polygon``  |[Annotation with polygons](#annotation-with-polygons)  |
+|![](static/documentation/images/image169.jpg)|``Polyline`` |[Annotation with polylines](#annotation-with-polylines)|
+|![](static/documentation/images/image170.jpg)|``Points``   |[Annotation with points](#annotation-with-points)      |
+|![](static/documentation/images/image176.jpg)|``Cuboid``   |[Annotation with cuboids](#annotation-with-cuboids)    |
+|![](static/documentation/images/image171.jpg)|``Tag``      |[Annotation with tag](#annotation-with-tag)            |
+
+**Edit block** - contains tools for editing tracks and shapes.
+|Icon                                         |Description                                        |Links to section  |
+|--                                           |--                                                 |--                |
+|![](static/documentation/images/image172.jpg)|``Merge Shapes``(``M``) — starts/stops the merging shapes mode.  |[Track mode (basics)](#track-mode-basics)|
+|![](static/documentation/images/image173.jpg)|``Group Shapes`` (``G``) — starts/stops the grouping shapes mode.|[Shape grouping](#shape-grouping)|
+|![](static/documentation/images/image174.jpg)|``Split`` — splits a track.                                      |[Track mode (advanced)](#interpolation-mode-advanced)|
+
+---
+
 ### Objects sidebar
 
 ``Hide`` - the button hides the object's sidebar.
