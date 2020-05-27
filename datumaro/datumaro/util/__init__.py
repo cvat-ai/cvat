@@ -5,6 +5,7 @@
 
 import os
 import os.path as osp
+from itertools import islice
 
 
 def find(iterable, pred=lambda x: True, default=None):
@@ -60,3 +61,17 @@ def to_snake_case(s):
         else:
             name.append(char)
     return ''.join(name)
+
+def take_by(iterable, count):
+    """
+    Returns elements from the input iterable by batches of N items.
+    ('abcdefg', 3) -> ['a', 'b', 'c'], ['d', 'e', 'f'], ['g']
+    """
+
+    it = iter(iterable)
+    while True:
+        batch = list(islice(it, count))
+        if len(batch) == 0:
+            break
+
+        yield batch
