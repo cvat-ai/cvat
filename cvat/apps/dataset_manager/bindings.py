@@ -498,7 +498,6 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             anno_label = map_label(shape_obj.label)
             anno_attr = convert_attrs(shape_obj.label, shape_obj.attributes)
             anno_attr['occluded'] = shape_obj.occluded
-            anno_attr['z_order'] = shape_obj.z_order
 
             if hasattr(shape_obj, 'track_id'):
                 anno_attr['track_id'] = shape_obj.track_id
@@ -507,17 +506,21 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             anno_points = shape_obj.points
             if shape_obj.type == ShapeType.POINTS:
                 anno = datumaro.Points(anno_points,
-                    label=anno_label, attributes=anno_attr, group=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group,
+                    z_order=shape_obj.z_order)
             elif shape_obj.type == ShapeType.POLYLINE:
                 anno = datumaro.PolyLine(anno_points,
-                    label=anno_label, attributes=anno_attr, group=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group,
+                    z_order=shape_obj.z_order)
             elif shape_obj.type == ShapeType.POLYGON:
                 anno = datumaro.Polygon(anno_points,
-                    label=anno_label, attributes=anno_attr, group=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group,
+                    z_order=shape_obj.z_order)
             elif shape_obj.type == ShapeType.RECTANGLE:
                 x0, y0, x1, y1 = anno_points
                 anno = datumaro.Bbox(x0, y0, x1 - x0, y1 - y0,
-                    label=anno_label, attributes=anno_attr, group=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group,
+                    z_order=shape_obj.z_order)
             elif shape_obj.type == ShapeType.CUBOID:
                 continue # Datumaro does not support cuboids
             else:
@@ -590,6 +593,7 @@ def import_dm_annotations(dm_dataset, task_data):
                     label=label_cat.items[ann.label].name,
                     points=ann.points,
                     occluded=ann.attributes.get('occluded') == True,
+                    z_order=ann.z_order,
                     group=group_map.get(ann.group, 0),
                     attributes=[task_data.Attribute(name=n, value=str(v))
                         for n, v in ann.attributes.items()],
