@@ -444,6 +444,40 @@ class VocConverterTest(TestCase):
                 VocSegmentationConverter(label_map='voc'), test_dir,
                 target_dataset=DstExtractor())
 
+    def test_can_save_voc_segm_unpainted(self):
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        # overlapping masks, the first should be truncated
+                        # the second and third are different instances
+                        Mask(image=np.array([[0, 1, 1, 1, 0]]), label=4,
+                            z_order=1),
+                        Mask(image=np.array([[1, 1, 0, 0, 0]]), label=3,
+                            z_order=2),
+                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
+                            z_order=2),
+                    ]),
+                ])
+
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Mask(image=np.array([[0, 0, 1, 0, 0]]), label=4,
+                            group=1),
+                        Mask(image=np.array([[1, 1, 0, 0, 0]]), label=3,
+                            group=2),
+                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
+                            group=3),
+                    ]),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                VocSegmentationConverter(label_map='voc', apply_colormap=False),
+                test_dir, target_dataset=DstExtractor())
+
     def test_can_save_voc_segm_with_many_instances(self):
         def bit(x, y, shape):
             mask = np.zeros(shape)
