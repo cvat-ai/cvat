@@ -1088,24 +1088,22 @@ Also, if you need to annotate small objects, increase ``Image Quality`` to
 
 It is used for road markup annotation etc.
 
-Before starting, you have to be sure that ``Polyline`` is selected.
+Before starting, you need to select the ``Polyline``. You can set a fixed number of points
+in the ``Number of points`` field, then drawing will be stopped automatically.
 
 ![](static/documentation/images/image085.jpg)
 
-Press ``N`` for entering drawing mode. There are two ways to draw a polyline —
-you either create points clicking or dragging mouse on the screen, holding ``Shift``.
-
+Click ``Shape`` to enter drawing mode. There are two ways to draw a polyline —
+you either create points by clicking or by dragging a mouse on the screen while holding ``Shift``.
 When ``Shift`` isn't pressed, you can zoom in/out (when scrolling the mouse wheel)
 and move (when clicking the mouse wheel and moving the mouse), you can delete
-previous point clicking right mouse button. Press ``N`` again to complete the
-shape. You can delete points double-clicking them. Double-click with pressed
-``Shift`` will open a polyline editor. There you can create new points
-(clicking or dragging) or delete part of a polygon closing the red line on
-another point. Press ``Esc`` to cancel editing. Also, you can set fixed number
-of points in the "poly shape size" field, then drawing will be stopped
-automatically. You can adjust the polyline after it has been drawn.
+previous points by right-clicking on it. Press ``N`` again to complete the shape.
+You can delete a point by double-clicking on it with pressed ``Ctrl`` or right-clicking on a point
+and selecting ``Delete point``. Double-click with pressed ``Shift`` will open a polyline editor.
+There you can create new points(by clicking or dragging) or delete part of a polygon closing
+the red line on another point. Press ``Esc`` to cancel editing.
 
-![](static/documentation/images/image039.jpg)
+![](static/documentation/images/image039_mapillary_vistas.jpg)
 
 ## Annotation with cuboids
 
