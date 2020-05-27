@@ -27,10 +27,10 @@
   - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
-  - [Annotation with cuboids](#annotation-with-cuboids)
   - [Annotation with points](#annotation-with-points)
     - [Points in annotation mode](#points-in-annotation-mode)
     - [Linear interpolation with one point](#linear-interpolation-with-one-point)
+  - [Annotation with cuboids](#annotation-with-cuboids)
   - [Annotation with Auto Segmentation](#annotation-with-auto-segmentation)
   - [Automatic annotation](#automatic-annotation)
   - [Shape grouping](#shape-grouping)
@@ -1104,6 +1104,52 @@ There you can create new points(by clicking or dragging) or delete part of a pol
 the red line on another point. Press ``Esc`` to cancel editing.
 
 ![](static/documentation/images/image039_mapillary_vistas.jpg)
+
+## Annotation with points
+
+### Points in shape mode
+
+It is used for face, landmarks annotation etc.
+
+Before you start you need to select the ``Points``. If necessary you can set a fixed number of points
+in the ``Number of points`` field, then drawing will be stopped automatically.
+
+![](static/documentation/images/image042.jpg)
+
+Click ``Shape`` to entering the drawing mode. Now you can start annotation of the necessary area.
+Points are automatically grouped — all points will be considered linked between each start and finish.
+Press ``N`` again to finish marking the area. You can delete a point by double-clicking with pressed ``Ctrl``
+or right-clicking on a point and selecting ``Delete point``. Double-clicking with pressed ``Shift`` will open the points
+shape editor. There you can add new points into an existing shape. You can zoom in/out (when scrolling the mouse wheel)
+and move (when clicking the mouse wheel and moving the mouse) while drawing. You can drag an object after
+it has been drawn and change the position of individual points after finishing an object.
+
+![](static/documentation/images/image063_affectnet.jpg)
+
+### Linear interpolation with one point
+
+You can use linear interpolation for points to annotate a moving object:
+
+1.  Before you start, select the ``Points``.
+1.  Linear interpolation works only with one point, so you need to set ``Number of points`` to 1.
+1.  After that select the ``Track``.
+
+    ![](static/documentation/images/image122.jpg)
+
+1.  Click ``Track`` to enter the drawing mode left-click to create a point and after that shape will be automatically completed.
+
+    ![](static/documentation/images/image163_detrac.jpg)
+
+1.  Move forward a few frames and move the point to the desired position,
+    this way you will create a keyframe and intermediate frames will be drawn automatically.
+    You can work with this object as with an interpolated track: you can hide it using the ``Outside``,
+    move around keyframes, etc.
+
+    ![](static/documentation/images/image165_detrac.jpg)
+
+1.  This way you'll get linear interpolation using the `` Points``.
+
+    ![](static/documentation/images/gif013_detrac.gif)
 
 ## Annotation with cuboids
 
