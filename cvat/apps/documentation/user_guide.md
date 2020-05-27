@@ -186,7 +186,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Stop frame**. Frame on which video in task ends.
 
     **Frame Step**. Use this option to filter video frames.
-    For example, enter ``25`` to leave every twenty fifth frame in the video or every twenty fifth image. 
+    For example, enter ``25`` to leave every twenty fifth frame in the video or every twenty fifth image.
 
     **Chunk size**. Defines a number of frames to be packed in a chunk when send from client to server.
     Server defines automatically if empty.
@@ -217,7 +217,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     Push ``Submit`` button and it will be added into the list of annotation tasks.
     Then, the created task will be displayed on a dashboard:
 
-    ![](static/documentation/images/image006_DETRAC.jpg)
+    ![](static/documentation/images/image006_detrac.jpg)
 
 1.  The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
     Each element contains: task name, preview, progress bar, button ``Open``, and menu ``Actions``.
@@ -227,7 +227,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       - [CVAT for video](/cvat/apps/documentation/xml_format.md#interpolation)
       is highlighted if a task has the interpolation mode.
       - [CVAT for images](/cvat/apps/documentation/xml_format.md#annotation)
-      is highlighted if a task has the annotation mode. 
+      is highlighted if a task has the annotation mode.
       - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [(VOC) Segmentation mask](http://host.robots.ox.ac.uk/pascal/VOC/) —
           archive contains class and instance masks for each frame in the png
@@ -250,7 +250,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 1.  Task details is a task page which contains a preview, a progress bar
     and the details of the task (specified when the task was created) and the jobs section.
 
-    ![](static/documentation/images/image131_DETRAC.jpg)
+    ![](static/documentation/images/image131_detrac.jpg)
 
     - The next actions are available on this page:
       1. Change the task’s title.
@@ -280,7 +280,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     UX, only the first chunk of several frames will be loaded and you will be able
     to annotate first images. Other frames will be loaded in background.
 
-    ![](static/documentation/images/image007_DETRAC.jpg)
+    ![](static/documentation/images/image007_detrac.jpg)
 
 ### Models
 
@@ -337,7 +337,7 @@ To execute enter a search string in search field.
 
 The search is case insensitive.
 
-![](static/documentation/images/image100.jpg)
+![](static/documentation/images/image100_detrac.jpg)
 
 ## Interface of the annotation tool
 
@@ -350,7 +350,7 @@ The tool consists of:
 - ``Objects sidebar`` — contains label filter, two lists:
   objects (on the frame) and labels (of objects on the frame) and appearance settings.
 
-![](static/documentation/images/image034_DETRAC.jpg)
+![](static/documentation/images/image034_detrac.jpg)
 
 ### Basic navigation
 
@@ -388,11 +388,11 @@ There are five shapes which you can annotate your images with:
 
 And there is how they all look like:
 
-![](static/documentation/images/image038_DETRAC.jpg "Rectangle") ![](static/documentation/images/image033_DETRAC.jpg "Polygon")
+![](static/documentation/images/image038_detrac.jpg "Rectangle") ![](static/documentation/images/image033_detrac.jpg "Polygon")
 
-![](static/documentation/images/image009_mapillary_vistas.jpg "Polyline") ![](static/documentation/images/image010_Affectnet.jpg "Points")
+![](static/documentation/images/image009_mapillary_vistas.jpg "Polyline") ![](static/documentation/images/image010_affectnet.jpg "Points")
 
-![](static/documentation/images/image015_DETRAC.jpg "Cuboid") ![](static/documentation/images/image135.jpg "Tag") 
+![](static/documentation/images/image015_detrac.jpg "Cuboid") ![](static/documentation/images/image135.jpg "Tag")
 
 ``Tag`` - has no shape in the workspace, but is displayed in objects sidebar.
 
@@ -418,7 +418,7 @@ Usage examples:
 
     -   Choose the opposite points. Your first rectangle is ready!
 
-        ![](static/documentation/images/image011_DETRAC.jpg)
+        ![](static/documentation/images/image011_detrac.jpg)
 
     -   To learn about creating a rectangle using the by 4 point drawing method, ([read here](#annotation-by-rectangle-4-points)).
 
@@ -434,7 +434,7 @@ Usage examples:
 
 1.  The following figure is an example of a fully annotated frame with separate shapes.
 
-    ![](static/documentation/images/image013_DETRAC.jpg)
+    ![](static/documentation/images/image013_detrac.jpg)
 
     Read more in the section [shape mode (advanced)](#shape-mode-advanced).
 
@@ -465,11 +465,11 @@ Usage examples:
       and the frames between them will be interpolated automatically.
     - Let's jump 30 frames forward and adjust the boundaries of the object. See an example below:
 
-        ![](static/documentation/images/image017_DETRAC.jpg)
+        ![](static/documentation/images/image017_detrac.jpg)
 
     -   After that the rectangle of the object will be changed automatically on frames 2270 to 2300:
 
-        ![](static/documentation/images/gif019_DETRAC.gif)
+        ![](static/documentation/images/gif019_detrac.gif)
 
 1.  When the annotated object disappears or becomes too small, you need to
     finish the track. You have to choose ``Outside Property``, shortcut ``O``.
@@ -484,12 +484,12 @@ Usage examples:
 
     -   Create tracks for moments when the cyclist is visible:
 
-        ![](static/documentation/images/gif001_DETRAC.gif)
+        ![](static/documentation/images/gif001_detrac.gif)
 
     -   Click ``Merge`` button or press key ``M`` and click on any rectangle of the first track
         and on any rectangle of the second track and so on:
 
-        ![](static/documentation/images/image162_DETRAC.jpg)
+        ![](static/documentation/images/image162_detrac.jpg)
 
     -   Click ``Merge`` button or press ``M`` to apply changes.
 
@@ -498,7 +498,7 @@ Usage examples:
     -   The final annotated sequence of frames in ``Interpolation`` mode can
         look like the clip below:
 
-        ![](static/documentation/images/gif003_DETRAC.gif)
+        ![](static/documentation/images/gif003_detrac.gif)
 
         Read more in the section [track mode (advanced)](#track-mode-advanced).
 
@@ -507,7 +507,7 @@ Usage examples:
 -   In this mode you can edit attributes with fast navigation between objects and frames using a keyboard.
     Open the drop-down list in the top panel and select Attribute annotation Mode.
 
-    ![](static/documentation/images/image023_Affectnet.jpg)
+    ![](static/documentation/images/image023_affectnet.jpg)
 
 -   In this mode objects panel change to a special panel :
 
@@ -517,12 +517,12 @@ Usage examples:
     shortcuts for changing the attribute. Press key ``2`` on your keyboard to assign a value (female) for the attribute
     or select from the drop-down list.
 
-    ![](static/documentation/images/image024_Affectnet.jpg)
+    ![](static/documentation/images/image024_affectnet.jpg)
 
 -   Press ``Up Arrow``/``Down Arrow`` on your keyboard or click the buttons in the UI to go to the next/previous
     attribute. In this case, after pressing ``Down Arrow`` you will be able to edit the ``Age`` attribute.
 
-    ![](static/documentation/images/image025_Affectnet.jpg)
+    ![](static/documentation/images/image025_affectnet.jpg)
 
 -   Use ``Right Arrow``/``Left Arrow`` keys to move to the previous/next image with annotation.
 
@@ -579,7 +579,7 @@ Read more in the section [attribute annotation mode (advanced)](#attribute-annot
 
 **Label** is a type of an annotated object (e.g. person, car, vehicle, etc.)
 
-![](static/documentation/images/image032_DETRAC.jpg)
+![](static/documentation/images/image032_detrac.jpg)
 
 ---
 
@@ -598,7 +598,7 @@ quality, etc.). There are two types of attributes:
 **Track** is a set of shapes on different frames which corresponds to one object.
 Tracks are created in ``Track mode``
 
-![](static/documentation/images/gif003_DETRAC.gif)
+![](static/documentation/images/gif003_detrac.gif)
 
 ---
 **Annotation** is a set of shapes and tracks. There are several types of annotations:
@@ -609,9 +609,9 @@ Tracks are created in ``Track mode``
 ---
 ### Workspace
 
-This is the main field in which drawing and editing objects takes place. 
-In addition the workspace also has the following functions: 
--   Right-clicking on an object calls up the ``Object card`` - this is an element containing 
+This is the main field in which drawing and editing objects takes place.
+In addition the workspace also has the following functions:
+-   Right-clicking on an object calls up the ``Object card`` - this is an element containing
     the necessary controls for changing the label and attributes of the object, as well as the action menu.
 
     ![](static/documentation/images/image138_mapillary_vistas.jpg)
@@ -620,8 +620,8 @@ In addition the workspace also has the following functions:
 
     ![](static/documentation/images/image139_mapillary_vistas.jpg)
 
--   ``Z-axis slider`` - Allows you to switch annotation layers hiding the upper layers 
-    (slider is enabled if several z layers are on a frame). 
+-   ``Z-axis slider`` - Allows you to switch annotation layers hiding the upper layers
+    (slider is enabled if several z layers are on a frame).
     This element has a button for adding a new layer. When pressed, a new layer is added and switched to it.
     You can move objects in layers using the ``+`` and ``-`` keys.
 
@@ -671,7 +671,7 @@ In tab ``Workspace`` you can:
   side panel for every interpolated object (turned off by default).
 - ``Always show object details`` - show text for an object on the canvas not only when the object is activated:
 
-   ![](static/documentation/images/image152_DETRAC.jpg)
+   ![](static/documentation/images/image152_detrac.jpg)
 
 - ``Automatic bordering`` - enable automatic bordering for polygons and polylines during drawing/editing.
   For more information To find out more, go to the section [annotation with polygons](#Annotation-with-polygons).
@@ -756,7 +756,7 @@ The fullscreen player mode. The keyboard shortcut is ``F11``.
 #### Info
 Open the job info.
 
-  ![](static/documentation/images/image144_DETRAC.jpg)
+  ![](static/documentation/images/image144_detrac.jpg)
 
 - Job status: ``annotation``, ``validation`` or ``completed`` task
 
@@ -879,7 +879,7 @@ A shape can be **Occluded**. Shortcut: ``Q``. Such shapes have dashed boundaries
 
 ![](static/documentation/images/image048.jpg)
 
-![](static/documentation/images/image049_DETRAC.jpg)
+![](static/documentation/images/image049_detrac.jpg)
 
 You can change the way an object is displayed on a frame (show or hide).
 
@@ -916,15 +916,15 @@ In this tab, you can lock or hide objects of a certain label.
 Change the color scheme of annotation:
 -   ``Instance`` — every  shape has random color
 
-    ![](static/documentation/images/image095_DETRAC.jpg)
+    ![](static/documentation/images/image095_detrac.jpg)
 
 -   ``Group`` — every group of shape has its own random color, ungrouped shapes are white
 
-    ![](static/documentation/images/image094_DETRAC.jpg)
+    ![](static/documentation/images/image094_detrac.jpg)
 
 -   ``Label`` — every label (e.g. car, person) has its own random color
 
-    ![](static/documentation/images/image093_DETRAC.jpg)
+    ![](static/documentation/images/image093_detrac.jpg)
 
     You can change any random color pointing to a needed box on a frame or on an
     object sidebar.
@@ -933,31 +933,31 @@ Change the color scheme of annotation:
 
 Change the opacity of every shape in the annotation.
 
-![](static/documentation/images/image086_DETRAC.jpg)
+![](static/documentation/images/image086_detrac.jpg)
 
 **Selected Fill Opacity** slider
 
 Change the opacity of the selected object's fill.
 
-![](static/documentation/images/image089_DETRAC.jpg)
+![](static/documentation/images/image089_detrac.jpg)
 
 **Black Stroke** checkbox
 
 Changes the shape border from colored to black.
 
-![](static/documentation/images/image088_DETRAC.jpg)
+![](static/documentation/images/image088_detrac.jpg)
 
 **Show bitmap** checkbox
 
 If enabled all shapes are displayed in white and the background is black.
 
-![](static/documentation/images/image087_DETRAC.jpg)
+![](static/documentation/images/image087_detrac.jpg)
 
 **Show projections** checkbox
 
 Enables / disables the display of auxiliary perspective lines. Only relevant for cuboids
 
-![](static/documentation/images/image090_DETRAC.jpg)
+![](static/documentation/images/image090_detrac.jpg)
 
 ---
 
@@ -999,7 +999,7 @@ Shapes that were created in the track mode, have extra navigation buttons.
 
 You can use the `` Split '' function to split one track into two tracks:
 
-![](static/documentation/images/gif010_DETRAC.gif)
+![](static/documentation/images/gif010_detrac.gif)
 
 ## Attribute annotation mode (advanced)
 
@@ -1007,7 +1007,7 @@ Basic operations in the mode were described in section [attribute annotation mod
 
 It is possible to handle lots of objects on the same frame in the mode.
 
-![](static/documentation/images/image058_DETRAC.jpg)
+![](static/documentation/images/image058_detrac.jpg)
 
 It is more convenient to annotate objects of the same type. In this case you can apply
 the appropriate filter. For example, the following filter will
@@ -1088,24 +1088,22 @@ Also, if you need to annotate small objects, increase ``Image Quality`` to
 
 It is used for road markup annotation etc.
 
-Before starting, you have to be sure that ``Polyline`` is selected.
+Before starting, you need to select the ``Polyline``. You can set a fixed number of points
+in the ``Number of points`` field, then drawing will be stopped automatically.
 
 ![](static/documentation/images/image085.jpg)
 
-Press ``N`` for entering drawing mode. There are two ways to draw a polyline —
-you either create points clicking or dragging mouse on the screen, holding ``Shift``.
-
+Click ``Shape`` to enter drawing mode. There are two ways to draw a polyline —
+you either create points by clicking or by dragging a mouse on the screen while holding ``Shift``.
 When ``Shift`` isn't pressed, you can zoom in/out (when scrolling the mouse wheel)
 and move (when clicking the mouse wheel and moving the mouse), you can delete
-previous point clicking right mouse button. Press ``N`` again to complete the
-shape. You can delete points double-clicking them. Double-click with pressed
-``Shift`` will open a polyline editor. There you can create new points
-(clicking or dragging) or delete part of a polygon closing the red line on
-another point. Press ``Esc`` to cancel editing. Also, you can set fixed number
-of points in the "poly shape size" field, then drawing will be stopped
-automatically. You can adjust the polyline after it has been drawn.
+previous points by right-clicking on it. Press ``N`` again to complete the shape.
+You can delete a point by double-clicking on it with pressed ``Ctrl`` or right-clicking on a point
+and selecting ``Delete point``. Double-click with pressed ``Shift`` will open a polyline editor.
+There you can create new points(by clicking or dragging) or delete part of a polygon closing
+the red line on another point. Press ``Esc`` to cancel editing.
 
-![](static/documentation/images/image039.jpg)
+![](static/documentation/images/image039_mapillary_vistas.jpg)
 
 ## Annotation with cuboids
 
@@ -1200,18 +1198,18 @@ You can use linear interpolation for points to annotate a moving object:
 1.  Press ``N`` or click ``Create Shape`` for entering drawing mode.
     Click LMB to create a point and shape will be automatically completed.
 
-    ![](static/documentation/images/gif011_DETRAC.gif)
+    ![](static/documentation/images/gif011_detrac.gif)
 
 1.  Move forward a few frames and move the point to the desired position,
     this way you will create a keyframe and intermediate frames will be drawn automatically.
     You can work with this object as with an interpolated track: hide with help of ``Outside``,
     move around keyframes, etc.
 
-    ![](static/documentation/images/gif012_DETRAC.gif)
+    ![](static/documentation/images/gif012_detrac.gif)
 
 1.  This way you'll get linear interpolation using `` Points``.
 
-    ![](static/documentation/images/gif013_DETRAC.gif)
+    ![](static/documentation/images/gif013_detrac.gif)
 
 ## Annotation with Auto Segmentation
 
@@ -1228,7 +1226,7 @@ in/out (when scrolling the mouse wheel) and move (when clicking the mouse
 wheel and moving the mouse) while drawing. At the end of Auto Segmentation,
 a shape is created and you can work with it as a polygon.
 
-![](static/documentation/images/gif009_DETRAC.gif)
+![](static/documentation/images/gif009_detrac.gif)
 
 ## Automatic annotation
 
@@ -1239,7 +1237,7 @@ You can find the list of available models in the ``Models`` section.
 1.  To launch automatic annotation, you should open the dashboard and find a task which you want to annotate.
     Then click the ``Actions`` button and choose option ``Automatic Annotation`` from the dropdown menu.
 
-    ![](static/documentation/images/image119_DETRAC.jpg)
+    ![](static/documentation/images/image119_detrac.jpg)
 
 1.  In the dialog window select a model you need. DL models are created for specific labels, e.g.
     the Crossroad model was taught using footage from cameras located above the highway and it is best to
@@ -1257,11 +1255,11 @@ You can find the list of available models in the ``Models`` section.
 
 1.  At runtime, you can see the percentage of completion.
 
-    ![](static/documentation/images/image121_DETRAC.jpg)
+    ![](static/documentation/images/image121_detrac.jpg)
 
 1.  As a result, you will get an annotation with separate bounding boxes (or other shapes)
 
-    ![](static/documentation/images/gif014_DETRAC.gif)
+    ![](static/documentation/images/gif014_detrac.gif)
 
 1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects and
     merging into tracks using ``ReID merge`` function. Click the ``ReID merge`` button in the menu.
@@ -1272,7 +1270,7 @@ You can find the list of available models in the ``Models`` section.
 
 1.  You can remove false positives and edit tracks using ``Split`` and ``Merge`` functions.
 
-    ![](static/documentation/images/gif015_DETRAC.gif)
+    ![](static/documentation/images/gif015_detrac.gif)
 
 ## Shape grouping
 
@@ -1365,7 +1363,7 @@ If your CVAT instance is created with analytics support, you can press the
 "analytics" button in dashboard, a new tab with analytics and journals will
 be opened.
 
-![](static/documentation/images/image113_DETRAC.jpg)
+![](static/documentation/images/image113_detrac.jpg)
 
 It allows you to see how much working time every user spend on each task and how much they did, over any time range.
 
