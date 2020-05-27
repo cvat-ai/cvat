@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to configure user agreements for the user registration form (https://github.com/opencv/cvat/pull/1464)
 - Added cuboid interpolation and cuboid drawing from rectangles (<https://github.com/opencv/cvat/pull/1560>)
 - Ability to configure custom pageViewHit, which can be useful for web analytics integration (https://github.com/opencv/cvat/pull/1566)
+- Ability to configure access to the analytics page based on roles (https://github.com/opencv/cvat/pull/1592)
 
 ### Changed
 - Downloaded file name in annotations export became more informative (https://github.com/opencv/cvat/pull/1352)
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an error when exporting a task with cuboids to any format except CVAT (<https://github.com/opencv/cvat/pull/1577>)
 - Synchronization with remote git repo (<https://github.com/opencv/cvat/pull/1582>)
 - A problem with mask to polygons conversion when polygons are too small (<https://github.com/opencv/cvat/pull/1581>)
+- Unable to upload video with uneven size (<https://github.com/opencv/cvat/pull/1594>)
 - Fixed an issue with `z_order` having no effect on segmentations (<https://github.com/opencv/cvat/pull/1589>)
 
 ### Security

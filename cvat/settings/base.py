@@ -409,11 +409,19 @@ DATUMARO_PATH = os.path.join(BASE_DIR, 'datumaro')
 sys.path.append(DATUMARO_PATH)
 
 RESTRICTIONS = {
-    "user_agreements": [],
+    'user_agreements': [],
 
     # this setting limits the number of tasks for the user
-    "task_limit": None,
+    'task_limit': None,
 
-    # this settings reduse task visibility to owner and assignee only
-    "reduce_task_visibility": False,
+    # this setting reduse task visibility to owner and assignee only
+    'reduce_task_visibility': False,
+
+    # allow access to analytics component to users with the following roles
+    'analytics_access': (
+        'engine.role.observer',
+        'engine.role.annotator',
+        'engine.role.user',
+        'engine.role.admin',
+        ),
 }
