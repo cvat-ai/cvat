@@ -337,7 +337,7 @@ To execute enter a search string in search field.
 
 The search is case insensitive.
 
-![](static/documentation/images/image100.jpg)
+![](static/documentation/images/image100_detrac.jpg)
 
 ## Interface of the annotation tool
 
@@ -388,7 +388,7 @@ There are five shapes which you can annotate your images with:
 
 And there is how they all look like:
 
-![](static/documentation/images/image038_detrac.jpg "Rectangle") ![](static/documentation/images/image033_DETRAC.jpg "Polygon")
+![](static/documentation/images/image038_detrac.jpg "Rectangle") ![](static/documentation/images/image033_detrac.jpg "Polygon")
 
 ![](static/documentation/images/image009_mapillary_vistas.jpg "Polyline") ![](static/documentation/images/image010_affectnet.jpg "Points")
 
