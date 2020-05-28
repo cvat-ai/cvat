@@ -1020,7 +1020,7 @@ Before starting, you need to select ``Polygon`` on the controls sidebar and choo
 
 | Clicking points                                   | Holding Shift+Dragging                            |
 | --                                                | --                                                |
-| ![](static/documentation/images/gif005_DETRAC.gif)| ![](static/documentation/images/gif006_DETRAC.gif)|
+| ![](static/documentation/images/gif005_detrac.gif)| ![](static/documentation/images/gif006_detrac.gif)|
 
 - When ``Shift`` isn't pressed, you can zoom in/out (when scrolling the mouse
   wheel) and move (when clicking the mouse wheel and moving the mouse), you can also
@@ -1082,7 +1082,7 @@ Used to create a polygon semi-automatically.
 - Press ``N`` again to finish marking the area. At the end of Auto Segmentation,
   a shape is created and you can work with it as a polygon.
 
-  ![](static/documentation/images/gif009_DETRAC.gif)
+  ![](static/documentation/images/gif009_detrac.gif)
 
 ### Edit polygon
 
