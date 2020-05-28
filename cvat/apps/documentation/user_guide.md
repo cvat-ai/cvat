@@ -1207,56 +1207,6 @@ Simply drag the faces to move them independently from the rest of the cuboid.
 
 ![](static/documentation/images/CuboidEditing2.gif)
 
-## Annotation with points
-
-### Points in annotation mode
-
-It is used for face landmarks annotation etc.
-
-Before starting, you have to be sure that ``Points`` is selected.
-
-![](static/documentation/images/image042.jpg)
-
-Press ``N`` for entering drawing mode. Now you can start annotating the necessary area.
-Press ``N`` again for finishing marking an area. You can delete points
-double-clicking them. Double-click with pressed ``Shift`` will open a points
-shape editor. There you can create new points into existing shape. Also, you
-can set fixed number of points in the "poly shape size" field, then drawing
-will be stopped automatically. Points are automatically grouped — all points
-will be considered linked between individual start and finish. You can zoom
-in/out (when scrolling the mouse wheel) and move (when clicking the mouse
-wheel and moving the mouse) while drawing. You can drag object after it has
-been drawn and fix a position of individual points after finishing the object.
-You can add/delete points after finishing.
-
-![](static/documentation/images/image063.jpg)
-
-### Linear interpolation with one point
-
-You can use linear interpolation for points to annotate a moving object:
-
-1.  Before starting, you have to be sure that ``Points`` is selected.
-1.  Linear interpolation works only with one point, so you need to set ``Poly Shapes Size``: 1.
-1.  After that select the interpolation mode.
-
-    ![](static/documentation/images/image122.jpg)
-
-1.  Press ``N`` or click ``Create Shape`` for entering drawing mode.
-    Click LMB to create a point and shape will be automatically completed.
-
-    ![](static/documentation/images/gif011_detrac.gif)
-
-1.  Move forward a few frames and move the point to the desired position,
-    this way you will create a keyframe and intermediate frames will be drawn automatically.
-    You can work with this object as with an interpolated track: hide with help of ``Outside``,
-    move around keyframes, etc.
-
-    ![](static/documentation/images/gif012_detrac.gif)
-
-1.  This way you'll get linear interpolation using `` Points``.
-
-    ![](static/documentation/images/gif013_detrac.gif)
-
 ## Annotation with Auto Segmentation
 
 Used to create a polygon semi-automatically. Before starting, you have to be
