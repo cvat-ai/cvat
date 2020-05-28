@@ -33,6 +33,7 @@ services:
   cvat:
     container_name: cvat
     image: cvat
+#    command:  "&& /usr/bin/python3 ~/manage.py shell --command='import default_superuser'"
     restart: always
     depends_on:
       - cvat_redis
@@ -60,6 +61,7 @@ services:
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
       - cvat_models:/home/django/models
+    
 
   cvat_ui:
     container_name: cvat_ui

@@ -106,7 +106,7 @@ RUN if [ "$AUTO_SEGMENTATION" = "yes" ]; then \
 
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/requirements/ /tmp/requirements/
-COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
+COPY default_superuser.py supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 WORKDIR "/opt/intel/openvino_2020.2.120/python/python3/"
 RUN rm -rf *
@@ -154,6 +154,6 @@ USER ${USER}
 
 RUN mkdir data share media keys logs /tmp/supervisord
 RUN python3 manage.py collectstatic
-RUN python3 manage.py shell --command="import default_superuser"
+#RUN python3 manage.py shell --command="import default_superuser"
 EXPOSE 8080 8443
 ENTRYPOINT ["/usr/bin/supervisord"]
