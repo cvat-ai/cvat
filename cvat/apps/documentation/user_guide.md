@@ -1120,7 +1120,7 @@ Before you start, you have to make sure that Cuboid is selected
 
 ![](static/documentation/images/image091.jpg)
 
-#### Drawing cuboid by 4 points.
+#### Drawing cuboid by 4 points
 
 Choose a drawing method “by 4 points” and click Shape to enter the drawing mode. There are many ways to draw a cuboid.
 You can draw the cuboid by placing 4 points, after that the drawing will be completed automatically.
@@ -1131,7 +1131,7 @@ A few examples:
 
 ![](static/documentation/images/image177_mapillary_vistas.jpg)
 
-### Drawing cuboid from rectangle.
+### Drawing cuboid from rectangle
 
 Choose a drawing method “from rectangle” and click Shape to enter the drawing mode.
 When you draw using the rectangle method, you must select the frontal plane of the object using the bounding box.
