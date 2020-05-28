@@ -37,7 +37,6 @@
   - [Filter](#filter)
   - [Analytics](#analytics)
   - [Shortcuts](#shortcuts)
-  - [Hints](#hints)
 
 # User's guide
 
@@ -958,8 +957,6 @@ If enabled all shapes are displayed in white and the background is black.
 Enables / disables the display of auxiliary perspective lines. Only relevant for cuboids
 
 ![](static/documentation/images/image090_detrac.jpg)
-
----
 
 ## Shape mode (advanced)
 
