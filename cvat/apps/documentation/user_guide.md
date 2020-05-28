@@ -1041,48 +1041,100 @@ Press ``Esc`` to cancel editing.
 
 ## Annotation with polygons
 
+### Manual drawing
+
 It is used for semantic / instance segmentation.
 
-Be sure ``Z-Order`` flag in ``Create new task`` dialog is enabled if you want to
-annotate polygons. Z-Order flag defines order of drawing. It is necessary to
-get right annotation mask without extra work (additional drawing of borders).
-Z-Order can be changed by ``+``/``-`` which set maximum/minimum z-order
+If you want to annotate polygons, make sure the ``Z-Order`` flag in ``Create new task`` dialog is enabled.
+The Z-Order flag defines the order of drawing. It is necessary to
+get the right annotation mask without extra work (additional drawing of borders).
+Z-Order can be changed by pressing ``+``/``-`` which set maximum/minimum z-order
 accordingly.
 
 ![](static/documentation/images/image074.jpg)
 
-Before starting, you need to be sure that ``Polygon`` is selected.
+Before starting, you need to select ``Polygon`` on the controls sidebar and choose the correct Label.
 
 ![](static/documentation/images/image084.jpg)
 
-Press ``N`` for entering drawing mode. There are two ways to draw a polygon
-— you either create points by clicking or by dragging mouse on the screen
-holding ``Shift``.
+- Click ``Shape`` to enter drawing mode.
+  There are two ways to draw a polygon: either create points by clicking or
+  by dragging the mouse on the screen while holding ``Shift``.
 
-| Clicking points                                | Holding Shift+Dragging                      |
-| --                                             | --                                          |
-| ![](static/documentation/images/gif005.gif)    | ![](static/documentation/images/gif006.gif) |
+| Clicking points                                   | Holding Shift+Dragging                            |
+| --                                                | --                                                |
+| ![](static/documentation/images/gif005_detrac.gif)| ![](static/documentation/images/gif006_detrac.gif)|
 
-When ``Shift`` isn't pressed, you can zoom in/out (when scrolling the mouse
-wheel) and move (when clicking the mouse wheel and moving the mouse), you can
-delete the previous point clicking right mouse button. Press ``N`` again for
-completing the shape. You can move points or delete them by double-clicking.
-Double-click with pressed ``Shift`` will open a polygon editor. There you can
-create new points (clicking or dragging) or delete part of a polygon closing
-the red line on another point. Press ``Esc`` to cancel editing.
+- When ``Shift`` isn't pressed, you can zoom in/out (when scrolling the mouse
+  wheel) and move (when clicking the mouse wheel and moving the mouse), you can also
+  delete the previous point by right-clicking on it.
+- Press ``N`` again for completing the shape.
+- After creating the polygon, you can move the points or delete them by right-clicking and selecting ``Delete point``
+  or double-clicking with pressed ``Ctrl`` key in the context menu.
 
-![](static/documentation/images/gif007.gif)
+### Drawing using automatic borders
 
-Also, you can set fixed number of points in the "poly shape size" field, then
-drawing will be stopped automatically. To enable dragging, you should right-click
-inside polygon and choose ``Enable Dragging``.
+![](static/documentation/images/gif025_mapillary_vistas.gif)
+
+You can use auto borders when drawing a polygon. Using automatic borders allows you to automatically trace
+the outline of polygons existing in the annotation.
+- To do this, go to settings -> workspace tab and enable ``Automatic Bordering``
+  or press ``Ctrl`` while drawing a polygon.
+
+  ![](static/documentation/images/image161.jpg)
+
+- Start drawing / editing a polygon.
+- Points of other shapes will be highlighted, which means that the polygon can be attached to them.
+- Define the part of the polygon path that you want to repeat.
+
+  ![](static/documentation/images/image157_mapillary_vistas.jpg)
+
+- Click on the first point of the contour part.
+
+  ![](static/documentation/images/image158_mapillary_vistas.jpg)
+
+- Then click on any point located on part of the path. The selected point will be highlighted in purple.
+
+  ![](static/documentation/images/image159_mapillary_vistas.jpg)
+
+- Сlick on the last point and the outline to this point will be built automatically.
+
+  ![](static/documentation/images/image160_mapillary_vistas.jpg)
+
+Besides, you can set a fixed number of points in the ``Number of points`` field, then
+drawing will be stopped automatically. To enable dragging you should right-click
+inside the polygon and choose ``Switch pinned property``.
 
 Below you can see results with opacity and black stroke:
 
-![](static/documentation/images/image064.jpg)
+![](static/documentation/images/image064_mapillary_vistas.jpg)
 
-Also, if you need to annotate small objects, increase ``Image Quality`` to
-``95`` in ``Create task`` dialog for annotator's convenience.
+If you need to annotate small objects, increase ``Image Quality`` to
+``95`` in ``Create task`` dialog for your convenience.
+
+### Make AI polygon
+
+Used to create a polygon semi-automatically.
+- Before starting, you have to make sure that the ``Make AI polygon`` is selected.
+
+  ![](static/documentation/images/image114.jpg)
+
+- Click ``Shape`` to enter drawing mode. Now you can start annotating the necessary area.
+  A shape must consist of 4 points minimum. You can set a fixed number of points in the ``Number of points`` field,
+  then drawing will be stopped automatically. You can zoom in/out and move while drawing.
+- Press ``N`` again to finish marking the area. At the end of Auto Segmentation,
+  a shape is created and you can work with it as a polygon.
+
+  ![](static/documentation/images/gif009_detrac.gif)
+
+### Edit polygon
+
+To edit a polygon you have to double-click with pressed ``Shift``, it will open the polygon editor.
+- There you can create new points or delete part of a polygon closing the line on another point.
+- After closing the polygon, you can select the part of the polygon that you want to leave.
+- You can press ``Esc`` to cancel editing.
+
+  ![](static/documentation/images/gif007_mapillary_vistas.gif)
 
 ## Annotation with polylines
 
