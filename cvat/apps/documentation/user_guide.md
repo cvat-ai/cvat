@@ -1154,58 +1154,74 @@ You can use linear interpolation for points to annotate a moving object:
 ## Annotation with cuboids
 
 It is used to annotate 3 dimensional objects such as cars, boxes, etc...
-Currently the feature supports one point perspective and has the contraint
+Currently the feature supports one point perspective and has the constraint
 where the vertical edges are exactly parallel to the sides.
 
 ### Creating the cuboid
 
-Before starting, you have to be sure that ``Cuboid`` is selected.
+Before you start, you have to make sure that Cuboid is selected
+ and choose a drawing method ”from rectangle” or “by 4 points”.
 
-Press ``N`` for entering drawing mode. There are many ways to draw a cuboid.
-You may draw the cuboid by placing 4 points, after which the drawing completes automatically.
-The first 3 points will represent a plane of the cuboid
-while the last point represents the depth of that plane.
-For the first 3 points, it is recomended to only draw the 2 closest side faces,
-as well as the top and bottom face.
+![](static/documentation/images/image091.jpg)
+
+#### Drawing cuboid by 4 points
+
+Choose a drawing method “by 4 points” and click Shape to enter the drawing mode. There are many ways to draw a cuboid.
+You can draw the cuboid by placing 4 points, after that the drawing will be completed automatically.
+The first 3 points determine the plane of the cuboid while the last point determines the depth of that plane.
+For the first 3 points, it is recommended to only draw the 2 closest side faces, as well as the top and bottom face.
 
 A few examples:
-![](static/documentation/images/CuboidDrawing1.gif)
 
-![](static/documentation/images/CuboidDrawing2.gif)
+![](static/documentation/images/image177_mapillary_vistas.jpg)
 
-![](static/documentation/images/CuboidDrawing3.gif)
+### Drawing cuboid from rectangle
+
+Choose a drawing method “from rectangle” and click Shape to enter the drawing mode.
+When you draw using the rectangle method, you must select the frontal plane of the object using the bounding box.
+The depth and perspective of the resulting cuboid can be edited.
+
+Example:
+
+![](static/documentation/images/image182_mapillary_vistas.jpg)
 
 ### Editing the cuboid
 
-The cuboid can be edited in multiple ways, by dragging points or by dragging certain faces.
-First notice that there is a face that is painted with pink lines only, let us call it the front face.
+![](static/documentation/images/image178_mapillary_vistas.jpg)
 
-The cuboid can be moved by simply dragging the shape as normal.
+The cuboid can be edited in multiple ways: by dragging points, by dragging certain faces or by dragging planes.
+First notice that there is a face that is painted with gray lines only, let us call it the front face.
+
+You can move the cuboid by simply dragging the shape behind the front face.
 The cuboid can be extended by dragging on the point in the middle of the edges.
 The cuboid can also be extended up and down by dragging the point at the vertices.
 
-![](static/documentation/images/CuboidEditing1.gif)
+![](static/documentation/images/gif017_mapillary_vistas.gif)
 
-To draw with perpective effects it is assumed that the front face is the closest to the camera.
-To begin simply drag the points on the vertices that are not on the pink/front face while holding ``Shift``.
+To draw with perspective effects it should be assumed that the front face is the closest to the camera.
+To begin simply drag the points on the vertices that are not on the gray/front face while holding ``Shift``.
 The cuboid can then be edited as usual.
 
-![](static/documentation/images/EditingPerspective.gif)
+![](static/documentation/images/gif018_mapillary_vistas.gif)
 
-If you wish to reset perspective effects, you may right click on cuboid,
-and select ``Reset Perspective`` to return to a regular cuboid.
+If you wish to reset perspective effects, you may right click on the cuboid,
+and select ``Reset perspective`` to return to a regular cuboid.
 
-The location of the pink face can be swapped with the adjacent visible side face.
-This is done by right clicking on the cuboid and selecting ``Switch Perspective Orientation``.
+![](static/documentation/images/image180_mapillary_vistas.jpg)
+
+The location of the gray face can be swapped with the adjacent visible side face.
+You can do it by right clicking on the cuboid and selecting ``Switch perspective orientation``.
 Note that this will also reset the perspective effects.
 
-![](static/documentation/images/ResetPerspective.gif)
+![](static/documentation/images/image179_mapillary_vistas.jpg)
 
 Certain faces of the cuboid can also be edited,
-these faces are the left, right and dorsal faces, relative to the pink face.
+these faces are: the left, right and dorsal faces, relative to the gray face.
 Simply drag the faces to move them independently from the rest of the cuboid.
 
-![](static/documentation/images/CuboidEditing2.gif)
+![](static/documentation/images/gif020_mapillary_vistas.gif)
+
+You can also use cuboids in track mode, similar to rectangles in track mode ([basics](#track-mode-basics) and [advanced](#track-mode-advanced))
 
 ## Annotation with Auto Segmentation
 
