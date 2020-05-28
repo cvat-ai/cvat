@@ -31,7 +31,7 @@
     - [Points in annotation mode](#points-in-annotation-mode)
     - [Linear interpolation with one point](#linear-interpolation-with-one-point)
   - [Annotation with cuboids](#annotation-with-cuboids)
-  - [Annotation with Auto Segmentation](#annotation-with-auto-segmentation)
+  - [Annotation with tags](#annotation-with-tags)
   - [Automatic annotation](#automatic-annotation)
   - [Shape grouping](#shape-grouping)
   - [Filter](#filter)
@@ -798,19 +798,19 @@ Switching between user interface modes.
 **Shapes block** - contains all the tools for creating shapes.
 |Icon                                         |Description   |Links to section  |
 |--                                           |--            |--                |
-|![](static/documentation/images/image167.jpg)|``Rectangle``|[Shape mode](#shape-mode-basics); [Track mode](#track-mode-basics);<br/> [Drawing by 4 points](#annotation-with-box-by-4-points)|
+|![](static/documentation/images/image167.jpg)|``Rectangle``|[Shape mode](#shape-mode-basics); [Track mode](#track-mode-basics);<br/> [Drawing by 4 points](#annotation-with-rectangle-by-4-points)|
 |![](static/documentation/images/image168.jpg)|``Polygon``  |[Annotation with polygons](#annotation-with-polygons)  |
 |![](static/documentation/images/image169.jpg)|``Polyline`` |[Annotation with polylines](#annotation-with-polylines)|
 |![](static/documentation/images/image170.jpg)|``Points``   |[Annotation with points](#annotation-with-points)      |
 |![](static/documentation/images/image176.jpg)|``Cuboid``   |[Annotation with cuboids](#annotation-with-cuboids)    |
-|![](static/documentation/images/image171.jpg)|``Tag``      |[Annotation with tag](#annotation-with-tag)            |
+|![](static/documentation/images/image171.jpg)|``Tag``      |[Annotation with tags](#annotation-with-tag)s            |
 
 **Edit block** - contains tools for editing tracks and shapes.
 |Icon                                         |Description                                        |Links to section  |
 |--                                           |--                                                 |--                |
 |![](static/documentation/images/image172.jpg)|``Merge Shapes``(``M``) — starts/stops the merging shapes mode.  |[Track mode (basics)](#track-mode-basics)|
 |![](static/documentation/images/image173.jpg)|``Group Shapes`` (``G``) — starts/stops the grouping shapes mode.|[Shape grouping](#shape-grouping)|
-|![](static/documentation/images/image174.jpg)|``Split`` — splits a track.                                      |[Track mode (advanced)](#interpolation-mode-advanced)|
+|![](static/documentation/images/image174.jpg)|``Split`` — splits a track.                                      |[Track mode (advanced)](#track-mode-advanced)|
 
 ---
 
@@ -1223,6 +1223,19 @@ wheel and moving the mouse) while drawing. At the end of Auto Segmentation,
 a shape is created and you can work with it as a polygon.
 
 ![](static/documentation/images/gif009_detrac.gif)
+
+## Annotation with Tags
+
+Used to annotate frames, does not have a shape in the workspace.
+Before you start, you have to make sure that Tag is selected.
+
+![](static/documentation/images/image181.jpg)
+
+Click tag to create. You can work with Tag only on the sidebar.
+You can use the lock function and change label and attribute.
+Other functions such as propagate, make a copy and remove are available in the action menu.
+
+![](static/documentation/images/image135.jpg)
 
 ## Automatic annotation
 
