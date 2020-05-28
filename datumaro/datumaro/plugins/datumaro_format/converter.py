@@ -12,7 +12,7 @@ import os.path as osp
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME, Annotation,
+    DEFAULT_SUBSET_NAME, Annotation, _Shape,
     Label, Mask, RleMask, Points, Polygon, PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
@@ -131,43 +131,38 @@ class _SubsetWriter:
                 # serialize as compressed COCO mask
                 'counts': rle['counts'].decode('ascii'),
                 'size': list(int(c) for c in rle['size']),
-            }
+            },
+            'z_order': obj.z_order,
+        })
+        return converted
+
+    def _convert_shape_object(self, obj):
+        assert isinstance(obj, _Shape)
+        converted = self._convert_annotation(obj)
+
+        converted.update({
+            'label_id': cast(obj.label, int),
+            'points': [float(p) for p in obj.points],
+            'z_order': obj.z_order,
         })
         return converted
 
     def _convert_polyline_object(self, obj):
-        converted = self._convert_annotation(obj)
-
-        converted.update({
-            'label_id': cast(obj.label, int),
-            'points': [float(p) for p in obj.points],
-        })
-        return converted
+        return self._convert_shape_object(obj)
 
     def _convert_polygon_object(self, obj):
-        converted = self._convert_annotation(obj)
-
-        converted.update({
-            'label_id': cast(obj.label, int),
-            'points': [float(p) for p in obj.points],
-        })
-        return converted
+        return self._convert_shape_object(obj)
 
     def _convert_bbox_object(self, obj):
-        converted = self._convert_annotation(obj)
-
-        converted.update({
-            'label_id': cast(obj.label, int),
-            'bbox': [float(p) for p in obj.get_bbox()],
-        })
+        converted = self._convert_shape_object(obj)
+        converted.pop('points', None)
+        converted['bbox'] = [float(p) for p in obj.get_bbox()]
         return converted
 
     def _convert_points_object(self, obj):
-        converted = self._convert_annotation(obj)
+        converted = self._convert_shape_object(obj)
 
         converted.update({
-            'label_id': cast(obj.label, int),
-            'points': [float(p) for p in obj.points],
             'visibility': [int(v.value) for v in obj.visibility],
         })
         return converted
