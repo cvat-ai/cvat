@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Synchronization with remote git repo (<https://github.com/opencv/cvat/pull/1582>)
 - A problem with mask to polygons conversion when polygons are too small (<https://github.com/opencv/cvat/pull/1581>)
 - Unable to upload video with uneven size (<https://github.com/opencv/cvat/pull/1594>)
+- Permission group whitelist check for analytics view (<https://github.com/opencv/cvat/pull/1608>)
 
 ### Security
 -
