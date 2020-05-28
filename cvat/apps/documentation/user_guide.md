@@ -1262,11 +1262,12 @@ You can find the list of available models in the ``Models`` section.
 
     ![](static/documentation/images/image120.jpg)
 
-1.  At runtime, you can see the percentage of completion.
+1.  At runtime - you can see the percentage of completion.
+    You can cancel the automatic annotation by clicking on the ``Cancel``button.
 
     ![](static/documentation/images/image121_detrac.jpg)
 
-1.  As a result, you will get an annotation with separate bounding boxes (or other shapes)
+1.  The end result of an automatic annotation is an annotation with separate rectangles (or other shapes)
 
     ![](static/documentation/images/gif014_detrac.gif)
 
@@ -1283,11 +1284,11 @@ You can find the list of available models in the ``Models`` section.
 
 ## Shape grouping
 
-This feature allows to group several shapes.
+This feature allows us to group several shapes.
 
-You may use ``Group Shapes`` button or shortcuts:
-- ``G`` — switch group mode
-- ``Alt+G`` — close group mode
+You may use the ``Group Shapes`` button or shortcuts:
+- ``G`` — start selection / end selection in group mode
+- ``Esc`` — close group mode
 - ``Shift+G`` — reset group for selected shapes
 
 You may select shapes clicking on them or selecting an area.
@@ -1299,9 +1300,9 @@ You have to switch ``Color By Group`` checkbox for that.
 
 Shapes that don't have ``group_id``, will be highlighted in white.
 
-![](static/documentation/images/image078.jpg)
+![](static/documentation/images/image078_detrac.jpg)
 
-![](static/documentation/images/image077.jpg)
+![](static/documentation/images/image077_detrac.jpg)
 
 ## Filter
 
