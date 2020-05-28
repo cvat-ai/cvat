@@ -20,3 +20,8 @@ class LogViewerProxy(PermissionRequiredMixin, ProxyView):
         headers['X-Forwarded-User'] = headers['REMOTE_USER']
 
         return headers
+
+    # Returns True if the user has any of the specified permissions
+    def has_permission(self):
+        perms = self.get_permission_required()
+        return any(self.request.user.has_perm(perm) for perm in perms)
