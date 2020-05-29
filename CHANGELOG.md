@@ -4,42 +4,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - Unreleased
+## [1.0.0] - 2020-05-29
 ### Added
-- cvat-ui: added cookie policy drawer for login page (<https://github.com/opencv/cvat/pull/1511>)
-- Added `datumaro_project` export format (https://github.com/opencv/cvat/pull/1352)
-- Ability to configure user agreements for the user registration form (https://github.com/opencv/cvat/pull/1464)
-- Added cuboid interpolation and cuboid drawing from rectangles (<https://github.com/opencv/cvat/pull/1560>)
-- Ability to configure custom pageViewHit, which can be useful for web analytics integration (https://github.com/opencv/cvat/pull/1566)
-- Ability to configure access to the analytics page based on roles (https://github.com/opencv/cvat/pull/1592)
+- cvat-ui: cookie policy drawer for login page (<https://github.com/opencv/cvat/pull/1511>)
+- `datumaro_project` export format (<https://github.com/opencv/cvat/pull/1352>)
+- Ability to configure user agreements for the user registration form (<https://github.com/opencv/cvat/pull/1464>)
+- Cuboid interpolation and cuboid drawing from rectangles (<https://github.com/opencv/cvat/pull/1560>)
+- Ability to configure custom pageViewHit, which can be useful for web analytics integration (<https://github.com/opencv/cvat/pull/1566>)
+- Ability to configure access to the analytics page based on roles (<https://github.com/opencv/cvat/pull/1592>)
 
 ### Changed
-- Downloaded file name in annotations export became more informative (https://github.com/opencv/cvat/pull/1352)
-- Added auto trimming for trailing whitespaces style enforcement (https://github.com/opencv/cvat/pull/1352)
-- REST API: updated `GET /task/<id>/annotations`: parameters are `format`, `filename` (now optional), `action` (optional) (https://github.com/opencv/cvat/pull/1352)
-- REST API: removed `dataset/formats`, changed format of `annotation/formats` (https://github.com/opencv/cvat/pull/1352)
-- Exported annotations are stored for N hours instead of indefinitely (https://github.com/opencv/cvat/pull/1352)
-- Formats: CVAT format now accepts ZIP and XML (https://github.com/opencv/cvat/pull/1352)
-- Formats: COCO format now accepts ZIP and JSON (https://github.com/opencv/cvat/pull/1352)
-- Formats: most of formats renamed, no extension in title (https://github.com/opencv/cvat/pull/1352)
-- Formats: definitions are changed, are not stored in DB anymore (https://github.com/opencv/cvat/pull/1352)
-- cvat-core: session.annotations.put() now returns identificators of added objects (https://github.com/opencv/cvat/pull/1493)
-- Images without annotations now also included in dataset/annotations export (https://github.com/opencv/cvat/issues/525)
-
-### Deprecated
--
+- Downloaded file name in annotations export became more informative (<https://github.com/opencv/cvat/pull/1352>)
+- Added auto trimming for trailing whitespaces style enforcement (<https://github.com/opencv/cvat/pull/1352>)
+- REST API: updated `GET /task/<id>/annotations`: parameters are `format`, `filename` (now optional), `action` (optional) (<https://github.com/opencv/cvat/pull/1352>)
+- REST API: removed `dataset/formats`, changed format of `annotation/formats` (<https://github.com/opencv/cvat/pull/1352>)
+- Exported annotations are stored for N hours instead of indefinitely (<https://github.com/opencv/cvat/pull/1352>)
+- Formats: CVAT format now accepts ZIP and XML (<https://github.com/opencv/cvat/pull/1352>)
+- Formats: COCO format now accepts ZIP and JSON (<https://github.com/opencv/cvat/pull/1352>)
+- Formats: most of formats renamed, no extension in title (<https://github.com/opencv/cvat/pull/1352>)
+- Formats: definitions are changed, are not stored in DB anymore (<https://github.com/opencv/cvat/pull/1352>)
+- cvat-core: session.annotations.put() now returns ids of added objects (<https://github.com/opencv/cvat/pull/1493>)
+- Images without annotations now also included in dataset/annotations export (<https://github.com/opencv/cvat/issues/525>)
 
 ### Removed
-- `annotation` application is replaced with `dataset_manager` (https://github.com/opencv/cvat/pull/1352)
-- `_DATUMARO_INIT_LOGLEVEL` env. variable is removed in favor of regular `--loglevel` cli parameter (https://github.com/opencv/cvat/pull/1583)
+- `annotation` application is replaced with `dataset_manager` (<https://github.com/opencv/cvat/pull/1352>)
+- `_DATUMARO_INIT_LOGLEVEL` env. variable is removed in favor of regular `--loglevel` cli parameter (<https://github.com/opencv/cvat/pull/1583>)
 
 ### Fixed
-- Categories for empty projects with no sources are taken from own dataset (https://github.com/opencv/cvat/pull/1352)
-- Added directory removal on error during `extract` command (https://github.com/opencv/cvat/pull/1352)
-- Added debug error message on incorrect XPath (https://github.com/opencv/cvat/pull/1352)
-- Exporting frame stepped task (https://github.com/opencv/cvat/issues/1294, https://github.com/opencv/cvat/issues/1334)
-- Fixed broken command line interface for `cvat` export format in Datumaro (https://github.com/opencv/cvat/issues/1494)
-- Updated Rest API document, Swagger document serving instruction issue (https://github.com/opencv/cvat/issues/1495)
+- Categories for empty projects with no sources are taken from own dataset (<https://github.com/opencv/cvat/pull/1352>)
+- Added directory removal on error during `extract` command (<https://github.com/opencv/cvat/pull/1352>)
+- Added debug error message on incorrect XPath (<https://github.com/opencv/cvat/pull/1352>)
+- Exporting frame stepped task (<https://github.com/opencv/cvat/issues/1294, https://github.com/opencv/cvat/issues/1334>)
+- Fixed broken command line interface for `cvat` export format in Datumaro (<https://github.com/opencv/cvat/issues/1494>)
+- Updated Rest API document, Swagger document serving instruction issue (<https://github.com/opencv/cvat/issues/1495>)
 - Fixed cuboid occluded view (<https://github.com/opencv/cvat/pull/1500>)
 - Non-informative lock icon (<https://github.com/opencv/cvat/pull/1434>)
 - Sidebar in AAM has no hide/show button (<https://github.com/opencv/cvat/pull/1420>)
@@ -58,9 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unable to upload video with uneven size (<https://github.com/opencv/cvat/pull/1594>)
 - Fixed an issue with `z_order` having no effect on segmentations (<https://github.com/opencv/cvat/pull/1589>)
 - Permission group whitelist check for analytics view (<https://github.com/opencv/cvat/pull/1608>)
-
-### Security
--
 
 ## [1.0.0-beta.2] - 2020-04-30
 ### Added
