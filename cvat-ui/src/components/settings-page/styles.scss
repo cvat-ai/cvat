@@ -5,6 +5,10 @@
 @import '../../base.scss';
 
 .cvat-settings-page {
+    height: 100%;
+    overflow-y: auto;
+    padding-bottom: 15px;
+
     > div:nth-child(1) {
         margin-top: 30px;
         margin-bottom: 10px;
@@ -20,8 +24,14 @@
 
 .cvat-player-settings-grid,
 .cvat-workspace-settings-auto-save,
-.cvat-workspace-settings-show-interpolated-checkbox {
-    margin-bottom: 10px;
+.cvat-workspace-settings-autoborders,
+.cvat-workspace-settings-show-text-always,
+.cvat-workspace-settings-show-interpolated {
+    margin-bottom: 25px;
+
+    > div:first-child {
+        margin-bottom: 10px;
+    }
 }
 
 .cvat-player-settings-grid-size,
@@ -31,7 +41,6 @@
 .cvat-player-settings-speed,
 .cvat-player-settings-reset-zoom,
 .cvat-player-settings-rotate-all,
-.cvat-workspace-settings-show-interpolated,
 .cvat-workspace-settings-aam-zoom-margin,
 .cvat-workspace-settings-auto-save-interval {
     margin-bottom: 25px;
@@ -73,10 +82,17 @@
     width: 90px;
 }
 
+.cvat-player-reset-color-settings,
 .cvat-player-settings-brightness,
 .cvat-player-settings-contrast,
 .cvat-player-settings-saturation {
     width: 40%;
+}
+
+.cvat-player-reset-color-settings {
+    > .ant-col {
+        text-align: center;
+    }
 }
 
 .cvat-settings-page-back-button {

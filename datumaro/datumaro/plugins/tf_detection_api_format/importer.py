@@ -13,15 +13,15 @@ from datumaro.components.extractor import Importer
 class TfDetectionApiImporter(Importer):
     EXTRACTOR_NAME = 'tf_detection_api'
 
+    @classmethod
+    def detect(cls, path):
+        return len(cls.find_subsets(path)) != 0
+
     def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
         project = Project()
 
-        if path.endswith('.tfrecord') and osp.isfile(path):
-            subset_paths = [path]
-        else:
-            subset_paths = glob(osp.join(path, '*.tfrecord'))
-
+        subset_paths = self.find_subsets(path)
         if len(subset_paths) == 0:
             raise Exception(
                 "Failed to find 'tf_detection_api' dataset at '%s'" % path)
@@ -42,3 +42,11 @@ class TfDetectionApiImporter(Importer):
 
         return project
 
+    @staticmethod
+    def find_subsets(path):
+        if path.endswith('.tfrecord') and osp.isfile(path):
+            subset_paths = [path]
+        else:
+            subset_paths = glob(osp.join(path, '**', '*.tfrecord'),
+                recursive=True)
+        return subset_paths

@@ -3,27 +3,23 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import Icon from 'antd/lib/icon';
+import Tooltip from 'antd/lib/tooltip';
+import Popover from 'antd/lib/popover';
 
-import {
-    Icon,
-    Tooltip,
-    Popover,
-} from 'antd';
-
-import {
-    RotateIcon,
-} from 'icons';
-
-import {
-    Rotation,
-} from 'reducers/interfaces';
+import { RotateIcon } from 'icons';
+import { Rotation } from 'reducers/interfaces';
 
 interface Props {
+    clockwiseShortcut: string;
+    anticlockwiseShortcut: string;
     rotateFrame(rotation: Rotation): void;
 }
 
 function RotateControl(props: Props): JSX.Element {
     const {
+        anticlockwiseShortcut,
+        clockwiseShortcut,
         rotateFrame,
     } = props;
 
@@ -33,14 +29,14 @@ function RotateControl(props: Props): JSX.Element {
             placement='right'
             content={(
                 <>
-                    <Tooltip title='Rotate the image anticlockwise' placement='topRight'>
+                    <Tooltip title={`Rotate the image anticlockwise ${anticlockwiseShortcut}`} placement='topRight'>
                         <Icon
                             className='cvat-rotate-canvas-controls-left'
                             onClick={(): void => rotateFrame(Rotation.ANTICLOCKWISE90)}
                             component={RotateIcon}
                         />
                     </Tooltip>
-                    <Tooltip title='Rotate the image clockwise' placement='topRight'>
+                    <Tooltip title={`Rotate the image clockwise ${clockwiseShortcut}`} placement='topRight'>
                         <Icon
                             className='cvat-rotate-canvas-controls-right'
                             onClick={(): void => rotateFrame(Rotation.CLOCKWISE90)}

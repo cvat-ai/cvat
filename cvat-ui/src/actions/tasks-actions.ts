@@ -9,7 +9,7 @@ import {
     CombinedState,
 } from 'reducers/interfaces';
 import { getCVATStore } from 'cvat-store';
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 import { getInferenceStatusAsync } from './models-actions';
 
 const cvat = getCore();
@@ -169,7 +169,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             dispatch(dumpAnnotation(task, dumper));
-            const url = await task.annotations.dump(task.name, dumper);
+            const url = await task.annotations.dump(dumper);
             const downloadAnchor = (window.document.getElementById('downloadAnchor') as HTMLAnchorElement);
             downloadAnchor.href = url;
             downloadAnchor.click();
@@ -280,7 +280,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         dispatch(exportDataset(task, exporter));
 
         try {
-            const url = await task.annotations.exportDataset(exporter.tag);
+            const url = await task.annotations.exportDataset(exporter.name);
             const downloadAnchor = (window.document.getElementById('downloadAnchor') as HTMLAnchorElement);
             downloadAnchor.href = url;
             downloadAnchor.click();
@@ -389,6 +389,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             labels: data.labels,
             z_order: data.advanced.zOrder,
             image_quality: 70,
+            use_zip_chunks: data.advanced.useZipChunks,
         };
 
         if (data.advanced.bugTracker) {
@@ -411,6 +412,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
         if (data.advanced.imageQuality) {
             description.image_quality = data.advanced.imageQuality;
+        }
+        if (data.advanced.dataChunkSize) {
+            description.data_chunk_size = data.advanced.dataChunkSize;
         }
 
         const taskInstance = new cvat.classes.Task(description);

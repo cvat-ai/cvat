@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,4 +9,5 @@ urlpatterns = [
     path('start/job/<int:jid>', views.start),
     path('cancel/<int:jid>', views.cancel),
     path('check/<int:jid>', views.check),
+    path('enabled', views.enabled),
 ]

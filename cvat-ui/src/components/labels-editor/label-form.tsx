@@ -3,22 +3,17 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Icon,
-    Input,
-    Button,
-    Select,
-    Tooltip,
-    Checkbox,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Input from 'antd/lib/input';
+import Button from 'antd/lib/button';
+import Checkbox from 'antd/lib/checkbox';
+import Tooltip from 'antd/lib/tooltip';
+import Select from 'antd/lib/select';
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
-import patterns from 'utils/validation-patterns';
 
+import patterns from 'utils/validation-patterns';
 import {
     equalArrayHead,
     idGenerator,
@@ -76,7 +71,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
                         return {
                             name: formValues.attrName[key],
-                            type: formValues.type[key],
+                            input_type: formValues.type[key],
                             mutable: formValues.mutable[key],
                             id: label && index < label.attributes.length
                                 ? label.attributes[index].id : key,
@@ -136,7 +131,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
     private renderAttributeTypeInput(key: number, attr: Attribute | null): JSX.Element {
         const locked = attr ? attr.id >= 0 : false;
-        const type = attr ? attr.type.toUpperCase() : AttributeType.SELECT;
+        const type = attr ? attr.input_type.toUpperCase() : AttributeType.SELECT;
         const { form } = this.props;
 
         return (

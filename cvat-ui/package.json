@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "0.5.2",
+  "version": "1.2.0",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -23,6 +23,7 @@
     "@typescript-eslint/parser": "^2.19.2",
     "babel-loader": "^8.0.6",
     "babel-plugin-import": "^1.12.2",
+    "copy-webpack-plugin": "^5.1.1",
     "css-loader": "^3.2.0",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-typescript": "^7.0.0",
@@ -32,8 +33,6 @@
     "eslint-plugin-react": "^7.17.0",
     "eslint-plugin-react-hooks": "^1.7.0",
     "html-webpack-plugin": "^3.2.0",
-    "less": "^3.10.3",
-    "less-loader": "^5.0.0",
     "node-sass": "^4.13.0",
     "postcss-loader": "^3.0.0",
     "postcss-preset-env": "^6.7.0",
@@ -42,11 +41,14 @@
     "style-loader": "^1.0.0",
     "tsconfig-paths-webpack-plugin": "^3.2.0",
     "typescript": "^3.7.3",
-    "webpack": "^4.41.2",
+    "webpack": "^4.42.1",
     "webpack-cli": "^3.3.8",
-    "webpack-dev-server": "^3.8.0"
+    "webpack-dev-server": "^3.8.0",
+    "worker-loader": "^2.0.0"
   },
   "dependencies": {
+    "cvat-core": "file:../cvat-core",
+    "cvat-canvas": "file:../cvat-canvas",
     "@types/react": "^16.9.2",
     "@types/react-dom": "^16.9.0",
     "@types/react-redux": "^7.1.2",
@@ -57,6 +59,7 @@
     "antd": "^3.25.2",
     "copy-to-clipboard": "^3.2.0",
     "dotenv-webpack": "^1.7.0",
+    "error-stack-parser": "^2.0.6",
     "moment": "^2.24.0",
     "prop-types": "^15.7.2",
     "react": "^16.9.0",

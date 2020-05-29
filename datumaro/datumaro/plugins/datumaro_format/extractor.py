@@ -6,8 +6,7 @@
 import json
 import os.path as osp
 
-from datumaro.components.extractor import (SourceExtractor,
-    DEFAULT_SUBSET_NAME, DatasetItem,
+from datumaro.components.extractor import (SourceExtractor, DatasetItem,
     AnnotationType, Label, RleMask, Points, Polygon, PolyLine, Bbox, Caption,
     LabelCategories, MaskCategories, PointsCategories
 )
@@ -18,16 +17,16 @@ from .format import DatumaroPath
 
 class DatumaroExtractor(SourceExtractor):
     def __init__(self, path):
-        super().__init__()
+        assert osp.isfile(path), path
+        rootpath = ''
+        if path.endswith(osp.join(DatumaroPath.ANNOTATIONS_DIR, osp.basename(path))):
+            rootpath = path.rsplit(DatumaroPath.ANNOTATIONS_DIR, maxsplit=1)[0]
+        images_dir = ''
+        if rootpath and osp.isdir(osp.join(rootpath, DatumaroPath.IMAGES_DIR)):
+            images_dir = osp.join(rootpath, DatumaroPath.IMAGES_DIR)
+        self._images_dir = images_dir
 
-        assert osp.isfile(path)
-        rootpath = path.rsplit(DatumaroPath.ANNOTATIONS_DIR, maxsplit=1)[0]
-        self._path = rootpath
-
-        subset_name = osp.splitext(osp.basename(path))[0]
-        if subset_name == DEFAULT_SUBSET_NAME:
-            subset_name = None
-        self._subset_name = subset_name
+        super().__init__(subset=osp.splitext(osp.basename(path))[0])
 
         with open(path, 'r') as f:
             parsed_anns = json.load(f)
@@ -43,16 +42,6 @@ class DatumaroExtractor(SourceExtractor):
 
     def __len__(self):
         return len(self._items)
-
-    def subsets(self):
-        if self._subset_name:
-            return [self._subset_name]
-        return None
-
-    def get_subset(self, name):
-        if name != self._subset_name:
-            return None
-        return self
 
     @staticmethod
     def _load_categories(parsed):
@@ -81,7 +70,7 @@ class DatumaroExtractor(SourceExtractor):
             point_categories = PointsCategories()
             for item in parsed_points_cat['items']:
                 point_categories.add(int(item['label_id']),
-                    item['labels'], adjacent=item['adjacent'])
+                    item['labels'], joints=item['joints'])
 
             categories[AnnotationType.points] = point_categories
 
@@ -95,13 +84,13 @@ class DatumaroExtractor(SourceExtractor):
             image = None
             image_info = item_desc.get('image', {})
             if image_info:
-                image_path = osp.join(self._path, DatumaroPath.IMAGES_DIR,
+                image_path = osp.join(self._images_dir,
                     image_info.get('path', '')) # relative or absolute fits
                 image = Image(path=image_path, size=image_info.get('size'))
 
             annotations = self._load_annotations(item_desc)
 
-            item = DatasetItem(id=item_id, subset=self._subset_name,
+            item = DatasetItem(id=item_id, subset=self._subset,
                 annotations=annotations, image=image)
 
             items.append(item)
@@ -118,41 +107,41 @@ class DatumaroExtractor(SourceExtractor):
             attributes = ann.get('attributes')
             group = ann.get('group')
 
+            label_id = ann.get('label_id')
+            z_order = ann.get('z_order')
+            points = ann.get('points')
+
             if ann_type == AnnotationType.label:
-                label_id = ann.get('label_id')
                 loaded.append(Label(label=label_id,
                     id=ann_id, attributes=attributes, group=group))
 
             elif ann_type == AnnotationType.mask:
-                label_id = ann.get('label_id')
                 rle = ann['rle']
                 rle['counts'] = rle['counts'].encode('ascii')
                 loaded.append(RleMask(rle=rle, label=label_id,
-                    id=ann_id, attributes=attributes, group=group))
+                    id=ann_id, attributes=attributes, group=group,
+                    z_order=z_order))
 
             elif ann_type == AnnotationType.polyline:
-                label_id = ann.get('label_id')
-                points = ann.get('points')
                 loaded.append(PolyLine(points, label=label_id,
-                    id=ann_id, attributes=attributes, group=group))
+                    id=ann_id, attributes=attributes, group=group,
+                    z_order=z_order))
 
             elif ann_type == AnnotationType.polygon:
-                label_id = ann.get('label_id')
-                points = ann.get('points')
                 loaded.append(Polygon(points, label=label_id,
-                    id=ann_id, attributes=attributes, group=group))
+                    id=ann_id, attributes=attributes, group=group,
+                    z_order=z_order))
 
             elif ann_type == AnnotationType.bbox:
-                label_id = ann.get('label_id')
-                x, y, w, h = ann.get('bbox')
+                x, y, w, h = ann['bbox']
                 loaded.append(Bbox(x, y, w, h, label=label_id,
-                    id=ann_id, attributes=attributes, group=group))
+                    id=ann_id, attributes=attributes, group=group,
+                    z_order=z_order))
 
             elif ann_type == AnnotationType.points:
-                label_id = ann.get('label_id')
-                points = ann.get('points')
                 loaded.append(Points(points, label=label_id,
-                    id=ann_id, attributes=attributes, group=group))
+                    id=ann_id, attributes=attributes, group=group,
+                    z_order=z_order))
 
             elif ann_type == AnnotationType.caption:
                 caption = ann.get('caption')

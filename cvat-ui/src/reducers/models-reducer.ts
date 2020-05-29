@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import { ModelsState } from './interfaces';
@@ -16,7 +17,10 @@ const defaultState: ModelsState = {
     inferences: {},
 };
 
-export default function (state = defaultState, action: ModelsActions | AuthActions): ModelsState {
+export default function (
+    state = defaultState,
+    action: ModelsActions | AuthActions | boundariesActions,
+): ModelsState {
     switch (action.type) {
         case ModelsActionTypes.GET_MODELS: {
             return {
@@ -118,10 +122,9 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 inferences: { ...inferences },
             };
         }
+        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
-            return {
-                ...defaultState,
-            };
+            return { ...defaultState };
         }
         default: {
             return state;

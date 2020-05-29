@@ -216,7 +216,7 @@ class MasksToPolygons(Transform, CliPlugin):
                     log.debug("[%s]: item %s: "
                         "Mask conversion to polygons resulted in too "
                         "small polygons, which were discarded" % \
-                        (self.NAME, item.id))
+                        (self._get_name(__class__), item.id))
                 annotations.extend(polygons)
             else:
                 annotations.append(ann)
@@ -443,9 +443,8 @@ class RemapLabels(Transform, CliPlugin):
 
             dst_index = dst_label_cat.find(dst_label)[0]
             if dst_index is None:
-                dst_label_cat.add(dst_label,
+                dst_index = dst_label_cat.add(dst_label,
                     src_label.parent, src_label.attributes)
-                dst_index = dst_label_cat.find(dst_label)[0]
             id_mapping[src_index] = dst_index
 
         if log.getLogger().isEnabledFor(log.DEBUG):

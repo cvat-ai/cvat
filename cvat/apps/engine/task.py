@@ -3,18 +3,18 @@
 #
 # SPDX-License-Identifier: MIT
 
+import itertools
 import os
 import sys
 import rq
 import shutil
-from PIL import Image
 from traceback import print_exception
-from ast import literal_eval
 from urllib import error as urlerror
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
-from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES
+from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
+from cvat.apps.engine.models import DataChoice
 
 import django_rq
 from django.conf import settings
@@ -36,53 +36,16 @@ def create(tid, data):
 def rq_handler(job, exc_type, exc_value, traceback):
     splitted = job.id.split('/')
     tid = int(splitted[splitted.index('tasks') + 1])
-    db_task = models.Task.objects.select_for_update().get(pk=tid)
-    with open(db_task.get_log_path(), "wt") as log_file:
-        print_exception(exc_type, exc_value, traceback, file=log_file)
+    try:
+        db_task = models.Task.objects.select_for_update().get(pk=tid)
+        with open(db_task.get_log_path(), "wt") as log_file:
+            print_exception(exc_type, exc_value, traceback, file=log_file)
+    except models.Task.DoesNotExist:
+        pass # skip exceptions in the code
+
     return False
 
 ############################# Internal implementation for server API
-
-def make_image_meta_cache(db_task):
-    with open(db_task.get_image_meta_cache_path(), 'w') as meta_file:
-        cache = {
-            'original_size': []
-        }
-
-        if db_task.mode == 'interpolation':
-            image = Image.open(db_task.get_frame_path(0))
-            cache['original_size'].append({
-                'width': image.size[0],
-                'height': image.size[1]
-            })
-            image.close()
-        else:
-            filenames = []
-            for root, _, files in os.walk(db_task.get_upload_dirname()):
-                fullnames = map(lambda f: os.path.join(root, f), files)
-                images = filter(lambda x: get_mime(x) == 'image', fullnames)
-                filenames.extend(images)
-            filenames.sort()
-
-            for image_path in filenames:
-                image = Image.open(image_path)
-                cache['original_size'].append({
-                    'width': image.size[0],
-                    'height': image.size[1]
-                })
-                image.close()
-
-        meta_file.write(str(cache))
-
-
-def get_image_meta_cache(db_task):
-    try:
-        with open(db_task.get_image_meta_cache_path()) as meta_cache_file:
-            return literal_eval(meta_cache_file.read())
-    except Exception:
-        make_image_meta_cache(db_task)
-        with open(db_task.get_image_meta_cache_path()) as meta_cache_file:
-            return literal_eval(meta_cache_file.read())
 
 def _copy_data_from_share(server_files, upload_dir):
     job = rq.get_current_job()
@@ -108,7 +71,7 @@ def _save_task_to_db(db_task):
     segment_size = db_task.segment_size
     segment_step = segment_size
     if segment_size == 0:
-        segment_size = db_task.size
+        segment_size = db_task.data.size
 
         # Segment step must be more than segment_size + overlap in single-segment tasks
         # Otherwise a task contains an extra segment
@@ -121,9 +84,8 @@ def _save_task_to_db(db_task):
 
     segment_step -= db_task.overlap
 
-    for x in range(0, db_task.size, segment_step):
-        start_frame = x
-        stop_frame = min(x + segment_size - 1, db_task.size - 1)
+    for start_frame in range(0, db_task.data.size, segment_step):
+        stop_frame = min(start_frame + segment_size - 1, db_task.data.size - 1)
 
         slogger.glob.info("New segment for task #{}: start_frame = {}, \
             stop_frame = {}".format(db_task.id, start_frame, stop_frame))
@@ -138,9 +100,10 @@ def _save_task_to_db(db_task):
         db_job.segment = db_segment
         db_job.save()
 
+    db_task.data.save()
     db_task.save()
 
-def _validate_data(data):
+def _count_files(data):
     share_root = settings.SHARE_ROOT
     server_files = []
 
@@ -184,6 +147,9 @@ def _validate_data(data):
         counter=counter,
     )
 
+    return counter
+
+def _validate_data(counter):
     unique_entries = 0
     multiple_entries = 0
     for media_type, media_config in MEDIA_TYPES.items():
@@ -203,7 +169,12 @@ def _validate_data(data):
     if unique_entries == 0 and multiple_entries == 0:
         raise ValueError('No media data found')
 
-    return counter
+    task_modes = [MEDIA_TYPES[media_type]['mode'] for media_type, media_files in counter.items() if media_files]
+
+    if not all(mode == task_modes[0] for mode in task_modes):
+        raise Exception('Could not combine different task modes for data')
+
+    return counter, task_modes[0]
 
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
@@ -237,15 +208,17 @@ def _create_thread(tid, data):
     slogger.glob.info("create task #{}".format(tid))
 
     db_task = models.Task.objects.select_for_update().get(pk=tid)
-    if db_task.size != 0:
+    db_data = db_task.data
+    if db_task.data.size != 0:
         raise NotImplementedError("Adding more data is not implemented")
 
-    upload_dir = db_task.get_upload_dirname()
+    upload_dir = db_data.get_upload_dirname()
 
     if data['remote_files']:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
-    media = _validate_data(data)
+    media = _count_files(data)
+    media, task_mode = _validate_data(media)
 
     if data['server_files']:
         _copy_data_from_share(data['server_files'], upload_dir)
@@ -255,58 +228,97 @@ def _create_thread(tid, data):
     job.save_meta()
 
     db_images = []
-    extractors = []
-    length = 0
+    extractor = None
+
     for media_type, media_files in media.items():
-        if not media_files:
-            continue
+        if media_files:
+            if extractor is not None:
+                raise Exception('Combined data types are not supported')
+            extractor = MEDIA_TYPES[media_type]['extractor'](
+                source_path=[os.path.join(upload_dir, f) for f in media_files],
+                step=db_data.get_frame_step(),
+                start=db_data.start_frame,
+                stop=data['stop_frame'],
+            )
+    db_task.mode = task_mode
+    db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
+    db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
 
-        extractor = MEDIA_TYPES[media_type]['extractor'](
-            source_path=[os.path.join(upload_dir, f) for f in media_files],
-            dest_path=upload_dir,
-            image_quality=db_task.image_quality,
-            step=db_task.get_frame_step(),
-            start=db_task.start_frame,
-            stop=db_task.stop_frame,
-        )
-        length += len(extractor)
-        db_task.mode = MEDIA_TYPES[media_type]['mode']
-        extractors.append(extractor)
+    def update_progress(progress):
+        progress_animation = '|/-\\'
+        if not hasattr(update_progress, 'call_counter'):
+            update_progress.call_counter = 0
 
-    for extractor in extractors:
-        for frame, image_orig_path in enumerate(extractor):
-            image_dest_path = db_task.get_frame_path(db_task.size)
-            dirname = os.path.dirname(image_dest_path)
+        status_template = 'Images are being compressed {}'
+        if progress:
+            current_progress = '{}%'.format(round(progress * 100))
+        else:
+            current_progress = '{}'.format(progress_animation[update_progress.call_counter])
+        job.meta['status'] = status_template.format(current_progress)
+        job.save_meta()
+        update_progress.call_counter = (update_progress.call_counter + 1) % len(progress_animation)
 
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
+    compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter
+    original_chunk_writer_class = Mpeg4ChunkWriter if db_data.original_chunk_type == DataChoice.VIDEO else ZipChunkWriter
 
-            if db_task.mode == 'interpolation':
-                extractor.save_image(frame, image_dest_path)
-            else:
-                width, height = extractor.save_image(frame, image_dest_path)
-                db_images.append(models.Image(
-                    task=db_task,
-                    path=image_orig_path,
-                    frame=db_task.size,
-                    width=width, height=height))
+    compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality)
+    original_chunk_writer = original_chunk_writer_class(100)
 
-            db_task.size += 1
-            progress = frame * 100 // length
-            job.meta['status'] = 'Images are being compressed... {}%'.format(progress)
-            job.save_meta()
+    # calculate chunk size if it isn't specified
+    if db_data.chunk_size is None:
+        if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
+            w, h = extractor.get_image_size()
+            area = h * w
+            db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
+        else:
+            db_data.chunk_size = 36
 
-    if db_task.mode == 'interpolation':
-        image = Image.open(db_task.get_frame_path(0))
-        models.Video.objects.create(
-            task=db_task,
-            path=extractors[0].get_source_name(),
-            width=image.width, height=image.height)
-        image.close()
-        if db_task.stop_frame == 0:
-            db_task.stop_frame = db_task.start_frame + (db_task.size - 1) * db_task.get_frame_step()
-    else:
+    video_path = ""
+    video_size = (0, 0)
+
+    counter = itertools.count()
+    generator = itertools.groupby(extractor, lambda x: next(counter) // db_data.chunk_size)
+    for chunk_idx, chunk_data in generator:
+        chunk_data = list(chunk_data)
+        original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
+        original_chunk_writer.save_as_chunk(chunk_data, original_chunk_path)
+
+        compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
+        img_sizes = compressed_chunk_writer.save_as_chunk(chunk_data, compressed_chunk_path)
+
+        if db_task.mode == 'annotation':
+            db_images.extend([
+                models.Image(
+                    data=db_data,
+                    path=os.path.relpath(data[1], upload_dir),
+                    frame=data[2],
+                    width=size[0],
+                    height=size[1])
+
+                for data, size in zip(chunk_data, img_sizes)
+            ])
+        else:
+            video_size = img_sizes[0]
+            video_path = chunk_data[0][1]
+
+        db_data.size += len(chunk_data)
+        progress = extractor.get_progress(chunk_data[-1][2])
+        update_progress(progress)
+
+    if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(db_images)
+        db_images = []
+    else:
+        models.Video.objects.create(
+            data=db_data,
+            path=os.path.relpath(video_path, upload_dir),
+            width=video_size[0], height=video_size[1])
 
-    slogger.glob.info("Founded frames {} for task #{}".format(db_task.size, tid))
+    if db_data.stop_frame == 0:
+        db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
+
+    preview = extractor.get_preview()
+    preview.save(db_data.get_preview_path())
+
+    slogger.glob.info("Founded frames {} for Data #{}".format(db_data.size, db_data.id))
     _save_task_to_db(db_task)

@@ -1,0 +1,34 @@
+{
+  "name": "cvat-data",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/js/cvat-data.js",
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.4",
+    "@babel/preset-env": "^7.4.4",
+    "babel-loader": "^8.0.6",
+    "copy-webpack-plugin": "^5.0.5",
+    "eslint": "^6.4.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-no-unsafe-innerhtml": "^1.0.16",
+    "eslint-plugin-no-unsanitized": "^3.0.2",
+    "eslint-plugin-security": "^1.4.0",
+    "nodemon": "^1.19.2",
+    "webpack": "^4.39.3",
+    "webpack-cli": "^3.3.7",
+    "worker-loader": "^2.0.0"
+  },
+  "dependencies": {
+    "async-mutex": "^0.1.4",
+    "jszip": "3.1.5"
+  },
+  "scripts": {
+    "patch": "cd src/js && patch --dry-run --forward -p0 < 3rdparty_patch.diff >> /dev/null && patch -p0 < 3rdparty_patch.diff; true",
+    "build": "npm run patch; webpack --config ./webpack.config.js",
+    "server": "npm run patch; nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
+  },
+  "author": "Intel",
+  "license": "MIT"
+}

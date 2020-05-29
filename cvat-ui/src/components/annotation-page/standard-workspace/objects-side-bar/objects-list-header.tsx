@@ -3,17 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Icon,
-    Select,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
-import { SelectValue } from 'antd/lib/select';
+import Tooltip from 'antd/lib/tooltip';
 
+import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
 import { StatesOrdering } from 'reducers/interfaces';
 
 
@@ -62,10 +58,9 @@ interface Props {
     statesLocked: boolean;
     statesCollapsed: boolean;
     statesOrdering: StatesOrdering;
-    annotationsFilters: string[];
-    annotationsFiltersHistory: string[];
+    switchLockAllShortcut: string;
+    switchHiddenAllShortcut: string;
     changeStatesOrdering(value: StatesOrdering): void;
-    changeAnnotationsFilters(value: SelectValue): void;
     lockAllStates(): void;
     unlockAllStates(): void;
     collapseAllStates(): void;
@@ -76,12 +71,12 @@ interface Props {
 
 function ObjectListHeader(props: Props): JSX.Element {
     const {
-        annotationsFilters,
-        annotationsFiltersHistory,
         statesHidden,
         statesLocked,
         statesCollapsed,
         statesOrdering,
+        switchLockAllShortcut,
+        switchHiddenAllShortcut,
         changeStatesOrdering,
         lockAllStates,
         unlockAllStates,
@@ -89,47 +84,36 @@ function ObjectListHeader(props: Props): JSX.Element {
         expandAllStates,
         hideAllStates,
         showAllStates,
-        changeAnnotationsFilters,
     } = props;
 
     return (
         <div className='cvat-objects-sidebar-states-header'>
             <Row>
                 <Col>
-                    <Select
-                        allowClear
-                        value={annotationsFilters}
-                        mode='tags'
-                        style={{ width: '100%' }}
-                        placeholder={(
-                            <>
-                                <Icon type='filter' />
-                                <span style={{ marginLeft: 5 }}>Annotations filter</span>
-                            </>
-                        )}
-                        onChange={changeAnnotationsFilters}
-                    >
-                        {annotationsFiltersHistory.map((element: string): JSX.Element => (
-                            <Select.Option key={element} value={element}>{element}</Select.Option>
-                        ))}
-                    </Select>
+                    <AnnotationsFiltersInput />
                 </Col>
             </Row>
             <Row type='flex' justify='space-between' align='middle'>
                 <Col span={2}>
-                    { statesLocked
-                        ? <Icon type='lock' onClick={unlockAllStates} />
-                        : <Icon type='unlock' onClick={lockAllStates} />}
+                    <Tooltip title={`Switch lock property for all ${switchLockAllShortcut}`}>
+                        { statesLocked
+                            ? <Icon type='lock' onClick={unlockAllStates} theme='filled' />
+                            : <Icon type='unlock' onClick={lockAllStates} />}
+                    </Tooltip>
                 </Col>
                 <Col span={2}>
-                    { statesHidden
-                        ? <Icon type='eye-invisible' onClick={showAllStates} />
-                        : <Icon type='eye' onClick={hideAllStates} />}
+                    <Tooltip title={`Switch hidden property for all ${switchHiddenAllShortcut}`}>
+                        { statesHidden
+                            ? <Icon type='eye-invisible' onClick={showAllStates} />
+                            : <Icon type='eye' onClick={hideAllStates} />}
+                    </Tooltip>
                 </Col>
                 <Col span={2}>
-                    { statesCollapsed
-                        ? <Icon type='caret-down' onClick={expandAllStates} />
-                        : <Icon type='caret-up' onClick={collapseAllStates} />}
+                    <Tooltip title='Expand/collapse all'>
+                        { statesCollapsed
+                            ? <Icon type='caret-down' onClick={expandAllStates} />
+                            : <Icon type='caret-up' onClick={collapseAllStates} />}
+                    </Tooltip>
                 </Col>
                 <StatesOrderingSelector
                     statesOrdering={statesOrdering}

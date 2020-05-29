@@ -3,25 +3,23 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Menu, Modal,
-} from 'antd';
-
-import { ClickParam } from 'antd/lib/menu/index';
+import Menu, { ClickParam } from 'antd/lib/menu';
+import Modal from 'antd/lib/modal';
 
 import DumpSubmenu from 'components/actions-menu/dump-submenu';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import ExportSubmenu from 'components/actions-menu/export-submenu';
+import ReIDPlugin from './reid-plugin';
 
 interface Props {
     taskMode: string;
     loaders: string[];
     dumpers: string[];
-    exporters: string[];
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
+    installedReID: boolean;
+    taskID: number;
     onClickMenu(params: ClickParam, file?: File): void;
 }
 
@@ -38,11 +36,12 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         taskMode,
         loaders,
         dumpers,
-        exporters,
         onClickMenu,
         loadActivity,
         dumpActivities,
         exportActivities,
+        installedReID,
+        taskID,
     } = props;
 
     let latestParams: ClickParam | null = null;
@@ -75,7 +74,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         } else if (copyParams.key === Actions.REMOVE_ANNO) {
             Modal.confirm({
                 title: 'All annotations will be removed',
-                content: 'You are goung to remove all annotations from the client. '
+                content: 'You are going to remove all annotations from the client. '
                     + 'It will stay on the server till you save a job. Continue?',
                 onOk: () => {
                     onClickMenu(copyParams);
@@ -112,7 +111,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             }
             {
                 ExportSubmenu({
-                    exporters,
+                    exporters: dumpers,
                     exportActivities,
                     menuKey: Actions.EXPORT_TASK_DATASET,
                 })
@@ -122,8 +121,11 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 Remove annotations
             </Menu.Item>
             <Menu.Item key={Actions.OPEN_TASK}>
-                Open the task
+                <a href={`/tasks/${taskID}`} onClick={(e: React.MouseEvent) => e.preventDefault()}>
+                    Open the task
+                </a>
             </Menu.Item>
+            { installedReID && <ReIDPlugin /> }
         </Menu>
     );
 }

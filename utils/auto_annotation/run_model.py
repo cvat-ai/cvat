@@ -36,9 +36,13 @@ def _get_kwargs():
     parser.add_argument('--show-image-delay', default=0, type=int, help='Displays the images for a set duration in milliseconds, default is until a key is pressed')
     parser.add_argument('--serialize', default=False, action='store_true', help='Try to serialize the result')
     parser.add_argument('--show-labels', action='store_true', help='Show the labels on the window')
-    
+
     return vars(parser.parse_args())
 
+def _init_django(settings):
+    import django
+    os.environ['DJANGO_SETTINGS_MODULE'] = settings
+    django.setup()
 
 def random_color():
     rgbl=[255,0,0]
@@ -63,10 +67,7 @@ def find_min_y(array):
     return array[index]
 
 def _get_docker_files(model_name: str, task_id: int):
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'cvat.settings.development'
-
-    import django
-    django.setup()
+    _init_django('cvat.settings.development')
 
     from cvat.apps.auto_annotation.models import AnnotationModel
     from cvat.apps.engine.models import Task as TaskModel
@@ -74,7 +75,7 @@ def _get_docker_files(model_name: str, task_id: int):
     task = TaskModel(pk=task_id)
     model = AnnotationModel.objects.get(name=model_name)
 
-    images_dir = task.get_data_dirname()
+    images_dir = task.data.get_data_dirname()
 
     py_file = model.interpretation_file.name
     mapping_file = model.labelmap_file.name
@@ -82,6 +83,7 @@ def _get_docker_files(model_name: str, task_id: int):
     bin_file = model.weights_file.name
 
     image_files = []
+    images_dir = os.path.abspath(images_dir)
     for root, _, filenames in os.walk(images_dir):
         for filename in fnmatch.filter(filenames, '*.jpg'):
             image_files.append(os.path.join(root, filename))
@@ -94,7 +96,7 @@ def main():
 
     py_file = kwargs.get('py')
     bin_file = kwargs.get('bin')
-    mapping_file = kwargs.get('json')
+    mapping_file = os.path.abspath(kwargs.get('json'))
     xml_file = kwargs.get('xml')
 
     model_name = kwargs.get('model_name')
@@ -233,9 +235,7 @@ def main():
             cv2.destroyWindow(str(index))
 
     if kwargs['serialize']:
-        os.environ['DJANGO_SETTINGS_MODULE'] = 'cvat.settings.production'
-        import django
-        django.setup()
+        _init_django('cvat.settings.production')
 
         from cvat.apps.engine.serializers import LabeledDataSerializer
 

@@ -3,30 +3,29 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Col,
-    Icon,
-    Modal,
-    Button,
-    Timeline,
-    Dropdown,
-} from 'antd';
+import { Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Modal from 'antd/lib/modal';
+import Button from 'antd/lib/button';
+import Timeline from 'antd/lib/timeline';
+import Dropdown from 'antd/lib/dropdown';
 
 import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotation-menu';
-
 import {
     MainMenuIcon,
     SaveIcon,
     UndoIcon,
     RedoIcon,
-} from '../../../icons';
+} from 'icons';
 
 interface Props {
     saving: boolean;
     savingStatuses: string[];
     undoAction?: string;
     redoAction?: string;
+    saveShortcut: string;
+    undoShortcut: string;
+    redoShortcut: string;
     onSaveAnnotation(): void;
     onUndoClick(): void;
     onRedoClick(): void;
@@ -38,6 +37,9 @@ function LeftGroup(props: Props): JSX.Element {
         savingStatuses,
         undoAction,
         redoAction,
+        saveShortcut,
+        undoShortcut,
+        redoShortcut,
         onSaveAnnotation,
         onUndoClick,
         onRedoClick,
@@ -52,6 +54,7 @@ function LeftGroup(props: Props): JSX.Element {
                 </Button>
             </Dropdown>
             <Button
+                title={`Save current changes ${saveShortcut}`}
                 onClick={saving ? undefined : onSaveAnnotation}
                 type='link'
                 className={saving
@@ -79,7 +82,7 @@ function LeftGroup(props: Props): JSX.Element {
                 </Modal>
             </Button>
             <Button
-                title={undoAction}
+                title={`Undo: ${undoAction} ${undoShortcut}`}
                 disabled={!undoAction}
                 style={{ pointerEvents: undoAction ? 'initial' : 'none', opacity: undoAction ? 1 : 0.5 }}
                 type='link'
@@ -90,7 +93,7 @@ function LeftGroup(props: Props): JSX.Element {
                 <span>Undo</span>
             </Button>
             <Button
-                title={redoAction}
+                title={`Redo: ${redoAction} ${redoShortcut}`}
                 disabled={!redoAction}
                 style={{ pointerEvents: redoAction ? 'initial' : 'none', opacity: redoAction ? 1 : 0.5 }}
                 type='link'

@@ -5,12 +5,10 @@
 import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
-
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
-
-import { InputNumber } from 'antd';
+import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
+import InputNumber from 'antd/lib/input-number';
 import { SliderValue } from 'antd/lib/slider';
 
 import {
@@ -22,14 +20,18 @@ import {
     undoActionAsync,
     redoActionAsync,
     searchAnnotationsAsync,
+    changeWorkspace as changeWorkspaceAction,
+    activateObject,
 } from 'actions/annotation-actions';
+import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
-import { CombinedState, FrameSpeed } from 'reducers/interfaces';
+import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
 
 interface StateToProps {
     jobInstance: any;
     frameNumber: number;
+    frameFilename: string;
     frameStep: number;
     frameSpeed: FrameSpeed;
     frameDelay: number;
@@ -41,16 +43,21 @@ interface StateToProps {
     redoAction?: string;
     autoSave: boolean;
     autoSaveInterval: number;
+    workspace: Workspace;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
+    normalizedKeyMap: Record<string, string>;
+    canvasInstance: Canvas;
 }
 
 interface DispatchToProps {
-    onChangeFrame(frame: number): void;
+    onChangeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void;
     onSwitchPlay(playing: boolean): void;
     onSaveAnnotation(sessionInstance: any): void;
     showStatistics(sessionInstance: any): void;
     undo(sessionInstance: any, frameNumber: any): void;
     redo(sessionInstance: any, frameNumber: any): void;
     searchAnnotations(sessionInstance: any, frameFrom: any, frameTo: any): void;
+    changeWorkspace(workspace: Workspace): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -59,6 +66,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             player: {
                 playing,
                 frame: {
+                    filename: frameFilename,
                     number: frameNumber,
                     delay: frameDelay,
                 },
@@ -75,7 +83,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             canvas: {
                 ready: canvasIsReady,
+                instance: canvasInstance,
             },
+            workspace,
         },
         settings: {
             player: {
@@ -86,6 +96,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 autoSave,
                 autoSaveInterval,
             },
+        },
+        shortcuts: {
+            keyMap,
+            normalizedKeyMap,
         },
     } = state;
 
@@ -98,18 +112,23 @@ function mapStateToProps(state: CombinedState): StateToProps {
         saving,
         savingStatuses,
         frameNumber,
+        frameFilename,
         jobInstance,
-        undoAction: history.undo[history.undo.length - 1],
-        redoAction: history.redo[history.redo.length - 1],
+        undoAction: history.undo.length ? history.undo[history.undo.length - 1][0] : undefined,
+        redoAction: history.redo.length ? history.redo[history.redo.length - 1][0] : undefined,
         autoSave,
         autoSaveInterval,
+        workspace,
+        keyMap,
+        normalizedKeyMap,
+        canvasInstance,
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onChangeFrame(frame: number): void {
-            dispatch(changeFrameAsync(frame));
+        onChangeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void {
+            dispatch(changeFrameAsync(frame, fillBuffer, frameStep));
         },
         onSwitchPlay(playing: boolean): void {
             dispatch(switchPlay(playing));
@@ -129,6 +148,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         searchAnnotations(sessionInstance: any, frameFrom: any, frameTo: any): void {
             dispatch(searchAnnotationsAsync(sessionInstance, frameFrom, frameTo));
+        },
+        changeWorkspace(workspace: Workspace): void {
+            dispatch(activateObject(null, null));
+            dispatch(changeWorkspaceAction(workspace));
         },
     };
 }
@@ -178,6 +201,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             frameDelay,
             playing,
             canvasIsReady,
+            canvasInstance,
             onSwitchPlay,
             onChangeFrame,
         } = this.props;
@@ -198,7 +222,14 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
-                        onChangeFrame(frameNumber + 1 + framesSkiped);
+                        if (isAbleToChangeFrame(canvasInstance)) {
+                            onChangeFrame(
+                                frameNumber + 1 + framesSkiped,
+                                stillPlaying, framesSkiped + 1,
+                            );
+                        } else {
+                            onSwitchPlay(false);
+                        }
                     }
                 }, frameDelay);
             } else {
@@ -218,9 +249,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             undo,
             jobInstance,
             frameNumber,
+            canvasInstance,
         } = this.props;
 
-        undo(jobInstance, frameNumber);
+        if (isAbleToChangeFrame(canvasInstance)) {
+            undo(jobInstance, frameNumber);
+        }
     };
 
     private redo = (): void => {
@@ -228,9 +262,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             redo,
             jobInstance,
             frameNumber,
+            canvasInstance,
         } = this.props;
 
-        redo(jobInstance, frameNumber);
+        if (isAbleToChangeFrame(canvasInstance)) {
+            redo(jobInstance, frameNumber);
+        }
     };
 
     private showStatistics = (): void => {
@@ -263,7 +300,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = jobInstance.startFrame;
@@ -271,7 +307,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -282,7 +318,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -291,7 +326,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -301,7 +336,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -310,7 +344,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -320,7 +354,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -329,7 +362,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -340,7 +373,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = Math
@@ -349,7 +381,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -359,7 +391,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             jobInstance,
             playing,
             onSwitchPlay,
-            onChangeFrame,
         } = this.props;
 
         const newFrame = jobInstance.stopFrame;
@@ -367,7 +398,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(newFrame);
+            this.changeFrame(newFrame);
         }
     };
 
@@ -381,30 +412,25 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     };
 
     private onChangePlayerSliderValue = (value: SliderValue): void => {
-        const {
-            playing,
-            onSwitchPlay,
-            onChangeFrame,
-        } = this.props;
-
+        const { playing, onSwitchPlay } = this.props;
         if (playing) {
             onSwitchPlay(false);
         }
-        onChangeFrame(value as number);
+        this.changeFrame(value as number);
     };
 
-    private onChangePlayerInputValue = (value: number | undefined): void => {
+    private onChangePlayerInputValue = (value: number): void => {
         const {
             onSwitchPlay,
-            onChangeFrame,
             playing,
+            frameNumber,
         } = this.props;
 
-        if (typeof (value) !== 'undefined') {
+        if (value !== frameNumber) {
             if (playing) {
                 onSwitchPlay(false);
             }
-            onChangeFrame(value);
+            this.changeFrame(value);
         }
     };
 
@@ -417,6 +443,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const url = `${origin}${pathname}?frame=${frameNumber}`;
         copy(url);
     };
+
+    private changeFrame(frame: number): void {
+        const { onChangeFrame, canvasInstance } = this.props;
+        if (isAbleToChangeFrame(canvasInstance)) {
+            onChangeFrame(frame);
+        }
+    }
 
     private beforeUnloadCallback(event: BeforeUnloadEvent): any {
         const { jobInstance } = this.props;
@@ -440,10 +473,16 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 stopFrame,
             },
             frameNumber,
+            frameFilename,
             undoAction,
             redoAction,
-            searchAnnotations,
+            workspace,
             canvasIsReady,
+            searchAnnotations,
+            changeWorkspace,
+            keyMap,
+            normalizedKeyMap,
+            canvasInstance,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -452,73 +491,18 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             }
         };
 
-        const keyMap = {
-            SAVE_JOB: {
-                name: 'Save the job',
-                description: 'Send all changes of annotations to the server',
-                sequence: 'ctrl+s',
-                action: 'keydown',
-            },
-            UNDO: {
-                name: 'Undo action',
-                description: 'Cancel the latest action related with objects',
-                sequence: 'ctrl+z',
-                action: 'keydown',
-            },
-            REDO: {
-                name: 'Redo action',
-                description: 'Cancel undo action',
-                sequences: ['ctrl+shift+z', 'ctrl+y'],
-                action: 'keydown',
-            },
-            NEXT_FRAME: {
-                name: 'Next frame',
-                description: 'Go to the next frame',
-                sequence: 'f',
-                action: 'keydown',
-            },
-            PREV_FRAME: {
-                name: 'Previous frame',
-                description: 'Go to the previous frame',
-                sequence: 'd',
-                action: 'keydown',
-            },
-            FORWARD_FRAME: {
-                name: 'Forward frame',
-                description: 'Go forward with a step',
-                sequence: 'v',
-                action: 'keydown',
-            },
-            BACKWARD_FRAME: {
-                name: 'Backward frame',
-                description: 'Go backward with a step',
-                sequence: 'c',
-                action: 'keydown',
-            },
-            SEARCH_FORWARD: {
-                name: 'Search forward',
-                description: 'Search the next frame that satisfies to the filters',
-                sequence: 'right',
-                action: 'keydown',
-            },
-            SEARCH_BACKWARD: {
-                name: 'Search backward',
-                description: 'Search the previous frame that satisfies to the filters',
-                sequence: 'left',
-                action: 'keydown',
-            },
-            PLAY_PAUSE: {
-                name: 'Play/pause',
-                description: 'Start/stop automatic changing frames',
-                sequence: 'space',
-                action: 'keydown',
-            },
-            FOCUS_INPUT_FRAME: {
-                name: 'Focus input frame',
-                description: 'Focus on the element to change the current frame',
-                sequences: ['`', '~'],
-                action: 'keydown',
-            },
+        const subKeyMap = {
+            SAVE_JOB: keyMap.SAVE_JOB,
+            UNDO: keyMap.UNDO,
+            REDO: keyMap.REDO,
+            NEXT_FRAME: keyMap.NEXT_FRAME,
+            PREV_FRAME: keyMap.PREV_FRAME,
+            FORWARD_FRAME: keyMap.FORWARD_FRAME,
+            BACKWARD_FRAME: keyMap.BACKWARD_FRAME,
+            SEARCH_FORWARD: keyMap.SEARCH_FORWARD,
+            SEARCH_BACKWARD: keyMap.SEARCH_BACKWARD,
+            PLAY_PAUSE: keyMap.PLAY_PAUSE,
+            FOCUS_INPUT_FRAME: keyMap.FOCUS_INPUT_FRAME,
         };
 
         const handlers = {
@@ -536,7 +520,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             },
             SAVE_JOB: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                this.onSaveAnnotation();
+                if (!saving) {
+                    this.onSaveAnnotation();
+                }
             },
             NEXT_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
@@ -564,13 +550,17 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             },
             SEARCH_FORWARD: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                if (frameNumber + 1 <= stopFrame && canvasIsReady) {
+                if (frameNumber + 1 <= stopFrame && canvasIsReady
+                    && isAbleToChangeFrame(canvasInstance)
+                ) {
                     searchAnnotations(jobInstance, frameNumber + 1, stopFrame);
                 }
             },
             SEARCH_BACKWARD: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                if (frameNumber - 1 >= startFrame && canvasIsReady) {
+                if (frameNumber - 1 >= startFrame && canvasIsReady
+                    && isAbleToChangeFrame(canvasInstance)
+                ) {
                     searchAnnotations(jobInstance, frameNumber - 1, startFrame);
                 }
             },
@@ -588,7 +578,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={keyMap as any as KeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
                 <AnnotationTopBarComponent
                     showStatistics={this.showStatistics}
                     onSwitchPlay={this.onSwitchPlay}
@@ -602,15 +592,27 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                     onSliderChange={this.onChangePlayerSliderValue}
                     onInputChange={this.onChangePlayerInputValue}
                     onURLIconClick={this.onURLIconClick}
+                    changeWorkspace={changeWorkspace}
+                    workspace={workspace}
                     playing={playing}
                     saving={saving}
                     savingStatuses={savingStatuses}
                     startFrame={startFrame}
                     stopFrame={stopFrame}
                     frameNumber={frameNumber}
+                    frameFilename={frameFilename}
                     inputFrameRef={this.inputFrameRef}
                     undoAction={undoAction}
                     redoAction={redoAction}
+                    saveShortcut={normalizedKeyMap.SAVE_JOB}
+                    undoShortcut={normalizedKeyMap.UNDO}
+                    redoShortcut={normalizedKeyMap.REDO}
+                    playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
+                    nextFrameShortcut={normalizedKeyMap.NEXT_FRAME}
+                    previousFrameShortcut={normalizedKeyMap.PREV_FRAME}
+                    forwardShortcut={normalizedKeyMap.FORWARD_FRAME}
+                    backwardShortcut={normalizedKeyMap.BACKWARD_FRAME}
+                    focusFrameInputShortcut={normalizedKeyMap.FOCUS_INPUT_FRAME}
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
                 />

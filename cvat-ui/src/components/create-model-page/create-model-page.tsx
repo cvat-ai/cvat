@@ -4,13 +4,9 @@
 
 import './styles.scss';
 import React from 'react';
-
-import {
-    Row,
-    Col,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
+
 import { ModelFiles } from 'reducers/interfaces';
 import CreateModelContent from './create-model-content';
 

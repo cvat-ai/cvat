@@ -2,19 +2,17 @@
 //
 // SPDX-License-Identifier: MIT
 
-import 'antd/dist/antd.less';
+import 'antd/dist/antd.css';
 import '../styles.scss';
 import React from 'react';
 import { Switch, Route, Redirect } from 'react-router';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
-import { GlobalHotKeys, KeyMap, configure } from 'react-hotkeys';
+import { GlobalHotKeys, ExtendedKeyMapOptions, configure } from 'react-hotkeys';
+import Spin from 'antd/lib/spin';
+import Layout from 'antd/lib/layout';
+import notification from 'antd/lib/notification';
 
-import {
-    Spin,
-    Layout,
-    notification,
-} from 'antd';
-
+import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
 import SettingsPageContainer from 'containers/settings-page/settings-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
@@ -26,7 +24,9 @@ import AnnotationPageContainer from 'containers/annotation-page/annotation-page'
 import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import HeaderContainer from 'containers/header/header';
+import { customWaViewHit } from 'utils/enviroment';
 
+import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from 'reducers/interfaces';
 
 interface CVATAppProps {
@@ -34,11 +34,14 @@ interface CVATAppProps {
     loadUsers: () => void;
     loadAbout: () => void;
     verifyAuthorized: () => void;
+    loadUserAgreements: () => void;
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
+    keyMap: Record<string, ExtendedKeyMapOptions>;
     userInitialized: boolean;
+    userFetching: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
     formatsInitialized: boolean;
@@ -50,24 +53,43 @@ interface CVATAppProps {
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
+    userAgreementsFetching: boolean,
+    userAgreementsInitialized: boolean,
     notifications: NotificationsState;
     user: any;
 }
 
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
-        const { verifyAuthorized } = this.props;
+        const core = getCore();
+        const { verifyAuthorized, history } = this.props;
         configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
+
+        // Logger configuration
+        const userActivityCallback: (() => void)[] = [];
+        window.addEventListener('click', () => {
+            userActivityCallback.forEach((handler) => handler());
+        });
+        core.logger.configure(() => window.document.hasFocus, userActivityCallback);
+
+        customWaViewHit(location.pathname, location.search, location.hash);
+        history.listen((location) => {
+            customWaViewHit(location.pathname, location.search, location.hash);
+        });
+
         verifyAuthorized();
     }
 
     public componentDidUpdate(): void {
         const {
+            verifyAuthorized,
             loadFormats,
             loadUsers,
             loadAbout,
+            loadUserAgreements,
             initPlugins,
             userInitialized,
+            userFetching,
             formatsInitialized,
             formatsFetching,
             usersInitialized,
@@ -77,13 +99,24 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             pluginsInitialized,
             pluginsFetching,
             user,
+            userAgreementsFetching,
+            userAgreementsInitialized,
         } = this.props;
 
         this.showErrors();
         this.showMessages();
 
-        if (!userInitialized || user == null) {
-            // not authorized user
+        if (!userInitialized && !userFetching) {
+            verifyAuthorized();
+            return;
+        }
+
+        if (!userAgreementsInitialized && !userAgreementsFetching) {
+            loadUserAgreements();
+            return;
+        }
+
+        if (user == null) {
             return;
         }
 
@@ -194,28 +227,19 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             switchShortcutsDialog,
             user,
             history,
+            keyMap,
         } = this.props;
 
         const readyForRender = (userInitialized && user == null)
             || (userInitialized && formatsInitialized
-            && pluginsInitialized && usersInitialized && aboutInitialized);
+                && pluginsInitialized && usersInitialized && aboutInitialized);
 
         const withModels = installedAutoAnnotation
             || installedTFAnnotation || installedTFSegmentation;
 
-        const keyMap = {
-            SWITCH_SHORTCUTS: {
-                name: 'Show shortcuts',
-                description: 'Open/hide the list of available shortcuts',
-                sequence: 'f1',
-                action: 'keydown',
-            },
-            OPEN_SETTINGS: {
-                name: 'Open settings',
-                description: 'Go to the settings page or go back',
-                sequence: 'f2',
-                action: 'keydown',
-            },
+        const subKeyMap = {
+            SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
+            OPEN_SETTINGS: keyMap.OPEN_SETTINGS,
         };
 
         const handlers = {
@@ -242,37 +266,41 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         if (readyForRender) {
             if (user) {
                 return (
-                    <Layout>
-                        <HeaderContainer> </HeaderContainer>
-                        <Layout.Content>
-                            <ShorcutsDialog />
-                            <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers}>
-                                <Switch>
-                                    <Route exact path='/settings' component={SettingsPageContainer} />
-                                    <Route exact path='/tasks' component={TasksPageContainer} />
-                                    <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
-                                    <Route exact path='/tasks/:id' component={TaskPageContainer} />
-                                    <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                    { withModels
-                                        && <Route exact path='/models' component={ModelsPageContainer} /> }
-                                    { installedAutoAnnotation
-                                        && <Route exact path='/models/create' component={CreateModelPageContainer} /> }
-                                    <Redirect push to='/tasks' />
-                                </Switch>
-                            </GlobalHotKeys>
-                            {/* eslint-disable-next-line */}
-                            <a id='downloadAnchor' style={{ display: 'none' }} download/>
-                        </Layout.Content>
-                    </Layout>
+                    <GlobalErrorBoundary>
+                        <Layout>
+                            <HeaderContainer> </HeaderContainer>
+                            <Layout.Content>
+                                <ShorcutsDialog />
+                                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
+                                    <Switch>
+                                        <Route exact path='/settings' component={SettingsPageContainer} />
+                                        <Route exact path='/tasks' component={TasksPageContainer} />
+                                        <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
+                                        <Route exact path='/tasks/:id' component={TaskPageContainer} />
+                                        <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
+                                        {withModels
+                                            && <Route exact path='/models' component={ModelsPageContainer} />}
+                                        {installedAutoAnnotation
+                                            && <Route exact path='/models/create' component={CreateModelPageContainer} />}
+                                        <Redirect push to='/tasks' />
+                                    </Switch>
+                                </GlobalHotKeys>
+                                {/* eslint-disable-next-line */}
+                                <a id='downloadAnchor' style={{ display: 'none' }} download />
+                            </Layout.Content>
+                        </Layout>
+                    </GlobalErrorBoundary>
                 );
             }
 
             return (
-                <Switch>
-                    <Route exact path='/auth/register' component={RegisterPageContainer} />
-                    <Route exact path='/auth/login' component={LoginPageContainer} />
-                    <Redirect to='/auth/login' />
-                </Switch>
+                <GlobalErrorBoundary>
+                    <Switch>
+                        <Route exact path='/auth/register' component={RegisterPageContainer} />
+                        <Route exact path='/auth/login' component={LoginPageContainer} />
+                        <Redirect to='/auth/login' />
+                    </Switch>
+                </GlobalErrorBoundary>
             );
         }
 

@@ -4,11 +4,9 @@
 
 import React from 'react';
 
-import {
-    Col,
-    Icon,
-    Tooltip,
-} from 'antd';
+import { Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Tooltip from 'antd/lib/tooltip';
 
 import {
     FirstIcon,
@@ -19,10 +17,15 @@ import {
     NextIcon,
     ForwardJumpIcon,
     LastIcon,
-} from '../../../icons';
+} from 'icons';
 
 interface Props {
     playing: boolean;
+    playPauseShortcut: string;
+    nextFrameShortcut: string;
+    previousFrameShortcut: string;
+    forwardShortcut: string;
+    backwardShortcut: string;
     onSwitchPlay(): void;
     onPrevFrame(): void;
     onNextFrame(): void;
@@ -35,6 +38,11 @@ interface Props {
 function PlayerButtons(props: Props): JSX.Element {
     const {
         playing,
+        playPauseShortcut,
+        nextFrameShortcut,
+        previousFrameShortcut,
+        forwardShortcut,
+        backwardShortcut,
         onSwitchPlay,
         onPrevFrame,
         onNextFrame,
@@ -49,16 +57,16 @@ function PlayerButtons(props: Props): JSX.Element {
             <Tooltip title='Go to the first frame'>
                 <Icon component={FirstIcon} onClick={onFirstFrame} />
             </Tooltip>
-            <Tooltip title='Go back with a step'>
+            <Tooltip title={`Go back with a step ${backwardShortcut}`}>
                 <Icon component={BackJumpIcon} onClick={onBackward} />
             </Tooltip>
-            <Tooltip title='Go back'>
+            <Tooltip title={`Go back ${previousFrameShortcut}`}>
                 <Icon component={PreviousIcon} onClick={onPrevFrame} />
             </Tooltip>
 
             {!playing
                 ? (
-                    <Tooltip title='Play'>
+                    <Tooltip title={`Play ${playPauseShortcut}`}>
                         <Icon
                             component={PlayIcon}
                             onClick={onSwitchPlay}
@@ -66,7 +74,7 @@ function PlayerButtons(props: Props): JSX.Element {
                     </Tooltip>
                 )
                 : (
-                    <Tooltip title='Pause'>
+                    <Tooltip title={`Pause ${playPauseShortcut}`}>
                         <Icon
                             component={PauseIcon}
                             onClick={onSwitchPlay}
@@ -74,10 +82,10 @@ function PlayerButtons(props: Props): JSX.Element {
                     </Tooltip>
                 )}
 
-            <Tooltip title='Go next'>
+            <Tooltip title={`Go next ${nextFrameShortcut}`}>
                 <Icon component={NextIcon} onClick={onNextFrame} />
             </Tooltip>
-            <Tooltip title='Go next with a step'>
+            <Tooltip title={`Go next with a step ${forwardShortcut}`}>
                 <Icon component={ForwardJumpIcon} onClick={onForward} />
             </Tooltip>
             <Tooltip title='Go to the last frame'>

@@ -67,7 +67,8 @@ function blurAllElements() {
 
 function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationSaverModel,
     uploadAnnotationButton, format) {
-    $('#annotationFileSelector').attr('accept', `.${format.format}`);
+    $('#annotationFileSelector').attr('accept',
+        format.ext.split(',').map(x => '.' + x.trimStart()).join(', '));
     $('#annotationFileSelector').one('change', async (changedFileEvent) => {
         const file = changedFileEvent.target.files['0'];
         changedFileEvent.target.value = '';
@@ -76,7 +77,7 @@ function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationS
         const annotationData = new FormData();
         annotationData.append('annotation_file', file);
         try {
-            await uploadJobAnnotationRequest(jobId, annotationData, format.display_name);
+            await uploadJobAnnotationRequest(jobId, annotationData, format.name);
             historyModel.empty();
             shapeCollectionModel.empty();
             const data = await $.get(`/api/v1/jobs/${jobId}/annotations`);
@@ -96,7 +97,7 @@ function setupFrameFilters() {
     const brightnessRange = $('#playerBrightnessRange');
     const contrastRange = $('#playerContrastRange');
     const saturationRange = $('#playerSaturationRange');
-    const frameBackground = $('#frameBackground');
+    const canvasBackground = $('#canvasBackground');
     const reset = $('#resetPlayerFilterButton');
     let brightness = 100;
     let contrast = 100;
@@ -105,7 +106,7 @@ function setupFrameFilters() {
     const { shortkeys } = window.cvat.config;
 
     function updateFilterParameters() {
-        frameBackground.css('filter', `contrast(${contrast}%) brightness(${brightness}%) saturate(${saturation}%)`);
+        canvasBackground.css('filter', `contrast(${contrast}%) brightness(${brightness}%) saturate(${saturation}%)`);
     }
 
     brightnessRange.attr('title', `
@@ -403,21 +404,19 @@ function setupMenu(job, task, shapeCollectionModel,
 
     const loaders = {};
 
-    for (const format of annotationFormats) {
-        for (const dumper of format.dumpers) {
-            const item = $(`<option>${dumper.display_name}</li>`);
+    for (const dumper of annotationFormats.exporters) {
+        const item = $(`<option>${dumper.name}</li>`);
 
-            if (!isDefaultFormat(dumper.display_name, window.cvat.job.mode)) {
-                item.addClass('regular');
-            }
-
-            item.appendTo(downloadButton);
+        if (!isDefaultFormat(dumper.name, window.cvat.job.mode)) {
+            item.addClass('regular');
         }
 
-        for (const loader of format.loaders) {
-            loaders[loader.display_name] = loader;
-            $(`<option class="regular">${loader.display_name}</li>`).appendTo(uploadButton);
-        }
+        item.appendTo(downloadButton);
+    }
+
+    for (const loader of annotationFormats.importers) {
+        loaders[loader.name] = loader;
+        $(`<option class="regular">${loader.name}</li>`).appendTo(uploadButton);
     }
 
     downloadButton.on('change', async (e) => {
@@ -425,7 +424,7 @@ function setupMenu(job, task, shapeCollectionModel,
         downloadButton.prop('value', 'Dump Annotation');
         try {
             downloadButton.prop('disabled', true);
-            await dumpAnnotationRequest(task.id, task.name, dumper);
+            await dumpAnnotationRequest(task.id, dumper);
         } catch (error) {
             showMessage(error.message);
         } finally {
@@ -488,12 +487,15 @@ function setupMenu(job, task, shapeCollectionModel,
 }
 
 
-function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, annotationFormats,
-    loadJobEvent) {
+function buildAnnotationUI(
+    jobData, taskData, imageMetaData,
+    annotationData, annotationFormats, loadJobEvent,
+) {
     // Setup some API
     window.cvat = {
         labelsInfo: new LabelsInfo(taskData.labels),
         translate: new CoordinateTranslator(),
+        frozen: true,
         player: {
             geometry: {
                 scale: 1,
@@ -511,6 +513,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
             task_id: taskData.id,
             mode: taskData.mode,
             images: imageMetaData,
+            chunk_size: taskData.data_chunk_size,
         },
         search: {
             value: window.location.search,
@@ -646,7 +649,6 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
     playerModel.shift(window.cvat.search.get('frame') || 0, true);
 
     const { shortkeys } = window.cvat.config;
-
     setupHelpWindow(shortkeys);
     setupSettingsWindow();
     setupMenu(jobData, taskData, shapeCollectionModel,
@@ -708,12 +710,14 @@ function callAnnotationUI(jid) {
     $.get(`/api/v1/jobs/${jid}`).done((jobData) => {
         $.when(
             $.get(`/api/v1/tasks/${jobData.task_id}`),
-            $.get(`/api/v1/tasks/${jobData.task_id}/frames/meta`),
+            $.get(`/api/v1/tasks/${jobData.task_id}/data/meta`),
             $.get(`/api/v1/jobs/${jid}/annotations`),
             $.get('/api/v1/server/annotation/formats'),
         ).then((taskData, imageMetaData, annotationData, annotationFormats) => {
             $('#loadingOverlay').remove();
-            setTimeout(() => {
+            setTimeout(async () => {
+                window.cvat.config.backendAPI = `${window.location.origin}/api/v1`;
+                [window.cvatTask] = (await window.cvat.tasks.get({ id: taskData[0].id }));
                 buildAnnotationUI(jobData, taskData[0],
                     imageMetaData[0], annotationData[0], annotationFormats[0], loadJobEvent);
             });

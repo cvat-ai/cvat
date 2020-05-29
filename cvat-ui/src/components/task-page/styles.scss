@@ -76,15 +76,14 @@
 }
 
 .cvat-task-preview-wrapper {
-    display: flex;
-    justify-content: flex-start;
     overflow: hidden;
     margin-bottom: 20px;
-
-    > .cvat-task-preview {
-        max-width: 252px;
-        max-height: 144px;
-    }
+    width: 252px;
+    height: 144px;
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+    background-color: $background-color-2;
 }
 
 .cvat-user-selector {

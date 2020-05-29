@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
+import getCore from 'cvat-core-wrapper';
+import { CanvasVersion } from 'cvat-canvas-wrapper';
+import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AboutActions, AboutActionTypes } from 'actions/about-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { AboutState } from './interfaces';
-
-import { CanvasVersion } from '../cvat-canvas';
-import getCore from '../cvat-core';
 import pjson from '../../package.json';
 
 const defaultState: AboutState = {
@@ -23,7 +23,7 @@ const defaultState: AboutState = {
 
 export default function (
     state: AboutState = defaultState,
-    action: AboutActions | AuthActions,
+    action: AboutActions | AuthActions | boundariesActions,
 ): AboutState {
     switch (action.type) {
         case AboutActionTypes.GET_ABOUT: {
@@ -46,7 +46,8 @@ export default function (
                 fetching: false,
                 initialized: true,
             };
-        case AuthActionTypes.LOGOUT_SUCCESS: {
+        case AuthActionTypes.LOGOUT_SUCCESS:
+        case BoundariesActionTypes.RESET_AFTER_ERROR: {
             return {
                 ...defaultState,
             };

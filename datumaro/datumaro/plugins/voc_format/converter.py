@@ -1,5 +1,5 @@
 
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -110,8 +110,8 @@ class _Converter:
         self._images_dir = images_dir
 
     def get_label(self, label_id):
-        return self._extractor.categories()[AnnotationType.label] \
-            .items[label_id].name
+        return self._strip_label(self._extractor. \
+            categories()[AnnotationType.label].items[label_id].name)
 
     def save_subsets(self):
         subsets = self._extractor.subsets()
@@ -317,6 +317,9 @@ class _Converter:
                     self.save_segm_lists(subset_name, segm_list)
 
     def save_action_lists(self, subset_name, action_list):
+        if not action_list:
+            return
+
         os.makedirs(self._action_subsets_dir, exist_ok=True)
 
         ann_file = osp.join(self._action_subsets_dir, subset_name + '.txt')
@@ -342,10 +345,10 @@ class _Converter:
                             (item, 1 + obj_id, 1 if presented else -1))
 
     def save_class_lists(self, subset_name, class_lists):
-        os.makedirs(self._cls_subsets_dir, exist_ok=True)
-
-        if len(class_lists) == 0:
+        if not class_lists:
             return
+
+        os.makedirs(self._cls_subsets_dir, exist_ok=True)
 
         for label in self._label_map:
             ann_file = osp.join(self._cls_subsets_dir,
@@ -360,6 +363,9 @@ class _Converter:
                     f.write('%s % d\n' % (item, 1 if presented else -1))
 
     def save_clsdet_lists(self, subset_name, clsdet_list):
+        if not clsdet_list:
+            return
+
         os.makedirs(self._cls_subsets_dir, exist_ok=True)
 
         ann_file = osp.join(self._cls_subsets_dir, subset_name + '.txt')
@@ -368,6 +374,9 @@ class _Converter:
                 f.write('%s\n' % item)
 
     def save_segm_lists(self, subset_name, segm_list):
+        if not segm_list:
+            return
+
         os.makedirs(self._segm_subsets_dir, exist_ok=True)
 
         ann_file = osp.join(self._segm_subsets_dir, subset_name + '.txt')
@@ -376,6 +385,9 @@ class _Converter:
                 f.write('%s\n' % item)
 
     def save_layout_lists(self, subset_name, layout_list):
+        if not layout_list:
+            return
+
         os.makedirs(self._layout_subsets_dir, exist_ok=True)
 
         ann_file = osp.join(self._layout_subsets_dir, subset_name + '.txt')
@@ -414,7 +426,7 @@ class _Converter:
             label_map = OrderedDict()
             label_map['background'] = [None, [], []]
             for item in labels.items:
-                label_map[item.name] = [None, [], []]
+                label_map[self._strip_label(item.name)] = [None, [], []]
 
         elif label_map_source in [LabelmapType.guess.name, None]:
             # generate colormap for union of VOC and input dataset labels
@@ -477,7 +489,7 @@ class _Converter:
 
     def _make_label_id_map(self):
         source_labels = {
-            id: label.name for id, label in
+            id: self._strip_label(label.name) for id, label in
             enumerate(self._extractor.categories().get(
                 AnnotationType.label, LabelCategories()).items)
         }

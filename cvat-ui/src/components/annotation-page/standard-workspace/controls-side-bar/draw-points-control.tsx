@@ -3,12 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import {
-    Popover,
-    Icon,
-} from 'antd';
+import Popover from 'antd/lib/popover';
+import Icon from 'antd/lib/icon';
 
-import { Canvas } from 'cvat-canvas';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { PointIcon } from 'icons';
 import { ShapeType } from 'reducers/interfaces';
 
@@ -20,10 +18,7 @@ interface Props {
 }
 
 function DrawPointsControl(props: Props): JSX.Element {
-    const {
-        canvasInstance,
-        isDrawing,
-    } = props;
+    const { canvasInstance, isDrawing } = props;
 
     const dynamcPopoverPros = isDrawing ? {
         overlayStyle: {

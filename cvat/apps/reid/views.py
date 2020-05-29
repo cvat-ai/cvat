@@ -94,3 +94,6 @@ def cancel(request, jid):
         return HttpResponseBadRequest(str(e))
 
     return HttpResponse()
+
+def enabled(request):
+    return HttpResponse()

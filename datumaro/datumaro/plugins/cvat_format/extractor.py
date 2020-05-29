@@ -5,10 +5,9 @@
 
 from collections import OrderedDict
 import os.path as osp
-import xml.etree as ET
+from defusedxml import ElementTree
 
-from datumaro.components.extractor import (SourceExtractor,
-    DEFAULT_SUBSET_NAME, DatasetItem,
+from datumaro.components.extractor import (SourceExtractor, DatasetItem,
     AnnotationType, Points, Polygon, PolyLine, Bbox, Label,
     LabelCategories
 )
@@ -21,9 +20,7 @@ class CvatExtractor(SourceExtractor):
     _SUPPORTED_SHAPES = ('box', 'polygon', 'polyline', 'points')
 
     def __init__(self, path):
-        super().__init__()
-
-        assert osp.isfile(path)
+        assert osp.isfile(path), path
         rootpath = ''
         if path.endswith(osp.join(CvatPath.ANNOTATIONS_DIR, osp.basename(path))):
             rootpath = path.rsplit(CvatPath.ANNOTATIONS_DIR, maxsplit=1)[0]
@@ -33,10 +30,7 @@ class CvatExtractor(SourceExtractor):
         self._images_dir = images_dir
         self._path = path
 
-        subset = osp.splitext(osp.basename(path))[0]
-        if subset == DEFAULT_SUBSET_NAME:
-            subset = None
-        self._subset = subset
+        super().__init__(subset=osp.splitext(osp.basename(path))[0])
 
         items, categories = self._parse(path)
         self._items = self._load_items(items)
@@ -52,19 +46,9 @@ class CvatExtractor(SourceExtractor):
     def __len__(self):
         return len(self._items)
 
-    def subsets(self):
-        if self._subset:
-            return [self._subset]
-        return None
-
-    def get_subset(self, name):
-        if name != self._subset:
-            return None
-        return self
-
     @classmethod
     def _parse(cls, path):
-        context = ET.ElementTree.iterparse(path, events=("start", "end"))
+        context = ElementTree.iterparse(path, events=("start", "end"))
         context = iter(context)
 
         categories, frame_size = cls._parse_meta(context)
@@ -254,8 +238,6 @@ class CvatExtractor(SourceExtractor):
             "Expected 'meta' section in the annotation file, path: %s" % states
 
         common_attrs = ['occluded']
-        if has_z_order:
-            common_attrs.append('z_order')
         if mode == 'interpolation':
             common_attrs.append('keyframe')
             common_attrs.append('outside')
@@ -276,8 +258,6 @@ class CvatExtractor(SourceExtractor):
         attributes = ann.get('attributes', {})
         if 'occluded' in categories[AnnotationType.label].attributes:
             attributes['occluded'] = ann.get('occluded', False)
-        if 'z_order' in categories[AnnotationType.label].attributes:
-            attributes['z_order'] = ann.get('z_order', 0)
         if 'outside' in categories[AnnotationType.label].attributes:
             attributes['outside'] = ann.get('outside', False)
         if 'keyframe' in categories[AnnotationType.label].attributes:
@@ -288,24 +268,25 @@ class CvatExtractor(SourceExtractor):
         label = ann.get('label')
         label_id = categories[AnnotationType.label].find(label)[0]
 
+        z_order = ann.get('z_order', 0)
         points = ann.get('points', [])
 
         if ann_type == 'polyline':
-            return PolyLine(points, label=label_id,
+            return PolyLine(points, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'polygon':
-            return Polygon(points, label=label_id,
+            return Polygon(points, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'points':
-            return Points(points, label=label_id,
+            return Points(points, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'box':
             x, y = points[0], points[1]
             w, h = points[2] - x, points[3] - y
-            return Bbox(x, y, w, h, label=label_id,
+            return Bbox(x, y, w, h, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
         else:
@@ -342,14 +323,8 @@ class CvatExtractor(SourceExtractor):
     def _find_image(self, file_name):
         search_paths = []
         if self._images_dir:
-            search_paths += [
-                osp.join(self._images_dir, file_name),
-                osp.join(self._images_dir, self._subset or DEFAULT_SUBSET_NAME,
-                    file_name),
-            ]
-        search_paths += [
-            osp.join(osp.dirname(self._path), file_name)
-        ]
+            search_paths += [ osp.join(self._images_dir, file_name) ]
+        search_paths += [ osp.join(osp.dirname(self._path), file_name) ]
         for image_path in search_paths:
             if osp.isfile(image_path):
                 return image_path

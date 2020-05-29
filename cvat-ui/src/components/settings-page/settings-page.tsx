@@ -4,14 +4,10 @@
 
 import './styles.scss';
 import React from 'react';
-import {
-    Row,
-    Col,
-    Tabs,
-    Icon,
-    Button,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Tabs from 'antd/lib/tabs';
+import Icon from 'antd/lib/icon';
+import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
 import { RouteComponentProps } from 'react-router';

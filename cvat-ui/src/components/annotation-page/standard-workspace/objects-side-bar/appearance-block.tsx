@@ -3,18 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Checkbox,
-    Collapse,
-    Slider,
-    Radio,
-} from 'antd';
-
 import Text from 'antd/lib/typography/Text';
-import { RadioChangeEvent } from 'antd/lib/radio';
-import { SliderValue } from 'antd/lib/slider';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import Radio, { RadioChangeEvent } from 'antd/lib/radio';
+import Slider, { SliderValue } from 'antd/lib/slider';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import Collapse from 'antd/lib/collapse';
 
 import { ColorBy } from 'reducers/interfaces';
 
@@ -24,12 +17,16 @@ interface Props {
     opacity: number;
     selectedOpacity: number;
     blackBorders: boolean;
+    showBitmap: boolean;
+    showProjections: boolean;
 
     collapseAppearance(): void;
     changeShapesColorBy(event: RadioChangeEvent): void;
     changeShapesOpacity(event: SliderValue): void;
     changeSelectedShapesOpacity(event: SliderValue): void;
     changeShapesBlackBorders(event: CheckboxChangeEvent): void;
+    changeShowBitmap(event: CheckboxChangeEvent): void;
+    changeShowProjections(event: CheckboxChangeEvent): void;
 }
 
 function AppearanceBlock(props: Props): JSX.Element {
@@ -39,11 +36,15 @@ function AppearanceBlock(props: Props): JSX.Element {
         opacity,
         selectedOpacity,
         blackBorders,
+        showBitmap,
+        showProjections,
         collapseAppearance,
         changeShapesColorBy,
         changeShapesOpacity,
         changeSelectedShapesOpacity,
         changeShapesBlackBorders,
+        changeShowBitmap,
+        changeShowProjections,
     } = props;
 
     return (
@@ -84,6 +85,18 @@ function AppearanceBlock(props: Props): JSX.Element {
                         checked={blackBorders}
                     >
                         Black borders
+                    </Checkbox>
+                    <Checkbox
+                        onChange={changeShowBitmap}
+                        checked={showBitmap}
+                    >
+                        Show bitmap
+                    </Checkbox>
+                    <Checkbox
+                        onChange={changeShowProjections}
+                        checked={showProjections}
+                    >
+                        Show projections
                     </Checkbox>
                 </div>
             </Collapse.Panel>

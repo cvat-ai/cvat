@@ -4,13 +4,8 @@
 
 import './styles.scss';
 import React from 'react';
-
-import {
-    Menu,
-    Modal,
-} from 'antd';
-
-import { ClickParam } from 'antd/lib/menu/index';
+import Menu, { ClickParam } from 'antd/lib/menu';
+import Modal from 'antd/lib/modal';
 
 import DumpSubmenu from './dump-submenu';
 import LoadSubmenu from './load-submenu';
@@ -23,7 +18,6 @@ interface Props {
 
     loaders: string[];
     dumpers: string[];
-    exporters: string[];
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
@@ -58,7 +52,6 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
 
         dumpers,
         loaders,
-        exporters,
         onClickMenu,
         dumpActivities,
         exportActivities,
@@ -138,7 +131,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
             }
             {
                 ExportSubmenu({
-                    exporters,
+                    exporters: dumpers,
                     exportActivities,
                     menuKey: Actions.EXPORT_TASK_DATASET,
                 })

@@ -3,10 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Select,
-} from 'antd';
+import Select from 'antd/lib/select';
 
 interface Props {
     value: string | null;

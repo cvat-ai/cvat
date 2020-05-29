@@ -4,19 +4,19 @@
 The CVAT module written in TypeScript language.
 It presents a canvas to viewing, drawing and editing of annotations.
 
+## Versioning
+If you make changes in this package, please do following:
+
+- After not important changes (typos, backward compatible bug fixes, refactoring) do: ``npm version patch``
+- After changing API (backward compatible new features) do: ``npm version minor``
+- After changing API (changes that break backward compatibility) do: ``npm version major``
+
 ## Commands
 - Building of the module from sources in the ```dist``` directory:
 
 ```bash
 npm run build
 npm run build -- --mode=development     # without a minification
-```
-
-- Updating of a module version:
-```bash
-npm version patch   # updated after minor fixes
-npm version minor   # updated after major changes which don't affect API compatibility with previous versions
-npm version major   # updated after major changes which affect API compatibility with previous versions
 ```
 
 ## Using
@@ -37,10 +37,34 @@ Canvas itself handles:
         EXTREME_POINTS = 'By 4 points'
     }
 
+    enum CuboidDrawingMethod {
+        CLASSIC = 'From rectangle',
+        CORNER_POINTS = 'By 4 points',
+    }
+
+    enum Mode {
+        IDLE = 'idle',
+        DRAG = 'drag',
+        RESIZE = 'resize',
+        DRAW = 'draw',
+        EDIT = 'edit',
+        MERGE = 'merge',
+        SPLIT = 'split',
+        GROUP = 'group',
+        DRAG_CANVAS = 'drag_canvas',
+        ZOOM_CANVAS = 'zoom_canvas',
+    }
+
+    interface Configuration {
+        displayAllText?: boolean;
+        undefinedAttrValue?: string;
+    }
+
     interface DrawData {
         enabled: boolean;
         shapeType?: string;
         rectDrawingMethod?: RectDrawingMethod;
+        cuboidDrawingMethod?: CuboidDrawingMethod;
         numberOfPoints?: number;
         initialState?: any;
         crosshair?: boolean;
@@ -86,10 +110,13 @@ Canvas itself handles:
         select(objectState: any): void;
 
         fitCanvas(): void;
+        bitmap(enabled: boolean): void;
         dragCanvas(enable: boolean): void;
         zoomCanvas(enable: boolean): void;
 
+        mode(): Mode;
         cancel(): void;
+        configure(configuration: Configuration): void;
     }
 ```
 
@@ -128,6 +155,11 @@ Standard JS events are used.
     - canvas.dragstop
     - canvas.zoomstart
     - canvas.zoomstop
+    - canvas.zoom
+    - canvas.fit
+    - canvas.dragshape => {id: number}
+    - canvas.resizeshape => {id: number}
+    - canvas.contextmenu => { mouseEvent: MouseEvent, objectState: ObjectState,  pointID: number }
 ```
 
 ### WEB
@@ -135,7 +167,8 @@ Standard JS events are used.
     // Create an instance of a canvas
     const canvas = new window.canvas.Canvas();
 
-    console.log('Version', window.canvas.CanvasVersion);
+    console.log('Version ', window.canvas.CanvasVersion);
+    console.log('Current mode is ', window.canvas.mode());
 
     // Put canvas to a html container
     htmlContainer.appendChild(canvas.html());
@@ -153,21 +186,25 @@ Standard JS events are used.
 
 ## API Reaction
 
-|              | IDLE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING | DRAG | ZOOM |
-|--------------|------|----------|-----------|---------|---------|---------|------|------|
-| html()       | +    | +        | +         | +       | +       | +       | +    | +    |
-| setup()      | +    | +        | +         | +       | +       | -       | +    | +    |
-| activate()   | +    | -        | -         | -       | -       | -       | -    | -    |
-| rotate()     | +    | +        | +         | +       | +       | +       | +    | +    |
-| focus()      | +    | +        | +         | +       | +       | +       | +    | +    |
-| fit()        | +    | +        | +         | +       | +       | +       | +    | +    |
-| grid()       | +    | +        | +         | +       | +       | +       | +    | +    |
-| draw()       | +    | -        | -         | -       | -       | -       | -    | -    |
-| split()      | +    | -        | +         | -       | -       | -       | -    | -    |
-| group()      | +    | +        | -         | -       | -       | -       | -    | -    |
-| merge()      | +    | -        | -         | -       | +       | -       | -    | -    |
-| fitCanvas()  | +    | +        | +         | +       | +       | +       | +    | +    |
-| dragCanvas() | +    | -        | -         | -       | -       | -       | +    | -    |
-| zoomCanvas() | +    | -        | -         | -       | -       | -       | -    | +    |
-| cancel()     | -    | +        | +         | +       | +       | +       | +    | +    |
-| setZLayer()  | +    | +        | +         | +       | +       | +       | +    | +    |
+|              | IDLE | GROUP | SPLIT | DRAW | MERGE | EDIT | DRAG | RESIZE | ZOOM_CANVAS | DRAG_CANVAS |
+|--------------|------|-------|-------|------|-------|------|------|--------|-------------|-------------|
+| html()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| setup()      | +    | +     | +     | +    | +     | +/-  | +/-  | +/-    | +           | +           |
+| activate()   | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
+| rotate()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| focus()      | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| fit()        | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| grid()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| draw()       | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
+| split()      | +    | -     | +     | -    | -     | -    | -    | -      | -           | -           |
+| group()      | +    | +     | -     | -    | -     | -    | -    | -      | -           | -           |
+| merge()      | +    | -     | -     | -    | +     | -    | -    | -      | -           | -           |
+| fitCanvas()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| dragCanvas() | +    | -     | -     | -    | -     | -    | +    | -      | -           | +           |
+| zoomCanvas() | +    | -     | -     | -    | -     | -    | -    | +      | +           | -           |
+| cancel()     | -    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| configure()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| bitmap()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+| setZLayer()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+
+You can call setup() during editing, dragging, and resizing only to update objects, not to change a frame.

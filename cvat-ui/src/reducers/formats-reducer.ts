@@ -2,21 +2,21 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { FormatsActionTypes, FormatsActions } from 'actions/formats-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 
 import { FormatsState } from './interfaces';
 
 const defaultState: FormatsState = {
-    annotationFormats: [],
-    datasetFormats: [],
+    annotationFormats: null,
     initialized: false,
     fetching: false,
 };
 
 export default (
     state: FormatsState = defaultState,
-    action: FormatsActions | AuthActions,
+    action: FormatsActions | AuthActions | boundariesActions,
 ): FormatsState => {
     switch (action.type) {
         case FormatsActionTypes.GET_FORMATS: {
@@ -32,7 +32,6 @@ export default (
                 initialized: true,
                 fetching: false,
                 annotationFormats: action.payload.annotationFormats,
-                datasetFormats: action.payload.datasetFormats,
             };
         case FormatsActionTypes.GET_FORMATS_FAILED:
             return {
@@ -40,10 +39,9 @@ export default (
                 initialized: true,
                 fetching: false,
             };
+        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
-            return {
-                ...defaultState,
-            };
+            return { ...defaultState };
         }
         default:
             return state;

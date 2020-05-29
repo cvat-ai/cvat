@@ -12,8 +12,8 @@ CocoTask = Enum('CocoTask', [
     'captions',
     'labels', # extension, does not exist in the original COCO format
     'image_info',
-    'panoptic',
-    'stuff',
+    # 'panoptic',
+    # 'stuff',
 ])
 
 class CocoPath:

@@ -13,10 +13,10 @@
 sudo add-apt-repository ppa:graphics-drivers/ppa
 sudo apt-get update
 sudo apt-cache search nvidia-*   # find latest nvidia driver
-sudo apt-get install nvidia-*    # install the nvidia driver
-sudo apt-get install mesa-common-dev
-sudo apt-get install freeglut3-dev
-sudo apt-get install nvidia-modprobe
+sudo apt-get --no-install-recommends install nvidia-*    # install the nvidia driver
+sudo apt-get --no-install-recommends install mesa-common-dev
+sudo apt-get --no-install-recommends install freeglut3-dev
+sudo apt-get --no-install-recommends install nvidia-modprobe
 ```
 
 #### Reboot your PC and verify installation by `nvidia-smi` command.

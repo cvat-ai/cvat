@@ -17,7 +17,7 @@
     const {
         Loader,
         Dumper,
-    } = require('./annotation-format.js');
+    } = require('./annotation-formats.js');
     const {
         ScriptingError,
         DataError,
@@ -247,6 +247,32 @@
         return result;
     }
 
+    function importAnnotations(session, data) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).collection.import(data);
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
+    }
+
+    function exportAnnotations(session) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).collection.export();
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
+    }
+
     async function exportDataset(session, format) {
         if (!(format instanceof String || typeof format === 'string')) {
             throw new ArgumentError(
@@ -332,6 +358,8 @@
         selectObject,
         uploadAnnotations,
         dumpAnnotations,
+        importAnnotations,
+        exportAnnotations,
         exportDataset,
         undoActions,
         redoActions,

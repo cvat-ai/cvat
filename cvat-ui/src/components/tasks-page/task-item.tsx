@@ -5,19 +5,14 @@
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
-
 import Text from 'antd/lib/typography/Text';
-import {
-    Col,
-    Row,
-    Button,
-    Icon,
-    Progress,
-    Dropdown,
-    Tooltip,
-    Modal,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Button from 'antd/lib/button';
+import Icon from 'antd/lib/icon';
+import Dropdown from 'antd/lib/dropdown';
+import Tooltip from 'antd/lib/tooltip';
+import Modal from 'antd/lib/modal';
+import Progress from 'antd/lib/progress';
 import moment from 'moment';
 
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
@@ -189,7 +184,11 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                             type='primary'
                             size='large'
                             ghost
-                            onClick={(): void => history.push(`/tasks/${id}`)}
+                            href={`/tasks/${id}`}
+                            onClick={(e: React.MouseEvent): void => {
+                                e.preventDefault();
+                                history.push(`/tasks/${id}`)
+                            }}
                         >
                             Open
                         </Button>

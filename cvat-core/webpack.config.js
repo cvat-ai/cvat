@@ -46,13 +46,33 @@ const webConfig = {
                 options: {
                     presets: [
                         ['@babel/preset-env', {
-                            targets: '> 2.5%', // https://github.com/browserslist/browserslist
+                            targets: '> 2.5%',
                         }],
                     ],
                     sourceType: 'unambiguous',
                 },
             },
-        }],
+        }, {
+            test: /3rdparty\/.*\.worker\.js$/,
+            use: {
+                loader: 'worker-loader',
+                options: {
+                    publicPath: '/static/engine/js/3rdparty/',
+                    name: '[name].js',
+                },
+            },
+        }, {
+            test: /\.worker\.js$/,
+            exclude: /3rdparty/,
+            use: {
+                loader: 'worker-loader',
+                options: {
+                    publicPath: '/static/engine/js/',
+                    name: '[name].js',
+                },
+            },
+        },
+        ],
     },
 };
 

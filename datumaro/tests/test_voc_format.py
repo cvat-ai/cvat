@@ -189,14 +189,14 @@ class VocExtractorTest(TestCase):
                             for l in VOC.VocLabel if l.value % 2 == 1
                         ]
                     ),
-
-                    DatasetItem(id='2007_000002', subset='test')
                 ])
 
         with TestDir() as test_dir:
             generate_dummy_voc(test_dir)
-            parsed_dataset = VocClassificationExtractor(test_dir)
-            compare_datasets(self, DstExtractor(), parsed_dataset)
+
+            parsed_train = VocClassificationExtractor(
+                osp.join(test_dir, 'ImageSets', 'Main', 'train.txt'))
+            compare_datasets(self, DstExtractor(), parsed_train)
 
     def test_can_load_voc_det(self):
         class DstExtractor(TestExtractorBase):
@@ -229,14 +229,13 @@ class VocExtractorTest(TestCase):
                             ),
                         ]
                     ),
-
-                    DatasetItem(id='2007_000002', subset='test')
                 ])
 
         with TestDir() as test_dir:
             generate_dummy_voc(test_dir)
-            parsed_dataset = VocDetectionExtractor(test_dir)
-            compare_datasets(self, DstExtractor(), parsed_dataset)
+            parsed_train = VocDetectionExtractor(
+                osp.join(test_dir, 'ImageSets', 'Main', 'train.txt'))
+            compare_datasets(self, DstExtractor(), parsed_train)
 
     def test_can_load_voc_segm(self):
         class DstExtractor(TestExtractorBase):
@@ -250,14 +249,13 @@ class VocExtractorTest(TestCase):
                             ),
                         ]
                     ),
-
-                    DatasetItem(id='2007_000002', subset='test')
                 ])
 
         with TestDir() as test_dir:
             generate_dummy_voc(test_dir)
-            parsed_dataset = VocSegmentationExtractor(test_dir)
-            compare_datasets(self, DstExtractor(), parsed_dataset)
+            parsed_train = VocSegmentationExtractor(
+                osp.join(test_dir, 'ImageSets', 'Segmentation', 'train.txt'))
+            compare_datasets(self, DstExtractor(), parsed_train)
 
     def test_can_load_voc_layout(self):
         class DstExtractor(TestExtractorBase):
@@ -285,14 +283,13 @@ class VocExtractorTest(TestCase):
                             )
                         ]
                     ),
-
-                    DatasetItem(id='2007_000002', subset='test')
                 ])
 
         with TestDir() as test_dir:
             generate_dummy_voc(test_dir)
-            parsed_dataset = VocLayoutExtractor(test_dir)
-            compare_datasets(self, DstExtractor(), parsed_dataset)
+            parsed_train = VocLayoutExtractor(
+                osp.join(test_dir, 'ImageSets', 'Layout', 'train.txt'))
+            compare_datasets(self, DstExtractor(), parsed_train)
 
     def test_can_load_voc_action(self):
         class DstExtractor(TestExtractorBase):
@@ -316,14 +313,13 @@ class VocExtractorTest(TestCase):
                             ),
                         ]
                     ),
-
-                    DatasetItem(id='2007_000002', subset='test')
                 ])
 
         with TestDir() as test_dir:
             generate_dummy_voc(test_dir)
-            parsed_dataset = VocActionExtractor(test_dir)
-            compare_datasets(self, DstExtractor(), parsed_dataset)
+            parsed_train = VocActionExtractor(
+                osp.join(test_dir, 'ImageSets', 'Action', 'train.txt'))
+            compare_datasets(self, DstExtractor(), parsed_train)
 
 class VocConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
@@ -421,11 +417,11 @@ class VocConverterTest(TestCase):
                     DatasetItem(id=1, subset='a', annotations=[
                         # overlapping masks, the first should be truncated
                         # the second and third are different instances
+                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
+                            z_order=3),
                         Mask(image=np.array([[0, 1, 1, 1, 0]]), label=4,
                             z_order=1),
                         Mask(image=np.array([[1, 1, 0, 0, 0]]), label=3,
-                            z_order=2),
-                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
                             z_order=2),
                     ]),
                 ])
@@ -440,6 +436,75 @@ class VocConverterTest(TestCase):
                             group=2),
                         Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
                             group=3),
+                    ]),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                VocSegmentationConverter(label_map='voc'), test_dir,
+                target_dataset=DstExtractor())
+
+    def test_can_save_voc_segm_unpainted(self):
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        # overlapping masks, the first should be truncated
+                        # the second and third are different instances
+                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
+                            z_order=3),
+                        Mask(image=np.array([[0, 1, 1, 1, 0]]), label=4,
+                            z_order=1),
+                        Mask(image=np.array([[1, 1, 0, 0, 0]]), label=3,
+                            z_order=2),
+                    ]),
+                ])
+
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Mask(image=np.array([[0, 0, 1, 0, 0]]), label=4,
+                            group=1),
+                        Mask(image=np.array([[1, 1, 0, 0, 0]]), label=3,
+                            group=2),
+                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
+                            group=3),
+                    ]),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                VocSegmentationConverter(label_map='voc', apply_colormap=False),
+                test_dir, target_dataset=DstExtractor())
+
+    def test_can_save_voc_segm_with_many_instances(self):
+        def bit(x, y, shape):
+            mask = np.zeros(shape)
+            mask[y, x] = 1
+            return mask
+
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Mask(image=bit(x, y, shape=[10, 10]),
+                            label=self._label(VOC.VocLabel(3).name),
+                            z_order=10 * y + x + 1
+                        )
+                        for y in range(10) for x in range(10)
+                    ]),
+                ])
+
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, subset='a', annotations=[
+                        Mask(image=bit(x, y, shape=[10, 10]),
+                            label=self._label(VOC.VocLabel(3).name),
+                            group=10 * y + x + 1
+                        )
+                        for y in range(10) for x in range(10)
                     ]),
                 ])
 
@@ -653,7 +718,7 @@ class VocConverterTest(TestCase):
 
             def categories(self):
                 label_cat = LabelCategories()
-                label_cat.add('label_1')
+                label_cat.add('Label_1') # should become lowercase
                 label_cat.add('label_2')
                 return {
                     AnnotationType.label: label_cat,
@@ -757,16 +822,26 @@ class VocImportTest(TestCase):
 
             dataset = Project.import_from(test_dir, 'voc').make_dataset()
 
-            self.assertEqual(len(VOC.VocTask), len(dataset.sources))
+            self.assertEqual(len(VOC.VocTask) * len(subsets),
+                len(dataset.sources))
             self.assertEqual(set(subsets), set(dataset.subsets()))
             self.assertEqual(
                 sum([len(s) for _, s in subsets.items()]),
                 len(dataset))
 
+    def test_can_detect_voc(self):
+        with TestDir() as test_dir:
+            generate_dummy_voc(test_dir)
+
+            dataset_found = VocImporter.detect(test_dir)
+
+            self.assertTrue(dataset_found)
+
 class VocFormatTest(TestCase):
     def test_can_write_and_parse_labelmap(self):
         src_label_map = VOC.make_voc_label_map()
         src_label_map['qq'] = [None, ['part1', 'part2'], ['act1', 'act2']]
+        src_label_map['ww'] = [(10, 20, 30), [], ['act3']]
 
         with TestDir() as test_dir:
             file_path = osp.join(test_dir, 'test.txt')

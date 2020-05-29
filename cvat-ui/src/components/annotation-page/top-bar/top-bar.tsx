@@ -4,15 +4,11 @@
 
 import React from 'react';
 
-import {
-    Row,
-    Col,
-    Layout,
-    InputNumber,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import InputNumber from 'antd/lib/input-number';
 import { SliderValue } from 'antd/lib/slider';
 
+import { Workspace } from 'reducers/interfaces';
 import LeftGroup from './left-group';
 import RightGroup from './right-group';
 import PlayerNavigation from './player-navigation';
@@ -23,11 +19,23 @@ interface Props {
     saving: boolean;
     savingStatuses: string[];
     frameNumber: number;
+    frameFilename: string;
     inputFrameRef: React.RefObject<InputNumber>;
     startFrame: number;
     stopFrame: number;
     undoAction?: string;
     redoAction?: string;
+    workspace: Workspace;
+    saveShortcut: string;
+    undoShortcut: string;
+    redoShortcut: string;
+    playPauseShortcut: string;
+    nextFrameShortcut: string;
+    previousFrameShortcut: string;
+    forwardShortcut: string;
+    backwardShortcut: string;
+    focusFrameInputShortcut: string;
+    changeWorkspace(workspace: Workspace): void;
     showStatistics(): void;
     onSwitchPlay(): void;
     onSaveAnnotation(): void;
@@ -38,7 +46,7 @@ interface Props {
     onFirstFrame(): void;
     onLastFrame(): void;
     onSliderChange(value: SliderValue): void;
-    onInputChange(value: number | undefined): void;
+    onInputChange(value: number): void;
     onURLIconClick(): void;
     onUndoClick(): void;
     onRedoClick(): void;
@@ -52,10 +60,22 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         redoAction,
         playing,
         frameNumber,
+        frameFilename,
         inputFrameRef,
         startFrame,
         stopFrame,
+        workspace,
+        saveShortcut,
+        undoShortcut,
+        redoShortcut,
+        playPauseShortcut,
+        nextFrameShortcut,
+        previousFrameShortcut,
+        forwardShortcut,
+        backwardShortcut,
+        focusFrameInputShortcut,
         showStatistics,
+        changeWorkspace,
         onSwitchPlay,
         onSaveAnnotation,
         onPrevFrame,
@@ -72,42 +92,54 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Layout.Header className='cvat-annotation-header'>
-            <Row type='flex' justify='space-between'>
-                <LeftGroup
-                    saving={saving}
-                    savingStatuses={savingStatuses}
-                    onSaveAnnotation={onSaveAnnotation}
-                    undoAction={undoAction}
-                    redoAction={redoAction}
-                    onUndoClick={onUndoClick}
-                    onRedoClick={onRedoClick}
-                />
-                <Col className='cvat-annotation-header-player-group'>
-                    <Row type='flex' align='middle'>
-                        <PlayerButtons
-                            playing={playing}
-                            onPrevFrame={onPrevFrame}
-                            onNextFrame={onNextFrame}
-                            onForward={onForward}
-                            onBackward={onBackward}
-                            onFirstFrame={onFirstFrame}
-                            onLastFrame={onLastFrame}
-                            onSwitchPlay={onSwitchPlay}
-                        />
-                        <PlayerNavigation
-                            startFrame={startFrame}
-                            stopFrame={stopFrame}
-                            frameNumber={frameNumber}
-                            inputFrameRef={inputFrameRef}
-                            onSliderChange={onSliderChange}
-                            onInputChange={onInputChange}
-                            onURLIconClick={onURLIconClick}
-                        />
-                    </Row>
-                </Col>
-                <RightGroup showStatistics={showStatistics} />
-            </Row>
-        </Layout.Header>
+        <Row type='flex' justify='space-between'>
+            <LeftGroup
+                saving={saving}
+                savingStatuses={savingStatuses}
+                undoAction={undoAction}
+                redoAction={redoAction}
+                saveShortcut={saveShortcut}
+                undoShortcut={undoShortcut}
+                redoShortcut={redoShortcut}
+                onSaveAnnotation={onSaveAnnotation}
+                onUndoClick={onUndoClick}
+                onRedoClick={onRedoClick}
+            />
+            <Col className='cvat-annotation-header-player-group'>
+                <Row type='flex' align='middle'>
+                    <PlayerButtons
+                        playing={playing}
+                        playPauseShortcut={playPauseShortcut}
+                        nextFrameShortcut={nextFrameShortcut}
+                        previousFrameShortcut={previousFrameShortcut}
+                        forwardShortcut={forwardShortcut}
+                        backwardShortcut={backwardShortcut}
+                        onPrevFrame={onPrevFrame}
+                        onNextFrame={onNextFrame}
+                        onForward={onForward}
+                        onBackward={onBackward}
+                        onFirstFrame={onFirstFrame}
+                        onLastFrame={onLastFrame}
+                        onSwitchPlay={onSwitchPlay}
+                    />
+                    <PlayerNavigation
+                        startFrame={startFrame}
+                        stopFrame={stopFrame}
+                        frameNumber={frameNumber}
+                        frameFilename={frameFilename}
+                        focusFrameInputShortcut={focusFrameInputShortcut}
+                        inputFrameRef={inputFrameRef}
+                        onSliderChange={onSliderChange}
+                        onInputChange={onInputChange}
+                        onURLIconClick={onURLIconClick}
+                    />
+                </Row>
+            </Col>
+            <RightGroup
+                workspace={workspace}
+                changeWorkspace={changeWorkspace}
+                showStatistics={showStatistics}
+            />
+        </Row>
     );
 }

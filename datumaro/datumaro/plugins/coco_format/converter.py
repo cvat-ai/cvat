@@ -1,5 +1,5 @@
 
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,21 +17,12 @@ from datumaro.components.extractor import (DEFAULT_SUBSET_NAME,
     AnnotationType, Points
 )
 from datumaro.components.cli_plugin import CliPlugin
-from datumaro.util import find
+from datumaro.util import find, cast
 from datumaro.util.image import save_image
 import datumaro.util.mask_tools as mask_tools
 import datumaro.util.annotation_tools as anno_tools
 
 from .format import CocoTask, CocoPath
-
-
-def _cast(value, type_conv, default=None):
-    if value is None:
-        return default
-    try:
-        return type_conv(value)
-    except Exception:
-        return default
 
 
 SegmentationMode = Enum('SegmentationMode', ['guess', 'polygons', 'mask'])
@@ -82,7 +73,7 @@ class _TaskConverter:
             'id': self._get_image_id(item),
             'width': int(w),
             'height': int(h),
-            'file_name': _cast(filename, str, ''),
+            'file_name': cast(filename, str, ''),
             'license': 0,
             'flickr_url': '',
             'coco_url': '',
@@ -162,8 +153,8 @@ class _InstancesConverter(_TaskConverter):
         for idx, cat in enumerate(label_categories.items):
             self.categories.append({
                 'id': 1 + idx,
-                'name': _cast(cat.name, str, ''),
-                'supercategory': _cast(cat.parent, str, ''),
+                'name': cast(cat.name, str, ''),
+                'supercategory': cast(cat.parent, str, ''),
             })
 
     @classmethod
@@ -309,7 +300,7 @@ class _InstancesConverter(_TaskConverter):
         elem = {
             'id': self._get_ann_id(ann),
             'image_id': self._get_image_id(item),
-            'category_id': _cast(ann.label, int, -1) + 1,
+            'category_id': cast(ann.label, int, -1) + 1,
             'segmentation': segmentation,
             'area': float(area),
             'bbox': list(map(float, bbox)),
@@ -334,10 +325,11 @@ class _KeypointsConverter(_InstancesConverter):
         for idx, label_cat in enumerate(label_categories.items):
             cat = {
                 'id': 1 + idx,
-                'name': _cast(label_cat.name, str, ''),
-                'supercategory': _cast(label_cat.parent, str, ''),
+                'name': cast(label_cat.name, str, ''),
+                'supercategory': cast(label_cat.parent, str, ''),
                 'keypoints': [],
                 'skeleton': [],
+
             }
 
             if point_categories is not None:
@@ -345,7 +337,7 @@ class _KeypointsConverter(_InstancesConverter):
                 if kp_cat is not None:
                     cat.update({
                         'keypoints': [str(l) for l in kp_cat.labels],
-                        'skeleton': [int(i) for i in kp_cat.adjacent],
+                        'skeleton': [list(map(int, j)) for j in kp_cat.joints],
                     })
             self.categories.append(cat)
 
@@ -360,8 +352,7 @@ class _KeypointsConverter(_InstancesConverter):
             instance = [points, [], None, points.get_bbox()]
             elem = super().convert_instance(instance, item)
             elem.update(self.convert_points_object(points))
-            if elem:
-                self.annotations.append(elem)
+            self.annotations.append(elem)
 
         # Create annotations for complete instance + keypoints annotations
         super().save_annotations(item)
@@ -372,9 +363,9 @@ class _KeypointsConverter(_InstancesConverter):
         solitary_points = []
 
         for g_id, group in groupby(annotations, lambda a: a.group):
-            if g_id and not cls.find_instance_anns(group):
+            if not g_id or g_id and not cls.find_instance_anns(group):
                 group = [a for a in group if a.type == AnnotationType.points]
-            solitary_points.extend(group)
+                solitary_points.extend(group)
 
         return solitary_points
 
@@ -398,7 +389,8 @@ class _KeypointsConverter(_InstancesConverter):
 
     def convert_instance(self, instance, item):
         points_ann = find(item.annotations, lambda x: \
-            x.type == AnnotationType.points and x.group == instance[0].group)
+            x.type == AnnotationType.points and \
+            instance[0].group and x.group == instance[0].group)
         if not points_ann:
             return None
 
@@ -416,8 +408,8 @@ class _LabelsConverter(_TaskConverter):
         for idx, cat in enumerate(label_categories.items):
             self.categories.append({
                 'id': 1 + idx,
-                'name': _cast(cat.name, str, ''),
-                'supercategory': _cast(cat.parent, str, ''),
+                'name': cast(cat.name, str, ''),
+                'supercategory': cast(cat.parent, str, ''),
             })
 
     def save_annotations(self, item):
@@ -472,8 +464,8 @@ class _Converter:
         self._save_images = save_images
 
         assert segmentation_mode is None or \
-            segmentation_mode in SegmentationMode or \
-            isinstance(segmentation_mode, str)
+            isinstance(segmentation_mode, str) or \
+            segmentation_mode in SegmentationMode
         if segmentation_mode is None:
             segmentation_mode = SegmentationMode.guess
         if isinstance(segmentation_mode, str):
@@ -504,7 +496,7 @@ class _Converter:
     def _get_image_id(self, item):
         image_id = self._image_ids.get(item.id)
         if image_id is None:
-            image_id = _cast(item.id, int, len(self._image_ids) + 1)
+            image_id = cast(item.id, int, len(self._image_ids) + 1)
             self._image_ids[item.id] = image_id
         return image_id
 
@@ -522,7 +514,7 @@ class _Converter:
         filename += CocoPath.IMAGE_EXT
         path = osp.join(self._images_dir, filename)
         save_image(path, image)
-        return filename
+        return path
 
     def convert(self):
         self._make_dirs()
@@ -544,7 +536,7 @@ class _Converter:
             for item in subset:
                 filename = ''
                 if item.has_image:
-                    filename = item.image.filename
+                    filename = item.image.path
                 if self._save_images:
                     if item.has_image:
                         filename = self._save_image(item)

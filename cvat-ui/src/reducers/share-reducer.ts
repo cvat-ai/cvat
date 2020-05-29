@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { BoundariesActionTypes, boundariesActions } from 'actions/boundaries-actions';
 import { ShareActionTypes, ShareActions } from 'actions/share-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import {
@@ -20,7 +21,7 @@ const defaultState: ShareState = {
 
 export default function (
     state: ShareState = defaultState,
-    action: ShareActions | AuthActions,
+    action: ShareActions | AuthActions | boundariesActions,
 ): ShareState {
     switch (action.type) {
         case ShareActionTypes.LOAD_SHARE_DATA_SUCCESS: {
@@ -48,10 +49,9 @@ export default function (
                 ...state,
             };
         }
+        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
-            return {
-                ...defaultState,
-            };
+            return { ...defaultState };
         }
         default:
             return state;

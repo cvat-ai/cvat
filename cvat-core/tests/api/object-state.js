@@ -289,7 +289,7 @@ describe('Feature: delete object', () => {
         const task = (await window.cvat.tasks.get({ id: 100 }))[0];
         const annotationsBefore = await task.annotations.get(0);
         const { length } = annotationsBefore;
-        await annotationsBefore[0].delete();
+        await annotationsBefore[0].delete(0);
         const annotationsAfter = await task.annotations.get(0);
         expect(annotationsAfter).toHaveLength(length - 1);
     });
@@ -298,7 +298,7 @@ describe('Feature: delete object', () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         const annotationsBefore = await task.annotations.get(0);
         const { length } = annotationsBefore;
-        await annotationsBefore[0].delete();
+        await annotationsBefore[0].delete(0);
         const annotationsAfter = await task.annotations.get(0);
         expect(annotationsAfter).toHaveLength(length - 1);
     });
