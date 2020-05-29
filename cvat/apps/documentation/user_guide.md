@@ -37,7 +37,6 @@
   - [Filter](#filter)
   - [Analytics](#analytics)
   - [Shortcuts](#shortcuts)
-  - [Hints](#hints)
 
 # User's guide
 
@@ -959,8 +958,6 @@ Enables / disables the display of auxiliary perspective lines. Only relevant for
 
 ![](static/documentation/images/image090_detrac.jpg)
 
----
-
 ## Shape mode (advanced)
 
 Basic operations in the mode were described in section [shape mode (basics)](#shape-mode-basics).
@@ -1379,75 +1376,78 @@ Shapes that don't have ``group_id``, will be highlighted in white.
 There are some reasons to use the feature:
 
 1. When you use a filter, objects that don't match the filter will be hidden.
-1. Fast navigation between frames that have an object of interest. Use
-``Left Arrow`` / ``Right Arrow`` keys for the purpose. If the filter is empty,
-the arrows go to previous/next frames which contain any objects.
+1. Fast navigation between the frames that have an object of interest. Use
+``Left Arrow`` / ``Right Arrow`` keys for this purpose. If there are no objects matching the filter,
+the will go to arrows the previous/next frames which contains any objects.
 1. The list contains frequently used and recent filters.
 
-To use the functionality, it is enough to specify a value inside ``Filter`` text
-box and defocus the text box (for example, click on the image). After that, the
-filter will be applied.
+To use the function, it is enough to specify a value inside the ``Filter`` text
+field and press ``Enter``. After that, the filter will be applied.
 
 ---
-In the trivial case, the correct filter must match the template: ``label[prop operator "value"]``
+**Supported properties:**
 
-``label`` is a type of an object (e.g. _person, car, face_, etc.). If the type isn't important, you can use ``*``.
+| Properties  | Supported values                  | Description                                                       |
+|--           |--                                 | --                                                                |
+| ``width``   |number of px or ``height``         | shape width                                                       |
+| ``height``  |number of px or ``width``          | shape height                                                      |
+| ``label``   |``"text"``  or ``["text"]``        | label name                                                        |
+| ``serverID``| number                            | ID of the object on server <br> (You can find out by forming a link to the object through the Action menu)|
+| ``clientID``| number                            | ID of the object in your client (indicated on the objects sidebar)|
+| ``type``    |``"shape"``, ``"track"``, ``"tag"``| type of object                                                    |
+| ``shape``   |``"rectangle"``,``"polygon"``, <br>``"polyline"``,``"points"``| type of shape                          |
+| ``occluded``|``true`` or ``false``              | occluded properties                                               |
+| ``attr``    |``"text"``                         | attribute name                                                    |
 
-``prop`` is a property which should be filtered. The following items are available:
+**Supported operators:**
 
-- ``id`` — identifier of an object. It helps to find a specific object easily
-in case of huge number of objects and images or frames.
-- ``type`` — an annotation type. Possible values: ``annotation``, ``interpolation``
-- ``lock`` accepts ``true`` and ``false`` values. It can be used to hide all locked objects.
-- ``occluded`` accepts ``true`` and ``false`` values. It can be used to hide all occluded objects.
-- ``attr`` is a prefix to access attributes of an object. For example, it is possible to
-access _race_ attribute. For the purpose you should specify
-- ``attr/race``. To access all attributes, it is necessary to write ``attr/*``.
+``==`` - Equally; ``!=`` - Not equal; ``>``  - More; ``>=`` - More or equal; ``<``  - Less; ``<=`` - Less or equal;
+``()`` - Brackets; ``&``  - And; ``|``- Or.
 
-``operator`` can be ``=`` (equal), ``!=`` (not equal), ``<`` (less), ``>``
-(more), ``<=`` (less or equal), ``>=`` (more or equal).
-
-``"value"`` — value of an attribute or a property. It has to be specified in quotes.
-
----
-
-| Example                        | Description                                                   |
-| -------------------------------|-------------                                                  |
-| ``face``                       | all faces                                                     |
-| ``*[id=4]``                    | object with id #4                                             |
-| ``*[type="annotation"]``       | annotated objects only                                        |
-| ``car[occluded="true"]``       | cars with _occluded_ property                                 |
-| ``*[lock!="true"]``            | all unlocked objects                                          |
-| ``car[attr/parked="true"]``    | parked cars                                                   |
-| ``*[attr/*="__undefined__"]``  | any objects with ``__undefined__`` value of an attribute      |
-| ``*[width<300 or height<300]`` | shape less than 300 pixels wide and more than 200 pixels high |
+If you have double quotes in your query string, please escape them using backslash: ``\"`` (see the latest example)
+All properties and values are case-sensitive. CVAT uses json queries to perform search.
 
 ---
 
-The functionality allows to create more complex conditions. Several filters can
-be combined by ``or``, ``and``, ``|`` operators. Operators ``or``, ``and`` can
-be applied inside square brackets. ``|`` operator (union) can be applied
-outside of square brackets.
+**Examples filters**
 
-| Example                                                                          | Description                                      |
-| --------------------------------------------------------                         |-------------                                     |
-| ``person[attr/age>="25" and attr/age<="35"]``                                    | people with age between 25 and 35.               |
-| ``face[attr/glass="sunglass" or attr/glass="no"]``                               | faces with sunglasses or without glasses at all. |
-| ``person[attr/race="asian"]`` \| ``car[attr/model="bmw" or attr/model="mazda"]`` | asian persons or bmw or mazda cars.              |
+- ``label=="car" | label==["road sign"]`` - this filter will show only objects with the car or road sign label.
+- ``shape == "polygon"`` - this filter will show only polygons.
+- ``width >= height`` - this filter will show only those objects whose width will be greater than
+  or equal to the height.
+- ``attr["color"] == "black"`` - this filter will show objects whose color attribute is black.
+- ``clientID == 50`` - this filter will show the object with id equal to 50 (e.g. rectangle 50).
+- ``(label=="car" & attr["parked"]==true) | (label=="pedestrian" & width > 150)`` - this filter will display objects
+  with the “car” label and the parking attribute enabled or objects with the “pedestrian” label with a height of more
+  than 150 pixels
+- ``(( label==["car \"mazda\""]) | (attr["parked"]==true & width > 150)) & (height > 150 & (clientID == serverID)))`` -
+  This filter will show objects with the label "car" mazda "" or objects that have the parked attribute turned on
+  and have a width of more than 150 pixels, and those listed should have a height of more than 150 pixels
+  and their clientID is equal to serverID.
+
+**Filter history**
+
+![](static/documentation/images/image175.jpg)
+
+You can add previously entered filters and combine them. To do so, click on the input field and a list of previously
+entered filters will open. Click on the filters to add them to the input field.
+Combined filters occur with the "or" operator.
+
+---
 
 ## Analytics
 
-If your CVAT instance is created with analytics support, you can press the
-"analytics" button in dashboard, a new tab with analytics and journals will
-be opened.
+If your CVAT instance was created with analytics support, you can press the ``Analytics`` button in the dashboard
+and analytics and journals will be opened in a new tab.
 
-![](static/documentation/images/image113_detrac.jpg)
+![](static/documentation/images/image113.jpg)
 
-It allows you to see how much working time every user spend on each task and how much they did, over any time range.
+The analytics allows you to see how much time every user spends on each task
+and how much work they did over any time range.
 
 ![](static/documentation/images/image097.jpg)
 
-It also has activity graph which can be modified with number of users shown and timeframe.
+It also has an activity graph which can be modified with a number of users shown and a timeframe.
 
 ![](static/documentation/images/image096.jpg)
 
@@ -1457,70 +1457,68 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 
 ![](static/documentation/images/image075.jpg)
 
-| Shortcut                         | Common                                                                     |
-|-----------------------           |------------------------------                                              |
-| ``F1``                           | open help                                                                  |
-| ``F1`` in dashboard              | open page with documentation                                               |
-| ``F2``                           | open settings                                                              |
-| ``L``                            | lock/unlock an active shape                                                |
-| ``L+T``                          | lock/unlock all shapes on the current frame                                |
-| ``Q`` or ``Num/``                | set occluded property for an active shape                                  |
-| ``N``                            | start/stop draw mode                                                       |
-| ``Esc``                          | close draw mode without create                                             |
-| ``Ctrl+<number>``                | change type of an active shape                                             |
-| ``Shift+<number>``               | change type of new shape by default                                        |
-| `` Alt + >``                     | switch next default shape type                                             |
-| ``Alt + <``                      | switch previous default shape type                                         |
-| ``Enter``                        | change color of active shape                                               |
-| ``H``                            | hide active shape                                                          |
-| ``T+H``                          | hide all shapes                                                            |
-| ``J``                            | hide labels with attributes on every frame                                 |
-| ``Delete``                       | delete an active shape                                                     |
-| ``Shift+Delete``                 | delete an active shape even if it is locked                                |
-| ``F``                            | go to next frame                                                           |
-| ``D``                            | go to previous frame                                                       |
-| ``V``                            | go forward with a predefined step                                          |
-| ``C``                            | go backward with a predefined step                                         |
-| ``~``                            | focus to ``go to frame`` element                                           |
-| ``Ctrl + R``                     | clockwise image rotation                                                   |
-| ``Ctrl + Shift + R``             | counter clockwise image rotation                                           |
-| ``Ctrl+C``                       | copy an active shape                                                       |
-| ``Ctrl+V``                       | insert a copied shape                                                      |
-| ``Ctrl+Z``                       | undo previous action                                                       |
-| ``Ctrl+Shift+Z``/``Ctrl+Y``      | redo previous action                                                       |
-| ``Shift+B``/``Alt+B``            | increase/decrease brightness on an image                                   |
-| ``Shift+C``/``Alt+C``            | increase/decrease contrast on an image                                     |
-| ``Shift+S``/``Alt+S``            | increase/decrease saturation on an image                                   |
-| ``Alt + G + '+', Alt + G + '-'`` | increase/decrease grid opacity                                             |
-| ``Alt + G + Enter``              | change grid color                                                          |
-| ``Ctrl+S``                       | save job                                                                   |
-| ``Ctrl+B``                       | propagate active shape                                                     |
-| ``+``/``-``                      | change relative order of highlighted box (if Z-Order is enabled)           |
-|                                  | **Interpolation**                                                          |
-| ``M``                            | enter/apply merge mode                                                     |
-| ``Esc``                          | close merge mode without apply the merge                                   |
-| ``R``                            | go to the next key frame of an active shape                                |
-| ``E``                            | go to the previous key frame of an active shape                            |
-| ``O``                            | change attribute of an active shape to "Outside the frame"                 |
-| ``K``                            | mark current frame as key frame on an active shape                         |
-|                                  | **Attribute annotation mode**                                              |
-| ``Shift+Enter``                  | enter/leave Attribute Annotation mode                                      |
-| ``Up Arrow``                     | go to the next attribute (up)                                              |
-| ``Down Arrow``                   | go to the next attribute (down)                                            |
-| ``Tab``                          | go to the next annotated object                                            |
-| ``Shift+Tab``                    | go to the previous annotated object                                        |
-| ``<number>``                     | assign a corresponding value to the current attribute                      |
-|                                  | **Grouping**                                                               |
-| ``G``                            | switch group mode                                                          |
-| ``Esc``                          | close group mode                                                           |
-| ``Shift+G``                      | reset group for selected shapes                                            |
-|                                  | **Filter**                                                                 |
-| ``Left Arrow``                   | go to the previous frame which corresponds to the specified filter value   |
-| ``Right Arrow``                  | go to the next frame which corresponds to the specified filter value       |
-
-## Hints
-Hold ``Mouse Wheel`` to move frame (for example, while drawing)
-
-Hold ``Ctrl`` when shape is active and fix it.
-
-Hold ``Ctrl`` when paste shape from buffer for multiple pasting.
+| Shortcut                       | Common                                                                          |
+|--------------------------------|---------------------------------------------------------------------------------|
+|                                | _Main functions_                                                                |
+| ``F2``                         | Open/hide the list of available shortcuts                                       |
+| ``F3``                         | Go to the settings page or go back                                              |
+| ``Ctrl+S``                     | Go to the settings page or go back                                              |
+| ``Ctrl+Z``                     | Cancel the latest action related with objects                                   |
+| ``Ctrl+Shift+Z`` or ``Ctrl+Y`` | Cancel undo action                                                              |
+| Hold ``Mouse Wheel``           | To move an image frame (for example, while drawing)                             |
+|                                | _Player_                                                                        |
+| ``F``                          | Go to the next frame                                                            |
+| ``D``                          | Go to the previous frame                                                        |
+| ``V``                          | Go forward with a step                                                          |
+| ``C``                          | Go backward with a step                                                         |
+| ``Right``                      | Search the next frame that satisfies to the filters <br> or next frame which contain any objects|
+| ``Left``                       | Search the previous frame that satisfies to the filters <br> or previous frame which contain any objects|
+| ``Space``                      | Start/stop automatic changing frames                                            |
+| `` ` `` or ``~``               | Focus on the element to change the current frame                                |
+|                                | _Modes_                                                                         |
+| ``N``                          | Repeat the latest procedure of drawing with the same parameters                 |
+| ``M``                          | Activate or deactivate mode to merging shapes                                   |
+| ``G``                          | Activate or deactivate mode to grouping shapes                                  |
+| ``Shift+G``                    | Reset group for selected shapes (in group mode)                                 |
+| ``Esc``                        | Cancel any active canvas mode                                                   |
+|                                | _Image operations_                                                              |
+| ``Ctrl+R``                     | Change image angle (add 90 degrees)                                             |
+| ``Ctrl+Shift+R``               | Change image angle (substract 90 degrees)                                       |
+| ``Shift+B+=``                  | Increase brightness level for the image                                         |
+| ``Shift+B+-``                  | Decrease brightness level for the image                                         |
+| ``Shift+C+=``                  | Increase contrast level for the image                                           |
+| ``Shift+C+-``                  | Decrease contrast level for the image                                           |
+| ``Shift+S+=``                  | Increase saturation level for the image                                         |
+| ``Shift+S+-``                  | Increase contrast level for the image                                           |
+| ``Shift+G+=``                  | Make the grid more visible                                                      |
+| ``Shift+G+-``                  | Make the grid less visible                                                      |
+| ``Shift+G+Enter``              | Set another color for the image grid                                            |
+|                                | _Operations with objects_                                                       |
+| ``Ctrl``                       | Switch automatic bordering for polygons and polylines during drawing/editing    |
+| Hold ``Ctrl``                  | When the shape is active and fix it                                             |
+| ``Ctrl+Double-Click`` on point | Deleting a point (used when hovering over a point of polygon, polyline, points) |
+| ``Shift+Double-Click`` on point| Editing a shape (used when hovering over a point of polygon, polyline or points)|
+| ``Right-Click`` on shape       | Display of an object element from objects sidebar                               |
+| ``T+L``                        | Change locked state for all objects in the sidebar                              |
+| ``L``                          | Change locked state for an active object                                        |
+| ``T+H``                        | Change hidden state for objects in the sidebar                                  |
+| ``H``                          | Change hidden state for an active object                                        |
+| ``Q`` or ``/``                 | Change occluded property for an active object                                   |
+| ``Del`` or ``Shift+Del``       | Delete an active object. Use shift to force delete of locked objects            |
+| ``-`` or ``_``                 | Put an active object "farther" from the user (decrease z axis value)            |
+| ``+`` or ``=``                 | Put an active object "closer" to the user (increase z axis value)               |
+| ``Ctrl+C``                     | Copy shape to CVAT internal clipboard                                           |
+| ``Ctrl+V``                     | Paste a shape from internal CVAT clipboard                                      |
+| Hold ``Ctrl`` while pasting    | When pasting shape from the buffer for multiple pasting.                        |
+| ``Crtl+B``                     | Make a copy of the object on the following frames                               |
+|                                | _Operations are available only for track_                                       |
+| ``K``                          | Change keyframe property for an active track                                    |
+| ``O``                          | Change outside property for an active track                                     |
+| ``R``                          | Go to the next keyframe of an active track                                      |
+| ``E``                          | Go to the previous keyframe of an active track                                  |
+|                                | _Attribute annotation mode_                                                     |
+| ``Up Arrow``                   | Go to the next attribute (up)                                                   |
+| ``Down Arrow``                 | Go to the next attribute (down)                                                 |
+| ``Tab``                        | Go to the next annotated object in current frame                                |
+| ``Shift+Tab``                  | Go to the previous annotated object in current frame                            |
+| ``<number>``                   | Assign a corresponding value to the current attribute                           |
