@@ -28,7 +28,7 @@
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
   - [Annotation with points](#annotation-with-points)
-    - [Points in annotation mode](#points-in-annotation-mode)
+    - [Points in shape mode](#points-in-shape-mode)
     - [Linear interpolation with one point](#linear-interpolation-with-one-point)
   - [Annotation with cuboids](#annotation-with-cuboids)
   - [Annotation with tags](#annotation-with-tags)
