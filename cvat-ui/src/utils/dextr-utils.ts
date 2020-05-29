@@ -4,7 +4,8 @@
 
 import getCore from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { ShapeType, RQStatus } from 'reducers/interfaces';
+import { ShapeType, RQStatus, CombinedState } from 'reducers/interfaces';
+import { getCVATStore } from 'cvat-store';
 
 const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);
@@ -145,6 +146,60 @@ function serverRequest(
     });
 }
 
+async function enter(this: any, self: DEXTRPlugin, objects: any[]): Promise<void> {
+    try {
+        if (self.data.enabled && objects.length === 1) {
+            const state = (getCVATStore().getState() as CombinedState);
+            const isPolygon = state.annotation
+                .drawing.activeShapeType === ShapeType.POLYGON;
+            if (!isPolygon) return;
+
+            document.body.append(antModalRoot);
+            const promises: Record<number, Promise<number[]>> = {};
+            for (let i = 0; i < objects.length; i++) {
+                if (objects[i].points.length >= 8) {
+                    promises[i] = serverRequest(
+                        self,
+                        this.id,
+                        objects[i].frame,
+                        objects[i].points,
+                    );
+                } else {
+                    promises[i] = new Promise((resolve) => {
+                        resolve(objects[i].points);
+                    });
+                }
+            }
+
+            const transformed = await Promise
+                .all(Object.values(promises));
+            for (let i = 0; i < objects.length; i++) {
+                // eslint-disable-next-line no-param-reassign
+                objects[i] = new core.classes.ObjectState({
+                    frame: objects[i].frame,
+                    objectType: objects[i].objectType,
+                    label: objects[i].label,
+                    shapeType: ShapeType.POLYGON,
+                    points: transformed[i],
+                    occluded: objects[i].occluded,
+                    zOrder: objects[i].zOrder,
+                });
+            }
+        }
+
+        return;
+    } catch (error) {
+        throw new core.exceptions.PluginError(error.toString());
+    } finally {
+        // eslint-disable-next-line no-param-reassign
+        self.data.canceled = false;
+        antModalButton.disabled = true;
+        if (antModalRoot.parentElement === document.body) {
+            document.body.removeChild(antModalRoot);
+        }
+    }
+}
+
 const plugin: DEXTRPlugin = {
     name: 'Deep extreme cut',
     description: 'Plugin allows to get a polygon from extreme points using AI',
@@ -154,54 +209,7 @@ const plugin: DEXTRPlugin = {
                 prototype: {
                     annotations: {
                         put: {
-                            async enter(self: DEXTRPlugin, objects: any[]): Promise<void> {
-                                try {
-                                    if (self.data.enabled) {
-                                        document.body.append(antModalRoot);
-                                        const promises: Record<number, Promise<number[]>> = {};
-                                        for (let i = 0; i < objects.length; i++) {
-                                            if (objects[i].points.length >= 8) {
-                                                promises[i] = serverRequest(
-                                                    self,
-                                                    (this as any).id,
-                                                    objects[i].frame,
-                                                    objects[i].points,
-                                                );
-                                            } else {
-                                                promises[i] = new Promise((resolve) => {
-                                                    resolve(objects[i].points);
-                                                });
-                                            }
-                                        }
-
-                                        const transformed = await Promise
-                                            .all(Object.values(promises));
-                                        for (let i = 0; i < objects.length; i++) {
-                                            // eslint-disable-next-line no-param-reassign
-                                            objects[i] = new core.classes.ObjectState({
-                                                frame: objects[i].frame,
-                                                objectType: objects[i].objectType,
-                                                label: objects[i].label,
-                                                shapeType: ShapeType.POLYGON,
-                                                points: transformed[i],
-                                                occluded: objects[i].occluded,
-                                                zOrder: objects[i].zOrder,
-                                            });
-                                        }
-                                    }
-
-                                    return;
-                                } catch (error) {
-                                    throw new core.exceptions.PluginError(error.toString());
-                                } finally {
-                                    // eslint-disable-next-line no-param-reassign
-                                    self.data.canceled = false;
-                                    antModalButton.disabled = true;
-                                    if (antModalRoot.parentElement === document.body) {
-                                        document.body.removeChild(antModalRoot);
-                                    }
-                                }
-                            },
+                            enter,
                         },
                     },
                 },

@@ -271,7 +271,7 @@ class _SubsetWriter:
                 )),
             ]))
 
-        shape_data['z_order'] = str(int(shape.attributes.get('z_order', 0)))
+        shape_data['z_order'] = str(int(shape.z_order))
         if shape.group:
             shape_data['group_id'] = str(shape.group)
 
@@ -363,7 +363,7 @@ class _Converter:
 class CvatConverter(Converter, CliPlugin):
     @classmethod
     def build_cmdline_parser(cls, **kwargs):
-        parser = super().__init__(**kwargs)
+        parser = super().build_cmdline_parser(**kwargs)
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")
         return parser

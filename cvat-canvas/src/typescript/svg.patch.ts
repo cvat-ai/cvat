@@ -248,8 +248,8 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.bot = this.polygon(this.cuboidModel.bot.points);
             this.top = this.polygon(this.cuboidModel.top.points);
             this.right = this.polygon(this.cuboidModel.right.points);
-            this.dorsal = this.polygon(this.cuboidModel.dorsal.points);
             this.left = this.polygon(this.cuboidModel.left.points);
+            this.dorsal = this.polygon(this.cuboidModel.dorsal.points);
             this.face = this.polygon(this.cuboidModel.front.points);
         },
 
@@ -263,10 +263,10 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.rbProj = this.line(this.updateProjectionLine(this.cuboidModel.rb.getEquation(),
                 this.cuboidModel.rb.points[1], this.cuboidModel.vpr));
 
-            this.ftProj.stroke({ color: '#C0C0C0' });
-            this.fbProj.stroke({ color: '#C0C0C0' });
-            this.rtProj.stroke({ color: '#C0C0C0' });
-            this.rbProj.stroke({ color: '#C0C0C0' });
+            this.ftProj.stroke({ color: '#C0C0C0' }).addClass('cvat_canvas_cuboid_projections');
+            this.fbProj.stroke({ color: '#C0C0C0' }).addClass('cvat_canvas_cuboid_projections');
+            this.rtProj.stroke({ color: '#C0C0C0' }).addClass('cvat_canvas_cuboid_projections');
+            this.rbProj.stroke({ color: '#C0C0C0' }).addClass('cvat_canvas_cuboid_projections');
         },
 
         setupEdges() {
@@ -281,7 +281,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.rightBotEdge = this.line(this.cuboidModel.rb.points);
         },
 
-        setupGrabPoints(circleType) {
+        setupGrabPoints(circleType: Function | string) {
             const viewModel = this.cuboidModel;
             const circle = typeof circleType === 'function' ? circleType : this.circle;
 
@@ -372,7 +372,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             }
 
             if (value === false) {
-                this.getGrabPoints().forEach((point) => {point && point.remove()});
+                this.getGrabPoints().forEach((point: SVG.Element) => {point && point.remove()});
             } else {
                 this.setupGrabPoints(this.face.remember('_selectHandler').drawPoint.bind(
                     {nested: this, options: this.face.remember('_selectHandler').options}
@@ -380,21 +380,29 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
                 // setup proper classes for selection points for proper cursor
                 Array.from(this.face.remember('_selectHandler').nested.node.children)
-                    .forEach((point: SVG.Circle, i: number) => {
+                    .forEach((point: SVG.LinkedHTMLElement, i: number) => {
                         point.classList.add(`svg_select_points_${['lt', 'lb', 'rb', 'rt'][i]}`)
                     });
 
                 if (this.cuboidModel.orientation === Orientation.LEFT) {
                     Array.from(this.dorsalRightEdge.remember('_selectHandler').nested.node.children)
-                    .forEach((point: SVG.Circle, i: number) => {
+                    .forEach((point: SVG.LinkedHTMLElement, i: number) => {
                         point.classList.add(`svg_select_points_${['t', 'b'][i]}`);
-                        point.ondblclick = this.resetPerspective.bind(this);
+                        point.ondblclick = (e: MouseEvent) => {
+                            if (e.shiftKey) {
+                                this.resetPerspective()
+                            }
+                        };
                     });
                 } else {
                     Array.from(this.dorsalLeftEdge.remember('_selectHandler').nested.node.children)
-                    .forEach((point: SVG.Circle, i: number) => {
+                    .forEach((point: SVG.LinkedHTMLElement, i: number) => {
                         point.classList.add(`svg_select_points_${['t', 'b'][i]}`);
-                        point.ondblclick = this.resetPerspective.bind(this);
+                        point.ondblclick = (e: MouseEvent) => {
+                            if (e.shiftKey) {
+                                this.resetPerspective()
+                            }
+                        };
                     });
                 }
 
@@ -584,7 +592,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 setupDorsalEdge.call(this, this.dorsalLeftEdge, this.cuboidModel.orientation);
             }
 
-            function horizontalEdgeControl(updatingFace, midX, midY) {
+            function horizontalEdgeControl(updatingFace: any, midX: number, midY: number) {
                 const leftPoints = this.updatedEdge(
                     this.cuboidModel.fl.points[0],
                     {x: midX, y: midY},
@@ -623,6 +631,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
                 this.cuboidModel.dr.points = [topPoint, botPoint];
                 this.updateViewAndVM();
+                this.fire(new CustomEvent('resizing', event));
             }).on('dragend', (event: CustomEvent) => {
                 this.fire(new CustomEvent('resizedone', event));
             });
@@ -650,6 +659,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
                 this.cuboidModel.dl.points = [topPoint, botPoint];
                 this.updateViewAndVM(true);
+                this.fire(new CustomEvent('resizing', event));
             }).on('dragend', (event: CustomEvent) => {
                 this.fire(new CustomEvent('resizedone', event));
             });;
@@ -848,16 +858,17 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             const edges = [this.frontLeftEdge, this.frontRightEdge, this.frontTopEdge, this.frontBotEdge]
             const width = this.attr('stroke-width');
             edges.forEach((edge: SVG.Element) => {
-                edge.attr('stroke-width', width * (this.strokeOffset || 1.75));
+                edge.attr('stroke-width', width * (this.strokeOffset || consts.CUBOID_UNACTIVE_EDGE_STROKE_WIDTH));
             });
             this.on('mouseover', () => {
                 edges.forEach((edge: SVG.Element) => {
-                    this.strokeOffset = 2.5;
+                    this.strokeOffset = this.node.classList.contains('cvat_canvas_shape_activated')
+                        ? consts.CUBOID_ACTIVE_EDGE_STROKE_WIDTH : consts.CUBOID_UNACTIVE_EDGE_STROKE_WIDTH;
                     edge.attr('stroke-width', width * this.strokeOffset);
                 })
             }).on('mouseout', () => {
                 edges.forEach((edge: SVG.Element) => {
-                    this.strokeOffset = 1.75;
+                    this.strokeOffset = consts.CUBOID_UNACTIVE_EDGE_STROKE_WIDTH;
                     edge.attr('stroke-width', width * this.strokeOffset);
                 })
             });

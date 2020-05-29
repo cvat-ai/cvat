@@ -103,6 +103,10 @@ polyline.cvat_canvas_shape_splitting {
     stroke-dasharray: 5;
 }
 
+.cvat_canvas_shape .svg_select_points, .cvat_canvas_shape .cvat_canvas_cuboid_projections {
+    stroke-dasharray: none;
+}
+
 .cvat_canvas_autoborder_point {
     opacity: 0.55;
 }

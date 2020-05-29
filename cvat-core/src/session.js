@@ -39,9 +39,9 @@
                         return result;
                     },
 
-                    async dump(name, dumper) {
+                    async dump(dumper, name = null) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.dump, name, dumper);
+                            .apiWrapper.call(this, prototype.annotations.dump, dumper, name);
                         return result;
                     },
 
@@ -255,8 +255,8 @@
                 * Method always dumps annotations for a whole task.
                 * @method dump
                 * @memberof Session.annotations
-                * @param {string} name - a name of a file with annotations
                 * @param {module:API.cvat.classes.Dumper} dumper - a dumper
+                * @param {string} [name = null] - a name of a file with annotations
                 * which will be used to dump
                 * @returns {string} URL which can be used in order to get a dump file
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -1541,7 +1541,7 @@
         return result;
     };
 
-    Job.prototype.annotations.dump.implementation = async function (name, dumper) {
+    Job.prototype.annotations.dump.implementation = async function (dumper, name) {
         const result = await dumpAnnotations(this, name, dumper);
         return result;
     };
@@ -1785,7 +1785,7 @@
         return result;
     };
 
-    Task.prototype.annotations.dump.implementation = async function (name, dumper) {
+    Task.prototype.annotations.dump.implementation = async function (dumper, name) {
         const result = await dumpAnnotations(this, name, dumper);
         return result;
     };

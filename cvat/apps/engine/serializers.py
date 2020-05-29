@@ -467,3 +467,6 @@ class LogEventSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=4096, required=False)
     payload = serializers.DictField(required=False)
     is_active = serializers.BooleanField()
+
+class AnnotationFileSerializer(serializers.Serializer):
+    annotation_file = serializers.FileField()

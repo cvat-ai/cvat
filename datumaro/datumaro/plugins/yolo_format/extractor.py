@@ -93,12 +93,6 @@ class YoloExtractor(SourceExtractor):
                     (osp.splitext(osp.basename(p.strip()))[0], p.strip())
                     for p in f
                 )
-
-            for item_id, image_path in subset.items.items():
-                image_path = self._make_local_path(image_path)
-                if not osp.isfile(image_path) and item_id not in image_info:
-                    raise Exception("Can't find image '%s'" % item_id)
-
             subsets[subset_name] = subset
 
         self._subsets = subsets
@@ -122,10 +116,9 @@ class YoloExtractor(SourceExtractor):
             image_path = self._make_local_path(item)
             image_size = self._image_info.get(item_id)
             image = Image(path=image_path, size=image_size)
-            h, w = image.size
 
             anno_path = osp.splitext(image_path)[0] + '.txt'
-            annotations = self._parse_annotations(anno_path, w, h)
+            annotations = self._parse_annotations(anno_path, image)
 
             item = DatasetItem(id=item_id, subset=subset_name,
                 image=image, annotations=annotations)
@@ -134,21 +127,30 @@ class YoloExtractor(SourceExtractor):
         return item
 
     @staticmethod
-    def _parse_annotations(anno_path, image_width, image_height):
+    def _parse_annotations(anno_path, image):
+        lines = []
         with open(anno_path, 'r') as f:
-            annotations = []
             for line in f:
-                label_id, xc, yc, w, h = line.strip().split()
-                label_id = int(label_id)
-                w = float(w)
-                h = float(h)
-                x = float(xc) - w * 0.5
-                y = float(yc) - h * 0.5
-                annotations.append(Bbox(
-                    round(x * image_width, 1), round(y * image_height, 1),
-                    round(w * image_width, 1), round(h * image_height, 1),
-                    label=label_id
-                ))
+                line = line.strip()
+                if line:
+                    lines.append(line)
+
+        annotations = []
+        if lines:
+            image_height, image_width = image.size # use image info late
+        for line in lines:
+            label_id, xc, yc, w, h = line.split()
+            label_id = int(label_id)
+            w = float(w)
+            h = float(h)
+            x = float(xc) - w * 0.5
+            y = float(yc) - h * 0.5
+            annotations.append(Bbox(
+                round(x * image_width, 1), round(y * image_height, 1),
+                round(w * image_width, 1), round(h * image_height, 1),
+                label=label_id
+            ))
+
         return annotations
 
     @staticmethod
