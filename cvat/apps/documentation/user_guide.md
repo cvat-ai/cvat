@@ -28,7 +28,7 @@
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
   - [Annotation with points](#annotation-with-points)
-    - [Points in annotation mode](#points-in-annotation-mode)
+    - [Points in shape mode](#points-in-shape-mode)
     - [Linear interpolation with one point](#linear-interpolation-with-one-point)
   - [Annotation with cuboids](#annotation-with-cuboids)
   - [Annotation with tags](#annotation-with-tags)
@@ -1271,23 +1271,6 @@ Simply drag the faces to move them independently from the rest of the cuboid.
 ![](static/documentation/images/gif020_mapillary_vistas.gif)
 
 You can also use cuboids in track mode, similar to rectangles in track mode ([basics](#track-mode-basics) and [advanced](#track-mode-advanced))
-
-## Annotation with Auto Segmentation
-
-Used to create a polygon semi-automatically. Before starting, you have to be
-sure that ``Auto Segmentation`` is selected.
-
-![](static/documentation/images/image114.jpg)
-
-Press ``N`` for entering drawing mode. Now you can start annotating the necessary area.
-Press ``N`` again for finishing marking an area. A shape must consist of 4
-points minimum. You can set a fixed number of points in the field
-"poly shape size", then drawing will be stopped automatically. You can zoom
-in/out (when scrolling the mouse wheel) and move (when clicking the mouse
-wheel and moving the mouse) while drawing. At the end of Auto Segmentation,
-a shape is created and you can work with it as a polygon.
-
-![](static/documentation/images/gif009_detrac.gif)
 
 ## Annotation with Tags
 
