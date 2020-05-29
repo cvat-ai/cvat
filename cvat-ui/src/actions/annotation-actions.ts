@@ -490,6 +490,7 @@ export function propagateObjectAsync(
                 label: objectState.label,
                 zOrder: objectState.zOrder,
                 frame: from,
+                annotationType: objectState.annotationType,
             };
 
             await sessionInstance.logger.log(

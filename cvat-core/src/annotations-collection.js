@@ -402,6 +402,7 @@
                 frame: Math.min.apply(null, Object.keys(keyframes).map((frame) => +frame)),
                 shapes: Object.values(keyframes),
                 group: 0,
+                annotation_type: objectStates[0].annotationType,
                 label_id: label.id,
                 attributes: Object.keys(objectStates[0].attributes)
                     .reduce((accumulator, attrID) => {

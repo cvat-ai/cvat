@@ -104,7 +104,7 @@
         CUBOID: 'cuboid',
     });
 
-    /**       
+    /**
         * Annotation type
         * @enum {string}
         * @name AnnotationType
@@ -120,7 +120,7 @@
 
     /**
         * Logger event types
-        * @enum {string}    
+        * @enum {string}
         * @name LogType
         * @memberof module:API.cvat.enums
         * @property {string} loadJob Load job

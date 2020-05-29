@@ -483,10 +483,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             state,
             points,
-            // annotation_type,
         } = event.detail;
         state.points = points;
-        state.annotation_type = 'Manual'
+        state.annotationType = 'Manual';
         onUpdateAnnotations([state]);
     };
 
