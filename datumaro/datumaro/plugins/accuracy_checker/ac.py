@@ -6,11 +6,13 @@
 from accuracy_checker.data_reader import DataRepresentation
 from accuracy_checker.utils import extract_image_representations
 
+from .representation import import_predictions
+
 
 class AcLauncher(Launcher):
     @staticmethod
     def from_config(self, config):
-        return __class__.from_launcher(ac.make_launcher(config))
+        return __class__(ac.make_launcher(config))
 
     def __init__(self, launcher, adapter, preproc=None, postproc=None):
         self._launcher = launcher
@@ -26,12 +28,14 @@ class AcLauncher(Launcher):
             inputs = self._preproc.process(inputs)
 
         outputs = self._launcher.predict(inputs, batch_meta)
-        outputs = self._adapter.process(outputs, [''] * len(batch), batch_meta)
+        outputs = self._adapter.process(outputs,
+            [''] * len(batch), # can be None, but it is not expected anywhere
+            batch_meta)
 
         if self._postproc:
             outputs = self._postproc.process(outputs)
 
-        return self._convert_outputs(outputs)
+        return import_predictions(outputs)
 
     def get_categories(self):
         return self._adapter.get_categories()
@@ -50,7 +54,3 @@ class AcLauncher(Launcher):
             self._input_shape = max(self._launcher.inputs.values(),
                 defult=None, key=lambda s: abs(np.prod(s)))
         return self._input_shape
-
-    @staticmethod
-    def _convert_outputs(predictions):
-        # Convert Accuracy checker predictions to Datumaro annotations
