@@ -443,7 +443,6 @@ def extract_command(args):
     if not args.filter:
         raise CliException("Expected a filter expression ('-e' argument)")
 
-    os.makedirs(dst_dir, exist_ok=False)
     dataset.extract_project(save_dir=dst_dir, filter_expr=args.filter,
         **filter_args)
 

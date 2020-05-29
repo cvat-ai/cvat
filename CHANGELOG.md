@@ -6,19 +6,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - Unreleased
 ### Added
--
+- cvat-ui: added cookie policy drawer for login page (<https://github.com/opencv/cvat/pull/1511>)
+- Added `datumaro_project` export format (https://github.com/opencv/cvat/pull/1352)
+- Ability to configure user agreements for the user registration form (https://github.com/opencv/cvat/pull/1464)
+- Added cuboid interpolation and cuboid drawing from rectangles (<https://github.com/opencv/cvat/pull/1560>)
+- Ability to configure custom pageViewHit, which can be useful for web analytics integration (https://github.com/opencv/cvat/pull/1566)
+- Ability to configure access to the analytics page based on roles (https://github.com/opencv/cvat/pull/1592)
 
 ### Changed
-- cvat-core: session.annotations.put() now returns identificators of added objects (<https://github.com/opencv/cvat/pull/1493>)
+- Downloaded file name in annotations export became more informative (https://github.com/opencv/cvat/pull/1352)
+- Added auto trimming for trailing whitespaces style enforcement (https://github.com/opencv/cvat/pull/1352)
+- REST API: updated `GET /task/<id>/annotations`: parameters are `format`, `filename` (now optional), `action` (optional) (https://github.com/opencv/cvat/pull/1352)
+- REST API: removed `dataset/formats`, changed format of `annotation/formats` (https://github.com/opencv/cvat/pull/1352)
+- Exported annotations are stored for N hours instead of indefinitely (https://github.com/opencv/cvat/pull/1352)
+- Formats: CVAT format now accepts ZIP and XML (https://github.com/opencv/cvat/pull/1352)
+- Formats: COCO format now accepts ZIP and JSON (https://github.com/opencv/cvat/pull/1352)
+- Formats: most of formats renamed, no extension in title (https://github.com/opencv/cvat/pull/1352)
+- Formats: definitions are changed, are not stored in DB anymore (https://github.com/opencv/cvat/pull/1352)
+- cvat-core: session.annotations.put() now returns identificators of added objects (https://github.com/opencv/cvat/pull/1493)
+- Images without annotations now also included in dataset/annotations export (https://github.com/opencv/cvat/issues/525)
 
 ### Deprecated
 -
 
 ### Removed
--
+- `annotation` application is replaced with `dataset_manager` (https://github.com/opencv/cvat/pull/1352)
+- `_DATUMARO_INIT_LOGLEVEL` env. variable is removed in favor of regular `--loglevel` cli parameter (https://github.com/opencv/cvat/pull/1583)
 
 ### Fixed
+- Categories for empty projects with no sources are taken from own dataset (https://github.com/opencv/cvat/pull/1352)
+- Added directory removal on error during `extract` command (https://github.com/opencv/cvat/pull/1352)
+- Added debug error message on incorrect XPath (https://github.com/opencv/cvat/pull/1352)
+- Exporting frame stepped task (https://github.com/opencv/cvat/issues/1294, https://github.com/opencv/cvat/issues/1334)
+- Fixed broken command line interface for `cvat` export format in Datumaro (https://github.com/opencv/cvat/issues/1494)
 - Updated Rest API document, Swagger document serving instruction issue (https://github.com/opencv/cvat/issues/1495)
+- Fixed cuboid occluded view (<https://github.com/opencv/cvat/pull/1500>)
+- Non-informative lock icon (<https://github.com/opencv/cvat/pull/1434>)
+- Sidebar in AAM has no hide/show button (<https://github.com/opencv/cvat/pull/1420>)
+- Task/Job buttons has no "Open in new tab" option (<https://github.com/opencv/cvat/pull/1419>)
+- Delete point context menu option has no shortcut hint (<https://github.com/opencv/cvat/pull/1416>)
+- Fixed issue with unnecessary tag activation in cvat-canvas (<https://github.com/opencv/cvat/issues/1540>)
+- Fixed an issue with large number of instances in instance mask (<https://github.com/opencv/cvat/issues/1539>)
+- Fixed full COCO dataset import error with conflicting labels in keypoints and detection (<https://github.com/opencv/cvat/pull/1548>)
+- Fixed COCO keypoints skeleton parsing and saving (<https://github.com/opencv/cvat/issues/1539>)
+- `tf.placeholder() is not compatible with eager execution` exception for auto_segmentation (<https://github.com/opencv/cvat/pull/1562>)
+- Canvas cannot be moved with move functionality on left mouse key (<https://github.com/opencv/cvat/pull/1573>)
+- Deep extreme cut request is sent when draw any shape with Make AI polygon option enabled  (<https://github.com/opencv/cvat/pull/1573>)
+- Fixed an error when exporting a task with cuboids to any format except CVAT (<https://github.com/opencv/cvat/pull/1577>)
+- Synchronization with remote git repo (<https://github.com/opencv/cvat/pull/1582>)
+- A problem with mask to polygons conversion when polygons are too small (<https://github.com/opencv/cvat/pull/1581>)
+- Unable to upload video with uneven size (<https://github.com/opencv/cvat/pull/1594>)
+- Fixed an issue with `z_order` having no effect on segmentations (<https://github.com/opencv/cvat/pull/1589>)
+- Permission group whitelist check for analytics view (<https://github.com/opencv/cvat/pull/1608>)
 
 ### Security
 -

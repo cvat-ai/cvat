@@ -15,10 +15,9 @@ export enum FormatsActionTypes {
 
 const formatsActions = {
     getFormats: () => createAction(FormatsActionTypes.GET_FORMATS),
-    getFormatsSuccess: (annotationFormats: any[], datasetFormats: any[]) => (
+    getFormatsSuccess: (annotationFormats: any) => (
         createAction(FormatsActionTypes.GET_FORMATS_SUCCESS, {
             annotationFormats,
-            datasetFormats,
         })
     ),
     getFormatsFailed: (error: any) => (
@@ -32,14 +31,12 @@ export function getFormatsAsync(): ThunkAction {
     return async (dispatch): Promise<void> => {
         dispatch(formatsActions.getFormats());
         let annotationFormats = null;
-        let datasetFormats = null;
 
         try {
             annotationFormats = await cvat.server.formats();
-            datasetFormats = await cvat.server.datasetFormats();
 
             dispatch(
-                formatsActions.getFormatsSuccess(annotationFormats, datasetFormats),
+                formatsActions.getFormatsSuccess(annotationFormats),
             );
         } catch (error) {
             dispatch(formatsActions.getFormatsFailed(error));

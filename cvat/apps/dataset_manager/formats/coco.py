@@ -2,52 +2,36 @@
 #
 # SPDX-License-Identifier: MIT
 
-format_spec = {
-    "name": "COCO",
-    "dumpers": [
-        {
-            "display_name": "{name} {format} {version}",
-            "format": "JSON",
-            "version": "1.0",
-            "handler": "dump"
-        },
-    ],
-    "loaders": [
-        {
-            "display_name": "{name} {format} {version}",
-            "format": "JSON",
-            "version": "1.0",
-            "handler": "load"
-        },
-    ],
-}
+import zipfile
+from tempfile import TemporaryDirectory
 
-def load(file_object, annotations):
-    from datumaro.plugins.coco_format.extractor import CocoInstancesExtractor
-    from cvat.apps.dataset_manager.bindings import import_dm_annotations
+from datumaro.components.project import Dataset
+from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, \
+    import_dm_annotations
+from cvat.apps.dataset_manager.util import make_zip_archive
 
-    dm_dataset = CocoInstancesExtractor(file_object.name)
-    import_dm_annotations(dm_dataset, annotations)
+from .registry import dm_env, exporter, importer
 
-from datumaro.plugins.coco_format.converter import \
-    CocoInstancesConverter as _CocoInstancesConverter
-class CvatCocoConverter(_CocoInstancesConverter):
-    NAME = 'cvat_coco'
 
-def dump(file_object, annotations):
-    import os.path as osp
-    import shutil
-    from cvat.apps.dataset_manager.bindings import CvatAnnotationsExtractor
-    from tempfile import TemporaryDirectory
-
-    extractor = CvatAnnotationsExtractor('', annotations)
-    converter = CvatCocoConverter()
+@exporter(name='COCO', ext='ZIP', version='1.0')
+def _export(dst_file, task_data, save_images=False):
+    extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
+    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
+        converter = dm_env.make_converter('coco_instances',
+            save_images=save_images)
         converter(extractor, save_dir=temp_dir)
 
-        # HACK: file_object should not be used this way, however,
-        # it is the most efficient way. The correct approach would be to copy
-        # file contents.
-        file_object.close()
-        shutil.move(osp.join(temp_dir, 'annotations', 'instances_default.json'),
-            file_object.name)
+        make_zip_archive(temp_dir, dst_file)
+
+@importer(name='COCO', ext='JSON, ZIP', version='1.0')
+def _import(src_file, task_data):
+    if zipfile.is_zipfile(src_file):
+        with TemporaryDirectory() as tmp_dir:
+            zipfile.ZipFile(src_file).extractall(tmp_dir)
+
+            dataset = dm_env.make_importer('coco')(tmp_dir).make_dataset()
+            import_dm_annotations(dataset, task_data)
+    else:
+        dataset = dm_env.make_extractor('coco_instances', src_file.name)
+        import_dm_annotations(dataset, task_data)

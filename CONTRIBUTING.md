@@ -75,6 +75,7 @@ for development
     - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
     - [vscode-remark-lint](https://marketplace.visualstudio.com/items?itemName=drewbourne.vscode-remark-lint)
     - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
+    - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
 
 -   Reload Visual Studio Code from virtual environment
 

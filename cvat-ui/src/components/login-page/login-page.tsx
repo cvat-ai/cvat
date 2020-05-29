@@ -10,6 +10,7 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
 import LoginForm, { LoginData } from './login-form';
+import CookieDrawer from './cookie-policy-drawer';
 
 interface LoginPageComponentProps {
     fetching: boolean;
@@ -31,25 +32,28 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     } = props;
 
     return (
-        <Row type='flex' justify='center' align='middle'>
-            <Col {...sizes}>
-                <Title level={2}> Login </Title>
-                <LoginForm
-                    fetching={fetching}
-                    onSubmit={(loginData: LoginData): void => {
-                        onLogin(loginData.username, loginData.password);
-                    }}
-                />
-                <Row type='flex' justify='start' align='top'>
-                    <Col>
-                        <Text strong>
-                            New to CVAT? Create
-                            <Link to='/auth/register'> an account</Link>
-                        </Text>
-                    </Col>
-                </Row>
-            </Col>
-        </Row>
+        <>
+            <Row type='flex' justify='center' align='middle'>
+                <Col {...sizes}>
+                    <Title level={2}> Login </Title>
+                    <LoginForm
+                        fetching={fetching}
+                        onSubmit={(loginData: LoginData): void => {
+                            onLogin(loginData.username, loginData.password);
+                        }}
+                    />
+                    <Row type='flex' justify='start' align='top'>
+                        <Col>
+                            <Text strong>
+                                New to CVAT? Create
+                                <Link to='/auth/register'> an account</Link>
+                            </Text>
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
+            <CookieDrawer />
+        </>
     );
 }
 

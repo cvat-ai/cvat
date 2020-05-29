@@ -337,7 +337,7 @@ class _KeypointsConverter(_InstancesConverter):
                 if kp_cat is not None:
                     cat.update({
                         'keypoints': [str(l) for l in kp_cat.labels],
-                        'skeleton': [int(i) for i in kp_cat.adjacent],
+                        'skeleton': [list(map(int, j)) for j in kp_cat.joints],
                     })
             self.categories.append(cat)
 
@@ -464,8 +464,8 @@ class _Converter:
         self._save_images = save_images
 
         assert segmentation_mode is None or \
-            segmentation_mode in SegmentationMode or \
-            isinstance(segmentation_mode, str)
+            isinstance(segmentation_mode, str) or \
+            segmentation_mode in SegmentationMode
         if segmentation_mode is None:
             segmentation_mode = SegmentationMode.guess
         if isinstance(segmentation_mode, str):

@@ -338,7 +338,7 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                         <Col>
                             <Tooltip title={`Switch lock property ${switchLockShortcut}`}>
                                 { locked
-                                    ? <Icon type='lock' onClick={unlock} />
+                                    ? <Icon type='lock' onClick={unlock} theme='filled'/>
                                     : <Icon type='unlock' onClick={lock} />}
                             </Tooltip>
                         </Col>
@@ -388,7 +388,7 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                         <Col>
                             <Tooltip title={`Switch lock property ${switchLockShortcut}`}>
                                 { locked
-                                    ? <Icon type='lock' onClick={unlock} />
+                                    ? <Icon type='lock' onClick={unlock} theme='filled' />
                                     : <Icon type='unlock' onClick={lock} />}
                             </Tooltip>
                         </Col>
@@ -405,7 +405,7 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                     <Col>
                         <Tooltip title={`Switch lock property ${switchLockShortcut}`}>
                             { locked
-                                ? <Icon type='lock' onClick={unlock} />
+                                ? <Icon type='lock' onClick={unlock} theme='filled'/>
                                 : <Icon type='unlock' onClick={lock} />}
                         </Tooltip>
                     </Col>
