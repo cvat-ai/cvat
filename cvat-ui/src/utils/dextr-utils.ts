@@ -71,20 +71,19 @@ antModal.append(antModalContent);
 antModalWrap.append(antModal);
 antModalRoot.append(antModalMask, antModalWrap);
 
-
 function serverRequest(
     plugin: DEXTRPlugin,
-    jid: number,
+    tid: number,
     frame: number,
     points: number[],
 ): Promise<number[]> {
     return new Promise((resolve, reject) => {
-        const reducer = (acc: Point[], _: number, index: number, array: number[]): Point[] => {
+        const reducer = (acc: number[][], _: number, index: number, array: number[]): number[][] => {
             if (!(index % 2)) { // 0, 2, 4
-                acc.push({
-                    x: array[index],
-                    y: array[index + 1],
-                });
+                acc.push([
+                    array[index],
+                    array[index + 1],
+                ]);
             }
 
             return acc;
@@ -92,9 +91,10 @@ function serverRequest(
 
         const reducedPoints = points.reduce(reducer, []);
         core.server.request(
-            `${baseURL}/dextr/create/${jid}`, {
+            `${baseURL}/api/v1/lambda/functions/public.dextr`, {
                 method: 'POST',
                 data: JSON.stringify({
+                    task: tid,
                     frame,
                     points: reducedPoints,
                 }),
@@ -102,44 +102,8 @@ function serverRequest(
                     'Content-Type': 'application/json',
                 },
             },
-        ).then(() => {
-            const timeoutCallback = (): void => {
-                core.server.request(
-                    `${baseURL}/dextr/check/${jid}`, {
-                        method: 'GET',
-                    },
-                ).then((response: any) => {
-                    const { status } = response;
-                    if (status === RQStatus.finished) {
-                        resolve(response.result.split(/\s|,/).map((coord: string) => +coord));
-                    } else if (status === RQStatus.failed) {
-                        reject(new Error(response.stderr));
-                    } else if (status === RQStatus.unknown) {
-                        reject(new Error('Unknown DEXTR status has been received'));
-                    } else {
-                        if (status === RQStatus.queued) {
-                            antModalButton.disabled = false;
-                        }
-                        if (!plugin.data.canceled) {
-                            setTimeout(timeoutCallback, 1000);
-                        } else {
-                            core.server.request(
-                                `${baseURL}/dextr/cancel/${jid}`, {
-                                    method: 'GET',
-                                },
-                            ).then(() => {
-                                resolve(points);
-                            }).catch((error: Error) => {
-                                reject(error);
-                            });
-                        }
-                    }
-                }).catch((error: Error) => {
-                    reject(error);
-                });
-            };
-
-            setTimeout(timeoutCallback, 1000);
+        ).then((response: any) => {
+            resolve(response.flat());
         }).catch((error: Error) => {
             reject(error);
         });
@@ -160,7 +124,7 @@ async function enter(this: any, self: DEXTRPlugin, objects: any[]): Promise<void
                 if (objects[i].points.length >= 8) {
                     promises[i] = serverRequest(
                         self,
-                        this.id,
+                        this.task.id,
                         objects[i].frame,
                         objects[i].points,
                     );
