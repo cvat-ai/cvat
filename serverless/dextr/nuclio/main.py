@@ -16,7 +16,7 @@ def handler(context, event):
     context.logger.info("call handler")
     data = event.body
     points = data["points"]
-    buf = io.BytesIO(base64.b64decode(data["image"]))
+    buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
     image = Image.open(buf)
 
     polygon = context.user_data.dextr_handler.handle(image, points)

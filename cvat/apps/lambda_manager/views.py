@@ -1,6 +1,10 @@
 from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.models import Task as TaskModel
+import base64
+import json
 import requests
 import django_rq
 
@@ -11,6 +15,7 @@ NUCLIO_TIMEOUT = 10
 
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.]+'
+    lookup_field = 'name'
 
     def list(self, request):
         response = []
@@ -26,30 +31,40 @@ class FunctionViewSet(viewsets.ViewSet):
 
         return Response(data=response)
 
+    @staticmethod
+    def _get_function(name):
+        reply = requests.get(NUCLIO_GATEWAY + '/' + name,
+            headers=NUCLIO_HEADERS, timeout=NUCLIO_TIMEOUT)
+        reply.raise_for_status()
+        output = reply.json()
 
-    def retrieve(self, request, pk):
+        return output
+
+
+    def retrieve(self, request, name):
         try:
-            reply = requests.get(NUCLIO_GATEWAY + '/' + pk,
-                headers=NUCLIO_HEADERS, timeout=NUCLIO_TIMEOUT)
-            reply.raise_for_status()
-            output = reply.json()
+            output = self._get_function(name)
             response = self._extract_function_info(output)
         except requests.RequestException as err:
-            return Response(str(err), status=reply.status_code)
+            return Response(str(err), status=output.status_code)
 
         return Response(data=response)
 
-    def call(self, request, pk):
+    def call(self, request, name):
         try:
             tid = request.data['task']
             frame = request.data['frame']
-            extra = request.data.get('extra')
+            reply = self._get_function(name)
+            port = reply["status"]["httpPort"]
+
+            points = request.data.get('points')
             data = {
-                'image': _get_image(tid, frame),
-                'extra': extra
+                'image': self._get_image(tid, frame),
+                'points': points
             }
-            reply = requests.post(NUCLIO_GATEWAY + '/' + pk,
-                headers=NUCLIO_HEADERS, json=data, timeout=NUCLIO_TIMEOUT)
+
+            reply = requests.post('http://localhost:{}'.format(port),
+                json=data, timeout=NUCLIO_TIMEOUT)
             reply.raise_for_status()
 
             # TODO: validate output of a function (detector, tracker, etc...)
@@ -60,8 +75,14 @@ class FunctionViewSet(viewsets.ViewSet):
         return Response(data=response)
 
     @staticmethod
-    def _get_image(jid, frame):
-        pass
+    def _get_image(tid, frame):
+        db_task = TaskModel.objects.get(pk=tid)
+        frame_provider = FrameProvider(db_task.data)
+        # FIXME: now we cannot use the original quality because nuclio has body
+        # limit size by default 4Mb (from FastHTTP).
+        image = frame_provider.get_frame(frame, quality=FrameProvider.Quality.COMPRESSED)
+
+        return base64.b64encode(image[0].getvalue()).decode('utf-8')
 
     @staticmethod
     def _extract_function_info(data):
@@ -110,6 +131,3 @@ class RequestViewSet(viewsets.ViewSet):
 #                 "id": job.get_id(),
 #                 ""
 #             })
-
-
-
