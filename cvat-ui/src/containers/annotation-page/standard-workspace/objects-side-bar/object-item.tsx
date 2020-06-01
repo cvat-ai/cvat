@@ -416,7 +416,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         this.resetCuboidPerspective(false);
 
         objectState.points = shift(objectState.points,
-            cuboidOrientationIsLeft(objectState.points) ? 4: -4);
+            cuboidOrientationIsLeft(objectState.points) ? 4 : -4);
 
         this.commit();
     }
