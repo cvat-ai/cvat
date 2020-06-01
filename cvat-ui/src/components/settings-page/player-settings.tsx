@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, {useRef, useEffect} from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
@@ -30,6 +30,7 @@ interface Props {
     brightnessLevel: number;
     contrastLevel: number;
     saturationLevel: number;
+    previewImage: string | null;
     onChangeFrameStep(step: number): void;
     onChangeFrameSpeed(speed: FrameSpeed): void;
     onSwitchResetZoom(enabled: boolean): void;
@@ -56,6 +57,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         brightnessLevel,
         contrastLevel,
         saturationLevel,
+        previewImage,
         onChangeFrameStep,
         onChangeFrameSpeed,
         onSwitchResetZoom,
@@ -74,6 +76,15 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
     const minGridSize = 5;
     const maxGridSize = 1000;
 
+    const imageRef = useRef<HTMLImageElement>(null);
+
+    useEffect(() => {
+        if (imageRef.current) {
+            imageRef.current.style.filter = `brightness(${brightnessLevel / 100})`
+                + `contrast(${contrastLevel / 100})`
+                + `saturate(${saturationLevel / 100})`;
+        }
+    }, [imageRef, brightnessLevel, contrastLevel, saturationLevel])
 
     return (
         <div className='cvat-player-settings'>
@@ -220,62 +231,80 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     </Row>
                 </Col>
             </Row>
-            <Row className='cvat-player-settings-brightness'>
-                <Col className='cvat-text-color'>
-                    Brightness
+            <Row>
+                <Col span={12}>
+                    <Row className='cvat-player-settings-brightness'>
+                        <Col className='cvat-text-color'>
+                            Brightness
+                        </Col>
+                        <Col>
+                            <Slider
+                                min={50}
+                                max={200}
+                                value={brightnessLevel}
+                                onChange={(value: number | [number, number]): void => {
+                                    onChangeBrightnessLevel(value as number);
+                                }}
+                            />
+                        </Col>
+                    </Row>
+                    <Row className='cvat-player-settings-contrast'>
+                        <Col className='cvat-text-color'>
+                            Contrast
+                        </Col>
+                        <Col>
+                            <Slider
+                                min={50}
+                                max={200}
+                                value={contrastLevel}
+                                onChange={(value: number | [number, number]): void => {
+                                    onChangeContrastLevel(value as number);
+                                }}
+                            />
+                        </Col>
+                    </Row>
+                    <Row className='cvat-player-settings-saturation'>
+                        <Col className='cvat-text-color'>
+                            Saturation
+                        </Col>
+                        <Col>
+                            <Slider
+                                min={0}
+                                max={300}
+                                value={saturationLevel}
+                                onChange={(value: number | [number, number]): void => {
+                                    onChangeSaturationLevel(value as number);
+                                }}
+                            />
+                        </Col>
+                    </Row>
+                    <Row className='cvat-player-reset-color-settings'>
+                        <Col>
+                            <Button
+                                onClick={() => {
+                                    onChangeBrightnessLevel(100);
+                                    onChangeContrastLevel(100);
+                                    onChangeSaturationLevel(100);
+                                }}
+                            >
+                                Reset color settings
+                            </Button>
+                        </Col>
+                    </Row>
                 </Col>
-                <Col>
-                    <Slider
-                        min={50}
-                        max={200}
-                        value={brightnessLevel}
-                        onChange={(value: number | [number, number]): void => {
-                            onChangeBrightnessLevel(value as number);
-                        }}
-                    />
-                </Col>
-            </Row>
-            <Row className='cvat-player-settings-contrast'>
-                <Col className='cvat-text-color'>
-                    Contrast
-                </Col>
-                <Col>
-                    <Slider
-                        min={50}
-                        max={200}
-                        value={contrastLevel}
-                        onChange={(value: number | [number, number]): void => {
-                            onChangeContrastLevel(value as number);
-                        }}
-                    />
-                </Col>
-            </Row>
-            <Row className='cvat-player-settings-saturation'>
-                <Col className='cvat-text-color'>
-                    Saturation
-                </Col>
-                <Col>
-                    <Slider
-                        min={0}
-                        max={300}
-                        value={saturationLevel}
-                        onChange={(value: number | [number, number]): void => {
-                            onChangeSaturationLevel(value as number);
-                        }}
-                    />
-                </Col>
-            </Row>
-            <Row className='cvat-player-reset-color-settings'>
-                <Col>
-                    <Button
-                        onClick={() => {
-                            onChangeBrightnessLevel(100);
-                            onChangeContrastLevel(100);
-                            onChangeSaturationLevel(100);
-                        }}
-                    >
-                        Reset color settings
-                    </Button>
+                <Col span={12}>
+                    {
+                        previewImage && (
+                            <>
+                                <Text>Preview:</Text>
+                                <br />
+                                <img
+                                    src={previewImage}
+                                    ref={imageRef}
+                                    className='cvat-player-settings-image-preview'/>
+                            </>
+                        )
+                    }
                 </Col>
             </Row>
         </div>

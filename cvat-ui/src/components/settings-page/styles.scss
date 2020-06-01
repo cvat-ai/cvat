@@ -104,3 +104,9 @@
     display: flex;
     justify-content: flex-end;
 }
+
+.cvat-player-settings-image-preview {
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+}
