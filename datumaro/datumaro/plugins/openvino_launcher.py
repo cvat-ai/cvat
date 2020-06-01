@@ -7,14 +7,42 @@
 
 import cv2
 import numpy as np
-import os
 import os.path as osp
-import platform
-import subprocess
+import shutil
 
 from openvino.inference_engine import IENetwork, IEPlugin
 
 from datumaro.components.launcher import Launcher
+from datumaro.components.cli_plugin import CliPlugin
+
+
+class OpenVinoImporter(CliPlugin):
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
+        parser.add_argument('-d', '--description', required=True,
+            help="Path to the model description file (.xml)")
+        parser.add_argument('-w', '--weights', required=True,
+            help="Path to the model weights file (.bin)")
+        parser.add_argument('-i', '--interpreter', required=True,
+            help="Path to the network output interprter script (.py)")
+        parser.add_argument('--device', default='CPU',
+            help="Target device (default: %(default)s)")
+        return parser
+
+    @staticmethod
+    def copy_model(model_dir, model):
+        shutil.copy(model['description'],
+            osp.join(model_dir, osp.basename(model['description'])))
+        model['description'] = osp.basename(model['description'])
+
+        shutil.copy(model['weights'],
+            osp.join(model_dir, osp.basename(model['weights'])))
+        model['weights'] = osp.basename(model['weights'])
+
+        shutil.copy(model['interpreter'],
+            osp.join(model_dir, osp.basename(model['interpreter'])))
+        model['interpreter'] = osp.basename(model['interpreter'])
 
 
 class InterpreterScript:
@@ -42,8 +70,7 @@ class InterpreterScript:
         return []
 
 class OpenVinoLauncher(Launcher):
-    _DEFAULT_IE_PLUGINS_PATH = "/opt/intel/openvino_2019.1.144/deployment_tools/inference_engine/lib/intel64"
-    _IE_PLUGINS_PATH = os.getenv("IE_PLUGINS_PATH", _DEFAULT_IE_PLUGINS_PATH)
+    cli_plugin = OpenVinoImporter
 
     @staticmethod
     def _check_instruction_set(instruction):
@@ -182,10 +209,10 @@ class OpenVinoLauncher(Launcher):
         return results
 
     def categories(self):
-        return self._interpreter_script.get_categories()
+        return self._interpreter.get_categories()
 
     def process_outputs(self, inputs, outputs):
-        return self._interpreter_script.process_outputs(inputs, outputs)
+        return self._interpreter.process_outputs(inputs, outputs)
 
     def preferred_input_size(self):
         _, _, h, w = self._input_layout
