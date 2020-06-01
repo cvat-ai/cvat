@@ -39,3 +39,11 @@ spec:
       maxWorkers: 2
       kind: "http"
       workerAvailabilityTimeoutMilliseconds: 10000
+
+  platform:
+    attributes:
+      network: "cvat_default"
+
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3

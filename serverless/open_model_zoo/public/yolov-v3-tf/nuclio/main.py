@@ -207,16 +207,14 @@ def intersection_over_union(box_1, box_2):
 def handler(context, event):
     context.logger.info("Run yolo-v3-tf model")
     data = event.body
-    buf = io.BytesIO(base64.b64decode(data["image"]))
-    threshold = float(data.get("threshold", 0.2))
+    buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
+    threshold = float(data.get("threshold", 0.5))
     image = Image.open(buf)
 
     output_layer = context.user_data.model_handler.infer(np.array(image))
 
-    results = []
     # Collecting object detection results
     objects = []
-    PROB_THRESHOLD = 0.5
     model = context.user_data.model_handler
     origin_im_size = (image.height, image.width)
     for layer_name, out_blob in output_layer.items():
@@ -224,22 +222,21 @@ def handler(context, event):
         layer_params = YoloParams(model.layers[layer_name].params, out_blob.shape[2])
         objects += parse_yolo_region(out_blob, model.input_size(),
                                         origin_im_size, layer_params,
-                                        PROB_THRESHOLD)
+                                        threshold)
 
-    # Filtering overlapping boxes with respect to the --iou_threshold CLI parameter
+    # Filtering overlapping boxes (non-maximum supression)
     IOU_THRESHOLD = 0.4
     objects = sorted(objects, key=lambda obj : obj['confidence'], reverse=True)
-    for i in range(len(objects)):
-        if objects[i]['confidence'] == 0:
+    for i, obj in enumerate(objects):
+        if obj['confidence'] == 0:
             continue
         for j in range(i + 1, len(objects)):
-            if intersection_over_union(objects[i], objects[j]) > IOU_THRESHOLD:
+            if intersection_over_union(obj, objects[j]) > IOU_THRESHOLD:
                 objects[j]['confidence'] = 0
 
-    objects = [obj for obj in objects if obj['confidence'] >= PROB_THRESHOLD]
-
+    results = []
     for obj in objects:
-        if obj['confidence'] >= PROB_THRESHOLD:
+        if obj['confidence'] >= threshold:
             xtl = max(obj['xmin'], 0)
             ytl = max(obj['ymin'], 0)
             xbr = min(obj['xmax'], image.width)

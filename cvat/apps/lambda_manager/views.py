@@ -11,10 +11,10 @@ import django_rq
 # FIXME: need to define the host in settings
 NUCLIO_GATEWAY = 'http://localhost:8070/api/functions'
 NUCLIO_HEADERS = {'x-nuclio-project-name': 'cvat'}
-NUCLIO_TIMEOUT = 10
+NUCLIO_TIMEOUT = 60
 
 class FunctionViewSet(viewsets.ViewSet):
-    lookup_value_regex = '[a-zA-Z0-9_.]+'
+    lookup_value_regex = '[a-zA-Z0-9_.-]+'
     lookup_field = 'name'
 
     def list(self, request):
