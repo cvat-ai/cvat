@@ -434,19 +434,19 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
 
         if (cuboidOrientationIsLeft(points)) {
-            points[10] = points[14] + points[6] - points[2] - minD.x;
-            points[11] = points[15] + points[7] - points[3];
-            points[12] = points[14] + points[0] - points[2];
-            points[13] = points[15] + points[1] - points[3] + minD.y;
-            points[8] = points[12] + points[4] - points[0] - minD.x;
-            points[9] = points[13] + points[5] - points[1];
-        } else {
             points[14] = points[10] + points[2] - points[6] + minD.x;
             points[15] = points[11] + points[3] - points[7];
             points[8] = points[10] + points[4] - points[6];
             points[9] = points[11] + points[5] - points[7] + minD.y;
             points[12] = points[14] + points[0] - points[2];
             points[13] = points[15] + points[1] - points[3] + minD.y;
+        } else {
+            points[10] = points[14] + points[6] - points[2] - minD.x;
+            points[11] = points[15] + points[7] - points[3];
+            points[12] = points[14] + points[0] - points[2];
+            points[13] = points[15] + points[1] - points[3] + minD.y;
+            points[8] = points[12] + points[4] - points[0] - minD.x;
+            points[9] = points[13] + points[5] - points[1];
         }
 
         objectState.points = points;
