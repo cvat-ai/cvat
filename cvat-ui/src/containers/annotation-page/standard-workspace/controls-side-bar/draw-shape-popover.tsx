@@ -107,11 +107,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     }
 
     private onDraw(objectType: ObjectType): void {
-        const {
-            canvasInstance,
-            shapeType,
-            onDrawStart,
-        } = this.props;
+        const { canvasInstance, shapeType, onDrawStart } = this.props;
 
         const {
             rectDrawingMethod,
@@ -143,8 +139,8 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     private onChangeCuboidDrawingMethod = (event: RadioChangeEvent): void => {
         this.setState({
             cuboidDrawingMethod: event.target.value,
-        })
-    }
+        });
+    };
 
     private onDrawShape = (): void => {
         this.onDraw(ObjectType.SHAPE);

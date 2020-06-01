@@ -451,7 +451,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         self.onEditDone(
                             state,
                             points,
-                        )
+                        );
                         e.preventDefault();
                         return;
                     }
@@ -687,7 +687,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.content.addEventListener('mousedown', (event): void => {
             if ([0, 1].includes(event.button)) {
-                if ([Mode.IDLE, Mode.DRAG, Mode.MERGE, Mode.SPLIT].includes(this.mode)
+                if ([Mode.IDLE, Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT].includes(this.mode)
                     || event.button === 1 || event.altKey
                 ) {
                     self.controller.enableDrag(event.clientX, event.clientY);
