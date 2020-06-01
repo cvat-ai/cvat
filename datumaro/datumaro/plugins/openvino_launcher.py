@@ -6,11 +6,12 @@
 # pylint: disable=exec-used
 
 import cv2
+import logging as log
 import numpy as np
 import os.path as osp
 import shutil
 
-from openvino.inference_engine import IENetwork, IEPlugin
+from openvino.inference_engine import IECore
 
 from datumaro.components.launcher import Launcher
 from datumaro.components.cli_plugin import CliPlugin
@@ -67,51 +68,16 @@ class InterpreterScript:
 
     @staticmethod
     def process_outputs(inputs, outputs):
-        return []
+        raise NotImplementedError(
+            "Function should be implemented in the interpreter script")
+
 
 class OpenVinoLauncher(Launcher):
     cli_plugin = OpenVinoImporter
 
-    @staticmethod
-    def _check_instruction_set(instruction):
-        return instruction == str.strip(
-            # Let's ignore a warning from bandit about using shell=True.
-            # In this case it isn't a security issue and we use some
-            # shell features like pipes.
-            subprocess.check_output(
-                'lscpu | grep -o "{}" | head -1'.format(instruction),
-                shell=True).decode('utf-8') # nosec
-        )
-
-    @staticmethod
-    def make_plugin(device='cpu', plugins_path=_IE_PLUGINS_PATH):
-        if plugins_path is None or not osp.isdir(plugins_path):
-            raise Exception('Inference engine plugins directory "%s" not found' % \
-                (plugins_path))
-
-        plugin = IEPlugin(device='CPU', plugin_dirs=[plugins_path])
-        if (OpenVinoLauncher._check_instruction_set('avx2')):
-            plugin.add_cpu_extension(os.path.join(plugins_path,
-                'libcpu_extension_avx2.so'))
-        elif (OpenVinoLauncher._check_instruction_set('sse4')):
-            plugin.add_cpu_extension(os.path.join(plugins_path,
-                'libcpu_extension_sse4.so'))
-        elif platform.system() == 'Darwin':
-            plugin.add_cpu_extension(os.path.join(plugins_path,
-                'libcpu_extension.dylib'))
-        else:
-            raise Exception('Inference engine requires support of avx2 or sse4')
-
-        return plugin
-
-    @staticmethod
-    def make_network(model, weights):
-        return IENetwork.from_ir(model=model, weights=weights)
-
-    def __init__(self, description, weights, interpretation_script,
-            plugins_path=None, model_dir=None, **kwargs):
-        if model_dir is None:
-            model_dir = ''
+    def __init__(self, description, weights, interpreter,
+            plugins_path=None, device=None, model_dir=None):
+        model_dir = model_dir or ''
         if not osp.isfile(description):
             description = osp.join(model_dir, description)
         if not osp.isfile(description):
@@ -124,34 +90,33 @@ class OpenVinoLauncher(Launcher):
             raise Exception('Failed to open model weights file "%s"' % \
                 (weights))
 
-        if not osp.isfile(interpretation_script):
-            interpretation_script = \
-                osp.join(model_dir, interpretation_script)
-        if not osp.isfile(interpretation_script):
-            raise Exception('Failed to open model interpretation script file "%s"' % \
-                (interpretation_script))
+        if not osp.isfile(interpreter):
+            interpreter = osp.join(model_dir, interpreter)
+        if not osp.isfile(interpreter):
+            raise Exception('Failed to open model interpreter script file "%s"' % \
+                (interpreter))
 
-        self._interpreter_script = InterpreterScript(interpretation_script)
+        self._interpreter = InterpreterScript(interpreter)
 
-        if plugins_path is None:
-            plugins_path = OpenVinoLauncher._IE_PLUGINS_PATH
+        self._device = device or 'CPU'
 
-        plugin = OpenVinoLauncher.make_plugin(plugins_path=plugins_path)
-        network = OpenVinoLauncher.make_network(description, weights)
-        self._network = network
-        self._plugin = plugin
+        self._ie = IECore()
+        self._network = self._ie.read_network(description, weights)
+        self._check_model_support(self._network, self._device)
         self._load_executable_net()
+
+    def _check_model_support(self, net, device):
+        supported_layers = set(self._ie.query_network(net, device))
+        not_supported_layers = set(net.layers) - supported_layers
+        if len(not_supported_layers) != 0:
+            log.error("The following layers are not supported " \
+                "by the plugin for device '%s': %s." % \
+                (device, ', '.join(not_supported_layers)))
+        raise NotImplementedError(
+            "Some layers are not supported on the device")
 
     def _load_executable_net(self, batch_size=1):
         network = self._network
-        plugin = self._plugin
-
-        supported_layers = plugin.get_supported_layers(network)
-        not_supported_layers = [l for l in network.layers.keys() if l not in supported_layers]
-        if len(not_supported_layers) != 0:
-            raise Exception('Following layers are not supported by the plugin'
-                ' for the specified device {}:\n {}'. format( \
-                plugin.device, ", ".join(not_supported_layers)))
 
         iter_inputs = iter(network.inputs)
         self._input_blob_name = next(iter_inputs)
@@ -169,14 +134,14 @@ class OpenVinoLauncher(Launcher):
         network.reshape({self._input_blob_name: self._input_layout})
         self._batch_size = batch_size
 
-        self._net = plugin.load(network=network, num_requests=1)
+        self._net = self._ie.load_network(network=network, num_requests=1,
+            device_name=self._device)
 
     def infer(self, inputs):
         assert len(inputs.shape) == 4, \
             "Expected an input image in (N, H, W, C) format, got %s" % \
-                (inputs.shape)
-        assert inputs.shape[3] == 3, \
-            "Expected BGR input"
+            (inputs.shape)
+        assert inputs.shape[3] == 3, "Expected BGR input, got %s" % inputs.shape
 
         n, c, h, w = self._input_layout
         if inputs.shape[1:3] != (h, w):
