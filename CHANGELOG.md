@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-alpha] - Unreleased
 ### Added
--
+- Throttling policy for unauthenticated users (<https://github.com/opencv/cvat/pull/1531>)
 
 ### Changed
 -
