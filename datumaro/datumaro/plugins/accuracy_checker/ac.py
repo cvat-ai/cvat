@@ -37,8 +37,8 @@ class AcLauncher(Launcher):
 
         return import_predictions(outputs)
 
-    def get_categories(self):
-        return self._adapter.get_categories()
+    def categories(self):
+        return self._adapter.categories()
 
     def preferred_input_size(self):
         if self.input_shape is None:

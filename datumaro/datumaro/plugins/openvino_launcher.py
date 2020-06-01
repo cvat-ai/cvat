@@ -181,7 +181,7 @@ class OpenVinoLauncher(Launcher):
         results = self.process_outputs(inputs, outputs)
         return results
 
-    def get_categories(self):
+    def categories(self):
         return self._interpreter_script.get_categories()
 
     def process_outputs(self, inputs, outputs):

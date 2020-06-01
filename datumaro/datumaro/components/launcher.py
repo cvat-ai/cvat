@@ -20,7 +20,7 @@ class Launcher:
     def preferred_input_size(self):
         return None
 
-    def get_categories(self):
+    def categories(self):
         return None
 # pylint: enable=no-self-use
 
@@ -43,7 +43,7 @@ class ModelTransform(Transform):
         return __class__(subset, self._launcher, self._batch_size)
 
     def categories(self):
-        launcher_override = self._launcher.get_categories()
+        launcher_override = self._launcher.categories()
         if launcher_override is not None:
             return launcher_override
         return self._extractor.categories()
