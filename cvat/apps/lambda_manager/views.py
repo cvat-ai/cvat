@@ -50,29 +50,35 @@ class FunctionViewSet(viewsets.ViewSet):
 
         return Response(data=response)
 
+    @staticmethod
+    def _call(function, task_id, frame, points=None):
+        reply = FunctionViewSet._get_function(function)
+        port = reply["status"]["httpPort"]
+
+        data = {
+            'image': FunctionViewSet._get_image(task_id, frame),
+            'points': points
+        }
+
+        reply = requests.post('http://localhost:{}'.format(port),
+            json=data, timeout=NUCLIO_TIMEOUT)
+        reply.raise_for_status()
+
+        # TODO: validate output of a function (detector, tracker, etc...)
+        return reply
+
+
     def call(self, request, name):
         try:
             tid = request.data['task']
             frame = request.data['frame']
-            reply = self._get_function(name)
-            port = reply["status"]["httpPort"]
-
             points = request.data.get('points')
-            data = {
-                'image': self._get_image(tid, frame),
-                'points': points
-            }
 
-            reply = requests.post('http://localhost:{}'.format(port),
-                json=data, timeout=NUCLIO_TIMEOUT)
-            reply.raise_for_status()
-
-            # TODO: validate output of a function (detector, tracker, etc...)
-            response = reply.json()
+            reply = self._call(function=name, task_id=tid, frame=frame, points=points)
         except requests.RequestException as err:
             return Response(str(err), status=reply.status_code)
 
-        return Response(data=response)
+        return Response(data=reply.json())
 
     @staticmethod
     def _get_image(tid, frame):
@@ -94,40 +100,70 @@ class FunctionViewSet(viewsets.ViewSet):
         }
 
 class RequestViewSet(viewsets.ViewSet):
+    QUEUE_NAME = 'low'
+
+    @staticmethod
+    def _get_job(job):
+        return {
+            "id": job.id,
+            "function": {
+                "name": job.args[0],
+                "args": job.args[1:]
+            },
+            "status": job.get_status(),
+            "enqueued": job.enqueued_at(),
+            "started": job.started_at(),
+            "ended": job.ended_at(),
+            "exc_info": job.exc_info
+        }
+
     def list(self, request):
+        queue = django_rq.get_queue(RequestViewSet.QUEUE_NAME)
+        results = []
+        for job in queue.jobs:
+            results.append(self._get_job(job))
+
+        return Response(data=results)
+
+    @staticmethod
+    def _save_annotations(db_task, frame, annotations):
         pass
 
+    @staticmethod
+    def _call(function, threshold, task_id):
+        try:
+            db_task = TaskModel.objects.get(pk=task_id)
+            for frame in range(db_task.size):
+                reply = FunctionViewSet._call(function, task_id, frame)
+                RequestViewSet._save_annotations(db_task, frame, reply.json())
+        except requests.RequestException as err:
+            return Response(str(err), status=reply.status_code)
+
+
+    # { 'function': 'name', 'threshold': 'n', 'task': 'id'}
     def create(self, request):
-        pass
+        function = request.data['function']
+        threshold = request.data['threshold']
+        task_id = request.data['task']
+
+        queue = django_rq.get_queue(RequestViewSet.QUEUE_NAME)
+        queue.enqueue(self._call, function, threshold, task_id)
+
 
     def retrieve(self, request, pk):
-        pass
+        queue = django_rq.get_queue(RequestViewSet.QUEUE_NAME)
+        job = queue.fetch_job(pk)
+        if job != None:
+            return Response(data=self._get_job(job))
+        else:
+            return Response(status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, pk):
-        pass
+        queue = django_rq.get_queue(RequestViewSet.QUEUE_NAME)
+        job = queue.fetch_job(pk)
+        if job != None:
+            job.delete()
+            return Response(status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(status.HTTP_404_NOT_FOUND)
 
-
-# # { 'function': 'name', 'task': 'id', 'frames': { 'start': 0, 'stop': 10 } }
-# # { 'function': 'name', 'job':  'id', 'frames': { 'start': 0, 'stop': 10 } }
-# def create_request(request):
-#     try:
-#         params = request.data
-#         queue = django_rq.get_queue("low")
-#         func_name = params['function']
-#         tid = params.get('task')
-#         jid = params.get('job')
-#         frames = params.get('frames')
-
-
-#     except:
-#         pass
-
-# def get_requests():
-#     queue = django_rq.get_queue("low")
-#     response = []
-#     for job in queue.jobs:
-#         if job.func_name.starts_with("labmda"):
-#             response.append({
-#                 "id": job.get_id(),
-#                 ""
-#             })
