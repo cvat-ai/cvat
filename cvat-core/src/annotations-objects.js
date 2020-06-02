@@ -590,24 +590,6 @@
             this.zOrder = zOrder;
         }
 
-        // _saveAnnotationType(annotationType, frame) {
-        //     const undoAnnotationType = this.annotationType;
-        //     const redoAnnotationType = annotationType;
-
-        //     this.history.do(HistoryActions.CHANGED_ANNOTATION_TYPE, () => {
-        //         this.annotationType = undoAnnotationType;
-        //         this.updated = Date.now();
-        //     }, () => {
-        //         this.annotationType = redoAnnotationType;
-        //         this.updated = Date.now();
-        //     }, [this.clientID], frame);
-
-        //     this.annotationType = annotationType;
-        // }
-
-
-
-
         save(frame, data) {
             if (frame !== this.frame) {
                 throw new ScriptingError(
@@ -924,7 +906,6 @@
                         outside: current.outside,
                         occluded: current.occluded,
                         attributes: {},
-                        // annotationType: current.annotationType,
                     };
                 }
             }
@@ -987,7 +968,6 @@
                 outside: current.outside,
                 occluded: current.occluded,
                 attributes: {},
-                // annotationType: current.annotationType,
             };
 
             this.shapes[frame] = redoShape;
@@ -1010,7 +990,6 @@
                 points: current.points,
                 occluded: current.occluded,
                 attributes: {},
-                // annotationType: current.annotationType,
             };
 
             this.shapes[frame] = redoShape;
@@ -1033,7 +1012,6 @@
                 points: current.points,
                 outside: current.outside,
                 attributes: {},
-                // annotationType: current.annotationType,
             };
 
             this.shapes[frame] = redoShape;
@@ -1056,7 +1034,6 @@
                 points: current.points,
                 outside: current.outside,
                 attributes: {},
-                // annotationType: current.annotationType,
             };
 
             this.shapes[frame] = redoShape;
@@ -1067,29 +1044,6 @@
                 redoShape,
             );
         }
-
-        // _saveAnnotationType(annotationType, frame) {
-        //     const current = this.get(frame);
-        //     const wasKeyframe = frame in this.shapes;
-        //     const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-        //     const redoShape = wasKeyframe ? { ...this.shapes[frame], annotationType } : {
-        //         frame,
-        //         annotationType,
-        //         zOrder: current.zOrder,
-        //         points: current.points,
-        //         occluded: current.occluded,
-        //         outside: current.outside,
-        //         attributes: {},
-        //     };
-
-        //     this.shapes[frame] = redoShape;
-        //     this._appendShapeActionToHistory(
-        //         HistoryActions.CHANGED_ANNOTATION_TYPE,
-        //         frame,
-        //         undoShape,
-        //         redoShape,
-        //     );
-        // }
 
         _saveKeyframe(frame, keyframe) {
             const current = this.get(frame);

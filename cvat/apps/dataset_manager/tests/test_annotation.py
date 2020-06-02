@@ -13,6 +13,7 @@ class TrackManagerTest(TestCase):
             "frame": 0,
             "label_id": 0,
             "group": None,
+            "annotation_type": "Manual",
             "attributes": [],
             "shapes": [
                 {

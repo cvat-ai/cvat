@@ -19,13 +19,13 @@ from .annotation import AnnotationManager, TrackManager
 class TaskData:
     Attribute = namedtuple('Attribute', 'name, value')
     LabeledShape = namedtuple(
-        'LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order')
+        'LabeledShape', 'type, frame, label, points, occluded, attributes, annotation_type, group, z_order')
     LabeledShape.__new__.__defaults__ = (0, 0)
     TrackedShape = namedtuple(
         'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, group, z_order, label, track_id')
     TrackedShape.__new__.__defaults__ = (0, 0, None, 0)
     Track = namedtuple('Track', 'label, group, shapes')
-    Tag = namedtuple('Tag', 'frame, label, attributes, group')
+    Tag = namedtuple('Tag', 'frame, label, attributes, annotation_type, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
         'Frame', 'idx, frame, name, width, height, labeled_shapes, tags')
@@ -216,6 +216,7 @@ class TaskData:
             occluded=shape["occluded"],
             z_order=shape.get("z_order", 0),
             group=shape.get("group", 0),
+            annotation_type=shape["annotation_type"],
             attributes=self._export_attributes(shape["attributes"]),
         )
 
@@ -225,6 +226,7 @@ class TaskData:
                 tag["frame"] * self._frame_step,
             label=self._get_label_name(tag["label_id"]),
             group=tag.get("group", 0),
+            annotation_type=tag["annotation_type"],
             attributes=self._export_attributes(tag["attributes"]),
         )
 
