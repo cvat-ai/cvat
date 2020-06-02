@@ -26,7 +26,7 @@ const validationPatterns = {
 
     validateUsernameLength: {
         pattern: /(?=.{5,})/,
-        message: 'Username must have at least 8 characters',
+        message: 'Username must have at least 5 characters',
     },
 
     validateUsernameCharacters: {
