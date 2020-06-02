@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0-alpha] - Unreleased
 ### Added
 - Throttling policy for unauthenticated users (<https://github.com/opencv/cvat/pull/1531>)
+- Annotation type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
+- Annotation type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
 
 ### Changed
 -
@@ -81,8 +83,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Methods ``import`` and ``export`` to import/export raw annotations for Job and Task in ``cvat-core`` (<https://github.com/opencv/cvat/pull/1406>)
 - Versioning of client packages (``cvat-core``, ``cvat-canvas``, ``cvat-ui``). Initial versions are set to 1.0.0  (<https://github.com/opencv/cvat/pull/1448>)
 - Cuboids feature was migrated from old UI to new one. (<https://github.com/opencv/cvat/pull/1451>)
-- Annotation type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
-- Annotation type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
 
 ### Removed
 - Annotation convertation utils, currently supported natively via Datumaro framework (https://github.com/opencv/cvat/pull/1477)
