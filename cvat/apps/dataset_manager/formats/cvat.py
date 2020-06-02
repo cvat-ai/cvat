@@ -432,7 +432,7 @@ def load(file_object, annotations):
                 )
             elif el.tag == 'image':
                 image_is_opened = True
-                frame_id = int(el.attrib['id'])
+                frame_id = annotations.match_frame(el.attrib['name'])
             elif el.tag in supported_shapes and (track is not None or image_is_opened):
                 attributes = []
                 shape = {
