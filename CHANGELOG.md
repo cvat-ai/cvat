@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Throttling policy for unauthenticated users (<https://github.com/opencv/cvat/pull/1531>)
 
 ### Changed
--
+- Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
 
 ### Deprecated
 -
