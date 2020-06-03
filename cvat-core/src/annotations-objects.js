@@ -1608,7 +1608,7 @@
                 return offsetVector;
             }
 
-            function matchCurves(leftCurve, rightCurve) {
+            function matchLeftRight(leftCurve, rightCurve) {
                 const matching = {};
                 for (let i = 0; i < leftCurve.length; i++) {
                     let minDistance = Number.MAX_SAFE_INTEGER;
@@ -1624,97 +1624,36 @@
                 return matching;
             }
 
-            function completeMatching(_leftPoints, _rightPoints, _matching) {
-                const leftPoints = [..._leftPoints];
-                const rightPoints = [..._rightPoints];
-
-                // get reverse matching (right => left)
-                const reverseMatching = {};
-                for (const key of Object.keys(_matching)) {
-                    const reverseKey = _matching[key];
-                    if (!(reverseKey in reverseMatching)) {
-                        reverseMatching[reverseKey] = [];
-                    }
-                    reverseMatching[reverseKey].push(+key);
+            function matchRightLeft(leftCurve, rightCurve, leftRightMatching) {
+                const matchedRightPoints = Object.values(leftRightMatching);
+                const unmatchedRightPoints = rightCurve.map((_, index) => index)
+                    .filter((index) => !matchedRightPoints.includes(index));
+                const updatedMatching = {};
+                for (const key of Object.keys(leftRightMatching)) {
+                    updatedMatching[key] = [leftRightMatching[key]];
                 }
 
-                const isAppended = {};
-                for (let i = 1; i < rightPoints.length - 1; i++) {
-                    if (!(i in reverseMatching)) {
-                        // for each point not in matching search neightbors in mapping
-                        let previousAnchorFound = false; // anchor wasn't appended in this loop
-                        let previousAnchor = i - 1;
-                        let previousFound = false;
-                        let previous = i - 1;
-                        while (!previousAnchorFound) {
-                            if (previous in reverseMatching) {
-                                previousFound = true;
-
-                                if (!isAppended[previousAnchor]) {
-                                    previousAnchorFound = true;
-                                    break;
-                                }
-                            }
-
-                            if (!previousFound) {
-                                previous -= 1;
-                            }
-                            previousAnchor -= 1;
+                for (const rightPoint of unmatchedRightPoints) {
+                    let minimumDistance = Number.MAX_SAFE_INTEGER;
+                    let leftPoint = null;
+                    for (let i = 0; i < leftCurve.length; i++) {
+                        const distance = Math.abs(leftCurve[i] - rightCurve[rightPoint]);
+                        if (distance < minimumDistance) {
+                            minimumDistance = distance;
+                            leftPoint = i;
                         }
-
-                        let nextFound = false;
-                        let next = i + 1;
-                        while (!nextFound) {
-                            if (next in reverseMatching) {
-                                nextFound = true;
-                                break;
-                            }
-
-                            next += 1;
-                        }
-
-                        // search an offset at right
-                        const rightOffset = curveLength(rightPoints.slice(previousAnchor, i + 1))
-                            / curveLength(rightPoints.slice(previousAnchor, next + 1));
-
-                        // for these neightbors search corresponded points at left
-                        const previousAnchorInLeft = Math.max(...reverseMatching[previousAnchor]);
-                        const previousInLeft = Math.max(...reverseMatching[previous]);
-                        const nextInLeft = Math.min(...reverseMatching[next]);
-
-                        // create corresponded point on left with the same offset
-                        if (rightOffset > 0.5) {
-                            leftPoints.splice(
-                                previousInLeft + 1, 0, leftPoints[nextInLeft],
-                            );
-                        } else {
-                            leftPoints.splice(
-                                previousInLeft + 1, 0, leftPoints[previousAnchorInLeft],
-                            );
-                        }
-
-                        // update matching
-                        for (const reverseKey of Object.keys(reverseMatching)) {
-                            for (let j = 0; j < reverseMatching[reverseKey].length; j++) {
-                                if (reverseMatching[reverseKey][j] > previousInLeft) {
-                                    reverseMatching[reverseKey][j]++;
-                                }
-                            }
-                        }
-
-                        reverseMatching[i] = [previousInLeft + 1];
-                        isAppended[i] = true;
                     }
+
+                    updatedMatching[leftPoint].push(rightPoint);
                 }
 
-                const matching = Object.keys(reverseMatching).reduce((acc, reverseKey) => {
-                    for (const key of reverseMatching[reverseKey]) {
-                        acc[key] = +reverseKey;
-                    }
-                    return acc;
-                }, {});
+                for (const key of Object.keys(updatedMatching)) {
+                    const sortedRightIndexes = updatedMatching[key]
+                        .sort((a, b) => a - b);
+                    updatedMatching[key] = sortedRightIndexes;
+                }
 
-                return [leftPoints, rightPoints, matching];
+                return updatedMatching;
             }
 
             function reduceInterpolation(interpolatedPoints, matching, leftPoints, rightPoints) {
@@ -1732,80 +1671,107 @@
                     };
                 }
 
-                function equal(point1, point2) {
-                    return point1.x === point2.x && point1.y === point2.y;
+                const reduced = [];
+                const interpolatedIndexes = {};
+                let accumulated = 0;
+                for (let i = 0; i < leftPoints.length; i++) {
+                    // eslint-disable-next-line
+                    interpolatedIndexes[i] = matching[i].map(() => accumulated++);
                 }
 
-                let latestRight = 0;
-                let latestLeft = leftPoints[0];
-                const leftSegments = [];
-                const rightSegments = [];
-                const left = {
-                    start: 0,
-                    stop: 0,
-                    active: false,
-                };
-                const right = { ...left };
+                function leftSegment(start, stop) {
+                    const startInterpolated = interpolatedIndexes[start][0];
+                    const stopInterpolated = interpolatedIndexes[stop][0];
 
-                for (let i = 1; i < leftPoints.length; i++) {
-                    if (matching[i] === latestRight && !left.active) {
-                        left.active = true;
-                        left.start = i - 1;
-                    } else if (matching[i] !== latestRight || i === leftPoints.length - 1) {
-                        if (left.active) {
-                            left.active = false;
-                            left.stop = i - 1;
-                            leftSegments.push({
-                                type: 'left',
-                                start: left.start,
-                                stop: left.stop,
-                            });
-                        }
-
-                        latestRight = matching[i];
+                    if (startInterpolated === stopInterpolated) {
+                        reduced.push(interpolatedPoints[startInterpolated]);
+                        return;
                     }
 
-                    if (equal(leftPoints[i], latestLeft) && !right.active) {
-                        right.active = true;
-                        right.start = i - 1;
-                    } else if (!equal(leftPoints[i], latestLeft) || i === leftPoints.length - 1) {
-                        if (right.active) {
-                            right.active = false;
-                            right.stop = i - 1;
-                            rightSegments.push({
-                                type: 'right',
-                                start: right.start,
-                                stop: right.stop,
-                            });
-                        }
+                    const baseLength = curveLength(leftPoints.slice(start, stop + 1));
+                    const interpolatedSegment = interpolatedPoints
+                        .slice(startInterpolated, stopInterpolated + 1);
+                    const interpolatedLength = curveLength(interpolatedSegment);
 
-                        latestLeft = leftPoints[i];
+                    const reduceFactor = Math.floor(baseLength / interpolatedLength);
+                    if (reduceFactor === 1) {
+                        reduced.push(...interpolatedSegment);
+                    } else {
+                        for (let i = startInterpolated; i <= stopInterpolated; i += reduceFactor) {
+                            const a = i;
+                            const b = Math.min(i + reduceFactor, stopInterpolated + 1);
+                            reduced.push(averagePoint(
+                                interpolatedPoints.slice(a, b),
+                            ));
+                        }
                     }
                 }
 
-                const allSegments = leftSegments.concat(rightSegments).sort((a, b) => a.start - b.start);
-                const reduced = interpolatedPoints.slice(0, allSegments.length ? allSegments[0].start : undefined);
-                for (const segment of allSegments) {
-                    const { start, stop, type } = segment;
-                    const baseCurve = type === 'left' ? leftPoints.slice(start, stop + 1) : rightPoints.slice(matching[start], matching[stop] + 1);
-                    const interpolatedSegment = interpolatedPoints.slice(start, stop + 1);
-                    const reduceFactor = Math.floor(
-                        curveLength(baseCurve) / curveLength(interpolatedSegment),
-                    );
-                    if (reduceFactor >= 2) {
-                        for (let i = 0; i < interpolatedSegment.length; i += reduceFactor) {
-                            const average = averagePoint(interpolatedSegment.slice(i, i + reduceFactor));
-                            reduced.push(average);
+                function rightSegment(leftPoint) {
+                    const start = matching[leftPoint][0];
+                    const [stop] = matching[leftPoint].slice(-1);
+                    const startInterpolated = interpolatedIndexes[leftPoint][0];
+                    const [stopInterpolated] = interpolatedIndexes[leftPoint].slice(-1);
+                    const interpolatedSegment = interpolatedPoints
+                        .slice(startInterpolated, stopInterpolated + 1);
+
+                    const baseLength = curveLength(rightPoints.slice(start, stop + 1));
+                    const interpolatedLength = curveLength(interpolatedSegment);
+
+                    const reduceFactor = Math.floor(baseLength / interpolatedLength);
+                    if (reduceFactor === 1) {
+                        reduced.push(...interpolatedSegment);
+                    } else {
+                        for (let i = startInterpolated; i <= stopInterpolated; i += reduceFactor) {
+                            const a = i;
+                            const b = Math.min(i + reduceFactor, stopInterpolated + 1);
+                            reduced.push(averagePoint(
+                                interpolatedPoints.slice(a, b),
+                            ));
+                        }
+                    }
+                }
+
+                let previousOpened = null;
+                for (let i = 0; i < leftPoints.length; i++) {
+                    if (matching[i].length === 1) {
+                        // check if left segment is opened
+                        if (previousOpened !== null) {
+                            // check if we should continue the left segment
+                            if (matching[i][0] === matching[previousOpened][0]) {
+                                continue;
+                            } else {
+                                // left segment found
+                                const start = previousOpened;
+                                const stop = i - 1;
+                                leftSegment(start, stop);
+
+                                // start next left segment
+                                previousOpened = i;
+                            }
+                        } else {
+                            // start next left segment
+                            previousOpened = i;
                         }
                     } else {
-                        reduced.push(...interpolatedSegment);
+                        // check if left segment is opened
+                        if (previousOpened !== null) {
+                            // left segment found
+                            const start = previousOpened;
+                            const stop = i - 1;
+                            leftSegment(start, stop);
+
+                            previousOpened = null;
+                        }
+
+                        // right segment found
+                        rightSegment(i);
                     }
                 }
-                if (allSegments.length) {
-                    Array.prototype.push.apply(
-                        reduced,
-                        interpolatedPoints.slice(allSegments[allSegments.length - 1].stop),
-                    );
+
+                // check if there is an opened segment
+                if (previousOpened !== null) {
+                    leftSegment(previousOpened, leftPoints.length - 1);
                 }
 
                 return reduced;
@@ -1820,34 +1786,35 @@
             const leftOffsetVec = curveToOffsetVec(leftPoints, leftCurveLength);
             const rightOffsetVec = curveToOffsetVec(rightPoints, rightCurveLength);
 
-            const matching = matchCurves(leftOffsetVec, rightOffsetVec);
-            const [
-                completedLeftPoints,
-                completedRightPoints,
-                completedMatching,
-            ] = completeMatching(leftPoints, rightPoints, matching);
+            const matching = matchLeftRight(leftOffsetVec, rightOffsetVec);
+            const completedMatching = matchRightLeft(
+                leftOffsetVec, rightOffsetVec, matching,
+            );
 
             const interpolatedPoints = Object.keys(completedMatching)
-                .map((key) => +key).sort((a, b) => a - b)
-                .reduce((acc, key) => {
-                    const left = completedLeftPoints[key];
-                    const right = completedRightPoints[+completedMatching[key]];
-                    acc.push({
-                        x: left.x + (right.x - left.x) * offset,
-                        y: left.y + (right.y - left.y) * offset,
-                    });
+                .map((leftPointIdx) => +leftPointIdx).sort((a, b) => a - b)
+                .reduce((acc, leftPointIdx) => {
+                    const leftPoint = leftPoints[leftPointIdx];
+                    for (const rightPointIdx of completedMatching[leftPointIdx]) {
+                        const rightPoint = rightPoints[rightPointIdx];
+                        acc.push({
+                            x: leftPoint.x + (rightPoint.x - leftPoint.x) * offset,
+                            y: leftPoint.y + (rightPoint.y - leftPoint.y) * offset,
+                        });
+                    }
+
                     return acc;
                 }, []);
 
-            const reducedInterpolation = reduceInterpolation(
+            const reducedPoints = reduceInterpolation(
                 interpolatedPoints,
                 completedMatching,
-                completedLeftPoints,
-                completedRightPoints,
+                leftPoints,
+                rightPoints,
             );
 
             return {
-                points: toArray(reducedInterpolation),
+                points: toArray(reducedPoints),
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -1862,6 +1829,26 @@
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
+        }
+
+        interpolatePosition(leftPosition, rightPosition, offset) {
+            const copyLeft = {
+                ...leftPosition,
+                points: [...leftPosition.points, leftPosition.points[0], leftPosition.points[1]],
+            };
+
+            const copyRight = {
+                ...rightPosition,
+                points: [...rightPosition.points, rightPosition.points[0], rightPosition.points[1]],
+            };
+
+            const result = PolyTrack.prototype.interpolatePosition
+                .call(this, copyLeft, copyRight, offset);
+
+            return {
+                ...result,
+                points: result.points.slice(0, -2),
+            };
         }
     }
 
