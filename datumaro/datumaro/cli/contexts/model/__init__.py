@@ -10,20 +10,19 @@ import os.path as osp
 import re
 
 from datumaro.components.config import DEFAULT_FORMAT
-from ...util import add_subparser
+from datumaro.components.project import Environment
+from ...util import add_subparser, MultilineFormatter
 from ...util.project import load_project
 
 
 def build_add_parser(parser_ctor=argparse.ArgumentParser):
     builtins = sorted(Environment().launchers.items)
 
-    parser = parser_ctor(help="Export project",
+    parser = parser_ctor(help="Add model to project",
         description="""
             Registers an executable model into a project. A model requires
             a launcher to be executed. Each launcher has its own options, which
             are passed after '--' separator, pass '-- -h' for more info.
-            |n
-            Launchers:|n
             |n
             List of builtin launchers: %s
         """ % ', '.join(builtins),
