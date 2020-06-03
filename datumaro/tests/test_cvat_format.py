@@ -18,10 +18,7 @@ from datumaro.util.test_utils import TestDir, compare_datasets
 
 def generate_dummy_cvat(path):
     images_dir = osp.join(path, CvatPath.IMAGES_DIR)
-    anno_dir = path
-
     os.makedirs(images_dir)
-    os.makedirs(anno_dir)
 
     root_elem = ET.Element('annotations')
     ET.SubElement(root_elem, 'version').text = '1.1'
@@ -93,7 +90,7 @@ def generate_dummy_cvat(path):
         'label': 'label2', 'points': '1,2;3,4;5,6', 'z_order': '2',
     })
 
-    with open(osp.join(anno_dir, 'train.xml'), 'w') as f:
+    with open(osp.join(path, 'train.xml'), 'w') as f:
         f.write(ET.tostring(root_elem, encoding='unicode'))
 
 class CvatImporterTest(TestCase):
