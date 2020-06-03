@@ -417,11 +417,11 @@ class VocConverterTest(TestCase):
                     DatasetItem(id=1, subset='a', annotations=[
                         # overlapping masks, the first should be truncated
                         # the second and third are different instances
+                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
+                            z_order=3),
                         Mask(image=np.array([[0, 1, 1, 1, 0]]), label=4,
                             z_order=1),
                         Mask(image=np.array([[1, 1, 0, 0, 0]]), label=3,
-                            z_order=2),
-                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
                             z_order=2),
                     ]),
                 ])
@@ -451,11 +451,11 @@ class VocConverterTest(TestCase):
                     DatasetItem(id=1, subset='a', annotations=[
                         # overlapping masks, the first should be truncated
                         # the second and third are different instances
+                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
+                            z_order=3),
                         Mask(image=np.array([[0, 1, 1, 1, 0]]), label=4,
                             z_order=1),
                         Mask(image=np.array([[1, 1, 0, 0, 0]]), label=3,
-                            z_order=2),
-                        Mask(image=np.array([[0, 0, 0, 1, 0]]), label=3,
                             z_order=2),
                     ]),
                 ])

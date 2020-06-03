@@ -271,7 +271,7 @@ class _SubsetWriter:
                 )),
             ]))
 
-        shape_data['z_order'] = str(int(shape.attributes.get('z_order', 0)))
+        shape_data['z_order'] = str(int(shape.z_order))
         if shape.group:
             shape_data['group_id'] = str(shape.group)
 
