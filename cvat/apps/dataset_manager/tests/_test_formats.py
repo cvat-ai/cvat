@@ -51,6 +51,9 @@ def _setUpModule():
     import cvat.apps.dataset_manager as dm
     globals()['dm'] = dm
 
+    import datumaro
+    globals()['datumaro'] = datumaro
+
     import sys
     sys.path.insert(0, __file__[:__file__.rfind('/dataset_manager/')])
 
@@ -61,6 +64,7 @@ from io import BytesIO
 import os.path as osp
 import random
 import tempfile
+import zipfile
 
 from PIL import Image
 from django.contrib.auth.models import User, Group
@@ -113,38 +117,7 @@ class TaskExportTest(APITestCase):
     def setUpTestData(cls):
         create_db_users(cls)
 
-    def _generate_task(self):
-        task = {
-            "name": "my task #1",
-            "owner": '',
-            "assignee": '',
-            "overlap": 0,
-            "segment_size": 100,
-            "z_order": False,
-            "labels": [
-                {
-                    "name": "car",
-                    "attributes": [
-                        {
-                            "name": "model",
-                            "mutable": False,
-                            "input_type": "select",
-                            "default_value": "mazda",
-                            "values": ["bmw", "mazda", "renault"]
-                        },
-                        {
-                            "name": "parked",
-                            "mutable": True,
-                            "input_type": "checkbox",
-                            "default_value": False
-                        },
-                    ]
-                },
-                {"name": "person"},
-            ]
-        }
-        task = self._create_task(task, 3)
-
+    def _generate_annotations(self, task):
         annotations = {
             "version": 0,
             "tags": [
@@ -256,8 +229,39 @@ class TaskExportTest(APITestCase):
             ]
         }
         self._put_api_v1_task_id_annotations(task["id"], annotations)
+        return annotations
 
-        return task, annotations
+    def _generate_task(self):
+        task = {
+            "name": "my task #1",
+            "owner": '',
+            "assignee": '',
+            "overlap": 0,
+            "segment_size": 100,
+            "z_order": False,
+            "labels": [
+                {
+                    "name": "car",
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "mazda",
+                            "values": ["bmw", "mazda", "renault"]
+                        },
+                        {
+                            "name": "parked",
+                            "mutable": True,
+                            "input_type": "checkbox",
+                            "default_value": False
+                        },
+                    ]
+                },
+                {"name": "person"},
+            ]
+        }
+        return self._create_task(task, 3)
 
     def _create_task(self, data, size):
         with ForceLogin(self.user, self.client):
@@ -285,53 +289,99 @@ class TaskExportTest(APITestCase):
 
         return response
 
-    def _test_export(self, format_name, save_images=False):
-        task, _ = self._generate_task()
-
+    def _test_export(self, check, task, format_name, **export_args):
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = osp.join(temp_dir, format_name)
             dm.task.export_task(task["id"], file_path,
-                format_name, save_images=save_images)
+                format_name, **export_args)
 
-            with open(file_path, 'rb') as f:
-                self.assertTrue(len(f.read()) != 0)
-
-    def test_datumaro(self):
-        self._test_export('Datumaro 1.0', save_images=False)
-
-    def test_coco(self):
-        self._test_export('COCO 1.0', save_images=True)
-
-    def test_voc(self):
-        self._test_export('PASCAL VOC 1.1', save_images=True)
-
-    def test_tf_record(self):
-        self._test_export('TFRecord 1.0', save_images=True)
-
-    def test_yolo(self):
-        self._test_export('YOLO 1.1', save_images=True)
-
-    def test_mot(self):
-        self._test_export('MOT 1.1', save_images=True)
-
-    def test_labelme(self):
-        self._test_export('LabelMe 3.0', save_images=True)
-
-    def test_mask(self):
-        self._test_export('Segmentation mask 1.1', save_images=True)
-
-    def test_cvat_video(self):
-        self._test_export('CVAT for video 1.1', save_images=True)
-
-    def test_cvat_images(self):
-        self._test_export('CVAT for images 1.1', save_images=True)
+            check(file_path)
 
     def test_export_formats_query(self):
         formats = dm.views.get_export_formats()
 
-        self.assertEqual(len(formats), 10)
+        self.assertEqual({f.DISPLAY_NAME for f in formats},
+        {
+            'COCO 1.0',
+            'CVAT for images 1.1',
+            'CVAT for video 1.1',
+            'Datumaro 1.0',
+            'LabelMe 3.0',
+            'MOT 1.1',
+            'PASCAL VOC 1.1',
+            'Segmentation mask 1.1',
+            'TFRecord 1.0',
+            'YOLO 1.1',
+        })
 
     def test_import_formats_query(self):
         formats = dm.views.get_import_formats()
 
-        self.assertEqual(len(formats), 8)
+        self.assertEqual({f.DISPLAY_NAME for f in formats},
+        {
+            'COCO 1.0',
+            'CVAT 1.1',
+            'LabelMe 3.0',
+            'MOT 1.1',
+            'PASCAL VOC 1.1',
+            'Segmentation mask 1.1',
+            'TFRecord 1.0',
+            'YOLO 1.1',
+        })
+
+    def test_exports(self):
+        def check(file_path):
+            with open(file_path, 'rb') as f:
+                self.assertTrue(len(f.read()) != 0)
+
+        for f in dm.views.get_export_formats():
+            format_name = f.DISPLAY_NAME
+            for save_images in { True, False }:
+                with self.subTest(format=format_name, save_images=save_images):
+                    task = self._generate_task()
+                    self._generate_annotations(task)
+                    self._test_export(check, task,
+                        format_name, save_images=save_images)
+
+    def test_empty_images_are_exported(self):
+        dm_env = dm.formats.registry.dm_env
+
+        for format_name, importer_name in [
+            ('COCO 1.0', 'coco'),
+            ('CVAT for images 1.1', 'cvat'),
+            # ('CVAT for video 1.1', 'cvat'), # does not support
+            ('Datumaro 1.0', 'datumaro_project'),
+            ('LabelMe 3.0', 'label_me'),
+            # ('MOT 1.1', 'mot_seq'), # does not support
+            ('PASCAL VOC 1.1', 'voc'),
+            ('Segmentation mask 1.1', 'voc'),
+            ('TFRecord 1.0', 'tf_detection_api'),
+            ('YOLO 1.1', 'yolo'),
+        ]:
+            with self.subTest(format=format_name):
+                task = self._generate_task()
+
+                def check(file_path):
+                    def load_dataset(src):
+                        if importer_name == 'datumaro_project':
+                            project = datumaro.components.project. \
+                                Project.load(src)
+
+                            # NOTE: can't import cvat.utils.cli
+                            # for whatever reason, so remove the dependency
+                            project.config.remove('sources')
+
+                            return project.make_dataset()
+                        return dm_env.make_importer(importer_name)(src) \
+                            .make_dataset()
+
+                    if zipfile.is_zipfile(file_path):
+                        with tempfile.TemporaryDirectory() as tmp_dir:
+                            zipfile.ZipFile(file_path).extractall(tmp_dir)
+                            dataset = load_dataset(tmp_dir)
+                    else:
+                        dataset = load_dataset(file_path)
+
+                    self.assertEqual(len(dataset), task["size"])
+                self._test_export(check, task, format_name, save_images=False)
+

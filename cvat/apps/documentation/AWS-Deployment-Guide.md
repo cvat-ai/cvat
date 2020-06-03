@@ -12,6 +12,7 @@ For any of above, don't forget to add exposed AWS public IP address or hostname 
 
 ```
 version: "2.3"
+services:
   cvat_proxy:
     environment:
       CVAT_HOST: your-instance.amazonaws.com

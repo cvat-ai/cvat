@@ -251,8 +251,7 @@ class VocSegmentationExtractor(_VocExtractor):
 
             if class_mask is not None:
                 label_cat = self._categories[AnnotationType.label]
-                instance_labels = compiled_mask.get_instance_labels(
-                    class_count=len(label_cat.items))
+                instance_labels = compiled_mask.get_instance_labels()
             else:
                 instance_labels = {i: None
                     for i in range(compiled_mask.instance_count)}

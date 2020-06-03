@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -304,10 +304,16 @@ class Mpeg4ChunkWriter(IChunkWriter):
         self._output_fps = 25
 
     @staticmethod
-    def _create_av_container(path, w, h, rate, pix_format, options):
+    def _create_av_container(path, w, h, rate, options):
+            # x264 requires width and height must be divisible by 2 for yuv420p
+            if h % 2:
+                h += 1
+            if w % 2:
+                w += 1
+
             container = av.open(path, 'w')
             video_stream = container.add_stream('libx264', rate=rate)
-            video_stream.pix_fmt = pix_format
+            video_stream.pix_fmt = "yuv420p"
             video_stream.width = w
             video_stream.height = h
             video_stream.options = options
@@ -320,14 +326,12 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         input_w = images[0][0].width
         input_h = images[0][0].height
-        pix_format = images[0][0].format.name
 
         output_container, output_v_stream = self._create_av_container(
             path=chunk_path,
             w=input_w,
             h=input_h,
             rate=self._output_fps,
-            pix_format=pix_format,
             options={
                 "crf": str(self._image_quality),
                 "preset": "ultrafast",
@@ -373,18 +377,11 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
         output_h = input_h // downscale_factor
         output_w = input_w // downscale_factor
 
-        # width and height must be divisible by 2
-        if output_h % 2:
-            output_h += 1
-        if output_w % 2:
-            output_w +=1
-
         output_container, output_v_stream = self._create_av_container(
             path=chunk_path,
             w=output_w,
             h=output_h,
             rate=self._output_fps,
-            pix_format='yuv420p',
             options={
                 'profile': 'baseline',
                 'coder': '0',

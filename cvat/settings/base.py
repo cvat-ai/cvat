@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     'cvat.apps.dataset_manager',
     'cvat.apps.engine',
     'cvat.apps.git',
+    'cvat.apps.restrictions',
     'django_rq',
     'compressor',
     'cacheops',
@@ -147,10 +148,16 @@ REST_FRAMEWORK = {
 
     # Disable default handling of the 'format' query parameter by REST framework
     'URL_FORMAT_OVERRIDE': 'scheme',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+    },
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
-    'REGISTER_SERIALIZER': 'cvat.apps.authentication.serializers.RegisterSerializerEx'
+    'REGISTER_SERIALIZER': 'cvat.apps.restrictions.serializers.RestrictedRegisterSerializer'
 }
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
@@ -216,6 +223,7 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 
 # Django Auth
 DJANGO_AUTH_TYPE = 'BASIC'
+DJANGO_AUTH_DEFAULT_GROUPS = []
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
 AUTH_LOGIN_NOTE = '<p>Have not registered yet? <a href="/auth/register">Register here</a>.</p>'
@@ -405,3 +413,21 @@ LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 
 DATUMARO_PATH = os.path.join(BASE_DIR, 'datumaro')
 sys.path.append(DATUMARO_PATH)
+
+RESTRICTIONS = {
+    'user_agreements': [],
+
+    # this setting limits the number of tasks for the user
+    'task_limit': None,
+
+    # this setting reduse task visibility to owner and assignee only
+    'reduce_task_visibility': False,
+
+    # allow access to analytics component to users with the following roles
+    'analytics_access': (
+        'engine.role.observer',
+        'engine.role.annotator',
+        'engine.role.user',
+        'engine.role.admin',
+        ),
+}

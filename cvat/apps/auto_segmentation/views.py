@@ -41,6 +41,11 @@ def run_tensorflow_auto_segmentation(frame_provider, labels_mapping, treshold):
 
     ## INITIALIZATION
 
+    # workarround for tf.placeholder() is not compatible with eager execution
+    # https://github.com/tensorflow/tensorflow/issues/18165
+    import tensorflow as tf
+    tf.compat.v1.disable_eager_execution()
+
     # Root directory of the project
     ROOT_DIR = os.environ.get('AUTO_SEGMENTATION_PATH')
     # Import Mask RCNN

@@ -142,7 +142,7 @@ def load_project_as_dataset(url):
 
 class Environment:
     _builtin_plugins = None
-    PROJECT_EXTRACTOR_NAME = 'project'
+    PROJECT_EXTRACTOR_NAME = 'datumaro_project'
 
     def __init__(self, config=None):
         config = Config(config,
