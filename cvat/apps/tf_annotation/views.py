@@ -329,15 +329,7 @@ def create(request, tid, mid):
         should_reset = data['reset']
         slogger.glob.info("user defined mapping {}".format(user_label_mapping))
         db_task = TaskModel.objects.get(pk=tid)
-        queue = django_rq.get_queue('low')
-        job_id = 'tf_annotation.create/{}'.format(str(tid))
-        # slogger.glob.info("job detail isnide create {}".format(job_id))
-        # slogger.glob.info("tf custom job {}".format(job_id))
-        job = queue.fetch_job(job_id)
-        slogger.glob.info("job enqueued {} status: {} is finished {} {}".format(job, job.is_started, job.is_finished,job.is_queued))
-        # if job is not None
-        if job is not None and (job.is_started or job.is_queued):
-            raise Exception("The process is already running")
+        
          
         db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
         db_labels = {db_label.id: db_label.name for db_label in db_labels}
@@ -397,7 +389,15 @@ def create(request, tid, mid):
                         if tf_class_label in tf_annotation_labels.keys():
                             labels_mapping[tf_annotation_labels[tf_class_label]] = task_label_id
 
-        
+        queue = django_rq.get_queue('low')
+        job_id = 'tf_annotation.create/{}'.format(str(tid))
+        # slogger.glob.info("job detail isnide create {}".format(job_id))
+        # slogger.glob.info("tf custom job {}".format(job_id))
+        job = queue.fetch_job(job_id)
+        # slogger.glob.info("job enqueued {} status: {} is finished {} {}".format(job, job.is_started, job.is_finished,job.is_queued))
+        # if job is not None
+        if job is not None and (job.is_started or job.is_queued):
+            raise Exception("The process is already running")
        
        
         if not len(labels_mapping.values()):
