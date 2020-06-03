@@ -5,8 +5,6 @@
 
 import argparse
 import logging as log
-import logging.handlers
-import os
 import sys
 
 from . import contexts, commands
@@ -25,6 +23,25 @@ _log_levels = {
 def loglevel(name):
     return _log_levels[name]
 
+class _LogManager:
+    @classmethod
+    def init_logger(cls, args=None):
+        # Define minimalistic parser only to obtain loglevel
+        parser = argparse.ArgumentParser(add_help=False)
+        cls._define_loglevel_option(parser)
+        args, _ = parser.parse_known_args(args)
+
+        log.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+            level=args.loglevel)
+
+    @staticmethod
+    def _define_loglevel_option(parser):
+        parser.add_argument('--loglevel', type=loglevel, default='info',
+            help="Logging level (options: %s; default: %s)" % \
+                (', '.join(_log_levels.keys()), "%(default)s"))
+        return parser
+
+
 def _make_subcommands_help(commands, help_line_start=0):
     desc = ""
     for command_name, _, command_help in commands:
@@ -38,9 +55,7 @@ def make_parser():
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument('--version', action='version', version=VERSION)
-    parser.add_argument('--loglevel', type=loglevel, default='info',
-        help="Logging level (options: %s; default: %s)" % \
-            (', '.join(_log_levels.keys()), "%(default)s"))
+    _LogManager._define_loglevel_option(parser)
 
     known_contexts = [
         ('project', contexts.project, "Actions on projects (datasets)"),
@@ -83,70 +98,12 @@ def make_parser():
 
     return parser
 
-class _LogManager:
-    _LOGLEVEL_ENV_NAME = '_DATUMARO_INIT_LOGLEVEL'
-    _BUFFER_SIZE = 1000
-    _root = None
-    _init_handler = None
-    _default_handler = None
-
-    @classmethod
-    def init_basic_logger(cls):
-        base_loglevel = os.getenv(cls._LOGLEVEL_ENV_NAME, 'info')
-        base_loglevel = loglevel(base_loglevel)
-        root = log.getLogger()
-        root.setLevel(base_loglevel)
-
-        # NOTE: defer use of this handler until the logger
-        # is properly initialized, but keep logging enabled before this.
-        # Store messages obtained during initialization and print them after
-        # if necessary.
-        default_handler = log.StreamHandler()
-        default_handler.setFormatter(
-            log.Formatter('%(asctime)s %(levelname)s: %(message)s'))
-
-        init_handler = logging.handlers.MemoryHandler(cls._BUFFER_SIZE,
-            target=default_handler)
-        root.addHandler(init_handler)
-
-        cls._root = root
-        cls._init_handler = init_handler
-        cls._default_handler = default_handler
-
-    @classmethod
-    def set_up_logger(cls, level):
-        log.getLogger().setLevel(level)
-
-        if cls._init_handler:
-            # NOTE: Handlers are not capable of filtering with loglevel
-            # despite a level can be set for a handler. The level is checked
-            # by Logger. However, handler filters are checked at handler level.
-            class LevelFilter:
-                def __init__(self, level):
-                    super().__init__()
-                    self.level = level
-
-                def filter(self, record):
-                    return record.levelno >= self.level
-            filt = LevelFilter(level)
-            cls._default_handler.addFilter(filt)
-
-            cls._root.removeHandler(cls._init_handler)
-            cls._init_handler.close()
-            del cls._init_handler
-            cls._init_handler = None
-
-            cls._default_handler.removeFilter(filt)
-
-            cls._root.addHandler(cls._default_handler)
 
 def main(args=None):
-    _LogManager.init_basic_logger()
+    _LogManager.init_logger(args)
 
     parser = make_parser()
     args = parser.parse_args(args)
-
-    _LogManager.set_up_logger(args.loglevel)
 
     if 'command' not in args:
         parser.print_help()

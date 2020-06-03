@@ -270,21 +270,22 @@ class CompiledMask:
         if instance_ids is not None:
             assert len(instance_ids) == len(instance_masks)
         else:
-            instance_ids = range(1, len(instance_masks) + 1)
+            instance_ids = [None] * len(instance_masks)
 
         if instance_labels is not None:
             assert len(instance_labels) == len(instance_masks)
         else:
             instance_labels = [None] * len(instance_masks)
 
-        instance_masks = sorted(instance_masks, key=lambda m: m.z_order)
+        instance_masks = sorted(
+            zip(instance_masks, instance_ids, instance_labels),
+            key=lambda m: m[0].z_order)
 
-        instance_mask = [m.as_instance_mask(id) for m, id in
-            zip(instance_masks, instance_ids)]
+        instance_mask = [m.as_instance_mask(id if id is not None else 1 + idx)
+            for idx, (m, id, _) in enumerate(instance_masks)]
         instance_mask = merge_masks(instance_mask)
 
-        cls_mask = [m.as_class_mask(c) for m, c in
-            zip(instance_masks, instance_labels)]
+        cls_mask = [m.as_class_mask(c) for m, _, c in instance_masks]
         cls_mask = merge_masks(cls_mask)
         return __class__(class_mask=cls_mask, instance_mask=instance_mask)
 

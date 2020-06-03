@@ -33,21 +33,21 @@ class CvatImporterTest(TestCase):
                     DatasetItem(id='img0', subset='train',
                         image=np.ones((8, 8, 3)),
                         annotations=[
-                            Bbox(0, 2, 4, 2, label=0,
+                            Bbox(0, 2, 4, 2, label=0, z_order=1,
                                 attributes={
-                                    'occluded': True, 'z_order': 1,
+                                    'occluded': True,
                                     'a1': True, 'a2': 'v3'
                                 }),
                             PolyLine([1, 2, 3, 4, 5, 6, 7, 8],
-                                attributes={'occluded': False, 'z_order': 0}),
+                                attributes={'occluded': False}),
                         ], attributes={'frame': 0}),
                     DatasetItem(id='img1', subset='train',
                         image=np.ones((10, 10, 3)),
                         annotations=[
-                            Polygon([1, 2, 3, 4, 6, 5],
-                                attributes={'occluded': False, 'z_order': 1}),
-                            Points([1, 2, 3, 4, 5, 6], label=1,
-                                attributes={'occluded': False, 'z_order': 2}),
+                            Polygon([1, 2, 3, 4, 6, 5], z_order=1,
+                                attributes={'occluded': False}),
+                            Points([1, 2, 3, 4, 5, 6], label=1, z_order=2,
+                                attributes={'occluded': False}),
                         ], attributes={'frame': 1}),
                 ])
 
@@ -73,14 +73,15 @@ class CvatImporterTest(TestCase):
                             Bbox(3, 4, 7, 1, label=2,
                                 id=0,
                                 attributes={
-                                    'occluded': True, 'z_order': 0,
+                                    'occluded': True,
                                     'outside': False, 'keyframe': True,
                                     'track_id': 0
                                 }),
-                            Points([21.95, 8.00, 2.55, 15.09, 2.23, 3.16], label=0,
+                            Points([21.95, 8.00, 2.55, 15.09, 2.23, 3.16],
+                                label=0,
                                 id=1,
                                 attributes={
-                                    'occluded': False, 'z_order': 0,
+                                    'occluded': False,
                                     'outside': False, 'keyframe': True,
                                     'track_id': 1, 'hgl': 'hgkf',
                                 }),
@@ -91,21 +92,23 @@ class CvatImporterTest(TestCase):
                             Bbox(7, 6, 7, 2, label=2,
                                 id=0,
                                 attributes={
-                                    'occluded': False, 'z_order': 0,
+                                    'occluded': False,
                                     'outside': True, 'keyframe': True,
                                     'track_id': 0
                                 }),
-                            Points([21.95, 8.00, 9.55, 15.09, 5.23, 1.16], label=0,
+                            Points([21.95, 8.00, 9.55, 15.09, 5.23, 1.16],
+                                label=0,
                                 id=1,
                                 attributes={
-                                    'occluded': False, 'z_order': 0,
+                                    'occluded': False,
                                     'outside': True, 'keyframe': True,
                                     'track_id': 1, 'hgl': 'jk',
                                 }),
-                            PolyLine([7.85, 13.88, 3.50, 6.67, 15.90, 2.00, 13.31, 7.21], label=2,
+                            PolyLine([7.85, 13.88, 3.50, 6.67, 15.90, 2.00, 13.31, 7.21],
+                                label=2,
                                 id=2,
                                 attributes={
-                                    'occluded': False, 'z_order': 0,
+                                    'occluded': False,
                                     'outside': False, 'keyframe': True,
                                     'track_id': 2,
                                 }),
@@ -116,14 +119,15 @@ class CvatImporterTest(TestCase):
                             Bbox(8, 7, 6, 10, label=2,
                                 id=0,
                                 attributes={
-                                    'occluded': False, 'z_order': 0,
+                                    'occluded': False,
                                     'outside': True, 'keyframe': True,
                                     'track_id': 0
                                 }),
-                            PolyLine([7.85, 13.88, 3.50, 6.67, 15.90, 2.00, 13.31, 7.21], label=2,
+                            PolyLine([7.85, 13.88, 3.50, 6.67, 15.90, 2.00, 13.31, 7.21],
+                                label=2,
                                 id=2,
                                 attributes={
-                                    'occluded': False, 'z_order': 0,
+                                    'occluded': False,
                                     'outside': True, 'keyframe': True,
                                     'track_id': 2,
                                 }),
@@ -162,7 +166,7 @@ class CvatConverterTest(TestCase):
         for i in range(10):
             label_categories.add(str(i))
         label_categories.items[2].attributes.update(['a1', 'a2'])
-        label_categories.attributes.update(['z_order', 'occluded'])
+        label_categories.attributes.update(['occluded'])
 
         class SrcExtractor(Extractor):
             def __iter__(self):
@@ -193,9 +197,9 @@ class CvatConverterTest(TestCase):
 
                     DatasetItem(id=2, subset='s2', image=np.ones((5, 10, 3)),
                         annotations=[
-                            Polygon([0, 0, 4, 0, 4, 4],
+                            Polygon([0, 0, 4, 0, 4, 4], z_order=1,
                                 label=3, group=4,
-                                attributes={ 'z_order': 1, 'occluded': False }),
+                                attributes={ 'occluded': False }),
                             PolyLine([5, 0, 9, 0, 5, 5]), # will be skipped as no label
                         ]
                     ),
@@ -214,13 +218,13 @@ class CvatConverterTest(TestCase):
                         annotations=[
                             Polygon([0, 0, 4, 0, 4, 4],
                                 label=1, group=4,
-                                attributes={ 'z_order': 0, 'occluded': True }),
+                                attributes={ 'occluded': True }),
                             Polygon([5, 0, 9, 0, 5, 5],
                                 label=2, group=4,
-                                attributes={ 'z_order': 0, 'occluded': False }),
+                                attributes={ 'occluded': False }),
                             Points([1, 1, 3, 2, 2, 3],
                                 label=2,
-                                attributes={ 'z_order': 0, 'occluded': False,
+                                attributes={ 'occluded': False,
                                     'a1': 'x', 'a2': 42 }),
                             Label(1),
                             Label(2, attributes={ 'a1': 'y', 'a2': 44 }),
@@ -230,18 +234,18 @@ class CvatConverterTest(TestCase):
                         annotations=[
                             PolyLine([0, 0, 4, 0, 4, 4],
                                 label=3, group=4,
-                                attributes={ 'z_order': 0, 'occluded': False }),
+                                attributes={ 'occluded': False }),
                             Bbox(5, 0, 1, 9,
                                 label=3, group=4,
-                                attributes={ 'z_order': 0, 'occluded': False }),
+                                attributes={ 'occluded': False }),
                         ], attributes={'frame': 1}
                     ),
 
                     DatasetItem(id=2, subset='s2', image=np.ones((5, 10, 3)),
                         annotations=[
-                            Polygon([0, 0, 4, 0, 4, 4],
+                            Polygon([0, 0, 4, 0, 4, 4], z_order=1,
                                 label=3, group=4,
-                                attributes={ 'z_order': 1, 'occluded': False }),
+                                attributes={ 'occluded': False }),
                         ], attributes={'frame': 0}
                     ),
 
