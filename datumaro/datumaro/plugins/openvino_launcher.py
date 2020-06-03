@@ -119,8 +119,8 @@ class OpenVinoLauncher(Launcher):
             log.error("The following layers are not supported " \
                 "by the plugin for device '%s': %s." % \
                 (device, ', '.join(not_supported_layers)))
-        raise NotImplementedError(
-            "Some layers are not supported on the device")
+            raise NotImplementedError(
+                "Some layers are not supported on the device")
 
     def _load_executable_net(self, batch_size=1):
         network = self._network
