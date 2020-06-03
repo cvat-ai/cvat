@@ -708,7 +708,7 @@ class VocConverterTest(TestCase):
                 SrcExtractor(), VocConverter(label_map='guess'),
                 test_dir, target_dataset=DstExtractor())
 
-    def test_dataset_with_source_labelmap(self):
+    def test_dataset_with_source_labelmap_undefined(self):
         class SrcExtractor(TestExtractorBase):
             def __iter__(self):
                 yield DatasetItem(id=1, annotations=[
@@ -718,11 +718,57 @@ class VocConverterTest(TestCase):
 
             def categories(self):
                 label_cat = LabelCategories()
-                label_cat.add('Label_1') # should become lowercase
+                label_cat.add('Label_1')
                 label_cat.add('label_2')
                 return {
                     AnnotationType.label: label_cat,
                 }
+
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                yield DatasetItem(id=1, annotations=[
+                    Bbox(2, 3, 4, 5, label=self._label('Label_1'),
+                        id=1, group=1, attributes={
+                            'truncated': False,
+                            'difficult': False,
+                            'occluded': False,
+                        }
+                    ),
+                    Bbox(1, 2, 3, 4, label=self._label('label_2'),
+                        id=2, group=2, attributes={
+                            'truncated': False,
+                            'difficult': False,
+                            'occluded': False,
+                        }
+                    ),
+                ])
+
+            def categories(self):
+                label_map = OrderedDict()
+                label_map['background'] = [None, [], []]
+                label_map['Label_1'] = [None, [], []]
+                label_map['label_2'] = [None, [], []]
+                return VOC.make_voc_categories(label_map)
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(
+                SrcExtractor(), VocConverter(label_map='source'),
+                test_dir, target_dataset=DstExtractor())
+
+    def test_dataset_with_source_labelmap_defined(self):
+        class SrcExtractor(TestExtractorBase):
+            def __iter__(self):
+                yield DatasetItem(id=1, annotations=[
+                    Bbox(2, 3, 4, 5, label=0, id=1),
+                    Bbox(1, 2, 3, 4, label=2, id=2),
+                ])
+
+            def categories(self):
+                label_map = OrderedDict()
+                label_map['label_1'] = [(1, 2, 3), [], []]
+                label_map['background'] = [(0, 0, 0), [], []] # can be not 0
+                label_map['label_2'] = [(3, 2, 1), [], []]
+                return VOC.make_voc_categories(label_map)
 
         class DstExtractor(TestExtractorBase):
             def __iter__(self):
@@ -745,9 +791,9 @@ class VocConverterTest(TestCase):
 
             def categories(self):
                 label_map = OrderedDict()
-                label_map['background'] = [None, [], []]
-                label_map['label_1'] = [None, [], []]
-                label_map['label_2'] = [None, [], []]
+                label_map['label_1'] = [(1, 2, 3), [], []]
+                label_map['background'] = [(0, 0, 0), [], []]
+                label_map['label_2'] = [(3, 2, 1), [], []]
                 return VOC.make_voc_categories(label_map)
 
         with TestDir() as test_dir:
