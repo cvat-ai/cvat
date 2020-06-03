@@ -47,7 +47,7 @@ def export_task(task_id, dst_format, server_url=None, save_images=False):
         cache_dir = get_export_cache_dir(db_task)
 
         exporter = EXPORT_FORMATS[dst_format]
-        output_base = '%s_%s' % ('dataset' if save_images else 'task',
+        output_base = '%s_%s' % ('dataset' if save_images else 'annotations',
             make_file_name(to_snake_case(dst_format)))
         output_path = '%s.%s' % (output_base, exporter.EXT)
         output_path = osp.join(cache_dir, output_path)
