@@ -552,8 +552,8 @@ class UserAPITestCase(APITestCase):
         self.assertEqual(data["username"], user.username)
         self.assertEqual(data["first_name"], user.first_name)
         self.assertEqual(data["last_name"], user.last_name)
-        self.assertEqual(data["email"], user.email)
         extra_check = self.assertIn if is_full else self.assertNotIn
+        extra_check("email", data)
         extra_check("groups", data)
         extra_check("is_staff", data)
         extra_check("is_superuser", data)

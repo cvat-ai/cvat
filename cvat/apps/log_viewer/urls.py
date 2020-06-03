@@ -1,5 +1,5 @@
 
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,4 +9,3 @@ from . import views
 urlpatterns = [
     path('<path:path>', views.LogViewerProxy.as_view())
 ]
-
