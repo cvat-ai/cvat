@@ -164,7 +164,6 @@ class CvatExtractor(SourceExtractor):
         categories = {}
 
         frame_size = None
-        has_z_order = False
         mode = None
         labels = OrderedDict()
         label = None
@@ -191,7 +190,6 @@ class CvatExtractor(SourceExtractor):
             if ev == 'start':
                 if accepted('annotations', 'meta'): pass
                 elif accepted('meta', 'task'): pass
-                elif accepted('task', 'z_order'): pass
                 elif accepted('task', 'mode'): pass
                 elif accepted('task', 'original_size'):
                     frame_size = [None, None]
@@ -216,8 +214,6 @@ class CvatExtractor(SourceExtractor):
                 elif consumed('task', 'task'): pass
                 elif consumed('mode', 'mode'):
                     mode = el.text
-                elif consumed('z_order', 'z_order'):
-                    has_z_order = (el.text == 'True')
                 elif consumed('original_size', 'original_size'): pass
                 elif consumed('frame_height', 'height'):
                     frame_size[0] = int(el.text)

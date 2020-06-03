@@ -457,8 +457,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
     def _load_categories(cvat_anno):
         categories = {}
 
-        label_categories = datumaro.LabelCategories(
-            attributes=['occluded', 'z_order'])
+        label_categories = datumaro.LabelCategories(attributes=['occluded'])
 
         for _, label in cvat_anno.meta['task']['labels']:
             label_categories.add(label['name'])
