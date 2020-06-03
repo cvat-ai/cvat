@@ -578,12 +578,12 @@ class DatasetItem:
     def __init__(self, id=None, annotations=None,
             subset=None, path=None, image=None, attributes=None):
         assert id is not None
-        self._id = str(id)
+        self._id = str(id).replace('\\', '/')
 
         if subset is None:
             subset = ''
         else:
-            subset = str(subset).replace('\\', '/')
+            subset = str(subset)
         self._subset = subset
 
         if path is None:
