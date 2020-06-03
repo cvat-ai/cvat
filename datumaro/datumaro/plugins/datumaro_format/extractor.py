@@ -91,13 +91,15 @@ class DatumaroExtractor(SourceExtractor):
             annotations = self._load_annotations(item_desc)
 
             item = DatasetItem(id=item_id, subset=self._subset,
-                annotations=annotations, image=image)
+                annotations=annotations, image=image,
+                attributes=item_desc.get('attr'))
 
             items.append(item)
 
         return items
 
-    def _load_annotations(self, item):
+    @staticmethod
+    def _load_annotations(item):
         parsed = item['annotations']
         loaded = []
 
