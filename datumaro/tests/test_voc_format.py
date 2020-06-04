@@ -32,7 +32,7 @@ from datumaro.util.image import save_image, Image
 from datumaro.util.test_utils import TestDir, compare_datasets
 
 
-class VocTest(TestCase):
+class VocFormatTest(TestCase):
     def test_colormap_generator(self):
         reference = np.array([
             [  0,   0,   0],
@@ -60,6 +60,19 @@ class VocTest(TestCase):
         ])
 
         self.assertTrue(np.array_equal(reference, list(VOC.VocColormap.values())))
+
+    def test_can_write_and_parse_labelmap(self):
+        src_label_map = VOC.make_voc_label_map()
+        src_label_map['qq'] = [None, ['part1', 'part2'], ['act1', 'act2']]
+        src_label_map['ww'] = [(10, 20, 30), [], ['act3']]
+
+        with TestDir() as test_dir:
+            file_path = osp.join(test_dir, 'test.txt')
+
+            VOC.write_label_map(file_path, src_label_map)
+            dst_label_map = VOC.parse_label_map(file_path)
+
+            self.assertEqual(src_label_map, dst_label_map)
 
 def get_label(extractor, label_id):
     return extractor.categories()[AnnotationType.label].items[label_id].name
@@ -882,17 +895,3 @@ class VocImportTest(TestCase):
             dataset_found = VocImporter.detect(test_dir)
 
             self.assertTrue(dataset_found)
-
-class VocFormatTest(TestCase):
-    def test_can_write_and_parse_labelmap(self):
-        src_label_map = VOC.make_voc_label_map()
-        src_label_map['qq'] = [None, ['part1', 'part2'], ['act1', 'act2']]
-        src_label_map['ww'] = [(10, 20, 30), [], ['act3']]
-
-        with TestDir() as test_dir:
-            file_path = osp.join(test_dir, 'test.txt')
-
-            VOC.write_label_map(file_path, src_label_map)
-            dst_label_map = VOC.parse_label_map(file_path)
-
-            self.assertEqual(src_label_map, dst_label_map)
