@@ -47,6 +47,7 @@ services:
         socks_proxy:
         TF_ANNOTATION: "no"
         AUTO_SEGMENTATION: "no"
+        TRACKING: "no"
         USER: "django"
         DJANGO_CONFIGURATION: "production"
         TZ: "Etc/UTC"

@@ -134,6 +134,14 @@ RUN if [ "$WITH_DEXTR" = "yes" ]; then \
         7z e ${DEXTR_MODEL_DIR}/dextr.zip -o${DEXTR_MODEL_DIR} && rm ${DEXTR_MODEL_DIR}/dextr.zip; \
     fi
 
+
+## enable tracking and set tracking path
+ARG TRACKING
+ENV TRACKING=${TRACKING}
+ENV TRACKING_PATH=${HOME}/tracking
+
+
+
 COPY ssh ${HOME}/.ssh
 COPY utils ${HOME}/utils
 COPY cvat/ ${HOME}/cvat
