@@ -15,6 +15,7 @@
                 name: initialData.name,
                 format: initialData.ext,
                 version: initialData.version,
+                enabled: initialData.enabled,
             };
 
             Object.defineProperties(this, {
@@ -47,6 +48,16 @@
                         * @instance
                     */
                     get: () => data.version,
+                },
+                enabled: {
+                    /**
+                        * @name enabled
+                        * @type {string}
+                        * @memberof module:API.cvat.classes.Loader
+                        * @readonly
+                        * @instance
+                    */
+                    get: () => data.enabled,
                 },
             });
         }
@@ -63,6 +74,7 @@
                 name: initialData.name,
                 format: initialData.ext,
                 version: initialData.version,
+                enabled: initialData.enabled,
             };
 
             Object.defineProperties(this, {
@@ -95,6 +107,16 @@
                         * @instance
                     */
                     get: () => data.version,
+                },
+                enabled: {
+                    /**
+                        * @name enabled
+                        * @type {string}
+                        * @memberof module:API.cvat.classes.Loader
+                        * @readonly
+                        * @instance
+                    */
+                    get: () => data.enabled,
                 },
             });
         }
