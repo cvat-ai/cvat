@@ -68,15 +68,16 @@ def add_command(args):
     model_args = cli_plugin.from_cmdline(args.extra_args)
 
     if args.copy:
-        try:
-            log.info("Copying model data")
+        log.info("Copying model data")
 
-            model_dir = project.local_model_dir(args.name)
-            os.makedirs(model_dir, exist_ok=False)
+        model_dir = project.local_model_dir(args.name)
+        os.makedirs(model_dir, exist_ok=False)
+
+        try:
             cli_plugin.copy_model(model_dir, model_args)
-        except NotImplementedError:
+        except (AttributeError, NotImplementedError):
             log.error("Can't copy: copying is not available for '%s' models" % \
-                (args.launcher))
+                args.launcher)
 
     log.info("Adding the model")
     project.add_model(args.name, {
