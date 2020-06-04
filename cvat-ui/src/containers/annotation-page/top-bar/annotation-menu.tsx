@@ -123,7 +123,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
                     dumpAnnotations(jobInstance.task, dumper);
                 }
             } else if (action === Actions.LOAD_JOB_ANNO) {
-                const [format] = additionalKey.split('::');
+                const format = additionalKey;
                 const [loader] = loaders
                     .filter((_loader: any): boolean => _loader.name === format);
                 if (loader && file) {
@@ -150,8 +150,8 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     return (
         <AnnotationMenuComponent
             taskMode={jobInstance.task.mode}
-            loaders={loaders.map((loader: any): string => loader.name)}
-            dumpers={dumpers.map((dumper: any): string => dumper.name)}
+            loaders={loaders}
+            dumpers={dumpers}
             loadActivity={loadActivity}
             dumpActivities={dumpActivities}
             exportActivities={exportActivities}

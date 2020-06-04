@@ -1,19 +1,36 @@
 import numpy as np
 import os.path as osp
 
-from unittest import TestCase
+from unittest import TestCase, skipIf
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Bbox, Mask, LabelCategories
 )
 from datumaro.components.project import Project
-from datumaro.plugins.tf_detection_api_format.importer import TfDetectionApiImporter
-from datumaro.plugins.tf_detection_api_format.extractor import TfDetectionApiExtractor
-from datumaro.plugins.tf_detection_api_format.converter import TfDetectionApiConverter
 from datumaro.util.image import Image
 from datumaro.util.test_utils import TestDir, compare_datasets
+from datumaro.util.tf_util import check_import
 
+try:
+    from datumaro.plugins.tf_detection_api_format.importer import TfDetectionApiImporter
+    from datumaro.plugins.tf_detection_api_format.extractor import TfDetectionApiExtractor
+    from datumaro.plugins.tf_detection_api_format.converter import TfDetectionApiConverter
+    import_failed = False
+except ImportError:
+    import_failed = True
 
+    import importlib
+    module_found = importlib.util.find_spec('tensorflow') is not None
+
+    @skipIf(not module_found, "Tensorflow package is not found")
+    class TfImportTest(TestCase):
+        def test_raises_when_crashes_on_import(self):
+            # Should fire if import can't be done for any reason except
+            # module unavailability and import crash
+            with self.assertRaisesRegex(ImportError, 'Test process exit code'):
+                check_import()
+
+@skipIf(import_failed, "Failed to import tensorflow")
 class TfrecordConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
             target_dataset=None, importer_args=None):
@@ -174,6 +191,7 @@ class TfrecordConverterTest(TestCase):
 DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__),
     'assets', 'tf_detection_api_dataset')
 
+@skipIf(import_failed, "Failed to import tensorflow")
 class TfrecordImporterTest(TestCase):
     def test_can_detect(self):
         self.assertTrue(TfDetectionApiImporter.detect(DUMMY_DATASET_DIR))
