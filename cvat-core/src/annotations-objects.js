@@ -1693,8 +1693,9 @@
                         .slice(startInterpolated, stopInterpolated + 1);
                     const interpolatedLength = curveLength(interpolatedSegment);
 
-                    const reduceFactor = Math.floor(baseLength / interpolatedLength);
-                    if (reduceFactor === 1) {
+                    const delta = 1e-5;
+                    const reduceFactor = Math.floor((baseLength + delta) / (interpolatedLength + delta));
+                    if (reduceFactor <= 1) {
                         reduced.push(...interpolatedSegment);
                     } else {
                         for (let i = startInterpolated; i <= stopInterpolated; i += reduceFactor) {
