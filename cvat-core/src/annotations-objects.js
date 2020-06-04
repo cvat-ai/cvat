@@ -1671,12 +1671,56 @@
                     };
                 }
 
+                function computeDistance(point1, point2) {
+                    return Math.sqrt(
+                        ((point1.x - point2.x) ** 2) + ((point1.y - point2.y) ** 2),
+                    );
+                }
+
                 const reduced = [];
                 const interpolatedIndexes = {};
                 let accumulated = 0;
                 for (let i = 0; i < leftPoints.length; i++) {
                     // eslint-disable-next-line
                     interpolatedIndexes[i] = matching[i].map(() => accumulated++);
+                }
+
+                function minimizeSegment(baseLength, N, startInterpolated, stopInterpolated) {
+                    const threshold = baseLength / (2 * (N - 1));
+                    for (let i = startInterpolated; i <= stopInterpolated; i++) {
+                        const points = [i];
+                        let j = i + 1;
+
+                        if (j > stopInterpolated) {
+                            // i is the latest point, just push it into final array
+                            reduced.push(interpolatedPoints[i]);
+                            break;
+                        }
+
+                        let distance = computeDistance(
+                            interpolatedPoints[i], interpolatedPoints[j],
+                        );
+
+                        while (distance < threshold) {
+                            points.push(j);
+                            j += 1;
+
+                            if (j > stopInterpolated) {
+                                // j - 1 was the latest point, stop internal loop
+                                break;
+                            }
+
+                            i = j - 1;
+                            distance += computeDistance(
+                                interpolatedPoints[i], interpolatedPoints[j],
+                            );
+                        }
+
+                        // average accumulated points
+                        reduced.push(averagePoint(
+                            points.map((pointIdx) => interpolatedPoints[pointIdx]),
+                        ));
+                    }
                 }
 
                 function leftSegment(start, stop) {
@@ -1689,25 +1733,9 @@
                     }
 
                     const baseLength = curveLength(leftPoints.slice(start, stop + 1));
-                    const interpolatedSegment = interpolatedPoints
-                        .slice(startInterpolated, stopInterpolated + 1);
-                    const interpolatedLength = curveLength(interpolatedSegment);
+                    const N = stop - start + 1;
 
-                    const delta = 1e-5;
-                    const reduceFactor = Math.floor(
-                        (baseLength + delta) / (interpolatedLength + delta),
-                    );
-                    if (reduceFactor <= 1) {
-                        reduced.push(...interpolatedSegment);
-                    } else {
-                        for (let i = startInterpolated; i <= stopInterpolated; i += reduceFactor) {
-                            const a = i;
-                            const b = Math.min(i + reduceFactor, stopInterpolated + 1);
-                            reduced.push(averagePoint(
-                                interpolatedPoints.slice(a, b),
-                            ));
-                        }
-                    }
+                    minimizeSegment(baseLength, N, startInterpolated, stopInterpolated);
                 }
 
                 function rightSegment(leftPoint) {
@@ -1715,27 +1743,10 @@
                     const [stop] = matching[leftPoint].slice(-1);
                     const startInterpolated = interpolatedIndexes[leftPoint][0];
                     const [stopInterpolated] = interpolatedIndexes[leftPoint].slice(-1);
-                    const interpolatedSegment = interpolatedPoints
-                        .slice(startInterpolated, stopInterpolated + 1);
-
                     const baseLength = curveLength(rightPoints.slice(start, stop + 1));
-                    const interpolatedLength = curveLength(interpolatedSegment);
+                    const N = stop - start + 1;
 
-                    const delta = 1e-5;
-                    const reduceFactor = Math.floor(
-                        (baseLength + delta) / (interpolatedLength + delta),
-                    );
-                    if (reduceFactor <= 1) {
-                        reduced.push(...interpolatedSegment);
-                    } else {
-                        for (let i = startInterpolated; i <= stopInterpolated; i += reduceFactor) {
-                            const a = i;
-                            const b = Math.min(i + reduceFactor, stopInterpolated + 1);
-                            reduced.push(averagePoint(
-                                interpolatedPoints.slice(a, b),
-                            ));
-                        }
-                    }
+                    minimizeSegment(baseLength, N, startInterpolated, stopInterpolated);
                 }
 
                 let previousOpened = null;
