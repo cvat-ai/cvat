@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 import os.path as osp
 import shutil
 from glob import glob
