@@ -7,6 +7,7 @@ import {
     CanvasMode,
     CanvasVersion,
     RectDrawingMethod,
+    CuboidDrawingMethod,
 } from 'cvat-canvas/src/typescript/canvas';
 
 export {
@@ -14,4 +15,5 @@ export {
     CanvasMode,
     CanvasVersion,
     RectDrawingMethod,
+    CuboidDrawingMethod,
 };

@@ -107,41 +107,41 @@ class DatumaroExtractor(SourceExtractor):
             attributes = ann.get('attributes')
             group = ann.get('group')
 
+            label_id = ann.get('label_id')
+            z_order = ann.get('z_order')
+            points = ann.get('points')
+
             if ann_type == AnnotationType.label:
-                label_id = ann.get('label_id')
                 loaded.append(Label(label=label_id,
                     id=ann_id, attributes=attributes, group=group))
 
             elif ann_type == AnnotationType.mask:
-                label_id = ann.get('label_id')
                 rle = ann['rle']
                 rle['counts'] = rle['counts'].encode('ascii')
                 loaded.append(RleMask(rle=rle, label=label_id,
-                    id=ann_id, attributes=attributes, group=group))
+                    id=ann_id, attributes=attributes, group=group,
+                    z_order=z_order))
 
             elif ann_type == AnnotationType.polyline:
-                label_id = ann.get('label_id')
-                points = ann.get('points')
                 loaded.append(PolyLine(points, label=label_id,
-                    id=ann_id, attributes=attributes, group=group))
+                    id=ann_id, attributes=attributes, group=group,
+                    z_order=z_order))
 
             elif ann_type == AnnotationType.polygon:
-                label_id = ann.get('label_id')
-                points = ann.get('points')
                 loaded.append(Polygon(points, label=label_id,
-                    id=ann_id, attributes=attributes, group=group))
+                    id=ann_id, attributes=attributes, group=group,
+                    z_order=z_order))
 
             elif ann_type == AnnotationType.bbox:
-                label_id = ann.get('label_id')
-                x, y, w, h = ann.get('bbox')
+                x, y, w, h = ann['bbox']
                 loaded.append(Bbox(x, y, w, h, label=label_id,
-                    id=ann_id, attributes=attributes, group=group))
+                    id=ann_id, attributes=attributes, group=group,
+                    z_order=z_order))
 
             elif ann_type == AnnotationType.points:
-                label_id = ann.get('label_id')
-                points = ann.get('points')
                 loaded.append(Points(points, label=label_id,
-                    id=ann_id, attributes=attributes, group=group))
+                    id=ann_id, attributes=attributes, group=group,
+                    z_order=z_order))
 
             elif ann_type == AnnotationType.caption:
                 caption = ann.get('caption')

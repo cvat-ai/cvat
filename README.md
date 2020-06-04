@@ -11,6 +11,7 @@ CVAT is free, online, interactive video and image annotation
 tool for computer vision. It is being used by our team to
 annotate million of objects with different properties. Many UI
 and UX decisions are based on feedbacks from professional data annotation team.
+Try it online [cvat.org](https://cvat.org).
 
 ![CVAT screenshot](cvat/apps/documentation/static/documentation/images/cvat.jpg)
 
@@ -60,15 +61,19 @@ via its command line tool and Python library.
 - [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
 - [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
 
-## Online Demo
+## Online demo: [cvat.org](https://cvat.org)
 
-[Onepanel](https://www.onepanel.io/) has added CVAT as an environment
-into their platform and a running demo of CVAT can be accessed at
-[CVAT Public Demo](https://c.onepanel.io/onepanel-demo/projects/cvat-public-demo/workspaces?utm_source=cvat).
+This is an online demo with the latest version of the annotation tool.
+Try it online without local installation. Only own or assigned tasks
+are visible to users.
 
-If you have any questions, please contact Onepanel directly at
-support@onepanel.io. If you are in the Onepanel application, you can also
-use the chat icon in the bottom right corner.
+Disabled features:
+- [Analytics: management and monitoring of data annotation team](/components/analytics/README.md)
+- [Support for NVIDIA GPUs](/components/cuda/README.md)
+
+Limitations:
+- No more than 10 tasks per user
+- Uploaded data is limited to 500Mb
 
 ## REST API
 

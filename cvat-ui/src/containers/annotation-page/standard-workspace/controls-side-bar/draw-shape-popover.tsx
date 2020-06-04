@@ -8,7 +8,7 @@ import { RadioChangeEvent } from 'antd/lib/radio';
 
 import { CombinedState, ShapeType, ObjectType } from 'reducers/interfaces';
 import { rememberObject } from 'actions/annotation-actions';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 
 interface OwnProps {
@@ -73,6 +73,7 @@ type Props = StateToProps & DispatchToProps;
 
 interface State {
     rectDrawingMethod?: RectDrawingMethod;
+    cuboidDrawingMethod?: CuboidDrawingMethod;
     numberOfPoints?: number;
     selectedLabelID: number;
 }
@@ -85,10 +86,13 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         const { shapeType } = props;
         const defaultLabelID = props.labels[0].id;
         const defaultRectDrawingMethod = RectDrawingMethod.CLASSIC;
+        const defaultCuboidDrawingMethod = CuboidDrawingMethod.CLASSIC;
         this.state = {
             selectedLabelID: defaultLabelID,
             rectDrawingMethod: shapeType === ShapeType.RECTANGLE
                 ? defaultRectDrawingMethod : undefined,
+            cuboidDrawingMethod: shapeType === ShapeType.CUBOID
+                ? defaultCuboidDrawingMethod : undefined,
         };
 
         if (shapeType === ShapeType.POLYGON) {
@@ -103,14 +107,11 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     }
 
     private onDraw(objectType: ObjectType): void {
-        const {
-            canvasInstance,
-            shapeType,
-            onDrawStart,
-        } = this.props;
+        const { canvasInstance, shapeType, onDrawStart } = this.props;
 
         const {
             rectDrawingMethod,
+            cuboidDrawingMethod,
             numberOfPoints,
             selectedLabelID,
         } = this.state;
@@ -119,6 +120,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         canvasInstance.draw({
             enabled: true,
             rectDrawingMethod,
+            cuboidDrawingMethod,
             numberOfPoints,
             shapeType,
             crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(shapeType),
@@ -131,6 +133,12 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     private onChangeRectDrawingMethod = (event: RadioChangeEvent): void => {
         this.setState({
             rectDrawingMethod: event.target.value,
+        });
+    };
+
+    private onChangeCuboidDrawingMethod = (event: RadioChangeEvent): void => {
+        this.setState({
+            cuboidDrawingMethod: event.target.value,
         });
     };
 
@@ -157,6 +165,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     public render(): JSX.Element {
         const {
             rectDrawingMethod,
+            cuboidDrawingMethod,
             selectedLabelID,
             numberOfPoints,
         } = this.state;
@@ -175,10 +184,12 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
                 selectedLabeID={selectedLabelID}
                 numberOfPoints={numberOfPoints}
                 rectDrawingMethod={rectDrawingMethod}
+                cuboidDrawingMethod={cuboidDrawingMethod}
                 repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
                 onChangeLabel={this.onChangeLabel}
                 onChangePoints={this.onChangePoints}
                 onChangeRectDrawingMethod={this.onChangeRectDrawingMethod}
+                onChangeCuboidDrawingMethod={this.onChangeCuboidDrawingMethod}
                 onDrawTrack={this.onDrawTrack}
                 onDrawShape={this.onDrawShape}
             />

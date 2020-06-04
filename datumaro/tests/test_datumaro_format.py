@@ -27,12 +27,12 @@ class DatumaroConverterTest(TestCase):
                             'x': 1,
                             'y': '2',
                         }),
-                        Bbox(1, 2, 3, 4, label=4, id=4, attributes={
+                        Bbox(1, 2, 3, 4, label=4, id=4, z_order=1, attributes={
                             'score': 1.0,
                         }),
                         Bbox(5, 6, 7, 8, id=5, group=5),
-                        Points([1, 2, 2, 0, 1, 1], label=0, id=5),
-                        Mask(label=3, id=5, image=np.ones((2, 3))),
+                        Points([1, 2, 2, 0, 1, 1], label=0, id=5, z_order=4),
+                        Mask(label=3, id=5, z_order=2, image=np.ones((2, 3))),
                     ]),
                 DatasetItem(id=21, subset='train',
                     annotations=[
@@ -43,8 +43,8 @@ class DatumaroConverterTest(TestCase):
 
                 DatasetItem(id=2, subset='val',
                     annotations=[
-                        PolyLine([1, 2, 3, 4, 5, 6, 7, 8], id=11),
-                        Polygon([1, 2, 3, 4, 5, 6, 7, 8], id=12),
+                        PolyLine([1, 2, 3, 4, 5, 6, 7, 8], id=11, z_order=1),
+                        Polygon([1, 2, 3, 4, 5, 6, 7, 8], id=12, z_order=4),
                     ]),
 
                 DatasetItem(id=42, subset='test'),

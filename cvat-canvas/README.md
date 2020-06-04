@@ -37,6 +37,11 @@ Canvas itself handles:
         EXTREME_POINTS = 'By 4 points'
     }
 
+    enum CuboidDrawingMethod {
+        CLASSIC = 'From rectangle',
+        CORNER_POINTS = 'By 4 points',
+    }
+
     enum Mode {
         IDLE = 'idle',
         DRAG = 'drag',
@@ -59,6 +64,7 @@ Canvas itself handles:
         enabled: boolean;
         shapeType?: string;
         rectDrawingMethod?: RectDrawingMethod;
+        cuboidDrawingMethod?: CuboidDrawingMethod;
         numberOfPoints?: number;
         initialState?: any;
         crosshair?: boolean;

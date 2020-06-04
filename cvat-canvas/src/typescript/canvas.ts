@@ -11,6 +11,7 @@ import {
     CanvasModel,
     CanvasModelImpl,
     RectDrawingMethod,
+    CuboidDrawingMethod,
     Configuration,
 } from './canvasModel';
 
@@ -164,5 +165,6 @@ export {
     CanvasVersion,
     Configuration,
     RectDrawingMethod,
+    CuboidDrawingMethod,
     Mode as CanvasMode,
 };

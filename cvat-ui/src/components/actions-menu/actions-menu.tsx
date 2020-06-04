@@ -16,8 +16,8 @@ interface Props {
     taskMode: string;
     bugTracker: string;
 
-    loaders: string[];
-    dumpers: string[];
+    loaders: any[];
+    dumpers: any[];
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;

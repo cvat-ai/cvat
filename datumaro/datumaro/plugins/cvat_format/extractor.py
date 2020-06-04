@@ -238,8 +238,6 @@ class CvatExtractor(SourceExtractor):
             "Expected 'meta' section in the annotation file, path: %s" % states
 
         common_attrs = ['occluded']
-        if has_z_order:
-            common_attrs.append('z_order')
         if mode == 'interpolation':
             common_attrs.append('keyframe')
             common_attrs.append('outside')
@@ -260,8 +258,6 @@ class CvatExtractor(SourceExtractor):
         attributes = ann.get('attributes', {})
         if 'occluded' in categories[AnnotationType.label].attributes:
             attributes['occluded'] = ann.get('occluded', False)
-        if 'z_order' in categories[AnnotationType.label].attributes:
-            attributes['z_order'] = ann.get('z_order', 0)
         if 'outside' in categories[AnnotationType.label].attributes:
             attributes['outside'] = ann.get('outside', False)
         if 'keyframe' in categories[AnnotationType.label].attributes:
@@ -272,24 +268,25 @@ class CvatExtractor(SourceExtractor):
         label = ann.get('label')
         label_id = categories[AnnotationType.label].find(label)[0]
 
+        z_order = ann.get('z_order', 0)
         points = ann.get('points', [])
 
         if ann_type == 'polyline':
-            return PolyLine(points, label=label_id,
+            return PolyLine(points, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'polygon':
-            return Polygon(points, label=label_id,
+            return Polygon(points, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'points':
-            return Points(points, label=label_id,
+            return Points(points, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'box':
             x, y = points[0], points[1]
             w, h = points[2] - x, points[3] - y
-            return Bbox(x, y, w, h, label=label_id,
+            return Bbox(x, y, w, h, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
         else:
