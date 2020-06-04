@@ -54,8 +54,7 @@ def save_image(path, image, create_dir=False, **kwargs):
         if create_dir:
             os.makedirs(dst_dir, exist_ok=True)
         elif not osp.isdir(dst_dir):
-            raise NotADirectoryError(
-                "Directory does not exist: '%s'" % dst_dir)
+            raise FileNotFoundError("Directory does not exist: '%s'" % dst_dir)
 
     if not kwargs:
         kwargs = {}
