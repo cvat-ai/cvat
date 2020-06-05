@@ -1,9 +1,6 @@
 from collections import OrderedDict
 import numpy as np
-import os
 import os.path as osp
-from xml.etree import ElementTree as ET
-import shutil
 
 from unittest import TestCase
 
@@ -11,13 +8,6 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Label, Bbox, Mask, LabelCategories,
 )
 import datumaro.plugins.voc_format.format as VOC
-from datumaro.plugins.voc_format.extractor import (
-    VocClassificationExtractor,
-    VocDetectionExtractor,
-    VocSegmentationExtractor,
-    VocLayoutExtractor,
-    VocActionExtractor,
-)
 from datumaro.plugins.voc_format.converter import (
     VocConverter,
     VocClassificationConverter,
@@ -28,11 +18,11 @@ from datumaro.plugins.voc_format.converter import (
 )
 from datumaro.plugins.voc_format.importer import VocImporter
 from datumaro.components.project import Project
-from datumaro.util.image import save_image, Image
+from datumaro.util.image import Image
 from datumaro.util.test_utils import TestDir, compare_datasets
 
 
-class VocTest(TestCase):
+class VocFormatTest(TestCase):
     def test_colormap_generator(self):
         reference = np.array([
             [  0,   0,   0],
@@ -61,115 +51,18 @@ class VocTest(TestCase):
 
         self.assertTrue(np.array_equal(reference, list(VOC.VocColormap.values())))
 
-def get_label(extractor, label_id):
-    return extractor.categories()[AnnotationType.label].items[label_id].name
+    def test_can_write_and_parse_labelmap(self):
+        src_label_map = VOC.make_voc_label_map()
+        src_label_map['qq'] = [None, ['part1', 'part2'], ['act1', 'act2']]
+        src_label_map['ww'] = [(10, 20, 30), [], ['act3']]
 
-def generate_dummy_voc(path):
-    cls_subsets_dir = osp.join(path, 'ImageSets', 'Main')
-    action_subsets_dir = osp.join(path, 'ImageSets', 'Action')
-    layout_subsets_dir = osp.join(path, 'ImageSets', 'Layout')
-    segm_subsets_dir = osp.join(path, 'ImageSets', 'Segmentation')
-    ann_dir = osp.join(path, 'Annotations')
-    img_dir = osp.join(path, 'JPEGImages')
-    segm_dir = osp.join(path, 'SegmentationClass')
-    inst_dir = osp.join(path, 'SegmentationObject')
+        with TestDir() as test_dir:
+            file_path = osp.join(test_dir, 'test.txt')
 
-    os.makedirs(cls_subsets_dir)
-    os.makedirs(ann_dir)
-    os.makedirs(img_dir)
-    os.makedirs(segm_dir)
-    os.makedirs(inst_dir)
+            VOC.write_label_map(file_path, src_label_map)
+            dst_label_map = VOC.parse_label_map(file_path)
 
-    subsets = {
-        'train': ['2007_000001'],
-        'test': ['2007_000002'],
-    }
-
-    # Subsets
-    for subset_name, subset in subsets.items():
-        for item in subset:
-            with open(osp.join(cls_subsets_dir, subset_name + '.txt'), 'w') as f:
-                for item in subset:
-                    f.write('%s\n' % item)
-    shutil.copytree(cls_subsets_dir, action_subsets_dir)
-    shutil.copytree(cls_subsets_dir, layout_subsets_dir)
-    shutil.copytree(cls_subsets_dir, segm_subsets_dir)
-
-    # Classification
-    subset_name = 'train'
-    subset = subsets[subset_name]
-    for label in VOC.VocLabel:
-        with open(osp.join(cls_subsets_dir, '%s_%s.txt' % \
-                (label.name, subset_name)), 'w') as f:
-            for item in subset:
-                presence = label.value % 2
-                f.write('%s %2d\n' % (item, 1 if presence else -1))
-
-    # Detection + Action + Layout
-    subset_name = 'train'
-    subset = subsets[subset_name]
-    for item in subset:
-        root_elem = ET.Element('annotation')
-        ET.SubElement(root_elem, 'folder').text = 'VOC' + item.split('_')[0]
-        ET.SubElement(root_elem, 'filename').text = item + '.jpg'
-
-        size_elem = ET.SubElement(root_elem, 'size')
-        ET.SubElement(size_elem, 'width').text = '10'
-        ET.SubElement(size_elem, 'height').text = '20'
-        ET.SubElement(size_elem, 'depth').text = '3'
-
-        ET.SubElement(root_elem, 'segmented').text = '1'
-
-        obj1_elem = ET.SubElement(root_elem, 'object')
-        ET.SubElement(obj1_elem, 'name').text = 'cat'
-        ET.SubElement(obj1_elem, 'pose').text = VOC.VocPose(1).name
-        ET.SubElement(obj1_elem, 'truncated').text = '1'
-        ET.SubElement(obj1_elem, 'difficult').text = '0'
-        obj1bb_elem = ET.SubElement(obj1_elem, 'bndbox')
-        ET.SubElement(obj1bb_elem, 'xmin').text = '1'
-        ET.SubElement(obj1bb_elem, 'ymin').text = '2'
-        ET.SubElement(obj1bb_elem, 'xmax').text = '3'
-        ET.SubElement(obj1bb_elem, 'ymax').text = '4'
-
-        obj2_elem = ET.SubElement(root_elem, 'object')
-        ET.SubElement(obj2_elem, 'name').text = 'person'
-        obj2bb_elem = ET.SubElement(obj2_elem, 'bndbox')
-        ET.SubElement(obj2bb_elem, 'xmin').text = '4'
-        ET.SubElement(obj2bb_elem, 'ymin').text = '5'
-        ET.SubElement(obj2bb_elem, 'xmax').text = '6'
-        ET.SubElement(obj2bb_elem, 'ymax').text = '7'
-        obj2head_elem = ET.SubElement(obj2_elem, 'part')
-        ET.SubElement(obj2head_elem, 'name').text = VOC.VocBodyPart(1).name
-        obj2headbb_elem = ET.SubElement(obj2head_elem, 'bndbox')
-        ET.SubElement(obj2headbb_elem, 'xmin').text = '5.5'
-        ET.SubElement(obj2headbb_elem, 'ymin').text = '6'
-        ET.SubElement(obj2headbb_elem, 'xmax').text = '7.5'
-        ET.SubElement(obj2headbb_elem, 'ymax').text = '8'
-        obj2act_elem = ET.SubElement(obj2_elem, 'actions')
-        for act in VOC.VocAction:
-            ET.SubElement(obj2act_elem, act.name).text = '%s' % (act.value % 2)
-
-        with open(osp.join(ann_dir, item + '.xml'), 'w') as f:
-            f.write(ET.tostring(root_elem, encoding='unicode'))
-
-    # Segmentation + Instances
-    subset_name = 'train'
-    subset = subsets[subset_name]
-    for item in subset:
-        save_image(osp.join(segm_dir, item + '.png'),
-            np.tile(VOC.VocColormap[2][::-1], (5, 10, 1))
-        )
-        save_image(osp.join(inst_dir, item + '.png'),
-            np.tile(1, (5, 10, 1)))
-
-    # Test images
-    subset_name = 'test'
-    subset = subsets[subset_name]
-    for item in subset:
-        save_image(osp.join(img_dir, item + '.jpg'),
-            np.ones([10, 20, 3]))
-
-    return subsets
+            self.assertEqual(src_label_map, dst_label_map)
 
 class TestExtractorBase(Extractor):
     def _label(self, voc_label):
@@ -178,32 +71,20 @@ class TestExtractorBase(Extractor):
     def categories(self):
         return VOC.make_voc_categories()
 
-class VocExtractorTest(TestCase):
-    def test_can_load_voc_cls(self):
+
+DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__), 'assets', 'voc_dataset')
+
+class VocImportTest(TestCase):
+    def test_can_import(self):
         class DstExtractor(TestExtractorBase):
             def __iter__(self):
                 return iter([
                     DatasetItem(id='2007_000001', subset='train',
+                        image=Image(path='2007_000001.jpg', size=(20, 10)),
                         annotations=[
                             Label(self._label(l.name))
                             for l in VOC.VocLabel if l.value % 2 == 1
-                        ]
-                    ),
-                ])
-
-        with TestDir() as test_dir:
-            generate_dummy_voc(test_dir)
-
-            parsed_train = VocClassificationExtractor(
-                osp.join(test_dir, 'ImageSets', 'Main', 'train.txt'))
-            compare_datasets(self, DstExtractor(), parsed_train)
-
-    def test_can_load_voc_det(self):
-        class DstExtractor(TestExtractorBase):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id='2007_000001', subset='train',
-                        annotations=[
+                        ] + [
                             Bbox(1, 2, 2, 2, label=self._label('cat'),
                                 attributes={
                                     'pose': VOC.VocPose(1).name,
@@ -224,102 +105,27 @@ class VocExtractorTest(TestCase):
                                     }
                                 },
                                 id=2, group=2,
-                                # TODO: Actions and group should be excluded
-                                # as soon as correct merge is implemented
                             ),
-                        ]
-                    ),
-                ])
-
-        with TestDir() as test_dir:
-            generate_dummy_voc(test_dir)
-            parsed_train = VocDetectionExtractor(
-                osp.join(test_dir, 'ImageSets', 'Main', 'train.txt'))
-            compare_datasets(self, DstExtractor(), parsed_train)
-
-    def test_can_load_voc_segm(self):
-        class DstExtractor(TestExtractorBase):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id='2007_000001', subset='train',
-                        annotations=[
+                            Bbox(5.5, 6, 2, 2, label=self._label(
+                                    VOC.VocBodyPart(1).name),
+                                group=2
+                            ),
                             Mask(image=np.ones([5, 10]),
                                 label=self._label(VOC.VocLabel(2).name),
                                 group=1,
                             ),
                         ]
                     ),
+                    DatasetItem(id='2007_000002', subset='test',
+                        image=np.zeros((20, 10, 3))),
                 ])
 
-        with TestDir() as test_dir:
-            generate_dummy_voc(test_dir)
-            parsed_train = VocSegmentationExtractor(
-                osp.join(test_dir, 'ImageSets', 'Segmentation', 'train.txt'))
-            compare_datasets(self, DstExtractor(), parsed_train)
+        dataset = Project.import_from(DUMMY_DATASET_DIR, 'voc').make_dataset()
 
-    def test_can_load_voc_layout(self):
-        class DstExtractor(TestExtractorBase):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id='2007_000001', subset='train',
-                        annotations=[
-                            Bbox(4, 5, 2, 2, label=self._label('person'),
-                                attributes={
-                                    'truncated': False,
-                                    'difficult': False,
-                                    'occluded': False,
-                                    **{
-                                        a.name: a.value % 2 == 1
-                                        for a in VOC.VocAction
-                                    }
-                                },
-                                id=2, group=2,
-                                # TODO: Actions should be excluded
-                                # as soon as correct merge is implemented
-                            ),
-                            Bbox(5.5, 6, 2, 2, label=self._label(
-                                    VOC.VocBodyPart(1).name),
-                                group=2
-                            )
-                        ]
-                    ),
-                ])
+        compare_datasets(self, DstExtractor(), dataset)
 
-        with TestDir() as test_dir:
-            generate_dummy_voc(test_dir)
-            parsed_train = VocLayoutExtractor(
-                osp.join(test_dir, 'ImageSets', 'Layout', 'train.txt'))
-            compare_datasets(self, DstExtractor(), parsed_train)
-
-    def test_can_load_voc_action(self):
-        class DstExtractor(TestExtractorBase):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id='2007_000001', subset='train',
-                        annotations=[
-                            Bbox(4, 5, 2, 2, label=self._label('person'),
-                                attributes={
-                                    'truncated': False,
-                                    'difficult': False,
-                                    'occluded': False,
-                                    **{
-                                        a.name: a.value % 2 == 1
-                                        for a in VOC.VocAction
-                                    }
-                                    # TODO: group should be excluded
-                                    # as soon as correct merge is implemented
-                                },
-                                id=2, group=2,
-                            ),
-                        ]
-                    ),
-                ])
-
-        with TestDir() as test_dir:
-            generate_dummy_voc(test_dir)
-            parsed_train = VocActionExtractor(
-                osp.join(test_dir, 'ImageSets', 'Action', 'train.txt'))
-            compare_datasets(self, DstExtractor(), parsed_train)
+    def test_can_detect_voc(self):
+        self.assertTrue(VocImporter.detect(DUMMY_DATASET_DIR))
 
 class VocConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
@@ -860,39 +666,3 @@ class VocConverterTest(TestCase):
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
                 VocConverter(label_map='voc'), test_dir)
-
-class VocImportTest(TestCase):
-    def test_can_import(self):
-        with TestDir() as test_dir:
-            subsets = generate_dummy_voc(test_dir)
-
-            dataset = Project.import_from(test_dir, 'voc').make_dataset()
-
-            self.assertEqual(len(VOC.VocTask) * len(subsets),
-                len(dataset.sources))
-            self.assertEqual(set(subsets), set(dataset.subsets()))
-            self.assertEqual(
-                sum([len(s) for _, s in subsets.items()]),
-                len(dataset))
-
-    def test_can_detect_voc(self):
-        with TestDir() as test_dir:
-            generate_dummy_voc(test_dir)
-
-            dataset_found = VocImporter.detect(test_dir)
-
-            self.assertTrue(dataset_found)
-
-class VocFormatTest(TestCase):
-    def test_can_write_and_parse_labelmap(self):
-        src_label_map = VOC.make_voc_label_map()
-        src_label_map['qq'] = [None, ['part1', 'part2'], ['act1', 'act2']]
-        src_label_map['ww'] = [(10, 20, 30), [], ['act3']]
-
-        with TestDir() as test_dir:
-            file_path = osp.join(test_dir, 'test.txt')
-
-            VOC.write_label_map(file_path, src_label_map)
-            dst_label_map = VOC.parse_label_map(file_path)
-
-            self.assertEqual(src_label_map, dst_label_map)
