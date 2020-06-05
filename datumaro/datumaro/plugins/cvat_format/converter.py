@@ -341,10 +341,6 @@ class _Converter:
         os.makedirs(images_dir, exist_ok=True)
         self._images_dir = images_dir
 
-        annotations_dir = osp.join(self._save_dir, CvatPath.ANNOTATIONS_DIR)
-        os.makedirs(annotations_dir, exist_ok=True)
-        self._annotations_dir = annotations_dir
-
         subsets = self._extractor.subsets()
         if len(subsets) == 0:
             subsets = [ None ]
@@ -356,7 +352,7 @@ class _Converter:
                 subset_name = DEFAULT_SUBSET_NAME
                 subset = self._extractor
 
-            with open(osp.join(annotations_dir, '%s.xml' % subset_name), 'w') as f:
+            with open(osp.join(self._save_dir, '%s.xml' % subset_name), 'w') as f:
                 writer = _SubsetWriter(f, subset_name, subset, self)
                 writer.write()
 
