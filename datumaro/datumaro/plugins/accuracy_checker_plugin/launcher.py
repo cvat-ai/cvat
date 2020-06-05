@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import yaml
+
 from datumaro.components.cli_plugin import CliPlugin
 from datumaro.components.launcher import Launcher
 

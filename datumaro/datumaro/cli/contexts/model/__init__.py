@@ -10,7 +10,8 @@ import os.path as osp
 import re
 
 from datumaro.components.config import DEFAULT_FORMAT
-from ...util import add_subparser
+from datumaro.components.project import Environment
+from ...util import add_subparser, MultilineFormatter
 from ...util.project import load_project
 
 
@@ -64,7 +65,7 @@ def add_command(args):
     except KeyError:
         raise CliException("Launcher '%s' is not found" % args.launcher)
 
-    cli_plugin = launcher.cli_plugin
+    cli_plugin = getattr(launcher, 'cli_plugin', launcher)
     model_args = cli_plugin.from_cmdline(args.extra_args)
 
     if args.copy:

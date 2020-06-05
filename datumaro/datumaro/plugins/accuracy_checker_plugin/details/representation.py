@@ -3,6 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datumaro.util.tf_util import import_tf
+import_tf() # prevent TF loading and potential interpeter crash
+
 import accuracy_checker.representation as ac
 
 import datumaro.components.extractor as dm
