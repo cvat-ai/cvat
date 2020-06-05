@@ -18,10 +18,7 @@ from datumaro.util.test_utils import TestDir, compare_datasets
 
 def generate_dummy_cvat(path):
     images_dir = osp.join(path, CvatPath.IMAGES_DIR)
-    anno_dir = osp.join(path, CvatPath.ANNOTATIONS_DIR)
-
     os.makedirs(images_dir)
-    os.makedirs(anno_dir)
 
     root_elem = ET.Element('annotations')
     ET.SubElement(root_elem, 'version').text = '1.1'
@@ -93,7 +90,7 @@ def generate_dummy_cvat(path):
         'label': 'label2', 'points': '1,2;3,4;5,6', 'z_order': '2',
     })
 
-    with open(osp.join(anno_dir, 'train.xml'), 'w') as f:
+    with open(osp.join(path, 'train.xml'), 'w') as f:
         f.write(ET.tostring(root_elem, encoding='unicode'))
 
 class CvatImporterTest(TestCase):
@@ -213,13 +210,13 @@ class CvatConverterTest(TestCase):
                 return iter([
                     DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
                         annotations=[
-                            Polygon([0, 0, 4, 0, 4, 4], z_order=0,
+                            Polygon([0, 0, 4, 0, 4, 4],
                                 label=1, group=4,
                                 attributes={ 'occluded': True }),
-                            Polygon([5, 0, 9, 0, 5, 5], z_order=0,
+                            Polygon([5, 0, 9, 0, 5, 5],
                                 label=2, group=4,
                                 attributes={ 'occluded': False }),
-                            Points([1, 1, 3, 2, 2, 3], z_order=0,
+                            Points([1, 1, 3, 2, 2, 3],
                                 label=2,
                                 attributes={ 'occluded': False,
                                     'a1': 'x', 'a2': 42 }),
@@ -229,10 +226,10 @@ class CvatConverterTest(TestCase):
                     ),
                     DatasetItem(id=1, subset='s1',
                         annotations=[
-                            PolyLine([0, 0, 4, 0, 4, 4], z_order=0,
+                            PolyLine([0, 0, 4, 0, 4, 4],
                                 label=3, group=4,
                                 attributes={ 'occluded': False }),
-                            Bbox(5, 0, 1, 9, z_order=0,
+                            Bbox(5, 0, 1, 9,
                                 label=3, group=4,
                                 attributes={ 'occluded': False }),
                         ]

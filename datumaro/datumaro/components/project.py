@@ -235,7 +235,17 @@ class Environment:
                 exports = cls._import_module(module_dir, module_name, types,
                     package)
             except Exception as e:
-                log.debug("Failed to import module '%s': %s" % (module_name, e))
+                module_search_error = ImportError
+                try:
+                    module_search_error = ModuleNotFoundError # python 3.6+
+                except NameError:
+                    pass
+
+                message = ["Failed to import module '%s': %s", module_name, e]
+                if isinstance(e, module_search_error):
+                    log.debug(*message)
+                else:
+                    log.warning(*message)
                 continue
 
             log.debug("Imported the following symbols from %s: %s" % \

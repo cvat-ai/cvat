@@ -70,7 +70,7 @@ class TaskData:
         for db_label in self._label_mapping.values():
             if label_name == db_label.name:
                 return db_label.id
-        return None
+        raise ValueError("Label {!r} is not registered for this task".format(label_name))
 
     def _get_label_name(self, label_id):
         return self._label_mapping[label_id].name
