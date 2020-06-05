@@ -220,10 +220,10 @@ class DiffVisualizer:
 
             img = np.hstack([img_a, img_b])
 
-            path = osp.join(self.save_dir, 'diff_%s' % item_a.id)
+            path = osp.join(self.save_dir, item_a.id)
 
             if self.output_format is Format.simple:
-                save_image(path + '.png', img)
+                save_image(path + '.png', img, create_dir=True)
             elif self.output_format is Format.tensorboard:
                 self.save_as_tensorboard(img, path)
 
