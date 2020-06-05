@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
+- Fixed dataset filter item representation for imageless dataset items (https://github.com/opencv/cvat/pull/1593)
 - Fixed interpreter crash when trying to import `tensorflow` with no AVX instructions available (https://github.com/opencv/cvat/pull/1567)
 
 ### Security
