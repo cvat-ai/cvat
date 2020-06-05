@@ -13,6 +13,8 @@ from cvat.apps.engine.data_manager import TrackManager
 from cvat.apps.engine.models import (Job, TrackedShape)
 from cvat.apps.engine.serializers import (TrackedShapeSerializer)
 from .tracker import RectangleTracker
+from cvat.apps.engine.log import slogger
+
 
 # TODO: Put tracker into background task.
 
@@ -24,6 +26,7 @@ def track(request):
     # Done by tracking a existing bounding box
 
     tracking_job = request.data['trackingJob']
+    slogger.glob.info("tracking job request data {}".format(request.data))
     job_id = request.data['jobId']
     track = tracking_job['track'] #already in server model
     # Start the tracking with the bounding box in this frame
@@ -50,10 +53,11 @@ def track(request):
 
     # This bounding box is used as a reference for tracking
     start_shape = shape_to_db(shapes_of_track[start_frame-first_frame_in_track])
-
+    slogger.glob.info("Tracking started*********************")
     # Do the actual tracking and serializee back
     tracker = RectangleTracker()
     new_shapes = tracker.track_rectangles(task, start_shape, stop_frame)
+    slogger.glob.info("new shapes {}".format(new_shapes))
     new_shapes = [TrackedShapeSerializer(s).data for s in new_shapes]
 
     # Pack recognized shape in a track onto the wire

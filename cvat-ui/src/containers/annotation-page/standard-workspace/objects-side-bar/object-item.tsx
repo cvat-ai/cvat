@@ -198,7 +198,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 interface TrackerPayload {
     jobId: number;
-    trackinJob: {
+    trackingJob: {
         startFrame: number;
         stopFrame: number;
         track: {
@@ -491,7 +491,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
         return {
             jobId: jobInstance.id,
-            trackinJob: {
+            trackingJob: {
                 startFrame: frameNumber,
                 stopFrame: tracker_frame_number ? frameNumber + tracker_frame_number : frameNumber + 50,
                 track: {

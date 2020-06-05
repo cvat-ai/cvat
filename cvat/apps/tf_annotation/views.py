@@ -606,7 +606,7 @@ def tracking(request, tid):
 	data = json.loads(request.body.decode('utf-8'))
 	# slogger.glob.info("data {}".format(data))
 	slogger.glob.info("tracking payload {}".format(data))
-	tracking_job = data['trackinJob']
+	tracking_job = data['trackingJob']
 	job_id = data['jobId']
 	track = tracking_job['track'] #already in server model
 	# Start the tracking with the bounding box in this frame
