@@ -4,6 +4,7 @@
 
 from copy import copy, deepcopy
 
+import sys
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from shapely import geometry
@@ -442,34 +443,296 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def get_interpolated_shapes(track, start_frame, end_frame):
-        def interpolate(shape0, shape1):
+        def copy_shape(source, frame, points = None):
+            copied = deepcopy(source)
+            copied["keyframe"] = True
+            copied["frame"] = frame
+            if points:
+                copied["points"] = points
+            return copied
+
+        def simple_interpolation(shape0, shape1):
             shapes = []
-            is_same_type = shape0["type"] == shape1["type"]
+            distance = shape1["frame"] - shape0["frame"]
+            diff = np.subtract(shape1["points"], shape0["points"])
+
+            for frame in range(shape0["frame"] + 1, shape1["frame"]):
+                offset = (frame - shape0["frame"]) / distance
+                points = None
+                if shape1["outside"]:
+                    points = np.asarray(shape0["points"])
+                else:
+                    points = shape0["points"] + diff * offset
+
+                shapes.append(copy_shape(shape0, frame, points.tolist()))
+
+            return shapes
+
+        def points_interpolation(shape0, shape1):
+            shapes = []
+            if len(shape0["points"]) == 2 and len(shape1["points"]) == 2:
+                distance = shape1["frame"] - shape0["frame"]
+                diff = np.subtract(shape1["points"], shape0["points"])
+                for frame in range(shape0["frame"] + 1, shape1["frame"]):
+                    offset = (frame - shape0["frame"]) / distance
+                    points = None
+                    if shape1["outside"]:
+                        points = np.asarray(shape0["points"])
+                    else:
+                        points = shape0["points"] + diff * offset
+
+                    shapes.append(copy_shape(shape0, frame, points.tolist()))
+            else:
+                for frame in range(shape0["frame"] + 1, shape1["frame"]):
+                    shapes.append(copy_shape(shape0, frame))
+
+            return shapes
+
+        def interpolate_position(leftPosition, rightPosition, offset):
+            def to_array(points):
+                return np.asarray(
+                    list(map(lambda point: [point["x"], point["y"]], points))
+                ).flatten()
+
+            def to_points(array):
+                return list(map(
+                    lambda point: {"x": point[0], "y": point[1]}, np.asarray(array).reshape(-1, 2)
+                ))
+
+            def curveLength(points):
+                length = 0
+                for i in range(1, len(points)):
+                    dx = points[i]["x"] - points[i - 1]["x"]
+                    dy = points[i]["y"] - points[i - 1]["y"]
+                    length += np.sqrt(dx ** 2 + dy ** 2)
+                return length
+
+            def curveToOffsetVec(points, length):
+                offsetVector = [0]
+                accumulatedLength = 0
+                for i in range(1, len(points)):
+                    dx = points[i]["x"] - points[i - 1]["x"]
+                    dy = points[i]["y"] - points[i - 1]["y"]
+                    accumulatedLength += np.sqrt(dx ** 2 + dy ** 2)
+                    offsetVector.append(accumulatedLength / length)
+
+                return offsetVector
+
+            def matchLeftRight(leftCurve, rightCurve):
+                matching = {}
+                for i, leftCurveItem in enumerate(leftCurve):
+                    minDistance = sys.maxsize
+                    for j, rightCurveItem in enumerate(rightCurve):
+                        distance = abs(leftCurveItem - rightCurveItem)
+                        if (distance < minDistance):
+                            minDistance = distance
+                            matching[i] = j
+
+                return matching
+
+            def matchRightLeft(leftCurve, rightCurve, leftRightMatching):
+                matchedRightPoints = leftRightMatching.values()
+                unmatchedRightPoints = filter(lambda x: x not in matchedRightPoints, range(len(rightCurve)))
+                updatedMatching = {}
+                for key, value in leftRightMatching.items():
+                    updatedMatching[key] = [value]
+
+                for rightPoint in unmatchedRightPoints:
+                    minimumDistance = sys.maxsize
+                    leftPoint = None
+                    for i, value in enumerate(leftCurve):
+                        distance = abs(value - rightCurve[rightPoint])
+                        if distance < minimumDistance:
+                            minimumDistance = distance
+                            leftPoint = i
+
+                    updatedMatching[leftPoint].append(rightPoint)
+
+                for key, value in updatedMatching.items():
+                    updatedMatching[key] = sorted(value)
+
+                return updatedMatching
+
+            def reduceInterpolation(interpolatedPoints, matching, leftPoints, rightPoints):
+                def averagePoint(points):
+                    sumX = 0
+                    sumY = 0
+                    for point in points:
+                        sumX += point["x"]
+                        sumY += point["y"]
+
+                    return {
+                        "x": sumX / len(points),
+                        "y": sumY / len(points)
+                    }
+
+                def computeDistance(point1, point2):
+                    return np.sqrt(
+                        ((point1["x"] - point2["x"])) ** 2
+                        + ((point1["y"] - point2["y"]) ** 2)
+                    )
+
+                reduced = []
+                interpolatedIndexes = {}
+                accumulated = 0
+                for i in range(len(leftPoints)):
+                    interpolatedIndexes[i] = []
+                    for _ in range(len(matching[i])):
+                        interpolatedIndexes[i].append(accumulated)
+                        accumulated += 1
+
+                def minimizeSegment(baseLength, N, startInterpolated, stopInterpolated):
+                    threshold = baseLength / (2 * (N - 1))
+                    for i in range(startInterpolated, stopInterpolated):
+                        points = [i]
+                        j = i + 1
+
+                        if j > stopInterpolated:
+                            reduced.append(interpolatedPoints[i])
+                            break
+
+                        distance = computeDistance(interpolatedPoints[i], interpolatedPoints[j])
+                        while distance < threshold:
+                            points.append(j)
+                            j += 1
+
+                            if j > stopInterpolated:
+                                break
+
+                            i = j - 1
+                            distance += computeDistance(interpolatedPoints[i], interpolatedPoints[j])
+
+                        reduced.append(averagePoint(
+                            list(map(lambda pointIdx: interpolatedPoints[pointIdx], points))
+                        ))
+
+                def leftSegment(start, stop):
+                    startInterpolated = interpolatedIndexes[start][0]
+                    stopInterpolated = interpolatedIndexes[stop][0]
+
+                    if startInterpolated == stopInterpolated:
+                        reduced.append(interpolatedPoints[startInterpolated])
+                        return
+
+                    baseLength = curveLength(leftPoints[start: stop + 1])
+                    N = stop - start + 1
+
+                    minimizeSegment(baseLength, N, startInterpolated, stopInterpolated)
+
+
+                def rightSegment(leftPoint):
+                    start = matching[leftPoint][0]
+                    stop = matching[leftPoint][-1]
+                    startInterpolated = interpolatedIndexes[leftPoint][0]
+                    stopInterpolated = interpolatedIndexes[leftPoint][-1]
+                    baseLength = curveLength(rightPoints[start: stop + 1])
+                    N = stop - start + 1
+
+                    minimizeSegment(baseLength, N, startInterpolated, stopInterpolated)
+
+                previousOpened = None
+                for i in range(len(leftPoints)):
+                    if len(matching[i]) == 1:
+                        if previousOpened is not None:
+                            if matching[i][0] == matching[previousOpened][0]:
+                                continue
+                            else:
+                                start = previousOpened
+                                stop = i - 1
+                                leftSegment(start, stop)
+                                previousOpened = i
+                        else:
+                            previousOpened = i
+                    else:
+                        if previousOpened is not None:
+                            start = previousOpened
+                            stop = i - 1
+                            leftSegment(start, stop)
+                            previousOpened = None
+
+                        rightSegment(i)
+
+                if previousOpened is not None:
+                    leftSegment(previousOpened, len(leftPoints) - 1)
+
+                return reduced
+
+            leftPoints = to_points(leftPosition["points"])
+            rightPoints = to_points(rightPosition["points"])
+            leftCurveLength = curveLength(leftPoints)
+            rightCurveLength = curveLength(rightPoints)
+            leftOffsetVec = curveToOffsetVec(leftPoints, leftCurveLength)
+            rightOffsetVec = curveToOffsetVec(rightPoints, rightCurveLength)
+
+            matching = matchLeftRight(leftOffsetVec, rightOffsetVec)
+            completedMatching = matchRightLeft(
+                leftOffsetVec, rightOffsetVec, matching,
+            )
+
+            interpolatedPoints = []
+            for leftPointIdx, leftPoint in enumerate(leftPoints):
+                for rightPointIdx in completedMatching[leftPointIdx]:
+                    rightPoint = rightPoints[rightPointIdx]
+                    interpolatedPoints.append({
+                        "x": leftPoint["x"] + (rightPoint["x"] - leftPoint["x"]) * offset,
+                        "y": leftPoint["y"] + (rightPoint["y"] - leftPoint["y"]) * offset,
+                    })
+
+            reducedPoints = reduceInterpolation(
+                interpolatedPoints,
+                completedMatching,
+                leftPoints,
+                rightPoints,
+            )
+
+            return to_array(reducedPoints).tolist()
+
+        def polyshape_interpolation(shape0, shape1):
+            shapes = []
             is_polygon = shape0["type"] == ShapeType.POLYGON
-            is_polyline = shape0["type"] == ShapeType.POLYLINE
-            is_same_size = len(shape0["points"]) == len(shape1["points"])
-            if not is_same_type or is_polygon or is_polyline or not is_same_size:
-                shape0 = TrackManager.normalize_shape(shape0)
-                shape1 = TrackManager.normalize_shape(shape1)
+            if is_polygon:
+                shape0["points"].extend(shape0["points"][:2])
+                shape1["points"].extend(shape1["points"][:2])
 
             distance = shape1["frame"] - shape0["frame"]
-            step = np.subtract(shape1["points"], shape0["points"]) / distance
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
-                off = frame - shape0["frame"]
+                offset = (frame - shape0["frame"]) / distance
+                points = None
                 if shape1["outside"]:
-                    points = np.asarray(shape0["points"]).reshape(-1, 2)
+                    points = np.asarray(shape0["points"])
                 else:
-                    points = (shape0["points"] + step * off).reshape(-1, 2)
-                shape = deepcopy(shape0)
-                if len(points) == 1:
-                    shape["points"] = points.flatten()
-                else:
-                    broken_line = geometry.LineString(points).simplify(0.05, False)
-                    shape["points"] = [x for p in broken_line.coords for x in p]
+                    points = interpolate_position(shape0, shape1, offset)
 
-                shape["keyframe"] = False
-                shape["frame"] = frame
-                shapes.append(shape)
+                shapes.append(copy_shape(shape0, frame, points))
+
+            if is_polygon:
+                shape0["points"] = shape0["points"][:-2]
+                shape1["points"] = shape1["points"][:-2]
+                for shape in shapes:
+                    shape["points"] = shape["points"][:-2]
+
+            return shapes
+
+        def interpolate(shape0, shape1):
+            is_same_type = shape0["type"] == shape1["type"]
+            is_rectangle = shape0["type"] == ShapeType.RECTANGLE
+            is_cuboid = shape0["type"] == ShapeType.CUBOID
+            is_polygon = shape0["type"] == ShapeType.POLYGON
+            is_polyline = shape0["type"] == ShapeType.POLYLINE
+            is_points = shape0["type"] == ShapeType.POINTS
+
+            assert is_same_type, "Shapes must have the same type"
+
+            shapes = []
+            if is_rectangle or is_cuboid:
+                shapes = simple_interpolation(shape0, shape1)
+
+            if is_points:
+                shapes = points_interpolation(shape0, shape1)
+
+            if is_polygon or is_polyline:
+                shapes = polyshape_interpolation(shape0, shape1)
+
             return shapes
 
         if track.get("interpolated_shapes"):

@@ -1921,13 +1921,12 @@
         }
 
         interpolatePosition(leftPosition, rightPosition, offset) {
-
             const positionOffset = leftPosition.points.map((point, index) => (
                 rightPosition.points[index] - point
-            ))
+            ));
 
             return {
-                points: leftPosition.points.map((point ,index) => (
+                points: leftPosition.points.map((point, index) => (
                     point + positionOffset[index] * offset
                 )),
                 occluded: leftPosition.occluded,
