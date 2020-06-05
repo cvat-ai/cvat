@@ -51,3 +51,14 @@ class ImageOperationsTest(TestCase):
 
             self.assertTrue(np.array_equal(src_image, dst_image),
                 'save: %s, load: %s' % (save_backend, load_backend))
+
+    def test_save_image_to_inexistent_dir_raises_error(self):
+        with self.assertRaises(FileNotFoundError):
+            image_module.save_image('some/path.jpg', np.ones((5, 4, 3)),
+                create_dir=False)
+
+    def test_save_image_can_create_dir(self):
+        with TestDir() as test_dir:
+            path = osp.join(test_dir, 'some', 'path.jpg')
+            image_module.save_image(path, np.ones((5, 4, 3)), create_dir=True)
+            self.assertTrue(osp.isfile(path))

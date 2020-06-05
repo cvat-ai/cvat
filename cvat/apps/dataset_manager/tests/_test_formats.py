@@ -339,6 +339,9 @@ class TaskExportTest(_DbTestBase):
                 self.assertTrue(len(f.read()) != 0)
 
         for f in dm.views.get_export_formats():
+            if not f.ENABLED:
+                self.skipTest("Format is disabled")
+
             format_name = f.DISPLAY_NAME
             for save_images in { True, False }:
                 images = self._generate_task_images(3)
@@ -364,6 +367,9 @@ class TaskExportTest(_DbTestBase):
             ('YOLO 1.1', 'yolo'),
         ]:
             with self.subTest(format=format_name):
+                if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:
+                    self.skipTest("Format is disabled")
+
                 images = self._generate_task_images(3)
                 task = self._generate_task(images)
 

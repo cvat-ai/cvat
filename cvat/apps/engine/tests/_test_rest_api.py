@@ -3149,8 +3149,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         export_formats = data['exporters']
         self.assertTrue(isinstance(import_formats, list) and import_formats)
         self.assertTrue(isinstance(export_formats, list) and export_formats)
-        import_formats = { v['name'] for v in import_formats }
-        export_formats = { v['name'] for v in export_formats }
+        import_formats = { v['name']: v for v in import_formats }
+        export_formats = { v['name']: v for v in export_formats }
 
         formats = { exp: exp if exp in import_formats else None
             for exp in export_formats }
@@ -3159,12 +3159,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 formats['CVAT for video 1.1'] = 'CVAT 1.1'
             if 'CVAT for images 1.1' in export_formats:
                 formats['CVAT for images 1.1'] = 'CVAT 1.1'
-        if import_formats ^ export_formats:
+        if set(import_formats) ^ set(export_formats):
             # NOTE: this may not be an error, so we should not fail
             print("The following import formats have no pair:",
-                import_formats - export_formats)
+                set(import_formats) - set(export_formats))
             print("The following export formats have no pair:",
-                export_formats - import_formats)
+                set(export_formats) - set(import_formats))
 
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format,
@@ -3183,7 +3183,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 # 3. download annotation
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
                     "?format={}".format(export_format))
-                self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+                if annotator and not export_formats[export_format]['enabled']:
+                    self.assertEqual(response.status_code,
+                        status.HTTP_405_METHOD_NOT_ALLOWED)
+                    continue
+                else:
+                    self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
                     "?format={}".format(export_format))
