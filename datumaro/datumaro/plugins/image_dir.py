@@ -65,8 +65,10 @@ class ImageDirExtractor(SourceExtractor):
         return self._items[item_id]
 
     def _is_image(self, path):
+        if not osp.isfile(path):
+            return False
         for ext in self._SUPPORTED_FORMATS:
-            if osp.isfile(path) and path.endswith(ext):
+            if path.endswith(ext):
                 return True
         return False
 
@@ -83,4 +85,5 @@ class ImageDirConverter(Converter):
                 else:
                     filename = item.id
                 filename += '.jpg'
-                save_image(osp.join(save_dir, filename), item.image.data)
+                save_image(osp.join(save_dir, filename), item.image.data,
+                    create_dir=True)

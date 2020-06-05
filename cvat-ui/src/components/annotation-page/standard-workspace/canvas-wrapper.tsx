@@ -571,7 +571,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                     canvasInstance.fit();
                 }
             }
-            if (activatedState.objectType !== ObjectType.TAG) {
+            if (activatedState && activatedState.objectType !== ObjectType.TAG) {
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
             }
             const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);

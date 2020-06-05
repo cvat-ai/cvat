@@ -13,8 +13,8 @@ import shutil
 
 from openvino.inference_engine import IECore
 
-from datumaro.components.launcher import Launcher
 from datumaro.components.cli_plugin import CliPlugin
+from datumaro.components.launcher import Launcher
 
 
 class OpenVinoImporter(CliPlugin):

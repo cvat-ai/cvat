@@ -335,6 +335,9 @@ class TaskExportTest(APITestCase):
                 self.assertTrue(len(f.read()) != 0)
 
         for f in dm.views.get_export_formats():
+            if not f.ENABLED:
+                self.skipTest("Format is disabled")
+
             format_name = f.DISPLAY_NAME
             for save_images in { True, False }:
                 with self.subTest(format=format_name, save_images=save_images):
@@ -359,6 +362,9 @@ class TaskExportTest(APITestCase):
             ('YOLO 1.1', 'yolo'),
         ]:
             with self.subTest(format=format_name):
+                if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:
+                    self.skipTest("Format is disabled")
+
                 task = self._generate_task()
 
                 def check(file_path):
