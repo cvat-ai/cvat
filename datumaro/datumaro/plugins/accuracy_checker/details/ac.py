@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import yaml
+
 from accuracy_checker.adapters import create_adapter
 from accuracy_checker.data_reader import DataRepresentation
 from accuracy_checker.launcher import InputFeeder, create_launcher
@@ -10,27 +12,12 @@ from accuracy_checker.postprocessor import PostprocessingExecutor
 from accuracy_checker.preprocessor import PreprocessingExecutor
 from accuracy_checker.utils import extract_image_representations
 
-from datumaro.components.cli_plugin import CliPlugin
 from datumaro.components.extractor import AnnotationType, LabelCategories
-from datumaro.components.launcher import Launcher
 
 from .representation import import_predictions
 
 
-class AcImporter(CliPlugin):
-    @classmethod
-    def build_cmdline_parser(cls, **kwargs):
-        parser = super().build_cmdline_parser(**kwargs)
-        parser.add_argument('-c', '--config',
-            help="Path to launcher configuration file (.yml)")
-        return parser
-
-class AcLauncher(Launcher):
-    cli_plugin = AcImporter
-    """
-    Generic model launcher with Accuracy Checker backend.
-    """
-
+class GenericAcLauncher:
     @staticmethod
     def from_config(config):
         launcher = create_launcher(config['launcher'])
@@ -128,3 +115,4 @@ class AcLauncher(Launcher):
         # An heuristic to determine input shape - use the max input shape
         return max(self._launcher.inputs.values(),
             defult=None, key=lambda s: abs(np.prod(s)))
+

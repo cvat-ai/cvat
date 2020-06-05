@@ -79,15 +79,14 @@ def add_command(args):
             log.error("Can't copy: copying is not available for '%s' models" % \
                 args.launcher)
 
-    log.info("Adding the model")
+    log.info("Checking the model")
     project.add_model(args.name, {
         'launcher': args.launcher,
         'options': model_args,
     })
-
-    log.info("Checking the model")
     project.make_executable_model(args.name)
 
+    log.info("Adding the model")
     project.save()
 
     log.info("Model '%s' with launcher '%s' has been added to project '%s'" % \
