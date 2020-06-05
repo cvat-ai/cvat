@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Throttling policy for unauthenticated users (<https://github.com/opencv/cvat/pull/1531>)
 - Added default label color table for mask export (https://github.com/opencv/cvat/pull/1549)
+- Added environment variables for Redis and Postgres hosts for Kubernetes deployment support (<https://github.com/opencv/cvat/pull/1641>)
 - Added visual identification for unavailable formats (https://github.com/opencv/cvat/pull/1567)
 
 ### Changed
