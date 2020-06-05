@@ -328,7 +328,7 @@ class BasicUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email')
+        fields = ('url', 'id', 'username', 'first_name', 'last_name')
         ordering = ['-id']
 
 class UserSerializer(serializers.ModelSerializer):

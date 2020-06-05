@@ -134,7 +134,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
                     dumpAnnotations(taskInstance, dumper);
                 }
             } else if (action === Actions.LOAD_TASK_ANNO) {
-                const [format] = additionalKey.split('::');
+                const format = additionalKey;
                 const [loader] = loaders
                     .filter((_loader: any): boolean => _loader.name === format);
                 if (loader && file) {
@@ -166,8 +166,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             taskID={taskInstance.id}
             taskMode={taskInstance.mode}
             bugTracker={taskInstance.bugTracker}
-            loaders={loaders.map((loader: any): string => `${loader.name}::${loader.format}`)}
-            dumpers={dumpers.map((dumper: any): string => dumper.name)}
+            loaders={loaders}
+            dumpers={dumpers}
             loadActivity={loadActivity}
             dumpActivities={dumpActivities}
             exportActivities={exportActivities}
