@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 
 interface Props {
     menuKey: string;
-    exporters: string[];
+    exporters: any[];
     exportActivities: string[] | null;
 }
 
@@ -23,16 +23,20 @@ export default function ExportSubmenu(props: Props): JSX.Element {
     return (
         <Menu.SubMenu key={menuKey} title='Export as a dataset'>
             {
-                exporters.map((exporter: string): JSX.Element => {
-                    const pending = (exportActivities || []).includes(exporter);
+                exporters
+                    .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                    .map((exporter: any): JSX.Element =>
+                {
+                    const pending = (exportActivities || []).includes(exporter.name);
+                    const disabled = !exporter.enabled || pending;
                     return (
                         <Menu.Item
-                            key={exporter}
-                            disabled={pending}
+                            key={exporter.name}
+                            disabled={disabled}
                             className='cvat-menu-export-submenu-item'
                         >
                             <Icon type='export' />
-                            <Text>{exporter}</Text>
+                            <Text disabled={disabled}>{exporter.name}</Text>
                             {pending && <Icon style={{ marginLeft: 10 }} type='loading' />}
                         </Menu.Item>
                     );

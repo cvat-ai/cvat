@@ -5,11 +5,12 @@
 
 # pylint: disable=unused-import
 
+from enum import Enum
 from io import BytesIO
 import numpy as np
+import os
 import os.path as osp
 
-from enum import Enum
 _IMAGE_BACKENDS = Enum('_IMAGE_BACKENDS', ['cv2', 'PIL'])
 _IMAGE_BACKEND = None
 try:
@@ -45,7 +46,16 @@ def load_image(path):
         assert image.shape[2] in {3, 4}
     return image
 
-def save_image(path, image, **kwargs):
+def save_image(path, image, create_dir=False, **kwargs):
+    # NOTE: Check destination path for existence
+    # OpenCV silently fails if target directory does not exist
+    dst_dir = osp.dirname(path)
+    if dst_dir:
+        if create_dir:
+            os.makedirs(dst_dir, exist_ok=True)
+        elif not osp.isdir(dst_dir):
+            raise FileNotFoundError("Directory does not exist: '%s'" % dst_dir)
+
     if not kwargs:
         kwargs = {}
 
