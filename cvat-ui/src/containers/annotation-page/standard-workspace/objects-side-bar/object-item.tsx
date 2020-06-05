@@ -25,6 +25,8 @@ import {
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 
+import {shift} from 'utils/math';
+
 interface OwnProps {
     clientID: number;
 }
@@ -404,6 +406,53 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
     }
 
+    private switchCuboidOrientation = (): void => {
+        function cuboidOrientationIsLeft(points: number[]): boolean {
+            return points[12] > points[0];
+        }
+
+        const {objectState} = this.props;
+
+        this.resetCuboidPerspective(false);
+
+        objectState.points = shift(objectState.points,
+            cuboidOrientationIsLeft(objectState.points) ? 4 : -4);
+
+        this.commit();
+    }
+
+    private resetCuboidPerspective = (commit: boolean = true): void => {
+        function cuboidOrientationIsLeft(points: number[]): boolean {
+            return points[12] > points[0];
+        }
+
+        const {objectState} = this.props;
+        const {points} = objectState;
+        const minD = {
+            x: (points[6] - points[2])*0.001,
+            y: (points[3] - points[1])*0.001,
+        }
+
+        if (cuboidOrientationIsLeft(points)) {
+            points[14] = points[10] + points[2] - points[6] + minD.x;
+            points[15] = points[11] + points[3] - points[7];
+            points[8] = points[10] + points[4] - points[6];
+            points[9] = points[11] + points[5] - points[7] + minD.y;
+            points[12] = points[14] + points[0] - points[2];
+            points[13] = points[15] + points[1] - points[3] + minD.y;
+        } else {
+            points[10] = points[14] + points[6] - points[2] - minD.x;
+            points[11] = points[15] + points[7] - points[3];
+            points[12] = points[14] + points[0] - points[2];
+            points[13] = points[15] + points[1] - points[3] + minD.y;
+            points[8] = points[12] + points[4] - points[0] - minD.x;
+            points[9] = points[13] + points[5] - points[1];
+        }
+
+        objectState.points = points;
+        if (commit) this.commit();
+    }
+
     private commit(): void {
         const {
             objectState,
@@ -507,6 +556,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 changeLabel={this.changeLabel}
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
+                switchCuboidOrientation={this.switchCuboidOrientation}
+                resetCuboidPerspective={() => this.resetCuboidPerspective()}
             />
         );
     }
