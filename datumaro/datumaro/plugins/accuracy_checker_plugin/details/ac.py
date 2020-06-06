@@ -6,8 +6,10 @@
 from datumaro.util.tf_util import import_tf
 import_tf() # prevent TF loading and potential interpeter crash
 
+from itertools import groupby
+
 from accuracy_checker.adapters import create_adapter
-from accuracy_checker.data_reader import DataRepresentation
+from accuracy_checker.data_readers import DataRepresentation
 from accuracy_checker.launcher import InputFeeder, create_launcher
 from accuracy_checker.postprocessor import PostprocessingExecutor
 from accuracy_checker.preprocessor import PreprocessingExecutor
@@ -18,16 +20,20 @@ from datumaro.components.extractor import AnnotationType, LabelCategories
 from .representation import import_predictions
 
 
+class _FakeDataset:
+    def __init__(self, metadata=None):
+        self.metadata = metadata or {}
+
 class GenericAcLauncher:
     @staticmethod
     def from_config(config):
-        launcher = create_launcher(config['launcher'])
+        launcher_config = config['launcher']
+        launcher = create_launcher(launcher_config)
 
-        dataset = object()
-        dataset.metadata = {}
-
-        adapter_config = config.get('adapter')
-        label_config = adapter_config.get('labels')
+        dataset = _FakeDataset()
+        adapter_config = config.get('adapter') or launcher_config.get('adapter')
+        label_config = adapter_config.get('labels') \
+            if isinstance(adapter_config, dict) else None
         if label_config:
             assert isinstance(label_config, (list, dict))
             if isinstance(label_config, list):
@@ -67,41 +73,38 @@ class GenericAcLauncher:
         self._preproc = preproc
         self._postproc = postproc
 
-        self._input_shape = self._init_input_shape()
         self._categories = self._init_categories()
 
-    def launch(self, inputs):
-        batch = [DataRepresentation(inp) for inp in inputs]
-        inputs = self._input_feeder.fill_inputs(batch)
+    def launch_raw(self, inputs):
+        ids = range(len(inputs))
+        inputs = [DataRepresentation(inp, identifier=id)
+            for id, inp in zip(ids, inputs)]
         _, batch_meta = extract_image_representations(inputs)
 
         if self._preproc:
             inputs = self._preproc.process(inputs)
 
+        inputs = self._input_feeder.fill_inputs(inputs)
         outputs = self._launcher.predict(inputs, batch_meta)
 
         if self._adapter:
-            outputs = self._adapter.process(outputs,
-                [''] * len(batch), # can be None, but it's not expected anywhere
-                batch_meta)
+            outputs = self._adapter.process(outputs, ids, batch_meta)
 
         if self._postproc:
             outputs = self._postproc.process(outputs)
 
-        return import_predictions(outputs)
+        return outputs
+
+    def launch(self, inputs):
+        outputs = self.launch_raw(inputs)
+        return [import_predictions(g) for _, g in
+            groupby(outputs, key=lambda o: o.identifier)]
 
     def categories(self):
         return self._categories
 
-    def preferred_input_size(self):
-        if self._input_shape is None:
-            return None
-
-        _, _, h, w = self.input_shape
-        return (h, w)
-
     def _init_categories(self):
-        if self._adapter is None:
+        if self._adapter is None or self._adapter.label_map is None:
             return None
 
         label_map = sorted(self._adapter.label_map.items(), key=lambda e: e[0])
@@ -111,9 +114,3 @@ class GenericAcLauncher:
             label_cat.add(label)
 
         return { AnnotationType.label: label_cat }
-
-    def _init_input_shape(self):
-        # An heuristic to determine input shape - use the max input shape
-        return max(self._launcher.inputs.values(),
-            defult=None, key=lambda s: abs(np.prod(s)))
-

@@ -17,9 +17,6 @@ class Launcher:
     def launch(self, inputs):
         raise NotImplementedError()
 
-    def preferred_input_size(self):
-        return None
-
     def categories(self):
         return None
 # pylint: enable=no-self-use
@@ -32,7 +29,7 @@ class ModelTransform(Transform):
 
     def __iter__(self):
         for batch in take_by(self._extractor, self._batch_size):
-            inputs = np.array([item.image.data for item in batch_items])
+            inputs = np.array([item.image.data for item in batch])
             inference = self._launcher.launch(inputs)
 
             for item, annotations in zip(batch, inference):
