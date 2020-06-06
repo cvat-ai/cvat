@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Kibana wrong working time calculation with new annotation UI use (<https://github.com/opencv/cvat/pull/1654>)
 
 ### Security
--
+- SQL injection in Django `CVE-2020-9402` (https://github.com/opencv/cvat/pull/1657)
 
 ## [1.0.0] - 2020-05-29
 ### Added
