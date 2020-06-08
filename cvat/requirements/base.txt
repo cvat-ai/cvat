@@ -1,5 +1,5 @@
 click==6.7
-Django==2.2.10
+Django==2.2.13
 django-appconf==1.0.2
 django-auth-ldap==1.4.0
 django-cacheops==4.0.6

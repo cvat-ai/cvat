@@ -9,16 +9,16 @@ from datumaro.util.test_utils import TestDir, compare_datasets
 
 
 class ImageDirFormatTest(TestCase):
-    class TestExtractor(Extractor):
-        def __iter__(self):
-            return iter([
-                DatasetItem(id=1, image=np.ones((10, 6, 3))),
-                DatasetItem(id=2, image=np.ones((5, 4, 3))),
-            ])
-
     def test_can_load(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=np.ones((10, 6, 3))),
+                    DatasetItem(id=2, image=np.ones((5, 4, 3))),
+                ])
+
         with TestDir() as test_dir:
-            source_dataset = self.TestExtractor()
+            source_dataset = TestExtractor()
 
             ImageDirConverter()(source_dataset, save_dir=test_dir)
 
