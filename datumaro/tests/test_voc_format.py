@@ -64,9 +64,6 @@ class VocFormatTest(TestCase):
 
             self.assertEqual(src_label_map, dst_label_map)
 
-def get_label(extractor, label_id):
-    return extractor.categories()[AnnotationType.label].items[label_id].name
-
 class TestExtractorBase(Extractor):
     def _label(self, voc_label):
         return self.categories()[AnnotationType.label].find(voc_label)[0]

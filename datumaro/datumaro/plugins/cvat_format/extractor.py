@@ -254,15 +254,15 @@ class CvatExtractor(SourceExtractor):
         ann_id = ann.get('id')
         ann_type = ann['type']
 
-        attributes = ann.get('attributes', {})
+        attributes = ann.get('attributes') or {}
         if 'occluded' in categories[AnnotationType.label].attributes:
             attributes['occluded'] = ann.get('occluded', False)
-        if 'outside' in categories[AnnotationType.label].attributes:
-            attributes['outside'] = ann.get('outside', False)
-        if 'keyframe' in categories[AnnotationType.label].attributes:
-            attributes['keyframe'] = ann.get('keyframe', False)
-        if 'track_id' in categories[AnnotationType.label].attributes:
-            attributes['track_id'] = ann.get('track_id', 0)
+        if 'outside' in ann:
+            attributes['outside'] = ann['outside']
+        if 'keyframe' in ann:
+            attributes['keyframe'] = ann['keyframe']
+        if 'track_id' in ann:
+            attributes['track_id'] = ann['track_id']
 
         group = ann.get('group')
 
@@ -303,16 +303,13 @@ class CvatExtractor(SourceExtractor):
 
     def _load_items(self, parsed):
         for frame_id, item_desc in parsed.items():
-            path = item_desc.get('name', 'frame_%06d.png' % int(frame_id))
+            name = item_desc.get('name', 'frame_%06d.png' % int(frame_id))
+            image = osp.join(self._images_dir, name)
             image_size = (item_desc.get('height'), item_desc.get('width'))
             if all(image_size):
-                image_size = (int(image_size[0]), int(image_size[1]))
-            else:
-                image_size = None
-            image = Image(path=osp.join(self._images_dir, path),
-                size=image_size)
+                image = Image(path=image, size=tuple(map(int, image_size)))
 
-            parsed[frame_id] = DatasetItem(id=osp.splitext(path)[0],
+            parsed[frame_id] = DatasetItem(id=osp.splitext(name)[0],
                 subset=self._subset, image=image,
                 annotations=item_desc.get('annotations'),
                 attributes={'frame': int(frame_id)})

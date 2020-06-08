@@ -53,7 +53,7 @@ class ImageOperationsTest(TestCase):
                 'save: %s, load: %s' % (save_backend, load_backend))
 
     def test_save_image_to_inexistent_dir_raises_error(self):
-        with self.assertRaises(NotADirectoryError):
+        with self.assertRaises(FileNotFoundError):
             image_module.save_image('some/path.jpg', np.ones((5, 4, 3)),
                 create_dir=False)
 

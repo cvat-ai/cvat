@@ -55,9 +55,7 @@ class CvatImporterTest(TestCase):
                 label_categories = LabelCategories()
                 label_categories.add('label1', attributes={'a1', 'a2'})
                 label_categories.add('label2')
-                return {
-                    AnnotationType.label: label_categories,
-                }
+                return { AnnotationType.label: label_categories }
 
         parsed_dataset = CvatImporter()(DUMMY_IMAGE_DATASET_DIR).make_dataset()
 
@@ -139,9 +137,7 @@ class CvatImporterTest(TestCase):
                 label_categories.add('klhg', attributes={'hgl'})
                 label_categories.add('z U k')
                 label_categories.add('II')
-                return {
-                    AnnotationType.label: label_categories,
-                }
+                return { AnnotationType.label: label_categories }
 
         parsed_dataset = CvatImporter()(DUMMY_VIDEO_DATASET_DIR).make_dataset()
 
@@ -176,12 +172,10 @@ class CvatConverterTest(TestCase):
                             Polygon([0, 0, 4, 0, 4, 4],
                                 label=1, group=4,
                                 attributes={ 'occluded': True }),
-                            Polygon([5, 0, 9, 0, 5, 5],
-                                label=2, group=4,
-                                attributes={ 'unknown': 'bar' }),
                             Points([1, 1, 3, 2, 2, 3],
                                 label=2,
-                                attributes={ 'a1': 'x', 'a2': 42 }),
+                                attributes={ 'a1': 'x', 'a2': 42,
+                                    'unknown': 'bar' }),
                             Label(1),
                             Label(2, attributes={ 'a1': 'y', 'a2': 44 }),
                         ]
@@ -219,9 +213,6 @@ class CvatConverterTest(TestCase):
                             Polygon([0, 0, 4, 0, 4, 4],
                                 label=1, group=4,
                                 attributes={ 'occluded': True }),
-                            Polygon([5, 0, 9, 0, 5, 5],
-                                label=2, group=4,
-                                attributes={ 'occluded': False }),
                             Points([1, 1, 3, 2, 2, 3],
                                 label=2,
                                 attributes={ 'occluded': False,

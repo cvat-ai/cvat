@@ -56,8 +56,7 @@ class TfrecordConverterTest(TestCase):
                             Bbox(0, 4, 4, 8, label=2),
                             Bbox(0, 4, 4, 4, label=3),
                             Bbox(2, 4, 4, 4),
-                        ],
-                        attributes={'source_id': ''}
+                        ], attributes={'source_id': ''}
                     ),
                 ])
 

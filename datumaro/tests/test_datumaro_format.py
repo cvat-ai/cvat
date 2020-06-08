@@ -12,27 +12,8 @@ from datumaro.plugins.datumaro_format.importer import DatumaroImporter
 from datumaro.plugins.datumaro_format.converter import DatumaroConverter
 from datumaro.util.mask_tools import generate_colormap
 from datumaro.util.image import Image
-from datumaro.util.test_utils import TestDir, item_to_str
+from datumaro.util.test_utils import TestDir, compare_datasets_strict
 
-
-def compare_datasets_strict(test, expected, actual):
-    test.assertEqual(expected.categories(), actual.categories())
-
-    test.assertListEqual(
-        sorted(expected.subsets()),
-        sorted(actual.subsets()),
-    )
-
-    test.assertEqual(len(expected), len(actual))
-
-    for subset_name in expected.subsets():
-        e_subset = expected.get_subset(subset_name)
-        a_subset = actual.get_subset(subset_name)
-        test.assertEqual(len(e_subset), len(a_subset))
-        for idx, (item_a, item_b) in enumerate(zip(e_subset, a_subset)):
-            test.assertEqual(item_a, item_b,
-                '%s:\n%s\nvs.\n%s\n' % \
-                (idx, item_to_str(item_a), item_to_str(item_b)))
 
 class DatumaroConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
