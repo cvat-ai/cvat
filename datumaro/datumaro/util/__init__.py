@@ -60,3 +60,12 @@ def to_snake_case(s):
         else:
             name.append(char)
     return ''.join(name)
+
+def str_to_bool(s):
+    t = s.lower()
+    if t in {'true', '1', 'ok', 'yes'}:
+        return True
+    elif t in {'false', '0', 'no'}:
+        return False
+    else:
+        raise ValueError("Can't convert value '%s' to bool" % s)

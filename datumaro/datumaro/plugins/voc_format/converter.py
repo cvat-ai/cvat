@@ -16,6 +16,7 @@ from datumaro.components.converter import Converter
 from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, AnnotationType,
     LabelCategories, CompiledMask,
 )
+from datumaro.util import str_to_bool, find
 from datumaro.util.image import save_image
 from datumaro.util.mask_tools import paint_mask, remap_mask
 
@@ -466,6 +467,12 @@ class _Converter:
         elif isinstance(label_map_source, str) and osp.isfile(label_map_source):
             label_map = parse_label_map(label_map_source)
 
+            has_black = find(label_map.items(),
+                lambda e: e[0] == 'background' or e[1][0] == (0, 0, 0))
+            if not has_black and 'background' not in label_map:
+                label_map['background'] = [(0, 0, 0), [], []]
+                label_map.move_to_end('background', last=False)
+
         else:
             raise Exception("Wrong labelmap specified, "
                 "expected one of %s or a file path" % \
@@ -559,7 +566,7 @@ class VocConverter(Converter, CliPlugin):
 
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")
-        parser.add_argument('--apply-colormap', type=bool, default=True,
+        parser.add_argument('--apply-colormap', type=str_to_bool, default=True,
             help="Use colormap for class and instance masks "
                 "(default: %(default)s)")
         parser.add_argument('--label-map', type=cls._get_labelmap, default=None,
