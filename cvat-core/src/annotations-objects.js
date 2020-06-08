@@ -1608,17 +1608,22 @@
                 return offsetVector;
             }
 
+            function findNearestPair(value, curve) {
+                let minimum = [0, Math.abs(value - curve[0])];
+                for (let i = 1; i < curve.length; i++) {
+                    const distance = Math.abs(value - curve[i]);
+                    if (distance < minimum[1]) {
+                        minimum = [i, distance];
+                    }
+                }
+
+                return minimum[0];
+            }
+
             function matchLeftRight(leftCurve, rightCurve) {
                 const matching = {};
                 for (let i = 0; i < leftCurve.length; i++) {
-                    let minDistance = Number.MAX_SAFE_INTEGER;
-                    for (let j = 0; j < rightCurve.length; j++) {
-                        const distance = Math.abs(leftCurve[i] - rightCurve[j]);
-                        if (distance < minDistance) {
-                            minDistance = distance;
-                            matching[i] = j;
-                        }
-                    }
+                    matching[i] = [findNearestPair(leftCurve[i], rightCurve)];
                 }
 
                 return matching;
@@ -1628,22 +1633,10 @@
                 const matchedRightPoints = Object.values(leftRightMatching);
                 const unmatchedRightPoints = rightCurve.map((_, index) => index)
                     .filter((index) => !matchedRightPoints.includes(index));
-                const updatedMatching = {};
-                for (const key of Object.keys(leftRightMatching)) {
-                    updatedMatching[key] = [leftRightMatching[key]];
-                }
+                const updatedMatching = { ...leftRightMatching };
 
                 for (const rightPoint of unmatchedRightPoints) {
-                    let minimumDistance = Number.MAX_SAFE_INTEGER;
-                    let leftPoint = null;
-                    for (let i = 0; i < leftCurve.length; i++) {
-                        const distance = Math.abs(leftCurve[i] - rightCurve[rightPoint]);
-                        if (distance < minimumDistance) {
-                            minimumDistance = distance;
-                            leftPoint = i;
-                        }
-                    }
-
+                    const leftPoint = findNearestPair(rightCurve[rightPoint], leftCurve);
                     updatedMatching[leftPoint].push(rightPoint);
                 }
 
@@ -1677,50 +1670,43 @@
                     );
                 }
 
+                function minimizeSegment(baseLength, N, startInterpolated, stopInterpolated) {
+                    const threshold = baseLength / (2 * N);
+                    const minimized = [interpolatedPoints[startInterpolated]];
+                    let latestPushed = startInterpolated;
+                    for (let i = startInterpolated + 1; i < stopInterpolated; i++) {
+                        const distance = computeDistance(
+                            interpolatedPoints[latestPushed], interpolatedPoints[i],
+                        );
+
+                        if (distance >= threshold) {
+                            minimized.push(interpolatedPoints[i]);
+                            latestPushed = i;
+                        }
+                    }
+
+                    minimized.push(interpolatedPoints[stopInterpolated]);
+
+                    if (minimized.length === 2) {
+                        const distance = computeDistance(
+                            interpolatedPoints[startInterpolated],
+                            interpolatedPoints[stopInterpolated],
+                        );
+
+                        if (distance < threshold) {
+                            return [averagePoint(minimized)];
+                        }
+                    }
+
+                    return minimized;
+                }
+
                 const reduced = [];
                 const interpolatedIndexes = {};
                 let accumulated = 0;
                 for (let i = 0; i < leftPoints.length; i++) {
                     // eslint-disable-next-line
                     interpolatedIndexes[i] = matching[i].map(() => accumulated++);
-                }
-
-                function minimizeSegment(baseLength, N, startInterpolated, stopInterpolated) {
-                    const threshold = baseLength / (2 * (N - 1));
-                    for (let i = startInterpolated; i <= stopInterpolated; i++) {
-                        const points = [i];
-                        let j = i + 1;
-
-                        if (j > stopInterpolated) {
-                            // i is the latest point, just push it into final array
-                            reduced.push(interpolatedPoints[i]);
-                            break;
-                        }
-
-                        let distance = computeDistance(
-                            interpolatedPoints[i], interpolatedPoints[j],
-                        );
-
-                        while (distance < threshold) {
-                            points.push(j);
-                            j += 1;
-
-                            if (j > stopInterpolated) {
-                                // j - 1 was the latest point, stop internal loop
-                                break;
-                            }
-
-                            i = j - 1;
-                            distance += computeDistance(
-                                interpolatedPoints[i], interpolatedPoints[j],
-                            );
-                        }
-
-                        // average accumulated points
-                        reduced.push(averagePoint(
-                            points.map((pointIdx) => interpolatedPoints[pointIdx]),
-                        ));
-                    }
                 }
 
                 function leftSegment(start, stop) {
@@ -1735,7 +1721,9 @@
                     const baseLength = curveLength(leftPoints.slice(start, stop + 1));
                     const N = stop - start + 1;
 
-                    minimizeSegment(baseLength, N, startInterpolated, stopInterpolated);
+                    reduced.push(
+                        ...minimizeSegment(baseLength, N, startInterpolated, stopInterpolated),
+                    );
                 }
 
                 function rightSegment(leftPoint) {
@@ -1746,7 +1734,9 @@
                     const baseLength = curveLength(rightPoints.slice(start, stop + 1));
                     const N = stop - start + 1;
 
-                    minimizeSegment(baseLength, N, startInterpolated, stopInterpolated);
+                    reduced.push(
+                        ...minimizeSegment(baseLength, N, startInterpolated, stopInterpolated),
+                    );
                 }
 
                 let previousOpened = null;
@@ -1798,10 +1788,8 @@
             // polyshapes have the same start point and the same draw direction
             const leftPoints = toPoints(leftPosition.points);
             const rightPoints = toPoints(rightPosition.points);
-            const leftCurveLength = curveLength(leftPoints);
-            const rightCurveLength = curveLength(rightPoints);
-            const leftOffsetVec = curveToOffsetVec(leftPoints, leftCurveLength);
-            const rightOffsetVec = curveToOffsetVec(rightPoints, rightCurveLength);
+            const leftOffsetVec = curveToOffsetVec(leftPoints, curveLength(leftPoints));
+            const rightOffsetVec = curveToOffsetVec(rightPoints, curveLength(rightPoints));
 
             const matching = matchLeftRight(leftOffsetVec, rightOffsetVec);
             const completedMatching = matchRightLeft(
