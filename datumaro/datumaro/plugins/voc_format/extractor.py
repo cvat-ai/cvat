@@ -32,12 +32,15 @@ class _VocExtractor(SourceExtractor):
         super().__init__(subset=osp.splitext(osp.basename(path))[0])
 
         self._categories = self._load_categories(self._dataset_dir)
-        log.debug("Loaded labels: %s",
-            ', '.join("'%s' (%s, %s, %s)" % \
-                (l.name, *self._categories[AnnotationType.mask].colormap[idx])
-            for idx, l in enumerate(
-                self._categories[AnnotationType.label].items))
-        )
+
+        label_color = lambda label_idx: \
+            self._categories[AnnotationType.mask].colormap.get(label_idx, None)
+        log.debug("Loaded labels: %s" % ', '.join(
+            "'%s' %s" % (l.name, ('(%s, %s, %s)' % c) if c else '')
+            for i, l, c in ((i, l, label_color(i)) for i, l in enumerate(
+                self._categories[AnnotationType.label].items
+            ))
+        ))
         self._items = self._load_subset_list(path)
 
     def categories(self):
