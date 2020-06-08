@@ -95,7 +95,7 @@ class Git:
             elif ssh_match:
                 user = ssh_match.group(1)
                 host = ssh_match.group(2)
-                repos = "{}{}".format(ssh_match.group(3)[1:], ssh_match.group(4))
+                repos = "{}{}".format(ssh_match.group(3), ssh_match.group(4))
             else:
                 raise Exception("Git repository URL does not satisfy pattern")
 
