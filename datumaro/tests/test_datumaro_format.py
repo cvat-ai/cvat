@@ -12,10 +12,24 @@ from datumaro.plugins.datumaro_format.importer import DatumaroImporter
 from datumaro.plugins.datumaro_format.converter import DatumaroConverter
 from datumaro.util.mask_tools import generate_colormap
 from datumaro.util.image import Image
-from datumaro.util.test_utils import TestDir, item_to_str
-
+from datumaro.util.test_utils import TestDir, compare_datasets_strict
 
 class DatumaroConverterTest(TestCase):
+    def _test_save_and_load(self, source_dataset, converter, test_dir,
+            target_dataset=None, importer_args=None):
+        converter(source_dataset, test_dir)
+
+        if importer_args is None:
+            importer_args = {}
+        parsed_dataset = Project.import_from(
+            test_dir, 'datumaro', **importer_args).make_dataset()
+
+        if target_dataset is None:
+            target_dataset = source_dataset
+
+        compare_datasets_strict(self,
+            expected=target_dataset, actual=parsed_dataset)
+
     class TestExtractor(Extractor):
         def __iter__(self):
             return iter([
@@ -47,7 +61,8 @@ class DatumaroConverterTest(TestCase):
                         Polygon([1, 2, 3, 4, 5, 6, 7, 8], id=12, z_order=4),
                     ]),
 
-                DatasetItem(id=42, subset='test'),
+                DatasetItem(id=42, subset='test',
+                    attributes={'a1': 5, 'a2': '42'}),
 
                 DatasetItem(id=42),
                 DatasetItem(id=43, image=Image(path='1/b/c.qq', size=(2, 4))),
@@ -73,33 +88,8 @@ class DatumaroConverterTest(TestCase):
 
     def test_can_save_and_load(self):
         with TestDir() as test_dir:
-            source_dataset = self.TestExtractor()
-
-            converter = DatumaroConverter(save_images=True)
-            converter(source_dataset, test_dir)
-
-            project = Project.import_from(test_dir, 'datumaro')
-            parsed_dataset = project.make_dataset()
-
-            self.assertListEqual(
-                sorted(source_dataset.subsets()),
-                sorted(parsed_dataset.subsets()),
-            )
-
-            self.assertEqual(len(source_dataset), len(parsed_dataset))
-
-            for subset_name in source_dataset.subsets():
-                source_subset = source_dataset.get_subset(subset_name)
-                parsed_subset = parsed_dataset.get_subset(subset_name)
-                self.assertEqual(len(source_subset), len(parsed_subset))
-                for idx, (item_a, item_b) in enumerate(
-                        zip(source_subset, parsed_subset)):
-                    self.assertEqual(item_a, item_b, '%s:\n%s\nvs.\n%s\n' % \
-                        (idx, item_to_str(item_a), item_to_str(item_b)))
-
-            self.assertEqual(
-                source_dataset.categories(),
-                parsed_dataset.categories())
+            self._test_save_and_load(self.TestExtractor(),
+                DatumaroConverter(save_images=True), test_dir)
 
     def test_can_detect(self):
         with TestDir() as test_dir:

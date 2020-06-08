@@ -21,11 +21,9 @@ class CvatExtractor(SourceExtractor):
 
     def __init__(self, path):
         assert osp.isfile(path), path
-        rootpath = ''
-        if path.endswith(osp.join(CvatPath.ANNOTATIONS_DIR, osp.basename(path))):
-            rootpath = path.rsplit(CvatPath.ANNOTATIONS_DIR, maxsplit=1)[0]
+        rootpath = osp.dirname(path)
         images_dir = ''
-        if rootpath and osp.isdir(osp.join(rootpath, CvatPath.IMAGES_DIR)):
+        if osp.isdir(osp.join(rootpath, CvatPath.IMAGES_DIR)):
             images_dir = osp.join(rootpath, CvatPath.IMAGES_DIR)
         self._images_dir = images_dir
         self._path = path
@@ -64,7 +62,7 @@ class CvatExtractor(SourceExtractor):
             if ev == 'start':
                 if el.tag == 'track':
                     track = {
-                        'id': el.attrib.get('id'),
+                        'id': el.attrib['id'],
                         'label': el.attrib.get('label'),
                         'group': int(el.attrib.get('group_id', 0)),
                         'height': frame_size[0],
@@ -85,6 +83,7 @@ class CvatExtractor(SourceExtractor):
                     }
                     if track:
                         shape.update(track)
+                        shape['track_id'] = int(track['id'])
                     if image:
                         shape.update(image)
                 elif el.tag == 'tag' and image:
@@ -165,8 +164,7 @@ class CvatExtractor(SourceExtractor):
         categories = {}
 
         frame_size = None
-        has_z_order = False
-        mode = 'annotation'
+        mode = None
         labels = OrderedDict()
         label = None
 
@@ -192,7 +190,7 @@ class CvatExtractor(SourceExtractor):
             if ev == 'start':
                 if accepted('annotations', 'meta'): pass
                 elif accepted('meta', 'task'): pass
-                elif accepted('task', 'z_order'): pass
+                elif accepted('task', 'mode'): pass
                 elif accepted('task', 'original_size'):
                     frame_size = [None, None]
                 elif accepted('original_size', 'height', next_state='frame_height'): pass
@@ -214,8 +212,8 @@ class CvatExtractor(SourceExtractor):
                 if consumed('meta', 'meta'):
                     break
                 elif consumed('task', 'task'): pass
-                elif consumed('z_order', 'z_order'):
-                    has_z_order = (el.text == 'True')
+                elif consumed('mode', 'mode'):
+                    mode = el.text
                 elif consumed('original_size', 'original_size'): pass
                 elif consumed('frame_height', 'height'):
                     frame_size[0] = int(el.text)
@@ -241,6 +239,7 @@ class CvatExtractor(SourceExtractor):
         if mode == 'interpolation':
             common_attrs.append('keyframe')
             common_attrs.append('outside')
+            common_attrs.append('track_id')
 
         label_cat = LabelCategories(attributes=common_attrs)
         for label, attrs in labels.items():
@@ -255,13 +254,15 @@ class CvatExtractor(SourceExtractor):
         ann_id = ann.get('id')
         ann_type = ann['type']
 
-        attributes = ann.get('attributes', {})
+        attributes = ann.get('attributes') or {}
         if 'occluded' in categories[AnnotationType.label].attributes:
             attributes['occluded'] = ann.get('occluded', False)
-        if 'outside' in categories[AnnotationType.label].attributes:
-            attributes['outside'] = ann.get('outside', False)
-        if 'keyframe' in categories[AnnotationType.label].attributes:
-            attributes['keyframe'] = ann.get('keyframe', False)
+        if 'outside' in ann:
+            attributes['outside'] = ann['outside']
+        if 'keyframe' in ann:
+            attributes['keyframe'] = ann['keyframe']
+        if 'track_id' in ann:
+            attributes['track_id'] = ann['track_id']
 
         group = ann.get('group')
 
@@ -302,30 +303,17 @@ class CvatExtractor(SourceExtractor):
 
     def _load_items(self, parsed):
         for frame_id, item_desc in parsed.items():
-            filename = item_desc.get('name')
-            if filename:
-                filename = self._find_image(filename)
-            if not filename:
-                filename = item_desc.get('name')
+            path = item_desc.get('name', 'frame_%06d.png' % int(frame_id))
             image_size = (item_desc.get('height'), item_desc.get('width'))
             if all(image_size):
                 image_size = (int(image_size[0]), int(image_size[1]))
             else:
                 image_size = None
             image = None
-            if filename:
-                image = Image(path=filename, size=image_size)
+            if path:
+                image = Image(path=osp.join(self._images_dir, path),
+                    size=image_size)
 
             parsed[frame_id] = DatasetItem(id=frame_id, subset=self._subset,
                 image=image, annotations=item_desc.get('annotations'))
         return parsed
-
-    def _find_image(self, file_name):
-        search_paths = []
-        if self._images_dir:
-            search_paths += [ osp.join(self._images_dir, file_name) ]
-        search_paths += [ osp.join(osp.dirname(self._path), file_name) ]
-        for image_path in search_paths:
-            if osp.isfile(image_path):
-                return image_path
-        return None

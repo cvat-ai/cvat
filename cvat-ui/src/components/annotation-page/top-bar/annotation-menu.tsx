@@ -13,8 +13,8 @@ import ReIDPlugin from './reid-plugin';
 
 interface Props {
     taskMode: string;
-    loaders: string[];
-    dumpers: string[];
+    loaders: any[];
+    dumpers: any[];
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
