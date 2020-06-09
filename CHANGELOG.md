@@ -24,9 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed dataset filter item representation for imageless dataset items (https://github.com/opencv/cvat/pull/1593)
 - Fixed interpreter crash when trying to import `tensorflow` with no AVX instructions available (https://github.com/opencv/cvat/pull/1567)
+- Kibana wrong working time calculation with new annotation UI use (<https://github.com/opencv/cvat/pull/1654>)
+- Wrong rexex for account name validation (<https://github.com/opencv/cvat/pull/1667>)
+- Wrong description on register view for the username field (<https://github.com/opencv/cvat/pull/1667>)
+- Wrong resolution for resizing a shape (<https://github.com/opencv/cvat/pull/1667>)
 
 ### Security
--
+- SQL injection in Django `CVE-2020-9402` (https://github.com/opencv/cvat/pull/1657)
 
 ## [1.0.0] - 2020-05-29
 ### Added

@@ -1587,7 +1587,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         let shapeSizeElement: ShapeSizeElement | null = null;
         let resized = false;
-        (shape as any).resize().on('resizestart', (): void => {
+        (shape as any).resize({
+            snapToGrid: 0.1,
+        }).on('resizestart', (): void => {
             this.mode = Mode.RESIZE;
             resized = false;
             hideDirection();
