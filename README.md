@@ -24,6 +24,7 @@ Try it online [cvat.org](https://cvat.org).
 - [Command line interface](utils/cli/)
 - [XML annotation format](cvat/apps/documentation/xml_format.md)
 - [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
+- [Frequently asked questions](cvat/apps/documentation/faq.md)
 - [Questions](#questions)
 
 ## Screencasts
