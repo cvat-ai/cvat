@@ -215,6 +215,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             />
             <SplitControl
                 canvasInstance={canvasInstance}
+                switchSplitShortcut={normalizedKeyMap.SWITCH_SPLIT_MODE}
                 activeControl={activeControl}
                 splitTrack={splitTrack}
             />
