@@ -15,7 +15,7 @@
     "eslint-plugin-no-unsafe-innerhtml": "^1.0.16",
     "eslint-plugin-no-unsanitized": "^3.0.2",
     "eslint-plugin-react": "^7.14.3",
-    "eslint-plugin-react-hooks": "^1.7.0",
+    "eslint-plugin-react-hooks": "^2.5.1",
     "eslint-plugin-security": "^1.4.0",
     "remark-lint-emphasis-marker": "^1.0.3",
     "remark-lint-list-item-spacing": "^1.1.3",
