@@ -7,7 +7,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from rest_framework.decorators import api_view
 from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
-from cvat.apps.dataset_manager.task import put_task_data
+from cvat.apps.dataset_manager.task import put_task_data,patch_task_data
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -27,8 +27,8 @@ def load_image_into_numpy(image):
     (im_width, im_height) = image.size
     return np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
 
-
-def run_inference_engine_annotation(image_list, labels_mapping, treshold):
+## not sure where this function is being used, better to be removed.
+def run_inference_engine_annotation(image_list, labels_mapping, threshold):
     from cvat.apps.auto_annotation.inference_engine import make_plugin_or_core, make_network
 
     def _normalize_box(box, w, h, dw, dh):
@@ -77,7 +77,7 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
             for obj in prediction:
                 obj_class = int(obj[1])
                 obj_value = obj[2]
-                if obj_class and obj_class in labels_mapping and obj_value >= treshold:
+                if obj_class and obj_class in labels_mapping and obj_value >= threshold:
                     label = labels_mapping[obj_class]
                     if label not in result:
                         result[label] = []
@@ -90,7 +90,7 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
     return result
 
 
-def run_tensorflow_annotation(frame_provider, labels_mapping, treshold):
+def run_tensorflow_annotation(frame_provider, labels_mapping, threshold, model_path):
     def _normalize_box(box, w, h):
         xmin = int(box[1] * w)
         ymin = int(box[0] * h)
@@ -99,7 +99,8 @@ def run_tensorflow_annotation(frame_provider, labels_mapping, treshold):
         return xmin, ymin, xmax, ymax
 
     result = {}
-    model_path = os.environ.get('TF_ANNOTATION_MODEL_PATH')
+    #use model path provided by user
+    # model_path = os.environ.get('TF_ANNOTATION_MODEL_PATH')
     if model_path is None:
         raise OSError('Model path env not found in the system.')
     job = rq.get_current_job()
@@ -143,7 +144,7 @@ def run_tensorflow_annotation(frame_provider, labels_mapping, treshold):
 
                 for i in range(len(classes[0])):
                     if classes[0][i] in labels_mapping.keys():
-                        if scores[0][i] >= treshold:
+                        if scores[0][i] >= threshold:
                             xmin, ymin, xmax, ymax = _normalize_box(boxes[0][i], width, height)
                             label = labels_mapping[classes[0][i]]
                             if label not in result:
@@ -178,9 +179,9 @@ def convert_to_cvat_format(data):
 
     return result
 
-def create_thread(tid, labels_mapping, user):
+def create_thread(tid, labels_mapping, user, tf_annotation_model_path, reset):
     try:
-        TRESHOLD = 0.5
+        THRESHOLD = 0.5
         # Init rq job
         job = rq.get_current_job()
         job.meta['progress'] = 0
@@ -193,7 +194,7 @@ def create_thread(tid, labels_mapping, user):
         # Run auto annotation by tf
         result = None
         slogger.glob.info("tf annotation with tensorflow framework for task {}".format(tid))
-        result = run_tensorflow_annotation(image_list, labels_mapping, TRESHOLD)
+        result = run_tensorflow_annotation(image_list, labels_mapping, THRESHOLD, tf_annotation_model_path)
 
         if result is None:
             slogger.glob.info('tf annotation for task {} canceled by user'.format(tid))
@@ -203,7 +204,10 @@ def create_thread(tid, labels_mapping, user):
         result = convert_to_cvat_format(result)
         serializer = LabeledDataSerializer(data = result)
         if serializer.is_valid(raise_exception=True):
-            put_task_data(tid, result)
+            if reset:
+                put_task_data(tid, result)
+            else:
+                patch_task_data(tid, user, result, "create")
         slogger.glob.info('tf annotation for task {} done'.format(tid))
     except Exception as ex:
         try:
@@ -239,6 +243,11 @@ def get_meta_info(request):
 def create(request, tid):
     slogger.glob.info('tf annotation create request for task {}'.format(tid))
     try:
+        data = json.loads(request.body.decode('utf-8'))
+
+		user_label_mapping = data["labels"]
+		should_reset = data['reset']
+
         db_task = TaskModel.objects.get(pk=tid)
         queue = django_rq.get_queue('low')
         job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
@@ -248,36 +257,65 @@ def create(request, tid):
         db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
         db_labels = {db_label.id:db_label.name for db_label in db_labels}
 
-        tf_annotation_labels = {
-            "person": 1, "bicycle": 2, "car": 3, "motorcycle": 4, "airplane": 5,
-            "bus": 6, "train": 7, "truck": 8, "boat": 9, "traffic_light": 10,
-            "fire_hydrant": 11, "stop_sign": 13, "parking_meter": 14, "bench": 15,
-            "bird": 16, "cat": 17, "dog": 18, "horse": 19, "sheep": 20, "cow": 21,
-            "elephant": 22, "bear": 23, "zebra": 24, "giraffe": 25, "backpack": 27,
-            "umbrella": 28, "handbag": 31, "tie": 32, "suitcase": 33, "frisbee": 34,
-            "skis": 35, "snowboard": 36, "sports_ball": 37, "kite": 38, "baseball_bat": 39,
-            "baseball_glove": 40, "skateboard": 41, "surfboard": 42, "tennis_racket": 43,
-            "bottle": 44, "wine_glass": 46, "cup": 47, "fork": 48, "knife": 49, "spoon": 50,
-            "bowl": 51, "banana": 52, "apple": 53, "sandwich": 54, "orange": 55, "broccoli": 56,
-            "carrot": 57, "hot_dog": 58, "pizza": 59, "donut": 60, "cake": 61, "chair": 62,
-            "couch": 63, "potted_plant": 64, "bed": 65, "dining_table": 67, "toilet": 70,
-            "tv": 72, "laptop": 73, "mouse": 74, "remote": 75, "keyboard": 76, "cell_phone": 77,
-            "microwave": 78, "oven": 79, "toaster": 80, "sink": 81, "refrigerator": 83,
-            "book": 84, "clock": 85, "vase": 86, "scissors": 87, "teddy_bear": 88, "hair_drier": 89,
-            "toothbrush": 90
-            }
+        if int(mid) == 989898:
+    			should_reset = True
+			tf_model_file_path = os.getenv('TF_ANNOTATION_MODEL_PATH')
+			tf_annotation_labels = {
+			"person": 1, "bicycle": 2, "car": 3, "motorcycle": 4, "airplane": 5,
+			"bus": 6, "train": 7, "truck": 8, "boat": 9, "traffic_light": 10,
+			"fire_hydrant": 11, "stop_sign": 13, "parking_meter": 14, "bench": 15,
+			"bird": 16, "cat": 17, "dog": 18, "horse": 19, "sheep": 20, "cow": 21,
+			"elephant": 22, "bear": 23, "zebra": 24, "giraffe": 25, "backpack": 27,
+			"umbrella": 28, "handbag": 31, "tie": 32, "suitcase": 33, "frisbee": 34,
+			"skis": 35, "snowboard": 36, "sports_ball": 37, "kite": 38, "baseball_bat": 39,
+			"baseball_glove": 40, "skateboard": 41, "surfboard": 42, "tennis_racket": 43,
+			"bottle": 44, "wine_glass": 46, "cup": 47, "fork": 48, "knife": 49, "spoon": 50,
+			"bowl": 51, "banana": 52, "apple": 53, "sandwich": 54, "orange": 55, "broccoli": 56,
+			"carrot": 57, "hot_dog": 58, "pizza": 59, "donut": 60, "cake": 61, "chair": 62,
+			"couch": 63, "potted_plant": 64, "bed": 65, "dining_table": 67, "toilet": 70,
+			"tv": 72, "laptop": 73, "mouse": 74, "remote": 75, "keyboard": 76, "cell_phone": 77,
+			"microwave": 78, "oven": 79, "toaster": 80, "sink": 81, "refrigerator": 83,
+			"book": 84, "clock": 85, "vase": 86, "scissors": 87, "teddy_bear": 88, "hair_drier": 89,
+			"toothbrush": 90
+			}
 
-        labels_mapping = {}
-        for key, labels in db_labels.items():
-            if labels in tf_annotation_labels.keys():
-                labels_mapping[tf_annotation_labels[labels]] = key
+			labels_mapping = {}
+			for key, labels in db_labels.items():
+				if labels in tf_annotation_labels.keys():
+					labels_mapping[tf_annotation_labels[labels]] = key
+		else:
+
+			dl_model = AnnotationModel.objects.get(pk=mid)
+
+			classes_file_path = dl_model.labelmap_file.name
+			tf_model_file_path = dl_model.model_file.name
+			 # Load and generate the tf annotation labels
+			tf_annotation_labels = {}
+			with open(classes_file_path, "r") as f:
+				f.readline()  # First line is header
+				line = f.readline().rstrip()
+				cnt = 1
+				while line:
+					tf_annotation_labels[line] = cnt
+					line = f.readline().rstrip()
+					cnt += 1
+
+			if len(tf_annotation_labels) == 0:
+				raise Exception("No classes found in classes file.")
+
+			labels_mapping = {}
+			for tf_class_label, mapped_task_label in user_label_mapping.items():
+				for task_label_id, task_label_name in db_labels.items():
+					if task_label_name == mapped_task_label:
+						if tf_class_label in tf_annotation_labels.keys():
+							labels_mapping[tf_annotation_labels[tf_class_label]] = task_label_id
 
         if not len(labels_mapping.values()):
             raise Exception('No labels found for tf annotation')
 
         # Run tf annotation job
         queue.enqueue_call(func=create_thread,
-            args=(tid, labels_mapping, request.user),
+            args=(tid, labels_mapping, request.user, tf_model_file_path, should_reset),
             job_id='tf_annotation.create/{}'.format(tid),
             timeout=604800)     # 7 days
 
