@@ -20,7 +20,7 @@ class AcLauncher(Launcher, CliPlugin):
     @classmethod
     def build_cmdline_parser(cls, **kwargs):
         parser = super().build_cmdline_parser(**kwargs)
-        parser.add_argument('-c', '--config', type=osp.abspath,
+        parser.add_argument('-c', '--config', type=osp.abspath, required=True,
             help="Path to the launcher configuration file (.yml)")
         return parser
 
