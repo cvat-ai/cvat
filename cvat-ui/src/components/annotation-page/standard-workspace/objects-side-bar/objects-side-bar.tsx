@@ -17,6 +17,8 @@ import ObjectsListContainer from 'containers/annotation-page/standard-workspace/
 import LabelsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/labels-list';
 import AppearanceBlock from './appearance-block';
 
+import { Canvas } from 'cvat-canvas-wrapper';
+
 interface Props {
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
@@ -26,6 +28,7 @@ interface Props {
     blackBorders: boolean;
     showBitmap: boolean;
     showProjections: boolean;
+    canvasInstance: Canvas;
 
     collapseSidebar(): void;
     collapseAppearance(): void;
@@ -48,6 +51,7 @@ function ObjectsSideBar(props: Props): JSX.Element {
         blackBorders,
         showBitmap,
         showProjections,
+        canvasInstance,
         collapseSidebar,
         collapseAppearance,
         changeShapesColorBy,
@@ -86,6 +90,9 @@ function ObjectsSideBar(props: Props): JSX.Element {
             collapsible
             trigger={null}
             collapsed={sidebarCollapsed}
+            onTransitionEnd={() => {
+                canvasInstance.fit();
+            }}
         >
             {/* eslint-disable-next-line */}
             <span

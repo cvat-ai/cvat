@@ -12,6 +12,7 @@ import Select from 'antd/lib/select';
 import InputNumber from 'antd/lib/input-number';
 import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
+import { SliderPicker } from 'react-color';
 
 import { clamp } from 'utils/math';
 import { BackJumpIcon, ForwardJumpIcon } from 'icons';
@@ -131,6 +132,11 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         <Select.Option key='slower' value={FrameSpeed.Slower}>Slower</Select.Option>
                         <Select.Option key='slowest' value={FrameSpeed.Slowest}>Slowest</Select.Option>
                     </Select>
+                </Col>
+            </Row>
+            <Row type='flex'>
+                <Col>
+                    <SliderPicker />
                 </Col>
             </Row>
             <Row type='flex'>
