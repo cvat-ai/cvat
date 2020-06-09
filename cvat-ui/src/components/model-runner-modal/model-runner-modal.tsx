@@ -161,7 +161,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                         })}
                     >
                         {models.map((model): JSX.Element => (
-                            <Select.Option key={model.name}>
+                            <Select.Option key={model.id || model.name} value={model.name}>
                                 {model.name}
                             </Select.Option>
                         ))}

@@ -16,14 +16,14 @@ import consts from 'consts';
 import ConnectedFileManager, {
     FileManagerContainer,
 } from 'containers/file-manager/file-manager';
-import { ModelFiles } from 'reducers/interfaces';
+import { ModelFiles, CsvModelFiles } from 'reducers/interfaces';
 
 import CreateModelForm, {
     CreateModelForm as WrappedCreateModelForm,
 } from './create-model-form';
 
 interface Props {
-    createModel(name: string, files: ModelFiles, global: boolean): void;
+    createModel(name: string, files: ModelFiles | CsvModelFiles, global: boolean): void;
     isAdmin: boolean;
     modelCreatingStatus: string;
 }
@@ -65,6 +65,11 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                     py: '',
                     json: '',
                 };
+                const csvGroupFiles: CsvModelFiles = {
+                    csv: '',
+                    pb: '',
+                    h5: '',
+                };
 
                 (files as any).reduce((acc: ModelFiles, value: File | string): ModelFiles => {
                     const name = typeof value === 'string' ? value : value.name;
@@ -76,16 +81,41 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                     return acc;
                 }, grouppedFiles);
 
+                (files as any).reduce((acc: CsvModelFiles, value: File | string): CsvModelFiles => {
+                    const name = typeof value === 'string' ? value : value.name;
+                    const [extension] = name.split('.').reverse();
+                    if (extension in acc) {
+                        acc[extension] = value;
+                    }
+                    return acc;
+                }, csvGroupFiles);
+
+
+                let groupedFileStatus: boolean = false,
+                    csvFileStatus: boolean = false;
+
                 if (Object.keys(grouppedFiles)
                     .map((key: string) => grouppedFiles[key])
-                    .filter((val) => !!val).length !== 4) {
-                    notification.error({
-                        message: 'Could not upload a model',
-                        description: 'Please, specify correct files',
-                    });
-                } else {
-                    createModel(data.name, grouppedFiles, data.global);
-                }
+                    .filter((val) => !!val).length == 4) {
+                        groupedFileStatus = true;
+                    }
+
+                if(!groupedFileStatus && Object.keys(csvGroupFiles)
+                    .map((key: string) => csvGroupFiles[key])
+                    .filter(val => !!val).length > 1) {
+                        csvFileStatus = true;
+                    }
+
+                    if(groupedFileStatus) {
+                        createModel(data.name, grouppedFiles, data.global);
+                    } else if(csvFileStatus) {
+                        createModel(data.name, csvGroupFiles, data.global);
+                    } else {
+                        notification.error({
+                            message: 'Could not upload a model',
+                            description: 'Please, specify correct files',
+                        });
+                    }
             }).catch(() => {
                 notification.error({
                     message: 'Could not upload a model',

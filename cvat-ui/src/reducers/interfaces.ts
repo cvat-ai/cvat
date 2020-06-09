@@ -140,6 +140,7 @@ export interface Model {
     uploadDate: string;
     updateDate: string;
     labels: string[];
+    framework: string;
 }
 
 export enum RQStatus {
@@ -173,6 +174,13 @@ export interface ModelsState {
     };
     visibleRunWindows: boolean;
     activeRunTask: any;
+}
+
+export interface CsvModelFiles {
+    [key: string]: string | File;
+    csv: string | File;
+    pb: string | File;
+    h5: string | File;
 }
 
 export interface ModelFiles {
