@@ -27,6 +27,7 @@ interface StateToProps {
     statesCollapsed: boolean;
     objectStates: any[];
     annotationsFilters: string[];
+    colors: string[];
     activatedStateID: number | null;
     minZLayer: number;
     maxZLayer: number;
@@ -71,6 +72,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 instance: canvasInstance,
             },
             tabContentHeight: listHeight,
+            colors,
         },
         shortcuts: {
             keyMap,
@@ -103,6 +105,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameNumber,
         jobInstance,
         annotationsFilters,
+        colors,
         activatedStateID,
         minZLayer,
         maxZLayer,
@@ -261,6 +264,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             keyMap,
             normalizedKeyMap,
             canvasInstance,
+            colors,
         } = this.props;
         const {
             sortedStatesID,
@@ -282,6 +286,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             PROPAGATE_OBJECT: keyMap.PROPAGATE_OBJECT,
             NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
             PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
+            CHANGE_OBJECT_COLOR: keyMap.CHANGE_OBJECT_COLOR,
         };
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -357,6 +362,18 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state) {
                     removeObject(jobInstance, state, event ? event.shiftKey : false);
+                }
+            },
+            CHANGE_OBJECT_COLOR: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state) {
+                    let colorID = colors.indexOf(state.color) + 1;
+                    if (colorID >= colors.length) {
+                        colorID = 0;
+                    }
+                    state.color = colors[colorID];
+                    updateAnnotations([state]);
                 }
             },
             TO_BACKGROUND: (event: KeyboardEvent | undefined) => {
