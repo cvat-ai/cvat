@@ -25,7 +25,7 @@
     "remark-lint-no-file-name-irregular-characters": "^1.0.3",
     "remark-lint-ordered-list-marker-style": "^1.0.3",
     "remark-lint-strong-marker": "^1.0.3",
-    "remark-lint-unordered-list-marker-style": "^1.0.3",
+    "remark-lint-unordered-list-marker-style": "^2.0.0",
     "remark-preset-lint-consistent": "^2.0.3",
     "remark-preset-lint-markdown-style-guide": "^2.1.3",
     "remark-preset-lint-recommended": "^3.0.3"
