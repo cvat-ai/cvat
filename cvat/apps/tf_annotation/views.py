@@ -105,11 +105,13 @@ def run_tensorflow_annotation(frame_provider, labels_mapping, threshold, model_p
 	if model_path is None:
 		raise OSError('Model path env not found in the system.')
 	job = rq.get_current_job()
-
+	#add .pb if default model selected
+	if "inference" in model_path:
+		model_path += ".pb"
 	detection_graph = tf.Graph()
 	with detection_graph.as_default():
 		od_graph_def = tf.GraphDef()
-		with tf.gfile.GFile(model_path + '.pb', 'rb') as fid:
+		with tf.gfile.GFile(model_path , 'rb') as fid:
 			serialized_graph = fid.read()
 			od_graph_def.ParseFromString(serialized_graph)
 			tf.import_graph_def(od_graph_def, name='')
@@ -208,7 +210,8 @@ def create_thread(tid, labels_mapping, user, tf_annotation_model_path, reset):
 			if reset:
 				put_task_data(tid, result)
 			else:
-				patch_task_data(tid, user, result, "create")
+				patch_task_data(tid, result, "create")
+
 		slogger.glob.info('tf annotation for task {} done'.format(tid))
 	except Exception as ex:
 		try:
