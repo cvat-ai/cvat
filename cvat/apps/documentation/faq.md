@@ -1,36 +1,38 @@
 # Frequently asked questions
 
 ## How to update CVAT
-Before upgrading, please follow the oficcial docker [manual](https://docs.docker.com/storage/volumes/#backup-restore-or-migrate-data-volumes) and backup all CVAT volumes.
+Before upgrading, please follow the oficcial docker
+[manual](https://docs.docker.com/storage/volumes/#backup-restore-or-migrate-data-volumes) and backup all CVAT volumes.
 
 To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
-```
+```sh
 docker-compose build
 ```
 and run containers:
-```
+```sh
 docker-compose up -d
 ```
 
-Sometimes the update process takes a lot of time due to a change in the database schema and data. You can check the current status with `docker logs cvat`. Please do not terminate the migration and wait for the process to complete.
+Sometimes the update process takes a lot of time due to a change in the database schema and data.
+You can check the current status with `docker logs cvat`.
+Please do not terminate the migration and wait for the process to complete.
 
 ## Kibana app works, but no logs here
 Make sure there aren't error messages from Elasticsearch:
-```
+```sh
 docker logs cvat_elasticsearch
 ```
 If you see errors like this:
-```
+```sh
 lood stage disk watermark [95%] exceeded on [uMg9WI30QIOJxxJNDiIPgQ][uMg9WI3][/usr/share/elasticsearch/data/nodes/0] free: 116.5gb[4%], all indices on this node will be marked read-only
 ```
 You should free disk space or change the threshold for this check: [Elasticsearch documentation](https://www.elastic.co/guide/en/elasticsearch/reference/6.8/disk-allocator.html).
-
 
 ## How to change default CVAT hostname or port
 The best way to do that is to create docker-compose.override.yml and override the host and port settings here.
 
 version: "2.3"
-```
+```yaml
 services:
   cvat_proxy:
     environment:
@@ -39,7 +41,8 @@ services:
       - "80:80"
 ```
 
-Please don't forget to include this file to docker-compose commands using the `-f` option (in some cases it can be omitted).
+Please don't forget to include this file to docker-compose commands
+using the `-f` option (in some cases it can be omitted).
 
 ## How to configure connected share folder on Windows
 Follow the Docker manual and configure the directory that you want to use as shared directory:
@@ -47,7 +50,7 @@ Follow the Docker manual and configure the directory that you want to use as sha
 - [Docker for windows (see FILE SHARING section)](https://docs.docker.com/docker-for-windows/#resources)
 
 After that, it should be possible to use this directory as CVAT share:
-```
+```yaml
 version: "2.3"
 
 services:
