@@ -31,7 +31,7 @@ export default function UploadedModelItem(props: Props): JSX.Element {
     return (
         <Row className='cvat-models-list-item' type='flex'>
             <Col span={4} xxl={3}>
-                <Tag color='purple'>OpenVINO</Tag>
+                <Tag color='purple'>{model.framework == "tensorflow" || "maskrcnn" ? "TensorFlow": "OpenVINO"}</Tag>
             </Col>
             <Col span={5} xxl={7}>
                 <Text className='cvat-text-color'>
@@ -57,7 +57,7 @@ export default function UploadedModelItem(props: Props): JSX.Element {
                 >
                     {model.labels.map(
                         (label): JSX.Element => (
-                            <Select.Option key={label}>
+                            <Select.Option key={label} value={label}>
                                 {label}
                             </Select.Option>
                         ),

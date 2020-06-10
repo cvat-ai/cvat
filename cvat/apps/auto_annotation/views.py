@@ -55,7 +55,7 @@ def create_model(request):
         is_shared = params["shared"].lower() == "true"
         if is_shared and not has_admin_role(request.user):
             raise Exception("Only admin can create shared models")
-
+        files = request.FILES if storage == "local" else params
         is_custom = "openvino"
         if "pb" in files:
             labelmap = files["csv"]
@@ -184,7 +184,7 @@ def get_meta_info(request):
                 "updateDate": dl_model.updated_date,
                 "labels": labels,
                 "owner": dl_model.owner.id,
-                 "framework":dl_model.framework,
+                "framework":dl_model.framework,
             })
 
         queue = django_rq.get_queue("low")

@@ -148,6 +148,7 @@ export function getModelsAsync(): ThunkAction {
                         uploadDate: model.uploadDate,
                         updateDate: model.updateDate,
                         labels: [...model.labels],
+                        framework: model.framework,
                     });
                 }
             }
