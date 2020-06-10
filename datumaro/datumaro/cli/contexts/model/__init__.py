@@ -84,7 +84,7 @@ def add_command(args):
         'launcher': args.launcher,
         'options': model_args,
     })
-    
+
     log.info("Checking the model")
     project.make_executable_model(args.name)
 
