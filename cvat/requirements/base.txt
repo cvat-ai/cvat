@@ -27,7 +27,7 @@ rules==2.0
 GitPython==3.0.8
 coreapi==2.3.3
 django-filter==2.0.0
-Markdown==3.0.1
+Markdown==3.2.2
 djangorestframework==3.9.3
 Pygments==2.3.1
 drf-yasg==1.17.0
