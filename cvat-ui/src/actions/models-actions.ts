@@ -208,7 +208,7 @@ export function getModelsAsync(): ThunkAction {
                         'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
                         'teddy bear', 'hair drier', 'toothbrush',
                     ],
-                    framework: "tensorflow",
+                    framework: "maskrcnn",
                 });
             }
         } catch (error) {
