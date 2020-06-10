@@ -518,7 +518,6 @@ def _export(dst_file, task_data, anno_callback, save_images=False):
 
         if save_images:
             img_dir = osp.join(temp_dir, 'images')
-            os.makedirs(img_dir)
             frame_provider = FrameProvider(task_data.db_task.data)
             frames = frame_provider.get_frames(
                 frame_provider.Quality.ORIGINAL,
@@ -527,10 +526,10 @@ def _export(dst_file, task_data, anno_callback, save_images=False):
                 frame_name = task_data.frame_info[frame_id]['path']
                 if '.' in frame_name:
                     save_image(osp.join(img_dir, frame_name),
-                        frame_data, jpeg_quality=100)
+                        frame_data, jpeg_quality=100, create_dir=True)
                 else:
                     save_image(osp.join(img_dir, frame_name + '.png'),
-                        frame_data)
+                        frame_data, create_dir=True)
 
         make_zip_archive(temp_dir, dst_file)
 

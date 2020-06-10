@@ -88,7 +88,7 @@ class YoloConverter(Converter, CliPlugin):
                             item_name = item.id
                         image_name = item_name + '.jpg'
                         save_image(osp.join(subset_dir, image_name),
-                            item.image.data)
+                            item.image.data, create_dir=True)
                     else:
                         log.warning("Item '%s' has no image" % item.id)
                 image_paths[item.id] = osp.join('data',
