@@ -63,9 +63,9 @@ def to_snake_case(s):
 
 def str_to_bool(s):
     t = s.lower()
-    if t in {'true', '1', 'ok', 'yes'}:
+    if t in {'true', '1', 'ok', 'yes', 'y'}:
         return True
-    elif t in {'false', '0', 'no'}:
+    elif t in {'false', '0', 'no', 'n'}:
         return False
     else:
         raise ValueError("Can't convert value '%s' to bool" % s)
