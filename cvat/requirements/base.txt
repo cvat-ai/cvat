@@ -13,11 +13,11 @@ pytz==2018.3
 pyunpack==0.1.2
 rcssmin==1.0.6
 redis==3.2.0
-requests==2.20.0
+requests==2.23.0
 rjsmin==1.0.12
 rq==1.0.0
 rq-scheduler==0.9.1
-scipy==1.2.1
+scipy==1.4.1
 sqlparse==0.2.4
 django-sendfile==0.3.11
 dj-pagination==2.4.0

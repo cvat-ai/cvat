@@ -424,7 +424,8 @@ class CocoConverterTest(TestCase):
                         annotations=[
                             Label(4, id=1, group=1),
                             Label(9, id=2, group=2),
-                        ], attributes={'id': 1}),
+                        ], attributes={'id': 1}
+                    ),
                 ])
 
             def categories(self):
