@@ -54,13 +54,16 @@ class InterpreterScript:
         context = {}
         exec(script, context, context)
 
-        process_outputs = context['process_outputs']
-        assert callable(process_outputs)
+        process_outputs = context.get('process_outputs')
+        if not callable(process_outputs):
+            raise Exception("Can't find 'process_outputs' function in "
+                "the interpreter script")
         self.__dict__['process_outputs'] = process_outputs
 
         get_categories = context.get('get_categories')
-        assert callable(get_categories) or get_categories is None
-        self.__dict__['get_categories'] = get_categories
+        assert get_categories is None or callable(get_categories)
+        if get_categories:
+            self.__dict__['get_categories'] = get_categories
 
     @staticmethod
     def get_categories():
@@ -101,7 +104,11 @@ class OpenVinoLauncher(Launcher):
         self._device = device or 'CPU'
 
         self._ie = IECore()
-        self._network = self._ie.read_network(description, weights)
+        if hasattr(self._ie, 'read_network'):
+            self._network = self._ie.read_network(description, weights)
+        else: # backward compatibility
+            from openvino.inference_engine import IENetwork
+            self._network = IENetwork.from_ir(description, weights)
         self._check_model_support(self._network, self._device)
         self._load_executable_net()
 
@@ -112,8 +119,8 @@ class OpenVinoLauncher(Launcher):
             log.error("The following layers are not supported " \
                 "by the plugin for device '%s': %s." % \
                 (device, ', '.join(not_supported_layers)))
-        raise NotImplementedError(
-            "Some layers are not supported on the device")
+            raise NotImplementedError(
+                "Some layers are not supported on the device")
 
     def _load_executable_net(self, batch_size=1):
         network = self._network

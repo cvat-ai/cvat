@@ -19,13 +19,11 @@ from ...util.project import load_project, generate_next_dir_name
 def build_add_parser(parser_ctor=argparse.ArgumentParser):
     builtins = sorted(Environment().launchers.items)
 
-    parser = parser_ctor(help="Export project",
+    parser = parser_ctor(help="Add model to project",
         description="""
             Registers an executable model into a project. A model requires
             a launcher to be executed. Each launcher has its own options, which
             are passed after '--' separator, pass '-- -h' for more info.
-            |n
-            Launchers:|n
             |n
             List of builtin launchers: %s
         """ % ', '.join(builtins),
@@ -81,14 +79,15 @@ def add_command(args):
             log.error("Can't copy: copying is not available for '%s' models" % \
                 args.launcher)
 
-    log.info("Checking the model")
+    log.info("Adding the model")
     project.add_model(args.name, {
         'launcher': args.launcher,
         'options': model_args,
     })
+    
+    log.info("Checking the model")
     project.make_executable_model(args.name)
 
-    log.info("Adding the model")
     project.save()
 
     log.info("Model '%s' with launcher '%s' has been added to project '%s'" % \

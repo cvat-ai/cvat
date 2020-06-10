@@ -49,6 +49,8 @@ class _SubsetWriter:
             'id': item.id,
             'annotations': annotations,
         }
+        if item.attributes:
+            item_desc['attr'] = item.attributes
         if item.path:
             item_desc['path'] = item.path
         if item.has_image:
