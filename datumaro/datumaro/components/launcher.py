@@ -6,6 +6,7 @@
 import numpy as np
 
 from datumaro.components.extractor import Transform
+from datumaro.util import take_by
 
 
 # pylint: disable=no-self-use
@@ -19,42 +20,30 @@ class Launcher:
     def preferred_input_size(self):
         return None
 
-    def get_categories(self):
+    def categories(self):
         return None
 # pylint: enable=no-self-use
 
-class InferenceWrapper(Transform):
+class ModelTransform(Transform):
     def __init__(self, extractor, launcher, batch_size=1):
         super().__init__(extractor)
         self._launcher = launcher
         self._batch_size = batch_size
 
     def __iter__(self):
-        stop = False
-        data_iter = iter(self._extractor)
-        while not stop:
-            batch_items = []
-            try:
-                for _ in range(self._batch_size):
-                    item = next(data_iter)
-                    batch_items.append(item)
-            except StopIteration:
-                stop = True
-                if len(batch_items) == 0:
-                    break
-
-            inputs = np.array([item.image.data for item in batch_items])
+        for batch in take_by(self._extractor, self._batch_size):
+            inputs = np.array([item.image.data for item in batch])
             inference = self._launcher.launch(inputs)
 
-            for item, annotations in zip(batch_items, inference):
+            for item, annotations in zip(batch, inference):
                 yield self.wrap_item(item, annotations=annotations)
 
     def get_subset(self, name):
         subset = self._extractor.get_subset(name)
-        return InferenceWrapper(subset, self._launcher, self._batch_size)
+        return __class__(subset, self._launcher, self._batch_size)
 
     def categories(self):
-        launcher_override = self._launcher.get_categories()
+        launcher_override = self._launcher.categories()
         if launcher_override is not None:
             return launcher_override
         return self._extractor.categories()
