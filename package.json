@@ -20,7 +20,7 @@
     "remark-lint-emphasis-marker": "^1.0.3",
     "remark-lint-list-item-spacing": "^2.0.0",
     "remark-lint-maximum-heading-length": "^2.0.0",
-    "remark-lint-maximum-line-length": "^1.2.1",
+    "remark-lint-maximum-line-length": "^2.0.0",
     "remark-lint-no-dead-urls": "^1.0.2",
     "remark-lint-no-file-name-irregular-characters": "^1.0.3",
     "remark-lint-ordered-list-marker-style": "^1.0.3",
