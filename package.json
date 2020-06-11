@@ -17,7 +17,7 @@
     "eslint-plugin-react": "^7.14.3",
     "eslint-plugin-react-hooks": "^2.5.1",
     "eslint-plugin-security": "^1.4.0",
-    "remark-lint-emphasis-marker": "^1.0.3",
+    "remark-lint-emphasis-marker": "^2.0.0",
     "remark-lint-list-item-spacing": "^2.0.0",
     "remark-lint-maximum-heading-length": "^2.0.0",
     "remark-lint-maximum-line-length": "^2.0.0",
