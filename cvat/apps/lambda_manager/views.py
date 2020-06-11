@@ -3,10 +3,13 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Task as TaskModel
+from cvat.apps.dataset_manager.task import put_task_data, patch_task_data
 import base64
 import json
 import requests
 import django_rq
+import rq
+from cvat.apps.engine.serializers import LabeledDataSerializer
 
 # FIXME: need to define the host in settings
 NUCLIO_GATEWAY = 'http://localhost:8070/api/functions'
@@ -74,9 +77,10 @@ class FunctionViewSet(viewsets.ViewSet):
             frame = request.data['frame']
             points = request.data.get('points')
 
-            reply = self._call(function=name, task_id=tid, frame=frame, points=points)
+            reply = FunctionViewSet._call(function=name, task_id=tid, frame=frame, points=points)
         except requests.RequestException as err:
-            return Response(str(err), status=reply.status_code)
+            # TODO: need to handle requests exception and return correct status
+            return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
 
         return Response(data=reply.json())
 
@@ -99,6 +103,20 @@ class FunctionViewSet(viewsets.ViewSet):
             'description': data['spec']['description']
         }
 
+def _callme(function, threshold, task_id):
+    try:
+        # TODO: need to remove annotations if clear flag is True
+        # TODO: need logging
+        db_task = TaskModel.objects.get(pk=task_id)
+        # TODO: check tasks with a frame step
+        for frame in range(db_task.data.size):
+            reply = FunctionViewSet._call(function, task_id, frame)
+            RequestViewSet._save_annotations(db_task, frame, reply.json())
+    except requests.RequestException as err:
+        # TODO: handle exceptions (e.g. no task, etc)
+        return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
+
+
 class RequestViewSet(viewsets.ViewSet):
     QUEUE_NAME = 'low'
 
@@ -111,9 +129,9 @@ class RequestViewSet(viewsets.ViewSet):
                 "args": job.args[1:]
             },
             "status": job.get_status(),
-            "enqueued": job.enqueued_at(),
-            "started": job.started_at(),
-            "ended": job.ended_at(),
+            "enqueued": job.enqueued_at,
+            "started": job.started_at,
+            "ended": job.ended_at,
             "exc_info": job.exc_info
         }
 
@@ -127,27 +145,56 @@ class RequestViewSet(viewsets.ViewSet):
 
     @staticmethod
     def _save_annotations(db_task, frame, annotations):
-        pass
+        # TODO: optimize
+        # TODO: need user mapping between model labels and task labels
+        db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
+        #attributes = {db_label.id:
+        #    {db_attr.name: db_attr.id for db_attr in db_label.attributespec_set.all()}
+        #    for db_label in db_labels}
+        labels = {db_label.name:db_label.id for db_label in db_labels}
 
-    @staticmethod
-    def _call(function, threshold, task_id):
-        try:
-            db_task = TaskModel.objects.get(pk=task_id)
-            for frame in range(db_task.size):
-                reply = FunctionViewSet._call(function, task_id, frame)
-                RequestViewSet._save_annotations(db_task, frame, reply.json())
-        except requests.RequestException as err:
-            return Response(str(err), status=reply.status_code)
+        # TODO: need to check 'cancel' operation
+        job = rq.get_current_job()
+        job.meta["progress"] = frame / db_task.data.size
+        job.save_meta()
 
 
-    # { 'function': 'name', 'threshold': 'n', 'task': 'id'}
+        # TODO: need to make "tags" and "tracks" are optional
+        # FIXME: need to provide the correct version here
+        results = {"version": 0, "tags": [], "shapes": [], "tracks": []}
+        for anno in annotations:
+            label_id = labels.get(anno["label"])
+            if label_id is not None:
+                results["shapes"].append({
+                    "frame": frame,
+                    "label_id": label_id,
+                    "type": anno["type"],
+                    "occluded": False,
+                    "points": anno["points"],
+                    "z_order": 0,
+                    "group": None,
+                    "attributes": []
+                })
+
+        serializer = LabeledDataSerializer(data=results)
+        # TODO: handle exceptions
+        if serializer.is_valid(raise_exception=True):
+            patch_task_data(db_task.id, results, "create")
+
+    # { 'function': 'name', 'threshold': 't', 'task': 'id'}
     def create(self, request):
         function = request.data['function']
-        threshold = request.data['threshold']
+        threshold = request.data.get('threshold')
         task_id = request.data['task']
 
         queue = django_rq.get_queue(RequestViewSet.QUEUE_NAME)
-        queue.enqueue(self._call, function, threshold, task_id)
+        # TODO: protect from running multiple times for the same task
+        # Only one job for an annotation task
+        job = queue.enqueue(_callme, function, threshold, task_id)
+
+
+
+        return Response(data={"id": job.id})
 
 
     def retrieve(self, request, pk):
