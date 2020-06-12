@@ -6,7 +6,7 @@ django-cacheops==4.0.6
 django-compressor==2.2
 django-rq==2.0.0
 EasyProcess==0.2.3
-Pillow==6.2.0
+Pillow==7.1.2
 numpy==1.16.2
 python-ldap==3.0.0
 pytz==2018.3
