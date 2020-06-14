@@ -2,21 +2,23 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, {useRef, useEffect} from 'react';
+import React, {useRef, useEffect, useState} from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Button from 'antd/lib/button';
 import Slider from 'antd/lib/slider';
 import Select from 'antd/lib/select';
+import Popover from 'antd/lib/popover';
 import InputNumber from 'antd/lib/input-number';
 import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
-import { SliderPicker } from 'react-color';
+import { CompactPicker } from 'react-color';
 
 import { clamp } from 'utils/math';
 import { BackJumpIcon, ForwardJumpIcon } from 'icons';
 import { FrameSpeed, GridColor } from 'reducers/interfaces';
+import consts from 'consts';
 
 
 interface Props {
@@ -32,6 +34,7 @@ interface Props {
     contrastLevel: number;
     saturationLevel: number;
     previewImage: string | null;
+    canvasBackgroundColor: string;
     onChangeFrameStep(step: number): void;
     onChangeFrameSpeed(speed: FrameSpeed): void;
     onSwitchResetZoom(enabled: boolean): void;
@@ -43,6 +46,7 @@ interface Props {
     onChangeBrightnessLevel(level: number): void;
     onChangeContrastLevel(level: number): void;
     onChangeSaturationLevel(level: number): void;
+    onChangeCanvasBackgroundColor(color: string): void;
 }
 
 export default function PlayerSettingsComponent(props: Props): JSX.Element {
@@ -59,6 +63,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         contrastLevel,
         saturationLevel,
         previewImage,
+        canvasBackgroundColor,
         onChangeFrameStep,
         onChangeFrameSpeed,
         onSwitchResetZoom,
@@ -70,6 +75,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         onChangeBrightnessLevel,
         onChangeContrastLevel,
         onChangeSaturationLevel,
+        onChangeCanvasBackgroundColor,
     } = props;
 
     const minFrameStep = 2;
@@ -134,9 +140,19 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            <Row type='flex'>
+            <Row type='flex' className='cvat-player-settings-canvas-background'>
                 <Col>
-                    <SliderPicker />
+                    <Popover
+                        content={(
+                            <CompactPicker
+                                colors={consts.CANVAS_BACKGROUND_COLORS}
+                                color={canvasBackgroundColor} onChange={(e) => onChangeCanvasBackgroundColor(e.hex)} />
+                        )}
+                        overlayClassName='canvas-background-color-picker-popover'
+                        trigger='click'
+                    >
+                        <Button type='default'>Select canvas background color</Button>
+                    </Popover>
                 </Col>
             </Row>
             <Row type='flex'>

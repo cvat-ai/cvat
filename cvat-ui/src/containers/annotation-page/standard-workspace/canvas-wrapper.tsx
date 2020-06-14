@@ -87,6 +87,7 @@ interface StateToProps {
     contextType: ContextMenuType;
     switchableAutomaticBordering: boolean;
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    canvasBackgroundColor: string;
 }
 
 interface DispatchToProps {
@@ -161,6 +162,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         settings: {
             player: {
+                canvasBackgroundColor,
                 grid,
                 gridSize,
                 gridColor,
@@ -227,6 +229,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         contextType,
         workspace,
         keyMap,
+        canvasBackgroundColor,
         switchableAutomaticBordering: activeControl === ActiveControl.DRAW_POLYGON
             || activeControl === ActiveControl.DRAW_POLYLINE
             || activeControl === ActiveControl.EDIT,

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, {useState} from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
@@ -15,6 +15,7 @@ import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 
+import SettingsModal from './settings-modal/settings-modal';
 import { CVATLogo, AccountIcon } from 'icons';
 import consts from 'consts';
 
@@ -68,6 +69,8 @@ function HeaderContainer(props: Props): JSX.Element {
         FORUM_URL,
         GITHUB_URL,
     } = consts;
+
+    const [settingsModalVisible, setSettingsModalVisible] = useState(false);
 
     function aboutModal(): void {
         Modal.info({
@@ -131,7 +134,7 @@ function HeaderContainer(props: Props): JSX.Element {
             <Menu.Item
                 title={`Press ${switchSettingsShortcut} to switch`}
                 onClick={
-                    (): void => props.history.push('/settings')
+                    (): void => setSettingsModalVisible(true)
                 }
             >
                 <Icon type='setting' />
@@ -236,6 +239,10 @@ function HeaderContainer(props: Props): JSX.Element {
                     </span>
                 </Dropdown>
             </div>
+            <SettingsModal
+                visible={settingsModalVisible}
+                onClose={() => setSettingsModalVisible(false)}
+            />
         </Layout.Header>
     );
 }

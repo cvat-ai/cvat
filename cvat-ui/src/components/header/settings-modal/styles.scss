@@ -2,15 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../../base.scss';
 
-.cvat-settings-page {
+.cvat-settings-tabs {
     height: 100%;
     overflow-y: auto;
     padding-bottom: 15px;
 
     > div:nth-child(1) {
-        margin-top: 30px;
+        margin-top: 10px;
         margin-bottom: 10px;
     }
 }
@@ -19,7 +19,7 @@
     width: 100%;
     height: max-content;
     background: $background-color-1;
-    padding: 50px;
+    padding: 24px;
 }
 
 .cvat-player-settings-grid,
@@ -41,6 +41,7 @@
 .cvat-player-settings-speed,
 .cvat-player-settings-reset-zoom,
 .cvat-player-settings-rotate-all,
+.cvat-player-settings-canvas-background,
 .cvat-workspace-settings-aam-zoom-margin,
 .cvat-workspace-settings-auto-save-interval {
     margin-bottom: 25px;
@@ -95,18 +96,16 @@
     }
 }
 
-.cvat-settings-page-back-button {
-    width: 100px;
-    margin-top: 15px;
-}
-
-.cvat-settings-page-back-button-wrapper {
-    display: flex;
-    justify-content: flex-end;
-}
-
 .cvat-player-settings-image-preview {
     width: 100%;
     max-height: 180px;
     object-fit: cover;
+}
+
+.canvas-background-color-picker-popover .ant-popover-inner-content {
+    padding: 6px 12px;
+
+    :first-child:first-child {
+        box-shadow: unset !important;
+    }
 }

@@ -14,7 +14,6 @@ import notification from 'antd/lib/notification';
 
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
-import SettingsPageContainer from 'containers/settings-page/settings-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
 import TaskPageContainer from 'containers/task-page/task-page';
@@ -273,7 +272,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <ShorcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>
-                                        <Route exact path='/settings' component={SettingsPageContainer} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />

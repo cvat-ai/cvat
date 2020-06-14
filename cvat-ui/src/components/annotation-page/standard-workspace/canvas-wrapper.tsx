@@ -65,6 +65,7 @@ interface Props {
     workspace: Workspace;
     automaticBordering: boolean;
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    canvasBackgroundColor: string;
     switchableAutomaticBordering: boolean;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
@@ -147,6 +148,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             showObjectsTextAlways,
             automaticBordering,
             showProjections,
+            canvasBackgroundColor,
         } = this.props;
 
         if (prevProps.showObjectsTextAlways !== showObjectsTextAlways
@@ -240,6 +242,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 loadingAnimation.classList.remove('cvat_canvas_hidden');
             } else {
                 loadingAnimation.classList.add('cvat_canvas_hidden');
+            }
+        }
+
+        if (prevProps.canvasBackgroundColor !== canvasBackgroundColor) {
+            const canvasWrapperElement = window.document.getElementsByClassName('cvat-canvas-container').item(0) as HTMLElement | null;
+            if (canvasWrapperElement) {
+                canvasWrapperElement.style.backgroundColor = canvasBackgroundColor;
             }
         }
 
@@ -639,6 +648,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             brightnessLevel,
             contrastLevel,
             saturationLevel,
+            canvasBackgroundColor,
         } = this.props;
 
         // Size
@@ -663,6 +673,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             backgroundElement.style.filter = `brightness(${brightnessLevel / 100})`
                 + `contrast(${contrastLevel / 100})`
                 + `saturate(${saturationLevel / 100})`;
+        }
+
+        const canvasWrapperElement = window.document.getElementsByClassName('cvat-canvas-container').item(0) as HTMLElement | null;
+        if (canvasWrapperElement) {
+            canvasWrapperElement.style.backgroundColor = canvasBackgroundColor;
         }
 
         // Events

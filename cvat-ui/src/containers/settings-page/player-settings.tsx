@@ -19,6 +19,7 @@ import {
     changeBrightnessLevel,
     changeContrastLevel,
     changeSaturationLevel,
+    changeCanvasBackgroundColor,
 } from 'actions/settings-actions';
 
 import {
@@ -40,6 +41,7 @@ interface StateToProps {
     contrastLevel: number;
     saturationLevel: number;
     previewImage: string | null;
+    canvasBackgroundColor: string;
 }
 
 interface DispatchToProps {
@@ -54,6 +56,7 @@ interface DispatchToProps {
     onChangeBrightnessLevel(level: number): void;
     onChangeContrastLevel(level: number): void;
     onChangeSaturationLevel(level: number): void;
+    onChangeCanvasBackgroundColor(color: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -109,6 +112,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onChangeSaturationLevel(level: number): void {
             dispatch(changeSaturationLevel(level));
         },
+        onChangeCanvasBackgroundColor(color: string): void {
+            dispatch(changeCanvasBackgroundColor(color));
+        }
     };
 }
 

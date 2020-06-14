@@ -34,6 +34,7 @@ const defaultState: SettingsState = {
         showAllInterpolationTracks: false,
     },
     player: {
+        canvasBackgroundColor: '#ffffff',
         frameStep: 10,
         frameSpeed: FrameSpeed.Usual,
         resetZoom: false,
@@ -256,6 +257,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                     automaticBordering: action.payload.automaticBordering,
                 },
             };
+        }
+        case SettingsActionTypes.CHANGE_CANVAS_BACKGROUND_COLOR: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    canvasBackgroundColor: action.payload.color,
+                }
+            }
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
