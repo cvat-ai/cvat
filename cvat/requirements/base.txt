@@ -37,7 +37,7 @@ pascal_voc_writer==0.1.4
 django-rest-auth[with_social]==0.9.5
 cython==0.29.13
 matplotlib==3.0.3
-scikit-image==0.15.0
+scikit-image==0.17.2
 tensorflow==1.15.2
 keras==2.3.1
 opencv-python==4.1.0.25
