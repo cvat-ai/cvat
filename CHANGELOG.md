@@ -10,10 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added default label color table for mask export (https://github.com/opencv/cvat/pull/1549)
 - Added environment variables for Redis and Postgres hosts for Kubernetes deployment support (<https://github.com/opencv/cvat/pull/1641>)
 - Added visual identification for unavailable formats (https://github.com/opencv/cvat/pull/1567)
+- Added canvas background color selector (<https://github.com/opencv/cvat/issues/1514>)
+- Added image settings preview (<https://github.com/opencv/cvat/issues/1458>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
 - Update https install manual. Makes it easier and more robust. Includes automatic renewing of lets encrypt certificates.
+- Settings page move to the modal.
 
 ### Deprecated
 -
@@ -28,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wrong rexex for account name validation (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong description on register view for the username field (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong resolution for resizing a shape (<https://github.com/opencv/cvat/pull/1667>)
+- Fixed issue tracker (<https://github.com/opencv/cvat/pull/918>)
+- Fixed canvas fit after sidebar open/close event (<https://github.com/opencv/cvat/issues/1643>)
 
 ### Security
 - SQL injection in Django `CVE-2020-9402` (https://github.com/opencv/cvat/pull/1657)
