@@ -32,8 +32,15 @@ class _VocExtractor(SourceExtractor):
         super().__init__(subset=osp.splitext(osp.basename(path))[0])
 
         self._categories = self._load_categories(self._dataset_dir)
-        log.debug("Loaded labels: %s", ', '.join("'%s'" % l.name
-            for l in self._categories[AnnotationType.label].items))
+
+        label_color = lambda label_idx: \
+            self._categories[AnnotationType.mask].colormap.get(label_idx, None)
+        log.debug("Loaded labels: %s" % ', '.join(
+            "'%s' %s" % (l.name, ('(%s, %s, %s)' % c) if c else '')
+            for i, l, c in ((i, l, label_color(i)) for i, l in enumerate(
+                self._categories[AnnotationType.label].items
+            ))
+        ))
         self._items = self._load_subset_list(path)
 
     def categories(self):
@@ -64,6 +71,7 @@ class VocClassificationExtractor(_VocExtractor):
     def __iter__(self):
         raw_anns = self._load_annotations()
         for item_id in self._items:
+            log.debug("Reading item '%s'" % item_id)
             image = osp.join(self._dataset_dir, VocPath.IMAGES_DIR,
                 item_id + VocPath.IMAGE_EXT)
             anns = self._parse_annotations(raw_anns, item_id)
@@ -99,6 +107,7 @@ class _VocXmlExtractor(_VocExtractor):
         anno_dir = osp.join(self._dataset_dir, VocPath.ANNOTATIONS_DIR)
 
         for item_id in self._items:
+            log.debug("Reading item '%s'" % item_id)
             image = osp.join(self._dataset_dir, VocPath.IMAGES_DIR,
                 item_id + VocPath.IMAGE_EXT)
 
@@ -219,6 +228,7 @@ class VocActionExtractor(_VocXmlExtractor):
 class VocSegmentationExtractor(_VocExtractor):
     def __iter__(self):
         for item_id in self._items:
+            log.debug("Reading item '%s'" % item_id)
             image = osp.join(self._dataset_dir, VocPath.IMAGES_DIR,
                 item_id + VocPath.IMAGE_EXT)
             anns = self._load_annotations(item_id)
