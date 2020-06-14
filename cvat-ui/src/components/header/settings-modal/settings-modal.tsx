@@ -9,8 +9,8 @@ import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal/Modal';
 
-import WorkspaceSettingsContainer from 'containers/settings-page/workspace-settings';
-import PlayerSettingsContainer from 'containers/settings-page/player-settings';
+import WorkspaceSettingsContainer from 'containers/header/settings-modal/workspace-settings';
+import PlayerSettingsContainer from 'containers/header/settings-modal/player-settings';
 import Button from 'antd/lib/button';
 
 interface SettingsModalProps {

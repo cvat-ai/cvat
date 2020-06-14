@@ -5,7 +5,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import PlayerSettingsComponent from 'components/settings-page/player-settings';
+import PlayerSettingsComponent from 'components/header/settings-modal/player-settings';
 
 import {
     changeFrameStep,
