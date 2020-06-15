@@ -13,7 +13,6 @@ from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.extractor import DatasetItem
 from datumaro.components.project import Dataset
-from datumaro.plugins.yolo_format.extractor import YoloExtractor
 
 from .registry import dm_env, exporter, importer
 
