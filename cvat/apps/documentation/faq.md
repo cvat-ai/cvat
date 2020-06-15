@@ -4,7 +4,7 @@
 - [How to change default CVAT hostname or port](#how-to-change-default-cvat-hostname-or-port)
 - [How to configure connected share folder on Windows](#how-to-configure-connected-share-folder-on-windows)
 - [How to make unassigned tasks not be visible to all users](#how-to-make-unassigned-tasks-not-be-visible-to-all-users)
-- [Can be Nvidia GPU be used to perform model inference with my own model?](#can-be-nvidia-gpu-be-used-to-perform-model-inference-with-my-own-model)
+- [Can Nvidia GPU be used to perform inference with my own model](#can-nvidia-gpu-be-used-to-perform-inference-with-my-own-model)
 
 ## How to update CVAT
 Before upgrading, please follow the oficcial docker
