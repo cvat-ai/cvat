@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0-alpha] - Unreleased
 ### Added
 - Throttling policy for unauthenticated users (<https://github.com/opencv/cvat/pull/1531>)
-- Added default label color table for mask export (https://github.com/opencv/cvat/pull/1549)
+- Added default label color table for mask export (<https://github.com/opencv/cvat/pull/1549>)
 - Added environment variables for Redis and Postgres hosts for Kubernetes deployment support (<https://github.com/opencv/cvat/pull/1641>)
-- Added visual identification for unavailable formats (https://github.com/opencv/cvat/pull/1567)
+- Added visual identification for unavailable formats (<https://github.com/opencv/cvat/pull/1567>)
+- Shortcut to change color of an activated shape in new UI (Enter) (<https://github.com/opencv/cvat/pull/1683>)
+- Shortcut to switch split mode (<https://github.com/opencv/cvat/pull/1683>)
+- Built-in search for labels when create an object or change a label (<https://github.com/opencv/cvat/pull/1683>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
@@ -22,15 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
-- Fixed dataset filter item representation for imageless dataset items (https://github.com/opencv/cvat/pull/1593)
-- Fixed interpreter crash when trying to import `tensorflow` with no AVX instructions available (https://github.com/opencv/cvat/pull/1567)
+- Fixed dataset filter item representation for imageless dataset items (<https://github.com/opencv/cvat/pull/1593>)
+- Fixed interpreter crash when trying to import `tensorflow` with no AVX instructions available (<https://github.com/opencv/cvat/pull/1567>)
 - Kibana wrong working time calculation with new annotation UI use (<https://github.com/opencv/cvat/pull/1654>)
 - Wrong rexex for account name validation (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong description on register view for the username field (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong resolution for resizing a shape (<https://github.com/opencv/cvat/pull/1667>)
 
 ### Security
-- SQL injection in Django `CVE-2020-9402` (https://github.com/opencv/cvat/pull/1657)
+- SQL injection in Django `CVE-2020-9402` (<https://github.com/opencv/cvat/pull/1657>)
 
 ## [1.0.0] - 2020-05-29
 ### Added

@@ -62,7 +62,7 @@ interface DispatchToProps {
     removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
-    changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
+    changeLabelColor(label: any, color: string): void;
     changeGroupColor(group: number, color: string): void;
 }
 
@@ -159,12 +159,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(propagateObjectAction(objectState));
         },
         changeLabelColor(
-            sessionInstance: any,
-            frameNumber: number,
             label: any,
             color: string,
         ): void {
-            dispatch(changeLabelColorAsync(sessionInstance, frameNumber, label, color));
+            dispatch(changeLabelColorAsync(label, color));
         },
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
@@ -388,12 +386,10 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private changeColor = (color: string): void => {
         const {
-            jobInstance,
             objectState,
             colorBy,
             changeLabelColor,
             changeGroupColor,
-            frameNumber,
         } = this.props;
 
         if (colorBy === ColorBy.INSTANCE) {
@@ -402,7 +398,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         } else if (colorBy === ColorBy.GROUP) {
             changeGroupColor(objectState.group.id, color);
         } else if (colorBy === ColorBy.LABEL) {
-            changeLabelColor(jobInstance, frameNumber, objectState.label, color);
+            changeLabelColor(objectState.label, color);
         }
     };
 
