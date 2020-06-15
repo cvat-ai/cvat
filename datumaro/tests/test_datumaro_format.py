@@ -14,6 +14,7 @@ from datumaro.util.mask_tools import generate_colormap
 from datumaro.util.image import Image
 from datumaro.util.test_utils import TestDir, compare_datasets_strict
 
+
 class DatumaroConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
             target_dataset=None, importer_args=None):
@@ -96,3 +97,16 @@ class DatumaroConverterTest(TestCase):
             DatumaroConverter()(self.TestExtractor(), save_dir=test_dir)
 
             self.assertTrue(DatumaroImporter.detect(test_dir))
+
+    def test_relative_paths(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='1', image=np.ones((4, 2, 3))),
+                    DatasetItem(id='subdir1/1', image=np.ones((2, 6, 3))),
+                    DatasetItem(id='subdir2/1', image=np.ones((5, 4, 3))),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                DatumaroConverter(save_images=True), test_dir)
