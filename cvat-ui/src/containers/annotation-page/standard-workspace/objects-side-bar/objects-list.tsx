@@ -14,9 +14,16 @@ import {
     collapseObjectItems,
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
+    changeGroupColorAsync,
+    changeLabelColorAsync,
 } from 'actions/annotation-actions';
 import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
-import { CombinedState, StatesOrdering, ObjectType } from 'reducers/interfaces';
+import {
+    CombinedState,
+    StatesOrdering,
+    ObjectType,
+    ColorBy,
+} from 'reducers/interfaces';
 
 interface StateToProps {
     jobInstance: any;
@@ -28,6 +35,7 @@ interface StateToProps {
     objectStates: any[];
     annotationsFilters: string[];
     colors: string[];
+    colorBy: ColorBy;
     activatedStateID: number | null;
     minZLayer: number;
     maxZLayer: number;
@@ -44,6 +52,8 @@ interface DispatchToProps {
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeFrame(frame: number): void;
+    changeGroupColor(group: number, color: string): void;
+    changeLabelColor(label: any, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -73,6 +83,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             tabContentHeight: listHeight,
             colors,
+        },
+        settings: {
+            shapes: {
+                colorBy,
+            },
         },
         shortcuts: {
             keyMap,
@@ -106,6 +121,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         annotationsFilters,
         colors,
+        colorBy,
         activatedStateID,
         minZLayer,
         maxZLayer,
@@ -135,6 +151,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         changeFrame(frame: number): void {
             dispatch(changeFrameAsync(frame));
+        },
+        changeGroupColor(group: number, color: string): void {
+            dispatch(changeGroupColorAsync(group, color));
+        },
+        changeLabelColor(label: any, color: string): void {
+            dispatch(changeLabelColorAsync(label, color));
         },
     };
 }
@@ -255,6 +277,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             objectStates,
             jobInstance,
             updateAnnotations,
+            changeGroupColor,
+            changeLabelColor,
             removeObject,
             copyShape,
             propagateObject,
@@ -265,6 +289,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             normalizedKeyMap,
             canvasInstance,
             colors,
+            colorBy,
         } = this.props;
         const {
             sortedStatesID,
@@ -368,10 +393,19 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedStated();
                 if (state) {
-                    let colorID = colors.indexOf(state.color) + 1;
-                    if (colorID >= colors.length) {
-                        colorID = 0;
+                    if (colorBy === ColorBy.GROUP) {
+                        const colorID = (colors.indexOf(state.group.color) + 1) % colors.length;
+                        changeGroupColor(state.group.id, colors[colorID]);
+                        return;
                     }
+
+                    if (colorBy === ColorBy.LABEL) {
+                        const colorID = (colors.indexOf(state.label.color) + 1) % colors.length;
+                        changeLabelColor(state.label, colors[colorID]);
+                        return;
+                    }
+
+                    const colorID = (colors.indexOf(state.color) + 1) % colors.length;
                     state.color = colors[colorID];
                     updateAnnotations([state]);
                 }

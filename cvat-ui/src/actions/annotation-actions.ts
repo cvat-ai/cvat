@@ -1288,19 +1288,23 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 }
 
 export function changeLabelColorAsync(
-    sessionInstance: any,
-    frameNumber: number,
     label: any,
     color: string,
 ): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
+            const {
+                filters,
+                showAllInterpolationTracks,
+                jobInstance,
+                frame,
+            } = receiveAnnotationsParameters();
+
             const updatedLabel = label;
             updatedLabel.color = color;
-            const states = await sessionInstance.annotations
-                .get(frameNumber, showAllInterpolationTracks, filters);
-            const history = await sessionInstance.actions.get();
+            const states = await jobInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
+            const history = await jobInstance.actions.get();
 
             dispatch({
                 type: AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS,

@@ -864,6 +864,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 trigger='click'
                 content={(
                     <ColorChanger
+                        shortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                         onChange={changeColor}
                         colors={colors}
                     />
