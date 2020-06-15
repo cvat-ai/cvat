@@ -31,7 +31,7 @@ Markdown==3.2.2
 djangorestframework==3.9.3
 Pygments==2.6.1
 drf-yasg==1.17.0
-Shapely==1.6.4.post2
+Shapely==1.7.0
 pdf2image==1.6.0
 pascal_voc_writer==0.1.4
 django-rest-auth[with_social]==0.9.5
