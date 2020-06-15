@@ -75,7 +75,7 @@ volumes:
 ## How to make unassigned tasks not be visible to all users
 Set [reduce_task_visibility](../../settings/base.py#L424) variable to `True`.
 
-## Can Nvidia GPU be used to perform model inference with my own model?
+## Can Nvidia GPU be used to perform inference with my own model
 Nvidia GPU can be used to accelerate inference of [tf_annotation](../../../components/tf_annotation/README.md) and [auto_segmentation](../../../components/auto_segmentation/README.md) models.
 
 OpenVino doesn't support Nvidia cards, so you can perform your own models only on CPU.
