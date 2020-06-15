@@ -24,8 +24,7 @@ import {
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
-
-import {shift} from 'utils/math';
+import { shift } from 'utils/math';
 
 interface OwnProps {
     clientID: number;
@@ -58,7 +57,7 @@ interface DispatchToProps {
     removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
-    changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
+    changeLabelColor(label: any, color: string): void;
     changeGroupColor(group: number, color: string): void;
 }
 
@@ -155,12 +154,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(propagateObjectAction(objectState));
         },
         changeLabelColor(
-            sessionInstance: any,
-            frameNumber: number,
             label: any,
             color: string,
         ): void {
-            dispatch(changeLabelColorAsync(sessionInstance, frameNumber, label, color));
+            dispatch(changeLabelColorAsync(label, color));
         },
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
@@ -357,12 +354,10 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private changeColor = (color: string): void => {
         const {
-            jobInstance,
             objectState,
             colorBy,
             changeLabelColor,
             changeGroupColor,
-            frameNumber,
         } = this.props;
 
         if (colorBy === ColorBy.INSTANCE) {
@@ -371,7 +366,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         } else if (colorBy === ColorBy.GROUP) {
             changeGroupColor(objectState.group.id, color);
         } else if (colorBy === ColorBy.LABEL) {
-            changeLabelColor(jobInstance, frameNumber, objectState.label, color);
+            changeLabelColor(objectState.label, color);
         }
     };
 
@@ -399,19 +394,13 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         this.commit();
     };
 
-    private changeFrame(frame: number): void {
-        const { changeFrame, canvasInstance } = this.props;
-        if (isAbleToChangeFrame(canvasInstance)) {
-            changeFrame(frame);
-        }
-    }
 
     private switchCuboidOrientation = (): void => {
         function cuboidOrientationIsLeft(points: number[]): boolean {
             return points[12] > points[0];
         }
 
-        const {objectState} = this.props;
+        const { objectState } = this.props;
 
         this.resetCuboidPerspective(false);
 
@@ -419,19 +408,19 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             cuboidOrientationIsLeft(objectState.points) ? 4 : -4);
 
         this.commit();
-    }
+    };
 
-    private resetCuboidPerspective = (commit: boolean = true): void => {
+    private resetCuboidPerspective = (commit = true): void => {
         function cuboidOrientationIsLeft(points: number[]): boolean {
             return points[12] > points[0];
         }
 
-        const {objectState} = this.props;
-        const {points} = objectState;
+        const { objectState } = this.props;
+        const { points } = objectState;
         const minD = {
-            x: (points[6] - points[2])*0.001,
-            y: (points[3] - points[1])*0.001,
-        }
+            x: (points[6] - points[2]) * 0.001,
+            y: (points[3] - points[1]) * 0.001,
+        };
 
         if (cuboidOrientationIsLeft(points)) {
             points[14] = points[10] + points[2] - points[6] + minD.x;
@@ -451,6 +440,13 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
         objectState.points = points;
         if (commit) this.commit();
+    };
+
+    private changeFrame(frame: number): void {
+        const { changeFrame, canvasInstance } = this.props;
+        if (isAbleToChangeFrame(canvasInstance)) {
+            changeFrame(frame);
+        }
     }
 
     private commit(): void {
