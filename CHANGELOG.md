@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
+- Problem with exported frame stepped image task (<https://github.com/opencv/cvat/issues/1613>)
 - Fixed dataset filter item representation for imageless dataset items (<https://github.com/opencv/cvat/pull/1593>)
 - Fixed interpreter crash when trying to import `tensorflow` with no AVX instructions available (<https://github.com/opencv/cvat/pull/1567>)
 - Kibana wrong working time calculation with new annotation UI use (<https://github.com/opencv/cvat/pull/1654>)
@@ -85,6 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A problem with mask to polygons conversion when polygons are too small (<https://github.com/opencv/cvat/pull/1581>)
 - Unable to upload video with uneven size (<https://github.com/opencv/cvat/pull/1594>)
 - Fixed an issue with `z_order` having no effect on segmentations (<https://github.com/opencv/cvat/pull/1589>)
+
+### Security
 - Permission group whitelist check for analytics view (<https://github.com/opencv/cvat/pull/1608>)
 
 ## [1.0.0-beta.2] - 2020-04-30
