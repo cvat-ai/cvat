@@ -331,7 +331,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         const onStart = (): void => {
             this.setState({
                 bugTrackerEditing: true,
-            })
+            });
         };
         const onChangeValue = (value: string): void => {
             if (value && !patterns.validateURL.pattern.test(value)) {
@@ -348,7 +348,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             } else {
                 this.setState({
                     bugTracker: value,
-                    bugTrackerEditing: false
+                    bugTrackerEditing: false,
                 });
 
                 taskInstance.bugTracker = value;
@@ -385,10 +385,14 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                 <Col>
                     <Text strong className='cvat-text-color'>Issue Tracker</Text>
                     <br />
-                    <Text editable={{
-                        onStart: onStart,
-                        onChange: onChangeValue
-                        }}>{bugTrackerEditing ? '' : 'Not specified'}</Text>
+                    <Text
+                        editable={{
+                            onStart,
+                            onChange: onChangeValue,
+                        }}
+                    >
+                        {bugTrackerEditing ? '' : 'Not specified'}
+                    </Text>
                 </Col>
             </Row>
         );

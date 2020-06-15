@@ -52,8 +52,8 @@ interface CVATAppProps {
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
-    userAgreementsFetching: boolean,
-    userAgreementsInitialized: boolean,
+    userAgreementsFetching: boolean;
+    userAgreementsInitialized: boolean;
     notifications: NotificationsState;
     user: any;
 }
@@ -61,7 +61,7 @@ interface CVATAppProps {
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
         const core = getCore();
-        const { verifyAuthorized, history } = this.props;
+        const { verifyAuthorized, history, location } = this.props;
         configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
@@ -72,8 +72,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
 
         customWaViewHit(location.pathname, location.search, location.hash);
-        history.listen((location) => {
-            customWaViewHit(location.pathname, location.search, location.hash);
+        history.listen((l) => {
+            customWaViewHit(l.pathname, l.search, l.hash);
         });
 
         verifyAuthorized();

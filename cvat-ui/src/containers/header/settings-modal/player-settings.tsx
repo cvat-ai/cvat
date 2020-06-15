@@ -114,7 +114,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onChangeCanvasBackgroundColor(color: string): void {
             dispatch(changeCanvasBackgroundColor(color));
-        }
+        },
     };
 }
 

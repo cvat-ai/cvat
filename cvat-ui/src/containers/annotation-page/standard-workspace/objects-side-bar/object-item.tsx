@@ -25,7 +25,7 @@ import {
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 
-import {shift} from 'utils/math';
+import { shift } from 'utils/math';
 
 interface OwnProps {
     clientID: number;
@@ -399,19 +399,12 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         this.commit();
     };
 
-    private changeFrame(frame: number): void {
-        const { changeFrame, canvasInstance } = this.props;
-        if (isAbleToChangeFrame(canvasInstance)) {
-            changeFrame(frame);
-        }
-    }
-
     private switchCuboidOrientation = (): void => {
         function cuboidOrientationIsLeft(points: number[]): boolean {
             return points[12] > points[0];
         }
 
-        const {objectState} = this.props;
+        const { objectState } = this.props;
 
         this.resetCuboidPerspective(false);
 
@@ -419,19 +412,19 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             cuboidOrientationIsLeft(objectState.points) ? 4 : -4);
 
         this.commit();
-    }
+    };
 
-    private resetCuboidPerspective = (commit: boolean = true): void => {
+    private resetCuboidPerspective = (commit = true): void => {
         function cuboidOrientationIsLeft(points: number[]): boolean {
             return points[12] > points[0];
         }
 
-        const {objectState} = this.props;
-        const {points} = objectState;
+        const { objectState } = this.props;
+        const { points } = objectState;
         const minD = {
-            x: (points[6] - points[2])*0.001,
-            y: (points[3] - points[1])*0.001,
-        }
+            x: (points[6] - points[2]) * 0.001,
+            y: (points[3] - points[1]) * 0.001,
+        };
 
         if (cuboidOrientationIsLeft(points)) {
             points[14] = points[10] + points[2] - points[6] + minD.x;
@@ -451,6 +444,13 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
         objectState.points = points;
         if (commit) this.commit();
+    };
+
+    private changeFrame(frame: number): void {
+        const { changeFrame, canvasInstance } = this.props;
+        if (isAbleToChangeFrame(canvasInstance)) {
+            changeFrame(frame);
+        }
     }
 
     private commit(): void {

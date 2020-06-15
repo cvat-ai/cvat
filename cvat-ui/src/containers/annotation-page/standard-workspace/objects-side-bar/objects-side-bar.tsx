@@ -31,7 +31,7 @@ import {
     changeShowProjections as changeShowProjectionsAction,
 } from 'actions/settings-actions';
 
-import {Canvas} from 'cvat-canvas-wrapper'
+import { Canvas } from 'cvat-canvas-wrapper';
 
 interface StateToProps {
     sidebarCollapsed: boolean;
@@ -64,7 +64,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             appearanceCollapsed,
             canvas: {
                 instance: canvasInstance,
-            }
+            },
         },
         settings: {
             shapes: {

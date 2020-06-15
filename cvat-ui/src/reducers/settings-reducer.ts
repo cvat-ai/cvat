@@ -264,8 +264,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     canvasBackgroundColor: action.payload.color,
-                }
-            }
+                },
+            };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {

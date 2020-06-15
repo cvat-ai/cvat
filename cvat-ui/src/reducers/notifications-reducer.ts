@@ -14,7 +14,7 @@ import { AboutActionTypes } from 'actions/about-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
-import { UserAgreementsActions, UserAgreementsActionTypes } from 'actions/useragreements-actions';
+import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 
 import { NotificationsState } from './interfaces';
 

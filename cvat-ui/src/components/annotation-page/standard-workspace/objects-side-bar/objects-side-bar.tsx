@@ -11,13 +11,13 @@ import Layout from 'antd/lib/layout';
 import { RadioChangeEvent } from 'antd/lib/radio';
 import { SliderValue } from 'antd/lib/slider';
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import { Canvas } from 'cvat-canvas-wrapper';
 
 import { ColorBy } from 'reducers/interfaces';
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import LabelsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/labels-list';
 import AppearanceBlock from './appearance-block';
 
-import { Canvas } from 'cvat-canvas-wrapper';
 
 interface Props {
     sidebarCollapsed: boolean;

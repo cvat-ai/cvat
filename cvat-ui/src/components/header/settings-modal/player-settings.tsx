@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, {useRef, useEffect, useState} from 'react';
+import React, { useRef, useEffect } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
@@ -91,7 +91,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 + `contrast(${contrastLevel / 100})`
                 + `saturate(${saturationLevel / 100})`;
         }
-    }, [imageRef, brightnessLevel, contrastLevel, saturationLevel])
+    }, [imageRef, brightnessLevel, contrastLevel, saturationLevel]);
 
     return (
         <div className='cvat-player-settings'>
@@ -146,7 +146,9 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         content={(
                             <CompactPicker
                                 colors={consts.CANVAS_BACKGROUND_COLORS}
-                                color={canvasBackgroundColor} onChange={(e) => onChangeCanvasBackgroundColor(e.hex)} />
+                                color={canvasBackgroundColor}
+                                onChange={(e) => onChangeCanvasBackgroundColor(e.hex)}
+                            />
                         )}
                         overlayClassName='canvas-background-color-picker-popover'
                         trigger='click'
@@ -321,9 +323,11 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                                 <Text>Preview:</Text>
                                 <br />
                                 <img
+                                    alt='preview'
                                     src={previewImage}
                                     ref={imageRef}
-                                    className='cvat-player-settings-image-preview'/>
+                                    className='cvat-player-settings-image-preview'
+                                />
                             </>
                         )
                     }

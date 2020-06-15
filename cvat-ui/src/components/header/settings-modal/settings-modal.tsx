@@ -19,7 +19,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal = (props: SettingsModalProps): JSX.Element => {
-    const {visible, onClose} = props;
+    const { visible, onClose } = props;
 
     return (
         <Modal
@@ -67,7 +67,7 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
                 </Tabs>
             </div>
         </Modal>
-    )
-}
+    );
+};
 
 export default SettingsModal;

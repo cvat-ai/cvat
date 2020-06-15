@@ -248,5 +248,5 @@ export function changeCanvasBackgroundColor(color: string): AnyAction {
         payload: {
             color,
         },
-    }
+    };
 }
