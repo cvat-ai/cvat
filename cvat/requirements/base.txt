@@ -8,7 +8,7 @@ django-rq==2.0.0
 EasyProcess==0.2.3
 Pillow==7.1.2
 numpy==1.16.2
-python-ldap==3.0.0
+python-ldap==3.2.0
 pytz==2018.3
 pyunpack==0.1.2
 rcssmin==1.0.6
