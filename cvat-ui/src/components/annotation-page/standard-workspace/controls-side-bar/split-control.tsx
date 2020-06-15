@@ -13,12 +13,13 @@ import { ActiveControl } from 'reducers/interfaces';
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
-
+    switchSplitShortcut: string;
     splitTrack(enabled: boolean): void;
 }
 
 function SplitControl(props: Props): JSX.Element {
     const {
+        switchSplitShortcut,
         activeControl,
         canvasInstance,
         splitTrack,
@@ -40,7 +41,7 @@ function SplitControl(props: Props): JSX.Element {
         };
 
     return (
-        <Tooltip title='Split a track' placement='right'>
+        <Tooltip title={`Split a track ${switchSplitShortcut}`} placement='right'>
             <Icon {...dynamicIconProps} component={SplitIcon} />
         </Tooltip>
     );

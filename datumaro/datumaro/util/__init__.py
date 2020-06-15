@@ -75,3 +75,12 @@ def take_by(iterable, count):
             break
 
         yield batch
+
+def str_to_bool(s):
+    t = s.lower()
+    if t in {'true', '1', 'ok', 'yes', 'y'}:
+        return True
+    elif t in {'false', '0', 'no', 'n'}:
+        return False
+    else:
+        raise ValueError("Can't convert value '%s' to bool" % s)

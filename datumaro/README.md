@@ -177,6 +177,24 @@ project = Project.load('directory')
   datum project diff mymodel_inference/ --format tensorboard --output-dir diff
   ```
 
+- Change colors in PASCAL VOC-like `.png` masks:
+  ```bash
+  datum project import --format voc --input-path <path/to/voc/dataset>
+
+  # Create a color map file with desired colors:
+  #
+  # label : color_rgb : parts : actions
+  # cat:0,0,255::
+  # dog:255,0,0::
+  #
+  # Save as mycolormap.txt
+
+  datum project export --format voc_segmentation -- --label-map mycolormap.txt
+  # add "--apply-colormap=0" to save grayscale (indexed) masks
+  # check "--help" option for more info
+  # use "datum --loglevel debug" for extra conversion info
+  ```
+
 <!--lint enable list-item-bullet-indent-->
 <!--lint enable list-item-indent-->
 
