@@ -552,7 +552,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             cosinus = scalarProduct(xAxis, baseVector)
                 / (vectorLength(xAxis) * baseVectorLength);
         }
-        const angle = Math.acos(cosinus) * Math.sign(baseVector.j) * 180 / Math.PI;
+        const angle = Math.acos(cosinus) * (Math.sign(baseVector.j) || 1) * 180 / Math.PI;
 
         const pathElement = handler.nested.path(path).fill('white')
             .stroke({
