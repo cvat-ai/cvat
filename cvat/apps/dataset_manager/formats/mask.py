@@ -24,7 +24,6 @@ def _export(dst_file, task_data, save_images=False):
     extractor = extractor.transform(envt.get('polygons_to_masks'))
     extractor = extractor.transform(envt.get('boxes_to_masks'))
     extractor = extractor.transform(envt.get('merge_instance_segments'))
-    extractor = extractor.transform(envt.get('id_from_image_name'))
     extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
         converter = dm_env.make_converter('voc_segmentation',
