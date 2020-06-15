@@ -2,7 +2,7 @@ click==6.7
 Django==2.2.13
 django-appconf==1.0.2
 django-auth-ldap==1.4.0
-django-cacheops==4.0.6
+django-cacheops==5.0
 django-compressor==2.2
 django-rq==2.0.0
 EasyProcess==0.2.3
