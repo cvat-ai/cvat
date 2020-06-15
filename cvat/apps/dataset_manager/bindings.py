@@ -392,7 +392,7 @@ class TaskData:
 
     @staticmethod
     def _get_filename(path):
-        return osp.splitext(path)[0]
+        return osp.splitext(osp.basename(path))[0]
 
     def match_frame(self, filename):
         # try to match by filename
