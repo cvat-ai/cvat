@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shortcut to change color of an activated shape in new UI (Enter) (<https://github.com/opencv/cvat/pull/1683>)
 - Shortcut to switch split mode (<https://github.com/opencv/cvat/pull/1683>)
 - Built-in search for labels when create an object or change a label (<https://github.com/opencv/cvat/pull/1683>)
+- ClamAV antivirus integration (<https://github.com/opencv/cvat/pull/1712>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
