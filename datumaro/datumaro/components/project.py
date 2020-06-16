@@ -19,7 +19,7 @@ from datumaro.components.config import Config, DEFAULT_FORMAT
 from datumaro.components.config_model import (Model, Source,
     PROJECT_DEFAULT_CONFIG, PROJECT_SCHEMA)
 from datumaro.components.extractor import Extractor
-from datumaro.components.launcher import InferenceWrapper
+from datumaro.components.launcher import ModelTransform
 from datumaro.components.dataset_filter import \
     XPathDatasetFilter, XPathAnnotationsFilter
 
@@ -683,7 +683,7 @@ class ProjectDataset(Dataset):
         if isinstance(model, str):
             launcher = self._project.make_executable_model(model)
 
-        self.transform_project(InferenceWrapper, launcher=launcher,
+        self.transform_project(ModelTransform, launcher=launcher,
             save_dir=save_dir, batch_size=batch_size)
 
     def export_project(self, save_dir, converter,

@@ -5,17 +5,16 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
+import Text from 'antd/lib/typography/Text';
 
 interface Props {
+    shortcut: string;
     colors: string[];
     onChange(color: string): void;
 }
 
 function ColorChanger(props: Props): JSX.Element {
-    const {
-        colors,
-        onChange,
-    } = props;
+    const { shortcut, colors, onChange } = props;
 
     const cols = 6;
     const rows = Math.ceil(colors.length / cols);
@@ -47,9 +46,12 @@ function ColorChanger(props: Props): JSX.Element {
     }
 
     return (
-        <>
+        <div>
+            <Text>
+                {`Press ${shortcut} to set a random color`}
+            </Text>
             {antdRows}
-        </>
+        </div>
     );
 }
 
