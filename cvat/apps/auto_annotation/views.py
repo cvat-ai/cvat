@@ -56,19 +56,19 @@ def create_model(request):
         if is_shared and not has_admin_role(request.user):
             raise Exception("Only admin can create shared models")
         files = request.FILES if storage == "local" else params
-        is_custom = "openvino"
+        framework = "openvino"
         if "pb" in files:
             labelmap = files["csv"]
             model = files["pb"]
             weights = None
             interpretation_script = None
-            is_custom="tensorflow"
+            framework="tensorflow"
         elif "h5" in files:
             labelmap = files["csv"]
             model = files["h5"]
             weights = None
             interpretation_script = None
-            is_custom = "maskrcnn"
+            framework = "maskrcnn"
         else:
             model = files["xml"]
             weights = files["bin"]
@@ -86,7 +86,7 @@ def create_model(request):
             owner=owner,
             storage=storage,
             is_shared=is_shared,
-            is_custom=is_custom
+            framework=framework
         )
 
         return JsonResponse({"id": rq_id})
@@ -109,19 +109,19 @@ def update_model(request, mid):
         if is_shared and not has_admin_role(request.user):
             raise Exception("Only admin can create shared models")
         files = request.FILES
-        is_custom="openvino"
+        framework="openvino"
         if "pb" in files:
             labelmap = files.get("csv")
             model = files.get("pb")
             weights = None
             interpretation_script = None
-            is_custom="tensorflow"
+            framework="tensorflow"
         elif "h5" in files:
             labelmap = files.get("csv")
             model = files.get("h5")
             weights = None
             interpretation_script = None
-            is_custom="maskrcnn"
+            framework="maskrcnn"
         else:
 
             model = files.get("xml")
@@ -139,7 +139,7 @@ def update_model(request, mid):
             owner=None,
             storage=storage,
             is_shared=is_shared,
-            is_custom=is_custom
+            framework=framework
         )
 
         return JsonResponse({"id": rq_id})
