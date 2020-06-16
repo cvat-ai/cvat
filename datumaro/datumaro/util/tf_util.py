@@ -35,8 +35,11 @@ def check_import():
 def import_tf(check=True):
     import sys
 
-    tf = sys.modules.get('tensorflow', None)
-    if tf is not None:
+    not_found = object()
+    tf = sys.modules.get('tensorflow', not_found)
+    if tf is None:
+        import tensorflow as tf # emit default error
+    elif tf is not not_found:
         return tf
 
     # Reduce output noise, https://stackoverflow.com/questions/38073432/how-to-suppress-verbose-tensorflow-logging
@@ -44,7 +47,11 @@ def import_tf(check=True):
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
     if check:
-        check_import()
+        try:
+            check_import()
+        except Exception:
+            sys.modules['tensorflow'] = None # prevent further import
+            raise
 
     import tensorflow as tf
 
