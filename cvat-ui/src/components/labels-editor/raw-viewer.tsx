@@ -9,7 +9,12 @@ import Button from 'antd/lib/button';
 import Tooltip from 'antd/lib/tooltip';
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 
-import { Label, Attribute, validateParsedLabel } from './common';
+import {
+    Label,
+    Attribute,
+    validateParsedLabel,
+    idGenerator,
+} from './common';
 
 type Props = FormComponentProps & {
     labels: Label[];
@@ -47,7 +52,14 @@ class RawViewer extends React.PureComponent<Props> {
         e.preventDefault();
         form.validateFields((error, values): void => {
             if (!error) {
-                onSubmit(JSON.parse(values.labels));
+                const parsed = JSON.parse(values.labels);
+                for (const label of parsed) {
+                    label.id = idGenerator();
+                    for (const attr of label.attributes) {
+                        attr.id = idGenerator();
+                    }
+                }
+                onSubmit(parsed);
             }
         });
     };
