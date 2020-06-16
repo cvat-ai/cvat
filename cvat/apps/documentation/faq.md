@@ -7,7 +7,7 @@
 - [Can Nvidia GPU be used to perform inference with my own model](#can-nvidia-gpu-be-used-to-perform-inference-with-my-own-model)
 
 ## How to update CVAT
-Before upgrading, please follow the oficcial docker
+Before upgrading, please follow the official docker
 [manual](https://docs.docker.com/storage/volumes/#backup-restore-or-migrate-data-volumes) and backup all CVAT volumes.
 
 To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
@@ -51,7 +51,7 @@ Please don't forget to include this file to docker-compose commands
 using the `-f` option (in some cases it can be omitted).
 
 ## How to configure connected share folder on Windows
-Follow the Docker manual and configure the directory that you want to use as shared directory:
+Follow the Docker manual and configure the directory that you want to use as a shared directory:
 - [Docker toolbox manual](https://docs.docker.com/toolbox/toolbox_install_windows/#optional-add-shared-directories)
 - [Docker for windows (see FILE SHARING section)](https://docs.docker.com/docker-for-windows/#resources)
 
