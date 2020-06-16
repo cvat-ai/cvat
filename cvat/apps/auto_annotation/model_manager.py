@@ -31,7 +31,7 @@ def _remove_old_file(model_file_field):
         os.remove(model_file_field.name)
 
 def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_file, labelmap_file,
-        interpretation_file, run_tests, is_local_storage, delete_if_test_fails, is_custom, restricted=True):
+        interpretation_file, run_tests, is_local_storage, delete_if_test_fails, framework, restricted=True):
     def _get_file_content(filename):
         return os.path.basename(filename), open(filename, "rb")
 
@@ -96,7 +96,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
             if labelmap_file:
                 _remove_old_file(dl_model.labelmap_file)
                 dl_model.labelmap_file.save(*_get_file_content(labelmap_file))
-            if is_custom == "openvino":
+            if framework == "openvino":
                 if interpretation_file:
                     _remove_old_file(dl_model.interpretation_file)
                     dl_model.interpretation_file.save(*_get_file_content(interpretation_file))
@@ -110,7 +110,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
             if is_shared != None:
                 dl_model.shared = is_shared
 
-            dl_model.framework = is_custom
+            dl_model.framework = framework
 
             dl_model.updated_date = timezone.now()
             dl_model.save()
@@ -121,7 +121,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
     if not test_res:
         raise Exception("Model was not properly created/updated. Test failed: {}".format(message))
 
-def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file, interpretation_file, owner, storage, is_shared,is_custom):
+def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file, interpretation_file, owner, storage, is_shared,framework):
     def get_abs_path(share_path):
         if not share_path:
             return share_path
@@ -148,10 +148,10 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
         dl_model_id = create_empty(owner=owner)
 
     run_tests = bool(model_file or weights_file or labelmap_file or interpretation_file)
-    if is_custom in ["tensorflow","maskrcnn"]:
+    if framework in ["tensorflow","maskrcnn"]:
         run_tests = False
     if storage != "local":
-        if is_custom in ["tensorflow","maskrcnn"]:
+        if framework in ["tensorflow","maskrcnn"]:
             model_file = get_abs_path(model_file)
             labelmap_file = get_abs_path(labelmap_file)
         else:
@@ -160,7 +160,7 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
             labelmap_file = get_abs_path(labelmap_file)
             interpretation_file = get_abs_path(interpretation_file)
     else:
-        if is_custom in ["tensorflow", "maskrcnn"]:
+        if framework in ["tensorflow", "maskrcnn"]:
             model_file = save_file_as_tmp(model_file)
             labelmap_file = save_file_as_tmp(labelmap_file)
         else:
@@ -189,7 +189,7 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
             run_tests,
             storage == "local",
             is_create_request,
-            is_custom,
+            framework,
             restricted
         ),
         job_id=rq_id
