@@ -9,10 +9,7 @@ import Button from 'antd/lib/button';
 import Tooltip from 'antd/lib/tooltip';
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 
-import {
-    Label,
-    Attribute,
-} from './common';
+import { Label, Attribute, validateParsedLabel } from './common';
 
 type Props = FormComponentProps & {
     labels: Label[];
@@ -22,7 +19,18 @@ type Props = FormComponentProps & {
 class RawViewer extends React.PureComponent<Props> {
     private validateLabels = (_: any, value: string, callback: any): void => {
         try {
-            JSON.parse(value);
+            const parsed = JSON.parse(value);
+            if (!Array.isArray(parsed)) {
+                callback('Field is expected to be a JSON array');
+            }
+
+            for (const label of parsed) {
+                try {
+                    validateParsedLabel(label);
+                } catch (error) {
+                    callback(error.toString());
+                }
+            }
         } catch (error) {
             callback(error.toString());
         }
