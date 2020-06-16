@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shortcut to change color of an activated shape in new UI (Enter) (<https://github.com/opencv/cvat/pull/1683>)
 - Shortcut to switch split mode (<https://github.com/opencv/cvat/pull/1683>)
 - Built-in search for labels when create an object or change a label (<https://github.com/opencv/cvat/pull/1683>)
+- Better validation of labels and attributes in raw viewer (<https://github.com/opencv/cvat/pull/1727>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
@@ -32,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wrong rexex for account name validation (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong description on register view for the username field (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong resolution for resizing a shape (<https://github.com/opencv/cvat/pull/1667>)
+- React warning because of not unique keys in labels viewer (<https://github.com/opencv/cvat/pull/1727>)
+
 
 ### Security
 - SQL injection in Django `CVE-2020-9402` (<https://github.com/opencv/cvat/pull/1657>)
