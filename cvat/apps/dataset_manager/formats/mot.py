@@ -40,7 +40,7 @@ def _import(src_file, task_data):
 
         for item in dataset:
             item = item.wrap(id=int(item.id) - 1) # NOTE: MOT frames start from 1
-            frame_id = match_frame(item, task_data)
+            frame_number = task_data.abs_frame_id(match_frame(item, task_data))
 
             for ann in item.annotations:
                 if ann.type != datumaro.AnnotationType.bbox:
@@ -57,7 +57,7 @@ def _import(src_file, task_data):
                     outside=False,
                     keyframe=False,
                     z_order=ann.z_order,
-                    frame=frame_id,
+                    frame=frame_number,
                     attributes=[],
                 )
 

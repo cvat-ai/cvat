@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shortcut to change color of an activated shape in new UI (Enter) (<https://github.com/opencv/cvat/pull/1683>)
 - Shortcut to switch split mode (<https://github.com/opencv/cvat/pull/1683>)
 - Built-in search for labels when create an object or change a label (<https://github.com/opencv/cvat/pull/1683>)
+- Better validation of labels and attributes in raw viewer (<https://github.com/opencv/cvat/pull/1727>)
 - ClamAV antivirus integration (<https://github.com/opencv/cvat/pull/1712>)
 
 ### Changed
@@ -26,12 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
+- Problem with exported frame stepped image task (<https://github.com/opencv/cvat/issues/1613>)
 - Fixed dataset filter item representation for imageless dataset items (<https://github.com/opencv/cvat/pull/1593>)
 - Fixed interpreter crash when trying to import `tensorflow` with no AVX instructions available (<https://github.com/opencv/cvat/pull/1567>)
 - Kibana wrong working time calculation with new annotation UI use (<https://github.com/opencv/cvat/pull/1654>)
 - Wrong rexex for account name validation (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong description on register view for the username field (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong resolution for resizing a shape (<https://github.com/opencv/cvat/pull/1667>)
+- React warning because of not unique keys in labels viewer (<https://github.com/opencv/cvat/pull/1727>)
+
 
 ### Security
 - SQL injection in Django `CVE-2020-9402` (<https://github.com/opencv/cvat/pull/1657>)
@@ -86,6 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A problem with mask to polygons conversion when polygons are too small (<https://github.com/opencv/cvat/pull/1581>)
 - Unable to upload video with uneven size (<https://github.com/opencv/cvat/pull/1594>)
 - Fixed an issue with `z_order` having no effect on segmentations (<https://github.com/opencv/cvat/pull/1589>)
+
+### Security
 - Permission group whitelist check for analytics view (<https://github.com/opencv/cvat/pull/1608>)
 
 ## [1.0.0-beta.2] - 2020-04-30
