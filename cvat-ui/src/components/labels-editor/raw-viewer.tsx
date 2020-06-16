@@ -54,9 +54,9 @@ class RawViewer extends React.PureComponent<Props> {
             if (!error) {
                 const parsed = JSON.parse(values.labels);
                 for (const label of parsed) {
-                    label.id = idGenerator();
+                    label.id = label.id || idGenerator();
                     for (const attr of label.attributes) {
-                        attr.id = idGenerator();
+                        attr.id = attr.id || idGenerator();
                     }
                 }
                 onSubmit(parsed);
