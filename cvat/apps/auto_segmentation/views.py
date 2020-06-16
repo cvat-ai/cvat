@@ -96,7 +96,7 @@ def run_tensorflow_auto_segmentation(frame_provider, labels_mapping, treshold, m
         NUM_CLASSES = num_c
         local_device_protos = device_lib.list_local_devices()
         num_gpus = len([x.name for x in local_device_protos if x.device_type == 'GPU'])
-        if num_gpus in [2,4,8]:
+        if num_gpus % 2 == 0:
             GPU_COUNT = num_gpus
 
     # Print config details
