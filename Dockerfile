@@ -119,6 +119,19 @@ RUN if [ "$CUDA_SUPPORT" = "yes" ]; then \
         /tmp/components/cuda/install.sh; \
     fi
 
+ARG CLAM_AV
+ENV CLAM_AV=${CLAM_AV}
+RUN if [ "$CLAM_AV" = "yes" ]; then \
+        apt-get update && \
+        apt-get --no-install-recommends install -yq \
+            clamav \
+            libclamunrar9 && \
+        sed -i 's/ReceiveTimeout 30/ReceiveTimeout 300/g' /etc/clamav/freshclam.conf && \
+        freshclam && \
+        chown -R ${USER}:${USER} /var/lib/clamav && \
+        rm -rf /var/lib/apt/lists/*; \
+    fi
+
 COPY ssh ${HOME}/.ssh
 COPY utils ${HOME}/utils
 COPY cvat/ ${HOME}/cvat

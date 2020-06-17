@@ -364,10 +364,13 @@ class RandomSplit(Transform, CliPlugin):
 
 class IdFromImageName(Transform, CliPlugin):
     def transform_item(self, item):
-        name = item.id
-        if item.has_image and item.image.filename:
-            name = osp.splitext(item.image.filename)[0]
-        return self.wrap_item(item, id=name)
+        if item.has_image and item.image.path:
+            name = osp.splitext(osp.basename(item.image.path))[0]
+            return self.wrap_item(item, id=name)
+        else:
+            log.debug("Can't change item id for item '%s': "
+                "item has no image info" % item.id)
+            return item
 
 class RemapLabels(Transform, CliPlugin):
     DefaultAction = Enum('DefaultAction', ['keep', 'delete'])

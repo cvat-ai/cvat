@@ -163,26 +163,21 @@ class _SubsetWriter:
 
         self._writer.close_root()
 
-    def _save_image(self, item):
+    def _save_image(self, item, filename):
         image = item.image.data
         if image is None:
             log.warning("Item '%s' has no image" % item.id)
             return ''
 
-        filename = item.image.filename
-        if filename:
-            filename = osp.splitext(filename)[0]
-        else:
-            filename = item.id
-        filename += CvatPath.IMAGE_EXT
-        image_path = osp.join(self._context._images_dir, filename)
-        save_image(image_path, image)
-        return filename
+        save_image(osp.join(self._context._images_dir, filename), image,
+            create_dir=True)
 
     def _write_item(self, item, index):
         image_info = OrderedDict([
-            ("id", str(cast(item.id, int, index))),
+            ("id", str(cast(item.attributes.get('frame'), int, index))),
         ])
+        filename = item.id + CvatPath.IMAGE_EXT
+        image_info["name"] = filename
         if item.has_image:
             size = item.image.size
             if size:
@@ -190,10 +185,8 @@ class _SubsetWriter:
                 image_info["width"] = str(w)
                 image_info["height"] = str(h)
 
-            filename = item.image.filename
             if self._context._save_images:
-                filename = self._save_image(item)
-            image_info["name"] = filename
+                self._save_image(item, filename)
         else:
             log.debug("Item '%s' has no image info" % item.id)
         self._writer.open_image(image_info)
