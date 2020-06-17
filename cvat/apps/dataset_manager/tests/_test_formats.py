@@ -405,6 +405,15 @@ class TaskExportTest(_DbTestBase):
                     self.assertEqual(len(dataset), task["size"])
                 self._test_export(check, task, format_name, save_images=False)
 
+    def test_cant_make_rel_frame_id_from_unknown(self):
+        images = self._generate_task_images(3)
+        images['frame_filter'] = 'step=2'
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        with self.assertRaisesRegex(ValueError, r'Unknown'):
+            task_data.rel_frame_id(1) # the task has only 0 and 2 frames
+
     def test_can_make_rel_frame_id_from_known(self):
         images = self._generate_task_images(6)
         images['frame_filter'] = 'step=2'
@@ -525,11 +534,3 @@ class FrameMatchingTest(_DbTestBase):
 
                 root = find_dataset_root(dataset, task_data)
                 self.assertEqual(expected, root)
-    def test_cant_make_rel_frame_id_from_unknown(self):
-        images = self._generate_task_images(3)
-        images['frame_filter'] = 'step=2'
-        task = self._generate_task(images)
-        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
-
-        with self.assertRaisesRegex(ValueError, r'Unknown'):
-            task_data.rel_frame_id(1) # the task has only 0 and 2 frames
