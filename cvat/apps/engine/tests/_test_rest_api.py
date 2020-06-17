@@ -2965,6 +2965,19 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                         "points": [2.0, 2.1, 77.2, 36.22],
                         "type": "rectangle",
                         "occluded": True,
+                        "outside": False,
+                        "attributes": [
+                            {
+                                "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                "value": task["labels"][0]["attributes"][1]["default_value"]
+                            }
+                        ]
+                    },
+                    {
+                        "frame": 2,
+                        "points": [2.0, 2.1, 77.2, 36.22],
+                        "type": "rectangle",
+                        "occluded": True,
                         "outside": True,
                         "attributes": [
                             {
@@ -2976,15 +2989,23 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 ]
             }]
             rectangle_tracks_wo_attrs = [{
-                "frame": 1,
+                "frame": 0,
                 "label_id": task["labels"][1]["id"],
                 "group": 0,
                 "attributes": [],
                 "shapes": [
                     {
-                        "frame": 1,
+                        "frame": 0,
                         "attributes": [],
                         "points": [1.0, 2.1, 50.2, 36.6],
+                        "type": "rectangle",
+                        "occluded": False,
+                        "outside": False
+                    },
+                    {
+                        "frame": 1,
+                        "attributes": [],
+                        "points": [1.0, 2.1, 51, 36.6],
                         "type": "rectangle",
                         "occluded": False,
                         "outside": False
