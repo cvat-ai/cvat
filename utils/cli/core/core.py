@@ -73,12 +73,13 @@ class CLI():
         log.info('Created task ID: {id} NAME: {name}'.format(**response_json))
         task_id = response_json['id']
         self.tasks_data(task_id, resource_type, resources)
-        
+
         if annotation_path != '':
             url = self.api.tasks_id(task_id)
             task_size = self.session.get(url).json()['size']
 
-            log.info('Awaiting data compression before uploading annotations...')            
+            log.info('Awaiting data compression before uploading annotations...')
+            
             while task_size == 0:
                 sleep(cooldown_period_in_secs)
                 task_size = self.session.get(url).json()['size']

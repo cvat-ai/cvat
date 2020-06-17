@@ -141,7 +141,7 @@ task_create_parser.add_argument(
     '--cooldown_period_in_secs',
     default=20,
     type=int,
-    help='''number of seconds to wait until checking 
+    help='''number of seconds to wait until checking
             if data compression finished (necessary before uploading annotations)'''
 )
 
