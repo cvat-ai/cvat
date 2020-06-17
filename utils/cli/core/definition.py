@@ -139,9 +139,10 @@ task_create_parser.add_argument(
 )
 task_create_parser.add_argument(
     '--cooldown_period_in_secs',
-    default=180,
+    default=20,
     type=int,
-    help='number of seconds to wait for the job to be created until uploading the annotations'
+    help='''number of seconds to wait until checking 
+            if data compression is finished (necessary before uploading annotations)'''
 )
 
 #######################################################################

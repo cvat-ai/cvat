@@ -26,11 +26,14 @@ class CLI():
         data = {}
         files = None
         if resource_type == ResourceType.LOCAL:
-            files = {'client_files[{}]'.format(i): open(f, 'rb') for i, f in enumerate(resources)}
+            files = {'client_files[{}]'.format(i): open(
+                f, 'rb') for i, f in enumerate(resources)}
         elif resource_type == ResourceType.REMOTE:
-            data = {'remote_files[{}]'.format(i): f for i, f in enumerate(resources)}
+            data = {'remote_files[{}]'.format(
+                i): f for i, f in enumerate(resources)}
         elif resource_type == ResourceType.SHARE:
-            data = {'server_files[{}]'.format(i): f for i, f in enumerate(resources)}
+            data = {'server_files[{}]'.format(
+                i): f for i, f in enumerate(resources)}
         data['image_quality'] = 50
         response = self.session.post(url, data=data, files=files)
         response.raise_for_status()
@@ -63,16 +66,21 @@ class CLI():
         data = {'name': name,
                 'labels': labels,
                 'bug_tracker': bug,
-        }
+                }
         response = self.session.post(url, json=data)
         response.raise_for_status()
         response_json = response.json()
         log.info('Created task ID: {id} NAME: {name}'.format(**response_json))
         self.tasks_data(response_json['id'], resource_type, resources)
         if annotation_path != '':
-            log.info('Waiting {} seconds for job to complete...'.format(cooldown_period_in_secs))
-            sleep(cooldown_period_in_secs)
-            # We have to wait for the job to be created to upload the annotations 
+            url = self.api.tasks_id(response_json['id'])
+            task_size = self.session.get(url).json()['size']
+            log.info(
+                'Waiting for data to be compressed before uploading annotations...')
+            while task_size == 0:
+                task_size = self.session.get(url).json()['size']
+                sleep(cooldown_period_in_secs)
+            print("task_size:", task_size)
             self.tasks_upload(
                 response_json['id'], annotation_format, annotation_path, **kwargs)
 
@@ -106,7 +114,8 @@ class CLI():
             if im_ext == '.jpe' or '.jpeg' or None:
                 im_ext = '.jpg'
 
-            outfile = 'task_{}_frame_{:06d}{}'.format(task_id, frame_id, im_ext)
+            outfile = 'task_{}_frame_{:06d}{}'.format(
+                task_id, frame_id, im_ext)
             im.save(os.path.join(outdir, outfile))
 
     def tasks_dump(self, task_id, fileformat, filename, **kwargs):
@@ -140,8 +149,8 @@ class CLI():
         while True:
             response = self.session.put(
                 url,
-                files={'annotation_file':open(filename, 'rb')}
-                )
+                files={'annotation_file': open(filename, 'rb')}
+            )
             response.raise_for_status()
             if response.status_code == 201:
                 break
@@ -149,14 +158,14 @@ class CLI():
         logger_string = "Upload job for Task ID {} ".format(task_id) +\
             "with annotation file {} finished".format(filename)
         log.info(logger_string)
-    
+
     def tasks_bulk_create(self, csv_path, labels, annotation_format, cooldown_period_in_secs, **kwargs):
         with open(csv_path, 'r') as f:
             reader = csv.DictReader(f)
             tasks = [dict(row) for row in reader]
             for task in tasks:
                 self.tasks_create(task['name'], labels, '', 'local', [task['images_path']],
-                     task['annotation_path'], annotation_format, cooldown_period_in_secs, **kwargs)
+                                  task['annotation_path'], annotation_format, cooldown_period_in_secs, **kwargs)
 
 
 class CVAT_API_V1():
