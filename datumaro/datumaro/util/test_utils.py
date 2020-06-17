@@ -87,6 +87,7 @@ def compare_datasets(test, expected, actual):
         item_b = find(actual, lambda x: x.id == item_a.id and \
             x.subset == item_a.subset)
         test.assertFalse(item_b is None, item_a.id)
+        test.assertEqual(item_a.attributes, item_b.attributes)
         test.assertEqual(len(item_a.annotations), len(item_b.annotations))
         for ann_a in item_a.annotations:
             # We might find few corresponding items, so check them all

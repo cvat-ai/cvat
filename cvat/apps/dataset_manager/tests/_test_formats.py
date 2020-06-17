@@ -72,6 +72,7 @@ from rest_framework import status
 
 _setUpModule()
 
+from cvat.apps.dataset_manager.annotation import AnnotationIR
 from cvat.apps.dataset_manager.bindings import TaskData, CvatTaskDataExtractor
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.engine.models import Task
@@ -411,8 +412,44 @@ class TaskExportTest(_DbTestBase):
 
         extractor = CvatTaskDataExtractor(task_data, include_outside=False)
         dm_dataset = datumaro.components.project.Dataset.from_extractors(extractor)
-        self.assertEqual(4, len(dm_dataset.get("1").annotations))
+        self.assertEqual(4, len(dm_dataset.get("image_1").annotations))
 
         extractor = CvatTaskDataExtractor(task_data, include_outside=True)
         dm_dataset = datumaro.components.project.Dataset.from_extractors(extractor)
-        self.assertEqual(5, len(dm_dataset.get("1").annotations))
+        self.assertEqual(5, len(dm_dataset.get("image_1").annotations))
+
+    def test_cant_make_rel_frame_id_from_unknown(self):
+        images = self._generate_task_images(3)
+        images['frame_filter'] = 'step=2'
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        with self.assertRaisesRegex(ValueError, r'Unknown'):
+            task_data.rel_frame_id(1) # the task has only 0 and 2 frames
+
+    def test_can_make_rel_frame_id_from_known(self):
+        images = self._generate_task_images(6)
+        images['frame_filter'] = 'step=2'
+        images['start_frame'] = 1
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        self.assertEqual(2, task_data.rel_frame_id(5))
+
+    def test_cant_make_abs_frame_id_from_unknown(self):
+        images = self._generate_task_images(3)
+        images['frame_filter'] = 'step=2'
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        with self.assertRaisesRegex(ValueError, r'Unknown'):
+            task_data.abs_frame_id(2) # the task has only 0 and 1 indices
+
+    def test_can_make_abs_frame_id_from_known(self):
+        images = self._generate_task_images(6)
+        images['frame_filter'] = 'step=2'
+        images['start_frame'] = 1
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        self.assertEqual(5, task_data.abs_frame_id(2))

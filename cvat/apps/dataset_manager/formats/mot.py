@@ -7,8 +7,7 @@ from tempfile import TemporaryDirectory
 from pyunpack import Archive
 
 import datumaro.components.extractor as datumaro
-from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
-    match_frame)
+from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.project import Dataset
 
@@ -18,8 +17,6 @@ from .registry import dm_env, exporter, importer
 @exporter(name='MOT', ext='ZIP', version='1.1')
 def _export(dst_file, task_data, save_images=False):
     extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
-    envt = dm_env.transforms
-    extractor = extractor.transform(envt.get('id_from_image_name'))
     extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
         converter = dm_env.make_converter('mot_seq_gt',
@@ -39,8 +36,8 @@ def _import(src_file, task_data):
         label_cat = dataset.categories()[datumaro.AnnotationType.label]
 
         for item in dataset:
-            item = item.wrap(id=int(item.id) - 1) # NOTE: MOT frames start from 1
-            frame_number = task_data.abs_frame_id(match_frame(item, task_data))
+            frame_number = int(item.id) - 1 # NOTE: MOT frames start from 1
+            frame_number = task_data.abs_frame_id(frame_number)
 
             for ann in item.annotations:
                 if ann.type != datumaro.AnnotationType.bbox:

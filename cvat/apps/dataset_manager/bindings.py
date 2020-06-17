@@ -11,6 +11,7 @@ from django.utils import timezone
 import datumaro.components.extractor as datumaro
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import AttributeType, ShapeType
+from datumaro.util import cast
 from datumaro.util.image import Image
 
 from .annotation import AnnotationManager, TrackManager
@@ -98,10 +99,16 @@ class TaskData:
         return self._get_attribute_id(label_id, attribute_name, 'immutable')
 
     def abs_frame_id(self, relative_id):
+        if relative_id not in range(0, self._db_task.data.size):
+            raise ValueError("Unknown internal frame id %s" % relative_id)
         return relative_id * self._frame_step + self._db_task.data.start_frame
 
     def rel_frame_id(self, absolute_id):
-        return (absolute_id - self._db_task.data.start_frame) // self._frame_step
+        d, m = divmod(
+            absolute_id - self._db_task.data.start_frame, self._frame_step)
+        if m or d not in range(0, self._db_task.data.size):
+            raise ValueError("Unknown frame %s" % absolute_id)
+        return d
 
     def _init_frame_info(self):
         if hasattr(self._db_task.data, 'video'):
@@ -423,8 +430,9 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 size=(frame_data.height, frame_data.width)
             )
             dm_anno = self._read_cvat_anno(frame_data, task_data)
-            dm_item = datumaro.DatasetItem(id=frame_data.frame,
-                annotations=dm_anno, image=dm_image)
+            dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
+                annotations=dm_anno, image=dm_image,
+                attributes={'frame': frame_data.frame})
             dm_items.append(dm_item)
 
         self._items = dm_items
@@ -537,23 +545,21 @@ def match_frame(item, task_data):
     is_video = task_data.meta['task']['mode'] == 'interpolation'
 
     frame_number = None
+    if frame_number is None and item.has_image:
+        try:
+            frame_number = task_data.match_frame(item.image.path)
+        except Exception:
+            pass
     if frame_number is None:
         try:
             frame_number = task_data.match_frame(item.id)
         except Exception:
             pass
-    if frame_number is None and item.has_image:
-        try:
-            frame_number = task_data.match_frame(item.image.filename)
-        except Exception:
-            pass
     if frame_number is None:
-        try:
-            frame_number = int(item.id)
-        except Exception:
-            pass
-    if frame_number is None and is_video and item.id.startswith('frame_'):
-        frame_number = int(item.id[len('frame_'):])
+        frame_number = cast(item.attributes.get('frame', item.id), int)
+    if frame_number is None and is_video:
+        frame_number = cast(osp.basename(item.id)[len('frame_'):], int)
+
     if not frame_number in task_data.frame_info:
         raise Exception("Could not match item id: '%s' with any task frame" %
             item.id)

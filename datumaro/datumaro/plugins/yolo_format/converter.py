@@ -80,13 +80,9 @@ class YoloConverter(Converter, CliPlugin):
                         "item has no image info" % item.id)
                 height, width = item.image.size
 
-                image_name = item.image.filename
-                item_name = osp.splitext(item.image.filename)[0]
+                image_name = item.id + '.jpg'
                 if self._save_images:
                     if item.has_image and item.image.has_data:
-                        if not item_name:
-                            item_name = item.id
-                        image_name = item_name + '.jpg'
                         save_image(osp.join(subset_dir, image_name),
                             item.image.data, create_dir=True)
                     else:
@@ -105,7 +101,8 @@ class YoloConverter(Converter, CliPlugin):
                     yolo_bb = ' '.join('%.6f' % p for p in yolo_bb)
                     yolo_annotation += '%s %s\n' % (bbox.label, yolo_bb)
 
-                annotation_path = osp.join(subset_dir, '%s.txt' % item_name)
+                annotation_path = osp.join(subset_dir, '%s.txt' % item.id)
+                os.makedirs(osp.dirname(annotation_path), exist_ok=True)
                 with open(annotation_path, 'w') as f:
                     f.write(yolo_annotation)
 
