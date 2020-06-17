@@ -1,8 +1,9 @@
 metadata:
   name: public.dextr
   namespace: cvat
-  labels:
+  annotations:
     type: interactor
+    spec:
 
 spec:
   description: Deep Extreme Cut
