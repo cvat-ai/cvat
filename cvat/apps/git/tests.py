@@ -28,7 +28,7 @@ class GitUrlTest(TestCase):
     def test_correct_urls_can_be_parsed(self):
         hosts = ['host.zone', '1.2.3.4']
         ports = ['', ':42']
-        repo_groups = ['repo', 'r4p0']
+        repo_groups = ['repo', 'r4p0', 'multi/group', 'multi/group/level']
         repo_repos = ['nkjl23', 'hewj']
         git_suffixes = ['', '.git']
 
