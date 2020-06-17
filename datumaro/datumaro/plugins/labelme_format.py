@@ -331,16 +331,13 @@ class LabelMeConverter(Converter, CliPlugin):
 
         log.debug("Converting item '%s'", item.id)
 
-        image_filename = ''
-        if item.has_image:
-            image_filename = item.image.filename
+        if '/' in item.id:
+            raise Exception("Can't export item '%s': "
+                "LabelMe format only supports flat image layout" % item.id)
+
+        image_filename = item.id + LabelMePath.IMAGE_EXT
         if self._save_images:
             if item.has_image and item.image.has_data:
-                if image_filename:
-                    image_filename = osp.splitext(image_filename)[0]
-                else:
-                    image_filename = item.id
-                image_filename += LabelMePath.IMAGE_EXT
                 save_image(osp.join(subset_dir, image_filename),
                     item.image.data, create_dir=True)
             else:

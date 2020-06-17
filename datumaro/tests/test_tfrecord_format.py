@@ -56,7 +56,7 @@ class TfrecordConverterTest(TestCase):
                             Bbox(0, 4, 4, 8, label=2),
                             Bbox(0, 4, 4, 4, label=3),
                             Bbox(2, 4, 4, 4),
-                        ]
+                        ], attributes={'source_id': ''}
                     ),
                 ])
 
@@ -85,7 +85,8 @@ class TfrecordConverterTest(TestCase):
                                 [0, 1, 1, 0],
                                 [1, 0, 0, 1],
                             ]), label=1),
-                        ]
+                        ],
+                        attributes={'source_id': ''}
                     ),
                 ])
 
@@ -111,18 +112,21 @@ class TfrecordConverterTest(TestCase):
                         annotations=[
                             Bbox(2, 1, 4, 4, label=2),
                             Bbox(4, 2, 8, 4, label=3),
-                        ]
+                        ],
+                        attributes={'source_id': ''}
                     ),
 
                     DatasetItem(id=2,
                         image=np.ones((8, 8, 3)) * 2,
                         annotations=[
                             Bbox(4, 4, 4, 4, label=3),
-                        ]
+                        ],
+                        attributes={'source_id': ''}
                     ),
 
                     DatasetItem(id=3,
                         image=np.ones((8, 4, 3)) * 3,
+                        attributes={'source_id': ''}
                     ),
                 ])
 
@@ -143,7 +147,10 @@ class TfrecordConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, image=Image(path='1/q.e', size=(10, 15))),
+                    DatasetItem(id='1/q.e',
+                        image=Image(path='1/q.e', size=(10, 15)),
+                        attributes={'source_id': ''}
+                    )
                 ])
 
             def categories(self):
@@ -199,6 +206,7 @@ class TfrecordImporterTest(TestCase):
                             Bbox(0, 4, 4, 4, label=3),
                             Bbox(2, 4, 4, 4),
                         ],
+                        attributes={'source_id': '1'}
                     ),
 
                     DatasetItem(id=2, subset='val',
@@ -206,10 +214,12 @@ class TfrecordImporterTest(TestCase):
                         annotations=[
                             Bbox(1, 2, 4, 2, label=3),
                         ],
+                        attributes={'source_id': '2'}
                     ),
 
                     DatasetItem(id=3, subset='test',
                         image=np.ones((5, 4, 3)) * 3,
+                        attributes={'source_id': '3'}
                     ),
                 ])
 

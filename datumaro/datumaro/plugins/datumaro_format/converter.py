@@ -253,12 +253,7 @@ class _Converter:
         if image is None:
             return ''
 
-        filename = item.image.filename
-        if filename:
-            filename = osp.splitext(filename)[0]
-        else:
-            filename = item.id
-        filename += DatumaroPath.IMAGE_EXT
+        filename = item.id + DatumaroPath.IMAGE_EXT
         image_path = osp.join(self._images_dir, filename)
         save_image(image_path, image, create_dir=True)
         return filename
