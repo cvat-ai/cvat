@@ -79,7 +79,7 @@ class CLI():
             task_size = self.session.get(url).json()['size']
 
             log.info('Awaiting data compression before uploading annotations...')
-            
+
             while task_size == 0:
                 sleep(cooldown_period_in_secs)
                 task_size = self.session.get(url).json()['size']
