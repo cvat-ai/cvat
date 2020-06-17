@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict
 import os
 import os.path as osp
 
@@ -41,28 +40,23 @@ class ImageDirExtractor(SourceExtractor):
         assert osp.isdir(url), url
 
         items = []
-        for name in os.listdir(url):
-            path = osp.join(url, name)
-            if self._is_image(path):
-                item_id = osp.splitext(name)[0]
-                item = DatasetItem(id=item_id, image=path)
-                items.append((item.id, item))
+        for dirpath, _, filenames in os.walk(url):
+            for name in filenames:
+                path = osp.join(dirpath, name)
+                if not self._is_image(path):
+                    continue
 
-        items = sorted(items, key=lambda e: e[0])
-        items = OrderedDict(items)
+                item_id = osp.relpath(osp.splitext(path)[0], url)
+                items.append(DatasetItem(id=item_id, image=path))
+
         self._items = items
 
     def __iter__(self):
-        for item in self._items.values():
+        for item in self._items:
             yield item
 
     def __len__(self):
         return len(self._items)
-
-    def get(self, item_id, subset=None, path=None):
-        if path or subset:
-            raise KeyError()
-        return self._items[item_id]
 
     def _is_image(self, path):
         if not osp.isfile(path):
@@ -79,11 +73,5 @@ class ImageDirConverter(Converter):
 
         for item in extractor:
             if item.has_image and item.image.has_data:
-                filename = item.image.filename
-                if filename:
-                    filename = osp.splitext(filename)[0]
-                else:
-                    filename = item.id
-                filename += '.jpg'
-                save_image(osp.join(save_dir, filename), item.image.data,
-                    create_dir=True)
+                save_image(osp.join(save_dir, item.id + '.jpg'),
+                    item.image.data, create_dir=True)

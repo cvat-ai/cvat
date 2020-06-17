@@ -5,7 +5,7 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
-import Select from 'antd/lib/select';
+import Select, { OptionProps } from 'antd/lib/select';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Input from 'antd/lib/input';
@@ -200,7 +200,20 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
             </Col>
             <Col span={12}>
                 <Tooltip title='Change current label'>
-                    <Select size='small' value={`${labelID}`} onChange={changeLabel}>
+                    <Select
+                        size='small'
+                        value={`${labelID}`}
+                        onChange={changeLabel}
+                        showSearch
+                        filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
+                            const { children } = option.props;
+                            if (typeof (children) === 'string') {
+                                return children.toLowerCase().includes(input.toLowerCase());
+                            }
+
+                            return false;
+                        }}
+                    >
                         { labels.map((label: any): JSX.Element => (
                             <Select.Option key={label.id} value={`${label.id}`}>
                                 {label.name}
@@ -851,6 +864,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 trigger='click'
                 content={(
                     <ColorChanger
+                        shortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                         onChange={changeColor}
                         colors={colors}
                     />

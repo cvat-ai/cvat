@@ -22,8 +22,6 @@ from .registry import dm_env, exporter, importer
 @exporter(name='PASCAL VOC', ext='ZIP', version='1.1')
 def _export(dst_file, task_data, save_images=False):
     extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
-    envt = dm_env.transforms
-    extractor = extractor.transform(envt.get('id_from_image_name'))
     extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
         converter = dm_env.make_converter('voc', label_map='source',
