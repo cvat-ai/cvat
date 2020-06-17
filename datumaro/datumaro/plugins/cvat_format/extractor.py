@@ -303,17 +303,14 @@ class CvatExtractor(SourceExtractor):
 
     def _load_items(self, parsed):
         for frame_id, item_desc in parsed.items():
-            path = item_desc.get('name', 'frame_%06d.png' % int(frame_id))
+            name = item_desc.get('name', 'frame_%06d.png' % int(frame_id))
+            image = osp.join(self._images_dir, name)
             image_size = (item_desc.get('height'), item_desc.get('width'))
             if all(image_size):
-                image_size = (int(image_size[0]), int(image_size[1]))
-            else:
-                image_size = None
-            image = None
-            if path:
-                image = Image(path=osp.join(self._images_dir, path),
-                    size=image_size)
+                image = Image(path=image, size=tuple(map(int, image_size)))
 
-            parsed[frame_id] = DatasetItem(id=frame_id, subset=self._subset,
-                image=image, annotations=item_desc.get('annotations'))
+            parsed[frame_id] = DatasetItem(id=osp.splitext(name)[0],
+                subset=self._subset, image=image,
+                annotations=item_desc.get('annotations'),
+                attributes={'frame': int(frame_id)})
         return parsed

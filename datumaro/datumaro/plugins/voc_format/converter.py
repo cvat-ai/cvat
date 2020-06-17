@@ -135,16 +135,9 @@ class _Converter:
             for item in subset:
                 log.debug("Converting item '%s'", item.id)
 
-                image_filename = ''
-                if item.has_image:
-                    image_filename = item.image.filename
+                image_filename = item.id + VocPath.IMAGE_EXT
                 if self._save_images:
                     if item.has_image and item.image.has_data:
-                        if image_filename:
-                            image_filename = osp.splitext(image_filename)[0]
-                        else:
-                            image_filename = item.id
-                        image_filename += VocPath.IMAGE_EXT
                         save_image(osp.join(self._images_dir, image_filename),
                             item.image.data, create_dir=True)
                     else:

@@ -126,8 +126,10 @@ class _CocoExtractor(SourceExtractor):
             anns = loader.loadAnns(anns)
             anns = sum((self._load_annotations(a, image_info) for a in anns), [])
 
-            items[img_id] = DatasetItem(id=img_id, subset=self._subset,
-                image=image, annotations=anns)
+            items[img_id] = DatasetItem(
+                id=osp.splitext(image_info['file_name'])[0],
+                subset=self._subset, image=image, annotations=anns,
+                attributes={'id': img_id})
 
         return items
 

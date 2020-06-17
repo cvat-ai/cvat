@@ -108,6 +108,21 @@ class LabelMeConverterTest(TestCase):
                 SrcExtractor(), LabelMeConverter(save_images=True),
                 test_dir, target_dataset=DstExtractor())
 
+    def test_cant_save_dataset_with_relative_paths(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='dir/1', image=np.ones((2, 6, 3))),
+                ])
+
+            def categories(self):
+                return { AnnotationType.label: LabelCategories() }
+
+        with self.assertRaisesRegex(Exception, r'only supports flat'):
+            with TestDir() as test_dir:
+                self._test_save_and_load(SrcExtractor(),
+                    LabelMeConverter(save_images=True), test_dir)
+
 
 DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__), 'assets', 'labelme_dataset')
 

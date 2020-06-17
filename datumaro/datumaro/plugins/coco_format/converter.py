@@ -496,25 +496,19 @@ class _Converter:
     def _get_image_id(self, item):
         image_id = self._image_ids.get(item.id)
         if image_id is None:
-            image_id = cast(item.id, int, len(self._image_ids) + 1)
+            image_id = cast(item.attributes.get('id'), int,
+                len(self._image_ids) + 1)
             self._image_ids[item.id] = image_id
         return image_id
 
-    def _save_image(self, item):
+    def _save_image(self, item, filename):
         image = item.image.data
         if image is None:
             log.warning("Item '%s' has no image" % item.id)
             return ''
 
-        filename = item.image.filename
-        if filename:
-            filename = osp.splitext(filename)[0]
-        else:
-            filename = item.id
-        filename += CocoPath.IMAGE_EXT
-        path = osp.join(self._images_dir, filename)
-        save_image(path, image)
-        return path
+        save_image(osp.join(self._images_dir, filename), image,
+            create_dir=True)
 
     def convert(self):
         self._make_dirs()
@@ -534,12 +528,10 @@ class _Converter:
             for task_conv in task_converters.values():
                 task_conv.save_categories(subset)
             for item in subset:
-                filename = ''
-                if item.has_image:
-                    filename = item.image.path
+                filename = item.id + CocoPath.IMAGE_EXT
                 if self._save_images:
                     if item.has_image:
-                        filename = self._save_image(item)
+                        self._save_image(item, filename)
                     else:
                         log.debug("Item '%s' has no image info" % item.id)
                 for task_conv in task_converters.values():

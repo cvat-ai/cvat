@@ -28,7 +28,8 @@ class CocoImporterTest(TestCase):
         class DstExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, image=np.ones((10, 5, 3)), subset='val',
+                    DatasetItem(id='000000000001', image=np.ones((10, 5, 3)),
+                        subset='val', attributes={'id': 1},
                         annotations=[
                             Polygon([0, 0, 1, 0, 1, 2, 0, 2], label=0,
                                 id=1, group=1, attributes={'is_crowd': False}),
@@ -76,16 +77,16 @@ class CocoConverterTest(TestCase):
                         annotations=[
                             Caption('hello', id=1, group=1),
                             Caption('world', id=2, group=2),
-                        ]),
+                        ], attributes={'id': 1}),
                     DatasetItem(id=2, subset='train',
                         annotations=[
                             Caption('test', id=3, group=3),
-                        ]),
+                        ], attributes={'id': 2}),
 
                     DatasetItem(id=3, subset='val',
                         annotations=[
                             Caption('word', id=1, group=1),
-                        ]
+                        ], attributes={'id': 1}
                     ),
                 ])
 
@@ -111,7 +112,7 @@ class CocoConverterTest(TestCase):
                             Polygon([0, 1, 2, 1, 2, 3, 0, 3],
                                 attributes={ 'is_crowd': False },
                                 label=2, group=1, id=1),
-                        ]),
+                        ], attributes={'id': 1}),
                     DatasetItem(id=2, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
                             # Mask + bbox
@@ -125,7 +126,7 @@ class CocoConverterTest(TestCase):
                                 label=4, group=3, id=3),
                             Bbox(1, 0, 2, 2, label=4, group=3, id=3,
                                 attributes={ 'is_crowd': True }),
-                        ]),
+                        ], attributes={'id': 2}),
 
                     DatasetItem(id=3, subset='val', image=np.ones((4, 4, 3)),
                         annotations=[
@@ -140,7 +141,7 @@ class CocoConverterTest(TestCase):
                                 ),
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
-                        ]),
+                        ], attributes={'id': 1}),
                 ])
 
             def categories(self):
@@ -154,7 +155,7 @@ class CocoConverterTest(TestCase):
                             Polygon([0, 1, 2, 1, 2, 3, 0, 3],
                                 attributes={ 'is_crowd': False },
                                 label=2, group=1, id=1),
-                        ]),
+                        ], attributes={'id': 1}),
                     DatasetItem(id=2, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
                             Mask(np.array([
@@ -165,7 +166,7 @@ class CocoConverterTest(TestCase):
                                 ),
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
-                        ]),
+                        ], attributes={'id': 2}),
 
                     DatasetItem(id=3, subset='val', image=np.ones((4, 4, 3)),
                         annotations=[
@@ -177,7 +178,7 @@ class CocoConverterTest(TestCase):
                                 ),
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
-                        ]),
+                        ], attributes={'id': 1}),
                 ])
 
             def categories(self):
@@ -227,7 +228,7 @@ class CocoConverterTest(TestCase):
                             ),
                             label=3, id=4, group=4,
                             attributes={ 'is_crowd': False }),
-                        ]
+                        ], attributes={'id': 1}
                     ),
                 ])
 
@@ -285,7 +286,7 @@ class CocoConverterTest(TestCase):
                             Polygon([1, 1, 4, 1, 4, 4, 1, 4],
                                 label=1, id=2, group=2,
                                 attributes={ 'is_crowd': False }),
-                        ]
+                        ], attributes={'id': 1}
                     ),
                 ])
 
@@ -335,7 +336,7 @@ class CocoConverterTest(TestCase):
                                 ),
                                 attributes={ 'is_crowd': True },
                                 label=3, id=4, group=4),
-                        ]
+                        ], attributes={'id': 1}
                     ),
                 ])
 
@@ -385,7 +386,7 @@ class CocoConverterTest(TestCase):
                                 [5.0, 3.5, 4.5, 0.0, 8.0, 0.0, 5.0, 3.5],
                                 label=3, id=4, group=4,
                                 attributes={ 'is_crowd': False }),
-                        ]
+                        ], attributes={'id': 1}
                     ),
                 ])
 
@@ -401,14 +402,14 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, subset='train'),
-                    DatasetItem(id=2, subset='train'),
+                    DatasetItem(id=1, subset='train', attributes={'id': 1}),
+                    DatasetItem(id=2, subset='train', attributes={'id': 2}),
 
-                    DatasetItem(id=2, subset='val'),
-                    DatasetItem(id=3, subset='val'),
-                    DatasetItem(id=4, subset='val'),
+                    DatasetItem(id=2, subset='val', attributes={'id': 2}),
+                    DatasetItem(id=3, subset='val', attributes={'id': 3}),
+                    DatasetItem(id=4, subset='val', attributes={'id': 4}),
 
-                    DatasetItem(id=5, subset='test'),
+                    DatasetItem(id=5, subset='test', attributes={'id': 1}),
                 ])
 
         with TestDir() as test_dir:
@@ -423,7 +424,7 @@ class CocoConverterTest(TestCase):
                         annotations=[
                             Label(4, id=1, group=1),
                             Label(9, id=2, group=2),
-                        ]
+                        ], attributes={'id': 1}
                     ),
                 ])
 
@@ -511,7 +512,7 @@ class CocoConverterTest(TestCase):
                             Polygon([1, 2, 3, 2, 3, 4, 1, 4],
                                 group=5, id=5,
                                 attributes={'is_crowd': False}),
-                        ]),
+                        ], attributes={'id': 1}),
                 ])
 
         with TestDir() as test_dir:
@@ -523,8 +524,8 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1),
-                    DatasetItem(id=2),
+                    DatasetItem(id=1, attributes={'id': 1}),
+                    DatasetItem(id=2, attributes={'id': 2}),
                 ])
 
             def categories(self):
@@ -538,9 +539,38 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, image=Image(path='1.jpg', size=(10, 15))),
+                    DatasetItem(id=1, image=Image(path='1.jpg', size=(10, 15)),
+                        attributes={'id': 1}),
                 ])
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
                 CocoConverter(tasks='image_info'), test_dir)
+
+    def test_relative_paths(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='1', image=np.ones((4, 2, 3)),
+                        attributes={'id': 1}),
+                    DatasetItem(id='subdir1/1', image=np.ones((2, 6, 3)),
+                        attributes={'id': 2}),
+                    DatasetItem(id='subdir2/1', image=np.ones((5, 4, 3)),
+                        attributes={'id': 3}),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                CocoConverter(tasks='image_info', save_images=True), test_dir)
+
+    def test_preserve_coco_ids(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='some/name1', image=np.ones((4, 2, 3)),
+                        attributes={'id': 40}),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                CocoConverter(tasks='image_info', save_images=True), test_dir)
