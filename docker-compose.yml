@@ -50,6 +50,7 @@ services:
         DJANGO_CONFIGURATION: "production"
         TZ: "Etc/UTC"
         OPENVINO_TOOLKIT: "no"
+        CLAM_AV: "no"
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
       ALLOWED_HOSTS: '*'

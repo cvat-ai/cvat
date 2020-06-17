@@ -23,6 +23,7 @@ interface StateToProps {
     labelName: string;
     labelColor: string;
     labelColors: string[];
+    changeColorShortcut: string;
     objectStates: any[];
     jobInstance: any;
     frameNumber: any;
@@ -30,7 +31,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     updateAnnotations(states: any[]): void;
-    changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
+    changeLabelColor(label: any, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -50,6 +51,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             },
             colors: labelColors,
         },
+        shortcuts: {
+            normalizedKeyMap,
+        },
     } = state;
 
     const [label] = labels
@@ -63,6 +67,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         objectStates,
         jobInstance,
         frameNumber,
+        changeColorShortcut: normalizedKeyMap.CHANGE_OBJECT_COLOR,
     };
 }
 
@@ -72,12 +77,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(updateAnnotationsAsync(states));
         },
         changeLabelColor(
-            sessionInstance: any,
-            frameNumber: number,
             label: any,
             color: string,
         ): void {
-            dispatch(changeLabelColorAsync(sessionInstance, frameNumber, label, color));
+            dispatch(changeLabelColorAsync(label, color));
         },
     };
 }
@@ -152,11 +155,9 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         const {
             changeLabelColor,
             label,
-            frameNumber,
-            jobInstance,
         } = this.props;
 
-        changeLabelColor(jobInstance, frameNumber, label, color);
+        changeLabelColor(label, color);
     };
 
     private switchHidden(value: boolean): void {
@@ -196,6 +197,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
             labelName,
             labelColor,
             labelColors,
+            changeColorShortcut,
         } = this.props;
 
         return (
@@ -206,6 +208,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
                 visible={visible}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
+                changeColorShortcut={changeColorShortcut}
                 hideStates={this.hideStates}
                 showStates={this.showStates}
                 lockStates={this.lockStates}

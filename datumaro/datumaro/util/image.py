@@ -216,10 +216,6 @@ class Image:
         return self._path
 
     @property
-    def filename(self):
-        return osp.basename(self._path)
-
-    @property
     def data(self):
         if callable(self._data):
             return self._data()

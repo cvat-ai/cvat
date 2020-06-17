@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -45,6 +45,7 @@ from cvat.apps.engine.serializers import (
     LogEventSerializer, PluginSerializer, ProjectSerializer,
     RqStatusSerializer, TaskSerializer, UserSerializer)
 from cvat.settings.base import CSS_3RDPARTY, JS_3RDPARTY
+from cvat.apps.engine.utils import av_scan_paths
 
 from . import models, task
 from .log import clogger, slogger
@@ -821,6 +822,8 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name):
             with open(filename, 'wb+') as f:
                 for chunk in anno_file.chunks():
                     f.write(chunk)
+
+            av_scan_paths(filename)
             rq_job = queue.enqueue_call(
                 func=rq_func,
                 args=(pk, filename, format_name),
