@@ -24,8 +24,13 @@ def mean_std(dataset):
     for i, item in enumerate(dataset):
         counts[i] = np.prod(item.image.size)
 
+        image = item.image.data
+        if len(image.shape) == 2:
+            image = image[:, :, np.newaxis]
+        else:
+            image = image[:, :, :3]
         # opencv is much faster than numpy here
-        cv2.meanStdDev((item.image.data[:, :, :3]).astype(np.double) / 255,
+        cv2.meanStdDev(image.astype(np.double) / 255,
             mean=mean(i, stats), stddev=var(i, stats))
 
     # make variance unbiased
