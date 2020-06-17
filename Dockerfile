@@ -52,6 +52,8 @@ RUN apt-get update && \
         p7zip-full \
         git \
         ssh \
+	nano \
+	vim \
         poppler-utils \
         curl && \
     curl https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \

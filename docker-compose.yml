@@ -57,13 +57,13 @@ services:
       ALLOWED_HOSTS: '*'
       CVAT_REDIS_HOST: "cvat_redis"
       CVAT_POSTGRES_HOST: "cvat_db"
-      CVAT_SHARE_URL: "Mounted from AWS S3"
+      #CVAT_SHARE_URL: "Mounted from AWS S3"
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
       - cvat_models:/home/django/models
-      - cvat_share:/home/django/share:ro
+      #- cvat_share:/home/django/share:ro
     
 
   cvat_ui:
@@ -107,8 +107,8 @@ volumes:
   cvat_keys:
   cvat_logs:
   cvat_models:
-  cvat_share:
-    driver_opts:
-      type: none
-      device: /mnt/share
-      o: bind
+ # cvat_share:
+  #  driver_opts:
+   #   type: none
+    #  device: /mnt/share
+     # o: bind
