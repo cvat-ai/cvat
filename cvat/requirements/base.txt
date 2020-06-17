@@ -7,7 +7,7 @@ django-compressor==2.4
 django-rq==2.0.0
 EasyProcess==0.2.3
 Pillow==7.1.2
-numpy==1.16.2
+numpy==1.18.5
 python-ldap==3.2.0
 pytz==2018.3
 pyunpack==0.1.2
