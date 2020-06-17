@@ -7,7 +7,7 @@ import Icon from 'antd/lib/icon';
 import Tooltip from 'antd/lib/tooltip';
 
 import { FitIcon } from 'icons';
-import { Canvas } from 'cvat-canvas';
+import { Canvas } from 'cvat-canvas-wrapper';
 
 interface Props {
     canvasInstance: Canvas;

@@ -3,23 +3,19 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Menu,
-    Icon,
-} from 'antd';
-
+import Menu from 'antd/lib/menu';
+import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 
 function isDefaultFormat(dumperName: string, taskMode: string): boolean {
-    return (dumperName === 'CVAT XML 1.1 for videos' && taskMode === 'interpolation')
-    || (dumperName === 'CVAT XML 1.1 for images' && taskMode === 'annotation');
+    return (dumperName === 'CVAT for video 1.1' && taskMode === 'interpolation')
+    || (dumperName === 'CVAT for images 1.1' && taskMode === 'annotation');
 }
 
 interface Props {
     taskMode: string;
     menuKey: string;
-    dumpers: string[];
+    dumpers: any[];
     dumpActivities: string[] | null;
 }
 
@@ -34,17 +30,21 @@ export default function DumpSubmenu(props: Props): JSX.Element {
     return (
         <Menu.SubMenu key={menuKey} title='Dump annotations'>
             {
-                dumpers.map((dumper: string): JSX.Element => {
-                    const pending = (dumpActivities || []).includes(dumper);
-                    const isDefault = isDefaultFormat(dumper, taskMode);
+                dumpers
+                    .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                    .map((dumper: any): JSX.Element =>
+                {
+                    const pending = (dumpActivities || []).includes(dumper.name);
+                    const disabled = !dumper.enabled || pending;
+                    const isDefault = isDefaultFormat(dumper.name, taskMode);
                     return (
                         <Menu.Item
-                            key={dumper}
-                            disabled={pending}
+                            key={dumper.name}
+                            disabled={disabled}
                             className='cvat-menu-dump-submenu-item'
                         >
                             <Icon type='download' />
-                            <Text strong={isDefault}>{dumper}</Text>
+                            <Text strong={isDefault} disabled={disabled}>{dumper.name}</Text>
                             {pending && <Icon style={{ marginLeft: 10 }} type='loading' />}
                         </Menu.Item>
                     );

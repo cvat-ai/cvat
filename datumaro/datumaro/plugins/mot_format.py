@@ -311,7 +311,9 @@ class MotSeqGtConverter(Converter, CliPlugin):
 
                 if self._save_images:
                     if item.has_image and item.image.has_data:
-                        self._save_image(item, index=frame_id)
+                        save_image(osp.join(self._images_dir,
+                                '%06d%s' % (frame_id, MotPath.IMAGE_EXT)),
+                            item.image.data)
                     else:
                         log.debug("Item '%s' has no image" % item.id)
 
@@ -320,13 +322,3 @@ class MotSeqGtConverter(Converter, CliPlugin):
             f.write('\n'.join(l.name
                 for l in extractor.categories()[AnnotationType.label].items)
             )
-
-    def _save_image(self, item, index):
-        if item.image.filename:
-            frame_id = osp.splitext(item.image.filename)[0]
-        else:
-            frame_id = item.id
-        frame_id = cast(frame_id, int, index)
-        image_filename = '%06d%s' % (frame_id, MotPath.IMAGE_EXT)
-        save_image(osp.join(self._images_dir, image_filename),
-            item.image.data)

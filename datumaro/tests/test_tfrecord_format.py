@@ -1,17 +1,36 @@
 import numpy as np
+import os.path as osp
 
-from unittest import TestCase
+from unittest import TestCase, skipIf
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Bbox, Mask, LabelCategories
 )
-from datumaro.plugins.tf_detection_api_format.importer import TfDetectionApiImporter
-from datumaro.plugins.tf_detection_api_format.extractor import TfDetectionApiExtractor
-from datumaro.plugins.tf_detection_api_format.converter import TfDetectionApiConverter
+from datumaro.components.project import Project
 from datumaro.util.image import Image
 from datumaro.util.test_utils import TestDir, compare_datasets
+from datumaro.util.tf_util import check_import
 
+try:
+    from datumaro.plugins.tf_detection_api_format.importer import TfDetectionApiImporter
+    from datumaro.plugins.tf_detection_api_format.extractor import TfDetectionApiExtractor
+    from datumaro.plugins.tf_detection_api_format.converter import TfDetectionApiConverter
+    import_failed = False
+except ImportError:
+    import_failed = True
 
+    import importlib
+    module_found = importlib.util.find_spec('tensorflow') is not None
+
+    @skipIf(not module_found, "Tensorflow package is not found")
+    class TfImportTest(TestCase):
+        def test_raises_when_crashes_on_import(self):
+            # Should fire if import can't be done for any reason except
+            # module unavailability and import crash
+            with self.assertRaisesRegex(ImportError, 'Test process exit code'):
+                check_import()
+
+@skipIf(import_failed, "Failed to import tensorflow")
 class TfrecordConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
             target_dataset=None, importer_args=None):
@@ -37,18 +56,7 @@ class TfrecordConverterTest(TestCase):
                             Bbox(0, 4, 4, 8, label=2),
                             Bbox(0, 4, 4, 4, label=3),
                             Bbox(2, 4, 4, 4),
-                        ]
-                    ),
-
-                    DatasetItem(id=2, subset='val',
-                        image=np.ones((8, 8, 3)),
-                        annotations=[
-                            Bbox(1, 2, 4, 2, label=3),
-                        ]
-                    ),
-
-                    DatasetItem(id=3, subset='test',
-                        image=np.ones((5, 4, 3)) * 3,
+                        ], attributes={'source_id': ''}
                     ),
                 ])
 
@@ -77,7 +85,8 @@ class TfrecordConverterTest(TestCase):
                                 [0, 1, 1, 0],
                                 [1, 0, 0, 1],
                             ]), label=1),
-                        ]
+                        ],
+                        attributes={'source_id': ''}
                     ),
                 ])
 
@@ -103,18 +112,21 @@ class TfrecordConverterTest(TestCase):
                         annotations=[
                             Bbox(2, 1, 4, 4, label=2),
                             Bbox(4, 2, 8, 4, label=3),
-                        ]
+                        ],
+                        attributes={'source_id': ''}
                     ),
 
                     DatasetItem(id=2,
                         image=np.ones((8, 8, 3)) * 2,
                         annotations=[
                             Bbox(4, 4, 4, 4, label=3),
-                        ]
+                        ],
+                        attributes={'source_id': ''}
                     ),
 
                     DatasetItem(id=3,
                         image=np.ones((8, 4, 3)) * 3,
+                        attributes={'source_id': ''}
                     ),
                 ])
 
@@ -135,7 +147,10 @@ class TfrecordConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=1, image=Image(path='1/q.e', size=(10, 15))),
+                    DatasetItem(id='1/q.e',
+                        image=Image(path='1/q.e', size=(10, 15)),
+                        attributes={'source_id': ''}
+                    )
                 ])
 
             def categories(self):
@@ -171,16 +186,40 @@ class TfrecordConverterTest(TestCase):
 
         self.assertEqual(expected, parsed)
 
+
+DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__),
+    'assets', 'tf_detection_api_dataset')
+
+@skipIf(import_failed, "Failed to import tensorflow")
 class TfrecordImporterTest(TestCase):
     def test_can_detect(self):
-        class TestExtractor(Extractor):
+        self.assertTrue(TfDetectionApiImporter.detect(DUMMY_DATASET_DIR))
+
+    def test_can_import(self):
+        class DstExtractor(Extractor):
             def __iter__(self):
                 return iter([
                     DatasetItem(id=1, subset='train',
                         image=np.ones((16, 16, 3)),
                         annotations=[
                             Bbox(0, 4, 4, 8, label=2),
-                        ]
+                            Bbox(0, 4, 4, 4, label=3),
+                            Bbox(2, 4, 4, 4),
+                        ],
+                        attributes={'source_id': '1'}
+                    ),
+
+                    DatasetItem(id=2, subset='val',
+                        image=np.ones((8, 8, 3)),
+                        annotations=[
+                            Bbox(1, 2, 4, 2, label=3),
+                        ],
+                        attributes={'source_id': '2'}
+                    ),
+
+                    DatasetItem(id=3, subset='test',
+                        image=np.ones((5, 4, 3)) * 3,
+                        attributes={'source_id': '3'}
                     ),
                 ])
 
@@ -192,10 +231,7 @@ class TfrecordImporterTest(TestCase):
                     AnnotationType.label: label_cat,
                 }
 
-        def generate_dummy_tfrecord(path):
-            TfDetectionApiConverter()(TestExtractor(), save_dir=path)
+        dataset = Project.import_from(DUMMY_DATASET_DIR, 'tf_detection_api') \
+            .make_dataset()
 
-        with TestDir() as test_dir:
-            generate_dummy_tfrecord(test_dir)
-
-            self.assertTrue(TfDetectionApiImporter.detect(test_dir))
+        compare_datasets(self, DstExtractor(), dataset)

@@ -10,7 +10,6 @@ import platform
 
 _IE_PLUGINS_PATH = os.getenv("IE_PLUGINS_PATH", None)
 
-
 def _check_instruction(instruction):
     return instruction == str.strip(
         subprocess.check_output(
@@ -24,7 +23,7 @@ def make_plugin_or_core():
     use_core_openvino = False
     try:
         major, minor, reference = [int(x) for x in version.split('.')]
-        if major >= 2 and minor >= 1 and reference >= 37988:
+        if major >= 2 and minor >= 1:
             use_core_openvino = True
     except Exception:
         pass

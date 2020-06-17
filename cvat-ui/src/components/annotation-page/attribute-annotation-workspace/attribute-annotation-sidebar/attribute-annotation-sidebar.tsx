@@ -12,6 +12,7 @@ import { SelectValue } from 'antd/lib/select';
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
+import Icon from 'antd/lib/icon';
 
 import { LogType } from 'cvat-logger';
 import {
@@ -106,6 +107,8 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         }, {}),
     );
 
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
     const [activeObjectState] = activatedStateID === null
         ? [null] : states.filter((objectState: any): boolean => (
             objectState.clientID === activatedStateID
@@ -175,6 +178,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         reverseArrow: true,
         collapsible: true,
         trigger: null,
+        collapsed: sidebarCollapsed,
     };
 
     const subKeyMap = {
@@ -218,8 +222,18 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
     if (activeObjectState) {
         return (
             <Layout.Sider {...siderProps}>
+                {/* eslint-disable-next-line */}
+                <span
+                    className={`cvat-objects-sidebar-sider
+                        ant-layout-sider-zero-width-trigger
+                        ant-layout-sider-zero-width-trigger-left`}
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                >
+                    {sidebarCollapsed ? <Icon type='menu-fold' title='Show' />
+                        : <Icon type='menu-unfold' title='Hide' />}
+                </span>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
-                <Row>
+                <Row className='cvat-objects-sidebar-filter-input'>
                     <Col>
                         <AnnotationsFiltersInput />
                     </Col>

@@ -6,7 +6,7 @@ import React from 'react';
 import Popover from 'antd/lib/popover';
 import Icon from 'antd/lib/icon';
 
-import { Canvas } from 'cvat-canvas';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { RectangleIcon } from 'icons';
 import { ShapeType } from 'reducers/interfaces';
 

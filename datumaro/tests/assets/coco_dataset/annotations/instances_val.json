@@ -1,0 +1,59 @@
+{
+    "licenses": [
+      {
+        "name": "",
+        "id": 0,
+        "url": ""
+      }
+    ],
+    "info": {
+      "contributor": "",
+      "date_created": "",
+      "description": "",
+      "url": "",
+      "version": "",
+      "year": ""
+    },
+    "categories": [
+      {
+        "id": 1,
+        "name": "TEST",
+        "supercategory": ""
+      }
+    ],
+    "images": [
+      {
+        "id": 1,
+        "width": 5,
+        "height": 10,
+        "file_name": "000000000001.jpg",
+        "license": 0,
+        "flickr_url": "",
+        "coco_url": "",
+        "date_captured": 0
+      }
+    ],
+    "annotations": [
+      {
+        "id": 1,
+        "image_id": 1,
+        "category_id": 1,
+        "segmentation": [[0, 0, 1, 0, 1, 2, 0, 2]],
+        "area": 2,
+        "bbox": [0, 0, 1, 2],
+        "iscrowd": 0
+      },
+      {
+        "id": 2,
+        "image_id": 1,
+        "category_id": 1,
+        "segmentation": {
+          "counts": [0, 10, 5, 5, 5, 5, 0, 10, 10, 0],
+          "size": [10, 5]
+        },
+        "area": 30,
+        "bbox": [0, 0, 10, 4],
+        "iscrowd": 1
+      }
+    ]
+  }

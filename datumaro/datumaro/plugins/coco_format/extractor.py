@@ -24,7 +24,8 @@ class _CocoExtractor(SourceExtractor):
     def __init__(self, path, task, merge_instance_polygons=False):
         assert osp.isfile(path), path
 
-        subset = osp.splitext(osp.basename(path))[0].rsplit('_', maxsplit=1)[1]
+        subset = osp.splitext(osp.basename(path))[0].rsplit('_', maxsplit=1)
+        subset = subset[1] if len(subset) == 2 else None
         super().__init__(subset=subset)
 
         rootpath = ''
@@ -70,7 +71,9 @@ class _CocoExtractor(SourceExtractor):
         self._categories = {}
 
         if self._task in [CocoTask.instances, CocoTask.labels,
-                CocoTask.person_keypoints, CocoTask.stuff, CocoTask.panoptic]:
+                CocoTask.person_keypoints,
+                # TODO: Task.stuff, CocoTask.panoptic
+                ]:
             label_categories, label_map = self._load_label_categories(loader)
             self._categories[AnnotationType.label] = label_categories
             self._label_map = label_map
@@ -101,7 +104,8 @@ class _CocoExtractor(SourceExtractor):
         for cat in cats:
             label_id = self._label_map[cat['id']]
             categories.add(label_id=label_id,
-                labels=cat['keypoints'], adjacent=cat['skeleton'])
+                labels=cat['keypoints'], joints=cat['skeleton']
+            )
 
         return categories
 
@@ -122,8 +126,10 @@ class _CocoExtractor(SourceExtractor):
             anns = loader.loadAnns(anns)
             anns = sum((self._load_annotations(a, image_info) for a in anns), [])
 
-            items[img_id] = DatasetItem(id=img_id, subset=self._subset,
-                image=image, annotations=anns)
+            items[img_id] = DatasetItem(
+                id=osp.splitext(image_info['file_name'])[0],
+                subset=self._subset, image=image, annotations=anns,
+                attributes={'id': img_id})
 
         return items
 

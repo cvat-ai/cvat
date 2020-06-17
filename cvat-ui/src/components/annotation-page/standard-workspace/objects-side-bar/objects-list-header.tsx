@@ -7,10 +7,11 @@ import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
+import Tooltip from 'antd/lib/tooltip';
 
 import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
 import { StatesOrdering } from 'reducers/interfaces';
-import { Tooltip } from 'antd';
+
 
 interface StatesOrderingSelectorComponentProps {
     statesOrdering: StatesOrdering;
@@ -96,7 +97,7 @@ function ObjectListHeader(props: Props): JSX.Element {
                 <Col span={2}>
                     <Tooltip title={`Switch lock property for all ${switchLockAllShortcut}`}>
                         { statesLocked
-                            ? <Icon type='lock' onClick={unlockAllStates} />
+                            ? <Icon type='lock' onClick={unlockAllStates} theme='filled' />
                             : <Icon type='unlock' onClick={lockAllStates} />}
                     </Tooltip>
                 </Col>

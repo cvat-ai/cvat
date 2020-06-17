@@ -3,17 +3,12 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Tag,
-    Select,
-    Menu,
-    Dropdown,
-    Icon,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Tag from 'antd/lib/tag';
+import Select from 'antd/lib/select';
+import Icon from 'antd/lib/icon';
+import Menu from 'antd/lib/menu';
+import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 

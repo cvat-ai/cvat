@@ -6,84 +6,47 @@ const aboutDummyData = {
     "version": "0.5.dev20190516142240"
 }
 
-const formatsDummyData = [{
-    "id": 1,
-    "dumpers": [
+const formatsDummyData = {
+    "exporters": [
         {
-            "display_name": "CVAT XML 1.1 for videos",
-            "format": "XML",
+            "name": "CVAT for video 1.1",
+            "ext": "XML",
             "version": "1.1",
-            "handler": "dump_as_cvat_interpolation"
         },
         {
-            "display_name": "CVAT XML 1.1 for images",
-            "format": "XML",
+            "name": "CVAT for images 1.1",
+            "ext": "XML",
             "version": "1.1",
-            "handler": "dump_as_cvat_annotation"
-        }
-    ],
-    "loaders": [
+        },
         {
-            "display_name": "CVAT XML 1.1",
-            "format": "XML",
+            "name": "PASCAL VOC 1.0",
+            "ext": "ZIP",
+            "version": "1.0",
+        },
+        {
+            "name": "YOLO 1.0",
+            "ext": "ZIP",
+            "version": "1.0",
+        },
+    ],
+    "importers": [
+        {
+            "name": "CVAT 1.1",
+            "ext": "XML, ZIP",
             "version": "1.1",
-            "handler": "load"
-        }
-    ],
-    "name": "CVAT",
-    "created_date": "2019-08-08T12:18:56.571488+03:00",
-    "updated_date": "2019-08-08T12:18:56.571533+03:00",
-    "handler_file": "cvat/apps/annotation/cvat.py",
-    "owner": null
-},
-{
-    "id": 2,
-    "dumpers": [
+        },
         {
-            "display_name": "PASCAL VOC ZIP 1.0",
-            "format": "ZIP",
+            "name": "PASCAL VOC 1.0",
+            "ext": "ZIP",
             "version": "1.0",
-            "handler": "dump"
-        }
-    ],
-    "loaders": [
+        },
         {
-            "display_name": "PASCAL VOC ZIP 1.0",
-            "format": "ZIP",
+            "name": "MYFORMAT 1.0",
+            "ext": "TXT",
             "version": "1.0",
-            "handler": "load"
         }
     ],
-    "name": "PASCAL VOC",
-    "created_date": "2019-08-08T12:18:56.625025+03:00",
-    "updated_date": "2019-08-08T12:18:56.625071+03:00",
-    "handler_file": "cvat/apps/annotation/pascal_voc.py",
-    "owner": null
-},
-{
-    "id": 3,
-    "dumpers": [
-        {
-            "display_name": "YOLO ZIP 1.0",
-            "format": "ZIP",
-            "version": "1.0",
-            "handler": "dump"
-        }
-    ],
-    "loaders": [
-        {
-            "display_name": "YOLO ZIP 1.0",
-            "format": "ZIP",
-            "version": "1.0",
-            "handler": "load"
-        }
-    ],
-    "name": "YOLO",
-    "created_date": "2019-08-08T12:18:56.667534+03:00",
-    "updated_date": "2019-08-08T12:18:56.667578+03:00",
-    "handler_file": "cvat/apps/annotation/yolo.py",
-    "owner": null
-}];
+};
 
 const usersDummyData = {
     "count": 2,
@@ -2514,6 +2477,35 @@ const taskAnnotationsDummyData = {
             "label_id": 2,
             "group": 0,
             "attributes": []
+        },  {
+            "type": "cuboid",
+            "occluded": false,
+            "z_order":12,
+            "points": [
+                37.037109375,
+                834.1583663313359,
+                37.037109375,
+                1005.6748046875,
+                500.1052119006872,
+                850.3421313142153,
+                500.1052119006872,
+                1021.9585696703798,
+                600.6842465753452,
+                763.1514501284273,
+                600.6842465753452,
+                934.6678884845915,
+                137.82724152601259,
+                747.0278858154179,
+                137.82724152601259,
+                918.4444406426646,
+            ],
+            "id": 137,
+            "frame": 0,
+            "label_id": 1,
+            "group": 0,
+            "attributes": [
+
+            ]
         }],
         "tracks":[]
     }

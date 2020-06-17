@@ -23,6 +23,7 @@ const defaultState: SettingsState = {
         selectedOpacity: 30,
         blackBorders: false,
         showBitmap: false,
+        showProjections: false,
     },
     workspace: {
         autoSave: false,
@@ -127,6 +128,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 shapes: {
                     ...state.shapes,
                     blackBorders: action.payload.blackBorders,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SHAPES_SHOW_PROJECTIONS: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    showProjections: action.payload.showProjections,
                 },
             };
         }

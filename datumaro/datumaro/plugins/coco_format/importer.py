@@ -37,8 +37,26 @@ class CocoImporter(Importer):
         if len(subsets) == 0:
             raise Exception("Failed to find 'coco' dataset at '%s'" % path)
 
+        # TODO: should be removed when proper label merging is implemented
+        conflicting_types = {CocoTask.instances,
+            CocoTask.person_keypoints, CocoTask.labels}
+        ann_types = set(t for s in subsets.values() for t in s) \
+            & conflicting_types
+        if 1 <= len(ann_types):
+            selected_ann_type = sorted(ann_types, key=lambda x: x.name)[0]
+        if 1 < len(ann_types):
+            log.warning("Not implemented: "
+                "Found potentially conflicting source types with labels: %s. "
+                "Only one type will be used: %s" \
+                % (", ".join(t.name for t in ann_types), selected_ann_type.name))
+
         for ann_files in subsets.values():
             for ann_type, ann_file in ann_files.items():
+                if ann_type in conflicting_types:
+                    if ann_type is not selected_ann_type:
+                        log.warning("Not implemented: "
+                            "conflicting source '%s' is skipped." % ann_file)
+                        continue
                 log.info("Found a dataset at '%s'" % ann_file)
 
                 source_name = osp.splitext(osp.basename(ann_file))[0]
@@ -71,6 +89,7 @@ class CocoImporter(Importer):
                     "type '%s', the only known are: %s" % \
                     (subset_path, ann_type,
                         ', '.join([e.name for e in CocoTask])))
+                continue
             subset_name = name_parts[1]
             subsets[subset_name][ann_type] = subset_path
         return dict(subsets)

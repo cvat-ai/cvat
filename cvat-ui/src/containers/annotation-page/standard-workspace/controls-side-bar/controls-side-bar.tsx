@@ -5,7 +5,7 @@
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 
-import { Canvas } from 'cvat-canvas';
+import { Canvas } from 'cvat-canvas-wrapper';
 import {
     mergeObjects,
     groupObjects,

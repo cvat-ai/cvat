@@ -8,7 +8,7 @@ import {
     ThunkAction,
     ThunkDispatch,
 } from 'utils/redux';
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 import { LogType } from 'cvat-logger';
 import { computeZRange } from './annotation-actions';
 

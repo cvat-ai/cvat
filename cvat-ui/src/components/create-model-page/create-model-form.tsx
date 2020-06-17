@@ -3,17 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Form,
-    Input,
-    Tooltip,
-    Checkbox,
-} from 'antd';
-
-import { FormComponentProps } from 'antd/lib/form/Form';
+import { Row, Col } from 'antd/lib/grid';
+import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import Input from 'antd/lib/input';
+import Tooltip from 'antd/lib/tooltip';
+import Checkbox from 'antd/lib/checkbox';
 import Text from 'antd/lib/typography/Text';
 
 type Props = FormComponentProps;

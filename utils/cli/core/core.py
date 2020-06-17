@@ -1,5 +1,6 @@
+# Copyright (C) 2020 Intel Corporation
+#
 # SPDX-License-Identifier: MIT
-import csv
 import json
 import logging
 import os
@@ -16,9 +17,10 @@ log = logging.getLogger(__name__)
 
 class CLI():
 
-    def __init__(self, session, api):
+    def __init__(self, session, api, credentials):
         self.api = api
         self.session = session
+        self.login(credentials)
 
     def tasks_data(self, task_id, resource_type, resources):
         """ Add local, remote, or shared files to an existing task. """
@@ -71,18 +73,21 @@ class CLI():
         response.raise_for_status()
         response_json = response.json()
         log.info('Created task ID: {id} NAME: {name}'.format(**response_json))
-        self.tasks_data(response_json['id'], resource_type, resources)
+        task_id = response_json['id']
+        self.tasks_data(task_id, resource_type, resources)
+        
         if annotation_path != '':
-            url = self.api.tasks_id(response_json['id'])
+            url = self.api.tasks_id(task_id)
             task_size = self.session.get(url).json()['size']
-            log.info(
-                'Waiting for data to be compressed before uploading annotations...')
+
+            log.info('Awaiting data compression before uploading annotations...')            
             while task_size == 0:
-                task_size = self.session.get(url).json()['size']
                 sleep(cooldown_period_in_secs)
-            print("task_size:", task_size)
+                task_size = self.session.get(url).json()['size']
+
             self.tasks_upload(
-                response_json['id'], annotation_format, annotation_path, **kwargs)
+                task_id, annotation_format, annotation_path, **kwargs)
+            log.info('Annotations successfully uploaded for task {}.'.format(task_id))
 
     def tasks_delete(self, task_ids, **kwargs):
         """ Delete a list of tasks, ignoring those which don't exist. """
@@ -159,6 +164,7 @@ class CLI():
             "with annotation file {} finished".format(filename)
         log.info(logger_string)
 
+<<<<<<< HEAD
     def tasks_bulk_create(self, csv_path, labels, annotation_format, cooldown_period_in_secs, **kwargs):
         with open(csv_path, 'r') as f:
             reader = csv.DictReader(f)
@@ -166,13 +172,22 @@ class CLI():
             for task in tasks:
                 self.tasks_create(task['name'], labels, '', 'local', [task['images_path']],
                                   task['annotation_path'], annotation_format, cooldown_period_in_secs, **kwargs)
+=======
+    def login(self, credentials):
+        url = self.api.login
+        auth = {'username': credentials[0], 'password': credentials[1]}
+        response = self.session.post(url, auth)
+        response.raise_for_status()
+        if 'csrftoken' in response.cookies:
+            self.session.headers['X-CSRFToken'] = response.cookies['csrftoken']
+>>>>>>> develop
 
 
 class CVAT_API_V1():
     """ Build parameterized API URLs """
 
-    def __init__(self, host, port):
-        self.base = 'http://{}:{}/api/v1/'.format(host, port)
+    def __init__(self, host):
+        self.base = 'http://{}/api/v1/'.format(host)
 
     @property
     def tasks(self):
@@ -195,5 +210,9 @@ class CVAT_API_V1():
             .format(fileformat)
 
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
-        return self.tasks_id(task_id) + '/annotations/{}?format={}' \
-            .format(name, fileformat)
+        return self.tasks_id(task_id) + '/annotations?format={}&filename={}' \
+            .format(fileformat, name)
+
+    @property
+    def login(self):
+        return self.base + 'auth/login'

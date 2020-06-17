@@ -4,12 +4,9 @@
 
 import './styles.scss';
 import React, { useEffect } from 'react';
-
-import {
-    Layout,
-    Spin,
-    Result,
-} from 'antd';
+import Layout from 'antd/lib/layout';
+import Spin from 'antd/lib/spin';
+import Result from 'antd/lib/result';
 
 import { Workspace } from 'reducers/interfaces';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';

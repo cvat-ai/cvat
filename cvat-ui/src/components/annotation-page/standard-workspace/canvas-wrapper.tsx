@@ -19,8 +19,8 @@ import {
     ShapeType,
 } from 'reducers/interfaces';
 import { LogType } from 'cvat-logger';
-import { Canvas } from 'cvat-canvas';
-import getCore from 'cvat-core';
+import { Canvas } from 'cvat-canvas-wrapper';
+import getCore from 'cvat-core-wrapper';
 import consts from 'consts';
 
 const cvat = getCore();
@@ -44,6 +44,7 @@ interface Props {
     selectedOpacity: number;
     blackBorders: boolean;
     showBitmap: boolean;
+    showProjections: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -145,15 +146,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             frameFetching,
             showObjectsTextAlways,
             automaticBordering,
+            showProjections,
         } = this.props;
 
         if (prevProps.showObjectsTextAlways !== showObjectsTextAlways
             || prevProps.automaticBordering !== automaticBordering
+            || prevProps.showProjections !== showProjections
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
                 displayAllText: showObjectsTextAlways,
                 autoborders: automaticBordering,
+                showProjections,
             });
         }
 
@@ -540,7 +544,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         } = this.props;
 
         const [state] = annotations.filter((el: any) => (el.clientID === activatedStateID));
-        if (state.shapeType !== ShapeType.RECTANGLE) {
+        if (![ShapeType.CUBOID, ShapeType.RECTANGLE].includes(state.shapeType)) {
             onUpdateContextMenu(activatedStateID !== null, e.detail.mouseEvent.clientX,
                 e.detail.mouseEvent.clientY, ContextMenuType.CANVAS_SHAPE_POINT, e.detail.pointID);
         }
@@ -558,16 +562,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         } = this.props;
 
         if (activatedStateID !== null) {
+            const [activatedState] = annotations
+                .filter((state: any): boolean => state.clientID === activatedStateID);
             if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
-                const [activatedState] = annotations
-                    .filter((state: any): boolean => state.clientID === activatedStateID);
                 if (activatedState.objectType !== ObjectType.TAG) {
                     canvasInstance.focus(activatedStateID, aamZoomMargin);
                 } else {
                     canvasInstance.fit();
                 }
             }
-            canvasInstance.activate(activatedStateID, activatedAttributeID);
+            if (activatedState && activatedState.objectType !== ObjectType.TAG) {
+                canvasInstance.activate(activatedStateID, activatedAttributeID);
+            }
             const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
             if (el) {
                 (el as any as SVGElement).setAttribute('fill-opacity', `${selectedOpacity / 100}`);

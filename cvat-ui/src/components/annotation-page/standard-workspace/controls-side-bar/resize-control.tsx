@@ -8,7 +8,7 @@ import Tooltip from 'antd/lib/tooltip';
 
 import { ZoomIcon } from 'icons';
 import { ActiveControl } from 'reducers/interfaces';
-import { Canvas } from 'cvat-canvas';
+import { Canvas } from 'cvat-canvas-wrapper';
 
 interface Props {
     canvasInstance: Canvas;

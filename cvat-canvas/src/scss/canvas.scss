@@ -103,6 +103,10 @@ polyline.cvat_canvas_shape_splitting {
     stroke-dasharray: 5;
 }
 
+.cvat_canvas_shape .svg_select_points, .cvat_canvas_shape .cvat_canvas_cuboid_projections {
+    stroke-dasharray: none;
+}
+
 .cvat_canvas_autoborder_point {
     opacity: 0.55;
 }
@@ -124,6 +128,27 @@ polyline.cvat_canvas_shape_splitting {
 .svg_select_boundingRect {
     opacity: 0;
     pointer-events: none;
+}
+
+.svg_select_points_lb:hover, .svg_select_points_rt:hover {
+    cursor: nesw-resize;
+}
+
+.svg_select_points_lt:hover, .svg_select_points_rb:hover {
+    cursor: nwse-resize;
+}
+
+.svg_select_points_l:hover, .svg_select_points_r:hover,
+.svg_select_points_ew:hover {
+    cursor: ew-resize;
+}
+
+.svg_select_points_t:hover, .svg_select_points_b:hover {
+    cursor: ns-resize;
+}
+
+.cvat_canvas_shape_draggable:hover {
+    cursor: move;
 }
 
 #cvat_canvas_wrapper {

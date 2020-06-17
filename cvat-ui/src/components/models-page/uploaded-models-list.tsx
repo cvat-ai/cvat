@@ -3,12 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
 import { Model } from 'reducers/interfaces';

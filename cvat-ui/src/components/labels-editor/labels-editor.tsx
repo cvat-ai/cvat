@@ -4,17 +4,12 @@
 
 import './styles.scss';
 import React from 'react';
-
-import {
-    Tabs,
-    Icon,
-    Button,
-    Tooltip,
-    notification,
-} from 'antd';
-
+import Tabs from 'antd/lib/tabs';
+import Icon from 'antd/lib/icon';
+import Button from 'antd/lib/button';
+import Tooltip from 'antd/lib/tooltip';
+import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
-
 import copy from 'copy-to-clipboard';
 
 import RawViewer from './raw-viewer';

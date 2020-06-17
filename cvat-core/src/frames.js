@@ -9,7 +9,7 @@
 */
 
 (() => {
-    const cvatData = require('../../cvat-data');
+    const cvatData = require('cvat-data');
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const { isBrowser, isNode } = require('browser-or-node');

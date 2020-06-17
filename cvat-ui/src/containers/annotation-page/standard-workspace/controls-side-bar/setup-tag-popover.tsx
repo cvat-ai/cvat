@@ -9,8 +9,8 @@ import { CombinedState, ObjectType } from 'reducers/interfaces';
 import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actions';
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
-import { Canvas } from 'cvat-canvas';
-import getCore from 'cvat-core';
+import { Canvas } from 'cvat-canvas-wrapper';
+import getCore from 'cvat-core-wrapper';
 
 const cvat = getCore();
 interface DispatchToProps {

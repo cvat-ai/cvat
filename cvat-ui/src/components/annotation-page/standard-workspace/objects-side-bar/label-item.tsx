@@ -3,16 +3,12 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Icon,
-    Popover,
-    Button,
-} from 'antd';
-
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Popover from 'antd/lib/popover';
+import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
+
 import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
 
 interface Props {
@@ -22,6 +18,7 @@ interface Props {
     visible: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
+    changeColorShortcut: string;
     hideStates(): void;
     showStates(): void;
     lockStates(): void;
@@ -42,6 +39,7 @@ function LabelItemComponent(props: Props): JSX.Element {
         lockStates,
         unlockStates,
         changeColor,
+        changeColorShortcut,
     } = props;
 
     return (
@@ -58,6 +56,7 @@ function LabelItemComponent(props: Props): JSX.Element {
                     trigger='click'
                     content={(
                         <ColorChanger
+                            shortcut={changeColorShortcut}
                             onChange={changeColor}
                             colors={labelColors}
                         />

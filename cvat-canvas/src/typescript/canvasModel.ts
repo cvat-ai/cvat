@@ -46,16 +46,23 @@ export enum RectDrawingMethod {
     EXTREME_POINTS = 'By 4 points'
 }
 
+export enum CuboidDrawingMethod {
+    CLASSIC = 'From rectangle',
+    CORNER_POINTS = 'By 4 points',
+}
+
 export interface Configuration {
     autoborders?: boolean;
     displayAllText?: boolean;
     undefinedAttrValue?: string;
+    showProjections?: boolean;
 }
 
 export interface DrawData {
     enabled: boolean;
     shapeType?: string;
     rectDrawingMethod?: RectDrawingMethod;
+    cuboidDrawingMethod?: CuboidDrawingMethod;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
@@ -527,6 +534,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.displayAllText = configuration.displayAllText;
         }
 
+        if (typeof (configuration.showProjections) !== 'undefined') {
+            this.data.configuration.showProjections = configuration.showProjections;
+        }
         if (typeof (configuration.autoborders) !== 'undefined') {
             this.data.configuration.autoborders = configuration.autoborders;
         }

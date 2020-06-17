@@ -4,19 +4,15 @@
 
 import './styles.scss';
 import React from 'react';
-
-import {
-    Row,
-    Col,
-    Tag,
-    Spin,
-    Icon,
-    Modal,
-    Select,
-    Tooltip,
-    Checkbox,
-    notification,
-} from 'antd';
+import { Row, Col } from 'antd/lib/grid';
+import Icon from 'antd/lib/icon';
+import Select from 'antd/lib/select';
+import Checkbox from 'antd/lib/checkbox';
+import Tooltip from 'antd/lib/tooltip';
+import Modal from 'antd/lib/modal';
+import Tag from 'antd/lib/tag';
+import Spin from 'antd/lib/spin';
+import notification from 'antd/lib/notification';
 
 import {
     Model,

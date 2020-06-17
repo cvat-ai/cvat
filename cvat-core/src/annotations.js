@@ -17,7 +17,7 @@
     const {
         Loader,
         Dumper,
-    } = require('./annotation-format.js');
+    } = require('./annotation-formats.js');
     const {
         ScriptingError,
         DataError,

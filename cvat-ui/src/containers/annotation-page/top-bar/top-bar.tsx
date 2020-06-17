@@ -23,7 +23,7 @@ import {
     changeWorkspace as changeWorkspaceAction,
     activateObject,
 } from 'actions/annotation-actions';
-import { Canvas, isAbleToChangeFrame } from 'cvat-canvas';
+import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';

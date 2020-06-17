@@ -4,20 +4,15 @@
 
 import './styles.scss';
 import React from 'react';
-
-import {
-    Icon,
-    Tabs,
-    Layout,
-} from 'antd';
-
 import Text from 'antd/lib/typography/Text';
+import Icon from 'antd/lib/icon';
+import Tabs from 'antd/lib/tabs';
+import Layout from 'antd/lib/layout';
 import { RadioChangeEvent } from 'antd/lib/radio';
 import { SliderValue } from 'antd/lib/slider';
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 
 import { ColorBy } from 'reducers/interfaces';
-
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import LabelsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/labels-list';
 import AppearanceBlock from './appearance-block';
@@ -30,6 +25,7 @@ interface Props {
     selectedOpacity: number;
     blackBorders: boolean;
     showBitmap: boolean;
+    showProjections: boolean;
 
     collapseSidebar(): void;
     collapseAppearance(): void;
@@ -39,6 +35,7 @@ interface Props {
     changeSelectedShapesOpacity(event: SliderValue): void;
     changeShapesBlackBorders(event: CheckboxChangeEvent): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
+    changeShowProjections(event: CheckboxChangeEvent): void;
 }
 
 function ObjectsSideBar(props: Props): JSX.Element {
@@ -50,6 +47,7 @@ function ObjectsSideBar(props: Props): JSX.Element {
         selectedOpacity,
         blackBorders,
         showBitmap,
+        showProjections,
         collapseSidebar,
         collapseAppearance,
         changeShapesColorBy,
@@ -57,6 +55,7 @@ function ObjectsSideBar(props: Props): JSX.Element {
         changeSelectedShapesOpacity,
         changeShapesBlackBorders,
         changeShowBitmap,
+        changeShowProjections,
     } = props;
 
     const appearanceProps = {
@@ -67,12 +66,14 @@ function ObjectsSideBar(props: Props): JSX.Element {
         selectedOpacity,
         blackBorders,
         showBitmap,
+        showProjections,
 
         changeShapesColorBy,
         changeShapesOpacity,
         changeSelectedShapesOpacity,
         changeShapesBlackBorders,
         changeShowBitmap,
+        changeShowProjections,
     };
 
     return (

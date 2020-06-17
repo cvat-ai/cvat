@@ -22,9 +22,9 @@ import {
     Workspace,
 } from 'reducers/interfaces';
 
-import getCore from 'cvat-core';
+import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
-import { RectDrawingMethod } from 'cvat-canvas';
+import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { getCVATStore } from 'cvat-store';
 
 interface AnnotationsParameters {
@@ -98,12 +98,14 @@ async function jobInfoGenerator(job: any): Promise<Record<string, number>> {
         'track count': total.rectangle.shape + total.rectangle.track
             + total.polygon.shape + total.polygon.track
             + total.polyline.shape + total.polyline.track
-            + total.points.shape + total.points.track,
+            + total.points.shape + total.points.track
+            + total.cuboid.shape + total.cuboid.track,
         'object count': total.total,
         'box count': total.rectangle.shape + total.rectangle.track,
         'polygon count': total.polygon.shape + total.polygon.track,
         'polyline count': total.polyline.shape + total.polyline.track,
         'points count': total.points.shape + total.points.track,
+        'cuboids count': total.cuboid.shape + total.cuboid.track,
         'tag count': total.tags,
     };
 }
@@ -1059,6 +1061,8 @@ export function rememberObject(
         activeControl = ActiveControl.DRAW_POLYLINE;
     } else if (shapeType === ShapeType.POINTS) {
         activeControl = ActiveControl.DRAW_POINTS;
+    } else if (shapeType === ShapeType.CUBOID) {
+        activeControl = ActiveControl.DRAW_CUBOID;
     }
 
     return {
@@ -1284,19 +1288,23 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 }
 
 export function changeLabelColorAsync(
-    sessionInstance: any,
-    frameNumber: number,
     label: any,
     color: string,
 ): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
+            const {
+                filters,
+                showAllInterpolationTracks,
+                jobInstance,
+                frame,
+            } = receiveAnnotationsParameters();
+
             const updatedLabel = label;
             updatedLabel.color = color;
-            const states = await sessionInstance.annotations
-                .get(frameNumber, showAllInterpolationTracks, filters);
-            const history = await sessionInstance.actions.get();
+            const states = await jobInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
+            const history = await jobInstance.actions.get();
 
             dispatch({
                 type: AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS,
@@ -1386,6 +1394,8 @@ export function pasteShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction>
                 activeControl = ActiveControl.DRAW_POLYGON;
             } else if (initialState.shapeType === ShapeType.POLYLINE) {
                 activeControl = ActiveControl.DRAW_POLYLINE;
+            } else if (initialState.shapeType === ShapeType.CUBOID) {
+                activeControl = ActiveControl.DRAW_CUBOID;
             }
 
             dispatch({
@@ -1447,6 +1457,8 @@ export function repeatDrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAc
             activeControl = ActiveControl.DRAW_POLYGON;
         } else if (activeShapeType === ShapeType.POLYLINE) {
             activeControl = ActiveControl.DRAW_POLYLINE;
+        } else if (activeShapeType === ShapeType.CUBOID) {
+            activeControl = ActiveControl.DRAW_CUBOID;
         }
 
         dispatch({

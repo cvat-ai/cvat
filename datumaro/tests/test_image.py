@@ -26,7 +26,7 @@ class ImageOperationsTest(TestCase):
                 path = osp.join(test_dir, 'img.png') # lossless
 
                 image_module._IMAGE_BACKEND = save_backend
-                image_module.save_image(path, src_image)
+                image_module.save_image(path, src_image, jpeg_quality=100)
 
                 image_module._IMAGE_BACKEND = load_backend
                 dst_image = image_module.load_image(path)
@@ -43,10 +43,22 @@ class ImageOperationsTest(TestCase):
                 src_image = np.random.randint(0, 255 + 1, (2, 4, c))
 
             image_module._IMAGE_BACKEND = save_backend
-            buffer = image_module.encode_image(src_image, '.png') # lossless
+            buffer = image_module.encode_image(src_image, '.png',
+                jpeg_quality=100) # lossless
 
             image_module._IMAGE_BACKEND = load_backend
             dst_image = image_module.decode_image(buffer)
 
             self.assertTrue(np.array_equal(src_image, dst_image),
                 'save: %s, load: %s' % (save_backend, load_backend))
+
+    def test_save_image_to_inexistent_dir_raises_error(self):
+        with self.assertRaises(FileNotFoundError):
+            image_module.save_image('some/path.jpg', np.ones((5, 4, 3)),
+                create_dir=False)
+
+    def test_save_image_can_create_dir(self):
+        with TestDir() as test_dir:
+            path = osp.join(test_dir, 'some', 'path.jpg')
+            image_module.save_image(path, np.ones((5, 4, 3)), create_dir=True)
+            self.assertTrue(osp.isfile(path))

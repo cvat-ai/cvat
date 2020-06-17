@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas';
+import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
 
 export type StringObject = {
     [index: string]: string;
@@ -63,8 +63,7 @@ export interface TasksState {
 }
 
 export interface FormatsState {
-    annotationFormats: any[];
-    datasetFormats: any[];
+    annotationFormats: any;
     fetching: boolean;
     initialized: boolean;
 }
@@ -101,6 +100,19 @@ export interface AboutState {
         canvas: string;
         ui: string;
     };
+    fetching: boolean;
+    initialized: boolean;
+}
+
+export interface UserAgreement {
+    name: string;
+    displayText: string;
+    url: string;
+    required: boolean;
+}
+
+export interface UserAgreementsState {
+    list: UserAgreement[];
     fetching: boolean;
     initialized: boolean;
 }
@@ -239,6 +251,9 @@ export interface NotificationsState {
         boundaries: {
             resetError: null | ErrorState;
         };
+        userAgreements: {
+            fetching: null | ErrorState;
+        };
 
         [index: string]: any;
     };
@@ -262,6 +277,7 @@ export enum ActiveControl {
     DRAW_POLYGON = 'draw_polygon',
     DRAW_POLYLINE = 'draw_polyline',
     DRAW_POINTS = 'draw_points',
+    DRAW_CUBOID = 'draw_cuboid',
     MERGE = 'merge',
     GROUP = 'group',
     SPLIT = 'split',
@@ -273,6 +289,7 @@ export enum ShapeType {
     POLYGON = 'polygon',
     POLYLINE = 'polyline',
     POINTS = 'points',
+    CUBOID = 'cuboid',
 }
 
 export enum ObjectType {
@@ -441,6 +458,7 @@ export interface ShapesSettingsState {
     selectedOpacity: number;
     blackBorders: boolean;
     showBitmap: boolean;
+    showProjections: boolean;
 }
 
 export interface SettingsState {
@@ -462,6 +480,7 @@ export interface CombinedState {
     about: AboutState;
     share: ShareState;
     formats: FormatsState;
+    userAgreements: UserAgreementsState;
     plugins: PluginsState;
     models: ModelsState;
     notifications: NotificationsState;

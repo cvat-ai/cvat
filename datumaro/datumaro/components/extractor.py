@@ -270,21 +270,22 @@ class CompiledMask:
         if instance_ids is not None:
             assert len(instance_ids) == len(instance_masks)
         else:
-            instance_ids = [1 + i for i in range(len(instance_masks))]
+            instance_ids = [None] * len(instance_masks)
 
         if instance_labels is not None:
             assert len(instance_labels) == len(instance_masks)
         else:
             instance_labels = [None] * len(instance_masks)
 
-        instance_masks = sorted(instance_masks, key=lambda m: m.z_order)
+        instance_masks = sorted(
+            zip(instance_masks, instance_ids, instance_labels),
+            key=lambda m: m[0].z_order)
 
-        instance_mask = [m.as_instance_mask(id) for m, id in
-            zip(instance_masks, instance_ids)]
+        instance_mask = [m.as_instance_mask(id if id is not None else 1 + idx)
+            for idx, (m, id, _) in enumerate(instance_masks)]
         instance_mask = merge_masks(instance_mask)
 
-        cls_mask = [m.as_class_mask(c) for m, c in
-            zip(instance_masks, instance_labels)]
+        cls_mask = [m.as_class_mask(c) for m, _, c in instance_masks]
         cls_mask = merge_masks(cls_mask)
         return __class__(class_mask=cls_mask, instance_mask=instance_mask)
 
@@ -310,15 +311,13 @@ class CompiledMask:
     def instance_count(self):
         return int(self.instance_mask.max())
 
-    def get_instance_labels(self, class_count=None):
-        if class_count is None:
-            class_count = np.max(self.class_mask) + 1
-
-        m = self.class_mask * class_count + self.instance_mask
-        m = m.astype(int)
+    def get_instance_labels(self):
+        class_shift = 16
+        m = (self.class_mask.astype(np.uint32) << class_shift) \
+            + self.instance_mask.astype(np.uint32)
         keys = np.unique(m)
-        instance_labels = {k % class_count: k // class_count
-            for k in keys if k % class_count != 0
+        instance_labels = {k & ((1 << class_shift) - 1): k >> class_shift
+            for k in keys if k & ((1 << class_shift) - 1) != 0
         }
         return instance_labels
 
@@ -481,7 +480,7 @@ class Bbox(_Shape):
         return compute_iou(self.get_bbox(), other.get_bbox())
 
 class PointsCategories(Categories):
-    Category = namedtuple('Category', ['labels', 'adjacent'])
+    Category = namedtuple('Category', ['labels', 'joints'])
 
     def __init__(self, items=None, attributes=None):
         super().__init__(attributes=attributes)
@@ -490,12 +489,13 @@ class PointsCategories(Categories):
             items = {}
         self.items = items
 
-    def add(self, label_id, labels=None, adjacent=None):
+    def add(self, label_id, labels=None, joints=None):
         if labels is None:
             labels = []
-        if adjacent is None:
-            adjacent = []
-        self.items[label_id] = self.Category(labels, set(adjacent))
+        if joints is None:
+            joints = []
+        joints = set(map(tuple, joints))
+        self.items[label_id] = self.Category(labels, joints)
 
     def __eq__(self, other):
         if not super().__eq__(other):
@@ -576,9 +576,9 @@ class Caption(Annotation):
 class DatasetItem:
     # pylint: disable=redefined-builtin
     def __init__(self, id=None, annotations=None,
-            subset=None, path=None, image=None):
+            subset=None, path=None, image=None, attributes=None):
         assert id is not None
-        self._id = str(id)
+        self._id = str(id).replace('\\', '/')
 
         if subset is None:
             subset = ''
@@ -604,6 +604,12 @@ class DatasetItem:
             image = Image(path=image)
         assert image is None or isinstance(image, Image)
         self._image = image
+
+        if attributes is None:
+            attributes = {}
+        else:
+            attributes = dict(attributes)
+        self._attributes = attributes
     # pylint: enable=redefined-builtin
 
     @property
@@ -630,6 +636,10 @@ class DatasetItem:
     def has_image(self):
         return self._image is not None
 
+    @property
+    def attributes(self):
+        return self._attributes
+
     def __eq__(self, other):
         if not isinstance(other, __class__):
             return False
@@ -638,10 +648,12 @@ class DatasetItem:
             (self.subset == other.subset) and \
             (self.path == other.path) and \
             (self.annotations == other.annotations) and \
-            (self.image == other.image)
+            (self.image == other.image) and \
+            (self.attributes == other.attributes)
 
     def wrap(item, **kwargs):
-        expected_args = {'id', 'annotations', 'subset', 'path', 'image'}
+        expected_args = {'id', 'annotations', 'subset',
+            'path', 'image', 'attributes'}
         for k in expected_args:
             if k not in kwargs:
                 kwargs[k] = getattr(item, k)
@@ -749,9 +761,7 @@ class SourceExtractor(Extractor):
         self._subset = subset
 
     def subsets(self):
-        if self._subset:
-            return [self._subset]
-        return None
+        return [self._subset]
 
     def get_subset(self, name):
         if name != self._subset:
