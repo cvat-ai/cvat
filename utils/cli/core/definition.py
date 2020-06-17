@@ -260,39 +260,3 @@ upload_parser.add_argument(
     default='CVAT 1.1',
     help='annotation format (default: %(default)s)'
 )
-
-
-#######################################################################
-# Create
-#######################################################################
-
-task_bulk_create_parser = task_subparser.add_parser(
-    'bulk_create',
-    description='Create many cvat tasks from a .csv file'
-)
-
-task_bulk_create_parser.add_argument(
-    'csv_path',
-    type=str,
-    help='Path to csv file with header [name, images_path, annotations_path]'
-)
-
-task_bulk_create_parser.add_argument(
-    '--labels',
-    default='[]',
-    type=parse_label_arg,
-    help='string or file containing JSON labels specification'
-)
-
-task_bulk_create_parser.add_argument(
-    '--annotation_format',
-    default='CVAT XML 1.1',
-    type=str,
-    help='format of the annotation file being uploaded, e.g. CVAT XML 1.1'
-)
-task_bulk_create_parser.add_argument(
-    '--cooldown_period_in_secs',
-    default=180,
-    type=int,
-    help='number of seconds to wait for the job to be created until uploading the annotations'
-)

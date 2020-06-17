@@ -1,15 +1,16 @@
 # Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+
 import json
 import logging
 import os
 import requests
 from io import BytesIO
 import mimetypes
+from time import sleep
 
 from PIL import Image
-from time import sleep
 
 from .definition import ResourceType
 log = logging.getLogger(__name__)
@@ -28,14 +29,11 @@ class CLI():
         data = {}
         files = None
         if resource_type == ResourceType.LOCAL:
-            files = {'client_files[{}]'.format(i): open(
-                f, 'rb') for i, f in enumerate(resources)}
+            files = {'client_files[{}]'.format(i): open(f, 'rb') for i, f in enumerate(resources)}
         elif resource_type == ResourceType.REMOTE:
-            data = {'remote_files[{}]'.format(
-                i): f for i, f in enumerate(resources)}
+            data = {'remote_files[{}]'.format(i): f for i, f in enumerate(resources)}
         elif resource_type == ResourceType.SHARE:
-            data = {'server_files[{}]'.format(
-                i): f for i, f in enumerate(resources)}
+            data = {'server_files[{}]'.format(i): f for i, f in enumerate(resources)}
         data['image_quality'] = 50
         response = self.session.post(url, data=data, files=files)
         response.raise_for_status()
@@ -68,7 +66,7 @@ class CLI():
         data = {'name': name,
                 'labels': labels,
                 'bug_tracker': bug,
-                }
+        }
         response = self.session.post(url, json=data)
         response.raise_for_status()
         response_json = response.json()
@@ -119,8 +117,7 @@ class CLI():
             if im_ext == '.jpe' or '.jpeg' or None:
                 im_ext = '.jpg'
 
-            outfile = 'task_{}_frame_{:06d}{}'.format(
-                task_id, frame_id, im_ext)
+            outfile = 'task_{}_frame_{:06d}{}'.format(task_id, frame_id, im_ext)
             im.save(os.path.join(outdir, outfile))
 
     def tasks_dump(self, task_id, fileformat, filename, **kwargs):
