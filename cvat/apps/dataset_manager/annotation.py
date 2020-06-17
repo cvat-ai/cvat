@@ -468,20 +468,10 @@ class TrackManager(ObjectManager):
             return shapes
 
         def points_interpolation(shape0, shape1):
-            shapes = []
             if len(shape0["points"]) == 2 and len(shape1["points"]) == 2:
-                distance = shape1["frame"] - shape0["frame"]
-                diff = np.subtract(shape1["points"], shape0["points"])
-                for frame in range(shape0["frame"] + 1, shape1["frame"]):
-                    offset = (frame - shape0["frame"]) / distance
-                    points = None
-                    if shape1["outside"]:
-                        points = np.asarray(shape0["points"])
-                    else:
-                        points = shape0["points"] + diff * offset
-
-                    shapes.append(copy_shape(shape0, frame, points.tolist()))
+                return simple_interpolation(shape0, shape1)
             else:
+                shapes = []
                 for frame in range(shape0["frame"] + 1, shape1["frame"]):
                     shapes.append(copy_shape(shape0, frame))
 

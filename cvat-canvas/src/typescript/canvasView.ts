@@ -526,8 +526,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private showDirection(state: any, shape: SVG.Polygon | SVG.PolyLine): void {
-        const path = 'M13.162 6.284L.682.524a.483.483 0 0 0-.574.134.477.477 0 '
-            + '0 0-.012.59L4.2 6.72.096 12.192a.479.479 0 0 0 .585.724l12.48-5.76a.48.48 0 0 0 0-.872z';
+        const path = consts.ARROW_PATH;
 
         const points = parsePoints(state.points);
         const handler = shape.remember('_selectHandler');

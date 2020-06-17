@@ -76,7 +76,7 @@ function ItemMenu(
                     </Button>
                 </Tooltip>
             </Menu.Item>
-            { [ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType) && (
+            { [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
                 <Menu.Item>
                     <Button type='link' icon='retweet' onClick={switchOrientation}>
                         Switch orientation
