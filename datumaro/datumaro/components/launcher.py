@@ -17,9 +17,6 @@ class Launcher:
     def launch(self, inputs):
         raise NotImplementedError()
 
-    def preferred_input_size(self):
-        return None
-
     def categories(self):
         return None
 # pylint: enable=no-self-use

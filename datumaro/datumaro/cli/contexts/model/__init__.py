@@ -11,8 +11,9 @@ import re
 
 from datumaro.components.config import DEFAULT_FORMAT
 from datumaro.components.project import Environment
-from ...util import add_subparser, MultilineFormatter
-from ...util.project import load_project
+
+from ...util import CliException, MultilineFormatter, add_subparser
+from ...util.project import load_project, generate_next_dir_name
 
 
 def build_add_parser(parser_ctor=argparse.ArgumentParser):
@@ -63,19 +64,20 @@ def add_command(args):
     except KeyError:
         raise CliException("Launcher '%s' is not found" % args.launcher)
 
-    cli_plugin = launcher.cli_plugin
+    cli_plugin = getattr(launcher, 'cli_plugin', launcher)
     model_args = cli_plugin.from_cmdline(args.extra_args)
 
     if args.copy:
-        try:
-            log.info("Copying model data")
+        log.info("Copying model data")
 
-            model_dir = project.local_model_dir(args.name)
-            os.makedirs(model_dir, exist_ok=False)
+        model_dir = project.local_model_dir(args.name)
+        os.makedirs(model_dir, exist_ok=False)
+
+        try:
             cli_plugin.copy_model(model_dir, model_args)
-        except NotImplementedError:
+        except (AttributeError, NotImplementedError):
             log.error("Can't copy: copying is not available for '%s' models" % \
-                (args.launcher))
+                args.launcher)
 
     log.info("Adding the model")
     project.add_model(args.name, {
@@ -115,12 +117,14 @@ def remove_command(args):
 def build_run_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor()
 
-    parser.add_argument('-o', '--output-dir', dest='dst_dir', required=True,
+    parser.add_argument('-o', '--output-dir', dest='dst_dir',
         help="Directory to save output")
     parser.add_argument('-m', '--model', dest='model_name', required=True,
         help="Model to apply to the project")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.add_argument('--overwrite', action='store_true',
+        help="Overwrite if exists")
     parser.set_defaults(command=run_command)
 
     return parser
@@ -128,10 +132,17 @@ def build_run_parser(parser_ctor=argparse.ArgumentParser):
 def run_command(args):
     project = load_project(args.project_dir)
 
-    dst_dir = osp.abspath(args.dst_dir)
-    os.makedirs(dst_dir, exist_ok=False)
+    dst_dir = args.dst_dir
+    if dst_dir:
+        if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
+            raise CliException("Directory '%s' already exists "
+                "(pass --overwrite overwrite)" % dst_dir)
+    else:
+        dst_dir = generate_next_dir_name('%s-inference' % \
+            (project.config.project_name))
+
     project.make_dataset().apply_model(
-        save_dir=dst_dir,
+        save_dir=osp.abspath(dst_dir),
         model=args.model_name)
 
     log.info("Inference results have been saved to '%s'" % dst_dir)

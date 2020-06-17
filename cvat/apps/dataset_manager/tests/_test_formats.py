@@ -72,6 +72,10 @@ from rest_framework import status
 
 _setUpModule()
 
+from cvat.apps.dataset_manager.annotation import AnnotationIR
+from cvat.apps.dataset_manager.bindings import TaskData
+from cvat.apps.engine.models import Task
+
 
 def generate_image_file(filename, size=(100, 50)):
     f = BytesIO()
@@ -397,3 +401,38 @@ class TaskExportTest(_DbTestBase):
                     self.assertEqual(len(dataset), task["size"])
                 self._test_export(check, task, format_name, save_images=False)
 
+    def test_cant_make_rel_frame_id_from_unknown(self):
+        images = self._generate_task_images(3)
+        images['frame_filter'] = 'step=2'
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        with self.assertRaisesRegex(ValueError, r'Unknown'):
+            task_data.rel_frame_id(1) # the task has only 0 and 2 frames
+
+    def test_can_make_rel_frame_id_from_known(self):
+        images = self._generate_task_images(6)
+        images['frame_filter'] = 'step=2'
+        images['start_frame'] = 1
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        self.assertEqual(2, task_data.rel_frame_id(5))
+
+    def test_cant_make_abs_frame_id_from_unknown(self):
+        images = self._generate_task_images(3)
+        images['frame_filter'] = 'step=2'
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        with self.assertRaisesRegex(ValueError, r'Unknown'):
+            task_data.abs_frame_id(2) # the task has only 0 and 1 indices
+
+    def test_can_make_abs_frame_id_from_known(self):
+        images = self._generate_task_images(6)
+        images['frame_filter'] = 'step=2'
+        images['start_frame'] = 1
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        self.assertEqual(5, task_data.abs_frame_id(2))
