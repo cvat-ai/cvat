@@ -389,6 +389,7 @@ class TaskExportTest(_DbTestBase):
 
                             # NOTE: can't import cvat.utils.cli
                             # for whatever reason, so remove the dependency
+                            #
                             project.config.remove('sources')
 
                             return project.make_dataset()
