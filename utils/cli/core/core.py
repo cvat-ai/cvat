@@ -164,15 +164,6 @@ class CLI():
             "with annotation file {} finished".format(filename)
         log.info(logger_string)
 
-<<<<<<< HEAD
-    def tasks_bulk_create(self, csv_path, labels, annotation_format, cooldown_period_in_secs, **kwargs):
-        with open(csv_path, 'r') as f:
-            reader = csv.DictReader(f)
-            tasks = [dict(row) for row in reader]
-            for task in tasks:
-                self.tasks_create(task['name'], labels, '', 'local', [task['images_path']],
-                                  task['annotation_path'], annotation_format, cooldown_period_in_secs, **kwargs)
-=======
     def login(self, credentials):
         url = self.api.login
         auth = {'username': credentials[0], 'password': credentials[1]}
@@ -180,7 +171,6 @@ class CLI():
         response.raise_for_status()
         if 'csrftoken' in response.cookies:
             self.session.headers['X-CSRFToken'] = response.cookies['csrftoken']
->>>>>>> develop
 
 
 class CVAT_API_V1():
