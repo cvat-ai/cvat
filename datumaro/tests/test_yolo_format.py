@@ -116,6 +116,32 @@ class YoloFormatTest(TestCase):
 
             compare_datasets(self, source_dataset, parsed_dataset)
 
+    def test_relative_paths(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='1', subset='train',
+                        image=np.ones((4, 2, 3))),
+                    DatasetItem(id='subdir1/1', subset='train',
+                        image=np.ones((2, 6, 3))),
+                    DatasetItem(id='subdir2/1', subset='train',
+                        image=np.ones((5, 4, 3))),
+                ])
+
+            def categories(self):
+                return { AnnotationType.label: LabelCategories() }
+
+        for save_images in {True, False}:
+            with self.subTest(save_images=save_images):
+                with TestDir() as test_dir:
+                    source_dataset = TestExtractor()
+
+                    YoloConverter(save_images=save_images)(
+                        source_dataset, test_dir)
+                    parsed_dataset = YoloImporter()(test_dir).make_dataset()
+
+                    compare_datasets(self, source_dataset, parsed_dataset)
+
 
 DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__), 'assets', 'yolo_dataset')
 

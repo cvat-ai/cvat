@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Select from 'antd/lib/select';
+import Select, { OptionProps } from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import InputNumber from 'antd/lib/input-number';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
@@ -70,6 +70,15 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             <Row type='flex' justify='center'>
                 <Col span={24}>
                     <Select
+                        showSearch
+                        filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
+                            const { children } = option.props;
+                            if (typeof (children) === 'string') {
+                                return children.toLowerCase().includes(input.toLowerCase());
+                            }
+
+                            return false;
+                        }}
                         value={`${selectedLabeID}`}
                         onChange={onChangeLabel}
                     >

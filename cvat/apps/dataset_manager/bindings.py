@@ -11,6 +11,7 @@ from django.utils import timezone
 import datumaro.components.extractor as datumaro
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import AttributeType, ShapeType
+from datumaro.util import cast
 from datumaro.util.image import Image
 
 from .annotation import AnnotationManager, TrackManager
@@ -97,16 +98,27 @@ class TaskData:
     def _get_immutable_attribute_id(self, label_id, attribute_name):
         return self._get_attribute_id(label_id, attribute_name, 'immutable')
 
+    def abs_frame_id(self, relative_id):
+        if relative_id not in range(0, self._db_task.data.size):
+            raise ValueError("Unknown internal frame id %s" % relative_id)
+        return relative_id * self._frame_step + self._db_task.data.start_frame
+
+    def rel_frame_id(self, absolute_id):
+        d, m = divmod(
+            absolute_id - self._db_task.data.start_frame, self._frame_step)
+        if m or d not in range(0, self._db_task.data.size):
+            raise ValueError("Unknown frame %s" % absolute_id)
+        return d
+
     def _init_frame_info(self):
         if hasattr(self._db_task.data, 'video'):
             self._frame_info = {frame: {
-                "path": "frame_{:06d}".format(
-                    self._db_task.data.start_frame + frame * self._frame_step),
+                "path": "frame_{:06d}".format(self.abs_frame_id(frame)),
                 "width": self._db_task.data.video.width,
                 "height": self._db_task.data.video.height,
             } for frame in range(self._db_task.data.size)}
         else:
-            self._frame_info = {db_image.frame: {
+            self._frame_info = {self.rel_frame_id(db_image.frame): {
                 "path": db_image.path,
                 "width": db_image.width,
                 "height": db_image.height,
@@ -193,8 +205,7 @@ class TaskData:
     def _export_tracked_shape(self, shape):
         return TaskData.TrackedShape(
             type=shape["type"],
-            frame=self._db_task.data.start_frame +
-                shape["frame"] * self._frame_step,
+            frame=self.abs_frame_id(shape["frame"]),
             label=self._get_label_name(shape["label_id"]),
             points=shape["points"],
             occluded=shape["occluded"],
@@ -210,8 +221,7 @@ class TaskData:
         return TaskData.LabeledShape(
             type=shape["type"],
             label=self._get_label_name(shape["label_id"]),
-            frame=self._db_task.data.start_frame +
-                shape["frame"] * self._frame_step,
+            frame=self.abs_frame_id(shape["frame"]),
             points=shape["points"],
             occluded=shape["occluded"],
             z_order=shape.get("z_order", 0),
@@ -221,8 +231,7 @@ class TaskData:
 
     def _export_tag(self, tag):
         return TaskData.Tag(
-            frame=self._db_task.data.start_frame +
-                tag["frame"] * self._frame_step,
+            frame=self.abs_frame_id(tag["frame"]),
             label=self._get_label_name(tag["label_id"]),
             group=tag.get("group", 0),
             attributes=self._export_attributes(tag["attributes"]),
@@ -232,7 +241,7 @@ class TaskData:
         frames = {}
         def get_frame(idx):
             frame_info = self._frame_info[idx]
-            frame = self._db_task.data.start_frame + idx * self._frame_step
+            frame = self.abs_frame_id(idx)
             if frame not in frames:
                 frames[frame] = TaskData.Frame(
                     idx=idx,
@@ -299,8 +308,7 @@ class TaskData:
     def _import_tag(self, tag):
         _tag = tag._asdict()
         label_id = self._get_label_id(_tag.pop('label'))
-        _tag['frame'] = (int(_tag['frame']) -
-            self._db_task.data.start_frame) // self._frame_step
+        _tag['frame'] = self.rel_frame_id(int(_tag['frame']))
         _tag['label_id'] = label_id
         _tag['attributes'] = [self._import_attribute(label_id, attrib)
             for attrib in _tag['attributes']
@@ -316,8 +324,7 @@ class TaskData:
     def _import_shape(self, shape):
         _shape = shape._asdict()
         label_id = self._get_label_id(_shape.pop('label'))
-        _shape['frame'] = (int(_shape['frame']) -
-            self._db_task.data.start_frame) // self._frame_step
+        _shape['frame'] = self.rel_frame_id(int(_shape['frame']))
         _shape['label_id'] = label_id
         _shape['attributes'] = [self._import_attribute(label_id, attrib)
             for attrib in _shape['attributes']
@@ -327,14 +334,13 @@ class TaskData:
     def _import_track(self, track):
         _track = track._asdict()
         label_id = self._get_label_id(_track.pop('label'))
-        _track['frame'] = (min(int(shape.frame) for shape in _track['shapes']) -
-            self._db_task.data.start_frame) // self._frame_step
+        _track['frame'] = self.rel_frame_id(
+            min(int(shape.frame) for shape in _track['shapes']))
         _track['label_id'] = label_id
         _track['attributes'] = []
         _track['shapes'] = [shape._asdict() for shape in _track['shapes']]
         for shape in _track['shapes']:
-            shape['frame'] = (int(shape['frame']) - \
-                self._db_task.data.start_frame) // self._frame_step
+            shape['frame'] = self.rel_frame_id(int(shape['frame']))
             _track['attributes'] = [self._import_attribute(label_id, attrib)
                 for attrib in shape['attributes']
                 if self._get_immutable_attribute_id(label_id, attrib.name)]
@@ -423,8 +429,9 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 size=(frame_data.height, frame_data.width)
             )
             dm_anno = self._read_cvat_anno(frame_data, task_data)
-            dm_item = datumaro.DatasetItem(id=frame_data.frame,
-                annotations=dm_anno, image=dm_image)
+            dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
+                annotations=dm_anno, image=dm_image,
+                attributes={'frame': frame_data.frame})
             dm_items.append(dm_item)
 
         self._items = dm_items
@@ -534,23 +541,21 @@ def match_frame(item, task_data):
     is_video = task_data.meta['task']['mode'] == 'interpolation'
 
     frame_number = None
+    if frame_number is None and item.has_image:
+        try:
+            frame_number = task_data.match_frame(item.image.path)
+        except Exception:
+            pass
     if frame_number is None:
         try:
             frame_number = task_data.match_frame(item.id)
         except Exception:
             pass
-    if frame_number is None and item.has_image:
-        try:
-            frame_number = task_data.match_frame(item.image.filename)
-        except Exception:
-            pass
     if frame_number is None:
-        try:
-            frame_number = int(item.id)
-        except Exception:
-            pass
-    if frame_number is None and is_video and item.id.startswith('frame_'):
-        frame_number = int(item.id[len('frame_'):])
+        frame_number = cast(item.attributes.get('frame', item.id), int)
+    if frame_number is None and is_video:
+        frame_number = cast(osp.basename(item.id)[len('frame_'):], int)
+
     if not frame_number in task_data.frame_info:
         raise Exception("Could not match item id: '%s' with any task frame" %
             item.id)
@@ -567,7 +572,7 @@ def import_dm_annotations(dm_dataset, task_data):
     label_cat = dm_dataset.categories()[datumaro.AnnotationType.label]
 
     for item in dm_dataset:
-        frame_number = match_frame(item, task_data)
+        frame_number = task_data.abs_frame_id(match_frame(item, task_data))
 
         # do not store one-item groups
         group_map = {0: 0}
