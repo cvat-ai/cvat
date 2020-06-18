@@ -59,7 +59,8 @@ class CLI():
             response.raise_for_status()
 
     def tasks_create(self, name, labels, bug, resource_type, resources,
-                     annotation_path, annotation_format, cooldown_period_in_secs, **kwargs):
+                     annotation_path='', annotation_format='CVAT XML 1.1',
+                     completion_verification_period=20, **kwargs):
         """ Create a new task with the given name and labels JSON and
         add the files to it. """
         url = self.api.tasks
@@ -75,18 +76,22 @@ class CLI():
         self.tasks_data(task_id, resource_type, resources)
 
         if annotation_path != '':
-            url = self.api.tasks_id(task_id)
-            task_size = self.session.get(url).json()['size']
+            url = self.api.tasks_id_status(task_id)
+            response = self.session.get(url)
+            response_json = response.json()
 
             log.info('Awaiting data compression before uploading annotations...')
+            while response_json['state'] != 'Finished':
+                sleep(completion_verification_period)
+                response = self.session.get(url)
+                response_json = response.json()
+                logger_string= '''Awaiting compression for task {}.
+                            Status={}, Message={}'''.format(task_id,
+                                                            response_json['state'],
+                                                            response_json['message'])
+                log.info(logger_string)
 
-            while task_size == 0:
-                sleep(cooldown_period_in_secs)
-                task_size = self.session.get(url).json()['size']
-
-            self.tasks_upload(
-                task_id, annotation_format, annotation_path, **kwargs)
-            log.info('Annotations successfully uploaded for task {}.'.format(task_id))
+            self.tasks_upload(task_id, annotation_format, annotation_path, **kwargs)
 
     def tasks_delete(self, task_ids, **kwargs):
         """ Delete a list of tasks, ignoring those which don't exist. """
@@ -192,6 +197,9 @@ class CVAT_API_V1():
 
     def tasks_id_frame_id(self, task_id, frame_id, quality):
         return self.tasks_id(task_id) + '/data?type=frame&number={}&quality={}'.format(frame_id, quality)
+
+    def tasks_id_status(self, task_id):
+        return self.tasks_id(task_id) + '/status'
 
     def tasks_id_annotations_format(self, task_id, fileformat):
         return self.tasks_id(task_id) + '/annotations?format={}' \

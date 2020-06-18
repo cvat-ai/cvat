@@ -138,7 +138,7 @@ task_create_parser.add_argument(
     help='format of the annotation file being uploaded, e.g. CVAT XML 1.1'
 )
 task_create_parser.add_argument(
-    '--cooldown_period_in_secs',
+    '--completion_verification_period',
     default=20,
     type=int,
     help='''number of seconds to wait until checking
