@@ -12,7 +12,7 @@ python-ldap==3.2.0
 pytz==2020.1
 pyunpack==0.2.1
 rcssmin==1.0.6
-redis==3.2.0
+redis==3.5.3
 rjsmin==1.1.0
 requests==2.24.0
 rq==1.0.0
