@@ -10,7 +10,7 @@ Pillow==7.1.2
 numpy==1.18.5
 python-ldap==3.2.0
 pytz==2020.1
-pyunpack==0.1.2
+pyunpack==0.2.1
 rcssmin==1.0.6
 redis==3.2.0
 requests==2.24.0
