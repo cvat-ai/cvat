@@ -252,6 +252,13 @@ RQ_QUEUES = {
     }
 }
 
+NUCLIO = {
+    'SCHEME': 'http',
+    'HOST': 'localhost',
+    'PORT': 8070,
+    'DEFAULT_TIMEOUT': 60
+}
+
 RQ_SHOW_ADMIN_LINK = True
 RQ_EXCEPTION_HANDLERS = ['cvat.apps.engine.views.rq_handler']
 
