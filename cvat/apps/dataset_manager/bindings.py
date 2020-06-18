@@ -99,10 +99,16 @@ class TaskData:
         return self._get_attribute_id(label_id, attribute_name, 'immutable')
 
     def abs_frame_id(self, relative_id):
+        if relative_id not in range(0, self._db_task.data.size):
+            raise ValueError("Unknown internal frame id %s" % relative_id)
         return relative_id * self._frame_step + self._db_task.data.start_frame
 
     def rel_frame_id(self, absolute_id):
-        return (absolute_id - self._db_task.data.start_frame) // self._frame_step
+        d, m = divmod(
+            absolute_id - self._db_task.data.start_frame, self._frame_step)
+        if m or d not in range(0, self._db_task.data.size):
+            raise ValueError("Unknown frame %s" % absolute_id)
+        return d
 
     def _init_frame_info(self):
         if hasattr(self._db_task.data, 'video'):
