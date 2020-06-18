@@ -42,7 +42,7 @@ tensorflow==1.15.2
 keras==2.3.1
 opencv-python==4.1.0.25
 h5py==2.9.0
-imgaug==0.2.9
+imgaug==0.4.0
 django-cors-headers==3.3.0
 furl==2.0.0
 av==6.2.0
