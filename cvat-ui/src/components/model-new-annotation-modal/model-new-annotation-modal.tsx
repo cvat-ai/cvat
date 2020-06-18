@@ -66,9 +66,6 @@ const models = [
         label: 'frcnn-res50-coco',
     },
     {
-        label: 'frcnn-res50-lowp',
-    },
-    {
         label: 'ssd-mobilenet-v2-coco',
     },
     {

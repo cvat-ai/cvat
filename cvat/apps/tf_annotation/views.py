@@ -10,6 +10,8 @@ from zipfile import ZipFile
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, QueryDict
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
+from rest_framework.decorators import api_view
+
 from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.auto_annotation.models import AnnotationModel
@@ -390,15 +392,18 @@ def create_thread(tid, labels_mapping, user, tf_annotation_model_path, reset):
 								   exc_into=True)
 		raise ex
 
-
+@api_view(['POST'])
 @login_required
 def get_meta_info(request):
 	try:
 		queue = django_rq.get_queue('low')
-		print(request.body)
-		print(request.body.decode('utf-8'))
-		tids = json.loads(request.body.decode('utf-8'))
-		print("tods",tids)
+		# print(request.body)
+		# print(request.body.decode('utf-8'))
+		# tids = json.loads(request.body.decode('utf-8'))
+		slogger.glob.info("tf get_meta request {} / ".format(request))
+		# slogger.glob.info("tf request body {}".format(request.body.decode('utf-8')))
+		tids = request.data
+		print("tids",tids)
 		result = {}
 		for tid in tids:
 			job = queue.fetch_job('tf_annotation.create/{}'.format(tid))

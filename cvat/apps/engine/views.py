@@ -13,8 +13,8 @@ from tempfile import mkstemp
 import tempfile
 import requests
 
-time = datetime.now()
-stamp = time.strftime("%m%d%Y%H%M%S")
+#time = datetime.now()
+#stamp = time.strftime("%m%d%Y%H%M%S")
 from cvat.apps.engine.data_manager import TrackManager
 from rules.contrib.views import permission_required, objectgetter
 
@@ -607,7 +607,23 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
 		return Response(status=status.HTTP_202_ACCEPTED)
 
+	@action(detail=True, methods=['POST'], serializer_class=None, url_path="get_base_model")
+	def get_model_keys(self, request, pk):
+		db_task = self.get_object()
+		S3 = boto3.client('s3')
+		paginator = S3.get_paginator('list_objects_v2')
+		keys = []
+		for page in paginator.paginate(Bucket=os.getenv('AWS_BUCKET_NAME'), Prefix=os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/models/'):
+			try:
+				contents = page['Contents']
+			except KeyError as e:
+				wlogger.warning("An exception occurred.")
+				break
 
+			for cont in contents:
+				if cont['Key'].startswith(db_task.name):
+					keys.append(cont['Key'])
+		return Response({'keys':keys})
 
 	@action(detail=True, methods=['POST'], serializer_class=None, url_path='create_annotation_model')
 	def create_annotation_model(self, request, pk):
@@ -625,6 +641,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 		# slogger.glob.info("form data {}".format(form_data))
 		# Parse any extra arguments
 		form_args = form_data['arguments']
+		time = datetime.now()
+		stamp = time.strftime("%m%d%Y%H%M%S")
 		if "cpu" in form_data['machine_type']:
 			tf_image = "tensorflow/tensorflow:1.13.1-py3"
 			machine ="Standard_D4s_v3"
@@ -676,10 +694,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 		# TODO: folder name should have timestamp
 		#project_uid is actually a task id
 		with tempfile.TemporaryDirectory() as test_dir:
-			print(test_dir)
+			#print(test_dir)
 			
 
-			print(os.listdir(test_dir))
+			#print(os.listdir(test_dir))
 			if "TFRecord" in form_data['dump_format']:
 				dataset_name = db_task.name+"_tfrecords_"+stamp
 				dataset_path_aws = os.path.join("datasets",dataset_name)
@@ -700,7 +718,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 						print(os.path.join(root, file))
 						s3_client.upload_file(os.path.join(test_dir,"images",file),os.getenv('AWS_BUCKET_NAME'),os.path.join(aws_s3_prefix+dataset_name+"/images/", file))
 		
-			print(os.listdir(test_dir))
+			# print(os.listdir(test_dir))
 		#execute workflow
 		configuration = onepanel.core.api.Configuration()
 		# # Configure API key authorization: Bearer
@@ -724,8 +742,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 			params.append(Parameter(name="tf-image", value=tf_image))
 			params.append(Parameter(name="sys-node-pool", value=machine))
 			if 'TFRecord' in form_data['dump_format']:
-				params.append(Parameter(name='model-path',value=os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/models/'+db_task.name+"_tfod_"+stamp+'/'))
-				params.append(Parameter(name='ref-model-path', value="models/savan/"+form_data['ref_model']))
+				params.append(Parameter(name='model-path',value=os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/models/'+db_task.name+"_tfod_"+form_data['ref_model']+'_'+stamp+'/'))
+				params.append(Parameter(name='ref-model-path', value="base-models/"+form_data['ref_model']))
 				params.append(Parameter(name='num-classes', value=str(num_classes)))
 				params.append(Parameter(name="ref-model", value=form_data['ref_model']))
 				body = onepanel.core.api.CreateWorkflowExecutionBody(parameters=params,
