@@ -13,7 +13,7 @@ pytz==2020.1
 pyunpack==0.1.2
 rcssmin==1.0.6
 redis==3.2.0
-requests==2.23.0
+requests==2.24.0
 rjsmin==1.0.12
 rq==1.0.0
 rq-scheduler==0.10.0
