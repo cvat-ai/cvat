@@ -89,7 +89,7 @@ services:
       - cvat
       - cvat_ui
     environment:
-      CVAT_HOST: localhost
+      CVAT_HOST: ec2-18-144-27-141.us-west-1.compute.amazonaws.com
     ports:
       - "8080:80"
     volumes:
