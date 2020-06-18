@@ -38,6 +38,7 @@ interface CVATAppProps {
     resetErrors: () => void;
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
+    switchSettingsDialog: () => void;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     userInitialized: boolean;
     userFetching: boolean;
@@ -72,8 +73,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
 
         customWaViewHit(location.pathname, location.search, location.hash);
-        history.listen((l) => {
-            customWaViewHit(l.pathname, l.search, l.hash);
+        history.listen((_location) => {
+            customWaViewHit(_location.pathname, _location.search, _location.hash);
         });
 
         verifyAuthorized();
@@ -224,8 +225,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             installedTFSegmentation,
             installedTFAnnotation,
             switchShortcutsDialog,
+            switchSettingsDialog,
             user,
-            history,
             keyMap,
         } = this.props;
 
@@ -238,27 +239,19 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
-            OPEN_SETTINGS: keyMap.OPEN_SETTINGS,
+            SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
         };
 
         const handlers = {
             SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
-                if (event) {
-                    event.preventDefault();
-                }
+                if (event) event.preventDefault();
 
                 switchShortcutsDialog();
             },
-            OPEN_SETTINGS: (event: KeyboardEvent | undefined) => {
-                if (event) {
-                    event.preventDefault();
-                }
+            SWITCH_SETTINGS: (event: KeyboardEvent | undefined) => {
+                if (event) event.preventDefault();
 
-                if (history.location.pathname.endsWith('settings')) {
-                    history.goBack();
-                } else {
-                    history.push('/settings');
-                }
+                switchSettingsDialog();
             },
         };
 

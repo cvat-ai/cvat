@@ -21,6 +21,7 @@ import { getUsersAsync } from 'actions/users-actions';
 import { getAboutAsync } from 'actions/about-actions';
 import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import { shortcutsActions } from 'actions/shortcuts-actions';
+import { switchSettingsDialog } from 'actions/settings-actions';
 import {
     resetErrors,
     resetMessages,
@@ -65,6 +66,7 @@ interface DispatchToProps {
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
     loadUserAgreements: () => void;
+    switchSettingsDialog: (show: boolean) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -109,6 +111,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
         switchShortcutsDialog: (): void => dispatch(shortcutsActions.switchShortcutsDialog()),
+        switchSettingsDialog: (): void => dispatch(switchSettingsDialog()),
     };
 }
 

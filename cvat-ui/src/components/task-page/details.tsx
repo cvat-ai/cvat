@@ -387,6 +387,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                     <br />
                     <Text
                         editable={{
+                            editing: bugTrackerEditing,
                             onStart,
                             onChange: onChangeValue,
                         }}

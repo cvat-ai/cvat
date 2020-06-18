@@ -27,9 +27,9 @@ const defaultKeyMap = {
         sequences: ['f1'],
         action: 'keydown',
     },
-    OPEN_SETTINGS: {
-        name: 'Open settings',
-        description: 'Go to the settings page or go back',
+    SWITCH_SETTINGS: {
+        name: 'Show settings',
+        description: 'Open/hide settings dialog',
         sequences: ['f2'],
         action: 'keydown',
     },

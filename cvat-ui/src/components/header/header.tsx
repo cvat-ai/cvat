@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useState } from 'react';
+import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
@@ -21,6 +21,7 @@ import SettingsModal from './settings-modal/settings-modal';
 
 interface HeaderContainerProps {
     onLogout: () => void;
+    switchSettingsDialog: (show: boolean) => void;
     logoutFetching: boolean;
     installedAnalytics: boolean;
     installedAutoAnnotation: boolean;
@@ -35,6 +36,7 @@ interface HeaderContainerProps {
     canvasVersion: string;
     uiVersion: string;
     switchSettingsShortcut: string;
+    settingsDialogShown: boolean;
 }
 
 type Props = HeaderContainerProps & RouteComponentProps;
@@ -55,7 +57,9 @@ function HeaderContainer(props: Props): JSX.Element {
         uiVersion,
         onLogout,
         logoutFetching,
+        settingsDialogShown,
         switchSettingsShortcut,
+        switchSettingsDialog,
     } = props;
 
     const renderModels = installedAutoAnnotation
@@ -69,8 +73,6 @@ function HeaderContainer(props: Props): JSX.Element {
         FORUM_URL,
         GITHUB_URL,
     } = consts;
-
-    const [settingsModalVisible, setSettingsModalVisible] = useState(false);
 
     function aboutModal(): void {
         Modal.info({
@@ -134,7 +136,7 @@ function HeaderContainer(props: Props): JSX.Element {
             <Menu.Item
                 title={`Press ${switchSettingsShortcut} to switch`}
                 onClick={
-                    (): void => setSettingsModalVisible(true)
+                    (): void => switchSettingsDialog(true)
                 }
             >
                 <Icon type='setting' />
@@ -240,8 +242,8 @@ function HeaderContainer(props: Props): JSX.Element {
                 </Dropdown>
             </div>
             <SettingsModal
-                visible={settingsModalVisible}
-                onClose={() => setSettingsModalVisible(false)}
+                visible={settingsDialogShown}
+                onClose={() => switchSettingsDialog(false)}
             />
         </Layout.Header>
     );

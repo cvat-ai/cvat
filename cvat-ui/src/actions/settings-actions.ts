@@ -33,6 +33,7 @@ export enum SettingsActionTypes {
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
     SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS = 'SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS',
     CHANGE_CANVAS_BACKGROUND_COLOR = 'CHANGE_CANVAS_BACKGROUND_COLOR',
+    SWITCH_SETTINGS_DIALOG = 'SWITCH_SETTINGS_DIALOG',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -247,6 +248,15 @@ export function changeCanvasBackgroundColor(color: string): AnyAction {
         type: SettingsActionTypes.CHANGE_CANVAS_BACKGROUND_COLOR,
         payload: {
             color,
+        },
+    };
+}
+
+export function switchSettingsDialog(show?: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_SETTINGS_DIALOG,
+        payload: {
+            show,
         },
     };
 }

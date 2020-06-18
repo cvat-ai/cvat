@@ -466,6 +466,7 @@ export interface SettingsState {
     shapes: ShapesSettingsState;
     workspace: WorkspaceSettingsState;
     player: PlayerSettingsState;
+    showDialog: boolean;
 }
 
 export interface ShortcutsState {

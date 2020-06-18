@@ -40,7 +40,6 @@ interface StateToProps {
     brightnessLevel: number;
     contrastLevel: number;
     saturationLevel: number;
-    previewImage: string | null;
     canvasBackgroundColor: string;
 }
 
@@ -64,17 +63,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settings: {
             player,
         },
-        tasks: {
-            current: tasks,
-        },
     } = state;
 
-    const previewImage = tasks.length ? tasks[0].preview : null;
-
-    return {
-        ...player,
-        previewImage,
-    };
+    return player;
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {

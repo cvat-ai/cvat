@@ -33,7 +33,6 @@ interface Props {
     brightnessLevel: number;
     contrastLevel: number;
     saturationLevel: number;
-    previewImage: string | null;
     canvasBackgroundColor: string;
     onChangeFrameStep(step: number): void;
     onChangeFrameSpeed(speed: FrameSpeed): void;
@@ -62,7 +61,6 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         brightnessLevel,
         contrastLevel,
         saturationLevel,
-        previewImage,
         canvasBackgroundColor,
         onChangeFrameStep,
         onChangeFrameSpeed,
@@ -82,16 +80,6 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
     const maxFrameStep = 1000;
     const minGridSize = 5;
     const maxGridSize = 1000;
-
-    const imageRef = useRef<HTMLImageElement>(null);
-
-    useEffect(() => {
-        if (imageRef.current) {
-            imageRef.current.style.filter = `brightness(${brightnessLevel / 100})`
-                + `contrast(${contrastLevel / 100})`
-                + `saturate(${saturationLevel / 100})`;
-        }
-    }, [imageRef, brightnessLevel, contrastLevel, saturationLevel]);
 
     return (
         <div className='cvat-player-settings'>
@@ -315,22 +303,6 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                             </Button>
                         </Col>
                     </Row>
-                </Col>
-                <Col span={12}>
-                    {
-                        previewImage && (
-                            <>
-                                <Text>Preview:</Text>
-                                <br />
-                                <img
-                                    alt='preview'
-                                    src={previewImage}
-                                    ref={imageRef}
-                                    className='cvat-player-settings-image-preview'
-                                />
-                            </>
-                        )
-                    }
                 </Col>
             </Row>
         </div>

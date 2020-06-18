@@ -138,6 +138,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             curZLayer,
             resetZoom,
             grid,
+            gridSize,
             gridOpacity,
             gridColor,
             brightnessLevel,
@@ -179,6 +180,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             if (el) {
                 (el as any).instance.fill({ opacity: opacity / 100 });
             }
+        }
+
+        if (gridSize !== prevProps.gridSize) {
+            canvasInstance.grid(gridSize, gridSize);
         }
 
         if (gridOpacity !== prevProps.gridOpacity

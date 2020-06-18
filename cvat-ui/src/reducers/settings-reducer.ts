@@ -47,6 +47,7 @@ const defaultState: SettingsState = {
         contrastLevel: 100,
         saturationLevel: 100,
     },
+    showDialog: false,
 };
 
 export default (state = defaultState, action: AnyAction): SettingsState => {
@@ -265,6 +266,12 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                     ...state.player,
                     canvasBackgroundColor: action.payload.color,
                 },
+            };
+        }
+        case SettingsActionTypes.SWITCH_SETTINGS_DIALOG: {
+            return {
+                ...state,
+                showDialog: typeof action.payload.show === 'undefined' ? !state.showDialog : action.payload.show,
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
