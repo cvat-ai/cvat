@@ -14,6 +14,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Icon from 'antd/lib/icon';
 
+import { Canvas } from 'cvat-canvas-wrapper';
 import { LogType } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
@@ -35,6 +36,7 @@ interface StateToProps {
     jobInstance: any;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
+    canvasInstance: Canvas;
 }
 
 interface DispatchToProps {
@@ -58,6 +60,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 instance: jobInstance,
                 labels,
             },
+            canvas: {
+                instance: canvasInstance,
+            },
         },
         shortcuts: {
             keyMap,
@@ -73,6 +78,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         states,
         keyMap,
         normalizedKeyMap,
+        canvasInstance,
     };
 }
 
@@ -98,6 +104,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         activateObject,
         keyMap,
         normalizedKeyMap,
+        canvasInstance,
     } = props;
 
     const [labelAttrMap, setLabelAttrMap] = useState(
@@ -108,6 +115,19 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
     );
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+    const collapse = (): void => {
+        const [collapser] = window.document
+            .getElementsByClassName('attribute-annotation-sidebar');
+
+        if (collapser) {
+            collapser.addEventListener('transitionend', () => {
+                canvasInstance.fitCanvas();
+            }, { once: true });
+        }
+
+        setSidebarCollapsed(!sidebarCollapsed);
+    };
 
     const [activeObjectState] = activatedStateID === null
         ? [null] : states.filter((objectState: any): boolean => (
@@ -227,7 +247,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     className={`cvat-objects-sidebar-sider
                         ant-layout-sider-zero-width-trigger
                         ant-layout-sider-zero-width-trigger-left`}
-                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    onClick={collapse}
                 >
                     {sidebarCollapsed ? <Icon type='menu-fold' title='Show' />
                         : <Icon type='menu-unfold' title='Hide' />}
