@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Built-in search for labels when create an object or change a label (<https://github.com/opencv/cvat/pull/1683>)
 - Better validation of labels and attributes in raw viewer (<https://github.com/opencv/cvat/pull/1727>)
 - ClamAV antivirus integration (<https://github.com/opencv/cvat/pull/1712>)
-- Added canvas background color selector (<https://github.com/opencv/cvat/issues/1705>)
+- Added canvas background color selector (<https://github.com/opencv/cvat/pull/1705>)
 - Added image settings preview (<https://github.com/opencv/cvat/pull/1705>)
 
 ### Changed
