@@ -27,6 +27,7 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
             visible={visible}
             onCancel={onClose}
             width={800}
+            className='cvat-settings-modal'
             footer={(
                 <Button type='primary' onClick={onClose}>
                     Close
