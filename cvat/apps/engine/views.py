@@ -618,7 +618,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 	@action(detail=True, methods=['POST'], serializer_class=None, url_path="get_base_model")
 	def get_model_keys(self, request, pk):
 		# db_task = self.get_object()
-		
+		form_data = request.data
 		S3 = boto3.client('s3')
 		paginator = S3.get_paginator('list_objects_v2')
 		keys = set()
@@ -632,8 +632,13 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 			for cont in contents:
 				# print(cont['Key'])
 				key = cont['Key']
-				if "models" in key and "saved_model" not in key and "logs" not in key and ('tfod' in key or 'maskrcnn' in key):
-					keys.add(os.path.join(*(os.path.dirname(cont['Key']).split(os.path.sep)[2:])))
+				if "models" in key and "saved_model" not in key and "logs" not in key:
+					if form_data['model_type'] == "tensorflow":
+						if "tfod" in key:
+							keys.add(os.path.join(*(os.path.dirname(cont['Key']).split(os.path.sep)[2:])))
+					else:
+						if "maskrcnn" in key:
+							keys.add(os.path.join(*(os.path.dirname(cont['Key']).split(os.path.sep)[2:])))
 		return Response({'keys':keys})
 
 	@action(detail=True, methods=['POST'], serializer_class=None, url_path='create_annotation_model')
