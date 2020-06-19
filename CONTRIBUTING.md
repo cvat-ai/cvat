@@ -117,17 +117,6 @@ to changes in ``.env/bin/activate`` file are active.
     export REID_MODEL_DIR="/path/to/dir" # dir must contain .xml and .bin files
 ```
 
-### Tensorflow Mask RCNN
-- Download Mask RCNN model, and save it somewhere:
-```sh
-curl https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o mask_rcnn_coco.h5
-```
-- Add next lines to ``.env/bin/activate``:
-```sh
-    export AUTO_SEGMENTATION="yes"
-    export AUTO_SEGMENTATION_PATH="/path/to/dir" # dir must contain mask_rcnn_coco.h5 file
-```
-
 ## JavaScript/Typescript coding style
 
 We use the [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript) for JavaScript code with a

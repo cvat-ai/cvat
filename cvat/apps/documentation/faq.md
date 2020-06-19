@@ -1,10 +1,10 @@
 # Frequently asked questions
-- [How to update CVAT](#how-to-update-cvat)
-- [Kibana app works, but no logs are displayed](#kibana-app-works-but-no-logs-are-displayed)
-- [How to change default CVAT hostname or port](#how-to-change-default-cvat-hostname-or-port)
-- [How to configure connected share folder on Windows](#how-to-configure-connected-share-folder-on-windows)
-- [How to make unassigned tasks not visible to all users](#how-to-make-unassigned-tasks-not-visible-to-all-users)
-- [Can Nvidia GPU be used to run inference with my own model](#can-nvidia-gpu-be-used-to-run-inference-with-my-own-model)
+- [Frequently asked questions](#frequently-asked-questions)
+  - [How to update CVAT](#how-to-update-cvat)
+  - [Kibana app works, but no logs are displayed](#kibana-app-works-but-no-logs-are-displayed)
+  - [How to change default CVAT hostname or port](#how-to-change-default-cvat-hostname-or-port)
+  - [How to configure connected share folder on Windows](#how-to-configure-connected-share-folder-on-windows)
+  - [How to make unassigned tasks not visible to all users](#how-to-make-unassigned-tasks-not-visible-to-all-users)
 
 ## How to update CVAT
 Before upgrading, please follow the official docker
@@ -75,7 +75,3 @@ volumes:
 ## How to make unassigned tasks not visible to all users
 Set [reduce_task_visibility](../../settings/base.py#L424) variable to `True`.
 
-## Can Nvidia GPU be used to run inference with my own model
-Nvidia GPU can be used to accelerate inference of [tf_annotation](../../../components/tf_annotation/README.md) and [auto_segmentation](../../../components/auto_segmentation/README.md) models.
-
-OpenVino doesn't support Nvidia cards, so you can run your own models only on CPU.

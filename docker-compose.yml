@@ -44,11 +44,9 @@ services:
         https_proxy:
         no_proxy:
         socks_proxy:
-        AUTO_SEGMENTATION: "no"
         USER: "django"
         DJANGO_CONFIGURATION: "production"
         TZ: "Etc/UTC"
-        OPENVINO_TOOLKIT: "no"
         CLAM_AV: "no"
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
