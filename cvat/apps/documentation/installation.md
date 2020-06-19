@@ -243,8 +243,6 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 ### Additional components
 
 - [Analytics: management and monitoring of data annotation team](/components/analytics/README.md)
-- [Semi-automatic segmentation with Deep Extreme Cut](/cvat/apps/dextr_segmentation/README.md)
-- [Auto segmentation: Keras+Tensorflow Mask R-CNN Segmentation](/components/auto_segmentation/README.md)
 
 ```bash
 # Build and run containers with Analytics component support:
