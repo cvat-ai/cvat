@@ -6,9 +6,9 @@
 
 .cvat-header.ant-layout-header {
     display: flex;
-    padding-left: 0px;
-    padding-right: 0px;
-    line-height: 0px;
+    padding-left: 0;
+    padding-right: 0;
+    line-height: 0;
     height: 44px;
     background: $header-color;
 }
@@ -35,16 +35,15 @@
 
 .ant-btn.cvat-header-button {
     color: $text-color;
-    padding: 0px 10px;
+    padding: 0 10px;
     margin-right: 10px;
 }
-
 
 .ant-dropdown-trigger.cvat-header-menu-dropdown {
     display: flex;
     align-items: center;
     border-left: 1px solid $border-color-1;
-    padding: 0px 20px;
+    padding: 0 20px;
 }
 
 .anticon.cvat-header-account-icon {
@@ -55,5 +54,5 @@
 
 .anticon.cvat-header-menu-icon {
     margin-left: 16px;
-    margin-right: 0px;
+    margin-right: 0;
 }
