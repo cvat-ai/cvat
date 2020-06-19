@@ -618,14 +618,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             annotations,
             frameData,
-            frameAngle,
             canvasInstance,
         } = this.props;
 
         if (frameData !== null) {
             canvasInstance.setup(frameData, annotations
                 .filter((e) => e.objectType !== ObjectType.TAG));
-            canvasInstance.rotate(frameAngle);
         }
     }
 
