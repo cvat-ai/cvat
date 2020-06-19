@@ -607,9 +607,18 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
 		return Response(status=status.HTTP_202_ACCEPTED)
 
+	@action(detail=True, methods=['POST'], serializer_class=None, url_path="get_object_counts")
+	def get_object_counts(self, request, pk):
+		# db_task = self.get_object()
+		data = annotation.TaskAnnotation(pk, request.user)
+		data.init_from_db()
+		# slogger.glob.info("annotation data {}".format(data))
+		return Response(data.data)
+
 	@action(detail=True, methods=['POST'], serializer_class=None, url_path="get_base_model")
 	def get_model_keys(self, request, pk):
 		# db_task = self.get_object()
+		
 		S3 = boto3.client('s3')
 		paginator = S3.get_paginator('list_objects_v2')
 		keys = set()
@@ -969,7 +978,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 		url_path='dataset')
 	def dataset_export(self, request, pk):
 		db_task = self.get_object()
-
+		
 		action = request.query_params.get("action", "")
 		action = action.lower()
 		if action not in ["", "download"]:
@@ -1063,6 +1072,7 @@ class JobViewSet(viewsets.GenericViewSet,
 		serializer_class=LabeledDataSerializer)
 	def annotations(self, request, pk):
 		self.get_object() # force to call check_object_permissions
+		slogger.glob.info("annotation request {} {}".format(request, pk))
 		if request.method == 'GET':
 			data = annotation.get_job_data(pk, request.user)
 			return Response(data)

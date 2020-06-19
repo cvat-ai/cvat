@@ -251,9 +251,12 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
         const {
             selectedModelType,
         } = this.state;
+        // let resp1 = await core.server.request(`${baseUrl}/api/v1/jobs/${taskInstance.id}/get_object_counts`, {
+        //     method: 'GET',
+        // });
         let resp = await core.server.request(`${baseUrl}/api/v1/jobs/${taskInstance.id}/annotations`, {
             method: 'GET',
-        })
+        });
         const requiredShape: String = selectedModelType === "MASK ZIP 1.0" ? "polygon" : "rectangle";
         const {
             shapes
