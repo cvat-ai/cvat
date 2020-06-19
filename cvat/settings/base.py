@@ -161,9 +161,6 @@ REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'cvat.apps.restrictions.serializers.RestrictedRegisterSerializer'
 }
 
-if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
-    INSTALLED_APPS += ['cvat.apps.auto_annotation']
-
 if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no') and os.environ.get('REID_MODEL_DIR', ''):
     INSTALLED_APPS += ['cvat.apps.reid']
 

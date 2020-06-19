@@ -242,7 +242,6 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 ### Additional components
 
-- [Auto annotation using DL models in OpenVINO toolkit format](/cvat/apps/auto_annotation/README.md)
 - [Analytics: management and monitoring of data annotation team](/components/analytics/README.md)
 - [Semi-automatic segmentation with Deep Extreme Cut](/cvat/apps/dextr_segmentation/README.md)
 - [Auto segmentation: Keras+Tensorflow Mask R-CNN Segmentation](/components/auto_segmentation/README.md)
@@ -515,7 +514,7 @@ server {
     proxy_set_header        Host $http_host;
     proxy_pass_header       Set-Cookie;
 
-    location ~* /api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*  {
+    location ~* /api/.*|git/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|reid/.*  {
         proxy_pass              http://cvat:8080;
     }
 
