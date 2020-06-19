@@ -3119,6 +3119,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
             elif annotation_format == "MOT 1.1":
+                annotations["shapes"] = rectangle_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
             elif annotation_format == "LabelMe 3.0":
