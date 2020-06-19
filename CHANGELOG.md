@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wrong description on register view for the username field (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong resolution for resizing a shape (<https://github.com/opencv/cvat/pull/1667>)
 - React warning because of not unique keys in labels viewer (<https://github.com/opencv/cvat/pull/1727>)
+- A couple of exceptions in AAM related with early object activation (<https://github.com/opencv/cvat/pull/1755>)
 
 
 ### Security
