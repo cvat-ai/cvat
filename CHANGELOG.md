@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
 - Update https install manual. Makes it easier and more robust. Includes automatic renewing of lets encrypt certificates.
+- Implemented import and export of annotations with relative image paths (<https://github.com/opencv/cvat/pull/1463>)
 
 ### Deprecated
 -
@@ -35,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wrong description on register view for the username field (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong resolution for resizing a shape (<https://github.com/opencv/cvat/pull/1667>)
 - React warning because of not unique keys in labels viewer (<https://github.com/opencv/cvat/pull/1727>)
+- A couple of exceptions in AAM related with early object activation (<https://github.com/opencv/cvat/pull/1755>)
 
 
 ### Security
