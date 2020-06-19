@@ -31,9 +31,6 @@ urlpatterns = [
     path('documentation/', include('cvat.apps.documentation.urls')),
 ]
 
-if apps.is_installed('cvat.apps.tf_annotation'):
-    urlpatterns.append(path('tensorflow/annotation/', include('cvat.apps.tf_annotation.urls')))
-
 if apps.is_installed('cvat.apps.git'):
     urlpatterns.append(path('git/repository/', include('cvat.apps.git.urls')))
 

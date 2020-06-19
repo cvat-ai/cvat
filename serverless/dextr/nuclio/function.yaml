@@ -4,6 +4,7 @@ metadata:
   annotations:
     type: interactor
     spec:
+    framework: openvino
 
 spec:
   description: Deep Extreme Cut

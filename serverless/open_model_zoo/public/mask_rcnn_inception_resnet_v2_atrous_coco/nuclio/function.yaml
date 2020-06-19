@@ -6,6 +6,7 @@ metadata:
   namespace: cvat
   annotations:
     type: detector
+    framework: openvino
     spec: |
       [
         { "id": 1, "name": "person" },

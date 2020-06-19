@@ -1,9 +1,9 @@
 metadata:
-  name: omz.public.faster_rcnn_inception_v2_coco
+  name: tf.faster_rcnn_inception_v2_coco
   namespace: cvat
   annotations:
     type: detector
-    framework: openvino
+    framework: tensorflow
     spec: |
       [
         { "id": 1, "name": "person" },
@@ -89,34 +89,31 @@ metadata:
       ]
 
 spec:
-  description: Faster RCNN inception v2 COCO from Intel Open Model Zoo
+  description: Faster RCNN from Tensorflow Object Detection API
   runtime: "python:3.6"
   handler: main:handler
   eventTimeout: 30s
-  env:
-    - name: NUCLIO_PYTHON_EXE_PATH
-      value: /opt/nuclio/python3
 
   build:
-    image: cvat/open_model_zoo/public/faster_rcnn_inception_v2_coco
-    baseImage: openvino/ubuntu18_dev:2020.2
+    image: cvat/tf/faster_rcnn_inception_v2_coco
+    baseImage: tensorflow/tensorflow:2.1.1
 
     directives:
       preCopy:
-      - kind: USER
-        value: root
-      - kind: WORKDIR
-        value: /opt/nuclio
-      - kind: RUN
-        value: ln -s /usr/bin/pip3 /usr/bin/pip
-      - kind: RUN
-        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name faster_rcnn_inception_v2_coco -o /opt/nuclio/open_model_zoo
-      - kind: RUN
-        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/converter.py --name faster_rcnn_inception_v2_coco --precisions FP32 -d /opt/nuclio/open_model_zoo -o /opt/nuclio/open_model_zoo
+        - kind: RUN
+          value: apt install curl
+        - kind: WORKDIR
+          value: /opt/nuclio
 
       postCopy:
-      - kind: USER
-        value: openvino
+        - kind: RUN
+          value: curl http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz -o model.tar.gz
+        - kind: RUN
+          value: tar -xzf model.tar.gz && rm model.tar.gz
+        - kind: RUN
+          value: ln -s faster_rcnn_inception_v2_coco_2018_01_28 rcnn
+        - kind: RUN
+          value: ln -s rcnn/frozen_inference_graph.pb rcnn/inference_graph.pb
 
   triggers:
     myHttpTrigger:

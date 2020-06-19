@@ -88,14 +88,6 @@ RUN if [ "$OPENVINO_TOOLKIT" = "yes" ]; then \
         curl https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -o reid/reid.bin; \
     fi
 
-# Tensorflow annotation support
-ARG TF_ANNOTATION
-ENV TF_ANNOTATION=${TF_ANNOTATION}
-ENV TF_ANNOTATION_MODEL_PATH=${HOME}/rcnn/inference_graph
-RUN if [ "$TF_ANNOTATION" = "yes" ]; then \
-        bash -i /tmp/components/tf_annotation/install.sh; \
-    fi
-
 # Auto segmentation support. by Mohammad
 ARG AUTO_SEGMENTATION
 ENV AUTO_SEGMENTATION=${AUTO_SEGMENTATION}
