@@ -133,9 +133,9 @@ task_create_parser.add_argument(
 )
 task_create_parser.add_argument(
     '--annotation_format',
-    default='CVAT XML 1.1',
+    default='CVAT 1.1',
     type=str,
-    help='format of the annotation file being uploaded, e.g. CVAT XML 1.1'
+    help='format of the annotation file being uploaded, e.g. CVAT 1.1'
 )
 task_create_parser.add_argument(
     '--completion_verification_period',
