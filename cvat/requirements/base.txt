@@ -39,7 +39,7 @@ cython==0.29.20
 matplotlib==3.0.3
 scikit-image==0.15.0
 tensorflow==1.15.2
-keras==2.3.1
+keras==2.4.2
 opencv-python==4.1.0.25
 h5py==2.9.0
 imgaug==0.4.0
