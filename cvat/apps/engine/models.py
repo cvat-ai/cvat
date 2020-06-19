@@ -380,20 +380,3 @@ class TrackedShape(Shape):
 
 class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE)
-
-class Plugin(models.Model):
-    name = models.SlugField(max_length=32, primary_key=True)
-    description = SafeCharField(max_length=8192)
-    maintainer = models.ForeignKey(User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="maintainers")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
-
-    # Extend default permission model
-    class Meta:
-        default_permissions = ()
-
-class PluginOption(models.Model):
-    plugin = models.ForeignKey(Plugin, on_delete=models.CASCADE)
-    name = SafeCharField(max_length=32)
-    value = SafeCharField(max_length=1024)
