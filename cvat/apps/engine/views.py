@@ -609,20 +609,22 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
 	@action(detail=True, methods=['POST'], serializer_class=None, url_path="get_base_model")
 	def get_model_keys(self, request, pk):
-		db_task = self.get_object()
+		# db_task = self.get_object()
 		S3 = boto3.client('s3')
 		paginator = S3.get_paginator('list_objects_v2')
-		keys = []
-		for page in paginator.paginate(Bucket=os.getenv('AWS_BUCKET_NAME'), Prefix=os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/models/'):
+		keys = set()
+		for page in paginator.paginate(Bucket=os.getenv('AWS_BUCKET_NAME'), Prefix=os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'):
 			try:
 				contents = page['Contents']
 			except KeyError as e:
-				wlogger.warning("An exception occurred.")
+				wlogger.warning("An exception occurred. {}".format(e))
 				break
 
 			for cont in contents:
-				if cont['Key'].startswith(db_task.name):
-					keys.append(cont['Key'])
+				# print(cont['Key'])
+				key = cont['Key']
+				if "models" in key and "saved_model" not in key and "logs" not in key and ('tfod' in key or 'maskrcnn' in key):
+					keys.add(os.path.join(*(os.path.dirname(cont['Key']).split(os.path.sep)[2:])))
 		return Response({'keys':keys})
 
 	@action(detail=True, methods=['POST'], serializer_class=None, url_path='create_annotation_model')
@@ -742,15 +744,25 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 			params.append(Parameter(name="tf-image", value=tf_image))
 			params.append(Parameter(name="sys-node-pool", value=machine))
 			if 'TFRecord' in form_data['dump_format']:
+				if form_data['base_model'] and "tfod" in form_data['base_model']:
+					ref_model_path = os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+form_data['base_model']
+				else:
+					ref_model_path = "base-models/"+form_data['ref_model']
+				slogger.glob.info("TF ref model path {}".format(ref_model_path))
 				params.append(Parameter(name='model-path',value=os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/models/'+db_task.name+"_tfod_"+form_data['ref_model']+'_'+stamp+'/'))
-				params.append(Parameter(name='ref-model-path', value="base-models/"+form_data['ref_model']))
+				params.append(Parameter(name='ref-model-path', value=ref_model_path))
 				params.append(Parameter(name='num-classes', value=str(num_classes)))
 				params.append(Parameter(name="ref-model", value=form_data['ref_model']))
 				body = onepanel.core.api.CreateWorkflowExecutionBody(parameters=params,
 				workflow_template_uid = os.getenv('ONEPANEL_OD_TEMPLATE_ID')) 
 			else:
+				if form_data['base_model'] and "maskrcnn" in form_data['base_model']:
+					ref_model_path = os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+form_data['base_model']
+				else:
+					ref_model_path = "base-models/maskrcnn"
+				slogger.glob.info("maskrcnn ref model path {}".format(ref_model_path))
 				params.append(Parameter(name='model-path',value=os.getenv('AWS_S3_PREFIX')+'/'+os.getenv('ONEPANEL_RESOURCE_NAMESPACE')+'/'+os.getenv('ONEPANEL_RESOURCE_UID')+'/models/'+db_task.name+"_maskrcnn_"+stamp+'/'))
-
+				params.append(Parameter(name='ref-model-path', value=ref_model_path))
 				params.append(Parameter(name='num-classes', value=str(num_classes+1)))
 				params.append(Parameter(name='stage-1-epochs', value=str(args_and_vals['--stage1_epochs'])))
 				params.append(Parameter(name='stage-2-epochs', value=str(args_and_vals['--stage2_epochs'])))

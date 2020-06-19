@@ -111,8 +111,11 @@ export const modelsActions = {
             taskInstance,
         },
     ),
-    openNewAnnotationDialog: (taskInstance: any) => createAction(
-        ModelsActionTypes.OPEN_NEW_ANNOTATION_DIALOG, { taskInstance },
+    openNewAnnotationDialog: (taskInstance: any, baseModelList: string[]) => createAction(
+        ModelsActionTypes.OPEN_NEW_ANNOTATION_DIALOG, { 
+            taskInstance,
+            baseModelList,
+         },
     ),
     closeNewAnnotationDialog: () => createAction(ModelsActionTypes.CLOSE_NEW_ANNOTATION_DIALOG),
 };
@@ -588,4 +591,23 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
             dispatch(modelsActions.cancelInferenceFaild(taskID, error));
         }
     };
+}
+
+export function getBaseModelsAsync(taskInstance: any) : ThunkAction {
+    return async(dispatch, getState): Promise<void> => {
+        try {
+            const {keys} = await core.server.request(
+                `${baseURL}/api/v1/tasks/${taskInstance.id}/get_base_model`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }
+            )
+
+            dispatch(modelsActions.openNewAnnotationDialog(taskInstance, keys || []));
+        } catch (e) {
+
+        }
+    }
 }

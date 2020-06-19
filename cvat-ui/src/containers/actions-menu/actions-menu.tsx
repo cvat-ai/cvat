@@ -5,12 +5,15 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
+import getCore from 'cvat-core-wrapper';
+const core = getCore();
+
 import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-menu';
 import {
     CombinedState,
 } from 'reducers/interfaces';
 
-import { modelsActions } from 'actions/models-actions';
+import { modelsActions, getBaseModelsAsync } from 'actions/models-actions';
 import {
     dumpAnnotationsAsync,
     loadAnnotationsAsync,
@@ -103,7 +106,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(modelsActions.showRunModelDialog(taskInstance));
         },
         openNewAnnotationModel: (taskInstance: any): void => {
-            dispatch(modelsActions.openNewAnnotationDialog(taskInstance));
+            dispatch(getBaseModelsAsync(taskInstance));
         },
     };
 }

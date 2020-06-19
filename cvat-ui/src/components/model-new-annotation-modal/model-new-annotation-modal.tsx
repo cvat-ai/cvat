@@ -27,6 +27,7 @@ import getCore from 'cvat-core-wrapper';
 interface Props {
     visible: boolean;
     taskInstance: any;
+    baseModelList: string[];
     closeDialog(): void;
 }
 
@@ -39,6 +40,7 @@ interface State {
         value: string;
     };
     argumentS: string;
+    selectedBaseModel: string;
 }
 
 interface CreateAnnotationSubmitData {
@@ -48,6 +50,7 @@ interface CreateAnnotationSubmitData {
     ref_model: string;
     dump_format: string;
     base_url: string;
+    base_model: string;
 }
 
 const core = getCore();
@@ -98,6 +101,7 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
             showModelsOptions: false,
             machineType: machines[0],
             argumentS: '',
+            selectedBaseModel: '',
         };
     }
 
@@ -114,6 +118,7 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
                 machineType: machines[0],
                 showModelsOptions: false,
                 argumentS: '',
+                selectedBaseModel: '',
             });
         }
     }
@@ -131,6 +136,7 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
                 value,
             },
             argumentS,
+            selectedBaseModel,
         } = this.state;
 
         const baseUrl: string = core.config.backendAPI.slice(0, -7);
@@ -141,6 +147,7 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
             machine_type: value,
             ref_model: selectedModelType !!== "MASK ZIP 1.0" ? selectedModel : "",
             base_url: baseUrl,
+            base_model: selectedBaseModel,
         }
         
         console.log(formData);
@@ -273,6 +280,10 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
 
     private renderModelSelector(): JSX.Element {
 
+        const {
+            baseModelList,
+        } = this.props
+
         return (
             <React.Fragment>
                 <Row type='flex' align='middle'>
@@ -361,6 +372,28 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
                         </Select>
                     </Col>
                 </Row>
+                <Row type='flex' align='middle'>
+                    <Col span={6}>Select Base Model:</Col>
+                    <Col span={17}>
+                        <Select
+                            placeholder='Select a base model'
+                            style={{ width: '100%' }}
+                            onChange={(value: string): void => {
+                                this.setState({
+                                    selectedBaseModel: value,
+                                });
+                            }}
+                        >
+                            {
+                                baseModelList.map((baseModel: string, index: number): JSX.Element => (
+                                    <Select.Option value={baseModel} key={index}>
+                                        {baseModel}
+                                    </Select.Option>
+                                ))
+                            }
+                        </Select>
+                    </Col>
+                </Row>
                 <Row type='flex'>
                     <Col span={6}> Arguments: </Col>
                     <Col span={17}>
@@ -409,7 +442,6 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
             visible,
             closeDialog,
         } = this.props;
-
 
         return (
             visible && (

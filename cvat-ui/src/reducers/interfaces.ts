@@ -164,6 +164,7 @@ export interface ModelsState {
     activeRunTask: any;
     visibleNewAnnotationWindows: boolean;
     activeNewAnnotationTask: any;
+    baseModelList: string[];
 }
 
 export interface CsvModelFiles {

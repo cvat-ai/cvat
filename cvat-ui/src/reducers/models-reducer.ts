@@ -17,6 +17,7 @@ const defaultState: ModelsState = {
     inferences: {},
     visibleNewAnnotationWindows: false,
     activeNewAnnotationTask: null,
+    baseModelList: [],
 };
 
 export default function (
@@ -98,6 +99,7 @@ export default function (
                 ...state,
                 visibleNewAnnotationWindows: true,
                 activeNewAnnotationTask: action.payload.taskInstance,
+                baseModelList: action.payload.baseModelList,
             }
         }
         case ModelsActionTypes.CLOSE_NEW_ANNOTATION_DIALOG: {

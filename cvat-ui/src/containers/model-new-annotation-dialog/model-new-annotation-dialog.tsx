@@ -21,6 +21,7 @@ import {
 interface StateToProps {
     taskInstance: any;
     visible: boolean;
+    baseModelList: string[];
 }
 
 interface DispatchToProps {
@@ -33,6 +34,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         taskInstance: models.activeNewAnnotationTask,
         visible: models.visibleNewAnnotationWindows,
+        baseModelList: models.baseModelList,
     };
 }
 
