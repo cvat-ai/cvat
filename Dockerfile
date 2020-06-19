@@ -103,14 +103,6 @@ RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGUR
 # pycocotools package is impossible to install with its dependencies by one pip install command
 RUN python3 -m pip install --no-cache-dir pycocotools==2.0.0
 
-
-# CUDA support
-ARG CUDA_SUPPORT
-ENV CUDA_SUPPORT=${CUDA_SUPPORT}
-RUN if [ "$CUDA_SUPPORT" = "yes" ]; then \
-        /tmp/components/cuda/install.sh; \
-    fi
-
 ARG CLAM_AV
 ENV CLAM_AV=${CLAM_AV}
 RUN if [ "$CLAM_AV" = "yes" ]; then \

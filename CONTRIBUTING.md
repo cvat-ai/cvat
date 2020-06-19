@@ -117,18 +117,6 @@ to changes in ``.env/bin/activate`` file are active.
     export REID_MODEL_DIR="/path/to/dir" # dir must contain .xml and .bin files
 ```
 
-### Tensorflow RCNN
-- Download RCNN model, unpack it, and save it somewhere:
-```sh
-curl http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_resnet_v2_atrous_coco_2018_01_28.tar.gz -o model.tar.gz && \
-tar -xzf model.tar.gz
-```
-- Add next lines to ``.env/bin/activate``:
-```sh
-    export TF_ANNOTATION="yes"
-    export TF_ANNOTATION_MODEL_PATH="/path/to/the/model/graph" # truncate .pb extension
-```
-
 ### Tensorflow Mask RCNN
 - Download Mask RCNN model, and save it somewhere:
 ```sh
