@@ -29,6 +29,7 @@ interface Props {
     taskInstance: any;
     baseModelList: string[];
     closeDialog(): void;
+    getBaseModelList(taskInstance: any, modelType: string): void;
 }
 
 interface State {
@@ -254,13 +255,23 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
         // let resp1 = await core.server.request(`${baseUrl}/api/v1/jobs/${taskInstance.id}/get_object_counts`, {
         //     method: 'GET',
         // });
-        let resp = await core.server.request(`${baseUrl}/api/v1/jobs/${taskInstance.id}/annotations`, {
-            method: 'GET',
+        let resp = await core.server.request(`${baseUrl}/api/v1/tasks/${taskInstance.id}/get_object_counts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
         });
         const requiredShape: String = selectedModelType === "MASK ZIP 1.0" ? "polygon" : "rectangle";
         const {
-            shapes
+            shapes,
+            tracks,
         } = resp;
+
+        if(tracks.length) {
+            this.createNewAnnotation();
+            return true;
+        }
+
         let count = shapes.reduce((acc: number, shape: any) => {
             if(shape.type === requiredShape) {
                 acc++;
@@ -284,7 +295,9 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
     private renderModelSelector(): JSX.Element {
 
         const {
+            taskInstance,
             baseModelList,
+            getBaseModelList,
         } = this.props
 
         return (
@@ -296,10 +309,15 @@ export default class ModelNewAnnotationModalComponent extends React.PureComponen
                             placeholder='Select a model type'
                             style={{ width: '100%' }}
                             onChange={(value: string): void => {
-                                this.setState({
-                                    selectedModelType: value,
-                                    showModelsOptions: value === "TFRecord ZIP 1.0",
-                                })}
+                                    this.setState({
+                                        selectedModelType: value,
+                                        showModelsOptions: value === "TFRecord ZIP 1.0",
+                                    })
+                                    if(value) {
+                                        const modelType = value === "TFRecord ZIP 1.0" ? "tensorflow" : "maskrcnn";
+                                        getBaseModelList(taskInstance, modelType);
+                                    }
+                                }
                             }
                         >
                             <Select.Option value="TFRecord ZIP 1.0">

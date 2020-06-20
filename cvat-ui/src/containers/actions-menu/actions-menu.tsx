@@ -13,7 +13,7 @@ import {
     CombinedState,
 } from 'reducers/interfaces';
 
-import { modelsActions, getBaseModelsAsync } from 'actions/models-actions';
+import { modelsActions } from 'actions/models-actions';
 import {
     dumpAnnotationsAsync,
     loadAnnotationsAsync,
@@ -106,7 +106,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(modelsActions.showRunModelDialog(taskInstance));
         },
         openNewAnnotationModel: (taskInstance: any): void => {
-            dispatch(getBaseModelsAsync(taskInstance));
+            dispatch(modelsActions.openNewAnnotationDialog(taskInstance));
         },
     };
 }

@@ -15,6 +15,7 @@ import {
     getModelsAsync,
     startInferenceAsync,
     modelsActions,
+    getBaseModelsAsync,
 } from 'actions/models-actions';
 
 
@@ -26,6 +27,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     closeDialog(): void;
+    getBaseModelList(taskInstance: any, modelType: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -43,6 +45,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         closeDialog(): void {
             dispatch(modelsActions.closeNewAnnotationDialog());
         },
+        getBaseModelList(taskInstance, modelType): void {
+            dispatch(getBaseModelsAsync(taskInstance, modelType));
+        }
     });
 }
 

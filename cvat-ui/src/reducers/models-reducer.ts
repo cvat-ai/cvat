@@ -99,8 +99,13 @@ export default function (
                 ...state,
                 visibleNewAnnotationWindows: true,
                 activeNewAnnotationTask: action.payload.taskInstance,
+            };
+        }
+        case ModelsActionTypes.GET_BASE_MODEL: {
+            return {
+                ...state,
                 baseModelList: action.payload.baseModelList,
-            }
+            };
         }
         case ModelsActionTypes.CLOSE_NEW_ANNOTATION_DIALOG: {
             return {

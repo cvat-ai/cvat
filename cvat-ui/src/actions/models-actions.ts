@@ -38,7 +38,8 @@ export enum ModelsActionTypes {
     CANCEL_INFERENCE_SUCCESS = 'CANCEL_INFERENCE_SUCCESS',
     CANCEL_INFERENCE_FAILED = 'CANCEL_INFERENCE_FAILED',
     OPEN_NEW_ANNOTATION_DIALOG = 'SHOW_NEW_ANNOTATION_DIALOG',
-    CLOSE_NEW_ANNOTATION_DIALOG = 'CLOSE_NEW_ANNOTATION_DIALOG'
+    CLOSE_NEW_ANNOTATION_DIALOG = 'CLOSE_NEW_ANNOTATION_DIALOG',
+    GET_BASE_MODEL = 'GET_BASE_MODEL',
 }
 
 export const modelsActions = {
@@ -111,11 +112,15 @@ export const modelsActions = {
             taskInstance,
         },
     ),
-    openNewAnnotationDialog: (taskInstance: any, baseModelList: string[]) => createAction(
+    openNewAnnotationDialog: (taskInstance: any) => createAction(
         ModelsActionTypes.OPEN_NEW_ANNOTATION_DIALOG, { 
             taskInstance,
-            baseModelList,
          },
+    ),
+    getBaseModelList: (baseModelList: string[]) => createAction(
+        ModelsActionTypes.GET_BASE_MODEL, {
+            baseModelList,
+        },
     ),
     closeNewAnnotationDialog: () => createAction(ModelsActionTypes.CLOSE_NEW_ANNOTATION_DIALOG),
 };
@@ -593,19 +598,20 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
     };
 }
 
-export function getBaseModelsAsync(taskInstance: any) : ThunkAction {
+export function getBaseModelsAsync(taskInstance: any, modelType: string) : ThunkAction {
     return async(dispatch, getState): Promise<void> => {
         try {
             const {keys} = await core.server.request(
                 `${baseURL}/api/v1/tasks/${taskInstance.id}/get_base_model`, {
                     method: 'POST',
+                    data: {model_type: modelType},
                     headers: {
                         'Content-Type': 'application/json',
                     },
                 }
             )
 
-            dispatch(modelsActions.openNewAnnotationDialog(taskInstance, keys || []));
+            dispatch(modelsActions.getBaseModelList(keys || []));
         } catch (e) {
 
         }
