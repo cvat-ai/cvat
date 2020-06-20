@@ -306,6 +306,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 ("outside", str(int(shape.outside))),
                 ("occluded", str(int(shape.occluded))),
                 ("keyframe", str(int(shape.keyframe))),
+                ("annotation_type", str(shape.annotation_type)),
             ])
 
             if shape.type == "rectangle":
@@ -394,6 +395,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame,
                 attributes=shape.attributes,
+                annotation_type=shape.annotation_type,
             ),
             annotations.TrackedShape(
                 type=shape.type,
@@ -404,6 +406,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame + annotations.frame_step,
                 attributes=shape.attributes,
+                annotation_type=shape.annotation_type,
             ),
             ],
         ))
@@ -461,6 +464,7 @@ def load(file_object, annotations):
                     shape['frame'] = el.attrib['frame']
                     shape['outside'] = el.attrib['outside'] == "1"
                     shape['keyframe'] = el.attrib['keyframe'] == "1"
+                    shape['annotation_type'] = str(el.attrib.get('annotation_type', 'Manual'))
                 else:
                     shape['frame'] = frame_id
                     shape['label'] = el.attrib['label']

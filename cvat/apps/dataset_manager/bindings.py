@@ -22,8 +22,8 @@ class TaskData:
         'LabeledShape', 'type, frame, label, points, occluded, attributes, annotation_type, group, z_order')
     LabeledShape.__new__.__defaults__ = (0, 0)
     TrackedShape = namedtuple(
-        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, group, z_order, label, track_id')
-    TrackedShape.__new__.__defaults__ = (0, 0, None, 0)
+        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, annotation_type, group, z_order, label, track_id')
+    TrackedShape.__new__.__defaults__ = ('Manual', 0, 0, None, 0)
     Track = namedtuple('Track', 'label, group, shapes')
     Tag = namedtuple('Tag', 'frame, label, attributes, annotation_type, group')
     Tag.__new__.__defaults__ = (0, )
@@ -203,6 +203,7 @@ class TaskData:
             outside=shape.get("outside", False),
             keyframe=shape.get("keyframe", True),
             track_id=shape["track_id"],
+            annotation_type=shape.get("annotation_type", "Manual"),
             attributes=self._export_attributes(shape["attributes"]),
         )
 
@@ -597,6 +598,7 @@ def import_dm_annotations(dm_dataset, task_data):
                     occluded=ann.attributes.get('occluded') == True,
                     z_order=ann.z_order,
                     group=group_map.get(ann.group, 0),
+                    annotation_type='Manual',
                     attributes=[task_data.Attribute(name=n, value=str(v))
                         for n, v in ann.attributes.items()],
                 ))
@@ -605,6 +607,7 @@ def import_dm_annotations(dm_dataset, task_data):
                     frame=frame_number,
                     label=label_cat.items[ann.label].name,
                     group=group_map.get(ann.group, 0),
+                    annotation_type='Manual',
                     attributes=[task_data.Attribute(name=n, value=str(v))
                         for n, v in ann.attributes.items()],
                 ))

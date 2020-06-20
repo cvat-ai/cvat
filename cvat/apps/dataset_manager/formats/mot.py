@@ -59,6 +59,7 @@ def _import(src_file, task_data):
                     z_order=ann.z_order,
                     frame=frame_id,
                     attributes=[],
+                    annotation_type='Manual',
                 )
 
                 # build trajectories as lists of shapes in track dict
