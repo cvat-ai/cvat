@@ -610,10 +610,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 	@action(detail=True, methods=['POST'], serializer_class=None, url_path="get_object_counts")
 	def get_object_counts(self, request, pk):
 		# db_task = self.get_object()
-		data = annotation.TaskAnnotation(pk, request.user)
-		data.init_from_db()
+		data = annotation.get_task_data_custom(pk, request.user)
+		# data.init_from_db()
 		# slogger.glob.info("annotation data {}".format(data))
-		return Response(data.data)
+		return Response(data)
 
 	@action(detail=True, methods=['POST'], serializer_class=None, url_path="get_base_model")
 	def get_model_keys(self, request, pk):

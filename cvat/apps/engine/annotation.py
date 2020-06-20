@@ -121,6 +121,13 @@ def delete_task_data(pk, user):
     annotation = TaskAnnotation(pk, user)
     annotation.delete()
 
+
+def get_task_data_custom(pk, user):
+    with transaction.atomic():
+        annotation = TaskAnnotation(pk, user)
+        annotation.init_from_db()
+    return annotation.data
+    
 def dump_task_data(pk, user, filename, dumper, scheme, host):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after _AnnotationForTask instance
