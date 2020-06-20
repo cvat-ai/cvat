@@ -86,25 +86,6 @@ You have done! Now it is possible to insert breakpoints and debug server and cli
 
 ## Setup additional components in development environment
 
-### Automatic annotation
--   Install OpenVINO on your host machine according to instructions from
-[OpenVINO website](https://docs.openvinotoolkit.org/latest/index.html)
-
--   Add some environment variables (copy code below to the end of ``.env/bin/activate`` file):
-```sh
-    source /opt/intel/openvino/bin/setupvars.sh
-
-    export OPENVINO_TOOLKIT="yes"
-    export IE_PLUGINS_PATH="/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64"
-    export OpenCV_DIR="/usr/local/lib/cmake/opencv4"
-    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/intel/openvino/inference_engine/lib/intel64"
-```
-
-Notice 1: be sure that these paths actually exist. Some of them can differ in different OpenVINO versions.
-
-Notice 2: you need to deactivate, activate again and restart vs code
-to changes in ``.env/bin/activate`` file are active.
-
 ### ReID algorithm
 - Perform all steps in the automatic annotation section
 - Download ReID model and save it somewhere:

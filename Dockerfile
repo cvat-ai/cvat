@@ -77,17 +77,6 @@ RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER} && \
 
 COPY components /tmp/components
 
-# OpenVINO toolkit support
-ARG OPENVINO_TOOLKIT
-ENV OPENVINO_TOOLKIT=${OPENVINO_TOOLKIT}
-ENV REID_MODEL_DIR=${HOME}/reid
-RUN if [ "$OPENVINO_TOOLKIT" = "yes" ]; then \
-        /tmp/components/openvino/install.sh && \
-        mkdir ${REID_MODEL_DIR} && \
-        curl https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -o reid/reid.xml && \
-        curl https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -o reid/reid.bin; \
-    fi
-
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
