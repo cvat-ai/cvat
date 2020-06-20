@@ -82,22 +82,25 @@ class DatumaroExtractor(SourceExtractor):
             item_id = item_desc['id']
 
             image = None
-            image_info = item_desc.get('image', {})
+            image_info = item_desc.get('image')
             if image_info:
-                image_path = osp.join(self._images_dir,
-                    image_info.get('path', '')) # relative or absolute fits
+                image_path = image_info.get('path') or \
+                    item_id + DatumaroPath.IMAGE_EXT
+                image_path = osp.join(self._images_dir, image_path)
                 image = Image(path=image_path, size=image_info.get('size'))
 
             annotations = self._load_annotations(item_desc)
 
             item = DatasetItem(id=item_id, subset=self._subset,
-                annotations=annotations, image=image)
+                annotations=annotations, image=image,
+                attributes=item_desc.get('attr'))
 
             items.append(item)
 
         return items
 
-    def _load_annotations(self, item):
+    @staticmethod
+    def _load_annotations(item):
         parsed = item['annotations']
         loaded = []
 

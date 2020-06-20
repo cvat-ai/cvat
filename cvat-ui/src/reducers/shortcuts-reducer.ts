@@ -217,6 +217,12 @@ const defaultKeyMap = {
         sequences: ['m'],
         action: 'keydown',
     },
+    SWITCH_SPLIT_MODE: {
+        name: 'Split mode',
+        description: 'Activate or deactivate mode to splitting shapes',
+        sequences: ['alt+m'],
+        action: 'keydown',
+    },
     SWITCH_GROUP_MODE: {
         name: 'Group mode',
         description: 'Activate or deactivate mode to grouping shapes',
@@ -318,6 +324,12 @@ const defaultKeyMap = {
         name: 'Switch automatic bordering',
         description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
         sequences: ['Control'],
+        action: 'keydown',
+    },
+    CHANGE_OBJECT_COLOR: {
+        name: 'Change color',
+        description: 'Set the next color for an activated shape',
+        sequences: ['Enter'],
         action: 'keydown',
     },
 } as any as Record<string, ExtendedKeyMapOptions>;

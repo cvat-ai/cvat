@@ -87,6 +87,7 @@ def compare_datasets(test, expected, actual):
         item_b = find(actual, lambda x: x.id == item_a.id and \
             x.subset == item_a.subset)
         test.assertFalse(item_b is None, item_a.id)
+        test.assertEqual(item_a.attributes, item_b.attributes)
         test.assertEqual(len(item_a.annotations), len(item_b.annotations))
         for ann_a in item_a.annotations:
             # We might find few corresponding items, so check them all
@@ -98,3 +99,20 @@ def compare_datasets(test, expected, actual):
             ann_b = find(ann_b_matches, lambda x: x == ann_a)
             test.assertEqual(ann_a, ann_b, 'ann: %s' % ann_to_str(ann_a))
             item_b.annotations.remove(ann_b) # avoid repeats
+
+def compare_datasets_strict(test, expected, actual):
+    # Compares datasets for strong equality
+
+    test.assertEqual(expected.categories(), actual.categories())
+
+    test.assertListEqual(sorted(expected.subsets()), sorted(actual.subsets()))
+    test.assertEqual(len(expected), len(actual))
+
+    for subset_name in expected.subsets():
+        e_subset = expected.get_subset(subset_name)
+        a_subset = actual.get_subset(subset_name)
+        test.assertEqual(len(e_subset), len(a_subset))
+        for idx, (item_a, item_b) in enumerate(zip(e_subset, a_subset)):
+            test.assertEqual(item_a, item_b,
+                '%s:\n%s\nvs.\n%s\n' % \
+                (idx, item_to_str(item_a), item_to_str(item_b)))

@@ -18,6 +18,7 @@ interface Props {
     visible: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
+    changeColorShortcut: string;
     hideStates(): void;
     showStates(): void;
     lockStates(): void;
@@ -38,6 +39,7 @@ function LabelItemComponent(props: Props): JSX.Element {
         lockStates,
         unlockStates,
         changeColor,
+        changeColorShortcut,
     } = props;
 
     return (
@@ -54,6 +56,7 @@ function LabelItemComponent(props: Props): JSX.Element {
                     trigger='click'
                     content={(
                         <ColorChanger
+                            shortcut={changeColorShortcut}
                             onChange={changeColor}
                             colors={labelColors}
                         />

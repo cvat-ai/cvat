@@ -6,7 +6,7 @@ from unittest import TestCase
 
 from datumaro.components.project import Project, Environment, Dataset
 from datumaro.components.config_model import Source, Model
-from datumaro.components.launcher import Launcher, InferenceWrapper
+from datumaro.components.launcher import Launcher, ModelTransform
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (Extractor, DatasetItem,
     Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
@@ -153,7 +153,7 @@ class ProjectTest(TestCase):
         extractor = TestExtractor()
 
         batch_size = 3
-        executor = InferenceWrapper(extractor, model, batch_size=batch_size)
+        executor = ModelTransform(extractor, model, batch_size=batch_size)
 
         for item in executor:
             self.assertEqual(1, len(item.annotations))

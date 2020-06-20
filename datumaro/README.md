@@ -32,15 +32,26 @@ VOC-like dataset  --                              ---> Publication etc.
 - Dataset format conversions:
   - COCO (`image_info`, `instances`, `person_keypoints`, `captions`, `labels`*)
     - [Format specification](http://cocodataset.org/#format-data)
+    - [Dataset example](tests/assets/coco_dataset)
     - `labels` are our extension - like `instances` with only `category_id`
   - PASCAL VOC (`classification`, `detection`, `segmentation` (class, instances), `action_classification`, `person_layout`)
     - [Format specification](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/index.html)
+    - [Dataset example](tests/assets/voc_dataset)
   - YOLO (`bboxes`)
     - [Format specification](https://github.com/AlexeyAB/darknet#how-to-train-pascal-voc-data)
+    - [Dataset example](tests/assets/yolo_dataset)
   - TF Detection API (`bboxes`, `masks`)
     - Format specifications: [bboxes](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/using_your_own_dataset.md), [masks](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/instance_segmentation.md)
+    - [Dataset example](tests/assets/tf_detection_api_dataset)
+  - MOT sequences
+    - [Format specification](https://arxiv.org/pdf/1906.04567.pdf)
+    - [Dataset example](tests/assets/mot_dataset)
   - CVAT
     - [Format specification](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md)
+    - [Dataset example](tests/assets/cvat_dataset)
+  - LabelMe
+    - [Format specification](http://labelme.csail.mit.edu/Release3.0)
+    - [Dataset example](tests/assets/labelme_dataset)
 - Dataset building operations:
   - Merging multiple datasets into one
   - Dataset filtering with custom conditions, for instance:
@@ -52,7 +63,7 @@ VOC-like dataset  --                              ---> Publication etc.
   - Annotation conversions, for instance
     - polygons to instance masks and vise-versa
     - apply a custom colormap for mask annotations
-    - remap dataset labels
+    - rename or remove dataset labels
 - Dataset comparison
 - Model integration:
   - Inference (OpenVINO and custom models)
@@ -164,6 +175,24 @@ project = Project.load('directory')
     --interpretation-script parse_results.py
   datum model run --model mymodel --output-dir mymodel_inference/
   datum project diff mymodel_inference/ --format tensorboard --output-dir diff
+  ```
+
+- Change colors in PASCAL VOC-like `.png` masks:
+  ```bash
+  datum project import --format voc --input-path <path/to/voc/dataset>
+
+  # Create a color map file with desired colors:
+  #
+  # label : color_rgb : parts : actions
+  # cat:0,0,255::
+  # dog:255,0,0::
+  #
+  # Save as mycolormap.txt
+
+  datum project export --format voc_segmentation -- --label-map mycolormap.txt
+  # add "--apply-colormap=0" to save grayscale (indexed) masks
+  # check "--help" option for more info
+  # use "datum --loglevel debug" for extra conversion info
   ```
 
 <!--lint enable list-item-bullet-indent-->

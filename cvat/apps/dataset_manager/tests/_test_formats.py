@@ -62,7 +62,6 @@ def _setUpModule():
 
 from io import BytesIO
 import os.path as osp
-import random
 import tempfile
 import zipfile
 
@@ -71,27 +70,24 @@ from django.contrib.auth.models import User, Group
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 
+from cvat.apps.dataset_manager.annotation import AnnotationIR
+from cvat.apps.dataset_manager.bindings import TaskData, find_dataset_root
+from cvat.apps.engine.models import Task
+
 _setUpModule()
 
+from cvat.apps.dataset_manager.annotation import AnnotationIR
+from cvat.apps.dataset_manager.bindings import TaskData
+from cvat.apps.engine.models import Task
 
-def generate_image_file(filename):
+
+def generate_image_file(filename, size=(100, 50)):
     f = BytesIO()
-    width = random.randint(10, 200)
-    height = random.randint(10, 200)
-    image = Image.new('RGB', size=(width, height))
+    image = Image.new('RGB', size=size)
     image.save(f, 'jpeg')
     f.name = filename
     f.seek(0)
-
     return f
-
-def create_db_users(cls):
-    group_user, _ = Group.objects.get_or_create(name="user")
-
-    user_dummy = User.objects.create_superuser(username="test", password="test", email="")
-    user_dummy.groups.add(group_user)
-
-    cls.user = user_dummy
 
 class ForceLogin:
     def __init__(self, user, client):
@@ -109,14 +105,47 @@ class ForceLogin:
         if self.user:
             self.client.logout()
 
-class TaskExportTest(APITestCase):
+class _DbTestBase(APITestCase):
     def setUp(self):
         self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
-        create_db_users(cls)
+        cls.create_db_users()
 
+    @classmethod
+    def create_db_users(cls):
+        group, _ = Group.objects.get_or_create(name="adm")
+
+        admin = User.objects.create_superuser(
+            username="test", password="test", email="")
+        admin.groups.add(group)
+
+        cls.user = admin
+
+    def _put_api_v1_task_id_annotations(self, tid, data):
+        with ForceLogin(self.user, self.client):
+            response = self.client.put("/api/v1/tasks/%s/annotations" % tid,
+                data=data, format="json")
+
+        return response
+
+    def _create_task(self, data, image_data):
+        with ForceLogin(self.user, self.client):
+            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED, response.status_code
+            tid = response.data["id"]
+
+            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+                data=image_data)
+            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+
+            response = self.client.get("/api/v1/tasks/%s" % tid)
+            task = response.data
+
+        return task
+
+class TaskExportTest(_DbTestBase):
     def _generate_annotations(self, task):
         annotations = {
             "version": 0,
@@ -237,7 +266,15 @@ class TaskExportTest(APITestCase):
         self._put_api_v1_task_id_annotations(task["id"], annotations)
         return annotations
 
-    def _generate_task(self):
+    def _generate_task_images(self, count): # pylint: disable=no-self-use
+        images = {
+            "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i)
+            for i in range(count)
+        }
+        images["image_quality"] = 75
+        return images
+
+    def _generate_task(self, images):
         task = {
             "name": "my task #1",
             "owner": '',
@@ -267,35 +304,10 @@ class TaskExportTest(APITestCase):
                 {"name": "person"},
             ]
         }
-        return self._create_task(task, 3)
+        return self._create_task(task, images)
 
-    def _create_task(self, data, size):
-        with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED, response.status_code
-            tid = response.data["id"]
-
-            images = {
-                "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i)
-                for i in range(size)
-            }
-            images["image_quality"] = 75
-            response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=images)
-            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
-
-            response = self.client.get("/api/v1/tasks/{}".format(tid))
-            task = response.data
-
-        return task
-
-    def _put_api_v1_task_id_annotations(self, tid, data):
-        with ForceLogin(self.user, self.client):
-            response = self.client.put("/api/v1/tasks/{}/annotations".format(tid),
-                data=data, format="json")
-
-        return response
-
-    def _test_export(self, check, task, format_name, **export_args):
+    @staticmethod
+    def _test_export(check, task, format_name, **export_args):
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = osp.join(temp_dir, format_name)
             dm.task.export_task(task["id"], file_path,
@@ -341,11 +353,15 @@ class TaskExportTest(APITestCase):
                 self.assertTrue(len(f.read()) != 0)
 
         for f in dm.views.get_export_formats():
+            if not f.ENABLED:
+                self.skipTest("Format is disabled")
+
             format_name = f.DISPLAY_NAME
             for save_images in { True, False }:
+                images = self._generate_task_images(3)
+                task = self._generate_task(images)
+                self._generate_annotations(task)
                 with self.subTest(format=format_name, save_images=save_images):
-                    task = self._generate_task()
-                    self._generate_annotations(task)
                     self._test_export(check, task,
                         format_name, save_images=save_images)
 
@@ -365,7 +381,11 @@ class TaskExportTest(APITestCase):
             ('YOLO 1.1', 'yolo'),
         ]:
             with self.subTest(format=format_name):
-                task = self._generate_task()
+                if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:
+                    self.skipTest("Format is disabled")
+
+                images = self._generate_task_images(3)
+                task = self._generate_task(images)
 
                 def check(file_path):
                     def load_dataset(src):
@@ -375,6 +395,7 @@ class TaskExportTest(APITestCase):
 
                             # NOTE: can't import cvat.utils.cli
                             # for whatever reason, so remove the dependency
+                            #
                             project.config.remove('sources')
 
                             return project.make_dataset()
@@ -391,3 +412,132 @@ class TaskExportTest(APITestCase):
                     self.assertEqual(len(dataset), task["size"])
                 self._test_export(check, task, format_name, save_images=False)
 
+    def test_cant_make_rel_frame_id_from_unknown(self):
+        images = self._generate_task_images(3)
+        images['frame_filter'] = 'step=2'
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        with self.assertRaisesRegex(ValueError, r'Unknown'):
+            task_data.rel_frame_id(1) # the task has only 0 and 2 frames
+
+    def test_can_make_rel_frame_id_from_known(self):
+        images = self._generate_task_images(6)
+        images['frame_filter'] = 'step=2'
+        images['start_frame'] = 1
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        self.assertEqual(2, task_data.rel_frame_id(5))
+
+    def test_cant_make_abs_frame_id_from_unknown(self):
+        images = self._generate_task_images(3)
+        images['frame_filter'] = 'step=2'
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        with self.assertRaisesRegex(ValueError, r'Unknown'):
+            task_data.abs_frame_id(2) # the task has only 0 and 1 indices
+
+    def test_can_make_abs_frame_id_from_known(self):
+        images = self._generate_task_images(6)
+        images['frame_filter'] = 'step=2'
+        images['start_frame'] = 1
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+
+        self.assertEqual(5, task_data.abs_frame_id(2))
+
+class FrameMatchingTest(_DbTestBase):
+    def _generate_task_images(self, paths): # pylint: disable=no-self-use
+        f = BytesIO()
+        with zipfile.ZipFile(f, 'w') as archive:
+            for path in paths:
+                archive.writestr(path, generate_image_file(path).getvalue())
+        f.name = 'images.zip'
+        f.seek(0)
+
+        return {
+            'client_files[0]': f,
+            'image_quality': 75,
+        }
+
+    def _generate_task(self, images):
+        task = {
+            "name": "my task #1",
+            "owner": '',
+            "assignee": '',
+            "overlap": 0,
+            "segment_size": 100,
+            "z_order": False,
+            "labels": [
+                {
+                    "name": "car",
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "mazda",
+                            "values": ["bmw", "mazda", "renault"]
+                        },
+                        {
+                            "name": "parked",
+                            "mutable": True,
+                            "input_type": "checkbox",
+                            "default_value": False
+                        },
+                    ]
+                },
+                {"name": "person"},
+            ]
+        }
+        return self._create_task(task, images)
+
+    def test_frame_matching(self):
+        task_paths = [
+            'a.jpg',
+            'a/a.jpg',
+            'a/b.jpg',
+            'b/a.jpg',
+            'b/c.jpg',
+            'a/b/c.jpg',
+            'a/b/d.jpg',
+        ]
+
+        images = self._generate_task_images(task_paths)
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task["id"]))
+
+        for input_path, expected, root in [
+            ('z.jpg', None, ''), # unknown item
+            ('z/a.jpg', None, ''), # unknown item
+
+            ('d.jpg', 'a/b/d.jpg', 'a/b'), # match with root hint
+            ('b/d.jpg', 'a/b/d.jpg', 'a'), # match with root hint
+        ] + list(zip(task_paths, task_paths, [None] * len(task_paths))): # exact matches
+            with self.subTest(input=input_path):
+                actual = task_data.match_frame(input_path, root)
+                if actual is not None:
+                    actual = task_data.frame_info[actual]['path']
+                self.assertEqual(expected, actual)
+
+    def test_dataset_root(self):
+        for task_paths, dataset_paths, expected in [
+            ([ 'a.jpg', 'b/c/a.jpg' ], [ 'a.jpg', 'b/c/a.jpg' ], ''),
+            ([ 'b/a.jpg', 'b/c/a.jpg' ], [ 'a.jpg', 'c/a.jpg' ], 'b'), # 'images from share' case
+            ([ 'b/c/a.jpg' ], [ 'a.jpg' ], 'b/c'), # 'images from share' case
+            ([ 'a.jpg' ], [ 'z.jpg' ], None),
+        ]:
+            with self.subTest(expected=expected):
+                images = self._generate_task_images(task_paths)
+                task = self._generate_task(images)
+                task_data = TaskData(AnnotationIR(),
+                    Task.objects.get(pk=task["id"]))
+                dataset = [
+                    datumaro.components.extractor.DatasetItem(
+                        id=osp.splitext(p)[0])
+                    for p in dataset_paths]
+
+                root = find_dataset_root(dataset, task_data)
+                self.assertEqual(expected, root)
