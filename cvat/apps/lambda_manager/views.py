@@ -44,8 +44,8 @@ class LambdaGateway:
         response = [LambdaFunction(self, item) for item in data.values()]
         return response
 
-    def get(self, name):
-        data = self._http(url=self.NUCLIO_ROOT_URL + '/' + name)
+    def get(self, id):
+        data = self._http(url=self.NUCLIO_ROOT_URL + '/' + id)
         response = LambdaFunction(self, data)
         return response
 
@@ -54,8 +54,8 @@ class LambdaGateway:
 
 class LambdaFunction:
     def __init__(self, gateway, data):
-        # name of the function (e.g. omz.public.yolo-v3)
-        self.name = data['metadata']['name']
+        # ID of the function (e.g. omz.public.yolo-v3)
+        self.id = data['metadata']['name']
         # type of the function (e.g. detector, interactor)
         self.kind = data['metadata']['annotations'].get('type')
         # dictionary of labels for the function (e.g. car, person)
@@ -63,7 +63,7 @@ class LambdaFunction:
         labels = [item['name'] for item in spec]
         if len(labels) != len(set(labels)):
             raise ValidationError(
-                "`{}` lambda function has non-unique labels".format(self.name),
+                "`{}` lambda function has non-unique labels".format(self.id),
                 code=status.HTTP_404_NOT_FOUND)
         self.labels = labels
         # state of the function
@@ -72,15 +72,21 @@ class LambdaFunction:
         self.description = data['spec']['description']
         # http port to access the serverless function
         self.port = data["status"]["httpPort"]
+        # framework which is used for the function (e.g. tensorflow, openvino)
+        self.framework = data['metadata']['annotations'].get('framework')
+        # display name for the function
+        self.name = data['metadata']['annotations'].get('name')
         self.gateway = gateway
 
     def to_dict(self):
         response = {
-            'name': self.name,
+            'id': self.id,
             'kind': self.kind,
             'labels': self.labels,
             'state': self.state,
-            'description': self.description
+            'description': self.description,
+            'framework': self.framework,
+            'name': self.name,
         }
         return response
 
@@ -148,7 +154,7 @@ class LambdaJob:
         return {
             "id": self.job.id,
             "function": {
-                "name": lambda_func.name if lambda_func else None,
+                "id": lambda_func.id if lambda_func else None,
                 "threshold": self.job.kwargs.get("threshold"),
                 "task": self.job.kwargs.get("task")
             },
@@ -238,7 +244,7 @@ def return_response(success_code=status.HTTP_200_OK):
 
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
-    lookup_field = 'name'
+    lookup_field = 'id'
 
     @return_response()
     def list(self, request):
@@ -246,12 +252,12 @@ class FunctionViewSet(viewsets.ViewSet):
         return [f.to_dict() for f in gateway.list()]
 
     @return_response()
-    def retrieve(self, request, name):
+    def retrieve(self, request, id):
         gateway = LambdaGateway()
-        return gateway.get(name).to_dict()
+        return gateway.get(id).to_dict()
 
     @return_response()
-    def call(self, request, name):
+    def call(self, request, id):
         try:
             task = request.data['task']
             points = request.data.get('points')
@@ -259,12 +265,12 @@ class FunctionViewSet(viewsets.ViewSet):
             db_task = TaskModel.objects.get(pk=task)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
-                '`{}` lambda function was run '.format(name) +
+                '`{}` lambda function was run '.format(id) +
                 'with wrong arguments ({})'.format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST)
 
         gateway = LambdaGateway()
-        lambda_func = gateway.get(name)
+        lambda_func = gateway.get(id)
 
         return lambda_func.invoke(db_task, frame, points)
 

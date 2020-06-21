@@ -26,15 +26,6 @@ class PluginChecker {
             case SupportedPlugins.GIT_INTEGRATION: {
                 return isReachable(`${serverHost}/git/repository/meta/get`, 'OPTIONS');
             }
-            case SupportedPlugins.AUTO_ANNOTATION: {
-                return isReachable(`${serverHost}/auto_annotation/meta/get`, 'OPTIONS');
-            }
-            case SupportedPlugins.TF_ANNOTATION: {
-                return isReachable(`${serverHost}/tensorflow/annotation/meta/get`, 'OPTIONS');
-            }
-            case SupportedPlugins.TF_SEGMENTATION: {
-                return isReachable(`${serverHost}/tensorflow/segmentation/meta/get`, 'OPTIONS');
-            }
             case SupportedPlugins.DEXTR_SEGMENTATION: {
                 return isReachable(`${serverHost}/api/v1/lambda/functions/public.dextr`, 'GET');
             }
@@ -42,7 +33,7 @@ class PluginChecker {
                 return isReachable(`${serverHost}/analytics/app/kibana`, 'GET');
             }
             case SupportedPlugins.REID: {
-                return isReachable(`${serverHost}/reid/enabled`, 'GET');
+                return isReachable(`${serverHost}/api/v1/lambda/functions/omz.intel.reid`, 'GET');
             }
             default:
                 return false;

@@ -117,95 +117,31 @@ const baseURL = core.config.backendAPI.slice(0, -7);
 
 export function getModelsAsync(): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
-        const state: CombinedState = getState();
-        const OpenVINO = state.plugins.list.AUTO_ANNOTATION;
-        const RCNN = state.plugins.list.TF_ANNOTATION;
-        const MaskRCNN = state.plugins.list.TF_SEGMENTATION;
-
         dispatch(modelsActions.getModels());
         const models: Model[] = [];
 
         try {
-            if (OpenVINO) {
-                const response = await core.server.request(
-                    `${baseURL}/auto_annotation/meta/get`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        data: JSON.stringify([]),
+            const response = await core.server.request(
+                `${baseURL}/api/v1/lambda/functions`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
                     },
-                );
+                },
+            );
 
-
-                for (const model of response.models) {
+            for (const model of response) {
+                if (model.kind === 'detector') {
                     models.push({
-                        id: model.id,
-                        ownerID: model.owner,
-                        primary: model.primary,
+                        id: null,
+                        ownerID: null,
+                        primary: true,
                         name: model.name,
-                        uploadDate: model.uploadDate,
-                        updateDate: model.updateDate,
+                        uploadDate: '',
+                        updateDate: '',
                         labels: [...model.labels],
                     });
                 }
-            }
-
-            if (RCNN) {
-                models.push({
-                    id: null,
-                    ownerID: null,
-                    primary: true,
-                    name: PreinstalledModels.RCNN,
-                    uploadDate: '',
-                    updateDate: '',
-                    labels: ['surfboard', 'car', 'skateboard', 'boat', 'clock',
-                        'cat', 'cow', 'knife', 'apple', 'cup', 'tv',
-                        'baseball_bat', 'book', 'suitcase', 'tennis_racket',
-                        'stop_sign', 'couch', 'cell_phone', 'keyboard',
-                        'cake', 'tie', 'frisbee', 'truck', 'fire_hydrant',
-                        'snowboard', 'bed', 'vase', 'teddy_bear',
-                        'toaster', 'wine_glass', 'traffic_light',
-                        'broccoli', 'backpack', 'carrot', 'potted_plant',
-                        'donut', 'umbrella', 'parking_meter', 'bottle',
-                        'sandwich', 'motorcycle', 'bear', 'banana',
-                        'person', 'scissors', 'elephant', 'dining_table',
-                        'toothbrush', 'toilet', 'skis', 'bowl', 'sheep',
-                        'refrigerator', 'oven', 'microwave', 'train',
-                        'orange', 'mouse', 'laptop', 'bench', 'bicycle',
-                        'fork', 'kite', 'zebra', 'baseball_glove', 'bus',
-                        'spoon', 'horse', 'handbag', 'pizza', 'sports_ball',
-                        'airplane', 'hair_drier', 'hot_dog', 'remote',
-                        'sink', 'dog', 'bird', 'giraffe', 'chair',
-                    ],
-                });
-            }
-
-            if (MaskRCNN) {
-                models.push({
-                    id: null,
-                    ownerID: null,
-                    primary: true,
-                    name: PreinstalledModels.MaskRCNN,
-                    uploadDate: '',
-                    updateDate: '',
-                    labels: ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
-                        'bus', 'train', 'truck', 'boat', 'traffic light',
-                        'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird',
-                        'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear',
-                        'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie',
-                        'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-                        'kite', 'baseball bat', 'baseball glove', 'skateboard',
-                        'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup',
-                        'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
-                        'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-                        'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed',
-                        'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote',
-                        'keyboard', 'cell phone', 'microwave', 'oven', 'toaster',
-                        'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
-                        'teddy bear', 'hair drier', 'toothbrush',
-                    ],
-                });
             }
         } catch (error) {
             dispatch(modelsActions.getModelsFailed(error));

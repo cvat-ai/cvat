@@ -2,6 +2,7 @@ metadata:
   name: omz.public.faster_rcnn_inception_v2_coco
   namespace: cvat
   annotations:
+    name: Faster RCNN
     type: detector
     framework: openvino
     spec: |

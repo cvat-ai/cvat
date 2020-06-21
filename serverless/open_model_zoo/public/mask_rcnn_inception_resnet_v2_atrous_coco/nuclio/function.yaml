@@ -5,6 +5,7 @@ metadata:
   name: omz.public.mask_rcnn_inception_resnet_v2_atrous_coco
   namespace: cvat
   annotations:
+    name: Mask RCNN
     type: detector
     framework: openvino
     spec: |

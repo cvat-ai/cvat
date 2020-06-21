@@ -2,6 +2,7 @@ metadata:
   name: omz.public.yolo-v3-tf
   namespace: cvat
   annotations:
+    name: YOLO v3
     type: detector
     framework: openvino
     spec: |
