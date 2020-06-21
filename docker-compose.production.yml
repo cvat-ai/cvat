@@ -1,0 +1,10 @@
+version: "2.3"
+services:
+  cvat:
+    volumes:
+      - ./videos:/videos:ro
+  cvat_proxy:
+    environment:
+      CVAT_HOST: 35.245.244.50
+    ports:
+      - "80:80"

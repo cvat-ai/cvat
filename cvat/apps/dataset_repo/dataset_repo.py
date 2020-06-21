@@ -14,6 +14,7 @@ import zipfile
 
 import django_rq
 import git
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
@@ -26,8 +27,8 @@ from cvat.apps.dataset_repo.models import GitData, GitStatusChoice
 
 def _have_no_access_exception(ex):
     if 'Permission denied' in ex.stderr or 'Could not read from remote repository' in ex.stderr:
-        keys = subprocess.run(['ssh-add -L'], shell = True,
-            stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
+        keys = subprocess.run(['ssh-add -L'], shell=True,
+                              stdout=subprocess.PIPE).stdout.decode('utf-8').split('\n')
         keys = list(filter(len, list(map(lambda x: x.strip(), keys))))
         raise Exception(
             'Could not connect to the remote repository. ' +
@@ -39,14 +40,15 @@ def _have_no_access_exception(ex):
 
 
 def _read_old_diffs(diff_dir, summary):
-    diff_files = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
+    diff_files = list(map(lambda x: os.path.join(
+        diff_dir, x), os.listdir(diff_dir)))
     for diff_file in diff_files:
         diff_file = open(diff_file, 'r')
         diff = json.loads(diff_file.read())
 
         for action_key in diff:
-            summary[action_key] += sum([diff[action_key][key] for key in diff[action_key]])
-
+            summary[action_key] += sum([diff[action_key][key]
+                                        for key in diff[action_key]])
 
 
 class Git:
@@ -60,7 +62,8 @@ class Git:
             "email": user.email or "dummy@cvat.com"
         }
         self._cwd = os.path.join(db_task.get_task_artifacts_dirname(), "repos")
-        self._diffs_dir = os.path.join(db_task.get_task_artifacts_dirname(), "repos_diffs_v2")
+        self._diffs_dir = os.path.join(
+            db_task.get_task_artifacts_dirname(), "repos_diffs_v2")
         self._task_mode = db_task.mode
         self._task_name = re.sub(r'[\\/*?:"<>|\s]', '_', db_task.name)[:100]
         self._branch_name = 'cvat_{}_{}'.format(db_task.id, self._task_name)
@@ -68,10 +71,10 @@ class Git:
         self._sync_date = db_git.sync_date
         self._lfs = db_git.lfs
 
-
     # Method parses an got URL.
     # SSH: git@github.com/proj/repos[.git]
     # HTTP/HTTPS: [http://]github.com/proj/repos[.git]
+
     def _parse_url(self):
         try:
             # Almost STD66 (RFC3986), but schema can include a leading digit
@@ -79,8 +82,10 @@ class Git:
             # https://github.com/git/git/blob/77bd3ea9f54f1584147b594abc04c26ca516d987/url.c
 
             host_pattern = r"((?:(?:(?:\d{1,3}\.){3}\d{1,3})|(?:[a-zA-Z0-9._-]+[.a-zA-Z]+))(?::\d+)?)"
-            http_pattern = r"(?:http[s]?://)?" + host_pattern + r"((?:/[a-zA-Z0-9._-]+){2,})"
-            ssh_pattern = r"([a-zA-Z0-9._-]+)@" + host_pattern + r":([a-zA-Z0-9._-]+)((?:/[a-zA-Z0-9._-]+)+)"
+            http_pattern = r"(?:http[s]?://)?" + \
+                host_pattern + r"((?:/[a-zA-Z0-9._-]+){2,})"
+            ssh_pattern = r"([a-zA-Z0-9._-]+)@" + host_pattern + \
+                r":([a-zA-Z0-9._-]+)((?:/[a-zA-Z0-9._-]+)+)"
 
             http_match = re.match(http_pattern, self._url)
             ssh_match = re.match(ssh_pattern, self._url)
@@ -104,11 +109,12 @@ class Git:
 
             return user, host, repos
         except Exception as ex:
-            slogger.glob.exception('URL parsing errors occurred', exc_info = True)
+            slogger.glob.exception(
+                'URL parsing errors occurred', exc_info=True)
             raise ex
 
-
     # Method creates the main branch if repostory doesn't have any branches
+
     def _create_master_branch(self):
         if len(self._rep.heads):
             raise Exception("Some heads already exists")
@@ -116,12 +122,13 @@ class Git:
         with open(readme_md_name, "w"):
             pass
         self._rep.index.add([readme_md_name])
-        self._rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self._user["name"], timezone.now()))
+        self._rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(
+            self._user["name"], timezone.now()))
 
         self._rep.git.push("origin", "master")
 
-
     # Method creates task branch for repository from current master
+
     def _to_task_branch(self):
         # Remove user branch from local repository if it exists
         if self._branch_name not in list(map(lambda x: x.name, self._rep.heads)):
@@ -129,8 +136,8 @@ class Git:
 
         self._rep.head.reference = self._rep.heads[self._branch_name]
 
-
     # Method setups a config file for current user
+
     def _update_config(self):
         slogger.task[self._tid].info("User config initialization..")
         with self._rep.config_writer() as cw:
@@ -146,37 +153,38 @@ class Git:
         if not len(self._rep.heads):
             self._create_master_branch()
         self._to_task_branch()
-        os.makedirs(self._diffs_dir, exist_ok = True)
-
+        os.makedirs(self._diffs_dir, exist_ok=True)
 
     def _ssh_url(self):
         user, host, repos = self._parse_url()
         return "{}@{}:{}".format(user, host, repos)
 
-
     # Method clones a remote repos to the local storage using SSH and initializes it
+
     def _clone(self):
         os.makedirs(self._cwd)
         ssh_url = self._ssh_url()
 
         # Cloning
-        slogger.task[self._tid].info("Cloning remote repository from {}..".format(ssh_url))
+        slogger.task[self._tid].info(
+            "Cloning remote repository from {}..".format(ssh_url))
         self._rep = git.Repo.clone_from(ssh_url, self._cwd)
 
         # Intitialization
         self._configurate()
 
-
     # Method is some wrapper for clone
     # It restores state if any errors have occured
     # It useful if merge conflicts have occured during pull
+
     def _reclone(self):
         if os.path.exists(self._cwd):
             if not os.path.isdir(self._cwd):
                 os.remove(self._cwd)
             else:
                 # Rename current repository dir
-                tmp_repo = os.path.abspath(os.path.join(self._cwd, "..", "tmp_repo"))
+                tmp_repo = os.path.abspath(
+                    os.path.join(self._cwd, "..", "tmp_repo"))
                 os.rename(self._cwd, tmp_repo)
 
                 # Try clone repository
@@ -192,8 +200,8 @@ class Git:
         else:
             self._clone()
 
-
     # Method checkouts to master branch and pulls it from remote repos
+
     def _pull(self):
         self._rep.head.reference = self._rep.heads["master"]
         try:
@@ -209,10 +217,10 @@ class Git:
             # Merge conflicts
             self._reclone()
 
-
     # Method connects a local repository if it exists
     # Otherwise it clones it before
-    def init_repos(self, wo_remote = False):
+
+    def init_repos(self, wo_remote=False):
         try:
             # Try to use a local repos. It can throw GitError exception
             self._rep = git.Repo(self._cwd)
@@ -220,9 +228,11 @@ class Git:
 
             # Check if remote URL is actual
             if self._ssh_url() != self._rep.git.remote('get-url', '--all', 'origin'):
-                slogger.task[self._tid].info("Local repository URL is obsolete.")
+                slogger.task[self._tid].info(
+                    "Local repository URL is obsolete.")
                 # We need reinitialize repository if it's false
-                raise git.exc.GitError("Actual and saved repository URLs aren't match")
+                raise git.exc.GitError(
+                    "Actual and saved repository URLs aren't match")
         except git.exc.GitError:
             if wo_remote:
                 raise Exception('Local repository is failed')
@@ -230,13 +240,14 @@ class Git:
             shutil.rmtree(self._cwd, True)
             self._clone()
 
-
     # Method prepares an annotation, merges diffs and pushes it to remote repository to user branch
+
     def push(self, user, scheme, host, db_task, last_save):
         # Update local repository
         self._pull()
 
-        os.makedirs(os.path.join(self._cwd, os.path.dirname(self._annotation_file)), exist_ok = True)
+        os.makedirs(os.path.join(self._cwd, os.path.dirname(
+            self._annotation_file)), exist_ok=True)
         # Remove old annotation file if it exists
         if os.path.exists(self._annotation_file):
             os.remove(self._annotation_file)
@@ -244,7 +255,8 @@ class Git:
         # Initialize LFS if need
         if self._lfs:
             updated = False
-            lfs_settings = ["*.xml\tfilter=lfs diff=lfs merge=lfs -text\n", "*.zip\tfilter=lfs diff=lfs merge=lfs -text\n"]
+            lfs_settings = ["*.xml\tfilter=lfs diff=lfs merge=lfs -text\n",
+                            "*.zip\tfilter=lfs diff=lfs merge=lfs -text\n"]
             if not os.path.isfile(os.path.join(self._cwd, ".gitattributes")):
                 with open(os.path.join(self._cwd, ".gitattributes"), "w") as gitattributes:
                     gitattributes.writelines(lfs_settings)
@@ -270,7 +282,7 @@ class Git:
         else:
             format_name = "CVAT for video 1.1"
         dump_name = os.path.join(db_task.get_task_dirname(),
-            "git_annotation_{}.zip".format(timestamp))
+                                 "git_annotation_{}.zip".format(timestamp))
         export_task(
             task_id=self._tid,
             dst_file=dump_name,
@@ -302,7 +314,8 @@ class Git:
             "delete": 0
         }
 
-        old_diffs_dir = os.path.join(os.path.dirname(self._diffs_dir), 'repos_diffs')
+        old_diffs_dir = os.path.join(
+            os.path.dirname(self._diffs_dir), 'repos_diffs')
         if (os.path.isdir(old_diffs_dir)):
             _read_old_diffs(old_diffs_dir, summary_diff)
 
@@ -312,8 +325,10 @@ class Git:
                 for key in diff:
                     summary_diff[key] += diff[key]
 
-        message = "CVAT Annotation updated by {}. \n".format(self._user["name"])
-        message += 'Task URL: {}://{}/dashboard?id={}\n'.format(scheme, host, db_task.id)
+        message = "CVAT Annotation updated by {}. \n".format(
+            self._user["name"])
+        message += 'Task URL: {}://{}/dashboard?id={}\n'.format(
+            scheme, host, db_task.id)
         if db_task.bug_tracker:
             message += 'Bug Tracker URL: {}\n'.format(db_task.bug_tracker)
         message += "Created: {}, updated: {}, deleted: {}\n".format(
@@ -321,8 +336,10 @@ class Git:
             summary_diff["update"],
             summary_diff["delete"]
         )
-        message += "Annotation time: {} hours\n".format(math.ceil((last_save - self._sync_date).total_seconds() / 3600))
-        message += "Total annotation time: {} hours".format(math.ceil((last_save - db_task.created_date).total_seconds() / 3600))
+        message += "Annotation time: {} hours\n".format(
+            math.ceil((last_save - self._sync_date).total_seconds() / 3600))
+        message += "Total annotation time: {} hours".format(
+            math.ceil((last_save - db_task.created_date).total_seconds() / 3600))
 
         self._rep.index.commit(message)
         self._rep.git.push("origin", self._branch_name, "--force")
@@ -330,23 +347,27 @@ class Git:
         shutil.rmtree(old_diffs_dir, True)
         shutil.rmtree(self._diffs_dir, True)
 
-
     # Method checks status of repository annotation
+
     def remote_status(self, last_save):
         # Check repository exists and archive exists
         if not os.path.isfile(self._annotation_file) or last_save != self._sync_date:
             return GitStatusChoice.NON_SYNCED
         else:
-            self._rep.git.update_ref('-d', 'refs/remotes/origin/{}'.format(self._branch_name))
+            self._rep.git.update_ref(
+                '-d', 'refs/remotes/origin/{}'.format(self._branch_name))
             self._rep.git.remote('-v', 'update')
 
-            last_hash = self._rep.git.show_ref('refs/heads/{}'.format(self._branch_name), '--hash')
-            merge_base_hash = self._rep.merge_base('refs/remotes/origin/master', self._branch_name)[0].hexsha
+            last_hash = self._rep.git.show_ref(
+                'refs/heads/{}'.format(self._branch_name), '--hash')
+            merge_base_hash = self._rep.merge_base(
+                'refs/remotes/origin/master', self._branch_name)[0].hexsha
             if last_hash == merge_base_hash:
                 return GitStatusChoice.MERGED
             else:
                 try:
-                    self._rep.git.show_ref('refs/remotes/origin/{}'.format(self._branch_name), '--hash')
+                    self._rep.git.show_ref(
+                        'refs/remotes/origin/{}'.format(self._branch_name), '--hash')
                     return GitStatusChoice.SYNCED
                 except git.exc.GitCommandError:
                     # Remote branch has been deleted w/o merge
@@ -355,7 +376,7 @@ class Git:
 
 def initial_create(tid, git_path, lfs, user):
     try:
-        db_task = Task.objects.get(pk = tid)
+        db_task = Task.objects.get(pk=tid)
         path_pattern = r"\[(.+)\]"
         path_search = re.search(path_pattern, git_path)
         path = None
@@ -366,7 +387,7 @@ def initial_create(tid, git_path, lfs, user):
             path = os.path.join('/', path.strip())
         else:
             anno_file = re.sub(r'[\\/*?:"<>|\s]', '_', db_task.name)[:100]
-            path = '/annotation/{}.zip'.format(anno_file)
+            path = '/annotations/{}.zip'.format(anno_file)
 
         path = path[1:]
         _split = os.path.splitext(path)
@@ -386,15 +407,16 @@ def initial_create(tid, git_path, lfs, user):
         except git.exc.GitCommandError as ex:
             _have_no_access_exception(ex)
     except Exception as ex:
-        slogger.task[tid].exception('exception occured during git initial_create', exc_info = True)
+        slogger.task[tid].exception(
+            'exception occured during git initial_create', exc_info=True)
         raise ex
 
 
 @transaction.atomic
 def push(tid, user, scheme, host):
     try:
-        db_task = Task.objects.get(pk = tid)
-        db_git = GitData.objects.select_for_update().get(pk = db_task)
+        db_task = Task.objects.get(pk=tid)
+        db_git = GitData.objects.select_for_update().get(pk=db_task)
         try:
             _git = Git(db_git, db_task, user)
             _git.init_repos()
@@ -407,7 +429,8 @@ def push(tid, user, scheme, host):
         except git.exc.GitCommandError as ex:
             _have_no_access_exception(ex)
     except Exception as ex:
-        slogger.task[tid].exception('push to remote repository errors occured', exc_info = True)
+        slogger.task[tid].exception(
+            'push to remote repository errors occured', exc_info=True)
         raise ex
 
 
@@ -417,9 +440,9 @@ def get(tid, user):
     response["url"] = {"value": None}
     response["status"] = {"value": None, "error": None}
 
-    db_task = Task.objects.get(pk = tid)
-    if GitData.objects.filter(pk = db_task).exists():
-        db_git = GitData.objects.select_for_update().get(pk = db_task)
+    db_task = Task.objects.get(pk=tid)
+    if GitData.objects.filter(pk=db_task).exists():
+        db_git = GitData.objects.select_for_update().get(pk=db_task)
         response['url']['value'] = '{} [{}]'.format(db_git.url, db_git.path)
         try:
             rq_id = "git.push.{}".format(tid)
@@ -444,6 +467,7 @@ def get(tid, user):
 
     return response
 
+
 def update_states():
     db_git_records = GitData.objects.all()
     db_user = User.objects.first()
@@ -455,15 +479,20 @@ def update_states():
         try:
             get(db_git.task_id, db_user)
         except Exception:
-            slogger.glob("Exception occured during a status updating for db_git with tid: {}".format(db_git.task_id))
+            slogger.glob("Exception occured during a status updating for db_git with tid: {}".format(
+                db_git.task_id))
+
 
 @transaction.atomic
 def _onsave(jid, data, action):
-    db_task = Job.objects.select_related('segment__task').get(pk = jid).segment.task
+    db_task = Job.objects.select_related(
+        'segment__task').get(pk=jid).segment.task
     try:
-        db_git = GitData.objects.select_for_update().get(pk = db_task.id)
-        diff_dir = os.path.join(db_task.get_task_artifacts_dirname(), "repos_diffs")
-        diff_dir_v2 = os.path.join(db_task.get_task_artifacts_dirname(), "repos_diffs_v2")
+        db_git = GitData.objects.select_for_update().get(pk=db_task.id)
+        diff_dir = os.path.join(
+            db_task.get_task_artifacts_dirname(), "repos_diffs")
+        diff_dir_v2 = os.path.join(
+            db_task.get_task_artifacts_dirname(), "repos_diffs_v2")
 
         summary = {
             "update": 0,
@@ -475,12 +504,14 @@ def _onsave(jid, data, action):
             _read_old_diffs(diff_dir, summary)
             shutil.rmtree(diff_dir, True)
 
-        os.makedirs(diff_dir_v2, exist_ok = True)
+        os.makedirs(diff_dir_v2, exist_ok=True)
 
-        summary[action] += sum([len(data[key]) for key in ['shapes', 'tracks', 'tags']])
+        summary[action] += sum([len(data[key])
+                                for key in ['shapes', 'tracks', 'tags']])
 
         if summary["update"] or summary["create"] or summary["delete"]:
-            diff_files = list(map(lambda x: os.path.join(diff_dir_v2, x), os.listdir(diff_dir_v2)))
+            diff_files = list(map(lambda x: os.path.join(
+                diff_dir_v2, x), os.listdir(diff_dir_v2)))
             last_num = 0
             for f in diff_files:
                 number = os.path.splitext(os.path.basename(f))[0]
@@ -496,7 +527,8 @@ def _onsave(jid, data, action):
     except GitData.DoesNotExist:
         pass
 
-add_plugin("patch_job_data", _onsave, "after", exc_ok = False)
+
+add_plugin("patch_job_data", _onsave, "after", exc_ok=False)
 
 # TODO: Append git repository into dump file
 # def _ondump(task_id, dst_file, format_name,

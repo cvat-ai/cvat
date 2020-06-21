@@ -14,6 +14,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
+from pathlib import Path
 import os
 import sys
 import fcntl
@@ -22,17 +23,17 @@ import subprocess
 import mimetypes
 mimetypes.add_type("application/wasm", ".wasm", True)
 
-from pathlib import Path
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get(
+    'ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
 
 try:
     sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
+    from keys.secret_key import SECRET_KEY  # pylint: disable=unused-import
 except ImportError:
 
     from django.utils.crypto import get_random_string
@@ -52,41 +53,53 @@ def generate_ssh_keys():
 
     def add_ssh_keys():
         IGNORE_FILES = ('README.md', 'ssh.pid')
-        keys_to_add = [entry.name for entry in os.scandir(ssh_dir) if entry.name not in IGNORE_FILES]
+        keys_to_add = [entry.name for entry in os.scandir(
+            ssh_dir) if entry.name not in IGNORE_FILES]
         keys_to_add = ' '.join(os.path.join(ssh_dir, f) for f in keys_to_add)
         subprocess.run(['ssh-add {}'.format(keys_to_add)],
-            shell = True,
-            stderr = subprocess.PIPE,
-            # lets set the timeout if ssh-add requires a input passphrase for key
-            # otherwise the process will be freezed
-            timeout=30,
-            )
+                       shell=True,
+                       stderr=subprocess.PIPE,
+                       # lets set the timeout if ssh-add requires a input passphrase for key
+                       # otherwise the process will be freezed
+                       timeout=30,
+                       )
 
     with open(pidfile, "w") as pid:
         fcntl.flock(pid, fcntl.LOCK_EX)
         try:
             add_ssh_keys()
-            keys = subprocess.run(['ssh-add -l'], shell = True,
-                stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
+            keys = subprocess.run(['ssh-add -l'], shell=True,
+                                  stdout=subprocess.PIPE).stdout.decode('utf-8').split('\n')
             if 'has no identities' in keys[0]:
                 print('SSH keys were not found')
                 volume_keys = os.listdir(keys_dir)
                 if not ('id_rsa' in volume_keys and 'id_rsa.pub' in volume_keys):
                     print('New pair of keys are being generated')
-                    subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell = True)
-                    shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
-                    shutil.copymode('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
-                    shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
-                    shutil.copymode('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
+                    subprocess.run(
+                        ['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell=True)
+                    shutil.copyfile('{}/id_rsa'.format(ssh_dir),
+                                    '{}/id_rsa'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa'.format(ssh_dir),
+                                    '{}/id_rsa'.format(keys_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir),
+                                    '{}/id_rsa.pub'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(ssh_dir),
+                                    '{}/id_rsa.pub'.format(keys_dir))
                 else:
                     print('Copying them from keys volume')
-                    shutil.copyfile('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
-                    shutil.copymode('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
-                    shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
-                    shutil.copymode('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
-                subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)], shell = True)
+                    shutil.copyfile('{}/id_rsa'.format(keys_dir),
+                                    '{}/id_rsa'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa'.format(keys_dir),
+                                    '{}/id_rsa'.format(ssh_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(keys_dir),
+                                    '{}/id_rsa.pub'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(keys_dir),
+                                    '{}/id_rsa.pub'.format(ssh_dir))
+                subprocess.run(
+                    ['ssh-add', '{}/id_rsa'.format(ssh_dir)], shell=True)
         finally:
             fcntl.flock(pid, fcntl.LOCK_UN)
+
 
 try:
     if os.getenv("SSH_AUTH_SOCK", None):
@@ -272,7 +285,8 @@ COMPRESS_CSS_FILTERS = [
     'compressor.filters.css_default.CssAbsoluteFilter',
     'compressor.filters.cssmin.rCSSMinFilter'
 ]
-COMPRESS_JS_FILTERS = []  # No compression for js files (template literals were compressed bad)
+# No compression for js files (template literals were compressed bad)
+COMPRESS_JS_FILTERS = []
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
@@ -295,7 +309,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Cache DB access (e.g. for engine.task.get_frame)
 # https://github.com/Suor/django-cacheops
 CACHEOPS_REDIS = {
-    'host': 'localhost', # redis-server is on same machine
+    'host': 'localhost',  # redis-server is on same machine
     'port': 6379,        # default redis port
     'db': 1,             # SELECT non-default redis database
 }
@@ -380,7 +394,7 @@ LOGGING = {
             'level': 'DEBUG',
             'filename': os.path.join(BASE_DIR, 'logs', 'cvat_server.log'),
             'formatter': 'standard',
-            'maxBytes': 1024*1024*50, # 50 MB
+            'maxBytes': 1024*1024*50,  # 50 MB
             'backupCount': 5,
         },
         'logstash': {
@@ -438,24 +452,20 @@ RESTRICTIONS = {
 
     # allow access to analytics component to users with the following roles
     'analytics_access': (
-        'engine.role.observer',
-        'engine.role.annotator',
-        'engine.role.user',
         'engine.role.admin',
-        ),
+    ),
 }
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
 CACHES = {
-   'default' : {
-       'BACKEND' : 'diskcache.DjangoCache',
-       'LOCATION' : CACHE_ROOT,
-       'TIMEOUT' : None,
-       'OPTIONS' : {
-            'size_limit' : 2 ** 40, # 1 Tb
-       }
-   }
+    'default': {
+        'BACKEND': 'diskcache.DjangoCache',
+        'LOCATION': CACHE_ROOT,
+        'TIMEOUT': None,
+        'OPTIONS': {
+            'size_limit': 2 ** 40,  # 1 Tb
+        }
+    }
 }
 
 USE_CACHE = True
-

@@ -1,5 +1,6 @@
 # Project Specific
 /data/
+/videos/
 /models/
 /share/
 /static/
