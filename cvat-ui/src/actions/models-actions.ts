@@ -137,6 +137,7 @@ export function getModelsAsync(): ThunkAction {
                         ownerID: null,
                         primary: true,
                         name: model.name,
+                        framework: model.framework,
                         uploadDate: '',
                         updateDate: '',
                         labels: [...model.labels],

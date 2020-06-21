@@ -24,26 +24,6 @@ function TopBarComponent(props: Props): JSX.Element {
             <Col md={11} lg={9} xl={8} xxl={7}>
                 <Text className='cvat-title'>Models</Text>
             </Col>
-            <Col
-                md={{ span: 11 }}
-                lg={{ span: 9 }}
-                xl={{ span: 8 }}
-                xxl={{ span: 7 }}
-            >
-                { installedAutoAnnotation
-                    && (
-                        <Button
-                            size='large'
-                            id='cvat-create-model-button'
-                            type='primary'
-                            onClick={
-                                (): void => history.push('/models/create')
-                            }
-                        >
-                            Create new model
-                        </Button>
-                    )}
-            </Col>
         </Row>
     );
 }
