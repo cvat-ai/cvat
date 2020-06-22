@@ -62,6 +62,7 @@ interface Props {
     contextType: ContextMenuType;
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
+    showAllInterpolationTracks: boolean;
     workspace: Workspace;
     automaticBordering: boolean;
     keyMap: Record<string, ExtendedKeyMapOptions>;
@@ -94,6 +95,7 @@ interface Props {
     onChangeGridColor(color: GridColor): void;
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onFetchAnnotation(): void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -147,9 +149,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             workspace,
             frameFetching,
             showObjectsTextAlways,
+            showAllInterpolationTracks,
             automaticBordering,
             showProjections,
             canvasBackgroundColor,
+            onFetchAnnotation,
         } = this.props;
 
         if (prevProps.showObjectsTextAlways !== showObjectsTextAlways
@@ -162,6 +166,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 autoborders: automaticBordering,
                 showProjections,
             });
+        }
+
+        if (prevProps.showAllInterpolationTracks !== showAllInterpolationTracks) {
+            onFetchAnnotation();
         }
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -229,7 +237,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
-            || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
+            || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy
+        ) {
             this.updateShapesView();
         }
 

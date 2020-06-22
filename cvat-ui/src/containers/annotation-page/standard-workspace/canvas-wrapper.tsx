@@ -26,6 +26,7 @@ import {
     updateCanvasContextMenu,
     addZLayer,
     switchZLayer,
+    fetchAnnotationsAsync,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -78,6 +79,7 @@ interface StateToProps {
     resetZoom: boolean;
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
+    showAllInterpolationTracks: boolean;
     workspace: Workspace;
     minZLayer: number;
     maxZLayer: number;
@@ -118,6 +120,7 @@ interface DispatchToProps {
     onChangeGridColor(color: GridColor): void;
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onFetchAnnotation(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -175,6 +178,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             workspace: {
                 aamZoomMargin,
                 showObjectsTextAlways,
+                showAllInterpolationTracks,
                 automaticBordering,
             },
             shapes: {
@@ -221,6 +225,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         resetZoom,
         aamZoomMargin,
         showObjectsTextAlways,
+        showAllInterpolationTracks,
         curZLayer,
         minZLayer,
         maxZLayer,
@@ -320,6 +325,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSwitchAutomaticBordering(enabled: boolean): void {
             dispatch(switchAutomaticBordering(enabled));
+        },
+        onFetchAnnotation(): void {
+            dispatch(fetchAnnotationsAsync());
         },
     };
 }
