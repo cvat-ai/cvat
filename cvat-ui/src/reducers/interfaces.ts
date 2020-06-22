@@ -162,6 +162,7 @@ export interface ActiveInference {
     progress: number;
     error: string;
     modelType: ModelType;
+    id: string;
 }
 
 export interface ModelsState {

@@ -96,7 +96,7 @@ export const modelsActions = {
             taskID,
         },
     ),
-    cancelInferenceFaild: (taskID: number, error: any) => createAction(
+    cancelInferenceFailed: (taskID: number, error: any) => createAction(
         ModelsActionTypes.CANCEL_INFERENCE_FAILED, {
             taskID,
             error,
@@ -133,7 +133,7 @@ export function getModelsAsync(): ThunkAction {
             for (const model of response) {
                 if (model.kind === 'detector') {
                     models.push({
-                        id: null,
+                        id: model.id,
                         ownerID: null,
                         primary: true,
                         name: model.name,
@@ -342,69 +342,22 @@ export function getInferenceStatusAsync(tasks: number[]): ThunkAction {
             }));
         }
 
-        const state: CombinedState = getState();
-        const OpenVINO = state.plugins.list.AUTO_ANNOTATION;
-        const RCNN = state.plugins.list.TF_ANNOTATION;
-        const MaskRCNN = state.plugins.list.TF_SEGMENTATION;
-
         const dispatchCallback = (action: ModelsActions): void => {
             dispatch(action);
         };
 
         try {
-            if (OpenVINO) {
-                const response = await core.server.request(
-                    `${baseURL}/auto_annotation/meta/get`, {
-                        method: 'POST',
-                        data: JSON.stringify(tasks),
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                    },
-                );
+            const response = await core.server.request(
+                `${baseURL}/api/v1/lambda/requests`, {
+                    method: 'GET',
+                },
+            );
 
-                parse(response.run, ModelType.OPENVINO)
-                    .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
-                    .forEach((inferenceMeta: InferenceMeta): void => {
-                        subscribe(inferenceMeta, dispatchCallback);
-                    });
-            }
-
-            if (RCNN) {
-                const response = await core.server.request(
-                    `${baseURL}/tensorflow/annotation/meta/get`, {
-                        method: 'POST',
-                        data: JSON.stringify(tasks),
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                    },
-                );
-
-                parse(response, ModelType.RCNN)
-                    .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
-                    .forEach((inferenceMeta: InferenceMeta): void => {
-                        subscribe(inferenceMeta, dispatchCallback);
-                    });
-            }
-
-            if (MaskRCNN) {
-                const response = await core.server.request(
-                    `${baseURL}/tensorflow/segmentation/meta/get`, {
-                        method: 'POST',
-                        data: JSON.stringify(tasks),
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                    },
-                );
-
-                parse(response, ModelType.MASK_RCNN)
-                    .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
-                    .forEach((inferenceMeta: InferenceMeta): void => {
-                        subscribe(inferenceMeta, dispatchCallback);
-                    });
-            }
+            parse(response.run, ModelType.OPENVINO)
+                .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
+                .forEach((inferenceMeta: InferenceMeta): void => {
+                    subscribe(inferenceMeta, dispatchCallback);
+                });
         } catch (error) {
             dispatch(modelsActions.fetchMetaFailed(error));
         }
@@ -421,28 +374,20 @@ export function startInferenceAsync(
 ): ThunkAction {
     return async (dispatch): Promise<void> => {
         try {
-            if (model.name === PreinstalledModels.RCNN) {
-                await core.server.request(
-                    `${baseURL}/tensorflow/annotation/create/task/${taskInstance.id}`,
-                );
-            } else if (model.name === PreinstalledModels.MaskRCNN) {
-                await core.server.request(
-                    `${baseURL}/tensorflow/segmentation/create/task/${taskInstance.id}`,
-                );
-            } else {
-                await core.server.request(
-                    `${baseURL}/auto_annotation/start/${model.id}/${taskInstance.id}`, {
-                        method: 'POST',
-                        data: JSON.stringify({
-                            reset: cleanOut,
-                            labels: mapping,
-                        }),
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+            await core.server.request(
+                `${baseURL}/api/v1/lambda/requests`, {
+                    method: 'POST',
+                    data: JSON.stringify({
+                        cleanup: cleanOut,
+                        mapping,
+                        task: taskInstance.id,
+                        function: model.id,
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json',
                     },
-                );
-            }
+                },
+            );
 
             dispatch(getInferenceStatusAsync([taskInstance.id]));
         } catch (error) {
@@ -456,19 +401,11 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
         try {
             const inference = getState().models.inferences[taskID];
             if (inference) {
-                if (inference.modelType === ModelType.OPENVINO) {
-                    await core.server.request(
-                        `${baseURL}/auto_annotation/cancel/${taskID}`,
-                    );
-                } else if (inference.modelType === ModelType.RCNN) {
-                    await core.server.request(
-                        `${baseURL}/tensorflow/annotation/cancel/task/${taskID}`,
-                    );
-                } else if (inference.modelType === ModelType.MASK_RCNN) {
-                    await core.server.request(
-                        `${baseURL}/tensorflow/segmentation/cancel/task/${taskID}`,
-                    );
-                }
+                await core.server.request(
+                    `${baseURL}/api/v1/lambda/requests/${inference.id}`, {
+                        method: 'DELETE',
+                    },
+                );
 
                 if (timers[taskID]) {
                     clearTimeout(timers[taskID]);
@@ -478,7 +415,7 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
 
             dispatch(modelsActions.cancelInferenceSuccess(taskID));
         } catch (error) {
-            dispatch(modelsActions.cancelInferenceFaild(taskID, error));
+            dispatch(modelsActions.cancelInferenceFailed(taskID, error));
         }
     };
 }

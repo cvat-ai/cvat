@@ -71,11 +71,11 @@ class LambdaFunction:
         # description of the function
         self.description = data['spec']['description']
         # http port to access the serverless function
-        self.port = data["status"]["httpPort"]
+        self.port = data["status"].get("httpPort")
         # framework which is used for the function (e.g. tensorflow, openvino)
         self.framework = data['metadata']['annotations'].get('framework')
         # display name for the function
-        self.name = data['metadata']['annotations'].get('name')
+        self.name = data['metadata']['annotations'].get('name', self.id)
         self.gateway = gateway
 
     def to_dict(self):
@@ -88,21 +88,30 @@ class LambdaFunction:
             'framework': self.framework,
             'name': self.name,
         }
+
         return response
 
-    def invoke(self, db_task, frame, points=None):
+    def invoke(self, db_task, frame, quality, points=None):
         payload = {
-            'image': self._get_image(db_task, frame),
+            'image': self._get_image(db_task, frame, quality),
             'points': points
         }
 
         return self.gateway.invoke(self, payload)
 
-    def _get_image(self, db_task, frame):
+    def _get_image(self, db_task, frame, quality):
+        if quality is None or quality == "original":
+            quality = FrameProvider.Quality.ORIGINAL
+        elif quality == "original":
+            quality = FrameProvider.Quality.COMPRESSED
+        else:
+            raise ValidationError(
+                '`{}` lambda function was run '.format(self.id) +
+                'with wrong arguments (quality={})'.format(quality),
+                code=status.HTTP_400_BAD_REQUEST)
+
         frame_provider = FrameProvider(db_task.data)
-        # FIXME: now we cannot use the original quality because nuclio has body
-        # limit size by default 4Mb (from FastHTTP).
-        image = frame_provider.get_frame(frame, quality=FrameProvider.Quality.COMPRESSED)
+        image = frame_provider.get_frame(frame, quality=quality)
         return base64.b64encode(image[0].getvalue()).decode('utf-8')
 
 
@@ -117,10 +126,10 @@ class LambdaQueue:
 
     # TODO: protect from running multiple times for the same task
     # Only one job for an annotation task
-    def enqueue(self, lambda_func, threshold, task):
+    def enqueue(self, lambda_func, threshold, task, quality):
         queue = self._get_queue()
         # LambdaJob(None) is a workaround for python-rq. It has multiple issues
-        # with invocation of non trivial functions. For example, it cannot run
+        # with invocation of non-trivial functions. For example, it cannot run
         # staticmethod, it cannot run a callable class. Thus I provide an object
         # which has __call__ function.
         job = queue.create_job(LambdaJob(None),
@@ -128,7 +137,8 @@ class LambdaQueue:
             kwargs = {
                 "function": lambda_func,
                 "threshold": threshold,
-                "task": task
+                "task": task,
+                "quality": quality
             })
 
         queue.enqueue_job(job)
@@ -169,13 +179,13 @@ class LambdaJob:
         self.job.delete()
 
     @staticmethod
-    def __call__(function, threshold, task):
+    def __call__(function, threshold, task, quality):
         # TODO: need to remove annotations if clear flag is True
         # TODO: need logging
         db_task = TaskModel.objects.get(pk=task)
         # TODO: check tasks with a frame step
         for frame in range(db_task.data.size):
-            annotations = function.invoke(db_task, frame)
+            annotations = function.invoke(db_task, frame, quality)
             # TODO: optimize
             # TODO: need user mapping between model labels and task labels
             db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
@@ -262,6 +272,7 @@ class FunctionViewSet(viewsets.ViewSet):
             task = request.data['task']
             points = request.data.get('points')
             frame = request.data['frame']
+            quality = request.data.get('quality')
             db_task = TaskModel.objects.get(pk=task)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
@@ -272,7 +283,7 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(id)
 
-        return lambda_func.invoke(db_task, frame, points)
+        return lambda_func.invoke(db_task, frame, quality, points)
 
 class RequestViewSet(viewsets.ViewSet):
     @return_response()
@@ -285,11 +296,12 @@ class RequestViewSet(viewsets.ViewSet):
         function = request.data['function']
         threshold = request.data.get('threshold')
         task = request.data['task']
+        quality = request.data.get("quality")
 
         gateway = LambdaGateway()
         queue = LambdaQueue()
         lambda_func = gateway.get(function)
-        job = queue.enqueue(lambda_func, threshold, task)
+        job = queue.enqueue(lambda_func, threshold, task, quality)
 
         return job.to_dict()
 
