@@ -151,6 +151,25 @@ polyline.cvat_canvas_shape_splitting {
     cursor: move;
 }
 
+.cvat_canvas_first_poly_point {
+    fill: lightgray;
+}
+
+.cvat_canvas_poly_direction {
+    fill: lightgray;
+    stroke: black;
+
+    &:hover {
+        fill: black;
+        stroke: lightgray;
+    }
+
+    &:active {
+        fill: lightgray;
+        stroke: black;
+    }
+}
+
 #cvat_canvas_wrapper {
     width: calc(100% - 10px);
     height: calc(100% - 10px);

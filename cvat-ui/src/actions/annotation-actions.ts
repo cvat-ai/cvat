@@ -1487,3 +1487,51 @@ export function repeatDrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAc
         }
     };
 }
+
+export function redrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const {
+            annotations: {
+                activatedStateID,
+                states,
+            },
+            canvas: {
+                instance: canvasInstance,
+            },
+        } = getStore().getState().annotation;
+
+        if (activatedStateID !== null) {
+            const [state] = states
+                .filter((_state: any): boolean => _state.clientID === activatedStateID);
+            if (state && state.objectType !== ObjectType.TAG) {
+                let activeControl = ActiveControl.CURSOR;
+                if (state.shapeType === ShapeType.RECTANGLE) {
+                    activeControl = ActiveControl.DRAW_RECTANGLE;
+                } else if (state.shapeType === ShapeType.POINTS) {
+                    activeControl = ActiveControl.DRAW_POINTS;
+                } else if (state.shapeType === ShapeType.POLYGON) {
+                    activeControl = ActiveControl.DRAW_POLYGON;
+                } else if (state.shapeType === ShapeType.POLYLINE) {
+                    activeControl = ActiveControl.DRAW_POLYLINE;
+                } else if (state.shapeType === ShapeType.CUBOID) {
+                    activeControl = ActiveControl.DRAW_CUBOID;
+                }
+
+                dispatch({
+                    type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
+                    payload: {
+                        activeControl,
+                    },
+                });
+
+                canvasInstance.cancel();
+                canvasInstance.draw({
+                    enabled: true,
+                    redraw: activatedStateID,
+                    shapeType: state.shapeType,
+                    crosshair: state.shapeType === ShapeType.RECTANGLE,
+                });
+            }
+        }
+    };
+}
