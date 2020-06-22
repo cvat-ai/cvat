@@ -42,6 +42,7 @@ export interface DrawnState {
     pinned?: boolean;
     updated: number;
     frame: number;
+    label: any;
 }
 
 // Translate point array from the canvas coordinate system

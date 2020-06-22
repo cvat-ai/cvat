@@ -15,13 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Built-in search for labels when create an object or change a label (<https://github.com/opencv/cvat/pull/1683>)
 - Better validation of labels and attributes in raw viewer (<https://github.com/opencv/cvat/pull/1727>)
 - ClamAV antivirus integration (<https://github.com/opencv/cvat/pull/1712>)
-- Added canvas background color selector (<https://github.com/opencv/cvat/issues/1514>)
-- Added image settings preview (<https://github.com/opencv/cvat/issues/1458>)
+- Added canvas background color selector (<https://github.com/opencv/cvat/pull/1705>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
 - Update https install manual. Makes it easier and more robust. Includes automatic renewing of lets encrypt certificates.
-- Settings page move to the modal.
+- Settings page move to the modal. (<https://github.com/opencv/cvat/pull/1705>)
+- Implemented import and export of annotations with relative image paths (<https://github.com/opencv/cvat/pull/1463>)
 - Colorized object items in the side panel (<https://github.com/opencv/cvat/pull/1753>)
 
 ### Deprecated
@@ -39,12 +39,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wrong description on register view for the username field (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong resolution for resizing a shape (<https://github.com/opencv/cvat/pull/1667>)
 - React warning because of not unique keys in labels viewer (<https://github.com/opencv/cvat/pull/1727>)
-- Fixed issue tracker (<https://github.com/opencv/cvat/pull/918>)
-- Fixed canvas fit after sidebar open/close event (<https://github.com/opencv/cvat/issues/1643>)
+- Fixed issue tracker (<https://github.com/opencv/cvat/pull/1705>)
+- Fixed canvas fit after sidebar open/close event (<https://github.com/opencv/cvat/pull/1705>)
+- A couple of exceptions in AAM related with early object activation (<https://github.com/opencv/cvat/pull/1755>)
 - Annotations aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
 - Labels aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
 - Canvas isn't fitted after collapsing side panel in attribute annotation mode (<https://github.com/opencv/cvat/pull/1753>)
-
 
 ### Security
 - SQL injection in Django `CVE-2020-9402` (<https://github.com/opencv/cvat/pull/1657>)

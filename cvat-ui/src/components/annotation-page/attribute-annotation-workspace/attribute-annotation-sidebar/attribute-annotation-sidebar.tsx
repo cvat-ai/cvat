@@ -37,6 +37,7 @@ interface StateToProps {
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
+    canvasIsReady: boolean;
 }
 
 interface DispatchToProps {
@@ -62,6 +63,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             canvas: {
                 instance: canvasInstance,
+                ready: canvasIsReady,
             },
         },
         shortcuts: {
@@ -79,6 +81,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         canvasInstance,
+        canvasIsReady,
     };
 }
 
@@ -105,6 +108,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         keyMap,
         normalizedKeyMap,
         canvasInstance,
+        canvasIsReady,
     } = props;
 
     const [labelAttrMap, setLabelAttrMap] = useState(
@@ -137,14 +141,16 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         ? labelAttrMap[activeObjectState.label.id]
         : null;
 
-    if (activeObjectState) {
-        const attribute = labelAttrMap[activeObjectState.label.id];
-        if (attribute && attribute.id !== activatedAttributeID) {
-            activateObject(activatedStateID, attribute ? attribute.id : null);
+    if (canvasIsReady) {
+        if (activeObjectState) {
+            const attribute = labelAttrMap[activeObjectState.label.id];
+            if (attribute && attribute.id !== activatedAttributeID) {
+                activateObject(activatedStateID, attribute ? attribute.id : null);
+            }
+        } else if (states.length) {
+            const attribute = labelAttrMap[states[0].label.id];
+            activateObject(states[0].clientID, attribute ? attribute.id : null);
         }
-    } else if (states.length) {
-        const attribute = labelAttrMap[states[0].label.id];
-        activateObject(states[0].clientID, attribute ? attribute.id : null);
     }
 
     const nextObject = (step: number): void => {

@@ -21,7 +21,6 @@ class Source(Config):
 
 MODEL_SCHEMA = _SchemaBuilder() \
     .add('launcher', str) \
-    .add('model_dir', str, internal=True) \
     .add('options', dict) \
     .build()
 

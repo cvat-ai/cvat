@@ -174,18 +174,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     public componentDidMount(): void {
         const {
-            autoSave,
             autoSaveInterval,
-            saving,
             history,
             jobInstance,
         } = this.props;
 
-        this.autoSaveInterval = window.setInterval((): void => {
-            if (autoSave && !saving) {
-                this.onSaveAnnotation();
-            }
-        }, autoSaveInterval);
+        this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
 
         this.unblock = history.block((location: any) => {
             const { task, id: jobID } = jobInstance;
@@ -201,7 +195,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         window.addEventListener('beforeunload', this.beforeUnloadCallback);
     }
 
-    public componentDidUpdate(): void {
+    public componentDidUpdate(prevProps: Props): void {
         const {
             jobInstance,
             frameSpeed,
@@ -212,8 +206,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             canvasInstance,
             onSwitchPlay,
             onChangeFrame,
+            autoSaveInterval,
         } = this.props;
 
+        if (autoSaveInterval !== prevProps.autoSaveInterval) {
+            if (this.autoSaveInterval) window.clearInterval(this.autoSaveInterval);
+            this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
+        }
 
         if (playing && canvasIsReady) {
             if (frameNumber < jobInstance.stopFrame) {
@@ -464,6 +463,14 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         }
         return undefined;
     };
+
+    private autoSave(): void {
+        const { autoSave, saving } = this.props;
+
+        if (autoSave && !saving) {
+            this.onSaveAnnotation();
+        }
+    }
 
     private changeFrame(frame: number): void {
         const { onChangeFrame, canvasInstance } = this.props;

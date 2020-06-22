@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { useEffect } from 'react';
 import Text from 'antd/lib/typography/Text';
 import Icon from 'antd/lib/icon';
 import Tabs from 'antd/lib/tabs';
@@ -80,6 +80,20 @@ function ObjectsSideBar(props: Props): JSX.Element {
         changeShowProjections,
     };
 
+    useEffect(() => {
+        const listener = (): void => {
+            canvasInstance.fit();
+        };
+
+        const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
+
+        sidebar.addEventListener('transitionend', listener);
+
+        return () => {
+            sidebar.removeEventListener('transitionend', listener);
+        };
+    }, []);
+
     return (
         <Layout.Sider
             className='cvat-objects-sidebar'
@@ -90,9 +104,6 @@ function ObjectsSideBar(props: Props): JSX.Element {
             collapsible
             trigger={null}
             collapsed={sidebarCollapsed}
-            onTransitionEnd={() => {
-                canvasInstance.fit();
-            }}
         >
             {/* eslint-disable-next-line */}
             <span
