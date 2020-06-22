@@ -8,6 +8,6 @@ pylint-django==2.0.15
 pylint-plugin-utils==0.6
 rope==0.17.0
 wrapt==1.12.1
-django-extensions==2.0.6
+django-extensions==2.2.9
 Werkzeug==0.15.3
 snakeviz==2.1.0
