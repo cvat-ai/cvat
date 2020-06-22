@@ -134,13 +134,12 @@ export function getModelsAsync(): ThunkAction {
                 if (model.kind === 'detector') {
                     models.push({
                         id: model.id,
-                        ownerID: null,
                         primary: true,
                         name: model.name,
+                        description: model.description,
                         framework: model.framework,
-                        uploadDate: '',
-                        updateDate: '',
                         labels: [...model.labels],
+                        type: model.kind,
                     });
                 }
             }

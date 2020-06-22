@@ -19,18 +19,13 @@ interface Props {
 export default function UploadedModelsListComponent(props: Props): JSX.Element {
     const {
         models,
-        registeredUsers,
-        deleteModel,
     } = props;
 
     const items = models.map((model): JSX.Element => {
-        const owner = registeredUsers.filter((user) => user.id === model.ownerID)[0];
         return (
             <UploadedModelItem
-                key={model.id as number}
-                owner={owner}
+                key={model.id as string}
                 model={model}
-                onDelete={(): void => deleteModel(model.id as number)}
             />
         );
     });
@@ -38,29 +33,23 @@ export default function UploadedModelsListComponent(props: Props): JSX.Element {
     return (
         <>
             <Row type='flex' justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
-                    <Text className='cvat-text-color' strong>Uploaded by a user</Text>
-                </Col>
-            </Row>
-            <Row type='flex' justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14} className='cvat-models-list'>
                     <Row type='flex' align='middle' style={{ padding: '10px' }}>
-                        <Col span={4} xxl={3}>
+                        <Col span={3}>
                             <Text strong>Framework</Text>
                         </Col>
-                        <Col span={5} xxl={7}>
+                        <Col span={3}>
                             <Text strong>Name</Text>
                         </Col>
                         <Col span={3}>
-                            <Text strong>Owner</Text>
+                            <Text strong>Type</Text>
+                        </Col>
+                        <Col span={8}>
+                            <Text strong>Description</Text>
                         </Col>
                         <Col span={4}>
-                            <Text strong>Uploaded</Text>
-                        </Col>
-                        <Col span={5}>
                             <Text strong>Labels</Text>
                         </Col>
-                        <Col span={3} xxl={2} />
                     </Row>
                     { items }
                 </Col>

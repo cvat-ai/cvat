@@ -133,14 +133,13 @@ export interface ShareState {
 }
 
 export interface Model {
-    id: number | null; // null for preinstalled models
-    ownerID: number | null; // null for preinstalled models
+    id: string | null; // null for preinstalled models
     name: string;
     primary: boolean;
-    uploadDate: string;
-    updateDate: string;
     labels: string[];
     framework: string;
+    description: string;
+    type: string;
 }
 
 export enum RQStatus {

@@ -6,47 +6,35 @@ import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
 import Select from 'antd/lib/select';
-import Icon from 'antd/lib/icon';
-import Menu from 'antd/lib/menu';
-import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
-import moment from 'moment';
-
-import { MenuIcon } from 'icons';
 import { Model } from 'reducers/interfaces';
 
 interface Props {
     model: Model;
-    owner: any;
-    onDelete(): void;
 }
 
 export default function UploadedModelItem(props: Props): JSX.Element {
     const {
         model,
-        owner,
-        onDelete,
     } = props;
 
     return (
         <Row className='cvat-models-list-item' type='flex'>
-            <Col span={4} xxl={3}>
-                <Tag color='purple'>OpenVINO</Tag>
+            <Col span={3}>
+                <Tag color='purple'>{model.framework}</Tag>
             </Col>
-            <Col span={5} xxl={7}>
+            <Col span={3}>
                 <Text className='cvat-text-color'>
                     {model.name}
                 </Text>
             </Col>
             <Col span={3}>
-                <Text className='cvat-text-color'>
-                    {owner ? owner.username : 'undefined'}
-                </Text>
+                <Tag color='orange'>
+                    {model.type}
+                </Tag>
             </Col>
-            <Col span={4}>
-                <Text className='cvat-text-color'>
-                    {moment(model.uploadDate).format('MMMM Do YYYY')}
-                </Text>
+            <Col span={10}>
+                <Text style={{ whiteSpace: 'normal', height: 'auto' }}>{model.description}</Text>
             </Col>
             <Col span={5}>
                 <Select
@@ -63,26 +51,6 @@ export default function UploadedModelItem(props: Props): JSX.Element {
                         ),
                     )}
                 </Select>
-            </Col>
-            <Col span={3} xxl={2}>
-                <Text className='cvat-text-color'>Actions</Text>
-                <Dropdown overlay={
-                    (
-                        <Menu className='cvat-task-item-menu'>
-                            <Menu.Item
-                                onClick={(): void => {
-                                    onDelete();
-                                }}
-                                key='delete'
-                            >
-                                    Delete
-                            </Menu.Item>
-                        </Menu>
-                    )
-                }
-                >
-                    <Icon className='cvat-menu-icon' component={MenuIcon} />
-                </Dropdown>
             </Col>
         </Row>
     );
