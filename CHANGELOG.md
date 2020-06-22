@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Built-in search for labels when create an object or change a label (<https://github.com/opencv/cvat/pull/1683>)
 - Better validation of labels and attributes in raw viewer (<https://github.com/opencv/cvat/pull/1727>)
 - ClamAV antivirus integration (<https://github.com/opencv/cvat/pull/1712>)
+- Supported import and export or single boxes in MOT format (https://github.com/opencv/cvat/pull/1764)
 - [Datumaro] Added `stats` command, which shows some dataset statistics like image mean and std (https://github.com/opencv/cvat/pull/1734)
 - Add option to upload annotations upon task creation on CLI 
 - Polygon and polylines interpolation (<https://github.com/opencv/cvat/pull/1571>)
