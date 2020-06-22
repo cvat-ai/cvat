@@ -71,6 +71,6 @@ def av_scan_paths(*paths):
     if 'yes' == os.environ.get('CLAM_AV'):
         command = ['clamscan', '--no-summary', '-i', '-o']
         command.extend(paths)
-        res = subprocess.run(command, capture_output=True)
+        res = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if res.returncode:
             raise ValidationError(res.stdout)
