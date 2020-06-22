@@ -35,6 +35,7 @@ interface StateToProps {
     jobInstance: any;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
+    canvasIsReady: boolean;
 }
 
 interface DispatchToProps {
@@ -58,6 +59,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 instance: jobInstance,
                 labels,
             },
+            canvas: {
+                ready: canvasIsReady,
+            },
         },
         shortcuts: {
             keyMap,
@@ -73,6 +77,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         states,
         keyMap,
         normalizedKeyMap,
+        canvasIsReady,
     };
 }
 
@@ -98,6 +103,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         activateObject,
         keyMap,
         normalizedKeyMap,
+        canvasIsReady,
     } = props;
 
     const [labelAttrMap, setLabelAttrMap] = useState(
@@ -117,14 +123,16 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         ? labelAttrMap[activeObjectState.label.id]
         : null;
 
-    if (activeObjectState) {
-        const attribute = labelAttrMap[activeObjectState.label.id];
-        if (attribute && attribute.id !== activatedAttributeID) {
-            activateObject(activatedStateID, attribute ? attribute.id : null);
+    if (canvasIsReady) {
+        if (activeObjectState) {
+            const attribute = labelAttrMap[activeObjectState.label.id];
+            if (attribute && attribute.id !== activatedAttributeID) {
+                activateObject(activatedStateID, attribute ? attribute.id : null);
+            }
+        } else if (states.length) {
+            const attribute = labelAttrMap[states[0].label.id];
+            activateObject(states[0].clientID, attribute ? attribute.id : null);
         }
-    } else if (states.length) {
-        const attribute = labelAttrMap[states[0].label.id];
-        activateObject(states[0].clientID, attribute ? attribute.id : null);
     }
 
     const nextObject = (step: number): void => {

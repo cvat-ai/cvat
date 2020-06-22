@@ -53,8 +53,8 @@ interface CVATAppProps {
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
-    userAgreementsFetching: boolean,
-    userAgreementsInitialized: boolean,
+    userAgreementsFetching: boolean;
+    userAgreementsInitialized: boolean;
     notifications: NotificationsState;
     user: any;
 }
@@ -72,7 +72,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
 
-        customWaViewHit(location.pathname, location.search, location.hash);
+        customWaViewHit(history.location.pathname, history.location.search, history.location.hash);
         history.listen((location) => {
             customWaViewHit(location.pathname, location.search, location.hash);
         });
