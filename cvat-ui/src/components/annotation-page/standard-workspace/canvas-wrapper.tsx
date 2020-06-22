@@ -58,8 +58,6 @@ interface Props {
     contrastLevel: number;
     saturationLevel: number;
     resetZoom: boolean;
-    contextVisible: boolean;
-    contextType: ContextMenuType;
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
     workspace: Workspace;
@@ -382,10 +380,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             activatedStateID,
             onUpdateContextMenu,
-            contextType,
         } = this.props;
 
-        if (contextType !== ContextMenuType.CANVAS_SHAPE_POINT) {
+        if (e.target && !(e.target as HTMLElement).classList.contains('svg_select_points')) {
             onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY,
                 ContextMenuType.CANVAS_SHAPE);
         }
@@ -618,14 +615,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             annotations,
             frameData,
-            frameAngle,
             canvasInstance,
         } = this.props;
 
         if (frameData !== null) {
             canvasInstance.setup(frameData, annotations
                 .filter((e) => e.objectType !== ObjectType.TAG));
-            canvasInstance.rotate(frameAngle);
         }
     }
 

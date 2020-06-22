@@ -70,6 +70,10 @@ from django.contrib.auth.models import User, Group
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 
+from cvat.apps.dataset_manager.annotation import AnnotationIR
+from cvat.apps.dataset_manager.bindings import TaskData, find_dataset_root
+from cvat.apps.engine.models import Task
+
 _setUpModule()
 
 from cvat.apps.dataset_manager.annotation import AnnotationIR
@@ -256,7 +260,7 @@ class TaskExportTest(_DbTestBase):
         self._put_api_v1_task_id_annotations(task["id"], annotations)
         return annotations
 
-    def _generate_task_images(self, count):
+    def _generate_task_images(self, count): # pylint: disable=no-self-use
         images = {
             "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i)
             for i in range(count)
@@ -385,6 +389,7 @@ class TaskExportTest(_DbTestBase):
 
                             # NOTE: can't import cvat.utils.cli
                             # for whatever reason, so remove the dependency
+                            #
                             project.config.remove('sources')
 
                             return project.make_dataset()
@@ -436,3 +441,97 @@ class TaskExportTest(_DbTestBase):
         task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
 
         self.assertEqual(5, task_data.abs_frame_id(2))
+
+class FrameMatchingTest(_DbTestBase):
+    def _generate_task_images(self, paths): # pylint: disable=no-self-use
+        f = BytesIO()
+        with zipfile.ZipFile(f, 'w') as archive:
+            for path in paths:
+                archive.writestr(path, generate_image_file(path).getvalue())
+        f.name = 'images.zip'
+        f.seek(0)
+
+        return {
+            'client_files[0]': f,
+            'image_quality': 75,
+        }
+
+    def _generate_task(self, images):
+        task = {
+            "name": "my task #1",
+            "owner": '',
+            "assignee": '',
+            "overlap": 0,
+            "segment_size": 100,
+            "z_order": False,
+            "labels": [
+                {
+                    "name": "car",
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "mazda",
+                            "values": ["bmw", "mazda", "renault"]
+                        },
+                        {
+                            "name": "parked",
+                            "mutable": True,
+                            "input_type": "checkbox",
+                            "default_value": False
+                        },
+                    ]
+                },
+                {"name": "person"},
+            ]
+        }
+        return self._create_task(task, images)
+
+    def test_frame_matching(self):
+        task_paths = [
+            'a.jpg',
+            'a/a.jpg',
+            'a/b.jpg',
+            'b/a.jpg',
+            'b/c.jpg',
+            'a/b/c.jpg',
+            'a/b/d.jpg',
+        ]
+
+        images = self._generate_task_images(task_paths)
+        task = self._generate_task(images)
+        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task["id"]))
+
+        for input_path, expected, root in [
+            ('z.jpg', None, ''), # unknown item
+            ('z/a.jpg', None, ''), # unknown item
+
+            ('d.jpg', 'a/b/d.jpg', 'a/b'), # match with root hint
+            ('b/d.jpg', 'a/b/d.jpg', 'a'), # match with root hint
+        ] + list(zip(task_paths, task_paths, [None] * len(task_paths))): # exact matches
+            with self.subTest(input=input_path):
+                actual = task_data.match_frame(input_path, root)
+                if actual is not None:
+                    actual = task_data.frame_info[actual]['path']
+                self.assertEqual(expected, actual)
+
+    def test_dataset_root(self):
+        for task_paths, dataset_paths, expected in [
+            ([ 'a.jpg', 'b/c/a.jpg' ], [ 'a.jpg', 'b/c/a.jpg' ], ''),
+            ([ 'b/a.jpg', 'b/c/a.jpg' ], [ 'a.jpg', 'c/a.jpg' ], 'b'), # 'images from share' case
+            ([ 'b/c/a.jpg' ], [ 'a.jpg' ], 'b/c'), # 'images from share' case
+            ([ 'a.jpg' ], [ 'z.jpg' ], None),
+        ]:
+            with self.subTest(expected=expected):
+                images = self._generate_task_images(task_paths)
+                task = self._generate_task(images)
+                task_data = TaskData(AnnotationIR(),
+                    Task.objects.get(pk=task["id"]))
+                dataset = [
+                    datumaro.components.extractor.DatasetItem(
+                        id=osp.splitext(p)[0])
+                    for p in dataset_paths]
+
+                root = find_dataset_root(dataset, task_data)
+                self.assertEqual(expected, root)

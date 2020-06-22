@@ -23,7 +23,7 @@ import {
     changeWorkspace as changeWorkspaceAction,
     activateObject,
 } from 'actions/annotation-actions';
-import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
@@ -222,7 +222,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
-                        if (isAbleToChangeFrame(canvasInstance)) {
+                        if (canvasInstance.isAbleToChangeFrame()) {
                             onChangeFrame(
                                 frameNumber + 1 + framesSkiped,
                                 stillPlaying, framesSkiped + 1,
@@ -252,7 +252,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             canvasInstance,
         } = this.props;
 
-        if (isAbleToChangeFrame(canvasInstance)) {
+        if (canvasInstance.isAbleToChangeFrame()) {
             undo(jobInstance, frameNumber);
         }
     };
@@ -265,7 +265,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             canvasInstance,
         } = this.props;
 
-        if (isAbleToChangeFrame(canvasInstance)) {
+        if (canvasInstance.isAbleToChangeFrame()) {
             redo(jobInstance, frameNumber);
         }
     };
@@ -446,7 +446,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     private changeFrame(frame: number): void {
         const { onChangeFrame, canvasInstance } = this.props;
-        if (isAbleToChangeFrame(canvasInstance)) {
+        if (canvasInstance.isAbleToChangeFrame()) {
             onChangeFrame(frame);
         }
     }
@@ -551,7 +551,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             SEARCH_FORWARD: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 if (frameNumber + 1 <= stopFrame && canvasIsReady
-                    && isAbleToChangeFrame(canvasInstance)
+                    && canvasInstance.isAbleToChangeFrame()
                 ) {
                     searchAnnotations(jobInstance, frameNumber + 1, stopFrame);
                 }
@@ -559,7 +559,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             SEARCH_BACKWARD: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 if (frameNumber - 1 >= startFrame && canvasIsReady
-                    && isAbleToChangeFrame(canvasInstance)
+                    && canvasInstance.isAbleToChangeFrame()
                 ) {
                     searchAnnotations(jobInstance, frameNumber - 1, startFrame);
                 }
