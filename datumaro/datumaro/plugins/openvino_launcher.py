@@ -186,6 +186,3 @@ class OpenVinoLauncher(Launcher):
     def process_outputs(self, inputs, outputs):
         return self._interpreter.process_outputs(inputs, outputs)
 
-    def preferred_input_size(self):
-        _, _, h, w = self._input_layout
-        return (h, w)
