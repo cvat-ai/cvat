@@ -207,9 +207,8 @@ class _Converter:
                         ET.SubElement(obj_elem, 'name').text = obj_label
 
                         if 'pose' in attr:
-                            pose = _convert_attr('pose', attr,
-                                lambda v: VocPose[v], VocPose.Unspecified)
-                            ET.SubElement(obj_elem, 'pose').text = pose.name
+                            ET.SubElement(obj_elem, 'pose').text = \
+                                str(attr['pose'])
 
                         if 'truncated' in attr:
                             truncated = _convert_attr('truncated', attr, int, 0)
