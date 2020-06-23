@@ -745,7 +745,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             if (model.configuration.displayAllText && !this.configuration.displayAllText) {
                 for (const i in this.drawnStates) {
-                    if (!Object.keys(this.svgTexts).includes(i)) {
+                    if (!(i in this.svgTexts)) {
                         this.svgTexts[i] = this.addText(this.drawnStates[i]);
                         this.updateTextPosition(
                             this.svgTexts[i],
@@ -756,8 +756,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else if (model.configuration.displayAllText === false
                     && this.configuration.displayAllText) {
                 for (const i in this.drawnStates) {
-                    if (Object.keys(this.svgTexts).includes(i)
-                        && Number.parseInt(i, 10) !== activeElement.clientID) {
+                    if (i in this.svgTexts && Number.parseInt(i, 10) !== activeElement.clientID) {
                         this.svgTexts[i].remove();
                         delete this.svgTexts[i];
                     }

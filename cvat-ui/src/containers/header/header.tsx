@@ -28,7 +28,6 @@ interface StateToProps {
     canvasVersion: string;
     uiVersion: string;
     switchSettingsShortcut: string;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
     settingsDialogShown: boolean;
 }
 
@@ -54,7 +53,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         shortcuts: {
             normalizedKeyMap,
-            keyMap,
         },
         settings: {
             showDialog: settingsDialogShown,
@@ -76,7 +74,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasVersion: packageVersion.canvas,
         uiVersion: packageVersion.ui,
         switchSettingsShortcut: normalizedKeyMap.OPEN_SETTINGS,
-        keyMap,
         settingsDialogShown,
     };
 }

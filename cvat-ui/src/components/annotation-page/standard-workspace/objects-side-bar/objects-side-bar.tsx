@@ -81,16 +81,19 @@ function ObjectsSideBar(props: Props): JSX.Element {
     };
 
     useEffect(() => {
-        const listener = (): void => {
-            canvasInstance.fit();
+        const listener = (event: Event): void => {
+            if ((event as TransitionEvent).propertyName === 'width'
+                    && ((event.target as any).classList as DOMTokenList).contains('ant-tabs-tab-prev')) {
+                canvasInstance.fit();
+            }
         };
 
         const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
 
-        sidebar.addEventListener('transitionend', listener);
+        sidebar.addEventListener('transitionstart', listener);
 
         return () => {
-            sidebar.removeEventListener('transitionend', listener);
+            sidebar.removeEventListener('transitionstart', listener);
         };
     }, []);
 
