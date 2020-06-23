@@ -311,7 +311,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
             .filter((_model): boolean => _model.name === selectedModel)[0];
 
         const excludedModelLabels: string[] = Object.keys(mapping);
-        const withMapping = model && !model.primary;
+        const withMapping = model;
         const tags = withMapping ? excludedModelLabels
             .map((modelLabel: string) => this.renderMappingTag(
                 modelLabel,
