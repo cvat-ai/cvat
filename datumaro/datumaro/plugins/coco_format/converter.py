@@ -562,22 +562,23 @@ class CocoConverter(Converter, CliPlugin):
 
     @classmethod
     def build_cmdline_parser(cls, **kwargs):
+        kwargs['description'] = """
+            Segmentation save modes:|n
+            - '{sm.guess.name}': guess the mode for each instance,|n
+            |s|suse 'is_crowd' attribute as a hint|n
+            - '{sm.polygons.name}': save polygons,|n
+            |s|smerge and convert masks, prefer polygons|n
+            - '{sm.mask.name}': save masks,|n
+            |s|smerge and convert polygons, prefer masks
+            """.format(sm=SegmentationMode)
         parser = super().build_cmdline_parser(**kwargs)
+
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")
         parser.add_argument('--segmentation-mode',
             choices=[m.name for m in SegmentationMode],
             default=SegmentationMode.guess.name,
-            help="""
-                Save mode for instance segmentation:|n
-                - '{sm.guess.name}': guess the mode for each instance,|n
-                |s|suse 'is_crowd' attribute as hint|n
-                - '{sm.polygons.name}': save polygons,|n
-                |s|smerge and convert masks, prefer polygons|n
-                - '{sm.mask.name}': save masks,|n
-                |s|smerge and convert polygons, prefer masks|n
-                Default: %(default)s.
-                """.format(sm=SegmentationMode))
+            help="Save mode for instance segmentation (default: %(default)s)")
         parser.add_argument('--crop-covered', action='store_true',
             help="Crop covered segments so that background objects' "
                 "segmentation was more accurate (default: %(default)s)")
