@@ -97,7 +97,7 @@ services:
 
   serverless:
     container_name: nuclio
-    image: quay.io/nuclio/dashboard:stable-amd64
+    image: quay.io/nuclio/dashboard:1.4.6-amd64
     restart: always
     networks:
       default:

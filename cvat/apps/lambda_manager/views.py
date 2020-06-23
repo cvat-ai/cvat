@@ -3,7 +3,8 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Task as TaskModel
-from cvat.apps.dataset_manager.task import put_task_data, patch_task_data
+from cvat.apps.dataset_manager.task import (put_task_data, patch_task_data,
+    delete_task_data)
 from django.core.exceptions import ValidationError
 import base64
 import json
@@ -91,18 +92,25 @@ class LambdaFunction:
 
         return response
 
-    def invoke(self, db_task, frame, quality, points=None):
+    def invoke(self, db_task, frame, quality, mapping, points=None):
         payload = {
             'image': self._get_image(db_task, frame, quality),
-            'points': points
+            'points': points,
         }
 
-        return self.gateway.invoke(self, payload)
+        response = self.gateway.invoke(self, payload)
+        if mapping:
+            for item in response:
+                item['label'] = mapping.get(item['label'], item['label'])
+
+        return response
 
     def _get_image(self, db_task, frame, quality):
-        if quality is None or quality == "original":
+        if quality == "original":
             quality = FrameProvider.Quality.ORIGINAL
-        elif quality == "original":
+        # FIXME: if quality is none we should use original quality
+        # but now we have some problems with nuclio.
+        elif quality is None or quality == "compressed":
             quality = FrameProvider.Quality.COMPRESSED
         else:
             raise ValidationError(
@@ -126,7 +134,7 @@ class LambdaQueue:
 
     # TODO: protect from running multiple times for the same task
     # Only one job for an annotation task
-    def enqueue(self, lambda_func, threshold, task, quality):
+    def enqueue(self, lambda_func, threshold, task, quality, mapping, cleanup):
         queue = self._get_queue()
         # LambdaJob(None) is a workaround for python-rq. It has multiple issues
         # with invocation of non-trivial functions. For example, it cannot run
@@ -138,7 +146,9 @@ class LambdaQueue:
                 "function": lambda_func,
                 "threshold": threshold,
                 "task": task,
-                "quality": quality
+                "quality": quality,
+                "cleanup": cleanup,
+                "mapping": mapping
             })
 
         queue.enqueue_job(job)
@@ -179,15 +189,16 @@ class LambdaJob:
         self.job.delete()
 
     @staticmethod
-    def __call__(function, threshold, task, quality):
-        # TODO: need to remove annotations if clear flag is True
+    def __call__(function, threshold, task, quality, cleanup, mapping):
         # TODO: need logging
         db_task = TaskModel.objects.get(pk=task)
+        if cleanup:
+            delete_task_data(db_task.id)
+
         # TODO: check tasks with a frame step
         for frame in range(db_task.data.size):
-            annotations = function.invoke(db_task, frame, quality)
+            annotations = function.invoke(db_task, frame, quality, mapping)
             # TODO: optimize
-            # TODO: need user mapping between model labels and task labels
             db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
             attributes = {db_label.id:
                 {db_attr.name: db_attr.id for db_attr in db_label.attributespec_set.all()}
@@ -218,7 +229,6 @@ class LambdaJob:
                     })
 
             serializer = LabeledDataSerializer(data=results)
-            # TODO: handle exceptions
             if serializer.is_valid(raise_exception=True):
                 patch_task_data(db_task.id, results, "create")
 
@@ -252,6 +262,8 @@ def return_response(success_code=status.HTTP_200_OK):
         return func_wrapper
     return wrap_response
 
+# TODO: need to protect the class. Only a registered use can get information
+# about available serverless functions.
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
     lookup_field = 'id'
@@ -269,10 +281,15 @@ class FunctionViewSet(viewsets.ViewSet):
     @return_response()
     def call(self, request, id):
         try:
+            # Mandatory parameters
             task = request.data['task']
-            points = request.data.get('points')
             frame = request.data['frame']
+
+            # Optional parameters
+            points = request.data.get('points')
             quality = request.data.get('quality')
+            mapping = request.data.get('mapping')
+
             db_task = TaskModel.objects.get(pk=task)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
@@ -283,8 +300,10 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(id)
 
-        return lambda_func.invoke(db_task, frame, quality, points)
+        return lambda_func.invoke(db_task, frame, quality, mapping, points)
 
+# TODO: need to protect the class. Only a person with appropriate rights
+# can create the annotation request and cancel it.
 class RequestViewSet(viewsets.ViewSet):
     @return_response()
     def list(self, request):
@@ -297,11 +316,14 @@ class RequestViewSet(viewsets.ViewSet):
         threshold = request.data.get('threshold')
         task = request.data['task']
         quality = request.data.get("quality")
+        cleanup = request.data.get('cleanup', False)
+        mapping = request.data.get('mapping')
 
         gateway = LambdaGateway()
         queue = LambdaQueue()
         lambda_func = gateway.get(function)
-        job = queue.enqueue(lambda_func, threshold, task, quality)
+        job = queue.enqueue(lambda_func, threshold, task, quality,
+            mapping, cleanup)
 
         return job.to_dict()
 
