@@ -130,11 +130,26 @@ class LambdaQueue:
 
     def get_jobs(self):
         queue = self._get_queue()
-        return [LambdaJob(job) for job in queue.jobs if job.meta.get("lambda")]
+        # Only failed jobs are not included in the list below.
+        job_ids = set(queue.get_job_ids() +
+            queue.started_job_registry.get_job_ids() +
+            queue.finished_job_registry.get_job_ids() +
+            queue.scheduled_job_registry.get_job_ids() +
+            queue.deferred_job_registry.get_job_ids())
+        jobs = queue.job_class.fetch_many(job_ids, queue.connection)
 
-    # TODO: protect from running multiple times for the same task
-    # Only one job for an annotation task
+        return [LambdaJob(job) for job in jobs if job.meta.get("lambda")]
+
     def enqueue(self, lambda_func, threshold, task, quality, mapping, cleanup):
+        jobs = self.get_jobs()
+        # It is still possible to run several concurrent jobs for the same task.
+        # But the race isn't critical. The filtration is just a light-weight
+        # protection.
+        if list(filter(lambda job: job.get_task() == task and not job.is_finished, jobs)):
+            raise ValidationError(
+                "Only one running request is allowed for the same task #{}".format(task),
+                code=status.HTTP_409_CONFLICT)
+
         queue = self._get_queue()
         # LambdaJob(None) is a workaround for python-rq. It has multiple issues
         # with invocation of non-trivial functions. For example, it cannot run
@@ -184,6 +199,36 @@ class LambdaJob:
             "ended": self.job.ended_at,
             "exc_info": self.job.exc_info
         }
+
+    def get_task(self):
+        return self.job.kwargs.get("task")
+
+    def get_status(self):
+        return self.job.get_status()
+
+    @property
+    def is_finished(self):
+        return self.get_status() == rq.job.JobStatus.FINISHED
+
+    @property
+    def is_queued(self):
+        return self.get_status() == rq.job.JobStatus.QUEUED
+
+    @property
+    def is_failed(self):
+        return self.get_status() == rq.job.JobStatus.FAILED
+
+    @property
+    def is_started(self):
+        return self.get_status() == rq.job.JobStatus.STARTED
+
+    @property
+    def is_deferred(self):
+        return self.get_status() == rq.job.JobStatus.DEFERRED
+
+    @property
+    def is_scheduled(self):
+        return self.get_status() == rq.job.JobStatus.SCHEDULED
 
     def delete(self):
         self.job.delete()
