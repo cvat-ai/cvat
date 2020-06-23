@@ -207,8 +207,8 @@ const defaultKeyMap = {
     },
     SWITCH_DRAW_MODE: {
         name: 'Draw mode',
-        description: 'Repeat the latest procedure of drawing with the same parameters',
-        sequences: ['n'],
+        description: 'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
+        sequences: ['shift+n', 'n'],
         action: 'keydown',
     },
     SWITCH_MERGE_MODE: {

@@ -305,7 +305,6 @@ export enum StatesOrdering {
 }
 
 export enum ContextMenuType {
-    CANVAS = 'canvas',
     CANVAS_SHAPE = 'canvas_shape',
     CANVAS_SHAPE_POINT = 'canvas_shape_point',
 }
