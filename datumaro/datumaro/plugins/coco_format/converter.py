@@ -592,7 +592,7 @@ class CocoConverter(Converter, CliPlugin):
 
     def __init__(self,
             tasks=None, save_images=False, segmentation_mode=None,
-            crop_covered=False):
+            crop_covered=False, allow_attributes=True):
         super().__init__()
 
         self._options = {
@@ -600,6 +600,7 @@ class CocoConverter(Converter, CliPlugin):
             'save_images': save_images,
             'segmentation_mode': segmentation_mode,
             'crop_covered': crop_covered,
+            'allow_attributes': allow_attributes,
         }
 
     def __call__(self, extractor, save_dir):
