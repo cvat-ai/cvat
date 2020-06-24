@@ -797,15 +797,17 @@
                 .concat(imported.tracks)
                 .concat(imported.shapes);
 
-            this.history.do(HistoryActions.CREATED_OBJECTS, () => {
-                importedArray.forEach((object) => {
-                    object.removed = true;
-                });
-            }, () => {
-                importedArray.forEach((object) => {
-                    object.removed = false;
-                });
-            }, importedArray.map((object) => object.clientID), objectStates[0].frame);
+            if (objectStates.length) {
+                this.history.do(HistoryActions.CREATED_OBJECTS, () => {
+                    importedArray.forEach((object) => {
+                        object.removed = true;
+                    });
+                }, () => {
+                    importedArray.forEach((object) => {
+                        object.removed = false;
+                    });
+                }, importedArray.map((object) => object.clientID), objectStates[0].frame);
+            }
 
             return importedArray.map((value) => value.clientID);
         }
