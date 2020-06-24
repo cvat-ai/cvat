@@ -156,8 +156,7 @@
 
         if (type === AttributeType.NUMBER) {
             return +value >= +values[0]
-                && +value <= +values[1]
-                && !((+value - +values[0]) % +values[2]);
+                && +value <= +values[1];
         }
 
         if (type === AttributeType.CHECKBOX) {

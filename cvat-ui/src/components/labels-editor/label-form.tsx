@@ -239,21 +239,27 @@ class LabelForm extends React.PureComponent<Props, {}> {
                 .split(';')
                 .map((number): number => Number.parseFloat(number));
             if (numbers.length !== 3) {
-                callback('Invalid input');
+                callback('Three numbers are expected');
             }
 
             for (const number of numbers) {
                 if (Number.isNaN(number)) {
-                    callback('Invalid input');
+                    callback(`"${number}" is not a number`);
                 }
             }
 
-            if (numbers[0] >= numbers[1]) {
-                callback('Invalid input');
+            const [min, max, step] = numbers;
+
+            if (min >= max) {
+                callback('Minimum must be less than maximum');
             }
 
-            if (+numbers[1] - +numbers[0] < +numbers[2]) {
-                callback('Invalid input');
+            if (max - min < step) {
+                callback('Step must be less than minmax difference');
+            }
+
+            if (step <= 0) {
+                callback('Step must be a positive number');
             }
 
             callback();
