@@ -15,7 +15,8 @@
     }
 }
 
-.cvat-workspace-settings, .cvat-player-settings {
+.cvat-workspace-settings,
+.cvat-player-settings {
     width: 100%;
     height: max-content;
     background: $background-color-1;
@@ -74,7 +75,7 @@
 }
 
 .cvat-player-settings-step > div > span > i {
-    margin: 0px 5px;
+    margin: 0 5px;
     font-size: 10px;
 }
 
