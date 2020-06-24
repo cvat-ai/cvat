@@ -5,6 +5,8 @@
 
 from itertools import groupby
 
+import numpy as np
+
 
 def find_instances(instance_anns):
     instance_anns = sorted(instance_anns, key=lambda a: a.group)
@@ -27,3 +29,6 @@ def compute_bbox(annotations):
     x1 = max((b[0] + b[2] for b in boxes), default=0)
     y1 = max((b[1] + b[3] for b in boxes), default=0)
     return [x0, y0, x1 - x0, y1 - y0]
+
+def softmax(x):
+    return np.exp(x) / sum(np.exp(x))

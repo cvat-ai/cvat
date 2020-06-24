@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better validation of labels and attributes in raw viewer (<https://github.com/opencv/cvat/pull/1727>)
 - ClamAV antivirus integration (<https://github.com/opencv/cvat/pull/1712>)
 - Added canvas background color selector (<https://github.com/opencv/cvat/pull/1705>)
+- SCSS files linting with Stylelint tool (<https://github.com/opencv/cvat/pull/1766>)
 - Supported import and export or single boxes in MOT format (https://github.com/opencv/cvat/pull/1764)
 - [Datumaro] Added `stats` command, which shows some dataset statistics like image mean and std (https://github.com/opencv/cvat/pull/1734)
 - Add option to upload annotations upon task creation on CLI
