@@ -16,6 +16,7 @@ from datumaro.components.converter import Converter
 from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, AnnotationType,
     LabelCategories, CompiledMask,
 )
+from datumaro.util import str_to_bool, find
 from datumaro.util.image import save_image
 from datumaro.util.mask_tools import paint_mask, remap_mask
 
@@ -110,8 +111,8 @@ class _Converter:
         self._images_dir = images_dir
 
     def get_label(self, label_id):
-        return self._strip_label(self._extractor. \
-            categories()[AnnotationType.label].items[label_id].name)
+        return self._extractor. \
+            categories()[AnnotationType.label].items[label_id].name
 
     def save_subsets(self):
         subsets = self._extractor.subsets()
@@ -134,18 +135,11 @@ class _Converter:
             for item in subset:
                 log.debug("Converting item '%s'", item.id)
 
-                image_filename = ''
-                if item.has_image:
-                    image_filename = item.image.filename
+                image_filename = item.id + VocPath.IMAGE_EXT
                 if self._save_images:
                     if item.has_image and item.image.has_data:
-                        if image_filename:
-                            image_filename = osp.splitext(image_filename)[0]
-                        else:
-                            image_filename = item.id
-                        image_filename += VocPath.IMAGE_EXT
                         save_image(osp.join(self._images_dir, image_filename),
-                            item.image.data)
+                            item.image.data, create_dir=True)
                     else:
                         log.debug("Item '%s' has no image" % item.id)
 
@@ -207,7 +201,7 @@ class _Converter:
 
                         obj_elem = ET.SubElement(root_elem, 'object')
 
-                        obj_label =  self.get_label(obj.label)
+                        obj_label = self.get_label(obj.label)
                         ET.SubElement(obj_elem, 'name').text = obj_label
 
                         if 'pose' in attr:
@@ -262,7 +256,9 @@ class _Converter:
                             VocTask.detection,
                             VocTask.person_layout,
                             VocTask.action_classification}:
-                        with open(osp.join(self._ann_dir, item.id + '.xml'), 'w') as f:
+                        ann_path = osp.join(self._ann_dir, item.id + '.xml')
+                        os.makedirs(osp.dirname(ann_path), exist_ok=True)
+                        with open(ann_path, 'w') as f:
                             f.write(ET.tostring(root_elem,
                                 encoding='unicode', pretty_print=True))
 
@@ -357,8 +353,7 @@ class _Converter:
                 for item, item_labels in class_lists.items():
                     if not item_labels:
                         continue
-                    item_labels = [self._strip_label(self.get_label(l))
-                        for l in item_labels]
+                    item_labels = [self.get_label(l) for l in item_labels]
                     presented = label in item_labels
                     f.write('%s % d\n' % (item, 1 if presented else -1))
 
@@ -404,29 +399,43 @@ class _Converter:
             if colormap is None:
                 colormap = self._categories[AnnotationType.mask].colormap
             mask = paint_mask(mask, colormap)
-        save_image(path, mask)
+        save_image(path, mask, create_dir=True)
 
     def save_label_map(self):
         path = osp.join(self._save_dir, VocPath.LABELMAP_FILE)
         write_label_map(path, self._label_map)
 
-    @staticmethod
-    def _strip_label(label):
-        return label.lower().strip()
-
     def _load_categories(self, label_map_source=None):
         if label_map_source == LabelmapType.voc.name:
-            # strictly use VOC default labelmap
+            # use the default VOC colormap
             label_map = make_voc_label_map()
 
-        elif label_map_source == LabelmapType.source.name:
-            # generate colormap from the input dataset
+        elif label_map_source == LabelmapType.source.name and \
+                AnnotationType.mask not in self._extractor.categories():
+            # generate colormap for input labels
             labels = self._extractor.categories() \
                 .get(AnnotationType.label, LabelCategories())
             label_map = OrderedDict()
             label_map['background'] = [None, [], []]
             for item in labels.items:
-                label_map[self._strip_label(item.name)] = [None, [], []]
+                label_map[item.name] = [None, [], []]
+
+        elif label_map_source == LabelmapType.source.name and \
+                AnnotationType.mask in self._extractor.categories():
+            # use source colormap
+            labels = self._extractor.categories()[AnnotationType.label]
+            colors = self._extractor.categories()[AnnotationType.mask]
+            label_map = OrderedDict()
+            has_black = False
+            for idx, item in enumerate(labels.items):
+                color = colors.colormap.get(idx)
+                if idx is not None:
+                    if color == (0, 0, 0):
+                        has_black = True
+                    label_map[item.name] = [color, [], []]
+            if not has_black and 'background' not in label_map:
+                label_map['background'] = [(0, 0, 0), [], []]
+                label_map.move_to_end('background', last=False)
 
         elif label_map_source in [LabelmapType.guess.name, None]:
             # generate colormap for union of VOC and input dataset labels
@@ -436,11 +445,10 @@ class _Converter:
             source_labels = self._extractor.categories() \
                 .get(AnnotationType.label, LabelCategories())
             for label in source_labels.items:
-                label_name = self._strip_label(label.name)
-                if label_name not in label_map:
+                if label.name not in label_map:
                     rebuild_colormap = True
-                if label.attributes or label_name not in label_map:
-                    label_map[label_name] = [None, [], label.attributes]
+                if label.attributes or label.name not in label_map:
+                    label_map[label.name] = [None, [], label.attributes]
 
             if rebuild_colormap:
                 for item in label_map.values():
@@ -451,6 +459,12 @@ class _Converter:
 
         elif isinstance(label_map_source, str) and osp.isfile(label_map_source):
             label_map = parse_label_map(label_map_source)
+
+            has_black = find(label_map.items(),
+                lambda e: e[0] == 'background' or e[1][0] == (0, 0, 0))
+            if not has_black and 'background' not in label_map:
+                label_map['background'] = [(0, 0, 0), [], []]
+                label_map.move_to_end('background', last=False)
 
         else:
             raise Exception("Wrong labelmap specified, "
@@ -469,27 +483,26 @@ class _Converter:
         self._label_id_mapping = self._make_label_id_map()
 
     def _is_label(self, s):
-        return self._label_map.get(self._strip_label(s)) is not None
+        return self._label_map.get(s) is not None
 
     def _is_part(self, s):
-        s = self._strip_label(s)
         for label_desc in self._label_map.values():
             if s in label_desc[1]:
                 return True
         return False
 
     def _is_action(self, label, s):
-        return self._strip_label(s) in self._get_actions(label)
+        return s in self._get_actions(label)
 
     def _get_actions(self, label):
-        label_desc = self._label_map.get(self._strip_label(label))
+        label_desc = self._label_map.get(label)
         if not label_desc:
             return []
         return label_desc[2]
 
     def _make_label_id_map(self):
         source_labels = {
-            id: self._strip_label(label.name) for id, label in
+            id: label.name for id, label in
             enumerate(self._extractor.categories().get(
                 AnnotationType.label, LabelCategories()).items)
         }
@@ -546,7 +559,7 @@ class VocConverter(Converter, CliPlugin):
 
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")
-        parser.add_argument('--apply-colormap', type=bool, default=True,
+        parser.add_argument('--apply-colormap', type=str_to_bool, default=True,
             help="Use colormap for class and instance masks "
                 "(default: %(default)s)")
         parser.add_argument('--label-map', type=cls._get_labelmap, default=None,

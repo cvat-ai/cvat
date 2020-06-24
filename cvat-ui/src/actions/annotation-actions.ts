@@ -1288,19 +1288,23 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 }
 
 export function changeLabelColorAsync(
-    sessionInstance: any,
-    frameNumber: number,
     label: any,
     color: string,
 ): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
+            const {
+                filters,
+                showAllInterpolationTracks,
+                jobInstance,
+                frame,
+            } = receiveAnnotationsParameters();
+
             const updatedLabel = label;
             updatedLabel.color = color;
-            const states = await sessionInstance.annotations
-                .get(frameNumber, showAllInterpolationTracks, filters);
-            const history = await sessionInstance.actions.get();
+            const states = await jobInstance.annotations
+                .get(frame, showAllInterpolationTracks, filters);
+            const history = await jobInstance.actions.get();
 
             dispatch({
                 type: AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS,
@@ -1480,6 +1484,54 @@ export function repeatDrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAc
                 shapeType: activeShapeType,
                 crosshair: activeShapeType === ShapeType.RECTANGLE,
             });
+        }
+    };
+}
+
+export function redrawShapeAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const {
+            annotations: {
+                activatedStateID,
+                states,
+            },
+            canvas: {
+                instance: canvasInstance,
+            },
+        } = getStore().getState().annotation;
+
+        if (activatedStateID !== null) {
+            const [state] = states
+                .filter((_state: any): boolean => _state.clientID === activatedStateID);
+            if (state && state.objectType !== ObjectType.TAG) {
+                let activeControl = ActiveControl.CURSOR;
+                if (state.shapeType === ShapeType.RECTANGLE) {
+                    activeControl = ActiveControl.DRAW_RECTANGLE;
+                } else if (state.shapeType === ShapeType.POINTS) {
+                    activeControl = ActiveControl.DRAW_POINTS;
+                } else if (state.shapeType === ShapeType.POLYGON) {
+                    activeControl = ActiveControl.DRAW_POLYGON;
+                } else if (state.shapeType === ShapeType.POLYLINE) {
+                    activeControl = ActiveControl.DRAW_POLYLINE;
+                } else if (state.shapeType === ShapeType.CUBOID) {
+                    activeControl = ActiveControl.DRAW_CUBOID;
+                }
+
+                dispatch({
+                    type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
+                    payload: {
+                        activeControl,
+                    },
+                });
+
+                canvasInstance.cancel();
+                canvasInstance.draw({
+                    enabled: true,
+                    redraw: activatedStateID,
+                    shapeType: state.shapeType,
+                    crosshair: state.shapeType === ShapeType.RECTANGLE,
+                });
+            }
         }
     };
 }

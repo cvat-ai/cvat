@@ -17,7 +17,7 @@ import {
     Orientation,
     Edge,
 } from './cuboid';
-import { parsePoints, stringifyPoints, clamp } from './shared';
+import { parsePoints, clamp } from './shared';
 
 // Update constructor
 const originalDraw = SVG.Element.prototype.draw;
@@ -174,7 +174,8 @@ SVG.Element.prototype.resize = function constructor(...args: any): any {
         originalResize.call(this, ...args);
         handler = this.remember('_resizeHandler');
         handler.resize = function(e: any) {
-            if (e.detail.event.button === 0) {
+            const { event } = e.detail;
+            if (event.button === 0 && !event.shiftKey && !event.ctrlKey) {
                 return handler.constructor.prototype.resize.call(this, e);
             }
         }
@@ -248,8 +249,8 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.bot = this.polygon(this.cuboidModel.bot.points);
             this.top = this.polygon(this.cuboidModel.top.points);
             this.right = this.polygon(this.cuboidModel.right.points);
-            this.dorsal = this.polygon(this.cuboidModel.dorsal.points);
             this.left = this.polygon(this.cuboidModel.left.points);
+            this.dorsal = this.polygon(this.cuboidModel.dorsal.points);
             this.face = this.polygon(this.cuboidModel.front.points);
         },
 
@@ -631,6 +632,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
                 this.cuboidModel.dr.points = [topPoint, botPoint];
                 this.updateViewAndVM();
+                this.fire(new CustomEvent('resizing', event));
             }).on('dragend', (event: CustomEvent) => {
                 this.fire(new CustomEvent('resizedone', event));
             });
@@ -658,6 +660,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
                 this.cuboidModel.dl.points = [topPoint, botPoint];
                 this.updateViewAndVM(true);
+                this.fire(new CustomEvent('resizing', event));
             }).on('dragend', (event: CustomEvent) => {
                 this.fire(new CustomEvent('resizedone', event));
             });;
@@ -856,16 +859,17 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             const edges = [this.frontLeftEdge, this.frontRightEdge, this.frontTopEdge, this.frontBotEdge]
             const width = this.attr('stroke-width');
             edges.forEach((edge: SVG.Element) => {
-                edge.attr('stroke-width', width * (this.strokeOffset || 1.75));
+                edge.attr('stroke-width', width * (this.strokeOffset || consts.CUBOID_UNACTIVE_EDGE_STROKE_WIDTH));
             });
             this.on('mouseover', () => {
                 edges.forEach((edge: SVG.Element) => {
-                    this.strokeOffset = 2.5;
+                    this.strokeOffset = this.node.classList.contains('cvat_canvas_shape_activated')
+                        ? consts.CUBOID_ACTIVE_EDGE_STROKE_WIDTH : consts.CUBOID_UNACTIVE_EDGE_STROKE_WIDTH;
                     edge.attr('stroke-width', width * this.strokeOffset);
                 })
             }).on('mouseout', () => {
                 edges.forEach((edge: SVG.Element) => {
-                    this.strokeOffset = 1.75;
+                    this.strokeOffset = consts.CUBOID_UNACTIVE_EDGE_STROKE_WIDTH;
                     edge.attr('stroke-width', width * this.strokeOffset);
                 })
             });

@@ -11,7 +11,8 @@ import Checkbox from 'antd/lib/checkbox';
 
 import patterns from 'utils/validation-patterns';
 
-import { UserAgreement } from 'reducers/interfaces'
+import { UserAgreement } from 'reducers/interfaces';
+import { Row, Col } from 'antd/lib/grid';
 
 export interface UserConfirmation {
     name: string;
@@ -30,7 +31,7 @@ export interface RegisterData {
 
 type RegisterFormProps = {
     fetching: boolean;
-    userAgreements: UserAgreement[],
+    userAgreements: UserAgreement[];
     onSubmit(registerData: RegisterData): void;
 } & FormComponentProps;
 
@@ -82,7 +83,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
 
     private validateAgrement = (agreement: any, value: any, callback: any): void => {
         const { userAgreements } = this.props;
-        let isValid: boolean = true;
+        let isValid = true;
         for (const userAgreement of userAgreements) {
             if (agreement.field === userAgreement.name
                 && userAgreement.required && !value) {
@@ -106,18 +107,20 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
 
         form.validateFields((error, values): void => {
             if (!error) {
-                values.confirmations = []
-                
+                const validatedFields = {
+                    ...values,
+                    confirmations: [],
+                };
+
                 for (const userAgreement of userAgreements) {
-                    
-                    values.confirmations.push({
+                    validatedFields.confirmations.push({
                         name: userAgreement.name,
-                        value: values[userAgreement.name]
+                        value: validatedFields[userAgreement.name],
                     });
-                    delete values[userAgreement.name];
+                    delete validatedFields[userAgreement.name];
                 }
 
-                onSubmit(values);
+                onSubmit(validatedFields);
             }
         });
     };
@@ -254,8 +257,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
 
     private renderUserAgreements(): JSX.Element[] {
         const { form, userAgreements } = this.props;
-        const getUserAgreementsElements = () =>
-        {
+        const getUserAgreementsElements = (): JSX.Element[] => {
             const agreementsList: JSX.Element[] = [];
             for (const userAgreement of userAgreements) {
                 agreementsList.push(
@@ -268,18 +270,24 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                                 message: 'You must accept to continue!',
                             }, {
                                 validator: this.validateAgrement,
-                            }]
+                            }],
                         })(
                             <Checkbox>
-                                I read and accept the <a rel='noopener noreferrer' target='_blank'
-                                     href={ userAgreement.url }>{ userAgreement.displayText }</a>
-                            </Checkbox>
+                                I read and accept the
+                                <a
+                                    rel='noopener noreferrer'
+                                    target='_blank'
+                                    href={userAgreement.url}
+                                >
+                                    {userAgreement.displayText}
+                                </a>
+                            </Checkbox>,
                         )}
-                    </Form.Item>
+                    </Form.Item>,
                 );
             }
             return agreementsList;
-        }
+        };
 
         return getUserAgreementsElements();
     }
@@ -289,8 +297,14 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
 
         return (
             <Form onSubmit={this.handleSubmit} className='login-form'>
-                {this.renderFirstNameField()}
-                {this.renderLastNameField()}
+                <Row gutter={8}>
+                    <Col span={12}>
+                        {this.renderFirstNameField()}
+                    </Col>
+                    <Col span={12}>
+                        {this.renderLastNameField()}
+                    </Col>
+                </Row>
                 {this.renderUsernameField()}
                 {this.renderEmailField()}
                 {this.renderPasswordField()}

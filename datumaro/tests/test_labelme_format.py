@@ -6,8 +6,8 @@ from unittest import TestCase
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Bbox, Mask, Polygon, LabelCategories
 )
-from datumaro.components.project import Dataset
-from datumaro.plugins.labelme_format import LabelMeExtractor, LabelMeImporter, \
+from datumaro.components.project import Project
+from datumaro.plugins.labelme_format import LabelMeImporter, \
     LabelMeConverter
 from datumaro.util.test_utils import TestDir, compare_datasets
 
@@ -108,11 +108,29 @@ class LabelMeConverterTest(TestCase):
                 SrcExtractor(), LabelMeConverter(save_images=True),
                 test_dir, target_dataset=DstExtractor())
 
+    def test_cant_save_dataset_with_relative_paths(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='dir/1', image=np.ones((2, 6, 3))),
+                ])
+
+            def categories(self):
+                return { AnnotationType.label: LabelCategories() }
+
+        with self.assertRaisesRegex(Exception, r'only supports flat'):
+            with TestDir() as test_dir:
+                self._test_save_and_load(SrcExtractor(),
+                    LabelMeConverter(save_images=True), test_dir)
+
 
 DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__), 'assets', 'labelme_dataset')
 
-class LabelMeExtractorTest(TestCase):
-    def test_can_load(self):
+class LabelMeImporterTest(TestCase):
+    def test_can_detect(self):
+        self.assertTrue(LabelMeImporter.detect(DUMMY_DATASET_DIR))
+
+    def test_can_import(self):
         class DstExtractor(Extractor):
             def __iter__(self):
                 img1 = np.ones((77, 102, 3)) * 255
@@ -208,13 +226,6 @@ class LabelMeExtractorTest(TestCase):
                     AnnotationType.label: label_cat,
                 }
 
-        parsed = Dataset.from_extractors(LabelMeExtractor(DUMMY_DATASET_DIR))
+        parsed = Project.import_from(DUMMY_DATASET_DIR, 'label_me') \
+            .make_dataset()
         compare_datasets(self, expected=DstExtractor(), actual=parsed)
-
-class LabelMeImporterTest(TestCase):
-    def test_can_detect(self):
-        self.assertTrue(LabelMeImporter.detect(DUMMY_DATASET_DIR))
-
-    def test_can_import(self):
-        parsed = LabelMeImporter()(DUMMY_DATASET_DIR).make_dataset()
-        self.assertEqual(1, len(parsed))

@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -45,6 +45,7 @@ from cvat.apps.engine.serializers import (
     LogEventSerializer, PluginSerializer, ProjectSerializer,
     RqStatusSerializer, TaskSerializer, UserSerializer)
 from cvat.settings.base import CSS_3RDPARTY, JS_3RDPARTY
+from cvat.apps.engine.utils import av_scan_paths
 
 from . import models, task
 from .log import clogger, slogger
@@ -482,7 +483,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         responses={
             '202': openapi.Response(description='Dump of annotations has been started'),
             '201': openapi.Response(description='Annotations file is ready to download'),
-            '200': openapi.Response(description='Download of file started')
+            '200': openapi.Response(description='Download of file started'),
+            '405': openapi.Response(description='Format is not available'),
         }
     )
     @swagger_auto_schema(method='put', operation_summary='Method allows to upload task annotations',
@@ -494,6 +496,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         responses={
             '202': openapi.Response(description='Uploading has been started'),
             '201': openapi.Response(description='Uploading has finished'),
+            '405': openapi.Response(description='Format is not available'),
         }
     )
     @swagger_auto_schema(method='patch', operation_summary='Method performs a partial update of annotations in a specific task',
@@ -619,7 +622,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         ],
         responses={'202': openapi.Response(description='Exporting has been started'),
             '201': openapi.Response(description='Output file is ready for downloading'),
-            '200': openapi.Response(description='Download of file started')
+            '200': openapi.Response(description='Download of file started'),
+            '405': openapi.Response(description='Format is not available'),
         }
     )
     @action(detail=True, methods=['GET'], serializer_class=None,
@@ -799,22 +803,27 @@ def rq_handler(job, exc_type, exc_value, tb):
 #     tags=['tasks'])
 # @api_view(['PUT'])
 def _import_annotations(request, rq_id, rq_func, pk, format_name):
+    format_desc = {f.DISPLAY_NAME: f
+        for f in dm.views.get_import_formats()}.get(format_name)
+    if format_desc is None:
+        raise serializers.ValidationError(
+            "Unknown input format '{}'".format(format_name))
+    elif not format_desc.ENABLED:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
         serializer = AnnotationFileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            if format_name not in \
-                    [f.DISPLAY_NAME for f in dm.views.get_import_formats()]:
-                raise serializers.ValidationError(
-                    "Unknown input format '{}'".format(format_name))
-
             anno_file = serializer.validated_data['annotation_file']
             fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
             with open(filename, 'wb+') as f:
                 for chunk in anno_file.chunks():
                     f.write(chunk)
+
+            av_scan_paths(filename)
             rq_job = queue.enqueue_call(
                 func=rq_func,
                 args=(pk, filename, format_name),
@@ -843,9 +852,13 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
 
-    if format_name not in [f.DISPLAY_NAME for f in dm.views.get_export_formats()]:
+    format_desc = {f.DISPLAY_NAME: f
+        for f in dm.views.get_export_formats()}.get(format_name)
+    if format_desc is None:
         raise serializers.ValidationError(
             "Unknown format specified for the request")
+    elif not format_desc.ENABLED:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     queue = django_rq.get_queue("default")
 

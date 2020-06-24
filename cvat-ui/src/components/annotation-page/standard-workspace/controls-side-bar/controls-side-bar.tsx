@@ -37,13 +37,15 @@ interface Props {
     repeatDrawShape(): void;
     pasteShape(): void;
     resetGroup(): void;
+    redrawShape(): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
         canvasInstance,
         activeControl,
-
+        normalizedKeyMap,
+        keyMap,
         mergeObjects,
         groupObjects,
         splitTrack,
@@ -51,8 +53,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         repeatDrawShape,
         pasteShape,
         resetGroup,
-        normalizedKeyMap,
-        keyMap,
+        redrawShape,
     } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -65,6 +66,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         PASTE_SHAPE: keyMap.PASTE_SHAPE,
         SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
         SWITCH_MERGE_MODE: keyMap.SWITCH_MERGE_MODE,
+        SWITCH_SPLIT_MODE: keyMap.SWITCH_SPLIT_MODE,
         SWITCH_GROUP_MODE: keyMap.SWITCH_GROUP_MODE,
         RESET_GROUP: keyMap.RESET_GROUP,
         CANCEL: keyMap.CANCEL,
@@ -88,7 +90,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance.cancel();
                 // repeateDrawShapes gets all the latest parameters
                 // and calls canvasInstance.draw() with them
-                repeatDrawShape();
+
+                if (event && event.shiftKey) {
+                    redrawShape();
+                } else {
+                    repeatDrawShape();
+                }
             } else {
                 canvasInstance.draw({ enabled: false });
             }
@@ -101,6 +108,15 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             }
             canvasInstance.merge({ enabled: !merging });
             mergeObjects(!merging);
+        },
+        SWITCH_SPLIT_MODE: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            const splitting = activeControl === ActiveControl.SPLIT;
+            if (!splitting) {
+                canvasInstance.cancel();
+            }
+            canvasInstance.split({ enabled: !splitting });
+            splitTrack(!splitting);
         },
         SWITCH_GROUP_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
@@ -205,6 +221,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             />
             <SplitControl
                 canvasInstance={canvasInstance}
+                switchSplitShortcut={normalizedKeyMap.SWITCH_SPLIT_MODE}
                 activeControl={activeControl}
                 splitTrack={splitTrack}
             />

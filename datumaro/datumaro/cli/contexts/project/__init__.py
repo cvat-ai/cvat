@@ -16,6 +16,7 @@ from datumaro.components.comparator import Comparator
 from datumaro.components.dataset_filter import DatasetItemEncoder
 from datumaro.components.extractor import AnnotationType
 from datumaro.components.cli_plugin import CliPlugin
+from datumaro.components.operations import mean_std
 from .diff import DiffVisualizer
 from ...util import add_subparser, CliException, MultilineFormatter, \
     make_file_name
@@ -623,6 +624,38 @@ def transform_command(args):
 
     return 0
 
+def build_stats_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor(help="Get project statistics",
+        description="""
+            Outputs project statistics.
+        """,
+        formatter_class=MultilineFormatter)
+
+    parser.add_argument('-p', '--project', dest='project_dir', default='.',
+        help="Directory of the project to operate on (default: current dir)")
+    parser.set_defaults(command=stats_command)
+
+    return parser
+
+def stats_command(args):
+    project = load_project(args.project_dir)
+    dataset = project.make_dataset()
+
+    def print_extractor_info(extractor, indent=''):
+        mean, std = mean_std(dataset)
+        print("%sImage mean:" % indent, ', '.join('%.3f' % n for n in mean))
+        print("%sImage std:" % indent, ', '.join('%.3f' % n for n in std))
+
+    print("Dataset: ")
+    print_extractor_info(dataset)
+
+    if 1 < len(dataset.subsets()):
+        print("Subsets: ")
+        for subset_name in dataset.subsets():
+            subset = dataset.get_subset(subset_name)
+            print("  %s:" % subset_name)
+            print_extractor_info(subset, " " * 4)
+
 def build_info_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Get project info",
         description="""
@@ -718,5 +751,6 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
     add_subparser(subparsers, 'diff', build_diff_parser)
     add_subparser(subparsers, 'transform', build_transform_parser)
     add_subparser(subparsers, 'info', build_info_parser)
+    add_subparser(subparsers, 'stats', build_stats_parser)
 
     return parser

@@ -7,8 +7,13 @@ import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
 import { LogType } from 'cvat-logger';
-import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
-import { ActiveControl, CombinedState, ColorBy } from 'reducers/interfaces';
+import { Canvas } from 'cvat-canvas-wrapper';
+import {
+    ActiveControl,
+    CombinedState,
+    ColorBy,
+    ShapeType,
+} from 'reducers/interfaces';
 import {
     collapseObjectItems,
     changeLabelColorAsync,
@@ -24,6 +29,7 @@ import {
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
+import { shift } from 'utils/math';
 
 interface OwnProps {
     clientID: number;
@@ -56,7 +62,7 @@ interface DispatchToProps {
     removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
-    changeLabelColor(sessionInstance: any, frameNumber: number, label: any, color: string): void;
+    changeLabelColor(label: any, color: string): void;
     changeGroupColor(group: number, color: string): void;
 }
 
@@ -153,12 +159,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(propagateObjectAction(objectState));
         },
         changeLabelColor(
-            sessionInstance: any,
-            frameNumber: number,
             label: any,
             color: string,
         ): void {
-            dispatch(changeLabelColorAsync(sessionInstance, frameNumber, label, color));
+            dispatch(changeLabelColorAsync(label, color));
         },
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
@@ -234,6 +238,33 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const search = `frame=${frameNumber}&type=${objectState.objectType}&serverID=${objectState.serverID}`;
         const url = `${origin}${pathname}?${search}`;
         copy(url);
+    };
+
+    private switchOrientation = (): void => {
+        const { objectState, updateState } = this.props;
+        if (objectState.shapeType === ShapeType.CUBOID) {
+            this.switchCuboidOrientation();
+            return;
+        }
+
+        const reducedPoints = objectState.points.reduce(
+            (acc: number[][], _: number, index: number, array: number[]): number[][] => {
+                if (index % 2) {
+                    acc.push([array[index - 1], array[index]]);
+                }
+
+                return acc;
+            }, [],
+        );
+
+        if (objectState.shapeType === ShapeType.POLYGON) {
+            objectState.points = reducedPoints.slice(0, 1)
+                .concat(reducedPoints.reverse().slice(0, -1)).flat();
+            updateState(objectState);
+        } else if (objectState.shapeType === ShapeType.POLYLINE) {
+            objectState.points = reducedPoints.reverse().flat();
+            updateState(objectState);
+        }
     };
 
     private toBackground = (): void => {
@@ -355,12 +386,10 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private changeColor = (color: string): void => {
         const {
-            jobInstance,
             objectState,
             colorBy,
             changeLabelColor,
             changeGroupColor,
-            frameNumber,
         } = this.props;
 
         if (colorBy === ColorBy.INSTANCE) {
@@ -369,7 +398,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         } else if (colorBy === ColorBy.GROUP) {
             changeGroupColor(objectState.group.id, color);
         } else if (colorBy === ColorBy.LABEL) {
-            changeLabelColor(jobInstance, frameNumber, objectState.label, color);
+            changeLabelColor(objectState.label, color);
         }
     };
 
@@ -397,9 +426,56 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         this.commit();
     };
 
+    private switchCuboidOrientation = (): void => {
+        function cuboidOrientationIsLeft(points: number[]): boolean {
+            return points[12] > points[0];
+        }
+
+        const { objectState } = this.props;
+
+        this.resetCuboidPerspective(false);
+
+        objectState.points = shift(objectState.points,
+            cuboidOrientationIsLeft(objectState.points) ? 4 : -4);
+
+        this.commit();
+    };
+
+    private resetCuboidPerspective = (commit = true): void => {
+        function cuboidOrientationIsLeft(points: number[]): boolean {
+            return points[12] > points[0];
+        }
+
+        const { objectState } = this.props;
+        const { points } = objectState;
+        const minD = {
+            x: (points[6] - points[2]) * 0.001,
+            y: (points[3] - points[1]) * 0.001,
+        };
+
+        if (cuboidOrientationIsLeft(points)) {
+            points[14] = points[10] + points[2] - points[6] + minD.x;
+            points[15] = points[11] + points[3] - points[7];
+            points[8] = points[10] + points[4] - points[6];
+            points[9] = points[11] + points[5] - points[7] + minD.y;
+            points[12] = points[14] + points[0] - points[2];
+            points[13] = points[15] + points[1] - points[3] + minD.y;
+        } else {
+            points[10] = points[14] + points[6] - points[2] - minD.x;
+            points[11] = points[15] + points[7] - points[3];
+            points[12] = points[14] + points[0] - points[2];
+            points[13] = points[15] + points[1] - points[3] + minD.y;
+            points[8] = points[12] + points[4] - points[0] - minD.x;
+            points[9] = points[13] + points[5] - points[1];
+        }
+
+        objectState.points = points;
+        if (commit) this.commit();
+    };
+
     private changeFrame(frame: number): void {
         const { changeFrame, canvasInstance } = this.props;
-        if (isAbleToChangeFrame(canvasInstance)) {
+        if (canvasInstance.isAbleToChangeFrame()) {
             changeFrame(frame);
         }
     }
@@ -489,6 +565,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 copy={this.copy}
                 propagate={this.propagate}
                 createURL={this.createURL}
+                switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}
                 toForeground={this.toForeground}
                 setOccluded={this.setOccluded}
@@ -507,6 +584,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 changeLabel={this.changeLabel}
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
+                resetCuboidPerspective={() => this.resetCuboidPerspective()}
             />
         );
     }

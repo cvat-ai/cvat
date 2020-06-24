@@ -5,7 +5,7 @@
 @import 'base.scss';
 
 .cvat-standard-workspace.ant-layout {
-    height: 100%
+    height: 100%;
 }
 
 .cvat-canvas-container {
@@ -17,8 +17,8 @@
 }
 
 .cvat-objects-sidebar-sider {
-    top: 0px;
-    right: 0px;
+    top: 0;
+    right: 0;
     left: auto;
     background-color: $background-color-2;
     border-left: 1px solid $border-color-1;
@@ -29,6 +29,10 @@
 
 .cvat-objects-sidebar {
     height: 100%;
+}
+
+.cvat-rotate-canvas-controls-right > svg {
+    transform: scaleX(-1);
 }
 
 .cvat-canvas-controls-sidebar {
@@ -70,6 +74,7 @@
     &:hover {
         transform: scale(0.75);
     }
+
     &:active {
         transform: scale(0.65);
     }
@@ -79,18 +84,14 @@
 .ant-popover-content >
 .ant-popover-inner > div >
 .ant-popover-inner-content {
-	padding: 0px;
-}
-
-.cvat-rotate-canvas-controls-right > svg {
-    transform: scaleX(-1);
+    padding: 0;
 }
 
 .cvat-draw-shape-popover >
 .ant-popover-content >
 .ant-popover-inner > div >
 .ant-popover-inner-content {
-	padding: 0px;
+    padding: 0;
 }
 
 .cvat-draw-shape-popover-points-selector {
@@ -102,12 +103,15 @@
     border-radius: 5px;
     background: $background-color-2;
     width: 250px;
+
     > div {
         margin-top: 5px;
     }
+
     > div:nth-child(3) > div > div {
         width: 100%;
     }
+
     > div:last-child {
         span {
             width: 100%;
@@ -115,11 +119,13 @@
 
         button {
             width: 100%;
+
             &:nth-child(1) {
-                border-radius: 3px 0px 0px 3px;
+                border-radius: 3px 0 0 3px;
             }
+
             &:nth-child(2) {
-                border-radius: 0px 3px 3px 0px;
+                border-radius: 0 3px 3px 0;
             }
         }
     }
@@ -128,6 +134,6 @@
 .cvat-propagate-confirm {
     > .ant-input-number {
         width: 70px;
-        margin: 0px 5px;
+        margin: 0 5px;
     }
 }

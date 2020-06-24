@@ -130,7 +130,7 @@ class Config:
         return len(self.items())
 
     def __iter__(self):
-        return iter(zip(self.keys(), self.values()))
+        return iter(self.keys())
 
     def __getitem__(self, key):
         default = object()

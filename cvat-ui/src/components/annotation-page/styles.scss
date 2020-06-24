@@ -5,27 +5,27 @@
 @import '../../base.scss';
 
 .cvat-annotation-page.ant-layout {
-    height: 100%
+    height: 100%;
 }
 
 .ant-layout-header.cvat-annotation-header {
     background-color: $background-color-2;
     border-bottom: 1px solid $border-color-1;
     height: 54px;
-    padding: 0px;
+    padding: 0;
 }
 
 .cvat-annotation-header-left-group {
     > button:first-child {
         filter: invert(0.9);
         background: $background-color-1;
-        border-radius: 0px;
+        border-radius: 0;
         width: 70px;
     }
 }
 
 .ant-btn.cvat-annotation-header-button {
-    padding: 0px;
+    padding: 0;
     width: 54px;
     height: 54px;
     float: left;
@@ -35,10 +35,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 0px 3px;
+    margin: 0 3px;
 
     > span {
-        margin-left: 0px;
+        margin-left: 0;
         font-size: 10px;
     }
 
@@ -57,19 +57,20 @@
 
     > * {
         display: block;
-        line-height: 0px;
+        line-height: 0;
     }
 }
 
 .cvat-annotation-disabled-header-button {
     @extend .cvat-annotation-header-button;
+
     opacity: 0.5;
     pointer-events: none;
 }
 
 .cvat-annotation-header-player-group > div {
     height: 54px;
-    line-height: 0px;
+    line-height: 0;
 }
 
 .cvat-player-buttons {
@@ -81,7 +82,7 @@
 
     > i {
         font-size: 25px;
-        margin: 0px 7px;
+        margin: 0 7px;
         color: $player-buttons-color;
 
         &:hover {
@@ -111,7 +112,6 @@
     > .ant-slider-rail {
         background-color: $player-slider-color;
     }
-
 }
 
 .cvat-player-filename-wrapper {
@@ -161,7 +161,8 @@
 
     > div:nth-child(1) {
         > div {
-            > .ant-select, i {
+            > .ant-select,
+            i {
                 margin-left: 10px;
             }
         }
@@ -203,18 +204,17 @@
 }
 
 .ant-menu.cvat-annotation-menu {
-    box-shadow: 0 0 17px rgba(0,0,0,0.2);
+    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
 
     > li:hover {
         background-color: $hover-menu-color;
     }
 
     .ant-menu-submenu-title {
-        margin: 0px;
+        margin: 0;
         width: 15em;
     }
 }
-
 
 // TODO: Move canvas from standard workspace and create its own .scss
 .cvat-canvas-context-menu {
@@ -231,13 +231,11 @@
 }
 
 .cvat-canvas-point-context-menu {
+    display: grid;
     opacity: 0.6;
     position: fixed;
-    width: 135px;
     z-index: 10;
-    max-height: 50%;
-    overflow-y: auto;
-    background-color: #ffffff;
+    background-color: #fff;
     border-radius: 4px;
 
     &:hover {
@@ -293,6 +291,7 @@
 
 .cvat-annotations-filters-input.ant-select > div {
     height: 32px;
+
     > div {
         height: 32px;
 

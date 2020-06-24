@@ -4,14 +4,14 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Select from 'antd/lib/select';
+import Select, { OptionProps } from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import InputNumber from 'antd/lib/input-number';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 
-import { RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
 import DEXTRPlugin from './dextr-plugin';
@@ -21,12 +21,14 @@ interface Props {
     labels: any[];
     minimumPoints: number;
     rectDrawingMethod?: RectDrawingMethod;
+    cuboidDrawingMethod?: CuboidDrawingMethod;
     numberOfPoints?: number;
     selectedLabeID: number;
     repeatShapeShortcut: string;
     onChangeLabel(value: string): void;
     onChangePoints(value: number | undefined): void;
     onChangeRectDrawingMethod(event: RadioChangeEvent): void;
+    onChangeCuboidDrawingMethod(event: RadioChangeEvent): void;
     onDrawTrack(): void;
     onDrawShape(): void;
 }
@@ -39,16 +41,15 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         selectedLabeID,
         numberOfPoints,
         rectDrawingMethod,
+        cuboidDrawingMethod,
         repeatShapeShortcut,
         onDrawTrack,
         onDrawShape,
         onChangeLabel,
         onChangePoints,
         onChangeRectDrawingMethod,
+        onChangeCuboidDrawingMethod,
     } = props;
-
-    const trackDisabled = shapeType === ShapeType.POLYGON || shapeType === ShapeType.POLYLINE
-        || shapeType === ShapeType.CUBOID || (shapeType === ShapeType.POINTS && numberOfPoints !== 1);
 
     return (
         <div className='cvat-draw-shape-popover-content'>
@@ -65,6 +66,15 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             <Row type='flex' justify='center'>
                 <Col span={24}>
                     <Select
+                        showSearch
+                        filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
+                            const { children } = option.props;
+                            if (typeof (children) === 'string') {
+                                return children.toLowerCase().includes(input.toLowerCase());
+                            }
+
+                            return false;
+                        }}
                         value={`${selectedLabeID}`}
                         onChange={onChangeLabel}
                     >
@@ -81,9 +91,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            {
-                shapeType === ShapeType.POLYGON && <DEXTRPlugin />
-            }
+            { shapeType === ShapeType.POLYGON && <DEXTRPlugin /> }
             {
                 shapeType === ShapeType.RECTANGLE && (
                     <>
@@ -107,6 +115,39 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                                     </Radio>
                                     <Radio
                                         value={RectDrawingMethod.EXTREME_POINTS}
+                                        style={{ width: 'auto' }}
+                                    >
+                                        By 4 Points
+                                    </Radio>
+                                </Radio.Group>
+                            </Col>
+                        </Row>
+                    </>
+                )
+            }
+            {
+                shapeType === ShapeType.CUBOID && (
+                    <>
+                        <Row>
+                            <Col>
+                                <Text className='cvat-text-color'> Drawing method </Text>
+                            </Col>
+                        </Row>
+                        <Row type='flex' justify='space-around'>
+                            <Col>
+                                <Radio.Group
+                                    style={{ display: 'flex' }}
+                                    value={cuboidDrawingMethod}
+                                    onChange={onChangeCuboidDrawingMethod}
+                                >
+                                    <Radio
+                                        value={CuboidDrawingMethod.CLASSIC}
+                                        style={{ width: 'auto' }}
+                                    >
+                                        From rectangle
+                                    </Radio>
+                                    <Radio
+                                        value={CuboidDrawingMethod.CORNER_POINTS}
                                         style={{ width: 'auto' }}
                                     >
                                         By 4 Points
@@ -146,19 +187,14 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             <Row type='flex' justify='space-around'>
                 <Col span={12}>
                     <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
-                        <Button
-                            onClick={onDrawShape}
-                        >
+                        <Button onClick={onDrawShape}>
                             Shape
                         </Button>
                     </Tooltip>
                 </Col>
                 <Col span={12}>
                     <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
-                        <Button
-                            onClick={onDrawTrack}
-                            disabled={trackDisabled}
-                        >
+                        <Button onClick={onDrawTrack}>
                             Track
                         </Button>
                     </Tooltip>

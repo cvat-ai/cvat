@@ -5,8 +5,9 @@
 @import '../../base.scss';
 
 .cvat-settings-page {
-    height: 90%;
+    height: 100%;
     overflow-y: auto;
+    padding-bottom: 15px;
 
     > div:nth-child(1) {
         margin-top: 30px;
@@ -14,7 +15,8 @@
     }
 }
 
-.cvat-workspace-settings, .cvat-player-settings {
+.cvat-workspace-settings,
+.cvat-player-settings {
     width: 100%;
     height: max-content;
     background: $background-color-1;
@@ -73,7 +75,7 @@
 }
 
 .cvat-player-settings-step > div > span > i {
-    margin: 0px 5px;
+    margin: 0 5px;
     font-size: 10px;
 }
 

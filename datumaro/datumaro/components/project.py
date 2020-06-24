@@ -19,7 +19,7 @@ from datumaro.components.config import Config, DEFAULT_FORMAT
 from datumaro.components.config_model import (Model, Source,
     PROJECT_DEFAULT_CONFIG, PROJECT_SCHEMA)
 from datumaro.components.extractor import Extractor
-from datumaro.components.launcher import InferenceWrapper
+from datumaro.components.launcher import ModelTransform
 from datumaro.components.dataset_filter import \
     XPathDatasetFilter, XPathAnnotationsFilter
 
@@ -235,7 +235,17 @@ class Environment:
                 exports = cls._import_module(module_dir, module_name, types,
                     package)
             except Exception as e:
-                log.debug("Failed to import module '%s': %s" % (module_name, e))
+                module_search_error = ImportError
+                try:
+                    module_search_error = ModuleNotFoundError # python 3.6+
+                except NameError:
+                    pass
+
+                message = ["Failed to import module '%s': %s", module_name, e]
+                if isinstance(e, module_search_error):
+                    log.debug(*message)
+                else:
+                    log.warning(*message)
                 continue
 
             log.debug("Imported the following symbols from %s: %s" % \
@@ -673,7 +683,7 @@ class ProjectDataset(Dataset):
         if isinstance(model, str):
             launcher = self._project.make_executable_model(model)
 
-        self.transform_project(InferenceWrapper, launcher=launcher,
+        self.transform_project(ModelTransform, launcher=launcher,
             save_dir=save_dir, batch_size=batch_size)
 
     def export_project(self, save_dir, converter,
@@ -807,9 +817,8 @@ class Project:
 
     def make_executable_model(self, name):
         model = self.get_model(name)
-        model.model_dir = self.local_model_dir(name)
         return self.env.make_launcher(model.launcher,
-            **model.options, model_dir=model.model_dir)
+            **model.options, model_dir=self.local_model_dir(name))
 
     def make_source_project(self, name):
         source = self.get_source(name)

@@ -162,14 +162,12 @@ class TfDetectionApiConverter(Converter, CliPlugin):
 
     def _make_tf_example(self, item):
         features = {
-            'image/source_id': bytes_feature(str(item.id).encode('utf-8')),
+            'image/source_id': bytes_feature(
+                str(item.attributes.get('source_id') or '').encode('utf-8')
+            ),
         }
 
-        filename = ''
-        if item.has_image:
-            filename = item.image.filename
-        if not filename:
-            filename = item.id + DetectionApiPath.IMAGE_EXT
+        filename = item.id + DetectionApiPath.IMAGE_EXT
         features['image/filename'] = bytes_feature(filename.encode('utf-8'))
 
         if not item.has_image:

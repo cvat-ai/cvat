@@ -12,10 +12,25 @@ from datumaro.plugins.datumaro_format.importer import DatumaroImporter
 from datumaro.plugins.datumaro_format.converter import DatumaroConverter
 from datumaro.util.mask_tools import generate_colormap
 from datumaro.util.image import Image
-from datumaro.util.test_utils import TestDir, item_to_str
+from datumaro.util.test_utils import TestDir, compare_datasets_strict
 
 
 class DatumaroConverterTest(TestCase):
+    def _test_save_and_load(self, source_dataset, converter, test_dir,
+            target_dataset=None, importer_args=None):
+        converter(source_dataset, test_dir)
+
+        if importer_args is None:
+            importer_args = {}
+        parsed_dataset = Project.import_from(
+            test_dir, 'datumaro', **importer_args).make_dataset()
+
+        if target_dataset is None:
+            target_dataset = source_dataset
+
+        compare_datasets_strict(self,
+            expected=target_dataset, actual=parsed_dataset)
+
     class TestExtractor(Extractor):
         def __iter__(self):
             return iter([
@@ -27,12 +42,12 @@ class DatumaroConverterTest(TestCase):
                             'x': 1,
                             'y': '2',
                         }),
-                        Bbox(1, 2, 3, 4, label=4, id=4, attributes={
+                        Bbox(1, 2, 3, 4, label=4, id=4, z_order=1, attributes={
                             'score': 1.0,
                         }),
                         Bbox(5, 6, 7, 8, id=5, group=5),
-                        Points([1, 2, 2, 0, 1, 1], label=0, id=5),
-                        Mask(label=3, id=5, image=np.ones((2, 3))),
+                        Points([1, 2, 2, 0, 1, 1], label=0, id=5, z_order=4),
+                        Mask(label=3, id=5, z_order=2, image=np.ones((2, 3))),
                     ]),
                 DatasetItem(id=21, subset='train',
                     annotations=[
@@ -43,11 +58,12 @@ class DatumaroConverterTest(TestCase):
 
                 DatasetItem(id=2, subset='val',
                     annotations=[
-                        PolyLine([1, 2, 3, 4, 5, 6, 7, 8], id=11),
-                        Polygon([1, 2, 3, 4, 5, 6, 7, 8], id=12),
+                        PolyLine([1, 2, 3, 4, 5, 6, 7, 8], id=11, z_order=1),
+                        Polygon([1, 2, 3, 4, 5, 6, 7, 8], id=12, z_order=4),
                     ]),
 
-                DatasetItem(id=42, subset='test'),
+                DatasetItem(id=42, subset='test',
+                    attributes={'a1': 5, 'a2': '42'}),
 
                 DatasetItem(id=42),
                 DatasetItem(id=43, image=Image(path='1/b/c.qq', size=(2, 4))),
@@ -73,36 +89,24 @@ class DatumaroConverterTest(TestCase):
 
     def test_can_save_and_load(self):
         with TestDir() as test_dir:
-            source_dataset = self.TestExtractor()
-
-            converter = DatumaroConverter(save_images=True)
-            converter(source_dataset, test_dir)
-
-            project = Project.import_from(test_dir, 'datumaro')
-            parsed_dataset = project.make_dataset()
-
-            self.assertListEqual(
-                sorted(source_dataset.subsets()),
-                sorted(parsed_dataset.subsets()),
-            )
-
-            self.assertEqual(len(source_dataset), len(parsed_dataset))
-
-            for subset_name in source_dataset.subsets():
-                source_subset = source_dataset.get_subset(subset_name)
-                parsed_subset = parsed_dataset.get_subset(subset_name)
-                self.assertEqual(len(source_subset), len(parsed_subset))
-                for idx, (item_a, item_b) in enumerate(
-                        zip(source_subset, parsed_subset)):
-                    self.assertEqual(item_a, item_b, '%s:\n%s\nvs.\n%s\n' % \
-                        (idx, item_to_str(item_a), item_to_str(item_b)))
-
-            self.assertEqual(
-                source_dataset.categories(),
-                parsed_dataset.categories())
+            self._test_save_and_load(self.TestExtractor(),
+                DatumaroConverter(save_images=True), test_dir)
 
     def test_can_detect(self):
         with TestDir() as test_dir:
             DatumaroConverter()(self.TestExtractor(), save_dir=test_dir)
 
             self.assertTrue(DatumaroImporter.detect(test_dir))
+
+    def test_relative_paths(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='1', image=np.ones((4, 2, 3))),
+                    DatasetItem(id='subdir1/1', image=np.ones((2, 6, 3))),
+                    DatasetItem(id='subdir2/1', image=np.ones((5, 4, 3))),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                DatumaroConverter(save_images=True), test_dir)

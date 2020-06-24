@@ -18,6 +18,15 @@
         }
     }
 
+    > div:nth-child(3) {
+        height: 83%;
+        padding-top: 10px;
+    }
+
+    > div:nth-child(4) {
+        padding-top: 10px;
+    }
+
     > div:nth-child(2) {
         > div:nth-child(1) {
             display: flex;
@@ -32,15 +41,6 @@
             display: flex;
             justify-content: flex-end;
         }
-    }
-
-    > div:nth-child(3) {
-        height: 83%;
-        padding-top: 10px;
-    }
-
-    > div:nth-child(4) {
-        padding-top: 10px;
     }
 }
 
@@ -97,7 +97,7 @@
     justify-content: center;
     overflow: hidden;
     margin: 20px;
-    margin-top: 0px;
+    margin-top: 0;
 
     > .cvat-task-item-preview {
         max-width: 140px;
@@ -121,10 +121,8 @@
     margin-right: 5px;
 }
 
-.cvat-task-completed-progress {
-    div.ant-progress-bg {
-        background: $completed-progress-color !important; /* csslint allow: important */
-    }
+.cvat-task-completed-progress div.ant-progress-bg {
+    background: $completed-progress-color !important;
 }
 
 .cvat-task-progress-progress {
