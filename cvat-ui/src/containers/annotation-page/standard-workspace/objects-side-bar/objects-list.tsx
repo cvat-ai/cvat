@@ -17,7 +17,7 @@ import {
     changeGroupColorAsync,
     changeLabelColorAsync,
 } from 'actions/annotation-actions';
-import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 import {
     CombinedState,
     StatesOrdering,
@@ -446,7 +446,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 if (state && state.objectType === ObjectType.TRACK) {
                     const frame = typeof (state.keyframes.next) === 'number'
                         ? state.keyframes.next : null;
-                    if (frame !== null && isAbleToChangeFrame(canvasInstance)) {
+                    if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
                         changeFrame(frame);
                     }
                 }
@@ -457,7 +457,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 if (state && state.objectType === ObjectType.TRACK) {
                     const frame = typeof (state.keyframes.prev) === 'number'
                         ? state.keyframes.prev : null;
-                    if (frame !== null && isAbleToChangeFrame(canvasInstance)) {
+                    if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
                         changeFrame(frame);
                     }
                 }

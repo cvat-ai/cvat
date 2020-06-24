@@ -6,19 +6,21 @@
 
 .cvat-objects-appearance-collapse.ant-collapse {
     width: 100%;
-    bottom: 0px;
+    bottom: 0;
     position: absolute;
-    border-radius: 0px;
+    border-radius: 0;
 
     > .ant-collapse-item {
         border: none;
+
         > .ant-collapse-header {
             padding-top: 2.5px;
             padding-bottom: 2.5px;
             background: $header-color;
-            border-radius: 0px;
+            border-radius: 0;
             height: 25px;
         }
+
         > .ant-collapse-content {
             background: $background-color-2;
             border-bottom: none;
@@ -27,7 +29,6 @@
             > .ant-collapse-content-box {
                 padding: 10px;
             }
-
         }
     }
 }
@@ -35,7 +36,6 @@
 .cvat-object-sidebar-icon {
     fill: $objects-bar-icons-color;
     color: $objects-bar-icons-color;
-
     font-size: 15px;
 
     &:hover {
@@ -50,7 +50,7 @@
 
     .ant-tabs-card-bar {
         border: none;
-        margin-bottom: 0px;
+        margin-bottom: 0;
         padding-top: 25px;
 
         .ant-tabs-tab {
@@ -71,6 +71,7 @@
 .cvat-objects-sidebar-states-header {
     background: $objects-bar-tabs-color;
     padding: 5px;
+    height: 80px;
 
     > div:nth-child(1) > div:nth-child(1) {
         height: 32px;
@@ -81,7 +82,7 @@
 
         > div {
             text-align: center;
-            margin: 0px 2px;
+            margin: 0 2px;
 
             > i {
                 @extend .cvat-object-sidebar-icon;
@@ -97,10 +98,6 @@
             }
         }
     }
-}
-
-.cvat-objects-sidebar-states-header {
-    height: 80px;
 }
 
 .cvat-objects-sidebar-states-list {
@@ -134,6 +131,7 @@
 
         > div:nth-child(3) > i {
             @extend .cvat-object-sidebar-icon;
+
             font-size: 25px;
         }
 
@@ -142,7 +140,7 @@
         }
     }
 
-    > div:nth-child(2)  {
+    > div:nth-child(2) {
         > div > div {
             margin-top: 5px;
         }
@@ -154,7 +152,7 @@
 }
 
 .cvat-objects-sidebar-state-item-collapse {
-    border: 0px;
+    border: 0;
     background: inherit;
 
     > .ant-collapse-item {
@@ -209,7 +207,7 @@
 
     > .ant-radio-group {
         display: grid;
-        padding: 5px
+        padding: 5px;
     }
 }
 
@@ -261,13 +259,13 @@
     }
 
     .ant-checkbox-wrapper {
-        margin-left: 0px;
+        margin-left: 0;
     }
 }
 
 .cvat-object-item-menu {
     > li {
-        padding: 0px;
+        padding: 0;
 
         > button {
             padding: 5px 32px;

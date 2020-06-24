@@ -8,7 +8,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     border-color: $border-color-2;
     box-shadow: none;
     border-top: none;
-    border-radius: 0px 0px 5px 5px;
+    border-radius: 0 0 5px 5px;
     min-height: 9em;
     font-family: $monospaced-fonts-stack;
 
@@ -27,7 +27,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     border: 1px solid $border-color-2;
     box-shadow: none;
     border-top: none;
-    border-radius: 0px 0px 5px 5px;
+    border-radius: 0 0 5px 5px;
     padding: 5px;
     display: flex;
     overflow-y: auto;
@@ -74,8 +74,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-label-constructor-creator,
-.cvat-label-constructor-updater
-{
+.cvat-label-constructor-updater {
     > form:first-child {
         margin-top: 10px;
     }

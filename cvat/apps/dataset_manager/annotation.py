@@ -442,34 +442,284 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def get_interpolated_shapes(track, start_frame, end_frame):
-        def interpolate(shape0, shape1):
+        def copy_shape(source, frame, points = None):
+            copied = deepcopy(source)
+            copied["keyframe"] = True
+            copied["frame"] = frame
+            if points:
+                copied["points"] = points
+            return copied
+
+        def simple_interpolation(shape0, shape1):
             shapes = []
-            is_same_type = shape0["type"] == shape1["type"]
+            distance = shape1["frame"] - shape0["frame"]
+            diff = np.subtract(shape1["points"], shape0["points"])
+
+            for frame in range(shape0["frame"] + 1, shape1["frame"]):
+                offset = (frame - shape0["frame"]) / distance
+                points = None
+                if shape1["outside"]:
+                    points = np.asarray(shape0["points"])
+                else:
+                    points = shape0["points"] + diff * offset
+
+                shapes.append(copy_shape(shape0, frame, points.tolist()))
+
+            return shapes
+
+        def points_interpolation(shape0, shape1):
+            if len(shape0["points"]) == 2 and len(shape1["points"]) == 2:
+                return simple_interpolation(shape0, shape1)
+            else:
+                shapes = []
+                for frame in range(shape0["frame"] + 1, shape1["frame"]):
+                    shapes.append(copy_shape(shape0, frame))
+
+            return shapes
+
+        def interpolate_position(left_position, right_position, offset):
+            def to_array(points):
+                return np.asarray(
+                    list(map(lambda point: [point["x"], point["y"]], points))
+                ).flatten()
+
+            def to_points(array):
+                return list(map(
+                    lambda point: {"x": point[0], "y": point[1]}, np.asarray(array).reshape(-1, 2)
+                ))
+
+            def curve_length(points):
+                length = 0
+                for i in range(1, len(points)):
+                    dx = points[i]["x"] - points[i - 1]["x"]
+                    dy = points[i]["y"] - points[i - 1]["y"]
+                    length += np.sqrt(dx ** 2 + dy ** 2)
+                return length
+
+            def curve_to_offset_vec(points, length):
+                offset_vector = [0]
+                accumulated_length = 0
+                for i in range(1, len(points)):
+                    dx = points[i]["x"] - points[i - 1]["x"]
+                    dy = points[i]["y"] - points[i - 1]["y"]
+                    accumulated_length += np.sqrt(dx ** 2 + dy ** 2)
+                    offset_vector.append(accumulated_length / length)
+
+                return offset_vector
+
+            def find_nearest_pair(value, curve):
+                minimum = [0, abs(value - curve[0])]
+                for i in range(1, len(curve)):
+                    distance = abs(value - curve[i])
+                    if distance < minimum[1]:
+                        minimum = [i, distance]
+
+                return minimum[0]
+
+            def match_left_right(left_curve, right_curve):
+                matching = {}
+                for i, left_curve_item in enumerate(left_curve):
+                    matching[i] = [find_nearest_pair(left_curve_item, right_curve)]
+                return matching
+
+            def match_right_left(left_curve, right_curve, left_right_matching):
+                matched_right_points = left_right_matching.values()
+                unmatched_right_points = filter(lambda x: x not in matched_right_points, range(len(right_curve)))
+                updated_matching = deepcopy(left_right_matching)
+
+                for right_point in unmatched_right_points:
+                    left_point = find_nearest_pair(right_curve[right_point], left_curve)
+                    updated_matching[left_point].append(right_point)
+
+                for key, value in updated_matching.items():
+                    updated_matching[key] = sorted(value)
+
+                return updated_matching
+
+            def reduce_interpolation(interpolated_points, matching, left_points, right_points):
+                def average_point(points):
+                    sumX = 0
+                    sumY = 0
+                    for point in points:
+                        sumX += point["x"]
+                        sumY += point["y"]
+
+                    return {
+                        "x": sumX / len(points),
+                        "y": sumY / len(points)
+                    }
+
+                def compute_distance(point1, point2):
+                    return np.sqrt(
+                        ((point1["x"] - point2["x"])) ** 2
+                        + ((point1["y"] - point2["y"]) ** 2)
+                    )
+
+                def minimize_segment(base_length, N, start_interpolated, stop_interpolated):
+                    threshold = base_length / (2 * N)
+                    minimized = [interpolated_points[start_interpolated]]
+                    latest_pushed = start_interpolated
+                    for i in range(start_interpolated + 1, stop_interpolated):
+                        distance = compute_distance(
+                            interpolated_points[latest_pushed], interpolated_points[i]
+                        )
+
+                        if distance >= threshold:
+                            minimized.append(interpolated_points[i])
+                            latest_pushed = i
+
+                    minimized.append(interpolated_points[stop_interpolated])
+
+                    if len(minimized) == 2:
+                        distance = compute_distance(
+                            interpolated_points[start_interpolated],
+                            interpolated_points[stop_interpolated]
+                        )
+
+                        if distance < threshold:
+                            return [average_point(minimized)]
+
+                    return minimized
+
+                reduced = []
+                interpolated_indexes = {}
+                accumulated = 0
+                for i in range(len(left_points)):
+                    interpolated_indexes[i] = []
+                    for _ in range(len(matching[i])):
+                        interpolated_indexes[i].append(accumulated)
+                        accumulated += 1
+
+                def left_segment(start, stop):
+                    start_interpolated = interpolated_indexes[start][0]
+                    stop_interpolated = interpolated_indexes[stop][0]
+
+                    if start_interpolated == stop_interpolated:
+                        reduced.append(interpolated_points[start_interpolated])
+                        return
+
+                    base_length = curve_length(left_points[start: stop + 1])
+                    N = stop - start + 1
+
+                    reduced.extend(
+                        minimize_segment(base_length, N, start_interpolated, stop_interpolated)
+                    )
+
+
+                def right_segment(left_point):
+                    start = matching[left_point][0]
+                    stop = matching[left_point][-1]
+                    start_interpolated = interpolated_indexes[left_point][0]
+                    stop_interpolated = interpolated_indexes[left_point][-1]
+                    base_length = curve_length(right_points[start: stop + 1])
+                    N = stop - start + 1
+
+                    reduced.extend(
+                        minimize_segment(base_length, N, start_interpolated, stop_interpolated)
+                    )
+
+                previous_opened = None
+                for i in range(len(left_points)):
+                    if len(matching[i]) == 1:
+                        if previous_opened is not None:
+                            if matching[i][0] == matching[previous_opened][0]:
+                                continue
+                            else:
+                                start = previous_opened
+                                stop = i - 1
+                                left_segment(start, stop)
+                                previous_opened = i
+                        else:
+                            previous_opened = i
+                    else:
+                        if previous_opened is not None:
+                            start = previous_opened
+                            stop = i - 1
+                            left_segment(start, stop)
+                            previous_opened = None
+
+                        right_segment(i)
+
+                if previous_opened is not None:
+                    left_segment(previous_opened, len(left_points) - 1)
+
+                return reduced
+
+            left_points = to_points(left_position["points"])
+            right_points = to_points(right_position["points"])
+            left_offset_vec = curve_to_offset_vec(left_points, curve_length(left_points))
+            right_offset_vec = curve_to_offset_vec(right_points, curve_length(right_points))
+
+            matching = match_left_right(left_offset_vec, right_offset_vec)
+            completed_matching = match_right_left(
+                left_offset_vec, right_offset_vec, matching
+            )
+
+            interpolated_points = []
+            for left_point_index, left_point in enumerate(left_points):
+                for right_point_index in completed_matching[left_point_index]:
+                    right_point = right_points[right_point_index]
+                    interpolated_points.append({
+                        "x": left_point["x"] + (right_point["x"] - left_point["x"]) * offset,
+                        "y": left_point["y"] + (right_point["y"] - left_point["y"]) * offset
+                    })
+
+            reducedPoints = reduce_interpolation(
+                interpolated_points,
+                completed_matching,
+                left_points,
+                right_points
+            )
+
+            return to_array(reducedPoints).tolist()
+
+        def polyshape_interpolation(shape0, shape1):
+            shapes = []
             is_polygon = shape0["type"] == ShapeType.POLYGON
-            is_polyline = shape0["type"] == ShapeType.POLYLINE
-            is_same_size = len(shape0["points"]) == len(shape1["points"])
-            if not is_same_type or is_polygon or is_polyline or not is_same_size:
-                shape0 = TrackManager.normalize_shape(shape0)
-                shape1 = TrackManager.normalize_shape(shape1)
+            if is_polygon:
+                shape0["points"].extend(shape0["points"][:2])
+                shape1["points"].extend(shape1["points"][:2])
 
             distance = shape1["frame"] - shape0["frame"]
-            step = np.subtract(shape1["points"], shape0["points"]) / distance
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
-                off = frame - shape0["frame"]
+                offset = (frame - shape0["frame"]) / distance
+                points = None
                 if shape1["outside"]:
-                    points = np.asarray(shape0["points"]).reshape(-1, 2)
+                    points = np.asarray(shape0["points"])
                 else:
-                    points = (shape0["points"] + step * off).reshape(-1, 2)
-                shape = deepcopy(shape0)
-                if len(points) == 1:
-                    shape["points"] = points.flatten()
-                else:
-                    broken_line = geometry.LineString(points).simplify(0.05, False)
-                    shape["points"] = [x for p in broken_line.coords for x in p]
+                    points = interpolate_position(shape0, shape1, offset)
 
-                shape["keyframe"] = False
-                shape["frame"] = frame
-                shapes.append(shape)
+                shapes.append(copy_shape(shape0, frame, points))
+
+            if is_polygon:
+                shape0["points"] = shape0["points"][:-2]
+                shape1["points"] = shape1["points"][:-2]
+                for shape in shapes:
+                    shape["points"] = shape["points"][:-2]
+
+            return shapes
+
+        def interpolate(shape0, shape1):
+            is_same_type = shape0["type"] == shape1["type"]
+            is_rectangle = shape0["type"] == ShapeType.RECTANGLE
+            is_cuboid = shape0["type"] == ShapeType.CUBOID
+            is_polygon = shape0["type"] == ShapeType.POLYGON
+            is_polyline = shape0["type"] == ShapeType.POLYLINE
+            is_points = shape0["type"] == ShapeType.POINTS
+
+            if not is_same_type:
+                raise NotImplementedError()
+
+            shapes = []
+            if is_rectangle or is_cuboid:
+                shapes = simple_interpolation(shape0, shape1)
+            elif is_points:
+                shapes = points_interpolation(shape0, shape1)
+            elif is_polygon or is_polyline:
+                shapes = polyshape_interpolation(shape0, shape1)
+            else:
+                raise NotImplementedError()
+
             return shapes
 
         if track.get("interpolated_shapes"):
