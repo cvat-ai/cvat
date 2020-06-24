@@ -90,7 +90,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
             dispatch(createAnnotationsAsync(jobInstance, frame, objectStates));
         },
         removeObject(jobInstance: any, objectState: any): void {
-            dispatch(removeObjectAsync(jobInstance, objectState, true))
+            dispatch(removeObjectAsync(jobInstance, objectState, true));
         },
         onRememberObject(labelID: number): void {
             dispatch(rememberObject(ObjectType.TAG, labelID));
@@ -118,7 +118,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         }
     };
 
-    const defaultLabelID = props.labels[0].id;
+    const defaultLabelID = labels[0].id;
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [frameTags, setFrameTags] = useState([] as any[]);
@@ -131,7 +131,9 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     }, []);
 
     useEffect(() => {
-        setFrameTags(states.filter((objectState: any): boolean => objectState.objectType === ObjectType.TAG))
+        setFrameTags(states.filter(
+            (objectState: any): boolean => objectState.objectType === ObjectType.TAG,
+        ));
     }, [states]);
 
     const siderProps: SiderProps = {
@@ -145,12 +147,20 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         collapsed: sidebarCollapsed,
     };
 
-    const onChangeLabel = (value: string) => {
-        setSelectedLabelID(Number.parseInt(value));
+    const onChangeLabel = (value: string): void => {
+        setSelectedLabelID(Number.parseInt(value, 10));
     };
 
-    const onRemoveState = (objectState: any) => {
-        removeObject(jobInstance, objectState)
+    const onRemoveState = (objectState: any): void => {
+        removeObject(jobInstance, objectState);
+    };
+
+    const onChangeFrame = (): void => {
+        const frame = Math.min(jobInstance.stopFrame, frameNumber + 1);
+
+        if (isAbleToChangeFrame(canvasInstance)) {
+            changeFrame(frame);
+        }
     };
 
     const onAddTag = (): void => {
@@ -165,14 +175,6 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         createAnnotations(jobInstance, frameNumber, [objectState]);
 
         onChangeFrame();
-    };
-
-    const onChangeFrame = (): void => {
-        const frame = Math.min(jobInstance.stopFrame, frameNumber + 1);
-
-        if (isAbleToChangeFrame(canvasInstance)) {
-            changeFrame(frame);
-        }
     };
 
     const subKeyMap = {
@@ -223,7 +225,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                     </Col>
                 </Row>
                 <Row type='flex' justify='space-around' className='tag-annotation-sidebar-buttons'>
-                    <Col span={8}  >
+                    <Col span={8}>
                         <Button onClick={onAddTag}>Add tag</Button>
                     </Col>
                     <Col span={8}>
@@ -234,21 +236,33 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                     <Col>
                         <Text strong>Frame tags:&nbsp;</Text>
                         {frameTags.map((tag: any) => (
-                            <Tag color={tag.label.color} closable onClose={() => {onRemoveState(tag)}} key={tag.clientID}>
+                            <Tag
+                                color={tag.label.color}
+                                onClose={() => { onRemoveState(tag); }}
+                                key={tag.clientID}
+                                closable
+                            >
                                 {tag.label.name}
-                            </Tag>)
-                        )}
+                            </Tag>
+                        ))}
                     </Col>
                 </Row>
                 <Row type='flex' justify='center' className='tag-annotation-sidebar-shortcut-help'>
                     <Col>
-                        <Text>Use <Text code>N</Text> to add selected tag <br/>
-                        or <Text code>→</Text> to skip frame</Text>
+                        <Text>
+                            Use
+                            <Text code>N</Text>
+                            to add selected tag
+                            <br />
+                            or
+                            <Text code>→</Text>
+                            to skip frame
+                        </Text>
                     </Col>
                 </Row>
             </Layout.Sider>
         </>
-    )
+    );
 }
 
 export default connect(
