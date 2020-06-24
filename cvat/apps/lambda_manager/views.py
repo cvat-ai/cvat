@@ -20,12 +20,17 @@ class LambdaGateway:
     NUCLIO_ROOT_URL = '/api/functions'
 
     def _http(self, method="get", scheme=None, host=None, port=None,
-        url=None, data=None):
+        url=None, headers=None, data=None):
         NUCLIO_GATEWAY = '{}://{}:{}'.format(
             scheme or settings.NUCLIO['SCHEME'],
             host or settings.NUCLIO['HOST'],
             port or settings.NUCLIO['PORT'])
-        NUCLIO_HEADERS = {'x-nuclio-project-name': 'cvat'}
+        extra_headers = {
+            'x-nuclio-project-name': 'cvat',
+            'x-nuclio-function-namespace': 'nuclio',
+        }
+        if headers:
+            extra_headers.update(headers)
         NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
 
         if url:
@@ -33,7 +38,7 @@ class LambdaGateway:
         else:
             url = NUCLIO_GATEWAY
 
-        reply = getattr(requests, method)(url, headers=NUCLIO_HEADERS,
+        reply = getattr(requests, method)(url, headers=extra_headers,
             timeout=NUCLIO_TIMEOUT, json=data)
         reply.raise_for_status()
         response = reply.json()
@@ -51,7 +56,17 @@ class LambdaGateway:
         return response
 
     def invoke(self, func, payload):
-        return self._http(method="post", port=func.port, data=payload)
+        # NOTE: it is overhead to invoke a function using nuclio
+        # dashboard REST API. Better to call host.docker.internal:<port>
+        # Look at https://github.com/docker/for-linux/issues/264.
+        # host.docker.internal isn't supported by docker on Linux.
+        # There are many workarounds but let's try to use the
+        # simple solution.
+        return self._http(method="post", url='/api/function_invocations',
+            data=payload, headers={
+                'x-nuclio-function-name': func.id,
+                'x-nuclio-path': '/'
+            })
 
 class LambdaFunction:
     def __init__(self, gateway, data):
