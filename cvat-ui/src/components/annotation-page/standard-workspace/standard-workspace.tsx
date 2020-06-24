@@ -11,7 +11,7 @@ import ControlsSideBarContainer from 'containers/annotation-page/standard-worksp
 import ObjectSideBarContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-side-bar';
 import PropagateConfirmContainer from 'containers/annotation-page/standard-workspace/propagate-confirm';
 import CanvasContextMenuContainer from 'containers/annotation-page/standard-workspace/canvas-context-menu';
-import CanvasPointContextMenuContainer from 'containers/annotation-page/standard-workspace/canvas-point-context-menu';
+import CanvasPointContextMenuComponent from 'components/annotation-page/standard-workspace/canvas-point-context-menu';
 
 export default function StandardWorkspaceComponent(): JSX.Element {
     return (
@@ -21,7 +21,7 @@ export default function StandardWorkspaceComponent(): JSX.Element {
             <ObjectSideBarContainer />
             <PropagateConfirmContainer />
             <CanvasContextMenuContainer />
-            <CanvasPointContextMenuContainer />
+            <CanvasPointContextMenuComponent />
         </Layout>
     );
 }

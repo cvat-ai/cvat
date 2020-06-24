@@ -117,6 +117,7 @@ Canvas itself handles:
         mode(): Mode;
         cancel(): void;
         configure(configuration: Configuration): void;
+        isAbleToChangeFrame(): boolean;
     }
 ```
 
@@ -188,8 +189,7 @@ Standard JS events are used.
 
 |              | IDLE | GROUP | SPLIT | DRAW | MERGE | EDIT | DRAG | RESIZE | ZOOM_CANVAS | DRAG_CANVAS |
 |--------------|------|-------|-------|------|-------|------|------|--------|-------------|-------------|
-| html()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| setup()      | +    | +     | +     | +    | +     | +/-  | +/-  | +/-    | +           | +           |
+| setup()      | +    | +     | +     | +/-  | +     | +/-  | +/-  | +/-    | +           | +           |
 | activate()   | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
 | rotate()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
 | focus()      | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
@@ -208,3 +208,6 @@ Standard JS events are used.
 | setZLayer()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
 
 You can call setup() during editing, dragging, and resizing only to update objects, not to change a frame.
+You can change frame during draw only when you do not redraw an existing object
+
+Other methods do not change state and can be used everytime.

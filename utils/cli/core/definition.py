@@ -125,6 +125,25 @@ task_create_parser.add_argument(
     help='list of paths or URLs',
     nargs='+'
 )
+task_create_parser.add_argument(
+    '--annotation_path',
+    default='',
+    type=str,
+    help='path to annotation file'
+)
+task_create_parser.add_argument(
+    '--annotation_format',
+    default='CVAT 1.1',
+    type=str,
+    help='format of the annotation file being uploaded, e.g. CVAT 1.1'
+)
+task_create_parser.add_argument(
+    '--completion_verification_period',
+    default=20,
+    type=int,
+    help='''number of seconds to wait until checking
+            if data compression finished (necessary before uploading annotations)'''
+)
 
 #######################################################################
 # Delete

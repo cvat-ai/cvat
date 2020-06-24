@@ -38,8 +38,8 @@ import { clamp } from 'utils/math';
 function ItemMenu(
     serverID: number | undefined,
     locked: boolean,
-    objectType: ObjectType,
     shapeType: ShapeType,
+    objectType: ObjectType,
     copyShortcut: string,
     pasteShortcut: string,
     propagateShortcut: string,
@@ -50,9 +50,9 @@ function ItemMenu(
     remove: (() => void),
     propagate: (() => void),
     createURL: (() => void),
+    switchOrientation: (() => void),
     toBackground: (() => void),
     toForeground: (() => void),
-    switchCuboidOrientation: (() => void),
     resetCuboidPerspective: (() => void),
 ): JSX.Element {
     return (
@@ -76,9 +76,9 @@ function ItemMenu(
                     </Button>
                 </Tooltip>
             </Menu.Item>
-            {shapeType === ShapeType.CUBOID && (
+            { [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
                 <Menu.Item>
-                    <Button type='link' icon='retweet' onClick={switchCuboidOrientation}>
+                    <Button type='link' icon='retweet' onClick={switchOrientation}>
                         Switch orientation
                     </Button>
                 </Menu.Item>
@@ -143,8 +143,8 @@ interface ItemTopComponentProps {
     serverID: number | undefined;
     labelID: number;
     labels: any[];
-    objectType: ObjectType;
     shapeType: ShapeType;
+    objectType: ObjectType;
     type: string;
     locked: boolean;
     copyShortcut: string;
@@ -158,9 +158,9 @@ interface ItemTopComponentProps {
     remove(): void;
     propagate(): void;
     createURL(): void;
+    switchOrientation(): void;
     toBackground(): void;
     toForeground(): void;
-    switchCuboidOrientation(): void;
     resetCuboidPerspective(): void;
 }
 
@@ -170,8 +170,8 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         serverID,
         labelID,
         labels,
-        objectType,
         shapeType,
+        objectType,
         type,
         locked,
         copyShortcut,
@@ -185,9 +185,9 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
         remove,
         propagate,
         createURL,
+        switchOrientation,
         toBackground,
         toForeground,
-        switchCuboidOrientation,
         resetCuboidPerspective,
     } = props;
 
@@ -228,8 +228,8 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                     overlay={ItemMenu(
                         serverID,
                         locked,
-                        objectType,
                         shapeType,
+                        objectType,
                         copyShortcut,
                         pasteShortcut,
                         propagateShortcut,
@@ -240,9 +240,9 @@ function ItemTopComponent(props: ItemTopComponentProps): JSX.Element {
                         remove,
                         propagate,
                         createURL,
+                        switchOrientation,
                         toBackground,
                         toForeground,
-                        switchCuboidOrientation,
                         resetCuboidPerspective,
                     )}
                 >
@@ -749,6 +749,7 @@ interface Props {
     copy(): void;
     propagate(): void;
     createURL(): void;
+    switchOrientation(): void;
     toBackground(): void;
     toForeground(): void;
     remove(): void;
@@ -768,7 +769,6 @@ interface Props {
     changeAttribute(attrID: number, value: string): void;
     changeColor(color: string): void;
     collapse(): void;
-    switchCuboidOrientation(): void;
     resetCuboidPerspective(): void;
 }
 
@@ -828,6 +828,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         copy,
         propagate,
         createURL,
+        switchOrientation,
         toBackground,
         toForeground,
         remove,
@@ -847,7 +848,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeAttribute,
         changeColor,
         collapse,
-        switchCuboidOrientation,
         resetCuboidPerspective,
     } = props;
 
@@ -886,9 +886,9 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     clientID={clientID}
                     labelID={labelID}
                     labels={labels}
+                    shapeType={shapeType}
                     objectType={objectType}
                     type={type}
-                    shapeType={shapeType}
                     locked={locked}
                     copyShortcut={normalizedKeyMap.COPY_SHAPE}
                     pasteShortcut={normalizedKeyMap.PASTE_SHAPE}
@@ -901,9 +901,9 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     remove={remove}
                     propagate={propagate}
                     createURL={createURL}
+                    switchOrientation={switchOrientation}
                     toBackground={toBackground}
                     toForeground={toForeground}
-                    switchCuboidOrientation={switchCuboidOrientation}
                     resetCuboidPerspective={resetCuboidPerspective}
                 />
                 <ItemButtons
