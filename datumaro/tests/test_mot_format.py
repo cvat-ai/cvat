@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 import os.path as osp
 
@@ -114,8 +115,8 @@ class MotConverterTest(TestCase):
                 }
 
         with TestDir() as test_dir:
-            self._test_save_and_load(
-                SrcExtractor(), MotSeqGtConverter(save_images=True),
+            self._test_save_and_load(SrcExtractor(),
+                partial(MotSeqGtConverter.convert, save_images=True),
                 test_dir, target_dataset=DstExtractor())
 
 
