@@ -15,10 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Built-in search for labels when create an object or change a label (<https://github.com/opencv/cvat/pull/1683>)
 - Better validation of labels and attributes in raw viewer (<https://github.com/opencv/cvat/pull/1727>)
 - ClamAV antivirus integration (<https://github.com/opencv/cvat/pull/1712>)
+- [Datumaro] Added an option to specify image extension when exporting datasets (https://github.com/opencv/cvat/pull/1799)
+- [Datumaro] Added image copying when exporting datasets, if possible (https://github.com/opencv/cvat/pull/1799)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
 - Update https install manual. Makes it easier and more robust. Includes automatic renewing of lets encrypt certificates.
+- [Datumaro] Annotation-less files are not generated anymore in COCO format, unless tasks explicitly requested (https://github.com/opencv/cvat/pull/1799)
 
 ### Deprecated
 -
