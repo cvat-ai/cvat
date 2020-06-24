@@ -11,7 +11,7 @@ from django.utils import timezone
 
 import datumaro.components.extractor as datumaro
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeType, ShapeType, AttributeSpec
+from cvat.apps.engine.models import AttributeType, ShapeType
 from datumaro.util import cast
 from datumaro.util.image import Image
 
