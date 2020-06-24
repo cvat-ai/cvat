@@ -379,7 +379,7 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                         <Col>
                             <Tooltip title={`Switch lock property ${switchLockShortcut}`}>
                                 { locked
-                                    ? <Icon type='lock' onClick={unlock} theme='filled' />
+                                    ? <Icon type='lock' theme='filled' onClick={unlock} />
                                     : <Icon type='unlock' onClick={lock} />}
                             </Tooltip>
                         </Col>
@@ -393,7 +393,7 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                         <Col>
                             <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`}>
                                 { hidden
-                                    ? <Icon type='eye-invisible' onClick={show} />
+                                    ? <Icon type='eye-invisible' theme='filled' onClick={show} />
                                     : <Icon type='eye' onClick={hide} />}
                             </Tooltip>
                         </Col>

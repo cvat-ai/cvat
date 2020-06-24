@@ -52,7 +52,8 @@ export const registerAsync = (
     dispatch(authActions.register());
 
     try {
-        await cvat.server.register(username, firstName, lastName, email, password1, password2, confirmations);
+        await cvat.server.register(username, firstName, lastName, email, password1, password2,
+            confirmations);
         const users = await cvat.users.get({ self: true });
 
         dispatch(authActions.registerSuccess(users[0]));
