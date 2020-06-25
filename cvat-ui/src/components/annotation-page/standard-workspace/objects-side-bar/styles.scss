@@ -106,11 +106,15 @@
     overflow-y: auto;
 }
 
-.cvat-objects-sidebar-state-active-item {
-    background: $active-object-item-background-color;
+.cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-active-item {
+    border-top: 2px solid $object-item-border-color;
+    border-right: 2px solid $object-item-border-color;
+    border-bottom: 2px solid $object-item-border-color;
+    padding: 3px 1px 1px 3px;
 }
 
 .cvat-objects-sidebar-state-item-color {
+    border: 1px solid $object-item-border-color;
     width: 7px;
     opacity: 1;
 
@@ -122,7 +126,7 @@
 .cvat-objects-sidebar-state-item {
     width: 100%;
     padding: 5px 3px 3px 3px;
-    border-bottom: 1px dashed;
+    opacity: 1;
 
     > div:nth-child(1) {
         > div:nth-child(1) {
@@ -218,7 +222,7 @@
 }
 
 .cvat-objects-sidebar-label-active-item {
-    background: $active-object-item-background-color;
+    background: $active-label-background-color;
 }
 
 .cvat-objects-sidebar-label-item {

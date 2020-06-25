@@ -77,6 +77,15 @@
         }
     }
 
+    async function closeSession(session) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            cache.delete(session);
+        }
+    }
+
     async function getAnnotations(session, frame, allTracks, filters) {
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
@@ -365,5 +374,6 @@
         redoActions,
         clearActions,
         getActions,
+        closeSession,
     };
 })();
