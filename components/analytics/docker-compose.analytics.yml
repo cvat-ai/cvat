@@ -1,7 +1,6 @@
 version: '2.3'
 services:
   cvat_elasticsearch:
-    container_name: cvat_elasticsearch
     image: cvat_elasticsearch
     networks:
       default:
@@ -16,7 +15,6 @@ services:
     restart: always
 
   cvat_kibana:
-    container_name: cvat_kibana
     image: cvat_kibana
     networks:
       default:
@@ -30,7 +28,6 @@ services:
     restart: always
 
   cvat_kibana_setup:
-    container_name: cvat_kibana_setup
     image: cvat
     volumes: ['./components/analytics/kibana:/home/django/kibana:ro']
     depends_on: ['cvat']
@@ -42,7 +39,6 @@ services:
       no_proxy: elasticsearch,kibana,${no_proxy}
 
   cvat_logstash:
-    container_name: cvat_logstash
     image: cvat_logstash
     networks:
       default:

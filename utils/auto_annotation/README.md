@@ -14,8 +14,8 @@ $ python /path/to/run_model.py --model-name mymodel --task-id 4
 
 If you're running in docker, this can be useful way to debug your model.
 
-``` shell
-$ docker exec -it cvat bash -ic 'python3 ~/cvat/apps/auto_annotation/run_model.py --model-name my-model --task-id 4
+```shell
+$ docker-compose exec cvat bash -ic 'python3 ~/cvat/apps/auto_annotation/run_model.py --model-name my-model --task-id 4
 ```
 
 If you are developing an auto annotation model or you can't get something uploaded into the server, 

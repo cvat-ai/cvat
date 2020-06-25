@@ -20,13 +20,13 @@ docker-compose up -d
 ```
 
 Sometimes the update process takes a lot of time due to changes in the database schema and data.
-You can check the current status with `docker logs cvat`.
+You can check the current status with `docker-compose logs cvat`.
 Please do not terminate the migration and wait till the process is complete.
 
 ## Kibana app works, but no logs are displayed
 Make sure there aren't error messages from Elasticsearch:
 ```sh
-docker logs cvat_elasticsearch
+docker-compose logs cvat_elasticsearch
 ```
 If you see errors like this:
 ```sh

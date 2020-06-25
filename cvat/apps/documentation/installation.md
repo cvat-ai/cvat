@@ -98,7 +98,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     below:
 
     ```sh
-    docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+    docker-compose exec cvat bash -ic 'python3 ~/manage.py createsuperuser'
     ```
     Choose login and password for your admin account. For more information
     please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
@@ -163,7 +163,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     below:
 
     ```sh
-    winpty docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+    winpty docker-compose exec cvat bash -ic 'python3 ~/manage.py createsuperuser'
     ```
     Choose login and password for your admin account. For more information
     please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
@@ -228,7 +228,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     below:
 
     ```sh
-    docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+    docker-compose exec cvat bash -ic 'python3 ~/manage.py createsuperuser'
     ```
     Choose login and password for your admin account. For more information
     please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
@@ -434,7 +434,7 @@ Let’s Encrypt provides rate limits to ensure fair usage by as many people as p
 ~/.acme.sh/acme.sh --issue --staging -d my-cvat-server.org -w $HOME/cvat/letsencrypt-webroot --debug
 ```
 
-> Debug note: nginx server logs for cvat_proxy are not saved in container. You shall see it at docker host by with: `docker logs cvat_proxy`.
+> Debug note: nginx server logs for cvat_proxy are not saved in container. You shall see it at docker host by with: `docker-compose logs cvat_proxy`.
 
 If certificates is issued a successful we should test a renew:
 
@@ -459,7 +459,7 @@ rm -r /root/.acme.sh/my-cvat-server.org
 Down the cvat_proxy container for setup https with issued certificates.
 
 ```bash
-docker stop cvat_proxy
+docker-compose stop cvat_proxy
 ```
 
 **Reconfigure nginx for use certificates.**
@@ -547,5 +547,5 @@ server {
 Start cvat_proxy container with https enabled.
 
 ```
-docker start cvat_proxy
+docker-compose start cvat_proxy
 ```

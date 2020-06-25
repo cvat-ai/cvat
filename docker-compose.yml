@@ -7,7 +7,6 @@ version: "2.3"
 
 services:
   cvat_db:
-    container_name: cvat_db
     image: postgres:10-alpine
     networks:
       default:
@@ -22,7 +21,6 @@ services:
       - cvat_db:/var/lib/postgresql/data
 
   cvat_redis:
-    container_name: cvat_redis
     image: redis:4.0-alpine
     networks:
       default:
@@ -31,7 +29,6 @@ services:
     restart: always
 
   cvat:
-    container_name: cvat
     image: cvat
     restart: always
     depends_on:
@@ -63,7 +60,6 @@ services:
       - cvat_models:/home/django/models
 
   cvat_ui:
-    container_name: cvat_ui
     restart: always
     build:
       context: .
@@ -82,7 +78,6 @@ services:
       - cvat
 
   cvat_proxy:
-    container_name: cvat_proxy
     image: nginx:stable-alpine
     restart: always
     depends_on:
