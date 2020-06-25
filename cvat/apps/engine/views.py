@@ -677,9 +677,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 		if '--stage1_epochs' not in args_and_vals:
 			args_and_vals["--stage1_epochs"] = 1
 		if '--stage2_epochs' not in args_and_vals:
-			args_and_vals["--stage2_epochs"] = 1
+			args_and_vals["--stage2_epochs"] = 2
 		if '--stage3_epochs' not in args_and_vals:
-			args_and_vals["--stage3_epochs"] = 1
+			args_and_vals["--stage3_epochs"] = 3
 		# print(args_and_vals)
 		# print("db",db_task)
 		# print(db_task.owner.username,"name")
