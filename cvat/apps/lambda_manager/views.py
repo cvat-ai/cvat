@@ -1,20 +1,20 @@
-from django.shortcuts import render
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Task as TaskModel
-from cvat.apps.dataset_manager.task import (put_task_data, patch_task_data,
-    delete_task_data)
-from django.core.exceptions import ValidationError
 import base64
 import json
-import requests
-import django_rq
-import rq
 from functools import wraps
-from cvat.apps.engine.serializers import LabeledDataSerializer
+
+import django_rq
+import requests
+import rq
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from rest_framework import status, viewsets
+from rest_framework.response import Response
+
+from cvat.apps.dataset_manager.task import delete_task_data, patch_task_data
+from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.models import Task as TaskModel
+from cvat.apps.engine.serializers import LabeledDataSerializer
+
 
 class LambdaGateway:
     NUCLIO_ROOT_URL = '/api/functions'
@@ -50,8 +50,8 @@ class LambdaGateway:
         response = [LambdaFunction(self, item) for item in data.values()]
         return response
 
-    def get(self, id):
-        data = self._http(url=self.NUCLIO_ROOT_URL + '/' + id)
+    def get(self, func_id):
+        data = self._http(url=self.NUCLIO_ROOT_URL + '/' + func_id)
         response = LambdaFunction(self, data)
         return response
 
@@ -260,9 +260,6 @@ class LambdaJob:
             annotations = function.invoke(db_task, frame, quality, mapping)
             # TODO: optimize
             db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
-            attributes = {db_label.id:
-                {db_attr.name: db_attr.id for db_attr in db_label.attributespec_set.all()}
-                for db_label in db_labels}
             labels = {db_label.name:db_label.id for db_label in db_labels}
 
             # TODO: need to check 'cancel' operation
@@ -326,7 +323,7 @@ def return_response(success_code=status.HTTP_200_OK):
 # about available serverless functions.
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
-    lookup_field = 'id'
+    lookup_field = 'req_id'
 
     @return_response()
     def list(self, request):
@@ -334,12 +331,12 @@ class FunctionViewSet(viewsets.ViewSet):
         return [f.to_dict() for f in gateway.list()]
 
     @return_response()
-    def retrieve(self, request, id):
+    def retrieve(self, request, req_id):
         gateway = LambdaGateway()
-        return gateway.get(id).to_dict()
+        return gateway.get(req_id).to_dict()
 
     @return_response()
-    def call(self, request, id):
+    def call(self, request, req_id):
         try:
             # Mandatory parameters
             task = request.data['task']
@@ -353,12 +350,12 @@ class FunctionViewSet(viewsets.ViewSet):
             db_task = TaskModel.objects.get(pk=task)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
-                '`{}` lambda function was run '.format(id) +
+                '`{}` lambda function was run '.format(req_id) +
                 'with wrong arguments ({})'.format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST)
 
         gateway = LambdaGateway()
-        lambda_func = gateway.get(id)
+        lambda_func = gateway.get(req_id)
 
         return lambda_func.invoke(db_task, frame, quality, mapping, points)
 
