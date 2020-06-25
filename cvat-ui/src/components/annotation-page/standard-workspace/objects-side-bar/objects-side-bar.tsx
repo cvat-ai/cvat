@@ -11,6 +11,7 @@ import Icon from 'antd/lib/icon';
 import Tabs from 'antd/lib/tabs';
 import Layout from 'antd/lib/layout';
 
+import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState } from 'reducers/interfaces';
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import LabelsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/labels-list';
@@ -22,6 +23,7 @@ import AppearanceBlock, { computeHeight } from 'components/annotation-page/appea
 
 interface StateToProps {
     sidebarCollapsed: boolean;
+    canvasInstance: Canvas;
 }
 
 interface DispatchToProps {
@@ -33,11 +35,15 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             sidebarCollapsed,
+            canvas: {
+                instance: canvasInstance,
+            },
         },
     } = state;
 
     return {
         sidebarCollapsed,
+        canvasInstance,
     };
 }
 
@@ -56,6 +62,7 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
 function ObjectsSideBar(props: StateToProps & DispatchToProps): JSX.Element {
     const {
         sidebarCollapsed,
+        canvasInstance,
         collapseSidebar,
         updateTabContentHeight,
     } = props;
@@ -72,6 +79,23 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps): JSX.Element {
 
         return () => {
             window.removeEventListener('resize', alignTabHeight);
+        };
+    }, []);
+
+    useEffect(() => {
+        const listener = (event: Event): void => {
+            if ((event as TransitionEvent).propertyName === 'width'
+                    && ((event.target as any).classList as DOMTokenList).contains('ant-tabs-tab-prev')) {
+                canvasInstance.fit();
+            }
+        };
+
+        const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
+
+        sidebar.addEventListener('transitionstart', listener);
+
+        return () => {
+            sidebar.removeEventListener('transitionstart', listener);
         };
     }, []);
 

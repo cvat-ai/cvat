@@ -5,7 +5,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import PlayerSettingsComponent from 'components/settings-page/player-settings';
+import PlayerSettingsComponent from 'components/header/settings-modal/player-settings';
 
 import {
     changeFrameStep,
@@ -19,6 +19,7 @@ import {
     changeBrightnessLevel,
     changeContrastLevel,
     changeSaturationLevel,
+    changeCanvasBackgroundColor,
 } from 'actions/settings-actions';
 
 import {
@@ -39,6 +40,7 @@ interface StateToProps {
     brightnessLevel: number;
     contrastLevel: number;
     saturationLevel: number;
+    canvasBackgroundColor: string;
 }
 
 interface DispatchToProps {
@@ -53,13 +55,17 @@ interface DispatchToProps {
     onChangeBrightnessLevel(level: number): void;
     onChangeContrastLevel(level: number): void;
     onChangeSaturationLevel(level: number): void;
+    onChangeCanvasBackgroundColor(color: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { player } = state.settings;
-    return {
-        ...player,
-    };
+    const {
+        settings: {
+            player,
+        },
+    } = state;
+
+    return player;
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -96,6 +102,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onChangeSaturationLevel(level: number): void {
             dispatch(changeSaturationLevel(level));
+        },
+        onChangeCanvasBackgroundColor(color: string): void {
+            dispatch(changeCanvasBackgroundColor(color));
         },
     };
 }

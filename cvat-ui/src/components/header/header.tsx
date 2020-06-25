@@ -17,9 +17,11 @@ import Text from 'antd/lib/typography/Text';
 
 import { CVATLogo, AccountIcon } from 'icons';
 import consts from 'consts';
+import SettingsModal from './settings-modal/settings-modal';
 
 interface HeaderContainerProps {
     onLogout: () => void;
+    switchSettingsDialog: (show: boolean) => void;
     logoutFetching: boolean;
     installedAnalytics: boolean;
     installedAutoAnnotation: boolean;
@@ -34,6 +36,7 @@ interface HeaderContainerProps {
     canvasVersion: string;
     uiVersion: string;
     switchSettingsShortcut: string;
+    settingsDialogShown: boolean;
 }
 
 type Props = HeaderContainerProps & RouteComponentProps;
@@ -54,7 +57,9 @@ function HeaderContainer(props: Props): JSX.Element {
         uiVersion,
         onLogout,
         logoutFetching,
+        settingsDialogShown,
         switchSettingsShortcut,
+        switchSettingsDialog,
     } = props;
 
     const renderModels = installedAutoAnnotation
@@ -131,7 +136,7 @@ function HeaderContainer(props: Props): JSX.Element {
             <Menu.Item
                 title={`Press ${switchSettingsShortcut} to switch`}
                 onClick={
-                    (): void => props.history.push('/settings')
+                    (): void => switchSettingsDialog(true)
                 }
             >
                 <Icon type='setting' />
@@ -236,6 +241,10 @@ function HeaderContainer(props: Props): JSX.Element {
                     </span>
                 </Dropdown>
             </div>
+            <SettingsModal
+                visible={settingsDialogShown}
+                onClose={() => switchSettingsDialog(false)}
+            />
         </Layout.Header>
     );
 }
