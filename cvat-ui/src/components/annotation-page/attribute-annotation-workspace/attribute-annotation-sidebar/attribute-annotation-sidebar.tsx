@@ -286,6 +286,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                                     nextAttribute={nextAttribute}
                                 />
                                 <AttributeEditor
+                                    clientID={activeObjectState.clientID}
                                     attribute={activeAttribute}
                                     currentValue={activeObjectState.attributes[activeAttribute.id]}
                                     onChange={(value: string) => {
