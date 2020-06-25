@@ -9,10 +9,12 @@ const CopyPlugin = require('copy-webpack-plugin');
 const cvatData = {
     target: 'web',
     mode: 'production',
-    entry: './src/js/cvat-data.js',
+    entry: {
+        'cvat-data': './src/js/cvat-data.js',
+    },
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'cvat-data.min.js',
+        filename: '[name].[contenthash].min.js',
         library: 'cvatData',
         libraryTarget: 'window',
     },
@@ -39,7 +41,7 @@ const cvatData = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: '[name].js',
+                        name: '[name].[contenthash].js',
                     },
                 },
             }, {
@@ -48,7 +50,7 @@ const cvatData = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/3rdparty/',
-                        name: '3rdparty/[name].js',
+                        name: '3rdparty/[name].[contenthash].js',
                     },
                 },
             },
