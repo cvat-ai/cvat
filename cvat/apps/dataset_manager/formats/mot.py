@@ -69,7 +69,8 @@ def _import(src_file, task_data):
             track.shapes.sort(key=lambda t: t.frame)
             # Append a shape with outside=True to finish the track
             last_shape = track.shapes[-1]
-            if last_shape.frame < int(task_data.meta['task']['stop_frame']):
+            if last_shape.frame + task_data.frame_step <= \
+                    int(task_data.meta['task']['stop_frame']):
                 track.shapes.append(last_shape._replace(outside=True,
                     frame=last_shape.frame + task_data.frame_step)
                 )
