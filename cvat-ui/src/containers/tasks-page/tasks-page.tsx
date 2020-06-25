@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { connect } from 'react-redux';
 
 import {
@@ -55,15 +54,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-type TasksPageContainerProps = StateToProps & DispatchToProps;
-
-function TasksPageContainer(props: TasksPageContainerProps): JSX.Element {
-    return (
-        <TasksPageComponent {...props} />
-    );
-}
-
 export default connect(
     mapStateToProps,
     mapDispatchToProps,
-)(TasksPageContainer);
+)(TasksPageComponent);
