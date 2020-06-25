@@ -21,6 +21,8 @@ import {
 } from 'actions/annotation-actions';
 import { CombinedState } from 'reducers/interfaces';
 import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
+import AppearanceBlock from 'components/annotation-page/appearance-block';
+
 import ObjectSwitcher from './object-switcher';
 import AttributeSwitcher from './attribute-switcher';
 import ObjectBasicsEditor from './object-basics-edtior';
@@ -308,6 +310,8 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                             </div>
                         )
                 }
+
+                { !sidebarCollapsed && <AppearanceBlock /> }
             </Layout.Sider>
         );
     }
