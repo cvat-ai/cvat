@@ -479,6 +479,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         }
     }
 
+
     public render(): JSX.Element {
         const {
             playing,

@@ -49,7 +49,8 @@ class TaskData:
             (db_label.id, db_label) for db_label in db_labels)
 
         self._attribute_mapping = {db_label.id: {
-            'mutable': {}, 'immutable': {}} for db_label in db_labels}
+            'mutable': {}, 'immutable': {}, 'spec': {}}
+            for db_label in db_labels}
 
         for db_label in db_labels:
             for db_attribute in db_label.attributespec_set.all():
@@ -57,6 +58,7 @@ class TaskData:
                     self._attribute_mapping[db_label.id]['mutable'][db_attribute.id] = db_attribute.name
                 else:
                     self._attribute_mapping[db_label.id]['immutable'][db_attribute.id] = db_attribute.name
+                self._attribute_mapping[db_label.id]['spec'][db_attribute.id] = db_attribute
 
         self._attribute_mapping_merged = {}
         for label_id, attr_mapping in self._attribute_mapping.items():
@@ -317,10 +319,28 @@ class TaskData:
         return _tag
 
     def _import_attribute(self, label_id, attribute):
-        return {
-            'spec_id': self._get_attribute_id(label_id, attribute.name),
-            'value': attribute.value,
-        }
+        spec_id = self._get_attribute_id(label_id, attribute.name)
+        value = attribute.value
+
+        if spec_id:
+            spec = self._attribute_mapping[label_id]['spec'][spec_id]
+
+            try:
+                if spec.input_type == AttributeType.NUMBER:
+                    pass # no extra processing required
+                elif spec.input_type == AttributeType.CHECKBOX:
+                    if isinstance(value, str):
+                        value = value.lower()
+                        assert value in {'true', 'false'}
+                    elif isinstance(value, (bool, int, float)):
+                        value = 'true' if value else 'false'
+                    else:
+                        raise ValueError("Unexpected attribute value")
+            except Exception as e:
+                raise Exception("Failed to convert attribute '%s'='%s': %s" %
+                    (self._get_label_name(label_id), value, e))
+
+        return { 'spec_id': spec_id, 'value': value }
 
     def _import_shape(self, shape):
         _shape = shape._asdict()

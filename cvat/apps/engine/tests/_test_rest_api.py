@@ -1988,7 +1988,7 @@ class JobAnnotationAPITestCase(APITestCase):
                             "name": "parked",
                             "mutable": True,
                             "input_type": "checkbox",
-                            "default_value": False
+                            "default_value": "false"
                         },
                     ]
                 },
