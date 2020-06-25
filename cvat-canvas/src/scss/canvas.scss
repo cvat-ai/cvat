@@ -188,7 +188,7 @@ polyline.cvat_canvas_shape_splitting {
     height: calc(100% - 10px);
     margin: 5px;
     border-radius: 5px;
-    background-color: white;
+    background-color: inherit;
     overflow: hidden;
     position: relative;
 }

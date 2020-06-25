@@ -16,7 +16,7 @@ import {
 
 import { CombinedState } from 'reducers/interfaces';
 
-import WorkspaceSettingsComponent from 'components/settings-page/workspace-settings';
+import WorkspaceSettingsComponent from 'components/header/settings-modal/workspace-settings';
 
 interface StateToProps {
     autoSave: boolean;

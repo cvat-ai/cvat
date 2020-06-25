@@ -31,6 +31,7 @@ import {
     changeShowProjections as changeShowProjectionsAction,
 } from 'actions/settings-actions';
 
+import { Canvas } from 'cvat-canvas-wrapper';
 
 interface StateToProps {
     sidebarCollapsed: boolean;
@@ -41,6 +42,7 @@ interface StateToProps {
     blackBorders: boolean;
     showBitmap: boolean;
     showProjections: boolean;
+    canvasInstance: Canvas;
 }
 
 interface DispatchToProps {
@@ -60,6 +62,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             sidebarCollapsed,
             appearanceCollapsed,
+            canvas: {
+                instance: canvasInstance,
+            },
         },
         settings: {
             shapes: {
@@ -82,6 +87,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         blackBorders,
         showBitmap,
         showProjections,
+        canvasInstance,
     };
 }
 
@@ -213,6 +219,7 @@ class ObjectsSideBarContainer extends React.PureComponent<Props> {
             blackBorders,
             showBitmap,
             showProjections,
+            canvasInstance,
             collapseSidebar,
             collapseAppearance,
         } = this.props;
@@ -227,6 +234,7 @@ class ObjectsSideBarContainer extends React.PureComponent<Props> {
                 blackBorders={blackBorders}
                 showBitmap={showBitmap}
                 showProjections={showProjections}
+                canvasInstance={canvasInstance}
                 collapseSidebar={collapseSidebar}
                 collapseAppearance={collapseAppearance}
                 changeShapesColorBy={this.changeShapesColorBy}
