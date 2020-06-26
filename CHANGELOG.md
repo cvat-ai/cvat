@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Highlights for the first point of a polygon/polyline and direction (<https://github.com/opencv/cvat/pull/1571>)
 - Ability to change orientation for poylgons/polylines in context menu (<https://github.com/opencv/cvat/pull/1571>)
 - Ability to set the first point for polygons in points context menu (<https://github.com/opencv/cvat/pull/1571>)
+- DL models as serverless functions (<https://github.com/opencv/cvat/pull/1767>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
@@ -34,12 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Using only single click to start editing or remove a point (<https://github.com/opencv/cvat/pull/1571>)
 - Added support for attributes in VOC XML format (https://github.com/opencv/cvat/pull/1792)
 - Colorized object items in the side panel (<https://github.com/opencv/cvat/pull/1753>)
+- It is impossible to submit a DL model in OpenVINO format using UI. Now you can deploy new models on the server using serverless functions (<https://github.com/opencv/cvat/pull/1767>)
 
 ### Deprecated
 -
 
 ### Removed
--
+- Removed OpenVINO and CUDA components because they are not necessary anymore (<https://github.com/opencv/cvat/pull/1767>)
 
 ### Fixed
 - Problem with exported frame stepped image task (<https://github.com/opencv/cvat/issues/1613>)
