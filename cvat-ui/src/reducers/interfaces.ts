@@ -150,17 +150,10 @@ export enum RQStatus {
     failed = 'failed',
 }
 
-export enum ModelType {
-    OPENVINO = 'openvino',
-    RCNN = 'rcnn',
-    MASK_RCNN = 'mask_rcnn',
-}
-
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
     error: string;
-    modelType: ModelType;
     id: string;
 }
 

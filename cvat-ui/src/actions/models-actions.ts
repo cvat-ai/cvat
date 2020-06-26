@@ -5,7 +5,6 @@
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
     Model,
-    ModelType,
     ModelFiles,
     ActiveInference,
     CombinedState,
@@ -122,7 +121,7 @@ export function getModelsAsync(): ThunkAction {
 
         try {
             const response = await core.server.request(
-                `${baseURL}/api/v1/lambda/functions`, {
+                `${core.config.backendAPI}/lambda/functions`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -235,7 +234,6 @@ interface InferenceMeta {
     active: boolean;
     taskID: number;
     requestID: string;
-    modelType: ModelType;
 }
 
 const timers: any = {};
@@ -243,7 +241,6 @@ const timers: any = {};
 async function timeoutCallback(
     url: string,
     taskID: number,
-    modelType: ModelType,
     dispatch: (action: ModelsActions) => void,
 ): Promise<void> {
     try {
@@ -256,8 +253,8 @@ async function timeoutCallback(
         const activeInference: ActiveInference = {
             status: response.status,
             progress: +response.progress || 0,
-            error: response.error || response.stderr || '',
-            modelType,
+            error: response.exc_info || '',
+            id: response.id,
         };
 
 
@@ -289,7 +286,6 @@ async function timeoutCallback(
                     null,
                     url,
                     taskID,
-                    modelType,
                     dispatch,
                 ), 3000,
             );
@@ -308,21 +304,12 @@ function subscribe(
     dispatch: (action: ModelsActions) => void,
 ): void {
     if (!(inferenceMeta.taskID in timers)) {
-        let requestURL = `${baseURL}`;
-        if (inferenceMeta.modelType === ModelType.OPENVINO) {
-            requestURL = `${requestURL}/auto_annotation/check`;
-        } else if (inferenceMeta.modelType === ModelType.RCNN) {
-            requestURL = `${requestURL}/tensorflow/annotation/check/task`;
-        } else if (inferenceMeta.modelType === ModelType.MASK_RCNN) {
-            requestURL = `${requestURL}/tensorflow/segmentation/check/task`;
-        }
-        requestURL = `${requestURL}/${inferenceMeta.requestID}`;
+        const requestURL = `${core.config.backendAPI}/lambda/requests/${inferenceMeta.requestID}`;
         timers[inferenceMeta.taskID] = setTimeout(
             timeoutCallback.bind(
                 null,
                 requestURL,
                 inferenceMeta.taskID,
-                inferenceMeta.modelType,
                 dispatch,
             ),
         );
@@ -331,28 +318,23 @@ function subscribe(
 
 export function getInferenceStatusAsync(tasks: number[]): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
-        function parse(response: any, modelType: ModelType): InferenceMeta[] {
-            return Object.keys(response).map((key: string): InferenceMeta => ({
-                taskID: +key,
-                requestID: response[key].rq_id || key,
-                active: typeof (response[key].active) === 'undefined' ? ['queued', 'started']
-                    .includes(response[key].status.toLowerCase()) : response[key].active,
-                modelType,
-            }));
-        }
-
         const dispatchCallback = (action: ModelsActions): void => {
             dispatch(action);
         };
 
         try {
             const response = await core.server.request(
-                `${baseURL}/api/v1/lambda/requests`, {
+                `${core.config.backendAPI}/lambda/requests`, {
                     method: 'GET',
                 },
             );
 
-            parse(response.run, ModelType.OPENVINO)
+            response
+                .map((request: any): InferenceMeta => ({
+                    taskID: +request.function.task,
+                    requestID: request.id,
+                    active: request.progress < 100,
+                }))
                 .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
                 .forEach((inferenceMeta: InferenceMeta): void => {
                     subscribe(inferenceMeta, dispatchCallback);
