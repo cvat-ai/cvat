@@ -13,6 +13,7 @@ import Button from 'antd/lib/button/button';
 import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
 
 import {
     createAnnotationsAsync,
@@ -20,11 +21,11 @@ import {
     changeFrameAsync,
     rememberObject,
 } from 'actions/annotation-actions';
-import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState, ObjectType } from 'reducers/interfaces';
 import Tag from 'antd/lib/tag';
 import getCore from 'cvat-core-wrapper';
-
+import ShortcutsSelect from './shortcuts-select';
 
 const cvat = getCore();
 
@@ -123,11 +124,30 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [frameTags, setFrameTags] = useState([] as any[]);
     const [selectedLabelID, setSelectedLabelID] = useState(defaultLabelID);
+    const [skipFrame, setSkipFrame] = useState(false);
 
     useEffect(() => {
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }
+    }, []);
+
+    useEffect(() => {
+        const listener = (event: Event): void => {
+            if ((event as TransitionEvent).propertyName === 'width'
+                    && ((event.target as any).classList as DOMTokenList).contains('cvat-tag-annotation-sidebar')) {
+                canvasInstance.fitCanvas();
+                canvasInstance.fit();
+            }
+        };
+
+        const [sidebar] = window.document.getElementsByClassName('cvat-tag-annotation-sidebar');
+
+        sidebar.addEventListener('transitionend', listener);
+
+        return () => {
+            sidebar.removeEventListener('transitionend', listener);
+        };
     }, []);
 
     useEffect(() => {
@@ -137,7 +157,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     }, [states]);
 
     const siderProps: SiderProps = {
-        className: 'tag-annotation-sidebar',
+        className: 'cvat-tag-annotation-sidebar',
         theme: 'light',
         width: 300,
         collapsedWidth: 0,
@@ -158,23 +178,23 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     const onChangeFrame = (): void => {
         const frame = Math.min(jobInstance.stopFrame, frameNumber + 1);
 
-        if (isAbleToChangeFrame(canvasInstance)) {
+        if (canvasInstance.isAbleToChangeFrame()) {
             changeFrame(frame);
         }
     };
 
-    const onAddTag = (): void => {
-        onRememberObject(selectedLabelID);
+    const onAddTag = (labelID: number): void => {
+        onRememberObject(labelID);
 
         const objectState = new cvat.classes.ObjectState({
             objectType: ObjectType.TAG,
-            label: labels.filter((label: any) => label.id === selectedLabelID)[0],
+            label: labels.filter((label: any) => label.id === labelID)[0],
             frame: frameNumber,
         });
 
         createAnnotations(jobInstance, frameNumber, [objectState]);
 
-        onChangeFrame();
+        if (skipFrame) onChangeFrame();
     };
 
     const subKeyMap = {
@@ -184,7 +204,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     const handlers = {
         SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
-            onAddTag();
+            onAddTag(selectedLabelID);
         },
     };
 
@@ -202,7 +222,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                     {sidebarCollapsed ? <Icon type='menu-fold' title='Show' />
                         : <Icon type='menu-unfold' title='Hide' />}
                 </span>
-                <Row type='flex' justify='start' className='tag-annotation-sidebar-label-select'>
+                <Row type='flex' justify='start' className='cvat-tag-annotation-sidebar-label-select'>
                     <Col>
                         <Text strong>Tag label</Text>
                         <Select
@@ -224,12 +244,24 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         </Select>
                     </Col>
                 </Row>
-                <Row type='flex' justify='space-around' className='tag-annotation-sidebar-buttons'>
+                <Row type='flex' justify='space-around' className='cvat-tag-annotation-sidebar-buttons'>
                     <Col span={8}>
-                        <Button onClick={onAddTag}>Add tag</Button>
+                        <Button onClick={() => onAddTag(selectedLabelID)}>Add tag</Button>
                     </Col>
                     <Col span={8}>
                         <Button onClick={onChangeFrame}>Skip frame</Button>
+                    </Col>
+                </Row>
+                <Row type='flex' className='cvat-tag-anntation-sidebar-checkbox-skip-frame'>
+                    <Col>
+                        <Checkbox
+                            checked={skipFrame}
+                            onChange={(event: CheckboxChangeEvent): void => {
+                                setSkipFrame(event.target.checked);
+                            }}
+                        >
+                            Automatically go to the next frame
+                        </Checkbox>
                     </Col>
                 </Row>
                 <Row type='flex' justify='start'>
@@ -247,16 +279,23 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         ))}
                     </Col>
                 </Row>
-                <Row type='flex' justify='center' className='tag-annotation-sidebar-shortcut-help'>
+                <Row>
+                    <Col>
+                        <ShortcutsSelect onAddTag={onAddTag} />
+                    </Col>
+                </Row>
+                <Row type='flex' justify='center' className='cvat-tag-annotation-sidebar-shortcut-help'>
                     <Col>
                         <Text>
-                            Use
+                            Use&nbsp;
                             <Text code>N</Text>
-                            to add selected tag
+                            &nbsp;or digits&nbsp;
+                            <Text code>0-9</Text>
+                            &nbsp;to add selected tag
                             <br />
-                            or
+                            or&nbsp;
                             <Text code>→</Text>
-                            to skip frame
+                            &nbsp;to skip frame
                         </Text>
                     </Col>
                 </Row>

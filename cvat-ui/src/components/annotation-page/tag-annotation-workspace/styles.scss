@@ -4,11 +4,11 @@
 
 @import 'base.scss';
 
-.tag-annotation-workspace.ant-layout {
+.cvat-tag-annotation-workspace.ant-layout {
     height: 100%;
 }
 
-.tag-annotation-sidebar {
+.cvat-tag-annotation-sidebar {
     background: $background-color-2;
     padding: 5px;
 
@@ -17,7 +17,7 @@
     }
 }
 
-.tag-annotation-sidebar-label-select {
+.cvat-tag-annotation-sidebar-label-select {
     padding-top: 40px;
     padding-bottom: 15px;
 
@@ -27,11 +27,21 @@
     }
 }
 
-.tag-annotation-sidebar-shortcut-help {
+.cvat-tag-annotation-sidebar-shortcut-help {
     padding-top: 15px;
     text-align: center;
 }
 
-.tag-annotation-sidebar-buttons {
+.cvat-tag-annotation-sidebar-buttons,
+.cvat-tag-anntation-sidebar-checkbox-skip-frame {
     padding-bottom: 15px;
+}
+
+.cvat-tag-annotation-label-selects {
+    padding-top: 10px;
+
+    .ant-select {
+        width: 230px;
+        padding: 5px 10px;
+    }
 }

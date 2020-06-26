@@ -9,9 +9,9 @@ import Layout from 'antd/lib/layout';
 import CanvasWrapperContainer from 'containers/annotation-page/standard-workspace/canvas-wrapper';
 import TagAnnotationSidebar from './tag-annotation-sidebar/tag-annotation-sidebar';
 
-export default function AttributeAnnotationWorkspace(): JSX.Element {
+export default function TagAnnotationWorkspace(): JSX.Element {
     return (
-        <Layout hasSider className='attribute-annotation-workspace'>
+        <Layout hasSider className='cvat-tag-annotation-workspace'>
             <CanvasWrapperContainer />
             <TagAnnotationSidebar />
         </Layout>
