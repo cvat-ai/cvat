@@ -255,14 +255,36 @@ class LambdaJob:
         db_task = TaskModel.objects.get(pk=task)
         if cleanup:
             delete_task_data(db_task.id)
+        db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
+        labels = {db_label.name:db_label.id for db_label in db_labels}
 
-        # TODO: check tasks with a frame step
+        class Results:
+            def __init__(self, task_id):
+                self.task_id = task_id
+                self.reset()
+
+            def append_shape(self, shape):
+                self.data["shapes"].append(shape)
+
+            def submit(self):
+                if not self.is_empty():
+                    serializer = LabeledDataSerializer(data=self.data)
+                    if serializer.is_valid(raise_exception=True):
+                        patch_task_data(self.task_id, serializer.data, "create")
+                    self.reset()
+
+            def is_empty(self):
+                return not (self.data["tags"] or self.data["shapes"] or self.data["tracks"])
+
+            def reset(self):
+                # TODO: need to make "tags" and "tracks" are optional
+                # FIXME: need to provide the correct version here
+                self.data = {"version": 0, "tags": [], "shapes": [], "tracks": []}
+
+        results = Results(db_task.id)
+
         for frame in range(db_task.data.size):
             annotations = function.invoke(db_task, frame, quality, mapping)
-            # TODO: optimize
-            db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
-            labels = {db_label.name:db_label.id for db_label in db_labels}
-
             job = rq.get_current_job()
             # If the job has been deleted, get_status will return None. Thus it will
             # exist the loop.
@@ -271,13 +293,10 @@ class LambdaJob:
             job.meta["progress"] = int((frame + 1) / db_task.data.size * 100)
             job.save_meta()
 
-            # TODO: need to make "tags" and "tracks" are optional
-            # FIXME: need to provide the correct version here
-            results = {"version": 0, "tags": [], "shapes": [], "tracks": []}
             for anno in annotations:
                 label_id = labels.get(anno["label"])
                 if label_id is not None:
-                    results["shapes"].append({
+                    results.append_shape({
                         "frame": frame,
                         "label_id": label_id,
                         "type": anno["type"],
@@ -288,9 +307,13 @@ class LambdaJob:
                         "attributes": []
                     })
 
-            serializer = LabeledDataSerializer(data=results)
-            if serializer.is_valid(raise_exception=True):
-                patch_task_data(db_task.id, results, "create")
+                # Accumulate data during 100 frames before sumbitting results.
+                # It is optimization to make fewer calls to our server. Also
+                # it isn't possible to keep all results in memory.
+                if frame % 100 == 0:
+                    results.submit()
+
+            results.submit()
 
 
 def return_response(success_code=status.HTTP_200_OK):
