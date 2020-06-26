@@ -209,6 +209,7 @@ class LambdaJob:
                 "task": self.job.kwargs.get("task")
             },
             "status": self.job.get_status(),
+            "progress": self.job.meta.get('progress', 0),
             "enqueued": self.job.enqueued_at,
             "started": self.job.started_at,
             "ended": self.job.ended_at,
@@ -262,11 +263,13 @@ class LambdaJob:
             db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
             labels = {db_label.name:db_label.id for db_label in db_labels}
 
-            # TODO: need to check 'cancel' operation
             job = rq.get_current_job()
-            job.meta["progress"] = frame / db_task.data.size
+            # If the job has been deleted, get_status will return None. Thus it will
+            # exist the loop.
+            if job.get_status() is None:
+                break
+            job.meta["progress"] = int((frame + 1) / db_task.data.size * 100)
             job.save_meta()
-
 
             # TODO: need to make "tags" and "tracks" are optional
             # FIXME: need to provide the correct version here
