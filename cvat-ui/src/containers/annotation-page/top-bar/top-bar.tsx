@@ -22,6 +22,7 @@ import {
     searchAnnotationsAsync,
     changeWorkspace as changeWorkspaceAction,
     activateObject,
+    closeJob as closeJobAction,
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
 
@@ -58,6 +59,7 @@ interface DispatchToProps {
     redo(sessionInstance: any, frameNumber: any): void;
     searchAnnotations(sessionInstance: any, frameFrom: any, frameTo: any): void;
     changeWorkspace(workspace: Workspace): void;
+    closeJob(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -153,6 +155,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(activateObject(null, null));
             dispatch(changeWorkspaceAction(workspace));
         },
+        closeJob(): void {
+            dispatch(closeJobAction());
+        },
     };
 }
 
@@ -169,31 +174,28 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     public componentDidMount(): void {
         const {
-            autoSave,
             autoSaveInterval,
-            saving,
             history,
             jobInstance,
         } = this.props;
 
-        this.autoSaveInterval = window.setInterval((): void => {
-            if (autoSave && !saving) {
-                this.onSaveAnnotation();
-            }
-        }, autoSaveInterval);
+        this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
 
         this.unblock = history.block((location: any) => {
-            if (jobInstance.annotations.hasUnsavedChanges() && location.pathname !== '/settings'
-                && location.pathname !== `/tasks/${jobInstance.task.id}/jobs/${jobInstance.id}`) {
+            const { task, id: jobID } = jobInstance;
+            const { id: taskID } = task;
+
+            if (jobInstance.annotations.hasUnsavedChanges()
+                && location.pathname !== `/tasks/${taskID}/jobs/${jobID}`) {
                 return 'You have unsaved changes, please confirm leaving this page.';
             }
             return undefined;
         });
-        this.beforeUnloadCallback = this.beforeUnloadCallback.bind(this);
+
         window.addEventListener('beforeunload', this.beforeUnloadCallback);
     }
 
-    public componentDidUpdate(): void {
+    public componentDidUpdate(prevProps: Props): void {
         const {
             jobInstance,
             frameSpeed,
@@ -204,8 +206,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             canvasInstance,
             onSwitchPlay,
             onChangeFrame,
+            autoSaveInterval,
         } = this.props;
 
+        if (autoSaveInterval !== prevProps.autoSaveInterval) {
+            if (this.autoSaveInterval) window.clearInterval(this.autoSaveInterval);
+            this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
+        }
 
         if (playing && canvasIsReady) {
             if (frameNumber < jobInstance.stopFrame) {
@@ -239,9 +246,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     }
 
     public componentWillUnmount(): void {
+        const { closeJob } = this.props;
         window.clearInterval(this.autoSaveInterval);
         window.removeEventListener('beforeunload', this.beforeUnloadCallback);
         this.unblock();
+        closeJob();
     }
 
     private undo = (): void => {
@@ -444,14 +453,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         copy(url);
     };
 
-    private changeFrame(frame: number): void {
-        const { onChangeFrame, canvasInstance } = this.props;
-        if (canvasInstance.isAbleToChangeFrame()) {
-            onChangeFrame(frame);
-        }
-    }
-
-    private beforeUnloadCallback(event: BeforeUnloadEvent): any {
+    private beforeUnloadCallback = (event: BeforeUnloadEvent): string | undefined => {
         const { jobInstance } = this.props;
         if (jobInstance.annotations.hasUnsavedChanges()) {
             const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
@@ -460,7 +462,23 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             return confirmationMessage;
         }
         return undefined;
+    };
+
+    private autoSave(): void {
+        const { autoSave, saving } = this.props;
+
+        if (autoSave && !saving) {
+            this.onSaveAnnotation();
+        }
     }
+
+    private changeFrame(frame: number): void {
+        const { onChangeFrame, canvasInstance } = this.props;
+        if (canvasInstance.isAbleToChangeFrame()) {
+            onChangeFrame(frame);
+        }
+    }
+
 
     public render(): JSX.Element {
         const {

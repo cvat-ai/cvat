@@ -187,7 +187,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                             href={`/tasks/${id}`}
                             onClick={(e: React.MouseEvent): void => {
                                 e.preventDefault();
-                                history.push(`/tasks/${id}`)
+                                history.push(`/tasks/${id}`);
                             }}
                         >
                             Open

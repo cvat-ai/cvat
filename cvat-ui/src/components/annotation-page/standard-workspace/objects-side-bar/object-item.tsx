@@ -379,7 +379,7 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                         <Col>
                             <Tooltip title={`Switch lock property ${switchLockShortcut}`}>
                                 { locked
-                                    ? <Icon type='lock' onClick={unlock} theme='filled' />
+                                    ? <Icon type='lock' theme='filled' onClick={unlock} />
                                     : <Icon type='unlock' onClick={lock} />}
                             </Tooltip>
                         </Col>
@@ -393,7 +393,7 @@ function ItemButtonsComponent(props: ItemButtonsComponentProps): JSX.Element {
                         <Col>
                             <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`}>
                                 { hidden
-                                    ? <Icon type='eye-invisible' onClick={show} />
+                                    ? <Icon type='eye-invisible' theme='filled' onClick={show} />
                                     : <Icon type='eye' onClick={hide} />}
                             </Tooltip>
                         </Col>
@@ -858,7 +858,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         : 'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
 
     return (
-        <div style={{ display: 'flex' }}>
+        <div style={{ display: 'flex', marginBottom: '1px' }}>
             <Popover
                 placement='left'
                 trigger='click'
@@ -872,14 +872,14 @@ function ObjectItemComponent(props: Props): JSX.Element {
             >
                 <div
                     className='cvat-objects-sidebar-state-item-color'
-                    style={{ background: ` ${color}` }}
+                    style={{ background: `${color}` }}
                 />
             </Popover>
             <div
                 onMouseEnter={activate}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
                 className={className}
-                style={{ borderColor: ` ${color}` }}
+                style={{ backgroundColor: `${color}88` }}
             >
                 <ItemTop
                     serverID={serverID}

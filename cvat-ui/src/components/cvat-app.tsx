@@ -14,7 +14,6 @@ import notification from 'antd/lib/notification';
 
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
-import SettingsPageContainer from 'containers/settings-page/settings-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
 import TaskPageContainer from 'containers/task-page/task-page';
@@ -39,6 +38,7 @@ interface CVATAppProps {
     resetErrors: () => void;
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
+    switchSettingsDialog: () => void;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     userInitialized: boolean;
     userFetching: boolean;
@@ -62,7 +62,7 @@ interface CVATAppProps {
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
         const core = getCore();
-        const { verifyAuthorized, history } = this.props;
+        const { verifyAuthorized, history, location } = this.props;
         configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
@@ -72,9 +72,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
 
-        customWaViewHit(history.location.pathname, history.location.search, history.location.hash);
-        history.listen((location) => {
-            customWaViewHit(location.pathname, location.search, location.hash);
+        customWaViewHit(location.pathname, location.search, location.hash);
+        history.listen((_location) => {
+            customWaViewHit(_location.pathname, _location.search, _location.hash);
         });
 
         verifyAuthorized();
@@ -225,8 +225,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             installedTFSegmentation,
             installedTFAnnotation,
             switchShortcutsDialog,
+            switchSettingsDialog,
             user,
-            history,
             keyMap,
         } = this.props;
 
@@ -239,27 +239,19 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
-            OPEN_SETTINGS: keyMap.OPEN_SETTINGS,
+            SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
         };
 
         const handlers = {
             SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
-                if (event) {
-                    event.preventDefault();
-                }
+                if (event) event.preventDefault();
 
                 switchShortcutsDialog();
             },
-            OPEN_SETTINGS: (event: KeyboardEvent | undefined) => {
-                if (event) {
-                    event.preventDefault();
-                }
+            SWITCH_SETTINGS: (event: KeyboardEvent | undefined) => {
+                if (event) event.preventDefault();
 
-                if (history.location.pathname.endsWith('settings')) {
-                    history.goBack();
-                } else {
-                    history.push('/settings');
-                }
+                switchSettingsDialog();
             },
         };
 
@@ -273,7 +265,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <ShorcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>
-                                        <Route exact path='/settings' component={SettingsPageContainer} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
