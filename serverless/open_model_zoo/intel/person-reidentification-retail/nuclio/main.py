@@ -3,7 +3,7 @@ import base64
 from PIL import Image
 import io
 from model_loader import ModelLoader
-import numpy as np
+from numpy import np
 
 def init_context(context):
     context.logger.info("Init context...  0%")
@@ -20,9 +20,9 @@ def handler(context, event):
     #threshold = float(data.get("threshold", 0.5))
     image = Image.open(buf)
 
-    #output_layer = context.user_data.model_handler.infer(np.array(image))
+    output_layer = context.user_data.model_handler.infer(np.array(image))
 
-    results = []
+    results = output_layer
 
     return context.Response(body=json.dumps(results), headers={},
         content_type='application/json', status_code=200)
