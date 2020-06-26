@@ -198,6 +198,12 @@ class _VocXmlExtractor(_VocExtractor):
                 item_annotations.append(Bbox(*part_bbox, label=part_label_id,
                     group=group))
 
+            attributes_elem = object_elem.find('attributes')
+            if attributes_elem is not None:
+                for attr_elem in attributes_elem.iter('attribute'):
+                    attributes[attr_elem.find('name').text] = \
+                        attr_elem.find('value').text
+
             if self._task is VocTask.person_layout and not has_parts:
                 continue
             if self._task is VocTask.action_classification and not actions:

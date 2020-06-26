@@ -22,6 +22,7 @@ import {
     searchAnnotationsAsync,
     changeWorkspace as changeWorkspaceAction,
     activateObject,
+    closeJob as closeJobAction,
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
 
@@ -58,6 +59,7 @@ interface DispatchToProps {
     redo(sessionInstance: any, frameNumber: any): void;
     searchAnnotations(sessionInstance: any, frameFrom: any, frameTo: any): void;
     changeWorkspace(workspace: Workspace): void;
+    closeJob(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -153,6 +155,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(activateObject(null, null));
             dispatch(changeWorkspaceAction(workspace));
         },
+        closeJob(): void {
+            dispatch(closeJobAction());
+        },
     };
 }
 
@@ -177,13 +182,16 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
 
         this.unblock = history.block((location: any) => {
-            if (jobInstance.annotations.hasUnsavedChanges() && location.pathname !== '/settings'
-                && location.pathname !== `/tasks/${jobInstance.task.id}/jobs/${jobInstance.id}`) {
+            const { task, id: jobID } = jobInstance;
+            const { id: taskID } = task;
+
+            if (jobInstance.annotations.hasUnsavedChanges()
+                && location.pathname !== `/tasks/${taskID}/jobs/${jobID}`) {
                 return 'You have unsaved changes, please confirm leaving this page.';
             }
             return undefined;
         });
-        this.beforeUnloadCallback = this.beforeUnloadCallback.bind(this);
+
         window.addEventListener('beforeunload', this.beforeUnloadCallback);
     }
 
@@ -238,9 +246,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     }
 
     public componentWillUnmount(): void {
+        const { closeJob } = this.props;
         window.clearInterval(this.autoSaveInterval);
         window.removeEventListener('beforeunload', this.beforeUnloadCallback);
         this.unblock();
+        closeJob();
     }
 
     private undo = (): void => {
@@ -443,6 +453,17 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         copy(url);
     };
 
+    private beforeUnloadCallback = (event: BeforeUnloadEvent): string | undefined => {
+        const { jobInstance } = this.props;
+        if (jobInstance.annotations.hasUnsavedChanges()) {
+            const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
+            // eslint-disable-next-line no-param-reassign
+            event.returnValue = confirmationMessage;
+            return confirmationMessage;
+        }
+        return undefined;
+    };
+
     private autoSave(): void {
         const { autoSave, saving } = this.props;
 
@@ -458,16 +479,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         }
     }
 
-    private beforeUnloadCallback(event: BeforeUnloadEvent): any {
-        const { jobInstance } = this.props;
-        if (jobInstance.annotations.hasUnsavedChanges()) {
-            const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
-            // eslint-disable-next-line no-param-reassign
-            event.returnValue = confirmationMessage;
-            return confirmationMessage;
-        }
-        return undefined;
-    }
 
     public render(): JSX.Element {
         const {
