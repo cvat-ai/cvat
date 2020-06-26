@@ -10,6 +10,7 @@ import {
     mergeObjects,
     groupObjects,
     splitTrack,
+    redrawShapeAsync,
     rotateCurrentFrame,
     repeatDrawShapeAsync,
     pasteShapeAsync,
@@ -34,6 +35,7 @@ interface DispatchToProps {
     resetGroup(): void;
     repeatDrawShape(): void;
     pasteShape(): void;
+    redrawShape(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -86,6 +88,9 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         },
         resetGroup(): void {
             dispatch(resetAnnotationsGroup());
+        },
+        redrawShape(): void {
+            dispatch(redrawShapeAsync());
         },
     };
 }

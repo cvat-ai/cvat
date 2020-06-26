@@ -15,10 +15,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Built-in search for labels when create an object or change a label (<https://github.com/opencv/cvat/pull/1683>)
 - Better validation of labels and attributes in raw viewer (<https://github.com/opencv/cvat/pull/1727>)
 - ClamAV antivirus integration (<https://github.com/opencv/cvat/pull/1712>)
+- Added canvas background color selector (<https://github.com/opencv/cvat/pull/1705>)
+- SCSS files linting with Stylelint tool (<https://github.com/opencv/cvat/pull/1766>)
+- Supported import and export or single boxes in MOT format (https://github.com/opencv/cvat/pull/1764)
+- [Datumaro] Added `stats` command, which shows some dataset statistics like image mean and std (https://github.com/opencv/cvat/pull/1734)
+- Add option to upload annotations upon task creation on CLI
+- Polygon and polylines interpolation (<https://github.com/opencv/cvat/pull/1571>)
+- Ability to redraw shape from scratch (Shift + N) for an activated shape (<https://github.com/opencv/cvat/pull/1571>)
+- Highlights for the first point of a polygon/polyline and direction (<https://github.com/opencv/cvat/pull/1571>)
+- Ability to change orientation for poylgons/polylines in context menu (<https://github.com/opencv/cvat/pull/1571>)
+- Ability to set the first point for polygons in points context menu (<https://github.com/opencv/cvat/pull/1571>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
 - Update https install manual. Makes it easier and more robust. Includes automatic renewing of lets encrypt certificates.
+- Settings page move to the modal. (<https://github.com/opencv/cvat/pull/1705>)
+- Implemented import and export of annotations with relative image paths (<https://github.com/opencv/cvat/pull/1463>)
+- Using only single click to start editing or remove a point (<https://github.com/opencv/cvat/pull/1571>)
+- Added support for attributes in VOC XML format (https://github.com/opencv/cvat/pull/1792)
+- Colorized object items in the side panel (<https://github.com/opencv/cvat/pull/1753>)
 
 ### Deprecated
 -
@@ -35,8 +50,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wrong description on register view for the username field (<https://github.com/opencv/cvat/pull/1667>)
 - Wrong resolution for resizing a shape (<https://github.com/opencv/cvat/pull/1667>)
 - React warning because of not unique keys in labels viewer (<https://github.com/opencv/cvat/pull/1727>)
+- Fixed issue tracker (<https://github.com/opencv/cvat/pull/1705>)
+- Fixed canvas fit after sidebar open/close event (<https://github.com/opencv/cvat/pull/1705>)
+- A couple of exceptions in AAM related with early object activation (<https://github.com/opencv/cvat/pull/1755>)
+- Propagation from the latest frame (<https://github.com/opencv/cvat/pull/1800>)
+- Number attribute value validation (didn't work well with floats) (<https://github.com/opencv/cvat/pull/1800>)
+- Annotations aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
+- Labels aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
+- Canvas isn't fitted after collapsing side panel in attribute annotation mode (<https://github.com/opencv/cvat/pull/1753>)
 - `outside` annotations should not be in exported images (<https://github.com/opencv/cvat/issues/1620>)
-
 
 ### Security
 - SQL injection in Django `CVE-2020-9402` (<https://github.com/opencv/cvat/pull/1657>)

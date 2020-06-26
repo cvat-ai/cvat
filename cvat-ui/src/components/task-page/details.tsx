@@ -32,6 +32,7 @@ interface Props {
 interface State {
     name: string;
     bugTracker: string;
+    bugTrackerEditing: boolean;
     repository: string;
     repositoryStatus: string;
 }
@@ -52,6 +53,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         this.state = {
             name: taskInstance.name,
             bugTracker: taskInstance.bugTracker,
+            bugTrackerEditing: false,
             repository: '',
             repositoryStatus: '',
         };
@@ -323,9 +325,14 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             taskInstance,
             onTaskUpdate,
         } = this.props;
-        const { bugTracker } = this.state;
+        const { bugTracker, bugTrackerEditing } = this.state;
 
         let shown = false;
+        const onStart = (): void => {
+            this.setState({
+                bugTrackerEditing: true,
+            });
+        };
         const onChangeValue = (value: string): void => {
             if (value && !patterns.validateURL.pattern.test(value)) {
                 if (!shown) {
@@ -341,6 +348,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             } else {
                 this.setState({
                     bugTracker: value,
+                    bugTrackerEditing: false,
                 });
 
                 taskInstance.bugTracker = value;
@@ -377,7 +385,15 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                 <Col>
                     <Text strong className='cvat-text-color'>Issue Tracker</Text>
                     <br />
-                    <Text editable={{ onChange: onChangeValue }}>Not specified</Text>
+                    <Text
+                        editable={{
+                            editing: bugTrackerEditing,
+                            onStart,
+                            onChange: onChangeValue,
+                        }}
+                    >
+                        {bugTrackerEditing ? '' : 'Not specified'}
+                    </Text>
                 </Col>
             </Row>
         );

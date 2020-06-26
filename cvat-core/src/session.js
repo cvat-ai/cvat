@@ -1310,6 +1310,21 @@
         }
 
         /**
+            * Method removes all task related data from the client (annotations, history, etc.)
+            * @method close
+            * @returns {module:API.cvat.classes.Task}
+            * @memberof module:API.cvat.classes.Task
+            * @readonly
+            * @async
+            * @instance
+            * @throws {module:API.cvat.exceptions.PluginError}
+        */
+        async close() {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.close);
+            return result;
+        }
+
+        /**
             * Method updates data of a created task or creates new task from scratch
             * @method save
             * @returns {module:API.cvat.classes.Task}
@@ -1372,6 +1387,7 @@
         redoActions,
         clearActions,
         getActions,
+        closeSession,
     } = require('./annotations');
 
     buildDublicatedAPI(Job.prototype);
@@ -1574,6 +1590,15 @@
     Job.prototype.logger.log.implementation = async function (logType, payload, wait) {
         const result = await this.task.logger.log(logType, { ...payload, job_id: this.id }, wait);
         return result;
+    };
+
+    Task.prototype.close.implementation = function closeTask() {
+        for (const job of this.jobs) {
+            closeSession(job);
+        }
+
+        closeSession(this);
+        return this;
     };
 
     Task.prototype.save.implementation = async function saveTaskImplementation(onUpdate) {
