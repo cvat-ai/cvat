@@ -19,7 +19,7 @@ from datumaro.util import find, str_to_bool
 from datumaro.util.image import save_image
 from datumaro.util.mask_tools import paint_mask, remap_mask
 
-from .format import (VocInstColormap, VocPath, VocPose, VocTask,
+from .format import (VocInstColormap, VocPath, VocTask,
     make_voc_categories, make_voc_label_map, parse_label_map,
     write_label_map)
 
@@ -76,6 +76,9 @@ class VocConverter(Converter):
         parser.add_argument('--label-map', type=cls._get_labelmap, default=None,
             help="Labelmap file path or one of %s" % \
                 ', '.join(t.name for t in LabelmapType))
+        parser.add_argument('--allow-attributes',
+            type=str_to_bool, default=True,
+            help="Allow export of attributes (default: %(default)s)")
         parser.add_argument('--tasks', type=cls._split_tasks_string,
             help="VOC task filter, comma-separated list of {%s} "
                 "(default: all)" % ', '.join(t.name for t in VocTask))
@@ -83,7 +86,8 @@ class VocConverter(Converter):
         return parser
 
     def __init__(self, extractor, save_dir,
-            tasks=None, apply_colormap=True, label_map=None, **kwargs):
+            tasks=None, apply_colormap=True, label_map=None,
+            allow_attributes=True, **kwargs):
         super().__init__(extractor, save_dir, **kwargs)
 
         assert tasks is None or isinstance(tasks, (VocTask, list, set))
@@ -96,6 +100,7 @@ class VocConverter(Converter):
         self._tasks = tasks
 
         self._apply_colormap = apply_colormap
+        self._allow_attributes = allow_attributes
 
         self._load_categories(label_map)
 
@@ -230,9 +235,8 @@ class VocConverter(Converter):
                         ET.SubElement(obj_elem, 'name').text = obj_label
 
                         if 'pose' in attr:
-                            pose = _convert_attr('pose', attr,
-                                lambda v: VocPose[v], VocPose.Unspecified)
-                            ET.SubElement(obj_elem, 'pose').text = pose.name
+                            ET.SubElement(obj_elem, 'pose').text = \
+                                str(attr['pose'])
 
                         if 'truncated' in attr:
                             truncated = _convert_attr('truncated', attr, int, 0)
@@ -276,6 +280,21 @@ class VocConverter(Converter):
                             objects_with_actions[new_obj_id][action] = present
                         if len(actions_elem) != 0:
                             obj_elem.append(actions_elem)
+
+                        if self._allow_attributes:
+                            native_attrs = {'difficult', 'pose',
+                                'truncated', 'occluded' }
+                            native_attrs.update(label_actions)
+
+                            attrs_elem = ET.Element('attributes')
+                            for k, v in attr.items():
+                                if k in native_attrs:
+                                    continue
+                                attr_elem = ET.SubElement(attrs_elem, 'attribute')
+                                ET.SubElement(attr_elem, 'name').text = str(k)
+                                ET.SubElement(attr_elem, 'value').text = str(v)
+                            if len(attrs_elem):
+                                obj_elem.append(attrs_elem)
 
                     if self._tasks & {VocTask.detection, VocTask.person_layout,
                             VocTask.action_classification}:

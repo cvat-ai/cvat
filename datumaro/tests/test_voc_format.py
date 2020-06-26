@@ -398,7 +398,8 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                partial(VocActionConverter.convert, label_map='voc'), test_dir,
+                partial(VocActionConverter.convert,
+                    label_map='voc', allow_attributes=False), test_dir,
                 target_dataset=DstExtractor())
 
     def test_can_save_dataset_with_no_subsets(self):
@@ -682,5 +683,37 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                partial(VocConverter.convert, label_map='voc', save_images=True),
+                partial(VocConverter.convert,
+                    label_map='voc', save_images=True),
                 test_dir)
+
+    def test_can_save_attributes(self):
+        class TestExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='a', annotations=[
+                        Bbox(2, 3, 4, 5, label=2,
+                            attributes={ 'occluded': True, 'x': 1, 'y': '2' }
+                        ),
+                    ]),
+                ])
+
+        class DstExtractor(TestExtractorBase):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id='a', annotations=[
+                        Bbox(2, 3, 4, 5, label=2, id=1, group=1,
+                            attributes={
+                                'truncated': False,
+                                'difficult': False,
+                                'occluded': True,
+                                'x': '1', 'y': '2', # can only read strings
+                            }
+                        ),
+                    ]),
+                ])
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                partial(VocConverter.convert, label_map='voc'), test_dir,
+                target_dataset=DstExtractor())
