@@ -42,7 +42,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchAutomaticBordering,
     } = props;
 
-    const minAutoSaveInterval = 5;
+    const minAutoSaveInterval = 1;
     const maxAutoSaveInterval = 60;
     const minAAMMargin = 0;
     const maxAAMMargin = 1000;

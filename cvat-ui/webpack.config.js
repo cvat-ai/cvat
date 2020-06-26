@@ -14,10 +14,13 @@ module.exports = {
     target: 'web',
     mode: 'production',
     devtool: 'source-map',
-    entry: './src/index.tsx',
+    entry: {
+        'cvat-ui': './src/index.tsx',
+    },
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'cvat-ui.min.js',
+        filename: '[name].[contenthash].min.js',
+        publicPath: '/',
     },
     devServer: {
         contentBase: path.join(__dirname, 'dist'),
@@ -79,7 +82,7 @@ module.exports = {
                 loader: 'worker-loader',
                 options: {
                     publicPath: '/',
-                    name: '3rdparty/[name].js',
+                    name: '3rdparty/[name].[contenthash].js',
                 },
             },
         }, {
@@ -89,7 +92,7 @@ module.exports = {
                 loader: 'worker-loader',
                 options: {
                     publicPath: '/',
-                    name: '[name].js',
+                    name: '[name].[contenthash].js',
                 },
             },
         },],
@@ -97,7 +100,7 @@ module.exports = {
     plugins: [
         new HtmlWebpackPlugin({
             template: "./src/index.html",
-            inject: false,
+            inject: 'body',
         }),
         new Dotenv({
             systemvars: true,

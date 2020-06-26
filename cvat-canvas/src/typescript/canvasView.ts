@@ -911,12 +911,32 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (reason === UpdateReasons.CONFIG_UPDATED) {
             const { activeElement } = this;
             this.deactivate();
+
+            if (model.configuration.displayAllText && !this.configuration.displayAllText) {
+                for (const i in this.drawnStates) {
+                    if (!(i in this.svgTexts)) {
+                        this.svgTexts[i] = this.addText(this.drawnStates[i]);
+                        this.updateTextPosition(
+                            this.svgTexts[i],
+                            this.svgShapes[i],
+                        );
+                    }
+                }
+            } else if (model.configuration.displayAllText === false
+                    && this.configuration.displayAllText) {
+                for (const i in this.drawnStates) {
+                    if (i in this.svgTexts && Number.parseInt(i, 10) !== activeElement.clientID) {
+                        this.svgTexts[i].remove();
+                        delete this.svgTexts[i];
+                    }
+                }
+            }
+
             this.configuration = model.configuration;
             this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);
 
-            // todo: setup text, add if doesn't exist and enabled
             // remove if exist and not enabled
             // this.setupObjects([]);
             // this.setupObjects(model.objects);
@@ -1208,6 +1228,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             pinned: state.pinned,
             updated: state.updated,
             frame: state.frame,
+            label: state.label,
         };
     }
 
