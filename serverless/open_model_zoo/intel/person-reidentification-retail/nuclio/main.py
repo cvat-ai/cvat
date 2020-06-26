@@ -17,10 +17,10 @@ def handler(context, event):
     context.logger.info("Run faster_rcnn_inception_v2_coco model")
     data = event.body
     buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
-    threshold = float(data.get("threshold", 0.5))
+    #threshold = float(data.get("threshold", 0.5))
     image = Image.open(buf)
 
-    output_layer = context.user_data.model_handler.infer(np.array(image))
+    #output_layer = context.user_data.model_handler.infer(np.array(image))
 
     results = []
 

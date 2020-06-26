@@ -323,7 +323,7 @@ def return_response(success_code=status.HTTP_200_OK):
 # about available serverless functions.
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
-    lookup_field = 'req_id'
+    lookup_field = 'func_id'
 
     @return_response()
     def list(self, request):
@@ -331,12 +331,12 @@ class FunctionViewSet(viewsets.ViewSet):
         return [f.to_dict() for f in gateway.list()]
 
     @return_response()
-    def retrieve(self, request, req_id):
+    def retrieve(self, request, func_id):
         gateway = LambdaGateway()
-        return gateway.get(req_id).to_dict()
+        return gateway.get(func_id).to_dict()
 
     @return_response()
-    def call(self, request, req_id):
+    def call(self, request, func_id):
         try:
             # Mandatory parameters
             task = request.data['task']
@@ -350,12 +350,12 @@ class FunctionViewSet(viewsets.ViewSet):
             db_task = TaskModel.objects.get(pk=task)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
-                '`{}` lambda function was run '.format(req_id) +
+                '`{}` lambda function was run '.format(func_id) +
                 'with wrong arguments ({})'.format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST)
 
         gateway = LambdaGateway()
-        lambda_func = gateway.get(req_id)
+        lambda_func = gateway.get(func_id)
 
         return lambda_func.invoke(db_task, frame, quality, mapping, points)
 

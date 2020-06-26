@@ -6,7 +6,6 @@
 import os
 import numpy as np
 import sys
-import skimage.io
 from skimage.measure import find_contours, approximate_polygon
 
 class MASKRCNN:

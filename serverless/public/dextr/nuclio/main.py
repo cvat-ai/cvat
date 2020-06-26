@@ -3,8 +3,6 @@ import base64
 from PIL import Image
 import io
 import dextr
-import sys
-import time
 
 def init_context(context):
     context.logger.info("Init context...  0%")

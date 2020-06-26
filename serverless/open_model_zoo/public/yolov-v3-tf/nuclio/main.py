@@ -44,8 +44,6 @@ class YoloParams:
 
             self.isYoloV3 = True # Weak way to determine but the only one.
 
-    def log_params(self):
-        params_to_print = {'classes': self.classes, 'num': self.num, 'coords': self.coords, 'anchors': self.anchors}
 
 def entry_index(side, coord, classes, location, entry):
     side_power_2 = side ** 2
