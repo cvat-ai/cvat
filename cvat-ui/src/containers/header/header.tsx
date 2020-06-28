@@ -32,7 +32,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onLogout: typeof logoutAsync;
+    onLogout: () => void;
     switchSettingsDialog: (show: boolean) => void;
 }
 
@@ -80,7 +80,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onLogout: logoutAsync,
+        onLogout: (): void => dispatch(logoutAsync()),
         switchSettingsDialog: (show: boolean): void => dispatch(switchSettingsDialog(show)),
     };
 }
