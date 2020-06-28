@@ -2,6 +2,7 @@ metadata:
   name: tf.faster_rcnn_inception_v2_coco
   namespace: cvat
   annotations:
+    name: Faster RCNN on GPU
     type: detector
     framework: tensorflow
     spec: |
@@ -107,19 +108,22 @@ spec:
 
       postCopy:
         - kind: RUN
-          value: curl http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz -o model.tar.gz
+          value: curl -O http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz
         - kind: RUN
-          value: tar -xzf model.tar.gz && rm model.tar.gz
+          value: tar -xzf faster_rcnn_inception_v2_coco_2018_01_28.tar.gz && rm faster_rcnn_inception_v2_coco_2018_01_28.tar.gz
         - kind: RUN
-          value: ln -s faster_rcnn_inception_v2_coco_2018_01_28 rcnn
+          value: ln -s faster_rcnn_inception_v2_coco_2018_01_28 faster_rcnn
         - kind: RUN
-          value: ln -s rcnn/frozen_inference_graph.pb rcnn/inference_graph.pb
+          value: pip install pillow pyyaml
+
 
   triggers:
     myHttpTrigger:
       maxWorkers: 2
       kind: "http"
       workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
 
   platform:
     attributes:
