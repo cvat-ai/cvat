@@ -397,6 +397,7 @@ export interface AnnotationState {
 export enum Workspace {
     STANDARD = 'Standard',
     ATTRIBUTE_ANNOTATION = 'Attribute annotation',
+    TAG_ANNOTATION = 'Tag annotation',
 }
 
 export enum GridColor {

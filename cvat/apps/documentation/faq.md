@@ -1,10 +1,11 @@
 # Frequently asked questions
-- [Frequently asked questions](#frequently-asked-questions)
-  - [How to update CVAT](#how-to-update-cvat)
-  - [Kibana app works, but no logs are displayed](#kibana-app-works-but-no-logs-are-displayed)
-  - [How to change default CVAT hostname or port](#how-to-change-default-cvat-hostname-or-port)
-  - [How to configure connected share folder on Windows](#how-to-configure-connected-share-folder-on-windows)
-  - [How to make unassigned tasks not visible to all users](#how-to-make-unassigned-tasks-not-visible-to-all-users)
+- [How to update CVAT](#how-to-update-cvat)
+- [Kibana app works, but no logs are displayed](#kibana-app-works-but-no-logs-are-displayed)
+- [How to change default CVAT hostname or port](#how-to-change-default-cvat-hostname-or-port)
+- [How to configure connected share folder on Windows](#how-to-configure-connected-share-folder-on-windows)
+- [How to make unassigned tasks not visible to all users](#how-to-make-unassigned-tasks-not-visible-to-all-users)
+- [Where are uploaded images/videos stored](#where-are-uploaded-imagesvideos-stored)
+- [Where are annotations stored](#where-are-annotations-stored)
 
 ## How to update CVAT
 Before upgrading, please follow the official docker
@@ -75,3 +76,16 @@ volumes:
 ## How to make unassigned tasks not visible to all users
 Set [reduce_task_visibility](../../settings/base.py#L424) variable to `True`.
 
+## Where are uploaded images/videos stored
+The uploaded data is stored in the `cvat_data` docker volume:
+```yml
+volumes:
+  - cvat_data:/home/django/data
+```
+
+## Where are annotations stored
+Annotations are stored in the PostgreSQL database. The database files are stored in the `cvat_db` docker volume:
+```yml
+volumes:
+  - cvat_db:/var/lib/postgresql/data
+```

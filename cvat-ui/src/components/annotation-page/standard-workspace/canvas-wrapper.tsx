@@ -226,8 +226,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.frame !== frameData.number
-            && resetZoom
-            && workspace !== Workspace.ATTRIBUTE_ANNOTATION
+            && ((resetZoom && workspace !== Workspace.ATTRIBUTE_ANNOTATION) ||
+            workspace === Workspace.TAG_ANNOTATION)
         ) {
             canvasInstance.html().addEventListener('canvas.setup', () => {
                 canvasInstance.fit();
@@ -462,7 +462,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onActivateObject,
         } = this.props;
 
-        if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+        if (workspace !== Workspace.STANDARD) {
             return;
         }
 
