@@ -6,7 +6,7 @@
 - [How to make unassigned tasks not visible to all users](#how-to-make-unassigned-tasks-not-visible-to-all-users)
 - [Can Nvidia GPU be used to run inference with my own model](#can-nvidia-gpu-be-used-to-run-inference-with-my-own-model)
 - [What versions of OpenVINO toolkit are supported](#what-versions-of-openvino-toolkit-are-supported)
-- [Where are uploaded images/videos stored](#where-are-uploaded-images/videos-stored)
+- [Where are uploaded images/videos stored](#where-are-uploaded-imagesvideos-stored)
 - [Where are annotations stored](#where-are-annotations-stored)
 
 
