@@ -60,10 +60,12 @@ const webConfig = {
     target: 'web',
     mode: 'production',
     devtool: 'source-map',
-    entry: './src/typescript/canvas.ts',
+    entry: {
+        'cvat-canvas': './src/typescript/canvas.ts',
+    },
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'cvat-canvas.js',
+        filename: '[name].[contenthash].js',
         library: 'canvas',
         libraryTarget: 'window',
     },
