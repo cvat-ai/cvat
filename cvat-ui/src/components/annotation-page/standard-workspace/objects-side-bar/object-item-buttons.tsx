@@ -25,6 +25,9 @@ interface Props {
     pinned: boolean;
     hidden: boolean;
     keyframe: boolean | undefined;
+    outsideDisabled: boolean;
+    hiddenDisabled: boolean;
+    keyframeDisabled: boolean;
     switchOccludedShortcut: string;
     switchOutsideShortcut: string;
     switchLockShortcut: string;
@@ -62,6 +65,9 @@ function ItemButtonsComponent(props: Props): JSX.Element {
         pinned,
         hidden,
         keyframe,
+        outsideDisabled,
+        hiddenDisabled,
+        keyframeDisabled,
         switchOccludedShortcut,
         switchOutsideShortcut,
         switchLockShortcut,
@@ -88,6 +94,11 @@ function ItemButtonsComponent(props: Props): JSX.Element {
         hide,
         show,
     } = props;
+
+    const outsideStyle = outsideDisabled ? { opacity: 0.5, pointerEvents: 'none' as 'none' } : {};
+    const hiddenStyle = hiddenDisabled ? { opacity: 0.5, pointerEvents: 'none' as 'none' } : {};
+    const keyframeStyle = keyframeDisabled ? { opacity: 0.5, pointerEvents: 'none' as 'none' } : {};
+
 
     if (objectType === ObjectType.TRACK) {
         return (
@@ -133,8 +144,14 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                         <Col>
                             <Tooltip title={`Switch outside property ${switchOutsideShortcut}`}>
                                 { outside
-                                    ? <Icon component={ObjectOutsideIcon} onClick={unsetOutside} />
-                                    : <Icon type='select' onClick={setOutside} />}
+                                    ? (
+                                        <Icon
+                                            component={ObjectOutsideIcon}
+                                            onClick={unsetOutside}
+                                            style={outsideStyle}
+                                        />
+                                    )
+                                    : <Icon type='select' onClick={setOutside} style={outsideStyle} />}
                             </Tooltip>
                         </Col>
                         <Col>
@@ -154,15 +171,15 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                         <Col>
                             <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`}>
                                 { hidden
-                                    ? <Icon type='eye-invisible' theme='filled' onClick={show} />
-                                    : <Icon type='eye' onClick={hide} />}
+                                    ? <Icon type='eye-invisible' theme='filled' onClick={show} style={hiddenStyle} />
+                                    : <Icon type='eye' onClick={hide} style={hiddenStyle} />}
                             </Tooltip>
                         </Col>
                         <Col>
                             <Tooltip title={`Switch keyframe property ${switchKeyFrameShortcut}`}>
                                 { keyframe
-                                    ? <Icon type='star' theme='filled' onClick={unsetKeyframe} />
-                                    : <Icon type='star' onClick={setKeyframe} />}
+                                    ? <Icon type='star' theme='filled' onClick={unsetKeyframe} style={keyframeStyle} />
+                                    : <Icon type='star' onClick={setKeyframe} style={keyframeStyle} />}
                             </Tooltip>
                         </Col>
                         {

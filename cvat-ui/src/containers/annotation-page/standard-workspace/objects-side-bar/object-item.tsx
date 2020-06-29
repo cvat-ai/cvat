@@ -7,7 +7,6 @@ import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
 import { LogType } from 'cvat-logger';
-import { Canvas } from 'cvat-canvas-wrapper';
 import {
     ActiveControl,
     CombinedState,
@@ -17,7 +16,6 @@ import {
 import {
     collapseObjectItems,
     changeLabelColorAsync,
-    createAnnotationsAsync,
     updateAnnotationsAsync,
     changeFrameAsync,
     removeObjectAsync,
@@ -50,13 +48,11 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
-    canvasInstance: Canvas;
 }
 
 interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(objectState: any): void;
-    createAnnotations(sessionInstance: any, frameNumber: number, state: any): void;
     collapseOrExpand(objectStates: any[], collapsed: boolean): void;
     activateObject: (activatedStateID: number | null) => void;
     removeObject: (sessionInstance: any, objectState: any) => void;
@@ -91,7 +87,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             canvas: {
                 ready,
                 activeControl,
-                instance: canvasInstance,
             },
             colors,
         },
@@ -127,7 +122,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
-        canvasInstance,
     };
 }
 
@@ -138,9 +132,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         updateState(state: any): void {
             dispatch(updateAnnotationsAsync([state]));
-        },
-        createAnnotations(sessionInstance: any, frameNumber: number, state: any): void {
-            dispatch(createAnnotationsAsync(sessionInstance, frameNumber, state));
         },
         collapseOrExpand(objectStates: any[], collapsed: boolean): void {
             dispatch(collapseObjectItems(objectStates, collapsed));
@@ -172,38 +163,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps;
 class ObjectItemContainer extends React.PureComponent<Props> {
-    private navigateFirstKeyframe = (): void => {
-        const { objectState, frameNumber } = this.props;
-        const { first } = objectState.keyframes;
-        if (first !== frameNumber) {
-            this.changeFrame(first);
-        }
-    };
-
-    private navigatePrevKeyframe = (): void => {
-        const { objectState, frameNumber } = this.props;
-        const { prev } = objectState.keyframes;
-        if (prev !== null && prev !== frameNumber) {
-            this.changeFrame(prev);
-        }
-    };
-
-    private navigateNextKeyframe = (): void => {
-        const { objectState, frameNumber } = this.props;
-        const { next } = objectState.keyframes;
-        if (next !== null && next !== frameNumber) {
-            this.changeFrame(next);
-        }
-    };
-
-    private navigateLastKeyframe = (): void => {
-        const { objectState, frameNumber } = this.props;
-        const { last } = objectState.keyframes;
-        if (last !== frameNumber) {
-            this.changeFrame(last);
-        }
-    };
-
     private copy = (): void => {
         const { objectState, copyShape } = this.props;
         copyShape(objectState);
@@ -298,80 +257,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         if (ready && activeControl === ActiveControl.CURSOR) {
             activateObject(objectState.clientID);
         }
-    };
-
-    private lock = (): void => {
-        const { objectState, jobInstance } = this.props;
-        jobInstance.logger.log(LogType.lockObject, { locked: true });
-        objectState.lock = true;
-        this.commit();
-    };
-
-    private unlock = (): void => {
-        const { objectState, jobInstance } = this.props;
-        jobInstance.logger.log(LogType.lockObject, { locked: false });
-        objectState.lock = false;
-        this.commit();
-    };
-
-    private pin = (): void => {
-        const { objectState } = this.props;
-        objectState.pinned = true;
-        this.commit();
-    };
-
-    private unpin = (): void => {
-        const { objectState } = this.props;
-        objectState.pinned = false;
-        this.commit();
-    };
-
-    private show = (): void => {
-        const { objectState } = this.props;
-        objectState.hidden = false;
-        this.commit();
-    };
-
-    private hide = (): void => {
-        const { objectState } = this.props;
-        objectState.hidden = true;
-        this.commit();
-    };
-
-    private setOccluded = (): void => {
-        const { objectState } = this.props;
-        objectState.occluded = true;
-        this.commit();
-    };
-
-    private unsetOccluded = (): void => {
-        const { objectState } = this.props;
-        objectState.occluded = false;
-        this.commit();
-    };
-
-    private setOutside = (): void => {
-        const { objectState } = this.props;
-        objectState.outside = true;
-        this.commit();
-    };
-
-    private unsetOutside = (): void => {
-        const { objectState } = this.props;
-        objectState.outside = false;
-        this.commit();
-    };
-
-    private setKeyframe = (): void => {
-        const { objectState } = this.props;
-        objectState.keyframe = true;
-        this.commit();
-    };
-
-    private unsetKeyframe = (): void => {
-        const { objectState } = this.props;
-        objectState.keyframe = false;
-        this.commit();
     };
 
     private collapse = (): void => {
@@ -473,13 +358,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         if (commit) this.commit();
     };
 
-    private changeFrame(frame: number): void {
-        const { changeFrame, canvasInstance } = this.props;
-        if (canvasInstance.isAbleToChangeFrame()) {
-            changeFrame(frame);
-        }
-    }
-
     private commit(): void {
         const {
             objectState,
@@ -495,24 +373,11 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             collapsed,
             labels,
             attributes,
-            frameNumber,
             activated,
             colorBy,
             colors,
             normalizedKeyMap,
         } = this.props;
-
-        const {
-            first,
-            prev,
-            next,
-            last,
-        } = objectState.keyframes || {
-            first: null, // shapes don't have keyframes, so we use null
-            prev: null,
-            next: null,
-            last: null,
-        };
 
         let stateColor = '';
         if (colorBy === ColorBy.INSTANCE) {
@@ -530,12 +395,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 shapeType={objectState.shapeType}
                 clientID={objectState.clientID}
                 serverID={objectState.serverID}
-                occluded={objectState.occluded}
-                outside={objectState.outside}
                 locked={objectState.lock}
-                pinned={objectState.pinned}
-                hidden={objectState.hidden}
-                keyframe={objectState.keyframe}
                 attrValues={{ ...objectState.attributes }}
                 labelID={objectState.label.id}
                 color={stateColor}
@@ -544,22 +404,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 normalizedKeyMap={normalizedKeyMap}
                 labels={labels}
                 collapsed={collapsed}
-                navigateFirstKeyframe={
-                    first >= frameNumber || first === null
-                        ? null : this.navigateFirstKeyframe
-                }
-                navigatePrevKeyframe={
-                    prev === frameNumber || prev === null
-                        ? null : this.navigatePrevKeyframe
-                }
-                navigateNextKeyframe={
-                    next === frameNumber || next === null
-                        ? null : this.navigateNextKeyframe
-                }
-                navigateLastKeyframe={
-                    last <= frameNumber || last === null
-                        ? null : this.navigateLastKeyframe
-                }
                 activate={this.activate}
                 remove={this.remove}
                 copy={this.copy}
@@ -568,18 +412,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}
                 toForeground={this.toForeground}
-                setOccluded={this.setOccluded}
-                unsetOccluded={this.unsetOccluded}
-                setOutside={this.setOutside}
-                unsetOutside={this.unsetOutside}
-                setKeyframe={this.setKeyframe}
-                unsetKeyframe={this.unsetKeyframe}
-                lock={this.lock}
-                unlock={this.unlock}
-                pin={this.pin}
-                unpin={this.unpin}
-                hide={this.hide}
-                show={this.show}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 changeAttribute={this.changeAttribute}

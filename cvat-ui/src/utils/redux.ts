@@ -23,5 +23,5 @@ export type ActionUnion<A extends ActionCreatorsMapObject> = ReturnType<A[keyof 
 export type ThunkAction<R = void, A extends Action = AnyAction>
     = _ThunkAction<R, CombinedState, {}, A>;
 
-export type ThunkDispatch<E = void, A extends Action = AnyAction>
+export type ThunkDispatch<E = {}, A extends Action = AnyAction>
     = _ThunkDispatch<CombinedState, E, A>;

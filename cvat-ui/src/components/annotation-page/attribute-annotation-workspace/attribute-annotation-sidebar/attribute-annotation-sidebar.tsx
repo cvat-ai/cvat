@@ -5,15 +5,13 @@
 import React, { useState, useEffect } from 'react';
 import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
-import { Action } from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
 import Layout, { SiderProps } from 'antd/lib/layout';
 import { SelectValue } from 'antd/lib/select';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Icon from 'antd/lib/icon';
 
+import { ThunkDispatch } from 'utils/redux';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { LogType } from 'cvat-logger';
 import {
@@ -23,6 +21,7 @@ import {
 import { CombinedState } from 'reducers/interfaces';
 import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
+import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 
 import ObjectSwitcher from './object-switcher';
 import AttributeSwitcher from './attribute-switcher';
@@ -87,7 +86,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
+function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
         activateObject(clientID: number, attrID: number): void {
             dispatch(activateObjectAction(clientID, attrID));
@@ -113,6 +112,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         canvasIsReady,
     } = props;
 
+    const filteredStates = states.filter((state) => !state.outside && !state.hidden);
     const [labelAttrMap, setLabelAttrMap] = useState(
         labels.reduce((acc, label): LabelAttrMap => {
             acc[label.id] = label.attributes.length ? label.attributes[0] : null;
@@ -135,10 +135,11 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         setSidebarCollapsed(!sidebarCollapsed);
     };
 
-    const [activeObjectState] = activatedStateID === null
-        ? [null] : states.filter((objectState: any): boolean => (
-            objectState.clientID === activatedStateID
-        ));
+    const indexes = filteredStates.map((state) => state.clientID);
+    const activatedIndex = indexes.indexOf(activatedStateID);
+    const activeObjectState = activatedStateID === null || activatedIndex === -1
+        ? null : filteredStates[activatedIndex];
+
     const activeAttribute = activeObjectState
         ? labelAttrMap[activeObjectState.label.id]
         : null;
@@ -149,24 +150,24 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             if (attribute && attribute.id !== activatedAttributeID) {
                 activateObject(activatedStateID, attribute ? attribute.id : null);
             }
-        } else if (states.length) {
-            const attribute = labelAttrMap[states[0].label.id];
-            activateObject(states[0].clientID, attribute ? attribute.id : null);
+        } else if (filteredStates.length) {
+            const attribute = labelAttrMap[filteredStates[0].label.id];
+            activateObject(filteredStates[0].clientID, attribute ? attribute.id : null);
         }
     }
 
     const nextObject = (step: number): void => {
-        if (states.length) {
-            const index = states.indexOf(activeObjectState);
+        if (filteredStates.length) {
+            const index = filteredStates.indexOf(activeObjectState);
             let nextIndex = index + step;
-            if (nextIndex > states.length - 1) {
+            if (nextIndex > filteredStates.length - 1) {
                 nextIndex = 0;
             } else if (nextIndex < 0) {
-                nextIndex = states.length - 1;
+                nextIndex = filteredStates.length - 1;
             }
             if (nextIndex !== index) {
-                const attribute = labelAttrMap[states[nextIndex].label.id];
-                activateObject(states[nextIndex].clientID, attribute ? attribute.id : null);
+                const attribute = labelAttrMap[filteredStates[nextIndex].label.id];
+                activateObject(filteredStates[nextIndex].clientID, attribute ? attribute.id : null);
             }
         }
     };
@@ -270,15 +271,14 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     currentLabel={activeObjectState.label.name}
                     clientID={activeObjectState.clientID}
                     occluded={activeObjectState.occluded}
-                    objectsCount={states.length}
-                    currentIndex={states.indexOf(activeObjectState)}
+                    objectsCount={filteredStates.length}
+                    currentIndex={filteredStates.indexOf(activeObjectState)}
                     normalizedKeyMap={normalizedKeyMap}
                     nextObject={nextObject}
                 />
                 <ObjectBasicsEditor
                     currentLabel={activeObjectState.label.name}
                     labels={labels}
-                    occluded={activeObjectState.occluded}
                     changeLabel={(value: SelectValue): void => {
                         const labelName = value as string;
                         const [newLabel] = labels
@@ -286,10 +286,12 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                         activeObjectState.label = newLabel;
                         updateAnnotations([activeObjectState]);
                     }}
-                    setOccluded={(event: CheckboxChangeEvent): void => {
-                        activeObjectState.occluded = event.target.checked;
-                        updateAnnotations([activeObjectState]);
-                    }}
+                />
+                <ObjectButtonsContainer
+                    clientID={activeObjectState.clientID}
+                    outsideDisabled
+                    hiddenDisabled
+                    keyframeDisabled
                 />
                 {
                     activeAttribute

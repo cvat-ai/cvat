@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import getCore from 'cvat-core-wrapper';
 import HeaderComponent from 'components/header/header';
