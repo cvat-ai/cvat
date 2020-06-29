@@ -17,8 +17,9 @@ import { LogType } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
     updateAnnotationsAsync,
+    changeFrameAsync,
 } from 'actions/annotation-actions';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, ObjectType } from 'reducers/interfaces';
 import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
@@ -44,6 +45,7 @@ interface StateToProps {
 interface DispatchToProps {
     activateObject(clientID: number | null, attrID: number | null): void;
     updateAnnotations(statesToUpdate: any[]): void;
+    changeFrame(frame: number): void;
 }
 
 interface LabelAttrMap {
@@ -94,6 +96,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
         updateAnnotations(states): void {
             dispatch(updateAnnotationsAsync(states));
         },
+        changeFrame(frame: number): void {
+            dispatch(changeFrameAsync(frame));
+        },
     };
 }
 
@@ -105,6 +110,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         activatedAttributeID,
         jobInstance,
         updateAnnotations,
+        changeFrame,
         activateObject,
         keyMap,
         normalizedKeyMap,
@@ -210,41 +216,73 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         collapsed: sidebarCollapsed,
     };
 
+    const preventDefault = (event: KeyboardEvent | undefined): void => {
+        if (event) {
+            event.preventDefault();
+        }
+    };
+
     const subKeyMap = {
         NEXT_ATTRIBUTE: keyMap.NEXT_ATTRIBUTE,
         PREVIOUS_ATTRIBUTE: keyMap.PREVIOUS_ATTRIBUTE,
         NEXT_OBJECT: keyMap.NEXT_OBJECT,
         PREVIOUS_OBJECT: keyMap.PREVIOUS_OBJECT,
+        SWITCH_LOCK: keyMap.SWITCH_LOCK,
+        SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
+        NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
+        PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
     };
 
     const handlers = {
         NEXT_ATTRIBUTE: (event: KeyboardEvent | undefined) => {
-            if (event) {
-                event.preventDefault();
-            }
-
+            preventDefault(event);
             nextAttribute(1);
         },
         PREVIOUS_ATTRIBUTE: (event: KeyboardEvent | undefined) => {
-            if (event) {
-                event.preventDefault();
-            }
-
+            preventDefault(event);
             nextAttribute(-1);
         },
         NEXT_OBJECT: (event: KeyboardEvent | undefined) => {
-            if (event) {
-                event.preventDefault();
-            }
-
+            preventDefault(event);
             nextObject(1);
         },
         PREVIOUS_OBJECT: (event: KeyboardEvent | undefined) => {
-            if (event) {
-                event.preventDefault();
-            }
-
+            preventDefault(event);
             nextObject(-1);
+        },
+        SWITCH_LOCK: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState) {
+                activeObjectState.lock = !activeObjectState.lock;
+                updateAnnotations([activeObjectState]);
+            }
+        },
+        SWITCH_OCCLUDED: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState && activeObjectState.objectType !== ObjectType.TAG) {
+                activeObjectState.occluded = !activeObjectState.occluded;
+                updateAnnotations([activeObjectState]);
+            }
+        },
+        NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState && activeObjectState.objectType === ObjectType.TRACK) {
+                const frame = typeof (activeObjectState.keyframes.next) === 'number'
+                    ? activeObjectState.keyframes.next : null;
+                if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
+                    changeFrame(frame);
+                }
+            }
+        },
+        PREV_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState && activeObjectState.objectType === ObjectType.TRACK) {
+                const frame = typeof (activeObjectState.keyframes.prev) === 'number'
+                    ? activeObjectState.keyframes.prev : null;
+                if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
+                    changeFrame(frame);
+                }
+            }
         },
     };
 
