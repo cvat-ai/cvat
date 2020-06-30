@@ -557,7 +557,7 @@ def diff_command(args):
         visualizer.save_dataset_diff(
             first_project.make_dataset(),
             second_project.make_dataset())
-    except Exception:
+    except BaseException:
         if not dst_dir_existed and osp.isdir(dst_dir):
             shutil.rmtree(dst_dir, ignore_errors=True)
         raise
