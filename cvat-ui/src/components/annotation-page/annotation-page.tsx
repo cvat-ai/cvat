@@ -13,6 +13,7 @@ import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-ba
 import StatisticsModalContainer from 'containers/annotation-page/top-bar/statistics-modal';
 import StandardWorkspaceComponent from './standard-workspace/standard-workspace';
 import AttributeAnnotationWorkspace from './attribute-annotation-workspace/attribute-annotation-workspace';
+import TagAnnotationWorkspace from './tag-annotation-workspace/tag-annotation-workspace';
 
 interface Props {
     job: any | null | undefined;
@@ -70,13 +71,19 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             <Layout.Header className='cvat-annotation-header'>
                 <AnnotationTopBarContainer />
             </Layout.Header>
-            { workspace === Workspace.STANDARD ? (
+            { workspace === Workspace.STANDARD && (
                 <Layout.Content>
                     <StandardWorkspaceComponent />
                 </Layout.Content>
-            ) : (
+            )}
+            { workspace === Workspace.ATTRIBUTE_ANNOTATION && (
                 <Layout.Content>
                     <AttributeAnnotationWorkspace />
+                </Layout.Content>
+            )}
+            { workspace === Workspace.TAG_ANNOTATION && (
+                <Layout.Content>
+                    <TagAnnotationWorkspace />
                 </Layout.Content>
             )}
             <StatisticsModalContainer />

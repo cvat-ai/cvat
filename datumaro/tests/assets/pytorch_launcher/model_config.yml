@@ -1,0 +1,37 @@
+launcher:
+  framework: pytorch
+  module: samplenet.SampLeNet
+  python_path: '.'
+  checkpoint: 'samplenet.pth'
+
+# launcher returns raw result, so it should be converted
+# to an appropriate representation with adapter
+adapter:
+  type: classification
+  labels:
+    - label1
+    - label2
+    - label3
+    - label4
+    - label5
+    - label6
+    - label7
+    - label8
+    - label9
+    - label10
+
+# list of preprocessing, applied to each image during validation
+# order of entries matters
+preprocessing:
+  # resize input image to topology input size
+  # you may specify size to which image should be resized
+  # via dst_width, dst_height fields
+  - type: resize
+    size: 32
+  # topology is trained on RGB images, but Datumaro reads in BGR
+  # so it must be converted to RGB
+  - type: bgr_to_rgb
+  # dataset mean and standard deviation
+  - type: normalization
+    mean: (125.307, 122.961, 113.8575)
+    std: (51.5865, 50.847, 51.255)

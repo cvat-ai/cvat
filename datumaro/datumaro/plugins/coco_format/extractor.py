@@ -145,6 +145,12 @@ class _CocoExtractor(SourceExtractor):
         ann_id = ann.get('id')
 
         attributes = {}
+        if 'attributes' in ann:
+            try:
+                attributes.update(ann['attributes'])
+            except Exception as e:
+                log.debug("item #%s: failed to read annotation attributes: %s",
+                    image_info['id'], e)
         if 'score' in ann:
             attributes['score'] = ann['score']
 

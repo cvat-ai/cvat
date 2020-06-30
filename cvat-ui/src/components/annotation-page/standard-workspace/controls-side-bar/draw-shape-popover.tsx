@@ -51,10 +51,6 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         onChangeCuboidDrawingMethod,
     } = props;
 
-    const trackDisabled = shapeType === ShapeType.POLYGON
-        || shapeType === ShapeType.POLYLINE
-        || (shapeType === ShapeType.POINTS && numberOfPoints !== 1);
-
     return (
         <div className='cvat-draw-shape-popover-content'>
             <Row type='flex' justify='start'>
@@ -198,7 +194,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                 </Col>
                 <Col span={12}>
                     <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
-                        <Button onClick={onDrawTrack} disabled={trackDisabled}>
+                        <Button onClick={onDrawTrack}>
                             Track
                         </Button>
                     </Tooltip>

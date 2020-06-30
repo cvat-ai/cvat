@@ -305,7 +305,6 @@ export enum StatesOrdering {
 }
 
 export enum ContextMenuType {
-    CANVAS = 'canvas',
     CANVAS_SHAPE = 'canvas_shape',
     CANVAS_SHAPE_POINT = 'canvas_shape_point',
 }
@@ -404,6 +403,7 @@ export interface AnnotationState {
 export enum Workspace {
     STANDARD = 'Standard',
     ATTRIBUTE_ANNOTATION = 'Attribute annotation',
+    TAG_ANNOTATION = 'Tag annotation',
 }
 
 export enum GridColor {
@@ -430,6 +430,7 @@ export enum ColorBy {
 }
 
 export interface PlayerSettingsState {
+    canvasBackgroundColor: string;
     frameStep: number;
     frameSpeed: FrameSpeed;
     resetZoom: boolean;
@@ -465,6 +466,7 @@ export interface SettingsState {
     shapes: ShapesSettingsState;
     workspace: WorkspaceSettingsState;
     player: PlayerSettingsState;
+    showDialog: boolean;
 }
 
 export interface ShortcutsState {

@@ -45,6 +45,17 @@ def _import(src_file, task_data):
 
                 track_id = ann.attributes.get('track_id')
                 if track_id is None:
+                    # Extension. Import regular boxes:
+                    task_data.add_shape(task_data.LabeledShape(
+                        type='rectangle',
+                        label=label_cat.items[ann.label].name,
+                        points=ann.points,
+                        occluded=ann.attributes.get('occluded') == True,
+                        z_order=ann.z_order,
+                        group=0,
+                        frame=frame_number,
+                        attributes=[],
+                    ))
                     continue
 
                 shape = task_data.TrackedShape(

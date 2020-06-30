@@ -27,9 +27,9 @@ const defaultKeyMap = {
         sequences: ['f1'],
         action: 'keydown',
     },
-    OPEN_SETTINGS: {
-        name: 'Open settings',
-        description: 'Go to the settings page or go back',
+    SWITCH_SETTINGS: {
+        name: 'Show settings',
+        description: 'Open/hide settings dialog',
         sequences: ['f2'],
         action: 'keydown',
     },
@@ -207,8 +207,8 @@ const defaultKeyMap = {
     },
     SWITCH_DRAW_MODE: {
         name: 'Draw mode',
-        description: 'Repeat the latest procedure of drawing with the same parameters',
-        sequences: ['n'],
+        description: 'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
+        sequences: ['shift+n', 'n'],
         action: 'keydown',
     },
     SWITCH_MERGE_MODE: {

@@ -6,7 +6,7 @@ import * as SVG from 'svg.js';
 import 'svg.select.js';
 
 import consts from './consts';
-import { translateFromSVG, pointsToArray } from './shared';
+import { translateFromSVG, pointsToNumberArray } from './shared';
 import { EditData, Geometry, Configuration } from './canvasModel';
 import { AutoborderHandler } from './autoborderHandler';
 
@@ -27,6 +27,38 @@ export class EditHandlerImpl implements EditHandler {
     private editLine: SVG.PolyLine;
     private clones: SVG.Polygon[];
     private autobordersEnabled: boolean;
+
+    private setupTrailingPoint(circle: SVG.Circle): void {
+        const head = this.editedShape.attr('points').split(' ').slice(0, this.editData.pointID).join(' ');
+        circle.on('mouseenter', (): void => {
+            circle.attr({
+                'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
+            });
+        });
+
+        circle.on('mouseleave', (): void => {
+            circle.attr({
+                'stroke-width': consts.POINTS_STROKE_WIDTH / this.geometry.scale,
+            });
+        });
+
+        const minimumPoints = 2;
+        circle.on('mousedown', (e: MouseEvent): void => {
+            if (e.button !== 0) return;
+            const { offset } = this.geometry;
+            const stringifiedPoints = `${head} ${this.editLine.node.getAttribute('points').slice(0, -2)}`;
+            const points = pointsToNumberArray(stringifiedPoints).slice(0, -2)
+                .map((coord: number): number => coord - offset);
+
+            if (points.length >= minimumPoints * 2) {
+                const { state } = this.editData;
+                this.edit({
+                    enabled: false,
+                });
+                this.onEditDone(state, points);
+            }
+        });
+    }
 
     private startEdit(): void {
         // get started coordinates
@@ -72,6 +104,14 @@ export class EditHandlerImpl implements EditHandler {
         });
 
         this.editLine = (this.canvas as any).polyline();
+
+        if (this.editData.state.shapeType === 'polyline') {
+            (this.editLine as any).on('drawpoint', (e: CustomEvent): void => {
+                const circle = (e.target as any).instance.remember('_paintHandler').set.last();
+                if (circle) this.setupTrailingPoint(circle);
+            });
+        }
+
         (this.editLine as any).addClass('cvat_canvas_shape_drawing').style({
             'pointer-events': 'none',
             'fill-opacity': 0,
@@ -110,7 +150,7 @@ export class EditHandlerImpl implements EditHandler {
 
     private selectPolygon(shape: SVG.Polygon): void {
         const { offset } = this.geometry;
-        const points = pointsToArray(shape.attr('points'))
+        const points = pointsToNumberArray(shape.attr('points'))
             .map((coord: number): number => coord - offset);
 
         const { state } = this.editData;
@@ -149,9 +189,8 @@ export class EditHandlerImpl implements EditHandler {
                 .concat(linePoints)
                 .concat(oldPoints.slice(stop + 1));
 
-            linePoints.reverse();
-            const secondPart = oldPoints.slice(start + 1, stop)
-                .concat(linePoints);
+            const secondPart = oldPoints.slice(start, stop)
+                .concat(linePoints.slice(1).reverse());
 
             if (firstPart.length < 3 || secondPart.length < 3) {
                 this.cancel();
@@ -198,7 +237,7 @@ export class EditHandlerImpl implements EditHandler {
             points = oldPoints.concat(linePoints.slice(0, -1));
         }
 
-        points = pointsToArray(points.join(' '))
+        points = pointsToNumberArray(points.join(' '))
             .map((coord: number): number => coord - offset);
 
         const { state } = this.editData;
