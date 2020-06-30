@@ -53,7 +53,8 @@ LabelmapType = Enum('LabelmapType', ['voc', 'source', 'guess'])
 
 class _Converter:
     def __init__(self, extractor, save_dir,
-            tasks=None, apply_colormap=True, save_images=False, label_map=None):
+            tasks=None, apply_colormap=True, save_images=False, label_map=None,
+            allow_attributes=True):
         assert tasks is None or isinstance(tasks, (VocTask, list, set))
         if tasks is None:
             tasks = set(VocTask)
@@ -66,6 +67,7 @@ class _Converter:
         self._extractor = extractor
         self._save_dir = save_dir
         self._apply_colormap = apply_colormap
+        self._allow_attributes = allow_attributes
         self._save_images = save_images
 
         self._load_categories(label_map)
@@ -205,9 +207,8 @@ class _Converter:
                         ET.SubElement(obj_elem, 'name').text = obj_label
 
                         if 'pose' in attr:
-                            pose = _convert_attr('pose', attr,
-                                lambda v: VocPose[v], VocPose.Unspecified)
-                            ET.SubElement(obj_elem, 'pose').text = pose.name
+                            ET.SubElement(obj_elem, 'pose').text = \
+                                str(attr['pose'])
 
                         if 'truncated' in attr:
                             truncated = _convert_attr('truncated', attr, int, 0)
@@ -251,6 +252,21 @@ class _Converter:
                             objects_with_actions[new_obj_id][action] = present
                         if len(actions_elem) != 0:
                             obj_elem.append(actions_elem)
+
+                        if self._allow_attributes:
+                            native_attrs = {'difficult', 'pose',
+                                'truncated', 'occluded' }
+                            native_attrs.update(label_actions)
+
+                            attrs_elem = ET.Element('attributes')
+                            for k, v in attr.items():
+                                if k in native_attrs:
+                                    continue
+                                attr_elem = ET.SubElement(attrs_elem, 'attribute')
+                                ET.SubElement(attr_elem, 'name').text = str(k)
+                                ET.SubElement(attr_elem, 'value').text = str(v)
+                            if len(attrs_elem):
+                                obj_elem.append(attrs_elem)
 
                     if self._tasks & {None,
                             VocTask.detection,
@@ -565,15 +581,17 @@ class VocConverter(Converter, CliPlugin):
         parser.add_argument('--label-map', type=cls._get_labelmap, default=None,
             help="Labelmap file path or one of %s" % \
                 ', '.join(t.name for t in LabelmapType))
+        parser.add_argument('--allow-attributes',
+            type=str_to_bool, default=True,
+            help="Allow export of attributes (default: %(default)s)")
         parser.add_argument('--tasks', type=cls._split_tasks_string,
-            default=None,
             help="VOC task filter, comma-separated list of {%s} "
-                "(default: all)" % ', '.join([t.name for t in VocTask]))
+                "(default: all)" % ', '.join(t.name for t in VocTask))
 
         return parser
 
     def __init__(self, tasks=None, save_images=False,
-            apply_colormap=False, label_map=None):
+            apply_colormap=False, label_map=None, allow_attributes=True):
         super().__init__()
 
         self._options = {
@@ -581,6 +599,7 @@ class VocConverter(Converter, CliPlugin):
             'save_images': save_images,
             'apply_colormap': apply_colormap,
             'label_map': label_map,
+            'allow_attributes': allow_attributes,
         }
 
     def __call__(self, extractor, save_dir):

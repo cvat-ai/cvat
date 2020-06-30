@@ -8,14 +8,14 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "eslint": "^6.8.0",
+    "eslint": "^7.3.0",
     "eslint-config-airbnb": "^18.0.1",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-no-unsafe-innerhtml": "^1.0.16",
     "eslint-plugin-no-unsanitized": "^3.0.2",
     "eslint-plugin-react": "^7.14.3",
-    "eslint-plugin-react-hooks": "^2.5.1",
+    "eslint-plugin-react-hooks": "^4.0.4",
     "eslint-plugin-security": "^1.4.0",
     "remark-lint-emphasis-marker": "^2.0.0",
     "remark-lint-list-item-spacing": "^2.0.0",
@@ -28,7 +28,9 @@
     "remark-lint-unordered-list-marker-style": "^2.0.0",
     "remark-preset-lint-consistent": "^3.0.0",
     "remark-preset-lint-markdown-style-guide": "^3.0.0",
-    "remark-preset-lint-recommended": "^4.0.0"
+    "remark-preset-lint-recommended": "^4.0.0",
+    "stylelint": "^13.6.1",
+    "stylelint-config-standard": "^20.0.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

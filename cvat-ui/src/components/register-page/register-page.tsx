@@ -10,7 +10,7 @@ import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
-import { UserAgreement } from 'reducers/interfaces'
+import { UserAgreement } from 'reducers/interfaces';
 import CookieDrawer from 'components/login-page/cookie-policy-drawer';
 import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 

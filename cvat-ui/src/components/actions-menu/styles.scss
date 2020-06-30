@@ -5,14 +5,14 @@
 @import '../../base.scss';
 
 .ant-menu.cvat-actions-menu {
-    box-shadow: 0 0 17px rgba(0,0,0,0.2);
+    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
 
     > li:hover {
         background-color: $hover-menu-color;
     }
 
     .ant-menu-submenu-title {
-        margin: 0px;
+        margin: 0;
         width: 13em;
     }
 }
@@ -30,10 +30,10 @@
 }
 
 .ant-menu-item.cvat-menu-load-submenu-item {
-    margin: 0px;
-    padding: 0px;
+    margin: 0;
+    padding: 0;
 
-   > span > .ant-upload {
+    > span > .ant-upload {
         width: 100%;
         height: 100%;
 

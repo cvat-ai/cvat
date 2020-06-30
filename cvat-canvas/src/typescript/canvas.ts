@@ -58,6 +58,7 @@ interface Canvas {
     mode(): Mode;
     cancel(): void;
     configure(configuration: Configuration): void;
+    isAbleToChangeFrame(): boolean;
 }
 
 class CanvasImpl implements Canvas {
@@ -152,6 +153,10 @@ class CanvasImpl implements Canvas {
 
     public configure(configuration: Configuration): void {
         this.model.configure(configuration);
+    }
+
+    public isAbleToChangeFrame(): boolean {
+        return this.model.isAbleToChangeFrame();
     }
 }
 

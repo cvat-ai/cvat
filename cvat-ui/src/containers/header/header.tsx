@@ -3,11 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import getCore from 'cvat-core-wrapper';
 import HeaderComponent from 'components/header/header';
 import { SupportedPlugins, CombinedState } from 'reducers/interfaces';
 import { logoutAsync } from 'actions/auth-actions';
+import { switchSettingsDialog } from 'actions/settings-actions';
 
 const core = getCore();
 
@@ -26,10 +28,12 @@ interface StateToProps {
     canvasVersion: string;
     uiVersion: string;
     switchSettingsShortcut: string;
+    settingsDialogShown: boolean;
 }
 
 interface DispatchToProps {
     onLogout: typeof logoutAsync;
+    switchSettingsDialog: (show: boolean) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -50,6 +54,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         shortcuts: {
             normalizedKeyMap,
         },
+        settings: {
+            showDialog: settingsDialogShown,
+        },
     } = state;
 
     return {
@@ -67,12 +74,16 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasVersion: packageVersion.canvas,
         uiVersion: packageVersion.ui,
         switchSettingsShortcut: normalizedKeyMap.OPEN_SETTINGS,
+        settingsDialogShown,
     };
 }
 
-const mapDispatchToProps: DispatchToProps = {
-    onLogout: logoutAsync,
-};
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+    return {
+        onLogout: logoutAsync,
+        switchSettingsDialog: (show: boolean): void => dispatch(switchSettingsDialog(show)),
+    };
+}
 
 export default connect(
     mapStateToProps,
