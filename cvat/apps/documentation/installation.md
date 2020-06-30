@@ -4,6 +4,7 @@
   - [Mac OS Mojave](#mac-os-mojave)
   - [Advanced topics](#advanced-topics)
     - [Additional components](#additional-components)
+    - [Semi-automatic and automatic annotation](#semi-automatic-and-automatic-annotation)
     - [Stop all containers](#stop-all-containers)
     - [Advanced settings](#advanced-settings)
     - [Share path](#share-path)
@@ -249,6 +250,34 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d --build
 ```
 
+### Semi-automatic and automatic annotation
+
+- You have to install `nuctl` command line tool to build and deploy serverless
+functions. Download [the latest release](https://github.com/nuclio/nuclio/releases).
+- Create `cvat` project inside nuclio dashboard where you will deploy new
+serverless functions and deploy a couple of DL models. Commands below should
+be run only after CVAT has been installed using docker-compose because it
+runs nuclio dashboard which manages all serverless functions.
+
+```bash
+nuctl create project cvat
+```
+
+```bash
+nuctl deploy --project-name cvat --path serverless/public/dextr/nuclio/
+```
+
+```bash
+nuctl deploy --project-name cvat --path serverless/open_model_zoo/public/yolo-v3-tf/nuclio/
+```
+
+List of DL models as serverless functions:
+- [Deep Extreme Cut (OpenVINO)](/serverless/public/dextr/nuclio)
+- [Faster RCNN (TensorFlow)](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)
+- [Mask RCNN (OpenVINO)](/serverless/open_model_zoo/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)
+- [YOLO v3 (OpenVINO)](/serverless/open_model_zoo/public/yolov-v3-tf/nuclio)
+- [Faster RCNN (OpenVINO)](/serverless/open_model_zoo/public/faster_rcnn_inception_v2_coco/nuclio)
+
 ### Stop all containers
 
 The command below stops and removes containers, networks, volumes, and images
@@ -314,9 +343,9 @@ our server connection.
 
 We assume that
 
--   you have sudo access on your server machine,
--   you have an IP address to use for remote access, and
--   that the local CVAT installation works on your server.
+- you have sudo access on your server machine,
+- you have an IP address to use for remote access, and
+- that the local CVAT installation works on your server.
 
 If this is not the case, please complete the steps in the installation manual first.
 
@@ -537,6 +566,6 @@ server {
 
 Start cvat_proxy container with https enabled.
 
-```
+```bash
 docker start cvat_proxy
 ```

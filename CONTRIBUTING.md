@@ -14,7 +14,7 @@ Next steps should work on clear Ubuntu 18.04.
 
 -   Install necessary dependencies:
     ```sh
-    $ sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev
+    sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev
     ```
     Also please make sure that you have installed ffmpeg with all necessary libav* libraries and pkg-config package.
     ```sh
@@ -93,7 +93,6 @@ Install [nuclio platform](https://github.com/nuclio/nuclio)
 
 - You have to install `nuctl` command line tool to build and deploy serverless
 functions. Download [the latest release](https://github.com/nuclio/nuclio/releases).
-
 - The simplest way to explore Nuclio is to run its graphical user interface (GUI)
 of the Nuclio dashboard. All you need in order to run the dashboard is Docker. See
 [nuclio documentation](https://github.com/nuclio/nuclio/blob/development/README.md)
@@ -137,7 +136,7 @@ nuctl deploy --project-name cvat --path serverless/public/dextr/nuclio/
 </details>
 
 ```bash
-nuctl deploy --project-name cvat --path serverless/open_model_zoo/public/yolov-v3-tf/nuclio/
+nuctl deploy --project-name cvat --path serverless/open_model_zoo/public/yolo-v3-tf/nuclio/
 ```
 
 <details>
@@ -160,7 +159,6 @@ nuctl deploy --project-name cvat --path serverless/open_model_zoo/public/yolov-v
 ```
 
 </details>
-
 
 - Display a list of running serverless functions using `nuctl` command or see them
 in dashboard:
@@ -346,7 +344,7 @@ project:
 1.  Commit your changes in logical chunks. Please adhere to these [git commit
    message guidelines](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)
    or your code is unlikely be merged into the main project. Use Git's
-   [interactive rebase](https://help.github.com/articles/interactive-rebase)
+   [interactive rebase](https://help.github.com/en/github/using-git/about-git-rebase)
    feature to tidy up your commits before making them public.
 
 1.  Locally merge (or rebase) the upstream development branch into your topic branch:
