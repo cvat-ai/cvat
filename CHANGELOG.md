@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented import and export of annotations with relative image paths (<https://github.com/opencv/cvat/pull/1463>)
 - Using only single click to start editing or remove a point (<https://github.com/opencv/cvat/pull/1571>)
 - Added support for attributes in VOC XML format (https://github.com/opencv/cvat/pull/1792)
+- Added annotation attributes in COCO format (https://github.com/opencv/cvat/pull/1782)
 - Colorized object items in the side panel (<https://github.com/opencv/cvat/pull/1753>)
 
 ### Deprecated

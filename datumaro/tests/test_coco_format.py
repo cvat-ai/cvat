@@ -574,3 +574,23 @@ class CocoConverterTest(TestCase):
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
                 CocoConverter(tasks='image_info', save_images=True), test_dir)
+
+    def test_annotation_attributes(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=1, image=np.ones((4, 2, 3)), annotations=[
+                        Polygon([0, 0, 4, 0, 4, 4], label=5, group=1, id=1,
+                            attributes={'is_crowd': False, 'x': 5, 'y': 'abc'}),
+                    ], attributes={'id': 1})
+                ])
+
+            def categories(self):
+                label_categories = LabelCategories()
+                for i in range(10):
+                    label_categories.add(str(i))
+                return { AnnotationType.label: label_categories, }
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                CocoConverter(), test_dir)
