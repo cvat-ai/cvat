@@ -55,6 +55,7 @@ def _import(src_file, task_data):
                         group=0,
                         frame=frame_number,
                         attributes=[],
+                        annotation_type='Manual',
                     ))
                     continue
 
