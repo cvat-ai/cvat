@@ -57,10 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A couple of exceptions in AAM related with early object activation (<https://github.com/opencv/cvat/pull/1755>)
 - Propagation from the latest frame (<https://github.com/opencv/cvat/pull/1800>)
 - Number attribute value validation (didn't work well with floats) (<https://github.com/opencv/cvat/pull/1800>)
+- Logout doesn't work (<https://github.com/opencv/cvat/pull/1812>)
 - Annotations aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
 - Labels aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
 - Canvas isn't fitted after collapsing side panel in attribute annotation mode (<https://github.com/opencv/cvat/pull/1753>)
-
 
 ### Security
 - SQL injection in Django `CVE-2020-9402` (<https://github.com/opencv/cvat/pull/1657>)
