@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Highlights for the first point of a polygon/polyline and direction (<https://github.com/opencv/cvat/pull/1571>)
 - Ability to change orientation for poylgons/polylines in context menu (<https://github.com/opencv/cvat/pull/1571>)
 - Ability to set the first point for polygons in points context menu (<https://github.com/opencv/cvat/pull/1571>)
+- Added new tag annotation workspace (<https://github.com/opencv/cvat/pull/1570>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
@@ -33,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented import and export of annotations with relative image paths (<https://github.com/opencv/cvat/pull/1463>)
 - Using only single click to start editing or remove a point (<https://github.com/opencv/cvat/pull/1571>)
 - Added support for attributes in VOC XML format (https://github.com/opencv/cvat/pull/1792)
+- Added annotation attributes in COCO format (https://github.com/opencv/cvat/pull/1782)
+- Colorized object items in the side panel (<https://github.com/opencv/cvat/pull/1753>)
 
 ### Deprecated
 -
@@ -54,7 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A couple of exceptions in AAM related with early object activation (<https://github.com/opencv/cvat/pull/1755>)
 - Propagation from the latest frame (<https://github.com/opencv/cvat/pull/1800>)
 - Number attribute value validation (didn't work well with floats) (<https://github.com/opencv/cvat/pull/1800>)
-- Fixed Logout function  (<https://github.com/opencv/cvat/issues/1810>)
+- Logout doesn't work (<https://github.com/opencv/cvat/pull/1812>)
+- Annotations aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
+- Labels aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
+- Canvas isn't fitted after collapsing side panel in attribute annotation mode (<https://github.com/opencv/cvat/pull/1753>)
 
 ### Security
 - SQL injection in Django `CVE-2020-9402` (<https://github.com/opencv/cvat/pull/1657>)
