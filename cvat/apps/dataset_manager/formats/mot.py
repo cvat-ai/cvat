@@ -62,7 +62,7 @@ def _import(src_file, task_data):
                 # build trajectories as lists of shapes in track dict
                 if track_id not in tracks:
                     tracks[track_id] = task_data.Track(
-                        label_cat.items[ann.label].name, 0, [])
+                        label_cat.items[ann.label].name, 0, 'Manual', [])
                 tracks[track_id].shapes.append(shape)
 
         for track in tracks.values():

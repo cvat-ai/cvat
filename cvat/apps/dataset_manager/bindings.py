@@ -26,7 +26,7 @@ class TaskData:
     TrackedShape = namedtuple(
         'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, annotation_type, group, z_order, label, track_id')
     TrackedShape.__new__.__defaults__ = ('Manual', 0, 0, None, 0)
-    Track = namedtuple('Track', 'label, group, shapes')
+    Track = namedtuple('Track', 'label, group, annotation_type, shapes')
     Tag = namedtuple('Tag', 'frame, label, attributes, annotation_type, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
@@ -291,11 +291,13 @@ class TaskData:
                 tracked_shape["attributes"] += track["attributes"]
                 tracked_shape["track_id"] = idx
                 tracked_shape["group"] = track["group"]
+                tracked_shape["annotation_type"] = track["annotation_type"]
                 tracked_shape["label_id"] = track["label_id"]
 
             yield TaskData.Track(
                 label=self._get_label_name(track["label_id"]),
                 group=track["group"],
+                annotation_type=track["annotation_type"],
                 shapes=[self._export_tracked_shape(shape)
                     for shape in tracked_shapes],
             )

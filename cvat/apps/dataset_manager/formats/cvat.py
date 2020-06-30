@@ -294,6 +294,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
         dump_data = OrderedDict([
             ("id", str(track_id)),
             ("label", track.label),
+            ("annotation_type", track.annotation_type),
         ])
 
         if track.group:
@@ -306,7 +307,6 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 ("outside", str(int(shape.outside))),
                 ("occluded", str(int(shape.occluded))),
                 ("keyframe", str(int(shape.keyframe))),
-                ("annotation_type", str(shape.annotation_type)),
             ])
 
             if shape.type == "rectangle":
@@ -386,6 +386,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
         dump_track(counter, annotations.Track(
             label=shape.label,
             group=shape.group,
+            annotation_type=shape.annotation_type,
             shapes=[annotations.TrackedShape(
                 type=shape.type,
                 points=shape.points,
@@ -395,7 +396,6 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame,
                 attributes=shape.attributes,
-                annotation_type=shape.annotation_type,
             ),
             annotations.TrackedShape(
                 type=shape.type,
@@ -406,7 +406,6 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame + annotations.frame_step,
                 attributes=shape.attributes,
-                annotation_type=shape.annotation_type,
             ),
             ],
         ))
@@ -433,6 +432,7 @@ def load(file_object, annotations):
                 track = annotations.Track(
                     label=el.attrib['label'],
                     group=int(el.attrib.get('group_id', 0)),
+                    annotation_type=el.attrib.get('annotation_type', 'Manual'),
                     shapes=[],
                 )
             elif el.tag == 'image':
@@ -464,7 +464,6 @@ def load(file_object, annotations):
                     shape['frame'] = el.attrib['frame']
                     shape['outside'] = el.attrib['outside'] == "1"
                     shape['keyframe'] = el.attrib['keyframe'] == "1"
-                    shape['annotation_type'] = str(el.attrib.get('annotation_type', 'Manual'))
                 else:
                     shape['frame'] = frame_id
                     shape['label'] = el.attrib['label']
