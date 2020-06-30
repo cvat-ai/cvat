@@ -116,6 +116,9 @@ class GitWrapper:
         spawn = not osp.isdir(cls._git_dir(path))
         repo = git.Repo.init(path=path)
         if spawn:
+            if not repo.active_branch.is_valid:
+                head = repo.create_head('master')
+                head.checkout()
             author = git.Actor("Nobody", "nobody@example.com")
             repo.index.commit('Initial commit', author=author)
         return repo
