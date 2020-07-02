@@ -150,7 +150,7 @@ class InferenceAnnotationRunner:
                     continue
 
             db_label = self.labels_mapping[shape["label"]]
-            label_attr_spec = self.attribute_spec.get(db_label)
+            label_attr_spec = self.attribute_spec.get(db_label, dict())
             target_container.append({
                 "label_id": db_label,
                 "frame": shape["frame"],

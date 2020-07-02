@@ -15,7 +15,7 @@ cvat_dir = os.path.join(work_dir, '..', '..')
 
 sys.path.insert(0, cvat_dir)
 
-from cvat.apps.auto_annotation.inference import run_inference_engine_annotation
+from cvat.apps.auto_annotation.inference import InferenceAnnotationRunner
 
 
 def _get_kwargs():
@@ -177,15 +177,14 @@ def main():
         test_image = np.ones((1024, 1980, 3), np.uint8) * 255
         image_data = [test_image,]
     attribute_spec = {}
+    runner = InferenceAnnotationRunner(image_data,
+                                       xml_file,
+                                       bin_file,
+                                       mapping,
+                                       attribute_spec,
+                                       py_file)
 
-    results = run_inference_engine_annotation(image_data,
-                                              xml_file,
-                                              bin_file,
-                                              mapping,
-                                              attribute_spec,
-                                              py_file,
-                                              restricted=restricted)
-
+    results, _ = runner.run(restricted=restricted)
 
     logging.warning('Inference didn\'t have any errors.')
     show_images = kwargs.get('show_images', False)
