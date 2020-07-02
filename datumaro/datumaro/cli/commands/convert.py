@@ -63,17 +63,17 @@ def convert_command(args):
     env = Environment()
 
     try:
-        converter = env.converters.get(args.format)
+        converter = env.converters.get(args.output_format)
     except KeyError:
         raise CliException("Converter for format '%s' is not found" % \
-            args.format)
+            args.output_format)
     if hasattr(converter, 'from_cmdline'):
         extra_args = converter.from_cmdline(args.extra_args)
         converter = converter(**extra_args)
 
     filter_args = FilterModes.make_filter_args(args.filter_mode)
 
-    if not args.format:
+    if not args.input_format:
         matches = []
         for format_name in env.importers.items:
             log.debug("Checking '%s' format...", format_name)
@@ -98,16 +98,16 @@ def convert_command(args):
             return 2
 
         format_name, importer = matches[0]
-        args.format = format_name
-        log.info("Source dataset format detected as '%s'", args.format)
+        args.input_format = format_name
+        log.info("Source dataset format detected as '%s'", args.input_format)
     else:
         try:
-            importer = env.make_importer(args.format)
+            importer = env.make_importer(args.input_format)
             if hasattr(importer, 'from_cmdline'):
                 extra_args = importer.from_cmdline()
         except KeyError:
             raise CliException("Importer for format '%s' is not found" % \
-                args.format)
+                args.input_format)
 
     source = osp.abspath(args.source)
 
@@ -118,11 +118,10 @@ def convert_command(args):
                 "(pass --overwrite to overwrite)" % dst_dir)
     else:
         dst_dir = generate_next_dir_name('%s-%s' % \
-            (osp.basename(source), make_file_name(args.format)))
+            (osp.basename(source), make_file_name(args.output_format)))
     dst_dir = osp.abspath(dst_dir)
 
-    project = importer(source, **extra_args)
-    project.config.project_dir = project_dir
+    project = importer(source)
     dataset = project.make_dataset()
 
     log.info("Exporting the dataset")
@@ -133,6 +132,6 @@ def convert_command(args):
         **filter_args)
 
     log.info("Dataset exported to '%s' as '%s'" % \
-        (dst_dir, args.format))
+        (dst_dir, args.output_format))
 
     return 0
