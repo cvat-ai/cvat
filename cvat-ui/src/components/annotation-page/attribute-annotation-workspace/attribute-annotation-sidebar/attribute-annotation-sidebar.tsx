@@ -377,6 +377,21 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
 
     return (
         <Layout.Sider {...siderProps}>
+            {/* eslint-disable-next-line */}
+            <span
+                className={`cvat-objects-sidebar-sider
+                    ant-layout-sider-zero-width-trigger
+                    ant-layout-sider-zero-width-trigger-left`}
+                onClick={collapse}
+            >
+                {sidebarCollapsed ? <Icon type='menu-fold' title='Show' />
+                    : <Icon type='menu-unfold' title='Hide' />}
+            </span>
+            <Row className='cvat-objects-sidebar-filter-input'>
+                <Col>
+                    <AnnotationsFiltersInput />
+                </Col>
+            </Row>
             <div className='attribute-annotations-sidebar-not-found-wrapper'>
                 <Text strong>No objects found</Text>
             </div>
