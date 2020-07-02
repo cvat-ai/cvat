@@ -2,7 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from openvino.inference_engine import IENetwork, IEPlugin, IECore, get_version
+from openvino.inference_engine import IENetwork, IECore, get_version
+
+try:
+    from openvino.inference_engine import IEPlugin
+except ImportError:
+    IEPlugin = None
 
 import subprocess
 import os
