@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
@@ -74,13 +73,7 @@ function mapDispatchToProps(dispatch: any, own: Props): DispatchToProps {
     };
 }
 
-function TaskPageContainer(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <TaskPageComponent {...props} />
-    );
-}
-
 export default withRouter(connect(
     mapStateToProps,
     mapDispatchToProps,
-)(TaskPageContainer));
+)(TaskPageComponent));

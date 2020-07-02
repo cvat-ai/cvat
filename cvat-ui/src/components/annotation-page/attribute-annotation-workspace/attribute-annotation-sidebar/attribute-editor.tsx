@@ -13,6 +13,7 @@ import Input from 'antd/lib/input';
 import consts from 'consts';
 
 interface InputElementParameters {
+    clientID: number;
     attrID: number;
     inputType: string;
     values: string[];
@@ -24,6 +25,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
     const {
         inputType,
         attrID,
+        clientID,
         values,
         currentValue,
         onChange,
@@ -103,7 +105,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
             <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
                 <Input
                     autoFocus
-                    key={attrID}
+                    key={`${clientID}:${attrID}`}
                     defaultValue={currentValue}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                         const { value } = event.target;
@@ -257,13 +259,19 @@ function renderList(parameters: ListParameters): JSX.Element | null {
 }
 
 interface Props {
+    clientID: number;
     attribute: any;
     currentValue: string;
     onChange(value: string): void;
 }
 
 function AttributeEditor(props: Props): JSX.Element {
-    const { attribute, currentValue, onChange } = props;
+    const {
+        attribute,
+        currentValue,
+        onChange,
+        clientID,
+    } = props;
     const { inputType, values, id: attrID } = attribute;
 
     return (
@@ -271,6 +279,7 @@ function AttributeEditor(props: Props): JSX.Element {
             {renderList({ values, inputType, onChange })}
             <hr />
             {renderInputElement({
+                clientID,
                 attrID,
                 inputType,
                 currentValue,
