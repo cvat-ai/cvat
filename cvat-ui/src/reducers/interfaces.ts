@@ -133,9 +133,8 @@ export interface ShareState {
 }
 
 export interface Model {
-    id: string | null; // null for preinstalled models
+    id: string;
     name: string;
-    primary: boolean;
     labels: string[];
     framework: string;
     description: string;

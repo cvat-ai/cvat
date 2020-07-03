@@ -44,14 +44,6 @@ export default function (
                 fetching: false,
             };
         }
-        case ModelsActionTypes.DELETE_MODEL_SUCCESS: {
-            return {
-                ...state,
-                models: state.models.filter(
-                    (model): boolean => model.id !== action.payload.id,
-                ),
-            };
-        }
         case ModelsActionTypes.CREATE_MODEL: {
             return {
                 ...state,

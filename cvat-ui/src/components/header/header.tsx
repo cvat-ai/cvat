@@ -24,9 +24,6 @@ interface HeaderContainerProps {
     switchSettingsDialog: (show: boolean) => void;
     logoutFetching: boolean;
     installedAnalytics: boolean;
-    installedAutoAnnotation: boolean;
-    installedTFAnnotation: boolean;
-    installedTFSegmentation: boolean;
     serverHost: string;
     username: string;
     toolName: string;
@@ -43,9 +40,6 @@ type Props = HeaderContainerProps & RouteComponentProps;
 
 function HeaderContainer(props: Props): JSX.Element {
     const {
-        installedTFSegmentation,
-        installedAutoAnnotation,
-        installedTFAnnotation,
         installedAnalytics,
         username,
         toolName,
@@ -61,10 +55,6 @@ function HeaderContainer(props: Props): JSX.Element {
         switchSettingsShortcut,
         switchSettingsDialog,
     } = props;
-
-    const renderModels = installedAutoAnnotation
-        || installedTFAnnotation
-        || installedTFSegmentation;
 
     const {
         CHANGELOG_URL,
@@ -172,19 +162,16 @@ function HeaderContainer(props: Props): JSX.Element {
                 >
                     Tasks
                 </Button>
-                { renderModels
-                    && (
-                        <Button
-                            className='cvat-header-button'
-                            type='link'
-                            value='models'
-                            onClick={
-                                (): void => props.history.push('/models')
-                            }
-                        >
-                            Models
-                        </Button>
-                    )}
+                <Button
+                    className='cvat-header-button'
+                    type='link'
+                    value='models'
+                    onClick={
+                        (): void => props.history.push('/models')
+                    }
+                >
+                    Models
+                </Button>
                 { installedAnalytics
                     && (
                         <Button

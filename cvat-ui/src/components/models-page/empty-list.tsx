@@ -3,14 +3,12 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
 
-import {
-    EmptyTasksIcon as EmptyModelsIcon,
-} from 'icons';
+import consts from 'consts';
+import { EmptyTasksIcon as EmptyModelsIcon } from 'icons';
 
 export default function EmptyListComponent(): JSX.Element {
     return (
@@ -22,7 +20,7 @@ export default function EmptyListComponent(): JSX.Element {
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Text strong>No models uploaded yet ...</Text>
+                    <Text strong>No models deployed yet...</Text>
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>
@@ -32,7 +30,8 @@ export default function EmptyListComponent(): JSX.Element {
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Link to='/models/create'>upload a new model</Link>
+                    <Text type='secondary'>deploy a model with </Text>
+                    <a href={`${consts.NUCLIO_GUIDE}`}>nuclio</a>
                 </Col>
             </Row>
         </div>
