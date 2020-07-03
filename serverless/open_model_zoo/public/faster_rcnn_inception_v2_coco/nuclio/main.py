@@ -2,20 +2,27 @@ import json
 import base64
 from PIL import Image
 import io
+import os
 from model_loader import ModelLoader
 import numpy as np
 import yaml
 
 def init_context(context):
     context.logger.info("Init context...  0%")
-    model_xml = "/opt/nuclio/open_model_zoo/public/faster_rcnn_inception_v2_coco/FP32/faster_rcnn_inception_v2_coco.xml"
-    model_bin = "/opt/nuclio/open_model_zoo/public/faster_rcnn_inception_v2_coco/FP32/faster_rcnn_inception_v2_coco.bin"
+
+    # Read the DL model
+    base_dir = "/opt/nuclio/open_model_zoo/public/faster_rcnn_inception_v2_coco/FP32"
+    model_xml = os.path.join(base_dir, "faster_rcnn_inception_v2_coco.xml")
+    model_bin = os.path.join(base_dir, "faster_rcnn_inception_v2_coco.bin")
     model_handler = ModelLoader(model_xml, model_bin)
     setattr(context.user_data, 'model_handler', model_handler)
+
+    # Read labels
     functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
     labels_spec = functionconfig['metadata']['annotations']['spec']
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
     setattr(context.user_data, "labels", labels)
+
     context.logger.info("Init context...100%")
 
 def handler(context, event):

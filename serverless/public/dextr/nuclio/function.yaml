@@ -47,9 +47,6 @@ spec:
         maxRequestBodySize: 33554432 # 32MB
 
   platform:
-    attributes:
-      network: "cvat_default"
-
       restartPolicy:
         name: always
         maximumRetryCount: 3
