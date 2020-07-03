@@ -91,7 +91,7 @@ function serverRequest(
 
         const reducedPoints = points.reduce(reducer, []);
         core.server.request(
-            `${baseURL}/api/v1/lambda/functions/public.dextr`, {
+            `${baseURL}/api/v1/lambda/functions/openvino.dextr`, {
                 method: 'POST',
                 data: JSON.stringify({
                     task: tid,

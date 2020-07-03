@@ -27,7 +27,7 @@ class PluginChecker {
                 return isReachable(`${serverHost}/git/repository/meta/get`, 'OPTIONS');
             }
             case SupportedPlugins.DEXTR_SEGMENTATION: {
-                return isReachable(`${serverHost}/api/v1/lambda/functions/public.dextr`, 'GET');
+                return isReachable(`${serverHost}/api/v1/lambda/functions/openvino.dextr`, 'GET');
             }
             case SupportedPlugins.ANALYTICS: {
                 return isReachable(`${serverHost}/analytics/app/kibana`, 'GET');

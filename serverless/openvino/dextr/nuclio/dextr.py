@@ -2,34 +2,22 @@
 #
 # SPDX-License-Identifier: MIT
 
-from inference_engine import make_plugin_or_core, make_network
-
 import os
 import cv2
 import numpy as np
-
-_IE_CPU_EXTENSION = os.getenv("IE_CPU_EXTENSION", "libcpu_extension_avx2.so")
-_IE_PLUGINS_PATH = os.getenv("IE_PLUGINS_PATH", None)
-
-_DEXTR_PADDING = 50
-_DEXTR_TRESHOLD = 0.9
-_DEXTR_SIZE = 512
+from openvino.inference_engine import IECore
 
 class DEXTR_HANDLER:
     def __init__(self):
-        self._plugin = None
-        self._network = None
         self._exec_network = None
         self._input_blob = None
         self._output_blob = None
-        self._plugin = make_plugin_or_core()
-        self._network = make_network('dextr.xml', 'dextr.bin')
+        self._plugin = IECore()
+        self._network = self._plugin.read_network('dextr.xml', 'dextr.bin')
         self._input_blob = next(iter(self._network.inputs))
         self._output_blob = next(iter(self._network.outputs))
-        if getattr(self._plugin, 'load_network', False):
-            self._exec_network = self._plugin.load_network(self._network, 'CPU')
-        else:
-            self._exec_network = self._plugin.load(network=self._network)
+        self._exec_network = self._plugin.load_network(self._network,
+            "CPU", num_requests=2)
 
     # Input:
     #   image: PIL image
@@ -37,27 +25,31 @@ class DEXTR_HANDLER:
     # Output:
     #   polygon: [[x1,y1], [x2,y2], [x3,y3], [x4,y4], ...]
     def handle(self, image, points):
+        DEXTR_PADDING = 50
+        DEXTR_TRESHOLD = 0.9
+        DEXTR_SIZE = 512
+
         numpy_image = np.array(image)
         points = np.asarray(points, dtype=int)
         bounding_box = (
-            max(min(points[:, 0]) - _DEXTR_PADDING, 0),
-            max(min(points[:, 1]) - _DEXTR_PADDING, 0),
-            min(max(points[:, 0]) + _DEXTR_PADDING, numpy_image.shape[1] - 1),
-            min(max(points[:, 1]) + _DEXTR_PADDING, numpy_image.shape[0] - 1)
+            max(min(points[:, 0]) - DEXTR_PADDING, 0),
+            max(min(points[:, 1]) - DEXTR_PADDING, 0),
+            min(max(points[:, 0]) + DEXTR_PADDING, numpy_image.shape[1] - 1),
+            min(max(points[:, 1]) + DEXTR_PADDING, numpy_image.shape[0] - 1)
         )
 
         # Prepare an image
         numpy_cropped = np.array(image.crop(bounding_box))
-        resized = cv2.resize(numpy_cropped, (_DEXTR_SIZE, _DEXTR_SIZE),
+        resized = cv2.resize(numpy_cropped, (DEXTR_SIZE, DEXTR_SIZE),
             interpolation = cv2.INTER_CUBIC).astype(np.float32)
 
         # Make a heatmap
-        points = points - [min(points[:, 0]), min(points[:, 1])] + [_DEXTR_PADDING, _DEXTR_PADDING]
-        points = (points * [_DEXTR_SIZE / numpy_cropped.shape[1], _DEXTR_SIZE / numpy_cropped.shape[0]]).astype(int)
+        points = points - [min(points[:, 0]), min(points[:, 1])] + [DEXTR_PADDING, DEXTR_PADDING]
+        points = (points * [DEXTR_SIZE / numpy_cropped.shape[1], DEXTR_SIZE / numpy_cropped.shape[0]]).astype(int)
         heatmap = np.zeros(shape=resized.shape[:2], dtype=np.float64)
         for point in points:
-            gaussian_x_axis = np.arange(0, _DEXTR_SIZE, 1, float) - point[0]
-            gaussian_y_axis = np.arange(0, _DEXTR_SIZE, 1, float)[:, np.newaxis] - point[1]
+            gaussian_x_axis = np.arange(0, DEXTR_SIZE, 1, float) - point[0]
+            gaussian_y_axis = np.arange(0, DEXTR_SIZE, 1, float)[:, np.newaxis] - point[1]
             gaussian = np.exp(-4 * np.log(2) * ((gaussian_x_axis ** 2 + gaussian_y_axis ** 2) / 100)).astype(np.float64)
             heatmap = np.maximum(heatmap, gaussian)
         cv2.normalize(heatmap,  heatmap, 0, 255, cv2.NORM_MINMAX)
@@ -69,7 +61,7 @@ class DEXTR_HANDLER:
         pred = self._exec_network.infer(inputs={self._input_blob: input_dextr[np.newaxis, ...]})[self._output_blob][0, 0, :, :]
         pred = cv2.resize(pred, tuple(reversed(numpy_cropped.shape[:2])), interpolation = cv2.INTER_CUBIC)
         result = np.zeros(numpy_image.shape[:2])
-        result[bounding_box[1]:bounding_box[1] + pred.shape[0], bounding_box[0]:bounding_box[0] + pred.shape[1]] = pred > _DEXTR_TRESHOLD
+        result[bounding_box[1]:bounding_box[1] + pred.shape[0], bounding_box[0]:bounding_box[0] + pred.shape[1]] = pred > DEXTR_TRESHOLD
 
         # Convert a mask to a polygon
         result = np.array(result, dtype=np.uint8)
@@ -91,11 +83,3 @@ class DEXTR_HANDLER:
             result.append([int(point[0]), int(point[1])])
 
         return result
-
-    def __del__(self):
-        if self._exec_network:
-            del self._exec_network
-        if self._network:
-            del self._network
-        if self._plugin:
-            del self._plugin

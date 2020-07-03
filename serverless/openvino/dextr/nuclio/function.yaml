@@ -1,5 +1,5 @@
 metadata:
-  name: public.dextr
+  name: openvino.dextr
   namespace: cvat
   annotations:
     type: interactor
@@ -16,7 +16,7 @@ spec:
       value: /opt/nuclio/python3
 
   build:
-    image: cvat/public.dextr
+    image: cvat/openvino.dextr
     baseImage: openvino/ubuntu18_runtime:2020.2
 
     directives:

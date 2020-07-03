@@ -122,13 +122,13 @@ nuctl deploy --project-name cvat --path serverless/public/dextr/nuclio/
 20.06.30 06:57:25.110                     nuctl (I) Cleaning up before deployment
 20.06.30 06:57:25.193                     nuctl (I) Function already exists, deleting
 20.06.30 06:57:30.363                     nuctl (I) Staging files and preparing base images
-20.06.30 06:57:30.369                     nuctl (I) Building processor image {"imageName": "cvat/public.dextr:latest"}
+20.06.30 06:57:30.369                     nuctl (I) Building processor image {"imageName": "cvat/openvino.dextr:latest"}
 20.06.30 06:57:30.369     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.4.8-amd64"}
 20.06.30 06:57:35.500     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
-20.06.30 06:57:39.593            nuctl.platform (I) Building docker image {"image": "cvat/public.dextr:latest"}
-20.06.30 06:59:39.707            nuctl.platform (I) Pushing docker image into registry {"image": "cvat/public.dextr:latest", "registry": ""}
-20.06.30 06:59:39.707            nuctl.platform (I) Docker image was successfully built and pushed into docker registry {"image": "cvat/public.dextr:latest"}
-20.06.30 06:59:39.707                     nuctl (I) Build complete {"result": {"Image":"cvat/public.dextr:latest","UpdatedFunctionConfig":{"metadata":{"name":"public.dextr","namespace":"nuclio","labels":{"nuclio.io/project-name":"cvat"},"annotations":{"framework":"openvino","spec":"","type":"interactor"}},"spec":{"description":"Deep Extreme Cut","handler":"main:handler","runtime":"python:3.6","env":[{"name":"NUCLIO_PYTHON_EXE_PATH","value":"/opt/nuclio/python3"}],"resources":{},"image":"cvat/public.dextr:latest","targetCPU":75,"triggers":{"myHttpTrigger":{"class":"","kind":"http","name":"","maxWorkers":2,"workerAvailabilityTimeoutMilliseconds":10000,"attributes":{"maxRequestBodySize":33554432}}},"build":{"image":"cvat/public.dextr","baseImage":"openvino/ubuntu18_runtime:2020.2","directives":{"postCopy":[{"kind":"RUN","value":"curl -O https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip"},{"kind":"RUN","value":"unzip dextr_model_v1.zip"},{"kind":"RUN","value":"pip3 install Pillow"},{"kind":"USER","value":"openvino"}],"preCopy":[{"kind":"USER","value":"root"},{"kind":"WORKDIR","value":"/opt/nuclio"},{"kind":"RUN","value":"ln -s /usr/bin/pip3 /usr/bin/pip"}]},"codeEntryType":"image"},"platform":{"attributes":{"restartPolicy":{"maximumRetryCount":3,"name":"always"}}},"readinessTimeoutSeconds":60,"eventTimeout":"30s"}}}}
+20.06.30 06:57:39.593            nuctl.platform (I) Building docker image {"image": "cvat/openvino.dextr:latest"}
+20.06.30 06:59:39.707            nuctl.platform (I) Pushing docker image into registry {"image": "cvat/openvino.dextr:latest", "registry": ""}
+20.06.30 06:59:39.707            nuctl.platform (I) Docker image was successfully built and pushed into docker registry {"image": "cvat/openvino.dextr:latest"}
+20.06.30 06:59:39.707                     nuctl (I) Build complete {"result": {"Image":"cvat/openvino.dextr:latest","UpdatedFunctionConfig":{"metadata":{"name":"openvino.dextr","namespace":"nuclio","labels":{"nuclio.io/project-name":"cvat"},"annotations":{"framework":"openvino","spec":"","type":"interactor"}},"spec":{"description":"Deep Extreme Cut","handler":"main:handler","runtime":"python:3.6","env":[{"name":"NUCLIO_PYTHON_EXE_PATH","value":"/opt/nuclio/python3"}],"resources":{},"image":"cvat/openvino.dextr:latest","targetCPU":75,"triggers":{"myHttpTrigger":{"class":"","kind":"http","name":"","maxWorkers":2,"workerAvailabilityTimeoutMilliseconds":10000,"attributes":{"maxRequestBodySize":33554432}}},"build":{"image":"cvat/openvino.dextr","baseImage":"openvino/ubuntu18_runtime:2020.2","directives":{"postCopy":[{"kind":"RUN","value":"curl -O https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip"},{"kind":"RUN","value":"unzip dextr_model_v1.zip"},{"kind":"RUN","value":"pip3 install Pillow"},{"kind":"USER","value":"openvino"}],"preCopy":[{"kind":"USER","value":"root"},{"kind":"WORKDIR","value":"/opt/nuclio"},{"kind":"RUN","value":"ln -s /usr/bin/pip3 /usr/bin/pip"}]},"codeEntryType":"image"},"platform":{"attributes":{"restartPolicy":{"maximumRetryCount":3,"name":"always"}}},"readinessTimeoutSeconds":60,"eventTimeout":"30s"}}}}
 20.06.30 06:59:40.209            nuctl.platform (I) Waiting for function to be ready {"timeout": 60}
 20.06.30 06:59:43.184                     nuctl (I) Function deploy complete {"httpPort": 63836}
 ```
@@ -174,7 +174,7 @@ nuctl get function
   nuclio    | omz.public.faster_rcnn_inception_v2_coco             | cvat    | ready |     63910 | 1/1
   nuclio    | omz.public.mask_rcnn_inception_resnet_v2_atrous_coco | cvat    | ready |     64500 | 1/1
   nuclio    | omz.public.yolo-v3-tf                                | cvat    | ready |     64573 | 1/1
-  nuclio    | public.dextr                                         | cvat    | ready |     63836 | 1/1
+  nuclio    | openvino.dextr                                         | cvat    | ready |     63836 | 1/1
 ```
 
 </details>
