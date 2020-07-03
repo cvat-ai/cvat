@@ -71,9 +71,6 @@ export interface FormatsState {
 // eslint-disable-next-line import/prefer-default-export
 export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
-    AUTO_ANNOTATION = 'AUTO_ANNOTATION',
-    TF_ANNOTATION = 'TF_ANNOTATION',
-    TF_SEGMENTATION = 'TF_SEGMENTATION',
     DEXTR_SEGMENTATION = 'DEXTR_SEGMENTATION',
     ANALYTICS = 'ANALYTICS',
     REID = 'REID',
