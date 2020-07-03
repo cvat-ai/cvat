@@ -1,5 +1,5 @@
 metadata:
-  name: omz.public.faster_rcnn_inception_v2_coco
+  name: openvino.omz.public.faster_rcnn_inception_v2_coco
   namespace: cvat
   annotations:
     name: Faster RCNN
@@ -90,7 +90,7 @@ metadata:
       ]
 
 spec:
-  description: Faster RCNN inception v2 COCO from Intel Open Model Zoo
+  description: Faster RCNN inception v2 COCO via Intel OpenVINO toolkit
   runtime: "python:3.6"
   handler: main:handler
   eventTimeout: 30s
@@ -99,7 +99,7 @@ spec:
       value: /opt/nuclio/python3
 
   build:
-    image: cvat/open_model_zoo/public/faster_rcnn_inception_v2_coco
+    image: cvat/openvino.omz.public.faster_rcnn_inception_v2_coco
     baseImage: openvino/ubuntu18_dev:2020.2
 
     directives:
