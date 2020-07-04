@@ -2,7 +2,7 @@
 # have enough memory (more than 4GB). Look here how to do that
 # https://stackoverflow.com/questions/44417159/docker-process-killed-with-cryptic-killed-message
 metadata:
-  name: omz.public.mask_rcnn_inception_resnet_v2_atrous_coco
+  name: openvino.omz.public.mask_rcnn_inception_resnet_v2_atrous_coco
   namespace: cvat
   annotations:
     name: Mask RCNN
@@ -93,7 +93,7 @@ metadata:
       ]
 
 spec:
-  description: Mask RCNN inception resnet v2 COCO from Intel Open Model Zoo
+  description: Mask RCNN inception resnet v2 COCO via Intel OpenVINO
   runtime: "python:3.6"
   handler: main:handler
   eventTimeout: 60s
@@ -102,7 +102,7 @@ spec:
       value: /opt/nuclio/python3
 
   build:
-    image: cvat/open_model_zoo/public/mask_rcnn_inception_resnet_v2_atrous_coco
+    image: cvat/openvino.omz.public.mask_rcnn_inception_resnet_v2_atrous_coco
     baseImage: openvino/ubuntu18_dev:2020.2
 
     directives:

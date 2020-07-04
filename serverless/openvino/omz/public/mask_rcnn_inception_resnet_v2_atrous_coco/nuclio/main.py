@@ -7,17 +7,22 @@ import numpy as np
 import cv2
 from skimage.measure import approximate_polygon, find_contours
 import yaml
+import os
 
 def init_context(context):
     context.logger.info("Init context...  0%")
-    model_xml = "/opt/nuclio/open_model_zoo/public/mask_rcnn_inception_resnet_v2_atrous_coco/FP32/mask_rcnn_inception_resnet_v2_atrous_coco.xml"
-    model_bin = "/opt/nuclio/open_model_zoo/public/mask_rcnn_inception_resnet_v2_atrous_coco/FP32/mask_rcnn_inception_resnet_v2_atrous_coco.bin"
+
+    base_dir = "/opt/nuclio/open_model_zoo/public/mask_rcnn_inception_resnet_v2_atrous_coco/FP32"
+    model_xml = os.path.join(base_dir, "mask_rcnn_inception_resnet_v2_atrous_coco.xml")
+    model_bin = os.path.join(base_dir, "mask_rcnn_inception_resnet_v2_atrous_coco.bin")
     model_handler = ModelLoader(model_xml, model_bin)
     setattr(context.user_data, 'model_handler', model_handler)
+
     functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
     labels_spec = functionconfig['metadata']['annotations']['spec']
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
     setattr(context.user_data, "labels", labels)
+
     context.logger.info("Init context...100%")
 
 MASK_THRESHOLD = 0.5
@@ -72,7 +77,9 @@ def handler(context, event):
             contour = contours[0]
             contour = np.flip(contour, axis=1)
             contour = approximate_polygon(contour, tolerance=2.5)
-            polygon = contour.tolist()
+            if len(contour) < 3:
+                continue
+            polygon = contour.ravel().tolist()
 
             results.append({
                 "confidence": str(obj_value),
