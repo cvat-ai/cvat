@@ -10,6 +10,7 @@ class ModelLoader:
     def __init__(self, model, weights):
         ie_core = IECore()
         network = ie_core.read_network(model, weights)
+        self._network = network
 
         # Check compatibility
         supported_layers = ie_core.query_network(network, "CPU")
@@ -35,7 +36,7 @@ class ModelLoader:
         self._output_blob_name = next(iter(network.outputs))
 
         # Load network
-        self._net = ie_core.load_network(network, "CPU", num_requests=2)
+        self._exec_net = ie_core.load_network(network, "CPU", num_requests=2)
         input_type = network.inputs[self._input_blob_name]
         self._input_layout = input_type if isinstance(input_type, list) else input_type.shape
 
@@ -47,7 +48,7 @@ class ModelLoader:
         if self._input_info_name:
             inputs[self._input_info_name] = [h, w, 1]
 
-        results = self._net.infer(inputs)
+        results = self._exec_net.infer(inputs)
         if len(results) == 1:
             return results[self._output_blob_name].copy()
         else:

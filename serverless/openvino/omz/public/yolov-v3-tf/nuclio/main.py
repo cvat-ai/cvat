@@ -6,17 +6,22 @@ from model_loader import ModelLoader
 import numpy as np
 from math import exp
 import yaml
+import os
 
 def init_context(context):
     context.logger.info("Init context...  0%")
-    model_xml = "/opt/nuclio/open_model_zoo/public/yolo-v3-tf/FP32/yolo-v3-tf.xml"
-    model_bin = "/opt/nuclio/open_model_zoo/public/yolo-v3-tf/FP32/yolo-v3-tf.bin"
+
+    base_dir = "/opt/nuclio/open_model_zoo/public/yolo-v3-tf/FP32"
+    model_xml = os.path.join(base_dir, "yolo-v3-tf.xml")
+    model_bin = os.path.join(base_dir, "yolo-v3-tf.bin")
     model_handler = ModelLoader(model_xml, model_bin)
     setattr(context.user_data, 'model_handler', model_handler)
+
     functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
     labels_spec = functionconfig['metadata']['annotations']['spec']
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
     setattr(context.user_data, "labels", labels)
+
     context.logger.info("Init context...100%")
 
 class YoloParams:

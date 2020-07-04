@@ -1,5 +1,5 @@
 metadata:
-  name: omz.public.yolo-v3-tf
+  name: openvino.omz.public.yolo-v3-tf
   namespace: cvat
   annotations:
     name: YOLO v3
@@ -90,7 +90,7 @@ metadata:
       ]
 
 spec:
-  description: YOLO v3 from Intel Open Model Zoo
+  description: YOLO v3 via Intel OpenVINO
   runtime: "python:3.6"
   handler: main:handler
   eventTimeout: 30s
@@ -99,7 +99,7 @@ spec:
       value: /opt/nuclio/python3
 
   build:
-    image: cvat/open_model_zoo/public/yolo-v3-tf
+    image: cvat/openvino.omz.public.yolo-v3-tf
     baseImage: openvino/ubuntu18_dev:2020.2
 
     directives:
