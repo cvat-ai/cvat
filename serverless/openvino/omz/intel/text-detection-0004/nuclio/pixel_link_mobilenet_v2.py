@@ -186,12 +186,3 @@ class PixelLinkDecoder():
         self._get_all()
         self._mask_to_bboxes()
 
-
-label = 1
-pcd = PixelLinkDecoder()
-for detection in detections:
-    frame = detection['frame_id']
-    pcd.decode(detection['frame_height'], detection['frame_width'], detection['detections'])
-    for box in pcd.bboxes:
-        box = [[int(b[0]), int(b[1])] for b in box]
-        results.add_polygon(box, label, frame)

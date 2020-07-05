@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT`
+
 import cv2
 import numpy as np
 
@@ -9,14 +11,14 @@ class PixelLinkDecoder():
             self._get_neighbours = self._get_neighbours_4
         else:
             self._get_neighbours = self._get_neighbours_8
-        self.pixel_conf_threshold = 0.8 
-        self.link_conf_threshold = 0.8 
+        self.pixel_conf_threshold = 0.8
+        self.link_conf_threshold = 0.8
 
     def decode(self, height, width, detections: dict):
         self.image_height = height
         self.image_width = width
-        self.pixel_scores = self._set_pixel_scores(detections['pixel_cls/add_2'])
-        self.link_scores = self._set_link_scores(detections['pixel_link/add_2'])
+        self.pixel_scores = self._set_pixel_scores(detections['model/segm_logits/add'])
+        self.link_scores = self._set_link_scores(detections['model/link_logits_/add'])
 
         self.pixel_mask = self.pixel_scores >= self.pixel_conf_threshold
         self.link_mask = self.link_scores >= self.link_conf_threshold
@@ -32,6 +34,7 @@ class PixelLinkDecoder():
     def _softmax(self, x, axis=None):
         return np.exp(x - self._logsumexp(x, axis=axis, keepdims=True))
 
+    # pylint: disable=no-self-use
     def _logsumexp(self, a, axis=None, b=None, keepdims=False, return_sign=False):
         if b is not None:
             a, b = np.broadcast_arrays(a, b)
@@ -148,6 +151,7 @@ class PixelLinkDecoder():
                 continue
             self.bboxes.append(self._order_points(rect))
 
+    # pylint: disable=no-self-use
     def _min_area_rect(self, cnt):
         rect = cv2.minAreaRect(cnt)
         w, h = rect[1]
@@ -155,6 +159,7 @@ class PixelLinkDecoder():
         box = np.int0(box)
         return box, w, h
 
+    # pylint: disable=no-self-use
     def _order_points(self, rect):
         """ (x, y)
             Order: TL, TR, BR, BL
@@ -181,12 +186,3 @@ class PixelLinkDecoder():
         self._get_all()
         self._mask_to_bboxes()
 
-
-label = 1
-pcd = PixelLinkDecoder()
-for detection in detections:
-    frame = detection['frame_id']
-    pcd.decode(detection['frame_height'], detection['frame_width'], detection['detections'])
-    for box in pcd.bboxes:
-        box = [[int(b[0]), int(b[1])] for b in box]
-        results.add_polygon(box, label, frame)
