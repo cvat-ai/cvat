@@ -10,11 +10,12 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
+from cvat.apps.authentication import auth
 from cvat.apps.dataset_manager.task import delete_task_data, patch_task_data
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
-
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 
 class LambdaGateway:
     NUCLIO_ROOT_URL = '/api/functions'
@@ -121,11 +122,9 @@ class LambdaFunction:
         return response
 
     def _get_image(self, db_task, frame, quality):
-        if quality == "original":
+        if quality is None or quality == "original":
             quality = FrameProvider.Quality.ORIGINAL
-        # FIXME: if quality is none we should use original quality
-        # but now we have some problems with nuclio.
-        elif quality is None or quality == "compressed":
+        elif  quality == "compressed":
             quality = FrameProvider.Quality.COMPRESSED
         else:
             raise ValidationError(
@@ -345,11 +344,18 @@ def return_response(success_code=status.HTTP_200_OK):
         return func_wrapper
     return wrap_response
 
-# TODO: need to protect the class. Only a registered use can get information
-# about available serverless functions.
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
     lookup_field = 'func_id'
+
+    def get_permissions(self):
+        http_method = self.request.method
+        permissions = [IsAuthenticated]
+
+        if http_method in ["POST"]:
+            permissions.append(auth.TaskAccessPermission)
+
+        return [perm() for perm in permissions]
 
     @return_response()
     def list(self, request):
@@ -374,6 +380,9 @@ class FunctionViewSet(viewsets.ViewSet):
             mapping = request.data.get('mapping')
 
             db_task = TaskModel.objects.get(pk=task)
+            # Check that the user has enough permissions to read
+            # data from the task.
+            self.check_object_permissions(self.request, db_task)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
                 '`{}` lambda function was run '.format(func_id) +
@@ -385,9 +394,16 @@ class FunctionViewSet(viewsets.ViewSet):
 
         return lambda_func.invoke(db_task, frame, quality, mapping, points)
 
-# TODO: need to protect the class. Only a person with appropriate rights
-# can create the annotation request and cancel it.
 class RequestViewSet(viewsets.ViewSet):
+    def get_permissions(self):
+        http_method = self.request.method
+        permissions = [IsAuthenticated]
+
+        if http_method in ["POST", "DELETE"]:
+            permissions.append(auth.TaskChangePermission)
+
+        return [perm() for perm in permissions]
+
     @return_response()
     def list(self, request):
         queue = LambdaQueue()
@@ -395,12 +411,23 @@ class RequestViewSet(viewsets.ViewSet):
 
     @return_response()
     def create(self, request):
-        function = request.data['function']
-        threshold = request.data.get('threshold')
-        task = request.data['task']
-        quality = request.data.get("quality")
-        cleanup = request.data.get('cleanup', False)
-        mapping = request.data.get('mapping')
+        try:
+            function = request.data['function']
+            threshold = request.data.get('threshold')
+            task = request.data['task']
+            quality = request.data.get("quality")
+            cleanup = request.data.get('cleanup', False)
+            mapping = request.data.get('mapping')
+
+            db_task = TaskModel.objects.get(pk=task)
+            # Check that the user has enough permissions to modify
+            # the task.
+            self.check_object_permissions(self.request, db_task)
+        except (KeyError, ObjectDoesNotExist) as err:
+            raise ValidationError(
+                '`{}` lambda function was run '.format(function) +
+                'with wrong arguments ({})'.format(str(err)),
+                code=status.HTTP_400_BAD_REQUEST)
 
         gateway = LambdaGateway()
         queue = LambdaQueue()
