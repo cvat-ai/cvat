@@ -63,7 +63,7 @@ def _import(src_file, task_data):
                     points=ann.points,
                     occluded=ann.attributes.get('occluded') == True,
                     outside=False,
-                    keyframe=False,
+                    keyframe=True,
                     z_order=ann.z_order,
                     frame=frame_number,
                     attributes=[],
@@ -78,6 +78,11 @@ def _import(src_file, task_data):
         for track in tracks.values():
             # MOT annotations do not require frames to be ordered
             track.shapes.sort(key=lambda t: t.frame)
-            # Set outside=True for the last shape in a track to finish the track
-            track.shapes[-1] = track.shapes[-1]._replace(outside=True)
+            # Append a shape with outside=True to finish the track
+            last_shape = track.shapes[-1]
+            if last_shape.frame + task_data.frame_step <= \
+                    int(task_data.meta['task']['stop_frame']):
+                track.shapes.append(last_shape._replace(outside=True,
+                    frame=last_shape.frame + task_data.frame_step)
+                )
             task_data.add_track(track)
