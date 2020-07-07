@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { connect } from 'react-redux';
 
 import ModelRunnerModalComponent from 'components/model-runner-modal/model-runner-modal';
@@ -75,14 +74,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     });
 }
 
-
-function ModelRunnerModalContainer(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <ModelRunnerModalComponent {...props} />
-    );
-}
-
 export default connect(
     mapStateToProps,
     mapDispatchToProps,
-)(ModelRunnerModalContainer);
+)(ModelRunnerModalComponent);

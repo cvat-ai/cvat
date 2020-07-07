@@ -5,6 +5,10 @@
 - [How to configure connected share folder on Windows](#how-to-configure-connected-share-folder-on-windows)
 - [How to make unassigned tasks not visible to all users](#how-to-make-unassigned-tasks-not-visible-to-all-users)
 - [Can Nvidia GPU be used to run inference with my own model](#can-nvidia-gpu-be-used-to-run-inference-with-my-own-model)
+- [What versions of OpenVINO toolkit are supported](#what-versions-of-openvino-toolkit-are-supported)
+- [Where are uploaded images/videos stored](#where-are-uploaded-imagesvideos-stored)
+- [Where are annotations stored](#where-are-annotations-stored)
+
 
 ## How to update CVAT
 Before upgrading, please follow the official docker
@@ -79,3 +83,20 @@ Set [reduce_task_visibility](../../settings/base.py#L424) variable to `True`.
 Nvidia GPU can be used to accelerate inference of [tf_annotation](../../../components/tf_annotation/README.md) and [auto_segmentation](../../../components/auto_segmentation/README.md) models.
 
 OpenVino doesn't support Nvidia cards, so you can run your own models only on CPU.
+
+## What versions of OpenVINO toolkit are supported
+These versions are supported: `2019 R3`, `2019 R3.1`, `2020 1`, `2020 2`
+
+## Where are uploaded images/videos stored
+The uploaded data is stored in the `cvat_data` docker volume:
+```yml
+volumes:
+  - cvat_data:/home/django/data
+```
+
+## Where are annotations stored
+Annotations are stored in the PostgreSQL database. The database files are stored in the `cvat_db` docker volume:
+```yml
+volumes:
+  - cvat_db:/var/lib/postgresql/data
+```
