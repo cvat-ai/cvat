@@ -2,21 +2,31 @@ import json
 import base64
 from PIL import Image
 import io
+from model_loader import ModelLoader
+import numpy as np
+import yaml
+
 
 def init_context(context):
     context.logger.info("Init context...  0%")
-    maskrcnn_handler = None
-    setattr(context.user_data, 'maskrcnn_handler', maskrcnn_handler)
+
+    functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
+    labels_spec = functionconfig['metadata']['annotations']['spec']
+    labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
+
+    model_handler = ModelLoader(labels)
+    setattr(context.user_data, 'model_handler', model_handler)
+
     context.logger.info("Init context...100%")
 
 def handler(context, event):
-    context.logger.info("call handler")
+    context.logger.info("Run tf.matterport.mask_rcnn model")
     data = event.body
-    buf = io.BytesIO(base64.b64decode(data["image"]))
+    buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
+    threshold = float(data.get("threshold", 0.2))
     image = Image.open(buf)
 
-    objects = context.user_data.maskrcnn_handler.handle(image)
-    return context.Response(body=json.dumps(objects),
-                            headers={},
-                            content_type='application/json',
-                            status_code=200)
+    results = context.user_data.model_handler.infer(np.array(image), threshold)
+
+    return context.Response(body=json.dumps(results), headers={},
+        content_type='application/json', status_code=200)
