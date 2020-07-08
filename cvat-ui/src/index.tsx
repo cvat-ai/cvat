@@ -48,9 +48,6 @@ interface StateToProps {
     formatsFetching: boolean;
     userAgreementsInitialized: boolean;
     userAgreementsFetching: boolean;
-    installedAutoAnnotation: boolean;
-    installedTFSegmentation: boolean;
-    installedTFAnnotation: boolean;
     notifications: NotificationsState;
     user: any;
     keyMap: Record<string, ExtendedKeyMapOptions>;
@@ -66,7 +63,7 @@ interface DispatchToProps {
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
     loadUserAgreements: () => void;
-    switchSettingsDialog: (show: boolean) => void;
+    switchSettingsDialog: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -91,9 +88,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         formatsFetching: formats.fetching,
         userAgreementsInitialized: userAgreements.initialized,
         userAgreementsFetching: userAgreements.fetching,
-        installedAutoAnnotation: plugins.list.AUTO_ANNOTATION,
-        installedTFSegmentation: plugins.list.TF_SEGMENTATION,
-        installedTFAnnotation: plugins.list.TF_ANNOTATION,
         notifications: state.notifications,
         user: auth.user,
         keyMap: shortcuts.keyMap,

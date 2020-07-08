@@ -3,26 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import {
-    Model,
-    ModelFiles,
-    ActiveInference,
-    CombinedState,
-} from 'reducers/interfaces';
+import { Model, ModelFiles, ActiveInference } from 'reducers/interfaces';
 import getCore from 'cvat-core-wrapper';
-
-export enum PreinstalledModels {
-    RCNN = 'RCNN Object Detector',
-    MaskRCNN = 'Mask RCNN Object Detector',
-}
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
     GET_MODELS_SUCCESS = 'GET_MODELS_SUCCESS',
     GET_MODELS_FAILED = 'GET_MODELS_FAILED',
     DELETE_MODEL = 'DELETE_MODEL',
-    DELETE_MODEL_SUCCESS = 'DELETE_MODEL_SUCCESS',
-    DELETE_MODEL_FAILED = 'DELETE_MODEL_FAILED',
     CREATE_MODEL = 'CREATE_MODEL',
     CREATE_MODEL_SUCCESS = 'CREATE_MODEL_SUCCESS',
     CREATE_MODEL_FAILED = 'CREATE_MODEL_FAILED',
@@ -47,16 +35,6 @@ export const modelsActions = {
     getModelsFailed: (error: any) => createAction(
         ModelsActionTypes.GET_MODELS_FAILED, {
             error,
-        },
-    ),
-    deleteModelSuccess: (id: number) => createAction(
-        ModelsActionTypes.DELETE_MODEL_SUCCESS, {
-            id,
-        },
-    ),
-    deleteModelFailed: (id: number, error: any) => createAction(
-        ModelsActionTypes.DELETE_MODEL_FAILED, {
-            error, id,
         },
     ),
     createModel: () => createAction(ModelsActionTypes.CREATE_MODEL),
@@ -115,7 +93,7 @@ const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);
 
 export function getModelsAsync(): ThunkAction {
-    return async (dispatch, getState): Promise<void> => {
+    return async (dispatch): Promise<void> => {
         dispatch(modelsActions.getModels());
         const models: Model[] = [];
 
@@ -133,7 +111,6 @@ export function getModelsAsync(): ThunkAction {
                 if (model.kind === 'detector') {
                     models.push({
                         id: model.id,
-                        primary: true,
                         name: model.name,
                         description: model.description,
                         framework: model.framework,
@@ -148,21 +125,6 @@ export function getModelsAsync(): ThunkAction {
         }
 
         dispatch(modelsActions.getModelsSuccess(models));
-    };
-}
-
-export function deleteModelAsync(id: number): ThunkAction {
-    return async (dispatch): Promise<void> => {
-        try {
-            await core.server.request(`${baseURL}/auto_annotation/delete/${id}`, {
-                method: 'DELETE',
-            });
-        } catch (error) {
-            dispatch(modelsActions.deleteModelFailed(id, error));
-            return;
-        }
-
-        dispatch(modelsActions.deleteModelSuccess(id));
     };
 }
 
@@ -316,8 +278,8 @@ function subscribe(
     }
 }
 
-export function getInferenceStatusAsync(tasks: number[]): ThunkAction {
-    return async (dispatch, getState): Promise<void> => {
+export function getInferenceStatusAsync(): ThunkAction {
+    return async (dispatch): Promise<void> => {
         const dispatchCallback = (action: ModelsActions): void => {
             dispatch(action);
         };
@@ -370,7 +332,7 @@ export function startInferenceAsync(
                 },
             );
 
-            dispatch(getInferenceStatusAsync([taskInstance.id]));
+            dispatch(getInferenceStatusAsync());
         } catch (error) {
             dispatch(modelsActions.startInferenceFailed(taskInstance.id, error));
         }

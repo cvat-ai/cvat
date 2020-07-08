@@ -28,9 +28,6 @@ interface StateToProps {
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
-    installedTFAnnotation: boolean;
-    installedTFSegmentation: boolean;
-    installedAutoAnnotation: boolean;
     inferenceIsActive: boolean;
 }
 
@@ -53,13 +50,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         formats: {
             annotationFormats,
         },
-        plugins: {
-            list: {
-                TF_ANNOTATION: installedTFAnnotation,
-                TF_SEGMENTATION: installedTFSegmentation,
-                AUTO_ANNOTATION: installedAutoAnnotation,
-            },
-        },
         tasks: {
             activities: {
                 dumps,
@@ -70,9 +60,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     } = state;
 
     return {
-        installedTFAnnotation,
-        installedTFSegmentation,
-        installedAutoAnnotation,
         dumpActivities: tid in dumps ? dumps[tid] : null,
         exportActivities: tid in activeExports ? activeExports[tid] : null,
         loadActivity: tid in loads ? loads[tid] : null,
@@ -112,9 +99,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         dumpActivities,
         exportActivities,
         inferenceIsActive,
-        installedAutoAnnotation,
-        installedTFAnnotation,
-        installedTFSegmentation,
 
         loadAnnotations,
         dumpAnnotations,
@@ -172,9 +156,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             dumpActivities={dumpActivities}
             exportActivities={exportActivities}
             inferenceIsActive={inferenceIsActive}
-            installedAutoAnnotation={installedAutoAnnotation}
-            installedTFAnnotation={installedTFAnnotation}
-            installedTFSegmentation={installedTFSegmentation}
             onClickMenu={onClickMenu}
         />
     );
