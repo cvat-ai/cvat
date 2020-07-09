@@ -20,7 +20,7 @@ rq-scheduler==0.10.0
 scipy==1.4.1
 sqlparse==0.3.1
 django-sendfile==0.3.11
-dj-pagination==2.4.0
+dj-pagination==2.5.0
 python-logstash==0.4.6
 django-revproxy==0.10.0
 rules==2.2
