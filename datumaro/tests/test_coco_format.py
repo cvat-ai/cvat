@@ -3,7 +3,7 @@ import os.path as osp
 
 from unittest import TestCase
 
-from datumaro.components.project import Project
+from datumaro.components.project import (Project, Dataset)
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Label, Mask, Points, Polygon, Bbox, Caption,
     LabelCategories, PointsCategories
@@ -25,9 +25,8 @@ DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__), 'assets', 'coco_dataset')
 
 class CocoImporterTest(TestCase):
     def test_can_import(self):
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        items_list = [
                     DatasetItem(id='000000000001', image=np.ones((10, 5, 3)),
                         subset='val', attributes={'id': 1},
                         annotations=[
@@ -40,17 +39,20 @@ class CocoImporterTest(TestCase):
                                 id=2, group=2, attributes={'is_crowd': True}),
                         ]
                     ),
-                ])
-
-            def categories(self):
-                label_cat = LabelCategories()
-                label_cat.add('TEST')
-                return { AnnotationType.label: label_cat }
+                ]
+        
+        # Creating categories
+        label_cat = LabelCategories()
+        label_cat.add('TEST')
+        categories = { AnnotationType.label : label_cat}
+        
+        # Creating exemplary dataset
+        exemplary_dataset = Dataset.from_iterable(items_list, categories)
 
         dataset = Project.import_from(DUMMY_DATASET_DIR, 'coco') \
             .make_dataset()
 
-        compare_datasets(self, DstExtractor(), dataset)
+        compare_datasets(self, exemplary_dataset, dataset)
 
     def test_can_detect(self):
         self.assertTrue(CocoImporter.detect(DUMMY_DATASET_DIR))
@@ -70,9 +72,8 @@ class CocoConverterTest(TestCase):
         compare_datasets(self, expected=target_dataset, actual=parsed_dataset)
 
     def test_can_save_and_load_captions(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        items_list = [
                     DatasetItem(id=1, subset='train',
                         annotations=[
                             Caption('hello', id=1, group=1),
@@ -88,21 +89,18 @@ class CocoConverterTest(TestCase):
                             Caption('word', id=1, group=1),
                         ], attributes={'id': 1}
                     ),
-                ])
+                ]
+        
+        # Creating exemplary dataset
+        exemplary_dataset = Dataset.from_iterable(items_list)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(exemplary_dataset,
                 CocoCaptionsConverter(), test_dir)
 
     def test_can_save_and_load_instances(self):
-        label_categories = LabelCategories()
-        for i in range(10):
-            label_categories.add(str(i))
-        categories = { AnnotationType.label: label_categories }
-
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        src_items_list = [
                     DatasetItem(id=1, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
                             # Bbox + single polygon
@@ -142,14 +140,19 @@ class CocoConverterTest(TestCase):
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
                         ], attributes={'id': 1}),
-                ])
+                ]
+        
+        # Creating categories
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+        categories = { AnnotationType.label: label_categories }
+        
+        # Creating exemplary dataset
+        src_exemplary_dataset = Dataset.from_iterable(src_items_list, categories)
 
-            def categories(self):
-                return categories
-
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        dst_items_list = [
                     DatasetItem(id=1, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
                             Polygon([0, 1, 2, 1, 2, 3, 0, 3],
@@ -179,25 +182,20 @@ class CocoConverterTest(TestCase):
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
                         ], attributes={'id': 1}),
-                ])
-
-            def categories(self):
-                return categories
+                ]
+        
+        
+        # Creating exemplary dataset
+        dst_exemplary_dataset = Dataset.from_iterable(dst_items_list, categories)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(src_exemplary_dataset,
                 CocoInstancesConverter(), test_dir,
-                target_dataset=DstExtractor())
+                target_dataset=dst_exemplary_dataset)
 
     def test_can_merge_polygons_on_loading(self):
-        label_categories = LabelCategories()
-        for i in range(10):
-            label_categories.add(str(i))
-        categories = { AnnotationType.label: label_categories }
-
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        src_items_list = [
                     DatasetItem(id=1, image=np.zeros((6, 10, 3)),
                         annotations=[
                             Polygon([0, 0, 4, 0, 4, 4],
@@ -206,14 +204,19 @@ class CocoConverterTest(TestCase):
                                 label=3, id=4, group=4),
                         ]
                     ),
-                ])
+                ]
+        
+        # Creating categories
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+        categories = { AnnotationType.label: label_categories }
+        
+        # Creating exemplary dataset
+        src_exemplary_dataset = Dataset.from_iterable(src_items_list, categories)
 
-            def categories(self):
-                return categories
-
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        dst_items_list = [
                     DatasetItem(id=1, image=np.zeros((6, 10, 3)),
                         annotations=[
                             Mask(np.array([
@@ -230,25 +233,20 @@ class CocoConverterTest(TestCase):
                             attributes={ 'is_crowd': False }),
                         ], attributes={'id': 1}
                     ),
-                ])
-
-            def categories(self):
-                return categories
+                ]
+        
+        # Creating exemplary dataset
+        dst_exemplary_dataset = Dataset.from_iterable(dst_items_list, categories)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(SrcExtractor(),
+            self._test_save_and_load(src_exemplary_dataset,
                 CocoInstancesConverter(), test_dir,
                 importer_args={'merge_instance_polygons': True},
-                target_dataset=DstExtractor())
+                target_dataset=dst_exemplary_dataset)
 
     def test_can_crop_covered_segments(self):
-        label_categories = LabelCategories()
-        for i in range(10):
-            label_categories.add(str(i))
-
-        class SrcTestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+         # Creating list of DatasetItems
+        src_items_list = [
                     DatasetItem(id=1, image=np.zeros((5, 5, 3)),
                         annotations=[
                             Mask(np.array([
@@ -263,14 +261,19 @@ class CocoConverterTest(TestCase):
                                 label=1, id=2, z_order=1),
                         ]
                     ),
-                ])
+                ]
+        
+        # Creating categories
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+        categories = { AnnotationType.label: label_categories }
 
-            def categories(self):
-                return { AnnotationType.label: label_categories }
+        # Creating exemplary dataset
+        src_exemplary_dataset = Dataset.from_iterable(src_items_list, categories)
 
-        class DstTestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+         # Creating list of DatasetItems
+        dst_items_list = [
                     DatasetItem(id=1, image=np.zeros((5, 5, 3)),
                         annotations=[
                             Mask(np.array([
@@ -288,24 +291,19 @@ class CocoConverterTest(TestCase):
                                 attributes={ 'is_crowd': False }),
                         ], attributes={'id': 1}
                     ),
-                ])
-
-            def categories(self):
-                return { AnnotationType.label: label_categories }
+                ]
+        
+        # Creating exemplary dataset
+        dst_exemplary_dataset = Dataset.from_iterable(dst_items_list, categories)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(SrcTestExtractor(),
+            self._test_save_and_load(src_exemplary_dataset,
                 CocoInstancesConverter(crop_covered=True), test_dir,
-                target_dataset=DstTestExtractor())
+                target_dataset=dst_exemplary_dataset)
 
     def test_can_convert_polygons_to_mask(self):
-        label_categories = LabelCategories()
-        for i in range(10):
-            label_categories.add(str(i))
-
-        class SrcTestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+         # Creating list of DatasetItems
+        src_items_list = [
                     DatasetItem(id=1, image=np.zeros((6, 10, 3)),
                         annotations=[
                             Polygon([0, 0, 4, 0, 4, 4],
@@ -314,14 +312,19 @@ class CocoConverterTest(TestCase):
                                 label=3, id=4, group=4),
                         ]
                     ),
-                ])
+                ]
+        
+        # Creating categories
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+        categories = { AnnotationType.label: label_categories }
 
-            def categories(self):
-                return { AnnotationType.label: label_categories }
+        # Creating exemplary dataset
+        src_exemplary_dataset = Dataset.from_iterable(src_items_list, categories)
 
-        class DstTestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+         # Creating list of DatasetItems
+        dst_items_list = [
                     DatasetItem(id=1, image=np.zeros((6, 10, 3)),
                         annotations=[
                             Mask(np.array([
@@ -338,24 +341,19 @@ class CocoConverterTest(TestCase):
                                 label=3, id=4, group=4),
                         ], attributes={'id': 1}
                     ),
-                ])
-
-            def categories(self):
-                return { AnnotationType.label: label_categories }
+                ]
+        
+        # Creating exemplary dataset
+        dst_exemplary_dataset = Dataset.from_iterable(dst_items_list, categories)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(SrcTestExtractor(),
+            self._test_save_and_load(src_exemplary_dataset,
                 CocoInstancesConverter(segmentation_mode='mask'), test_dir,
-                target_dataset=DstTestExtractor())
+                target_dataset=dst_exemplary_dataset)
 
     def test_can_convert_masks_to_polygons(self):
-        label_categories = LabelCategories()
-        for i in range(10):
-            label_categories.add(str(i))
-
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+         # Creating list of DatasetItems
+        src_items_list =[
                     DatasetItem(id=1, image=np.zeros((5, 10, 3)),
                         annotations=[
                             Mask(np.array([
@@ -368,14 +366,22 @@ class CocoConverterTest(TestCase):
                                 label=3, id=4, group=4),
                         ]
                     ),
-                ])
+                ]
+        
+        # Creating categories
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+        categories = { AnnotationType.label: label_categories }
 
-            def categories(self):
-                return { AnnotationType.label: label_categories }
+        # Creating exemplary dataset
+        src_exemplary_dataset = Dataset.from_iterable(src_items_list, categories)
 
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating exemplary dataset
+        src_exemplary_dataset = Dataset.from_iterable(src_items_list, categories)
+
+         # Creating list of DatasetItems
+        dst_items_list = [
                     DatasetItem(id=1, image=np.zeros((5, 10, 3)),
                         annotations=[
                             Polygon(
@@ -388,20 +394,19 @@ class CocoConverterTest(TestCase):
                                 attributes={ 'is_crowd': False }),
                         ], attributes={'id': 1}
                     ),
-                ])
-
-            def categories(self):
-                return { AnnotationType.label: label_categories }
+                ]
+        
+        # Creating exemplary dataset
+        dst_exemplary_dataset = Dataset.from_iterable(dst_items_list, categories)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(SrcExtractor(),
+            self._test_save_and_load(src_exemplary_dataset,
                 CocoInstancesConverter(segmentation_mode='polygons'), test_dir,
-                target_dataset=DstExtractor())
+                target_dataset=dst_exemplary_dataset)
 
     def test_can_save_and_load_images(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        items_list = [
                     DatasetItem(id=1, subset='train', attributes={'id': 1}),
                     DatasetItem(id=2, subset='train', attributes={'id': 2}),
 
@@ -410,50 +415,42 @@ class CocoConverterTest(TestCase):
                     DatasetItem(id=4, subset='val', attributes={'id': 4}),
 
                     DatasetItem(id=5, subset='test', attributes={'id': 1}),
-                ])
+                ]
+        
+        # Creating exemplary dataset
+        exemplary_dataset = Dataset.from_iterable(items_list)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(exemplary_dataset,
                 CocoImageInfoConverter(), test_dir)
 
     def test_can_save_and_load_labels(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        items_list = [
                     DatasetItem(id=1, subset='train',
                         annotations=[
                             Label(4, id=1, group=1),
                             Label(9, id=2, group=2),
                         ], attributes={'id': 1}
                     ),
-                ])
+                ]
+        
+        # Creating categories
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+        categories = { AnnotationType.label: label_categories }
 
-            def categories(self):
-                label_categories = LabelCategories()
-                for i in range(10):
-                    label_categories.add(str(i))
-                return {
-                    AnnotationType.label: label_categories,
-                }
+        # Creating exemplary dataset
+        exemplary_dataset = Dataset.from_iterable(items_list, categories)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(exemplary_dataset,
                 CocoLabelsConverter(), test_dir)
 
     def test_can_save_and_load_keypoints(self):
-        label_categories = LabelCategories()
-        points_categories = PointsCategories()
-        for i in range(10):
-            label_categories.add(str(i))
-            points_categories.add(i, joints=[[0, 1], [1, 2]])
-        categories = {
-            AnnotationType.label: label_categories,
-            AnnotationType.points: points_categories,
-        }
-
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        src_items_list = [
                     DatasetItem(id=1, subset='train', image=np.zeros((5, 5, 3)),
                         annotations=[
                             # Full instance annotations: polygon + keypoints
@@ -475,14 +472,24 @@ class CocoConverterTest(TestCase):
                             # Solitary keypoints with no label
                             Points([0, 0, 1, 2, 3, 4], [0, 1, 2], id=5),
                         ])
-                ])
+                ]
+        
+        # Creating categories
+        label_categories = LabelCategories()
+        points_categories = PointsCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+            points_categories.add(i, joints=[[0, 1], [1, 2]])
+        categories = {
+            AnnotationType.label: label_categories,
+            AnnotationType.points: points_categories,
+        }
 
-            def categories(self):
-                return categories
+        # Creating exemplary dataset
+        src_exemplary_dataset = Dataset.from_iterable(src_items_list, categories)
 
-        class DstTestExtractor(TestExtractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        dst_items_list = [
                     DatasetItem(id=1, subset='train', image=np.zeros((5, 5, 3)),
                         annotations=[
                             Points([0, 0, 0, 2, 4, 1], [0, 1, 2],
@@ -513,84 +520,97 @@ class CocoConverterTest(TestCase):
                                 group=5, id=5,
                                 attributes={'is_crowd': False}),
                         ], attributes={'id': 1}),
-                ])
+                ]
+        
+        # Creating exemplary dataset
+        dst_exemplary_dataset = Dataset.from_iterable(dst_items_list, categories)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(src_exemplary_dataset,
                 CocoPersonKeypointsConverter(), test_dir,
-                target_dataset=DstTestExtractor())
+                target_dataset=dst_exemplary_dataset)
 
     def test_can_save_dataset_with_no_subsets(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        items_list = [
                     DatasetItem(id=1, attributes={'id': 1}),
                     DatasetItem(id=2, attributes={'id': 2}),
-                ])
+                ]
+        
+        # Creating categories
+        categories = { AnnotationType.label: LabelCategories() }
 
-            def categories(self):
-                return { AnnotationType.label: LabelCategories() }
+        # Creating exemplary dataset
+        exemplary_dataset = Dataset.from_iterable(items_list, categories)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(exemplary_dataset,
                 CocoConverter(), test_dir)
 
     def test_can_save_dataset_with_image_info(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        items_list = [
                     DatasetItem(id=1, image=Image(path='1.jpg', size=(10, 15)),
                         attributes={'id': 1}),
-                ])
+                ]
+
+        # Creating exemplary dataset
+        exemplary_dataset = Dataset.from_iterable(items_list)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(exemplary_dataset,
                 CocoConverter(tasks='image_info'), test_dir)
 
     def test_relative_paths(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+         # Creating list of DatasetItems
+        items_list = [
                     DatasetItem(id='1', image=np.ones((4, 2, 3)),
                         attributes={'id': 1}),
                     DatasetItem(id='subdir1/1', image=np.ones((2, 6, 3)),
                         attributes={'id': 2}),
                     DatasetItem(id='subdir2/1', image=np.ones((5, 4, 3)),
                         attributes={'id': 3}),
-                ])
+                ]
+
+        # Creating exemplary dataset
+        exemplary_dataset = Dataset.from_iterable(items_list)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(exemplary_dataset,
                 CocoConverter(tasks='image_info', save_images=True), test_dir)
 
     def test_preserve_coco_ids(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        items_list = [
                     DatasetItem(id='some/name1', image=np.ones((4, 2, 3)),
                         attributes={'id': 40}),
-                ])
+                ]
+
+        # Creating exemplary dataset
+        exemplary_dataset = Dataset.from_iterable(items_list)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(exemplary_dataset,
                 CocoConverter(tasks='image_info', save_images=True), test_dir)
 
     def test_annotation_attributes(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        # Creating list of DatasetItems
+        items_list = [
                     DatasetItem(id=1, image=np.ones((4, 2, 3)), annotations=[
                         Polygon([0, 0, 4, 0, 4, 4], label=5, group=1, id=1,
                             attributes={'is_crowd': False, 'x': 5, 'y': 'abc'}),
                     ], attributes={'id': 1})
-                ])
+                ]
 
-            def categories(self):
-                label_categories = LabelCategories()
-                for i in range(10):
-                    label_categories.add(str(i))
-                return { AnnotationType.label: label_categories, }
+        # Creating categories
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+        categories = { AnnotationType.label: label_categories, }
+
+        # Creating exemplary dataset
+        exemplary_dataset = Dataset.from_iterable(items_list, categories)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(exemplary_dataset,
                 CocoConverter(), test_dir)
