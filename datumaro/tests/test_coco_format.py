@@ -38,8 +38,7 @@ class CocoImporterTest(TestCase):
                                 ), label=0,
                                 id=2, group=2, attributes={'is_crowd': True}),
                         ]
-                    ),
-                ]
+                    )]
         
         # Creating categories
         label_cat = LabelCategories()
@@ -88,8 +87,7 @@ class CocoConverterTest(TestCase):
                         annotations=[
                             Caption('word', id=1, group=1),
                         ], attributes={'id': 1}
-                    ),
-                ]
+                    )]
         
         # Creating exemplary dataset
         exemplary_dataset = Dataset.from_iterable(items_list)
@@ -139,8 +137,7 @@ class CocoConverterTest(TestCase):
                                 ),
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
-                        ], attributes={'id': 1}),
-                ]
+                        ], attributes={'id': 1})]
         
         # Creating categories
         label_categories = LabelCategories()
@@ -181,8 +178,8 @@ class CocoConverterTest(TestCase):
                                 ),
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
-                        ], attributes={'id': 1}),
-                ]
+                        ], attributes={'id': 1})
+                    ]
         
         
         # Creating exemplary dataset
@@ -203,8 +200,7 @@ class CocoConverterTest(TestCase):
                             Polygon([5, 0, 9, 0, 5, 5],
                                 label=3, id=4, group=4),
                         ]
-                    ),
-                ]
+                    )]
         
         # Creating categories
         label_categories = LabelCategories()
@@ -232,8 +228,7 @@ class CocoConverterTest(TestCase):
                             label=3, id=4, group=4,
                             attributes={ 'is_crowd': False }),
                         ], attributes={'id': 1}
-                    ),
-                ]
+                    )]
         
         # Creating exemplary dataset
         dst_exemplary_dataset = Dataset.from_iterable(dst_items_list, categories)
@@ -260,8 +255,7 @@ class CocoConverterTest(TestCase):
                             Polygon([1, 1, 4, 1, 4, 4, 1, 4],
                                 label=1, id=2, z_order=1),
                         ]
-                    ),
-                ]
+                    )]
         
         # Creating categories
         label_categories = LabelCategories()
@@ -290,8 +284,7 @@ class CocoConverterTest(TestCase):
                                 label=1, id=2, group=2,
                                 attributes={ 'is_crowd': False }),
                         ], attributes={'id': 1}
-                    ),
-                ]
+                    )]
         
         # Creating exemplary dataset
         dst_exemplary_dataset = Dataset.from_iterable(dst_items_list, categories)
@@ -311,8 +304,7 @@ class CocoConverterTest(TestCase):
                             Polygon([5, 0, 9, 0, 5, 5],
                                 label=3, id=4, group=4),
                         ]
-                    ),
-                ]
+                    )]
         
         # Creating categories
         label_categories = LabelCategories()
@@ -340,8 +332,7 @@ class CocoConverterTest(TestCase):
                                 attributes={ 'is_crowd': True },
                                 label=3, id=4, group=4),
                         ], attributes={'id': 1}
-                    ),
-                ]
+                    )]
         
         # Creating exemplary dataset
         dst_exemplary_dataset = Dataset.from_iterable(dst_items_list, categories)
@@ -365,8 +356,7 @@ class CocoConverterTest(TestCase):
                                 ]),
                                 label=3, id=4, group=4),
                         ]
-                    ),
-                ]
+                    )]
         
         # Creating categories
         label_categories = LabelCategories()
@@ -393,8 +383,7 @@ class CocoConverterTest(TestCase):
                                 label=3, id=4, group=4,
                                 attributes={ 'is_crowd': False }),
                         ], attributes={'id': 1}
-                    ),
-                ]
+                    )]
         
         # Creating exemplary dataset
         dst_exemplary_dataset = Dataset.from_iterable(dst_items_list, categories)
@@ -432,8 +421,7 @@ class CocoConverterTest(TestCase):
                             Label(4, id=1, group=1),
                             Label(9, id=2, group=2),
                         ], attributes={'id': 1}
-                    ),
-                ]
+                    )]
         
         # Creating categories
         label_categories = LabelCategories()
@@ -471,8 +459,7 @@ class CocoConverterTest(TestCase):
 
                             # Solitary keypoints with no label
                             Points([0, 0, 1, 2, 3, 4], [0, 1, 2], id=5),
-                        ])
-                ]
+                        ])]
         
         # Creating categories
         label_categories = LabelCategories()
@@ -519,8 +506,8 @@ class CocoConverterTest(TestCase):
                             Polygon([1, 2, 3, 2, 3, 4, 1, 4],
                                 group=5, id=5,
                                 attributes={'is_crowd': False}),
-                        ], attributes={'id': 1}),
-                ]
+                        ], attributes={'id': 1})
+                    ]
         
         # Creating exemplary dataset
         dst_exemplary_dataset = Dataset.from_iterable(dst_items_list, categories)

@@ -316,7 +316,7 @@ class Subset(Extractor):
 
 class Dataset(Extractor):
     @classmethod
-    def from_iterable(cls, iterable, categories={}):
+    def from_iterable(cls, iterable, categories=None):
         """Generation of Dataset from iterable object
 
         Args:
@@ -326,6 +326,11 @@ class Dataset(Extractor):
         Returns:
             Dataset: Dataset object
         """
+
+        # Configuration of categories
+        if not categories:
+            categories = {}
+
         # Get Dataset with specified categories
         dataset = Dataset(categories=categories)
 
