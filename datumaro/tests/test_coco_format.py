@@ -44,7 +44,7 @@ class CocoImporterTest(TestCase):
         label_cat = LabelCategories()
         label_cat.add('TEST')
         categories = { AnnotationType.label : label_cat}
-        
+
         # Creating exemplary dataset
         exemplary_dataset = Dataset.from_iterable(items_list, categories)
 
@@ -144,7 +144,7 @@ class CocoConverterTest(TestCase):
         for i in range(10):
             label_categories.add(str(i))
         categories = { AnnotationType.label: label_categories }
-        
+
         # Creating exemplary dataset
         src_exemplary_dataset = Dataset.from_iterable(src_items_list, categories)
 
@@ -207,7 +207,7 @@ class CocoConverterTest(TestCase):
         for i in range(10):
             label_categories.add(str(i))
         categories = { AnnotationType.label: label_categories }
-        
+
         # Creating exemplary dataset
         src_exemplary_dataset = Dataset.from_iterable(src_items_list, categories)
 
