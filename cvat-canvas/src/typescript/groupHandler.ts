@@ -95,7 +95,9 @@ export class GroupHandlerImpl implements GroupHandler {
             this.selectionRect = null;
 
             const box = this.getSelectionBox(event);
-            const shapes = (this.canvas.select('.cvat_canvas_shape') as any).members;
+            const shapes = (this.canvas.select('.cvat_canvas_shape') as any).members.filter(
+                (shape: SVG.Shape): boolean => !shape.hasClass('cvat_canvas_hidden'),
+            );
             for (const shape of shapes) {
                 // TODO: Doesn't work properly for groups
                 const bbox = shape.bbox();
