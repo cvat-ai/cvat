@@ -383,9 +383,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (typeof (clientID) === 'number') {
-            const [state] = this.data.objects
+            const [state] = this.objects
                 .filter((_state: any): boolean => _state.clientID === clientID);
-            if (!['rectangle', 'polygon', 'polyline', 'points', 'cuboid'].includes(state.shapeType)) {
+            if (!state || state.objectType === 'tag') {
                 return;
             }
         }
