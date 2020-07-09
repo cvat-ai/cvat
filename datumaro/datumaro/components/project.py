@@ -316,6 +316,41 @@ class Subset(Extractor):
 
 class Dataset(Extractor):
     @classmethod
+    def from_iterable(cls, iterable, categories={}):
+        """Generation of Dataset from iterable object
+
+        Args:
+            iterable: Iterable object contains DatasetItems
+            categories (dict, optional): Dict of categories of datasets. Defaults to {}.
+
+        Returns:
+            Dataset: Dataset object
+        """
+        # Get Dataset with specified categories
+        dataset = Dataset(categories=categories)
+
+        #Get iterator
+        it = iter(iterable)
+
+        # Merging items
+        subsets = defaultdict(lambda: Subset(dataset))
+
+        for item in it:
+                existing_item = subsets[item.subset].items.get(item.id)
+                if existing_item is not None:
+                    path = existing_item.path
+                    if item.path != path:
+                        path = None
+                    item = cls._merge_items(existing_item, item, path=path)
+
+                subsets[item.subset].items[item.id] = item
+
+        # Set obtained items to dataset
+        dataset._subsets = dict(subsets)
+
+        return dataset
+
+    @classmethod
     def from_extractors(cls, *sources):
         # merge categories
         # TODO: implement properly with merging and annotations remapping
