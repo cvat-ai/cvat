@@ -22,7 +22,6 @@ import {
     searchAnnotationsAsync,
     changeWorkspace as changeWorkspaceAction,
     activateObject,
-    closeJob as closeJobAction,
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
 
@@ -59,7 +58,6 @@ interface DispatchToProps {
     redo(sessionInstance: any, frameNumber: any): void;
     searchAnnotations(sessionInstance: any, frameFrom: any, frameTo: any): void;
     changeWorkspace(workspace: Workspace): void;
-    closeJob(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -155,9 +153,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(activateObject(null, null));
             dispatch(changeWorkspaceAction(workspace));
         },
-        closeJob(): void {
-            dispatch(closeJobAction());
-        },
     };
 }
 
@@ -246,11 +241,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     }
 
     public componentWillUnmount(): void {
-        const { closeJob } = this.props;
         window.clearInterval(this.autoSaveInterval);
         window.removeEventListener('beforeunload', this.beforeUnloadCallback);
         this.unblock();
-        closeJob();
     }
 
     private undo = (): void => {

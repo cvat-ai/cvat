@@ -164,7 +164,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                     onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
                         changeAttribute(attrID, event.target.value);
                     }}
-                    value={attrValue}
+                    defaultValue={attrValue}
                     className='cvat-object-item-text-attribute'
                 />
             </Col>
