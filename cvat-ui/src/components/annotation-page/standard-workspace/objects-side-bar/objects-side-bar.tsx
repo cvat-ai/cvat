@@ -3,82 +3,84 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
+import React, { Dispatch, useEffect } from 'react';
+import { AnyAction } from 'redux';
+import { connect } from 'react-redux';
 import Text from 'antd/lib/typography/Text';
 import Icon from 'antd/lib/icon';
 import Tabs from 'antd/lib/tabs';
 import Layout from 'antd/lib/layout';
-import { RadioChangeEvent } from 'antd/lib/radio';
-import { SliderValue } from 'antd/lib/slider';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import { Canvas } from 'cvat-canvas-wrapper';
 
-import { ColorBy } from 'reducers/interfaces';
+import { Canvas } from 'cvat-canvas-wrapper';
+import { CombinedState } from 'reducers/interfaces';
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import LabelsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/labels-list';
-import AppearanceBlock from './appearance-block';
+import {
+    collapseSidebar as collapseSidebarAction,
+    updateTabContentHeight as updateTabContentHeightAction,
+} from 'actions/annotation-actions';
+import AppearanceBlock, { computeHeight } from 'components/annotation-page/appearance-block';
 
-
-interface Props {
+interface StateToProps {
     sidebarCollapsed: boolean;
-    appearanceCollapsed: boolean;
-    colorBy: ColorBy;
-    opacity: number;
-    selectedOpacity: number;
-    blackBorders: boolean;
-    showBitmap: boolean;
-    showProjections: boolean;
     canvasInstance: Canvas;
-
-    collapseSidebar(): void;
-    collapseAppearance(): void;
-
-    changeShapesColorBy(event: RadioChangeEvent): void;
-    changeShapesOpacity(event: SliderValue): void;
-    changeSelectedShapesOpacity(event: SliderValue): void;
-    changeShapesBlackBorders(event: CheckboxChangeEvent): void;
-    changeShowBitmap(event: CheckboxChangeEvent): void;
-    changeShowProjections(event: CheckboxChangeEvent): void;
 }
 
-function ObjectsSideBar(props: Props): JSX.Element {
+interface DispatchToProps {
+    collapseSidebar(): void;
+    updateTabContentHeight(): void;
+}
+
+function mapStateToProps(state: CombinedState): StateToProps {
+    const {
+        annotation: {
+            sidebarCollapsed,
+            canvas: {
+                instance: canvasInstance,
+            },
+        },
+    } = state;
+
+    return {
+        sidebarCollapsed,
+        canvasInstance,
+    };
+}
+
+function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
+    return {
+        collapseSidebar(): void {
+            dispatch(collapseSidebarAction());
+        },
+        updateTabContentHeight(): void {
+            const height = computeHeight();
+            dispatch(updateTabContentHeightAction(height));
+        },
+    };
+}
+
+function ObjectsSideBar(props: StateToProps & DispatchToProps): JSX.Element {
     const {
         sidebarCollapsed,
-        appearanceCollapsed,
-        colorBy,
-        opacity,
-        selectedOpacity,
-        blackBorders,
-        showBitmap,
-        showProjections,
         canvasInstance,
         collapseSidebar,
-        collapseAppearance,
-        changeShapesColorBy,
-        changeShapesOpacity,
-        changeSelectedShapesOpacity,
-        changeShapesBlackBorders,
-        changeShowBitmap,
-        changeShowProjections,
+        updateTabContentHeight,
     } = props;
 
-    const appearanceProps = {
-        collapseAppearance,
-        appearanceCollapsed,
-        colorBy,
-        opacity,
-        selectedOpacity,
-        blackBorders,
-        showBitmap,
-        showProjections,
+    useEffect(() => {
+        const alignTabHeight = (): void => {
+            if (!sidebarCollapsed) {
+                updateTabContentHeight();
+            }
+        };
 
-        changeShapesColorBy,
-        changeShapesOpacity,
-        changeSelectedShapesOpacity,
-        changeShapesBlackBorders,
-        changeShowBitmap,
-        changeShowProjections,
-    };
+        window.addEventListener('resize', alignTabHeight);
+        alignTabHeight();
+
+        return () => {
+            window.removeEventListener('resize', alignTabHeight);
+        };
+    }, []);
 
     useEffect(() => {
         const listener = (event: Event): void => {
@@ -134,9 +136,12 @@ function ObjectsSideBar(props: Props): JSX.Element {
                 </Tabs.TabPane>
             </Tabs>
 
-            { !sidebarCollapsed && <AppearanceBlock {...appearanceProps} /> }
+            { !sidebarCollapsed && <AppearanceBlock /> }
         </Layout.Sider>
     );
 }
 
-export default React.memo(ObjectsSideBar);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps,
+)(React.memo(ObjectsSideBar));

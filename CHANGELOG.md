@@ -18,7 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Some objects aren't shown on canvas sometimes. For example after propagation on of objects is invisible (<https://github.com/opencv/cvat/pull/1834>)
+- `outside` annotations should not be in exported images (<https://github.com/opencv/cvat/issues/1620>)
 
 ### Security
 -
@@ -46,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to set the first point for polygons in points context menu (<https://github.com/opencv/cvat/pull/1571>)
 - DL models as serverless functions (<https://github.com/opencv/cvat/pull/1767>)
 - Added new tag annotation workspace (<https://github.com/opencv/cvat/pull/1570>)
+- Appearance block in attribute annotation mode (<https://github.com/opencv/cvat/pull/1820>)
+- Keyframe navigations and some switchers in attribute annotation mode (<https://github.com/opencv/cvat/pull/1820>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)

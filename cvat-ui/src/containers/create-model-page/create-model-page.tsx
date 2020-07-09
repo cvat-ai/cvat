@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { connect } from 'react-redux';
 
 import CreateModelPageComponent from 'components/create-model-page/create-model-page';
@@ -38,13 +37,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function CreateModelPageContainer(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <CreateModelPageComponent {...props} />
-    );
-}
-
 export default connect(
     mapStateToProps,
     mapDispatchToProps,
-)(CreateModelPageContainer);
+)(CreateModelPageComponent);

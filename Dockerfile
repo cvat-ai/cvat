@@ -56,7 +56,7 @@ RUN apt-get update && \
         curl && \
     curl https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \
     apt-get --no-install-recommends install -y git-lfs && git lfs install && \
-    python3 -m pip install --no-cache-dir -U pip==20.0.1 setuptools && \
+    python3 -m pip install --no-cache-dir -U pip==20.0.1 setuptools>=49.1.0 && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \

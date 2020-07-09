@@ -99,7 +99,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (value) {
             if (shape) {
                 (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
-                    .style('display', 'none');
+                    .addClass('cvat_canvas_hidden');
             }
 
             if (text) {
@@ -112,7 +112,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (!state.outside && !state.hidden) {
                     if (shape) {
                         (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
-                            .style('display', '');
+                            .removeClass('cvat_canvas_hidden');
                     }
 
                     if (text) {
@@ -1244,13 +1244,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (drawnState.hidden !== state.hidden || drawnState.outside !== state.outside) {
                 if (isInvisible) {
                     (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
-                        .style('display', 'none');
+                        .addClass('cvat_canvas_hidden');
                     if (text) {
                         text.addClass('cvat_canvas_hidden');
                     }
                 } else {
                     (state.shapeType === 'points' ? shape.remember('_selectHandler').nested : shape)
-                        .style('display', '');
+                        .removeClass('cvat_canvas_hidden');
                     if (text) {
                         text.removeClass('cvat_canvas_hidden');
                         this.updateTextPosition(
