@@ -4,6 +4,7 @@
 
 import './styles.scss';
 import React, { useEffect } from 'react';
+import { useHistory } from 'react-router';
 import Layout from 'antd/lib/layout';
 import Spin from 'antd/lib/spin';
 import Result from 'antd/lib/result';
@@ -20,6 +21,7 @@ interface Props {
     fetching: boolean;
     getJob(): void;
     saveLogs(): void;
+    closeJob(): void;
     workspace: Workspace;
 }
 
@@ -28,10 +30,12 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         job,
         fetching,
         getJob,
+        closeJob,
         saveLogs,
         workspace,
     } = props;
 
+    const history = useHistory();
     useEffect(() => {
         saveLogs();
         const root = window.document.getElementById('root');
@@ -43,6 +47,10 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             saveLogs();
             if (root) {
                 root.style.minHeight = '';
+            }
+
+            if (!history.location.pathname.includes('/jobs')) {
+                closeJob();
             }
         };
     }, []);
