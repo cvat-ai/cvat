@@ -119,10 +119,14 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     [CVAT user's guide](/cvat/apps/documentation/user_guide.md) for more details.
 
 ## Windows 10
--   Download [Docker for Windows](https://download.docker.com/win/stable/Docker%20for%20Windows%20Installer.exe).
-    Double-click `Docker for Windows Installer` to run the installer. More
-    instructions can be found [here](https://docs.docker.com/docker-for-windows/install/). Note:
-    Docker Desktop requires Windows 10 Pro or Enterprise version 14393 to run.
+-   Install WSL2 (Windows subsystem for Linux) refer to [this official guide](https://docs.microsoft.com/windows/wsl/install-win10).
+    WSL2 requires Windows 10, version 2004 or higher. Note: you may not install any Linux distribution unless necessary.
+
+-   Download and install [Docker Desktop for Windows](https://download.docker.com/win/stable/Docker%20Desktop%20Installer.exe).
+    Double-click `Docker for Windows Installer` to run the installer.
+    More instructions can be found [here](https://docs.docker.com/docker-for-windows/install/).
+    Official guide for docker WSL2 backend can be found
+    [here](https://docs.docker.com/docker-for-windows/wsl/). Note: check that using exaclty WSL2 backend for docker.
 
 -   Download and install
     [Git for Windows](https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe).
