@@ -327,33 +327,17 @@ class Dataset(Extractor):
             Dataset: Dataset object
         """
 
-        # Configuration of categories
         if not categories:
             categories = {}
 
-        # Get Dataset with specified categories
-        dataset = Dataset(categories=categories)
+        class tmpExtractor(Extractor):
+            def __iter__(self):
+                return iter(iterable)
 
-        #Get iterator
-        it = iter(iterable)
+            def categories(self):
+                return categories
 
-        # Merging items
-        subsets = defaultdict(lambda: Subset(dataset))
-
-        for item in it:
-                existing_item = subsets[item.subset].items.get(item.id)
-                if existing_item is not None:
-                    path = existing_item.path
-                    if item.path != path:
-                        path = None
-                    item = cls._merge_items(existing_item, item, path=path)
-
-                subsets[item.subset].items[item.id] = item
-
-        # Set obtained items to dataset
-        dataset._subsets = dict(subsets)
-
-        return dataset
+        return cls.from_extractors(tmpExtractor())
 
     @classmethod
     def from_extractors(cls, *sources):
