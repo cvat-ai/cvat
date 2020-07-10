@@ -72,6 +72,20 @@ class Categories:
 class LabelCategories(Categories):
     Category = namedtuple('Category', ['name', 'parent', 'attributes'])
 
+    @classmethod
+    def from_iterable(cls, iterable):
+        temp_categories = cls()
+
+        if isinstance(iterable, str):
+            iterable = [[iterable]]
+
+        for category in iterable:
+            if isinstance(category, str):
+                category = [category]
+            temp_categories.add(*category)
+
+        return temp_categories
+
     def __init__(self, items=None, attributes=None):
         super().__init__(attributes=attributes)
 
@@ -481,6 +495,19 @@ class Bbox(_Shape):
 
 class PointsCategories(Categories):
     Category = namedtuple('Category', ['labels', 'joints'])
+
+    @classmethod
+    def from_iterable(cls, iterable):
+        temp_categories = cls()
+
+        if isinstance(iterable, int):
+            iterable = [[iterable]]
+
+        for category in iterable:
+            if isinstance(category, int):
+                category = [category]
+            temp_categories.add(*category)
+        return temp_categories
 
     def __init__(self, items=None, attributes=None):
         super().__init__(attributes=attributes)
