@@ -129,7 +129,8 @@ class CocoConverterTest(TestCase):
                                 label=4, group=3, id=3),
                         ], attributes={'id': 1}),
                     ], categories={
-                        AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
+                        AnnotationType.label: LabelCategories.from_iterable(
+                            str(i) for i in range(10)),
                     })
 
         target_dataset = Dataset.from_iterable([
@@ -163,7 +164,8 @@ class CocoConverterTest(TestCase):
                                 label=4, group=3, id=3),
                         ], attributes={'id': 1})
                     ], categories={
-                        AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
+                        AnnotationType.label: LabelCategories.from_iterable(
+                            str(i) for i in range(10)),
                 })
 
         with TestDir() as test_dir:
@@ -203,7 +205,8 @@ class CocoConverterTest(TestCase):
                         ], attributes={'id': 1}
                     ),
                 ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
+                    AnnotationType.label: LabelCategories.from_iterable(
+                        str(i) for i in range(10)),
                 })
 
         with TestDir() as test_dir:
@@ -229,7 +232,8 @@ class CocoConverterTest(TestCase):
                         ]
                     ),
                 ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
+                    AnnotationType.label: LabelCategories.from_iterable(
+                        str(i) for i in range(10)),
                 })
 
         target_dataset = Dataset.from_iterable([
@@ -251,7 +255,8 @@ class CocoConverterTest(TestCase):
                         ], attributes={'id': 1}
                     ),
                 ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
+                    AnnotationType.label: LabelCategories.from_iterable(
+                        str(i) for i in range(10)),
                 })
 
         with TestDir() as test_dir:
@@ -270,7 +275,8 @@ class CocoConverterTest(TestCase):
                         ]
                     ),
                 ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
+                    AnnotationType.label: LabelCategories.from_iterable(
+                        str(i) for i in range(10)),
                 })
 
         target_dataset = Dataset.from_iterable([
@@ -291,7 +297,8 @@ class CocoConverterTest(TestCase):
                         ], attributes={'id': 1}
                     ),
                 ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
+                    AnnotationType.label: LabelCategories.from_iterable(
+                        str(i) for i in range(10)),
                 })
 
         with TestDir() as test_dir:
@@ -314,7 +321,8 @@ class CocoConverterTest(TestCase):
                         ]
                     ),
                 ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
+                    AnnotationType.label: LabelCategories.from_iterable(
+                        str(i) for i in range(10)),
                 })
 
         target_dataset = Dataset.from_iterable([
@@ -331,7 +339,8 @@ class CocoConverterTest(TestCase):
                         ], attributes={'id': 1}
                     ),
                 ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
+                    AnnotationType.label: LabelCategories.from_iterable(
+                        str(i) for i in range(10)),
                 })
 
         with TestDir() as test_dir:
@@ -364,7 +373,8 @@ class CocoConverterTest(TestCase):
                             Label(9, id=2, group=2),
                         ], attributes={'id': 1}),
                 ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
+                    AnnotationType.label: LabelCategories.from_iterable(
+                        str(i) for i in range(10)),
                 })
 
         with TestDir() as test_dir:
@@ -372,9 +382,6 @@ class CocoConverterTest(TestCase):
                 CocoLabelsConverter(), test_dir)
 
     def test_can_save_and_load_keypoints(self):
-        points_categories = PointsCategories()
-        for i in range(10):
-            points_categories.add(i, joints=[[0, 1], [1, 2]])
 
         source_dataset = Dataset.from_iterable([
                     DatasetItem(id=1, subset='train', image=np.zeros((5, 5, 3)),
@@ -399,8 +406,11 @@ class CocoConverterTest(TestCase):
                             Points([0, 0, 1, 2, 3, 4], [0, 1, 2], id=5),
                         ]),
                     ], categories={
-                            AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
-                            AnnotationType.points: points_categories,
+                            AnnotationType.label: LabelCategories.from_iterable(
+                                str(i) for i in range(10)),
+                            AnnotationType.points: PointsCategories.from_iterable(
+                                (i, None, [[0, 1], [1, 2]]) for i in range(10)
+                            ),
                     })
 
         target_dataset = Dataset.from_iterable([
@@ -435,8 +445,11 @@ class CocoConverterTest(TestCase):
                                 attributes={'is_crowd': False}),
                         ], attributes={'id': 1}),
                     ], categories={
-                            AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
-                            AnnotationType.points: points_categories,
+                            AnnotationType.label: LabelCategories.from_iterable(
+                                str(i) for i in range(10)),
+                            AnnotationType.points: PointsCategories.from_iterable(
+                                (i, None, [[0, 1], [1, 2]]) for i in range(10)
+                            ),
                     })
 
         with TestDir() as test_dir:
@@ -497,7 +510,8 @@ class CocoConverterTest(TestCase):
                             attributes={'is_crowd': False, 'x': 5, 'y': 'abc'}),
                     ], attributes={'id': 1})
                 ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
+                    AnnotationType.label: LabelCategories.from_iterable(
+                        str(i) for i in range(10)),
             })
 
         with TestDir() as test_dir:
