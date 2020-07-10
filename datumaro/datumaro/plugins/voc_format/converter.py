@@ -20,8 +20,7 @@ from datumaro.util import str_to_bool, find
 from datumaro.util.image import save_image
 from datumaro.util.mask_tools import paint_mask, remap_mask
 
-from .format import (VocTask, VocPath,
-    VocInstColormap, VocPose,
+from .format import (VocTask, VocPath, VocInstColormap,
     parse_label_map, make_voc_label_map, make_voc_categories, write_label_map
 )
 
@@ -156,7 +155,9 @@ class _Converter:
                     elif a.type == AnnotationType.mask:
                         masks.append(a)
 
-                if len(bboxes) != 0:
+                if self._tasks is None and bboxes or \
+                        self._tasks & {VocTask.detection, VocTask.person_layout,
+                            VocTask.action_classification}:
                     root_elem = ET.Element('annotation')
                     if '_' in item.id:
                         folder = item.id[ : item.id.find('_')]
