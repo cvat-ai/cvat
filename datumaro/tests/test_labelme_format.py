@@ -2,7 +2,7 @@ import numpy as np
 import os.path as osp
 
 from unittest import TestCase
-
+from datumaro.components.project import Dataset
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Bbox, Mask, Polygon, LabelCategories
 )
@@ -28,9 +28,7 @@ class LabelMeConverterTest(TestCase):
         compare_datasets(self, expected=target_dataset, actual=parsed_dataset)
 
     def test_can_save_and_load(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        source_dataset = Dataset.from_iterable([
                     DatasetItem(id=1, subset='train',
                         image=np.ones((16, 16, 3)),
                         annotations=[
@@ -49,19 +47,12 @@ class LabelMeConverterTest(TestCase):
                             ),
                         ]
                     ),
-                ])
+                ], categories={
+                    AnnotationType.label: LabelCategories.from_iterable(
+                        'label_' + str(label) for label in range(10)),
+                })
 
-            def categories(self):
-                label_cat = LabelCategories()
-                for label in range(10):
-                    label_cat.add('label_' + str(label))
-                return {
-                    AnnotationType.label: label_cat,
-                }
-
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        target_dataset = Dataset.from_iterable([
                     DatasetItem(id=1, subset='train',
                         image=np.ones((16, 16, 3)),
                         annotations=[
@@ -93,34 +84,26 @@ class LabelMeConverterTest(TestCase):
                             ),
                         ]
                     ),
-                ])
-
-            def categories(self):
-                label_cat = LabelCategories()
-                label_cat.add('label_2')
-                label_cat.add('label_3')
-                return {
-                    AnnotationType.label: label_cat,
-                }
+                ], categories={
+                    AnnotationType.label: LabelCategories.from_iterable([
+                        'label_2', 'label_3']),
+                })
 
         with TestDir() as test_dir:
             self._test_save_and_load(
-                SrcExtractor(), LabelMeConverter(save_images=True),
-                test_dir, target_dataset=DstExtractor())
+                source_dataset, LabelMeConverter(save_images=True),
+                test_dir, target_dataset=target_dataset)
 
     def test_cant_save_dataset_with_relative_paths(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        expected_dataset = Dataset.from_iterable([
                     DatasetItem(id='dir/1', image=np.ones((2, 6, 3))),
-                ])
-
-            def categories(self):
-                return { AnnotationType.label: LabelCategories() }
+                ], categories={
+                    AnnotationType.label: LabelCategories(),
+                })
 
         with self.assertRaisesRegex(Exception, r'only supports flat'):
             with TestDir() as test_dir:
-                self._test_save_and_load(SrcExtractor(),
+                self._test_save_and_load(expected_dataset,
                     LabelMeConverter(save_images=True), test_dir)
 
 
@@ -131,31 +114,29 @@ class LabelMeImporterTest(TestCase):
         self.assertTrue(LabelMeImporter.detect(DUMMY_DATASET_DIR))
 
     def test_can_import(self):
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                img1 = np.ones((77, 102, 3)) * 255
-                img1[6:32, 7:41] = 0
+        img1 = np.ones((77, 102, 3)) * 255
+        img1[6:32, 7:41] = 0
 
-                mask1 = np.zeros((77, 102), dtype=int)
-                mask1[67:69, 58:63] = 1
+        mask1 = np.zeros((77, 102), dtype=int)
+        mask1[67:69, 58:63] = 1
 
-                mask2 = np.zeros((77, 102), dtype=int)
-                mask2[13:25, 54:71] = [
-                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-                    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-                    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-                    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-                    [0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0],
-                    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0],
-                    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-                    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-                    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
-                    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
-                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                ]
+        mask2 = np.zeros((77, 102), dtype=int)
+        mask2[13:25, 54:71] = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
 
-                return iter([
+        target_dataset = Dataset.from_iterable([
                     DatasetItem(id='img1', image=img1,
                         annotations=[
                             Polygon([43, 34, 45, 34, 45, 37, 43, 37],
@@ -211,21 +192,13 @@ class LabelMeImporterTest(TestCase):
                             ),
                         ]
                     ),
-                ])
-
-            def categories(self):
-                label_cat = LabelCategories()
-                label_cat.add('window')
-                label_cat.add('license plate')
-                label_cat.add('o1')
-                label_cat.add('q1')
-                label_cat.add('b1')
-                label_cat.add('m1')
-                label_cat.add('hg')
-                return {
-                    AnnotationType.label: label_cat,
-                }
+                ], categories={
+                    AnnotationType.label: LabelCategories.from_iterable([
+                        'window', 'license plate', 'o1',
+                        'q1', 'b1', 'm1', 'hg',
+                    ]),
+                })
 
         parsed = Project.import_from(DUMMY_DATASET_DIR, 'label_me') \
             .make_dataset()
-        compare_datasets(self, expected=DstExtractor(), actual=parsed)
+        compare_datasets(self, expected=target_dataset, actual=parsed)
