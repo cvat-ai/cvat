@@ -6,9 +6,9 @@ django-cacheops==5.0
 django-compressor==2.4
 django-rq==2.0.0
 EasyProcess==0.3
-Pillow==7.1.2
+Pillow==7.2.0
 numpy==1.18.5
-python-ldap==3.3.0
+python-ldap==3.3.1
 pytz==2020.1
 pyunpack==0.2.1
 rcssmin==1.0.6
@@ -40,7 +40,7 @@ matplotlib==3.0.3
 scikit-image==0.15.0
 tensorflow==2.2.0
 keras==2.4.2
-opencv-python==4.2.0.34
+opencv-python==4.3.0.36
 h5py==2.10.0
 imgaug==0.4.0
 django-cors-headers==3.4.0

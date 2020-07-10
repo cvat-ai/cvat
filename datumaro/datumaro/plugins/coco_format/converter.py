@@ -17,7 +17,7 @@ from datumaro.components.extractor import (DEFAULT_SUBSET_NAME,
     AnnotationType, Points
 )
 from datumaro.components.cli_plugin import CliPlugin
-from datumaro.util import find, cast
+from datumaro.util import find, cast, str_to_bool
 from datumaro.util.image import save_image
 import datumaro.util.mask_tools as mask_tools
 import datumaro.util.annotation_tools as anno_tools
@@ -110,6 +110,12 @@ class _TaskConverter:
             self._min_ann_id = max(ann_id, self._min_ann_id)
         return ann_id
 
+    @staticmethod
+    def _convert_attributes(ann):
+        return { k: v for k, v in ann.attributes.items()
+            if k not in {'is_crowd', 'score'}
+        }
+
 class _ImageInfoConverter(_TaskConverter):
     def is_empty(self):
         return len(self._data['images']) == 0
@@ -141,6 +147,8 @@ class _CaptionsConverter(_TaskConverter):
                 except Exception as e:
                     log.warning("Item '%s', ann #%s: failed to convert "
                         "attribute 'score': %e" % (item.id, ann_idx, e))
+            if self._context._allow_attributes:
+                elem['attributes'] = self._convert_attributes(ann)
 
             self.annotations.append(elem)
 
@@ -312,6 +320,8 @@ class _InstancesConverter(_TaskConverter):
             except Exception as e:
                 log.warning("Item '%s': failed to convert attribute "
                     "'score': %e" % (item.id, e))
+        if self._context._allow_attributes:
+                elem['attributes'] = self._convert_attributes(ann)
 
         return elem
 
@@ -428,6 +438,8 @@ class _LabelsConverter(_TaskConverter):
                 except Exception as e:
                     log.warning("Item '%s': failed to convert attribute "
                         "'score': %e" % (item.id, e))
+            if self._context._allow_attributes:
+                elem['attributes'] = self._convert_attributes(ann)
 
             self.annotations.append(elem)
 
@@ -442,7 +454,7 @@ class _Converter:
 
     def __init__(self, extractor, save_dir,
             tasks=None, save_images=False, segmentation_mode=None,
-            crop_covered=False):
+            crop_covered=False, allow_attributes=True):
         assert tasks is None or isinstance(tasks, (CocoTask, list, str))
         if tasks is None:
             tasks = list(self._TASK_CONVERTER)
@@ -473,6 +485,7 @@ class _Converter:
         self._segmentation_mode = segmentation_mode
 
         self._crop_covered = crop_covered
+        self._allow_attributes = allow_attributes
 
         self._image_ids = {}
 
@@ -549,25 +562,29 @@ class CocoConverter(Converter, CliPlugin):
 
     @classmethod
     def build_cmdline_parser(cls, **kwargs):
+        kwargs['description'] = """
+            Segmentation save modes:|n
+            - '{sm.guess.name}': guess the mode for each instance,|n
+            |s|suse 'is_crowd' attribute as a hint|n
+            - '{sm.polygons.name}': save polygons,|n
+            |s|smerge and convert masks, prefer polygons|n
+            - '{sm.mask.name}': save masks,|n
+            |s|smerge and convert polygons, prefer masks
+            """.format(sm=SegmentationMode)
         parser = super().build_cmdline_parser(**kwargs)
+
         parser.add_argument('--save-images', action='store_true',
             help="Save images (default: %(default)s)")
         parser.add_argument('--segmentation-mode',
             choices=[m.name for m in SegmentationMode],
             default=SegmentationMode.guess.name,
-            help="""
-                Save mode for instance segmentation:|n
-                - '{sm.guess.name}': guess the mode for each instance,|n
-                |s|suse 'is_crowd' attribute as hint|n
-                - '{sm.polygons.name}': save polygons,|n
-                |s|smerge and convert masks, prefer polygons|n
-                - '{sm.mask.name}': save masks,|n
-                |s|smerge and convert polygons, prefer masks|n
-                Default: %(default)s.
-                """.format(sm=SegmentationMode))
+            help="Save mode for instance segmentation (default: %(default)s)")
         parser.add_argument('--crop-covered', action='store_true',
             help="Crop covered segments so that background objects' "
                 "segmentation was more accurate (default: %(default)s)")
+        parser.add_argument('--allow-attributes',
+            type=str_to_bool, default=True,
+            help="Allow export of attributes (default: %(default)s)")
         parser.add_argument('--tasks', type=cls._split_tasks_string,
             default=None,
             help="COCO task filter, comma-separated list of {%s} "
@@ -576,7 +593,7 @@ class CocoConverter(Converter, CliPlugin):
 
     def __init__(self,
             tasks=None, save_images=False, segmentation_mode=None,
-            crop_covered=False):
+            crop_covered=False, allow_attributes=True):
         super().__init__()
 
         self._options = {
@@ -584,6 +601,7 @@ class CocoConverter(Converter, CliPlugin):
             'save_images': save_images,
             'segmentation_mode': segmentation_mode,
             'crop_covered': crop_covered,
+            'allow_attributes': allow_attributes,
         }
 
     def __call__(self, extractor, save_dir):

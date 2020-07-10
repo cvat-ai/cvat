@@ -442,9 +442,10 @@ class TaskData:
         return None
 
 class CvatTaskDataExtractor(datumaro.SourceExtractor):
-    def __init__(self, task_data, include_images=False):
+    def __init__(self, task_data, include_images=False, include_outside=False):
         super().__init__()
         self._categories = self._load_categories(task_data)
+        self._include_outside = include_outside
 
         dm_items = []
 
@@ -540,6 +541,9 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             if hasattr(shape_obj, 'track_id'):
                 anno_attr['track_id'] = shape_obj.track_id
                 anno_attr['keyframe'] = shape_obj.keyframe
+
+                if not self._include_outside and shape_obj.outside:
+                    continue
 
             anno_points = shape_obj.points
             if shape_obj.type == ShapeType.POINTS:
