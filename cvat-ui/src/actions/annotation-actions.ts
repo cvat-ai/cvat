@@ -189,6 +189,11 @@ export enum AnnotationActionTypes {
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
+    TRACKER_SETTINGS = 'TRACKER_SETTINGS',
+    RESET_TRACKER_SETTINGS = 'RESET_TRACKER_SETTINGS',
+    DO_TRACKING = 'DO_TRACKING',
+    DO_TRACKING_SUCCESS = 'DO_TRACKING_SUCCESS',
+    DO_TRACKING_FAILURE = 'DO_TRACKING_FAILURE',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -1532,6 +1537,54 @@ export function redrawShapeAsync(): ThunkAction {
                     crosshair: state.shapeType === ShapeType.RECTANGLE,
                 });
             }
+        }
+    };
+}
+
+export function trackerSettings(name: string, value: string | number): AnyAction {
+    return {
+        type: AnnotationActionTypes.TRACKER_SETTINGS,
+        payload: {
+            name,
+            value,
+        },
+    };
+}
+
+export function resetTrackerSettings(): AnyAction {
+    return {
+        type: AnnotationActionTypes.RESET_TRACKER_SETTINGS,
+    };
+}
+
+export function doTracking(body: any, taskId: string): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch({
+            type: AnnotationActionTypes.DO_TRACKING,
+        });
+        const baseUrl = cvat.config.backendAPI.slice(0, -7);
+        try {
+            cvat.server.request(`${baseUrl}/api/v1/tasks/${taskId}/tracking/track`, {
+                method: 'POST',
+                data: JSON.stringify(body),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }).then((response: any) => {
+                console.log(response)
+                dispatch({
+                    type: AnnotationActionTypes.DO_TRACKING_SUCCESS,
+                });
+            })
+            .catch((err: any) => {
+                dispatch({
+                    type: AnnotationActionTypes.DO_TRACKING_FAILURE,
+                });
+            })
+        } catch(error) {
+            dispatch({
+                type: AnnotationActionTypes.DO_TRACKING_FAILURE,
+            });
         }
     };
 }

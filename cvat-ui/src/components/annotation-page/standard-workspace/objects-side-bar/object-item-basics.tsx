@@ -37,6 +37,7 @@ interface Props {
     toBackground(): void;
     toForeground(): void;
     resetCuboidPerspective(): void;
+    onTrackerClick(): void
 }
 
 function ItemTopComponent(props: Props): JSX.Element {
@@ -64,6 +65,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackground,
         toForeground,
         resetCuboidPerspective,
+        onTrackerClick,
     } = props;
 
     return (
@@ -119,6 +121,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         toBackground,
                         toForeground,
                         resetCuboidPerspective,
+                        onTrackerClick,
                     })}
                 >
                     <Icon type='more' />

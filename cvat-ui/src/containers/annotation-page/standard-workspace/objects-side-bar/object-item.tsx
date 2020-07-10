@@ -4,7 +4,9 @@
 
 import React from 'react';
 import copy from 'copy-to-clipboard';
+import {withRouter} from 'react-router-dom';
 import { connect } from 'react-redux';
+import { RouteComponentProps } from 'react-router';
 
 import { LogType } from 'cvat-logger';
 import {
@@ -24,6 +26,8 @@ import {
     activateObject as activateObjectAction,
     propagateObject as propagateObjectAction,
     pasteShapeAsync,
+    resetTrackerSettings,
+    doTracking,
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
@@ -48,7 +52,13 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
+    tracker_type: string;
+    tracker_until: string;
+    tracker_frame_number: number;
+    tracking: boolean;
 }
+
+type PathProps = RouteComponentProps<{tid: string}>;
 
 interface DispatchToProps {
     changeFrame(frame: number): void;
@@ -60,6 +70,8 @@ interface DispatchToProps {
     propagateObject: (objectState: any) => void;
     changeLabelColor(label: any, color: string): void;
     changeGroupColor(group: number, color: string): void;
+    resetTracker(): void;
+    handleTracking(data: TrackerPayload, taskId: string): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -87,6 +99,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             canvas: {
                 ready,
                 activeControl,
+            },
+            tracker: {
+                tracker_type,
+                tracker_until,
+                tracker_frame_number,
+                tracking,
             },
             colors,
         },
@@ -122,6 +140,10 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
+        tracker_type,
+        tracker_until,
+        tracker_frame_number,
+        tracking,
     };
 }
 
@@ -158,10 +180,47 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
         },
+        resetTracker(): void {
+            dispatch(resetTrackerSettings());
+        },
+        handleTracking(data: TrackerPayload, taskId: string): void {
+            dispatch(doTracking(data, taskId));
+        },
     };
 }
 
-type Props = StateToProps & DispatchToProps;
+interface TrackerPayload {
+    jobId: number;
+    trackingJob: {
+        startFrame: number;
+        stopFrame: number;
+        track: {
+            attributes: any;
+            frame: number;
+            group: number;
+            id: number;
+            label_id: number;
+            shapes: [
+                {
+                    frame: number;
+                    attributes: any;
+                    occluded: boolean;
+                    outside: boolean;
+                    points: number[];
+                    type: string;
+                    z_order: number;
+                }
+            ];
+        }
+    };
+
+    trackId: number;
+    trackerOptions: {
+        trackerType: string;
+    };
+}
+
+type Props = StateToProps & DispatchToProps & PathProps & OwnProps;
 class ObjectItemContainer extends React.PureComponent<Props> {
     private copy = (): void => {
         const { objectState, copyShape } = this.props;
@@ -367,6 +426,63 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         updateState(objectState);
     }
 
+    private createTrackerPayload = (): TrackerPayload => {
+        const {
+            tracker_type,
+            tracker_until,
+            tracker_frame_number,
+            resetTracker,
+            jobInstance,
+            objectState,
+            match,
+            frameNumber
+        } = this.props;
+
+
+        return {
+            jobId: jobInstance.id,
+            trackingJob: {
+                startFrame: frameNumber,
+                stopFrame: tracker_frame_number ? frameNumber + tracker_frame_number : frameNumber + 50,
+                track: {
+                    attributes: objectState.attributes,
+                    frame: objectState.frame,
+                    group: objectState.group,
+                    id: 4,
+                    label_id: objectState.label.id,
+                    shapes: [
+                        {
+                            frame: objectState.frame,
+                            attributes: objectState.attributes,
+                            occluded: objectState.occluded,
+                            outside: objectState.outside,
+                            points: objectState.points,
+                            type: objectState.shapeType,
+                            z_order: objectState.zOrder,
+                        }
+                    ],
+                }
+
+            },
+            trackId: 4,
+            trackerOptions: {
+                trackerType: tracker_type
+            }
+        }
+    }
+
+    private onTrackerClick = (): void => {
+        const {
+            match,
+            handleTracking,
+            resetTracker,
+        } = this.props;
+        console.log(this.props);
+        let payload: TrackerPayload = this.createTrackerPayload();
+        handleTracking(payload, match.params.tid);
+        // resetTracker();
+    }
+
     public render(): JSX.Element {
         const {
             objectState,
@@ -377,6 +493,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             colorBy,
             colors,
             normalizedKeyMap,
+            tracking
         } = this.props;
 
         let stateColor = '';
@@ -417,12 +534,14 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
                 resetCuboidPerspective={() => this.resetCuboidPerspective()}
+                onTrackerClick={this.onTrackerClick}
+                tracking={tracking}
             />
         );
     }
 }
 
-export default connect<StateToProps, DispatchToProps, OwnProps, CombinedState>(
+export default withRouter(connect<StateToProps, DispatchToProps, OwnProps, CombinedState>(
     mapStateToProps,
     mapDispatchToProps,
-)(ObjectItemContainer);
+)(ObjectItemContainer));

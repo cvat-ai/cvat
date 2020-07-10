@@ -23,6 +23,7 @@ import SetupTagControl from './setup-tag-control';
 import MergeControl from './merge-control';
 import GroupControl from './group-control';
 import SplitControl from './split-control';
+import TrackControl from './track-control';
 
 interface Props {
     canvasInstance: Canvas;
@@ -225,6 +226,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 activeControl={activeControl}
                 splitTrack={splitTrack}
             />
+            <TrackControl />
         </Layout.Sider>
     );
 }

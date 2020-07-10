@@ -92,6 +92,12 @@ const defaultState: AnnotationState = {
         collecting: false,
         data: null,
     },
+    tracker: {
+        tracker_type: '',
+        tracker_until: '',
+        tracker_frame_number: 0,
+        tracking: false,
+    },
     colors: [],
     sidebarCollapsed: false,
     appearanceCollapsed: false,
@@ -1083,6 +1089,50 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.CLOSE_JOB:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case AnnotationActionTypes.TRACKER_SETTINGS: {
+            return {
+                ...state,
+                tracker: {
+                    ...state.tracker,
+                    [action.payload.name]: action.payload.value,
+                },
+            };
+        }
+        case AnnotationActionTypes.RESET_TRACKER_SETTINGS: {
+            return {
+                ...state,
+                tracker: {
+                    ...defaultState.tracker,
+                },
+            };
+        }
+        case AnnotationActionTypes.DO_TRACKING: {
+            return {
+                ...state,
+                tracker: {
+                    ...state.tracker,
+                    tracking: true,
+                }
+            }
+        }
+        case AnnotationActionTypes.DO_TRACKING_SUCCESS: {
+            return {
+                ...state,
+                tracker: {
+                    ...defaultState.tracker,
+                    tracking: false,
+                }
+            }
+        }
+        case AnnotationActionTypes.DO_TRACKING_FAILURE: {
+            return {
+                ...state,
+                tracker: {
+                    ...state.tracker,
+                    tracking: false,
+                }
+            }
         }
         default: {
             return state;

@@ -393,11 +393,23 @@ export interface AnnotationState {
         visible: boolean;
         data: any;
     };
+    tracker: {
+        tracker_type: string;
+        tracker_until: string;
+        tracker_frame_number: number;
+        tracking: boolean;
+    };
     colors: any[];
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     tabContentHeight: number;
     workspace: Workspace;
+}
+
+export enum TrackerInputs {
+    tracker_type = 'tracker_type',
+    tracker_until = 'tracker_until',
+    tracker_frame_number = 'tracker_frame_number',
 }
 
 export enum Workspace {

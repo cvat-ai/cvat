@@ -4,6 +4,7 @@
 
 import React from 'react';
 import Popover from 'antd/lib/popover';
+import { Spin, Modal, Row, Col } from 'antd';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
@@ -24,6 +25,7 @@ interface Props {
     attrValues: Record<number, string>;
     color: string;
     colors: string[];
+    tracking: boolean;
 
     labels: any[];
     attributes: any[];
@@ -42,6 +44,7 @@ interface Props {
     changeColor(color: string): void;
     collapse(): void;
     resetCuboidPerspective(): void;
+    onTrackerClick(): void
 }
 
 function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
@@ -57,6 +60,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         && nextProps.labels === prevProps.labels
         && nextProps.attributes === prevProps.attributes
         && nextProps.normalizedKeyMap === prevProps.normalizedKeyMap
+        && nextProps.tracking === prevProps.tracking
         && attrValuesAreEqual(nextProps.attrValues, prevProps.attrValues);
 }
 
@@ -72,6 +76,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         labelID,
         color,
         colors,
+        tracking,
 
         attributes,
         labels,
@@ -91,6 +96,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeColor,
         collapse,
         resetCuboidPerspective,
+        onTrackerClick,
     } = props;
 
     const type = objectType === ObjectType.TAG ? ObjectType.TAG.toUpperCase()
@@ -101,6 +107,21 @@ function ObjectItemComponent(props: Props): JSX.Element {
 
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
+            <Modal
+                title='Tracking'
+                visible={tracking}
+                footer={[]}
+                closable={false}
+            >
+                <Row type='flex'>
+                    <Col span={3}>
+                        <Spin />
+                    </Col>
+                    <Col span={20}>
+                        Generating tracking results...
+                    </Col>
+                </Row>
+            </Modal>
             <Popover
                 placement='left'
                 trigger='click'
@@ -147,6 +168,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toBackground={toBackground}
                     toForeground={toForeground}
                     resetCuboidPerspective={resetCuboidPerspective}
+                    onTrackerClick={onTrackerClick}
                 />
                 <ObjectButtonsContainer
                     clientID={clientID}

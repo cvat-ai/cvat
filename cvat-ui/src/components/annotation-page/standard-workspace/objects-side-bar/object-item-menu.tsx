@@ -31,6 +31,7 @@ interface Props {
     toBackground: (() => void);
     toForeground: (() => void);
     resetCuboidPerspective: (() => void);
+    onTrackerClick: (() => void);
 }
 
 export default function ItemMenu(props: Props): JSX.Element {
@@ -53,6 +54,7 @@ export default function ItemMenu(props: Props): JSX.Element {
         toBackground,
         toForeground,
         resetCuboidPerspective,
+        onTrackerClick,
     } = props;
 
     return (
@@ -111,6 +113,12 @@ export default function ItemMenu(props: Props): JSX.Element {
                     </Tooltip>
                 </Menu.Item>
             )}
+            <Menu.Item>
+                <Button type='link' onClick={onTrackerClick}>
+                    <Icon component={ForegroundIcon} />
+                    Track
+                </Button>
+            </Menu.Item>
             <Menu.Item>
                 <Tooltip title={`${removeShortcut}`}>
                     <Button
