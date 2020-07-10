@@ -1,7 +1,7 @@
 import numpy as np
 
 from unittest import TestCase
-
+from datumaro.components.project import Dataset
 from datumaro.components.project import Project
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Label, Mask, Points, Polygon,
@@ -31,9 +31,18 @@ class DatumaroConverterTest(TestCase):
         compare_datasets_strict(self,
             expected=target_dataset, actual=parsed_dataset)
 
-    class TestExtractor(Extractor):
-        def __iter__(self):
-            return iter([
+    label_categories = LabelCategories()
+    for i in range(5):
+        label_categories.add('cat' + str(i))
+
+    mask_categories = MaskCategories(
+        generate_colormap(len(label_categories.items)))
+
+    points_categories = PointsCategories()
+    for index, _ in enumerate(label_categories.items):
+        points_categories.add(index, ['cat1', 'cat2'], joints=[[0, 1]])
+
+    expected_dataset = Dataset.from_iterable([
                 DatasetItem(id=100, subset='train', image=np.ones((10, 6, 3)),
                     annotations=[
                         Caption('hello', id=1),
@@ -67,46 +76,30 @@ class DatumaroConverterTest(TestCase):
 
                 DatasetItem(id=42),
                 DatasetItem(id=43, image=Image(path='1/b/c.qq', size=(2, 4))),
-            ])
-
-        def categories(self):
-            label_categories = LabelCategories()
-            for i in range(5):
-                label_categories.add('cat' + str(i))
-
-            mask_categories = MaskCategories(
-                generate_colormap(len(label_categories.items)))
-
-            points_categories = PointsCategories()
-            for index, _ in enumerate(label_categories.items):
-                points_categories.add(index, ['cat1', 'cat2'], joints=[[0, 1]])
-
-            return {
+            ], categories={
                 AnnotationType.label: label_categories,
                 AnnotationType.mask: mask_categories,
                 AnnotationType.points: points_categories,
-            }
+            })
 
     def test_can_save_and_load(self):
         with TestDir() as test_dir:
-            self._test_save_and_load(self.TestExtractor(),
+            self._test_save_and_load(self.expected_dataset,
                 DatumaroConverter(save_images=True), test_dir)
 
     def test_can_detect(self):
         with TestDir() as test_dir:
-            DatumaroConverter()(self.TestExtractor(), save_dir=test_dir)
+            DatumaroConverter()(self.expected_dataset, save_dir=test_dir)
 
             self.assertTrue(DatumaroImporter.detect(test_dir))
 
     def test_relative_paths(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        expected_dataset = Dataset.from_iterable([
                     DatasetItem(id='1', image=np.ones((4, 2, 3))),
                     DatasetItem(id='subdir1/1', image=np.ones((2, 6, 3))),
                     DatasetItem(id='subdir2/1', image=np.ones((5, 4, 3))),
                 ])
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(expected_dataset,
                 DatumaroConverter(save_images=True), test_dir)
