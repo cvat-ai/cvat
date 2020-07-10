@@ -89,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Annotations aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
 - Labels aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
 - Canvas isn't fitted after collapsing side panel in attribute annotation mode (<https://github.com/opencv/cvat/pull/1753>)
+- Error when interpolating polygons (<https://github.com/opencv/cvat/pull/1878>)
 
 ### Security
 - SQL injection in Django `CVE-2020-9402` (<https://github.com/opencv/cvat/pull/1657>)
