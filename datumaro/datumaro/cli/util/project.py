@@ -4,31 +4,36 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import re
 
 from datumaro.components.project import Project
+from datumaro.util import cast
 
 
 def load_project(project_dir):
     return Project.load(project_dir)
 
-def generate_next_dir_name(dirname, basedir='.', sep='.'):
+def generate_next_file_name(basename, basedir='.', sep='.', ext=''):
     """
-    If basedir does not contain dirname, returns dirname itself,
-    else generates a dirname by appending separator to the dirname
+    If basedir does not contain basename, returns basename,
+    otherwise generates a name by appending sep to the basename
     and the number, next to the last used number in the basedir for
-    files with dirname prefix.
+    files with basename prefix. Optionally, appends ext.
     """
 
-    def _to_int(s):
-        try:
-            return int(s)
-        except Exception:
-            return 0
-    sep_count = dirname.count(sep) + 2
+    return generate_next_name(os.listdir(basedir), basename, sep, ext)
 
-    files = [e for e in os.listdir(basedir) if e.startswith(dirname)]
-    if files:
-        files = [e.split(sep) for e in files]
-        files = [_to_int(e[-1]) for e in files if len(e) == sep_count]
-        dirname += '%s%s' % (sep, max(files, default=0) + 1)
-    return dirname
+def generate_next_name(names, basename, sep='.', suffix='', default=None):
+    pattern = re.compile(r'%s(?:%s(\d+))?%s' % \
+        tuple(map(re.escape, [basename, sep, suffix])))
+    matches = [match for match in (pattern.match(n) for n in names) if match]
+
+    max_idx = max([cast(match[1], int, 0) for match in matches], default=None)
+    if max_idx is None:
+        if default is not None:
+            idx = sep + str(default)
+        else:
+            idx = ''
+    else:
+        idx = sep + str(max_idx + 1)
+    return basename + idx + suffix

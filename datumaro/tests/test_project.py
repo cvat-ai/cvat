@@ -10,6 +10,7 @@ from datumaro.components.launcher import Launcher, ModelTransform
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (Extractor, DatasetItem,
     Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
+    LabelCategories, AnnotationType
 )
 from datumaro.util.image import Image
 from datumaro.components.config import Config, DefaultConfig, SchemaBuilder
@@ -168,6 +169,12 @@ class ProjectTest(TestCase):
                 for i in range(2):
                     yield DatasetItem(id=i, image=np.ones([2, 2, 3]) * i,
                         annotations=[Label(i)])
+
+            def categories(self):
+                label_cat = LabelCategories()
+                label_cat.add('0')
+                label_cat.add('1')
+                return { AnnotationType.label: label_cat }
 
         class TestLauncher(Launcher):
             def launch(self, inputs):
