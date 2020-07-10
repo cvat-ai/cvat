@@ -2,7 +2,7 @@ import numpy as np
 import os.path as osp
 
 from unittest import TestCase
-
+from datumaro.components.project import Dataset
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Points, Polygon, PolyLine, Bbox, Label,
     LabelCategories,
@@ -27,9 +27,7 @@ class CvatImporterTest(TestCase):
         self.assertTrue(CvatImporter.detect(DUMMY_VIDEO_DATASET_DIR))
 
     def test_can_load_image(self):
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        expected_dataset = Dataset.from_iterable([
                     DatasetItem(id='img0', subset='train',
                         image=np.ones((8, 8, 3)),
                         annotations=[
@@ -49,22 +47,19 @@ class CvatImporterTest(TestCase):
                             Points([1, 2, 3, 4, 5, 6], label=1, z_order=2,
                                 attributes={'occluded': False}),
                         ], attributes={'frame': 1}),
-                ])
-
-            def categories(self):
-                label_categories = LabelCategories()
-                label_categories.add('label1', attributes={'a1', 'a2'})
-                label_categories.add('label2')
-                return { AnnotationType.label: label_categories }
+                ], categories={
+                    AnnotationType.label: LabelCategories.from_iterable([
+                        ['label1', '', {'a1', 'a2'}],
+                        ['label2'],
+                    ])
+                })
 
         parsed_dataset = CvatImporter()(DUMMY_IMAGE_DATASET_DIR).make_dataset()
 
-        compare_datasets(self, DstExtractor(), parsed_dataset)
+        compare_datasets(self, expected_dataset, parsed_dataset)
 
     def test_can_load_video(self):
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        expected_dataset = Dataset.from_iterable([
                     DatasetItem(id='frame_000010', subset='annotations',
                         image=np.ones((20, 25, 3)),
                         annotations=[
@@ -130,18 +125,17 @@ class CvatImporterTest(TestCase):
                                     'track_id': 2,
                                 }),
                         ], attributes={'frame': 16}),
-                ])
-
-            def categories(self):
-                label_categories = LabelCategories()
-                label_categories.add('klhg', attributes={'hgl'})
-                label_categories.add('z U k')
-                label_categories.add('II')
-                return { AnnotationType.label: label_categories }
+                ], categories={
+                    AnnotationType.label: LabelCategories.from_iterable([
+                        ['klhg', '', {'hgl'}],
+                        ['z U k'],
+                        ['II']
+                    ]),
+                })
 
         parsed_dataset = CvatImporter()(DUMMY_VIDEO_DATASET_DIR).make_dataset()
 
-        compare_datasets(self, DstExtractor(), parsed_dataset)
+        compare_datasets(self, expected_dataset, parsed_dataset)
 
 class CvatConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter, test_dir,
@@ -164,9 +158,7 @@ class CvatConverterTest(TestCase):
         label_categories.items[2].attributes.update(['a1', 'a2'])
         label_categories.attributes.update(['occluded'])
 
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        source_dataset = Dataset.from_iterable([
                     DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
                         annotations=[
                             Polygon([0, 0, 4, 0, 4, 4],
@@ -200,14 +192,11 @@ class CvatConverterTest(TestCase):
 
                     DatasetItem(id=3, subset='s3', image=Image(
                         path='3.jpg', size=(2, 4))),
-                ])
+                ], categories={
+                    AnnotationType.label: label_categories,
+                })
 
-            def categories(self):
-                return { AnnotationType.label: label_categories }
-
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        target_dataset = Dataset.from_iterable([
                     DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
                         annotations=[
                             Polygon([0, 0, 4, 0, 4, 4],
@@ -243,58 +232,47 @@ class CvatConverterTest(TestCase):
                     DatasetItem(id=3, subset='s3', image=Image(
                             path='3.jpg', size=(2, 4)),
                         attributes={'frame': 0}),
-                ])
-
-            def categories(self):
-                return { AnnotationType.label: label_categories }
+                ], categories={
+                    AnnotationType.label: label_categories,
+                })
 
         with TestDir() as test_dir:
-            self._test_save_and_load(SrcExtractor(),
+            self._test_save_and_load(source_dataset,
                 CvatConverter(save_images=True), test_dir,
-                target_dataset=DstExtractor())
+                target_dataset=target_dataset)
 
     def test_relative_paths(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        source_dataset = Dataset.from_iterable([
                     DatasetItem(id='1', image=np.ones((4, 2, 3))),
                     DatasetItem(id='subdir1/1', image=np.ones((2, 6, 3))),
                     DatasetItem(id='subdir2/1', image=np.ones((5, 4, 3))),
-                ])
+                ], categories={ AnnotationType.label: LabelCategories() }
+            )
 
-            def categories(self):
-                return { AnnotationType.label: LabelCategories() }
-
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        target_dataset = Dataset.from_iterable([
                     DatasetItem(id='1', image=np.ones((4, 2, 3)),
                         attributes={'frame': 0}),
                     DatasetItem(id='subdir1/1', image=np.ones((2, 6, 3)),
                         attributes={'frame': 1}),
                     DatasetItem(id='subdir2/1', image=np.ones((5, 4, 3)),
                         attributes={'frame': 2}),
-                ])
-
-            def categories(self):
-                return { AnnotationType.label: LabelCategories() }
+                ], categories={
+                    AnnotationType.label: LabelCategories()
+                })
 
         with TestDir() as test_dir:
-            self._test_save_and_load(SrcExtractor(),
+            self._test_save_and_load(source_dataset,
                 CvatConverter(save_images=True), test_dir,
-                target_dataset=DstExtractor())
+                target_dataset=target_dataset)
 
     def test_preserve_frame_ids(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                return iter([
+        expected_dataset = Dataset.from_iterable([
                     DatasetItem(id='some/name1', image=np.ones((4, 2, 3)),
                         attributes={'frame': 40}),
-                ])
-
-            def categories(self):
-                return { AnnotationType.label: LabelCategories() }
+                ], categories={
+                    AnnotationType.label: LabelCategories()
+                })
 
         with TestDir() as test_dir:
-            self._test_save_and_load(TestExtractor(),
+            self._test_save_and_load(expected_dataset,
                 CvatConverter(save_images=True), test_dir)
