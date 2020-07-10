@@ -170,6 +170,10 @@
         }
 
         > .ant-collapse-content {
+            > .ant-collapse-content-box {
+                padding: 3px;
+            }
+
             background: inherit;
         }
     }
@@ -203,6 +207,7 @@
         overflow: hidden;
         max-height: 1.2em;
         font-size: 1em;
+        margin: 0;
 
         > span {
             padding: 0 10px;
@@ -211,7 +216,7 @@
 
     > .ant-radio-group {
         display: grid;
-        padding: 5px;
+        padding: 1px 5px 1px 5px;
     }
 }
 
