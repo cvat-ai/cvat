@@ -14,22 +14,29 @@ from datumaro.util.test_utils import compare_datasets
 
 class TransformsTest(TestCase):
     def test_reindex(self):
-        source_dataset = Dataset.from_iterable([
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                return iter([
                     DatasetItem(id=10),
                     DatasetItem(id=10, subset='train'),
                     DatasetItem(id='a', subset='val'),
                 ])
-        target_dataset = Dataset.from_iterable([
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
                     DatasetItem(id=5),
                     DatasetItem(id=6, subset='train'),
                     DatasetItem(id=7, subset='val'),
                 ])
 
-        actual = transforms.Reindex(source_dataset, start=5)
-        compare_datasets(self, target_dataset, actual)
+        actual = transforms.Reindex(SrcExtractor(), start=5)
+        compare_datasets(self, DstExtractor(), actual)
 
     def test_mask_to_polygons(self):
-        source_dataset = Dataset.from_iterable([
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                items = [
                     DatasetItem(id=1, image=np.zeros((5, 10, 3)),
                         annotations=[
                             Mask(np.array([
@@ -42,9 +49,12 @@ class TransformsTest(TestCase):
                             ),
                         ]
                     ),
-                ])
+                ]
+                return iter(items)
 
-        target_dataset = Dataset.from_iterable([
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                return iter([
                     DatasetItem(id=1, image=np.zeros((5, 10, 3)),
                         annotations=[
                             Polygon([3.0, 2.5, 1.0, 0.0, 3.5, 0.0, 3.0, 2.5]),
@@ -53,8 +63,8 @@ class TransformsTest(TestCase):
                     ),
                 ])
 
-        actual = transforms.MasksToPolygons(source_dataset)
-        compare_datasets(self, target_dataset, actual)
+        actual = transforms.MasksToPolygons(SrcExtractor())
+        compare_datasets(self, DstExtractor(), actual)
 
     def test_mask_to_polygons_small_polygons_message(self):
         source_dataset = Dataset.from_iterable([
@@ -346,7 +356,7 @@ class TransformsTest(TestCase):
             ])
 
     def test_remap_labels(self):
-        #todo: why this test brokes when I rewrite it on Dataset ?
+        #! why this test brokes when I rewrite it on Dataset ?
         class SrcExtractor(Extractor):
             def __iter__(self):
                 return iter([
