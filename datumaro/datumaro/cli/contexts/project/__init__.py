@@ -5,6 +5,7 @@
 
 import argparse
 from enum import Enum
+import json
 import logging as log
 import os
 import os.path as osp
@@ -20,7 +21,7 @@ from datumaro.components.operations import mean_std
 from .diff import DiffVisualizer
 from ...util import add_subparser, CliException, MultilineFormatter, \
     make_file_name
-from ...util.project import load_project, generate_next_dir_name
+from ...util.project import load_project, generate_next_file_name
 
 
 def build_create_parser(parser_ctor=argparse.ArgumentParser):
@@ -329,7 +330,7 @@ def export_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-%s' % \
+        dst_dir = generate_next_file_name('%s-%s' % \
             (project.config.project_name, make_file_name(args.format)))
     dst_dir = osp.abspath(dst_dir)
 
@@ -425,7 +426,7 @@ def extract_command(args):
                 raise CliException("Directory '%s' already exists "
                     "(pass --overwrite to force creation)" % dst_dir)
         else:
-            dst_dir = generate_next_dir_name('%s-filter' % \
+            dst_dir = generate_next_file_name('%s-filter' % \
                 project.config.project_name)
         dst_dir = osp.abspath(dst_dir)
 
@@ -543,7 +544,7 @@ def diff_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-%s-diff' % (
+        dst_dir = generate_next_file_name('%s-%s-diff' % (
             first_project.config.project_name,
             second_project.config.project_name)
         )
@@ -603,7 +604,7 @@ def transform_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-%s' % \
+        dst_dir = generate_next_file_name('%s-%s' % \
             (project.config.project_name, make_file_name(args.transform)))
     dst_dir = osp.abspath(dst_dir)
 
@@ -633,7 +634,8 @@ def transform_command(args):
 def build_stats_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Get project statistics",
         description="""
-            Outputs project statistics.
+            Outputs various project statistics like image mean and std,
+            annotations count etc.
         """,
         formatter_class=MultilineFormatter)
 
