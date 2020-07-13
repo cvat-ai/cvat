@@ -13,10 +13,8 @@ interface Props {
     model: Model;
 }
 
-export default function UploadedModelItem(props: Props): JSX.Element {
-    const {
-        model,
-    } = props;
+export default function DeployedModelItem(props: Props): JSX.Element {
+    const { model } = props;
 
     return (
         <Row className='cvat-models-list-item' type='flex'>

@@ -29,10 +29,7 @@ export function checkPluginsAsync(): ThunkAction {
         dispatch(pluginActions.checkPlugins());
         const plugins: PluginObjects = {
             ANALYTICS: false,
-            AUTO_ANNOTATION: true,
             GIT_INTEGRATION: false,
-            TF_ANNOTATION: false,
-            TF_SEGMENTATION: false,
             REID: false,
             DEXTR_SEGMENTATION: false,
         };
