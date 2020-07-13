@@ -624,9 +624,8 @@ class ProjectDataset(Dataset):
 
             if merge:
                 # merge and save the resulting dataset
-                converter = self.env.make_converter(
-                    DEFAULT_FORMAT, **converter_kwargs)
-                converter(self, dataset_save_dir)
+                self.env.converters.get(DEFAULT_FORMAT).convert(
+                    self, dataset_save_dir, **converter_kwargs)
             else:
                 if recursive:
                     # children items should already be updated
@@ -635,9 +634,8 @@ class ProjectDataset(Dataset):
                         if isinstance(source, ProjectDataset):
                             source.save(**converter_kwargs)
 
-                converter = self.env.make_converter(
-                    DEFAULT_FORMAT, **converter_kwargs)
-                converter(self.iterate_own(), dataset_save_dir)
+                self.env.converters.get(DEFAULT_FORMAT).convert(
+                    self.iterate_own(), dataset_save_dir, **converter_kwargs)
 
             project.save(save_dir)
         except BaseException:

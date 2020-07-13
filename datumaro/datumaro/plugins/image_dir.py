@@ -3,12 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging as log
 import os
 import os.path as osp
 
 from datumaro.components.extractor import DatasetItem, SourceExtractor, Importer
 from datumaro.components.converter import Converter
-from datumaro.util.image import save_image
+from datumaro.util.image import Image
 
 
 class ImageDirImporter(Importer):
@@ -32,8 +33,6 @@ class ImageDirImporter(Importer):
 
 
 class ImageDirExtractor(SourceExtractor):
-    _SUPPORTED_FORMATS = ['.png', '.jpg']
-
     def __init__(self, url):
         super().__init__()
 
@@ -43,11 +42,15 @@ class ImageDirExtractor(SourceExtractor):
         for dirpath, _, filenames in os.walk(url):
             for name in filenames:
                 path = osp.join(dirpath, name)
-                if not self._is_image(path):
+                try:
+                    image = Image(path)
+                    # force loading
+                    image.data # pylint: disable=pointless-statement
+                except Exception:
                     continue
 
                 item_id = osp.relpath(osp.splitext(path)[0], url)
-                items.append(DatasetItem(id=item_id, image=path))
+                items.append(DatasetItem(id=item_id, image=image))
 
         self._items = items
 
@@ -58,20 +61,16 @@ class ImageDirExtractor(SourceExtractor):
     def __len__(self):
         return len(self._items)
 
-    def _is_image(self, path):
-        if not osp.isfile(path):
-            return False
-        for ext in self._SUPPORTED_FORMATS:
-            if path.endswith(ext):
-                return True
-        return False
-
 
 class ImageDirConverter(Converter):
-    def __call__(self, extractor, save_dir):
-        os.makedirs(save_dir, exist_ok=True)
+    DEFAULT_IMAGE_EXT = '.jpg'
 
-        for item in extractor:
-            if item.has_image and item.image.has_data:
-                save_image(osp.join(save_dir, item.id + '.jpg'),
-                    item.image.data, create_dir=True)
+    def apply(self):
+        os.makedirs(self._save_dir, exist_ok=True)
+
+        for item in self._extractor:
+            if item.has_image:
+                self._save_image(item,
+                    osp.join(self._save_dir, self._make_image_filename(item)))
+            else:
+                log.debug("Item '%s' has no image info", item.id)

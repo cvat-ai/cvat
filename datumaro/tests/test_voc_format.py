@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from functools import partial
 import numpy as np
 import os.path as osp
 
@@ -158,7 +159,8 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocClassificationConverter(label_map='voc'), test_dir)
+                partial(VocClassificationConverter.convert, label_map='voc'),
+                test_dir)
 
     def test_can_save_voc_det(self):
         class TestExtractor(TestExtractorBase):
@@ -213,8 +215,8 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocDetectionConverter(label_map='voc'), test_dir,
-                target_dataset=DstExtractor())
+                partial(VocDetectionConverter.convert, label_map='voc'),
+                test_dir, target_dataset=DstExtractor())
 
     def test_can_save_voc_segm(self):
         class TestExtractor(TestExtractorBase):
@@ -247,8 +249,8 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocSegmentationConverter(label_map='voc'), test_dir,
-                target_dataset=DstExtractor())
+                partial(VocSegmentationConverter.convert, label_map='voc'),
+                test_dir, target_dataset=DstExtractor())
 
     def test_can_save_voc_segm_unpainted(self):
         class TestExtractor(TestExtractorBase):
@@ -281,7 +283,8 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocSegmentationConverter(label_map='voc', apply_colormap=False),
+                partial(VocSegmentationConverter.convert,
+                    label_map='voc', apply_colormap=False),
                 test_dir, target_dataset=DstExtractor())
 
     def test_can_save_voc_segm_with_many_instances(self):
@@ -316,8 +319,8 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocSegmentationConverter(label_map='voc'), test_dir,
-                target_dataset=DstExtractor())
+                partial(VocSegmentationConverter.convert, label_map='voc'),
+                test_dir, target_dataset=DstExtractor())
 
     def test_can_save_voc_layout(self):
         class TestExtractor(TestExtractorBase):
@@ -341,7 +344,7 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocLayoutConverter(label_map='voc'), test_dir)
+                partial(VocLayoutConverter.convert, label_map='voc'), test_dir)
 
     def test_can_save_voc_action(self):
         class TestExtractor(TestExtractorBase):
@@ -395,8 +398,9 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocActionConverter(label_map='voc', allow_attributes=False),
-                test_dir, target_dataset=DstExtractor())
+                partial(VocActionConverter.convert,
+                    label_map='voc', allow_attributes=False), test_dir,
+                target_dataset=DstExtractor())
 
     def test_can_save_dataset_with_no_subsets(self):
         class TestExtractor(TestExtractorBase):
@@ -414,7 +418,7 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocConverter(label_map='voc'), test_dir)
+                partial(VocConverter.convert, label_map='voc'), test_dir)
 
     def test_can_save_dataset_with_images(self):
         class TestExtractor(TestExtractorBase):
@@ -428,7 +432,8 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocConverter(label_map='voc', save_images=True), test_dir)
+                partial(VocConverter.convert, label_map='voc', save_images=True),
+                test_dir)
 
     def test_dataset_with_voc_labelmap(self):
         class SrcExtractor(TestExtractorBase):
@@ -463,8 +468,8 @@ class VocConverterTest(TestCase):
                 return VOC.make_voc_categories()
 
         with TestDir() as test_dir:
-            self._test_save_and_load(
-                SrcExtractor(), VocConverter(label_map='voc'),
+            self._test_save_and_load(SrcExtractor(),
+                partial(VocConverter.convert, label_map='voc'),
                 test_dir, target_dataset=DstExtractor())
 
     def test_dataset_with_guessed_labelmap(self):
@@ -510,8 +515,8 @@ class VocConverterTest(TestCase):
                 return VOC.make_voc_categories(label_map)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(
-                SrcExtractor(), VocConverter(label_map='guess'),
+            self._test_save_and_load(SrcExtractor(),
+                partial(VocConverter.convert, label_map='guess'),
                 test_dir, target_dataset=DstExtractor())
 
     def test_dataset_with_source_labelmap_undefined(self):
@@ -557,8 +562,8 @@ class VocConverterTest(TestCase):
                 return VOC.make_voc_categories(label_map)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(
-                SrcExtractor(), VocConverter(label_map='source'),
+            self._test_save_and_load(SrcExtractor(),
+                partial(VocConverter.convert, label_map='source'),
                 test_dir, target_dataset=DstExtractor())
 
     def test_dataset_with_source_labelmap_defined(self):
@@ -603,8 +608,8 @@ class VocConverterTest(TestCase):
                 return VOC.make_voc_categories(label_map)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(
-                SrcExtractor(), VocConverter(label_map='source'),
+            self._test_save_and_load(SrcExtractor(),
+                partial(VocConverter.convert, label_map='source'),
                 test_dir, target_dataset=DstExtractor())
 
     def test_dataset_with_fixed_labelmap(self):
@@ -652,8 +657,8 @@ class VocConverterTest(TestCase):
                 return VOC.make_voc_categories(label_map)
 
         with TestDir() as test_dir:
-            self._test_save_and_load(
-                SrcExtractor(), VocConverter(label_map=label_map),
+            self._test_save_and_load(SrcExtractor(),
+                partial(VocConverter.convert, label_map=label_map),
                 test_dir, target_dataset=DstExtractor())
 
     def test_can_save_dataset_with_image_info(self):
@@ -665,7 +670,7 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocConverter(label_map='voc'), test_dir)
+                partial(VocConverter.convert, label_map='voc'), test_dir)
 
     def test_relative_paths(self):
         class TestExtractor(TestExtractorBase):
@@ -678,7 +683,9 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocConverter(label_map='voc', save_images=True), test_dir)
+                partial(VocConverter.convert,
+                    label_map='voc', save_images=True),
+                test_dir)
 
     def test_can_save_attributes(self):
         class TestExtractor(TestExtractorBase):
@@ -708,5 +715,5 @@ class VocConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                VocDetectionConverter(label_map='voc'), test_dir,
+                partial(VocConverter.convert, label_map='voc'), test_dir,
                 target_dataset=DstExtractor())
