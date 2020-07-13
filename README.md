@@ -31,12 +31,12 @@ Try it online [cvat.org](https://cvat.org).
 
 - [Introduction](https://youtu.be/JERohTFp-NI)
 - [Annotation mode](https://youtu.be/vH_639N67HI)
-- [Interpolation mode](https://youtu.be/Hc3oudNuDsY)
+- [Interpolation of bounding boxes](https://youtu.be/Hc3oudNuDsY)
+- [Interpolation of polygons](https://youtu.be/K4nis9lk92s)
 - [Attribute mode](https://youtu.be/iIkJsOkDzVA)
 - [Segmentation mode](https://youtu.be/Fh8oKuSUIPs)
 - [Tutorial for polygons](https://www.youtube.com/watch?v=XTwfXDh4clI)
 - [Semi-automatic segmentation](https://www.youtube.com/watch?v=vnqXZ-Z-VTQ)
-- [Polygon in interpolation mode](https://youtu.be/K4nis9lk92s)
 
 ## Supported annotation formats
 
