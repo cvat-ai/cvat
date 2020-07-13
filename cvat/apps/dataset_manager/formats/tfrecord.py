@@ -27,9 +27,8 @@ def _export(dst_file, task_data, save_images=False):
     extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
     extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
-        converter = dm_env.make_converter('tf_detection_api',
-            save_images=save_images)
-        converter(extractor, save_dir=temp_dir)
+        dm_env.converters.get('tf_detection_api').convert(extractor,
+            save_dir=temp_dir, save_images=save_images)
 
         make_zip_archive(temp_dir, dst_file)
 

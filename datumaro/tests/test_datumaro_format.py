@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 
 from unittest import TestCase
@@ -90,11 +91,11 @@ class DatumaroConverterTest(TestCase):
     def test_can_save_and_load(self):
         with TestDir() as test_dir:
             self._test_save_and_load(self.TestExtractor(),
-                DatumaroConverter(save_images=True), test_dir)
+                partial(DatumaroConverter.convert, save_images=True), test_dir)
 
     def test_can_detect(self):
         with TestDir() as test_dir:
-            DatumaroConverter()(self.TestExtractor(), save_dir=test_dir)
+            DatumaroConverter.convert(self.TestExtractor(), save_dir=test_dir)
 
             self.assertTrue(DatumaroImporter.detect(test_dir))
 
@@ -109,4 +110,4 @@ class DatumaroConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                DatumaroConverter(save_images=True), test_dir)
+                partial(DatumaroConverter.convert, save_images=True), test_dir)

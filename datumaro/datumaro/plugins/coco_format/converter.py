@@ -3,26 +3,23 @@
 #
 # SPDX-License-Identifier: MIT
 
-from enum import Enum
-from itertools import groupby
 import json
 import logging as log
 import os
 import os.path as osp
+from enum import Enum
+from itertools import groupby
 
 import pycocotools.mask as mask_utils
 
-from datumaro.components.converter import Converter
-from datumaro.components.extractor import (DEFAULT_SUBSET_NAME,
-    AnnotationType, Points
-)
-from datumaro.components.cli_plugin import CliPlugin
-from datumaro.util import find, cast, str_to_bool
-from datumaro.util.image import save_image
-import datumaro.util.mask_tools as mask_tools
 import datumaro.util.annotation_tools as anno_tools
+import datumaro.util.mask_tools as mask_tools
+from datumaro.components.converter import Converter
+from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, AnnotationType,
+    Points)
+from datumaro.util import cast, find, str_to_bool
 
-from .format import CocoTask, CocoPath
+from .format import CocoPath, CocoTask
 
 
 SegmentationMode = Enum('SegmentationMode', ['guess', 'polygons', 'mask'])
@@ -443,7 +440,40 @@ class _LabelsConverter(_TaskConverter):
 
             self.annotations.append(elem)
 
-class _Converter:
+class CocoConverter(Converter):
+    @staticmethod
+    def _split_tasks_string(s):
+        return [CocoTask[i.strip()] for i in s.split(',')]
+
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
+        parser.add_argument('--segmentation-mode',
+            choices=[m.name for m in SegmentationMode],
+            default=SegmentationMode.guess.name,
+            help="""
+                Save mode for instance segmentation:|n
+                - '{sm.guess.name}': guess the mode for each instance,|n
+                |s|suse 'is_crowd' attribute as hint|n
+                - '{sm.polygons.name}': save polygons,|n
+                |s|smerge and convert masks, prefer polygons|n
+                - '{sm.mask.name}': save masks,|n
+                |s|smerge and convert polygons, prefer masks|n
+                Default: %(default)s.
+                """.format(sm=SegmentationMode))
+        parser.add_argument('--crop-covered', action='store_true',
+            help="Crop covered segments so that background objects' "
+                "segmentation was more accurate (default: %(default)s)")
+        parser.add_argument('--allow-attributes',
+            type=str_to_bool, default=True,
+            help="Allow export of attributes (default: %(default)s)")
+        parser.add_argument('--tasks', type=cls._split_tasks_string,
+            help="COCO task filter, comma-separated list of {%s} "
+                "(default: all)" % ', '.join(t.name for t in CocoTask))
+        return parser
+
+    DEFAULT_IMAGE_EXT = CocoPath.IMAGE_EXT
+
     _TASK_CONVERTER = {
         CocoTask.image_info: _ImageInfoConverter,
         CocoTask.instances: _InstancesConverter,
@@ -453,27 +483,22 @@ class _Converter:
     }
 
     def __init__(self, extractor, save_dir,
-            tasks=None, save_images=False, segmentation_mode=None,
-            crop_covered=False, allow_attributes=True):
+            tasks=None, segmentation_mode=None, crop_covered=False,
+            allow_attributes=True, **kwargs):
+        super().__init__(extractor, save_dir, **kwargs)
+
         assert tasks is None or isinstance(tasks, (CocoTask, list, str))
-        if tasks is None:
-            tasks = list(self._TASK_CONVERTER)
-        elif isinstance(tasks, CocoTask):
+        if isinstance(tasks, CocoTask):
             tasks = [tasks]
         elif isinstance(tasks, str):
             tasks = [CocoTask[tasks]]
-        else:
+        elif tasks:
             for i, t in enumerate(tasks):
                 if isinstance(t, str):
                     tasks[i] = CocoTask[t]
                 else:
                     assert t in CocoTask, t
         self._tasks = tasks
-
-        self._extractor = extractor
-        self._save_dir = save_dir
-
-        self._save_images = save_images
 
         assert segmentation_mode is None or \
             isinstance(segmentation_mode, str) or \
@@ -502,9 +527,8 @@ class _Converter:
         return self._TASK_CONVERTER[task](self)
 
     def _make_task_converters(self):
-        return {
-            task: self._make_task_converter(task) for task in self._tasks
-        }
+        return { task: self._make_task_converter(task)
+            for task in (self._tasks or self._TASK_CONVERTER) }
 
     def _get_image_id(self, item):
         image_id = self._image_ids.get(item.id)
@@ -514,23 +538,14 @@ class _Converter:
             self._image_ids[item.id] = image_id
         return image_id
 
-    def _save_image(self, item, filename):
-        image = item.image.data
-        if image is None:
-            log.warning("Item '%s' has no image" % item.id)
-            return ''
+    def _save_image(self, item, path=None):
+        super()._save_image(item,
+            osp.join(self._images_dir, self._make_image_filename(item)))
 
-        save_image(osp.join(self._images_dir, filename), image,
-            create_dir=True)
-
-    def convert(self):
+    def apply(self):
         self._make_dirs()
 
-        subsets = self._extractor.subsets()
-        if len(subsets) == 0:
-            subsets = [ None ]
-
-        for subset_name in subsets:
+        for subset_name in self._extractor.subsets() or [None]:
             if subset_name:
                 subset = self._extractor.get_subset(subset_name)
             else:
@@ -541,94 +556,43 @@ class _Converter:
             for task_conv in task_converters.values():
                 task_conv.save_categories(subset)
             for item in subset:
-                filename = item.id + CocoPath.IMAGE_EXT
                 if self._save_images:
                     if item.has_image:
-                        self._save_image(item, filename)
+                        self._save_image(item)
                     else:
-                        log.debug("Item '%s' has no image info" % item.id)
+                        log.debug("Item '%s' has no image info", item.id)
                 for task_conv in task_converters.values():
-                    task_conv.save_image_info(item, filename)
+                    task_conv.save_image_info(item,
+                        self._make_image_filename(item))
                     task_conv.save_annotations(item)
 
             for task, task_conv in task_converters.items():
+                if task_conv.is_empty() and not self._tasks:
+                    continue
                 task_conv.write(osp.join(self._ann_dir,
                     '%s_%s.json' % (task.name, subset_name)))
 
-class CocoConverter(Converter, CliPlugin):
-    @staticmethod
-    def _split_tasks_string(s):
-        return [CocoTask[i.strip()] for i in s.split(',')]
-
-    @classmethod
-    def build_cmdline_parser(cls, **kwargs):
-        kwargs['description'] = """
-            Segmentation save modes:|n
-            - '{sm.guess.name}': guess the mode for each instance,|n
-            |s|suse 'is_crowd' attribute as a hint|n
-            - '{sm.polygons.name}': save polygons,|n
-            |s|smerge and convert masks, prefer polygons|n
-            - '{sm.mask.name}': save masks,|n
-            |s|smerge and convert polygons, prefer masks
-            """.format(sm=SegmentationMode)
-        parser = super().build_cmdline_parser(**kwargs)
-
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-        parser.add_argument('--segmentation-mode',
-            choices=[m.name for m in SegmentationMode],
-            default=SegmentationMode.guess.name,
-            help="Save mode for instance segmentation (default: %(default)s)")
-        parser.add_argument('--crop-covered', action='store_true',
-            help="Crop covered segments so that background objects' "
-                "segmentation was more accurate (default: %(default)s)")
-        parser.add_argument('--allow-attributes',
-            type=str_to_bool, default=True,
-            help="Allow export of attributes (default: %(default)s)")
-        parser.add_argument('--tasks', type=cls._split_tasks_string,
-            default=None,
-            help="COCO task filter, comma-separated list of {%s} "
-                "(default: all)" % ', '.join([t.name for t in CocoTask]))
-        return parser
-
-    def __init__(self,
-            tasks=None, save_images=False, segmentation_mode=None,
-            crop_covered=False, allow_attributes=True):
-        super().__init__()
-
-        self._options = {
-            'tasks': tasks,
-            'save_images': save_images,
-            'segmentation_mode': segmentation_mode,
-            'crop_covered': crop_covered,
-            'allow_attributes': allow_attributes,
-        }
-
-    def __call__(self, extractor, save_dir):
-        converter = _Converter(extractor, save_dir, **self._options)
-        converter.convert()
-
 class CocoInstancesConverter(CocoConverter):
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs['tasks'] = CocoTask.instances
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
 class CocoImageInfoConverter(CocoConverter):
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs['tasks'] = CocoTask.image_info
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
 class CocoPersonKeypointsConverter(CocoConverter):
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs['tasks'] = CocoTask.person_keypoints
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
 class CocoCaptionsConverter(CocoConverter):
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs['tasks'] = CocoTask.captions
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
 class CocoLabelsConverter(CocoConverter):
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs['tasks'] = CocoTask.labels
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)

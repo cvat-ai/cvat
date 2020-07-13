@@ -7,6 +7,7 @@ from enum import Enum
 import logging as log
 import os.path as osp
 import random
+import re
 
 import pycocotools.mask as mask_utils
 
@@ -371,6 +372,40 @@ class IdFromImageName(Transform, CliPlugin):
             log.debug("Can't change item id for item '%s': "
                 "item has no image info" % item.id)
             return item
+
+class Rename(Transform, CliPlugin):
+    """
+    Renames items in the dataset. Supports regular expressions.
+    The first character in the expression is a delimiter for
+    the pattern and replacement parts. Replacement part can also
+    contain string.format tokens with 'item' object available.|n
+    |n
+    Examples:|n
+    - Replace 'pattern' with 'replacement':|n
+    |s|srename -e '|pattern|replacement|'|n
+    - Remove 'frame_' from item ids:|n
+    |s|srename -e '|frame_(\d+)|\\1|'
+    """
+
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
+        parser.add_argument('-e', '--regex',
+            help="Regex for renaming.")
+        return parser
+
+    def __init__(self, extractor, regex):
+        super().__init__(extractor)
+
+        assert regex and isinstance(regex, str)
+        parts = regex.split(regex[0], maxsplit=3)
+        regex, sub = parts[1:3]
+        self._re = re.compile(regex)
+        self._sub = sub
+
+    def transform_item(self, item):
+        return self.wrap_item(item, id=self._re.sub(self._sub, item.id) \
+            .format(item=item))
 
 class RemapLabels(Transform, CliPlugin):
     DefaultAction = Enum('DefaultAction', ['keep', 'delete'])

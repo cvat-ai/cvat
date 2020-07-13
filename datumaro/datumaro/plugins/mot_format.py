@@ -19,7 +19,6 @@ from datumaro.components.extractor import (SourceExtractor,
 )
 from datumaro.components.extractor import Importer
 from datumaro.components.converter import Converter
-from datumaro.components.cli_plugin import CliPlugin
 from datumaro.util import cast
 from datumaro.util.image import Image, save_image
 
@@ -253,25 +252,17 @@ class MotSeqImporter(Importer):
                 subsets.append(p)
         return subsets
 
-class MotSeqGtConverter(Converter, CliPlugin):
-    @classmethod
-    def build_cmdline_parser(cls, **kwargs):
-        parser = super().__init__(**kwargs)
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-        return parser
+class MotSeqGtConverter(Converter):
+    DEFAULT_IMAGE_EXT = MotPath.IMAGE_EXT
 
-    def __init__(self, save_images=False):
-        super().__init__()
+    def apply(self):
+        extractor = self._extractor
 
-        self._save_images = save_images
-
-    def __call__(self, extractor, save_dir):
-        images_dir = osp.join(save_dir, MotPath.IMAGE_DIR)
+        images_dir = osp.join(self._save_dir, MotPath.IMAGE_DIR)
         os.makedirs(images_dir, exist_ok=True)
         self._images_dir = images_dir
 
-        anno_dir = osp.join(save_dir, 'gt')
+        anno_dir = osp.join(self._save_dir, 'gt')
         os.makedirs(anno_dir, exist_ok=True)
         anno_file = osp.join(anno_dir, MotPath.GT_FILENAME)
         with open(anno_file, 'w', encoding="utf-8") as csv_file:
@@ -291,6 +282,7 @@ class MotSeqGtConverter(Converter, CliPlugin):
                     if track_id not in track_id_mapping:
                         track_id_mapping[track_id] = len(track_id_mapping)
                     track_id = track_id_mapping[track_id]
+
                     writer.writerow({
                         'frame_id': frame_id,
                         'track_id': track_id,
@@ -311,11 +303,10 @@ class MotSeqGtConverter(Converter, CliPlugin):
 
                 if self._save_images:
                     if item.has_image and item.image.has_data:
-                        save_image(osp.join(self._images_dir,
-                                '%06d%s' % (frame_id, MotPath.IMAGE_EXT)),
-                            item.image.data)
+                        self._save_image(item, osp.join(self._images_dir,
+                            '%06d%s' % (frame_id, self._find_image_ext(item))))
                     else:
-                        log.debug("Item '%s' has no image" % item.id)
+                        log.debug("Item '%s' has no image", item.id)
 
         labels_file = osp.join(anno_dir, MotPath.LABELS_FILE)
         with open(labels_file, 'w', encoding='utf-8') as f:

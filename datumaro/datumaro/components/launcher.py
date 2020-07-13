@@ -5,7 +5,8 @@
 
 import numpy as np
 
-from datumaro.components.extractor import Transform
+from datumaro.components.extractor import (Transform, LabelCategories,
+    AnnotationType)
 from datumaro.util import take_by
 
 
@@ -33,6 +34,7 @@ class ModelTransform(Transform):
             inference = self._launcher.launch(inputs)
 
             for item, annotations in zip(batch, inference):
+                self._check_annotations(annotations)
                 yield self.wrap_item(item, annotations=annotations)
 
     def get_subset(self, name):
@@ -49,3 +51,17 @@ class ModelTransform(Transform):
         inputs = np.expand_dims(item.image, axis=0)
         annotations = self._launcher.launch(inputs)[0]
         return self.wrap_item(item, annotations=annotations)
+
+    def _check_annotations(self, annotations):
+        labels_count = len(self.categories().get(
+            AnnotationType.label, LabelCategories()).items)
+
+        for ann in annotations:
+            label = getattr(ann, 'label')
+            if label is None:
+                continue
+
+            if label not in range(labels_count):
+                raise Exception("Annotation has unexpected label id %s, "
+                    "while there is only %s defined labels." % \
+                    (label, labels_count))

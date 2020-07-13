@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 import os.path as osp
 
@@ -69,8 +70,8 @@ class TfrecordConverterTest(TestCase):
                 }
 
         with TestDir() as test_dir:
-            self._test_save_and_load(
-                TestExtractor(), TfDetectionApiConverter(save_images=True),
+            self._test_save_and_load(TestExtractor(),
+                partial(TfDetectionApiConverter.convert, save_images=True),
                 test_dir)
 
     def test_can_save_masks(self):
@@ -99,8 +100,8 @@ class TfrecordConverterTest(TestCase):
                 }
 
         with TestDir() as test_dir:
-            self._test_save_and_load(
-                TestExtractor(), TfDetectionApiConverter(save_masks=True),
+            self._test_save_and_load(TestExtractor(),
+                partial(TfDetectionApiConverter.convert, save_masks=True),
                 test_dir)
 
     def test_can_save_dataset_with_no_subsets(self):
@@ -139,8 +140,8 @@ class TfrecordConverterTest(TestCase):
                 }
 
         with TestDir() as test_dir:
-            self._test_save_and_load(
-                TestExtractor(), TfDetectionApiConverter(save_images=True),
+            self._test_save_and_load(TestExtractor(),
+                partial(TfDetectionApiConverter.convert, save_images=True),
                 test_dir)
 
     def test_can_save_dataset_with_image_info(self):
@@ -158,7 +159,7 @@ class TfrecordConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                TfDetectionApiConverter(), test_dir)
+                TfDetectionApiConverter.convert, test_dir)
 
     def test_labelmap_parsing(self):
         text = """
