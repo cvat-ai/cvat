@@ -104,7 +104,7 @@ class GitWrapper:
     def __init__(self, config=None):
         self.repo = None
 
-        if config is not None and osp.isdir(config.project_dir):
+        if config is not None and config.project_dir:
             self.init(config.project_dir)
 
     @staticmethod
@@ -116,8 +116,12 @@ class GitWrapper:
         spawn = not osp.isdir(cls._git_dir(path))
         repo = git.Repo.init(path=path)
         if spawn:
-            author = git.Actor("Nobody", "nobody@example.com")
-            repo.index.commit('Initial commit', author=author)
+            repo.config_writer().set_value("user", "name", "User") \
+                .set_value("user", "email", "user@nowhere.com") \
+                .release()
+            # gitpython does not support init, use git directly
+            repo.git.init()
+            repo.git.commit('-m', 'Initial commit', '--allow-empty')
         return repo
 
     def init(self, path):
@@ -377,9 +381,10 @@ class Dataset(Extractor):
     def get(self, item_id, subset=None, path=None):
         if path:
             raise KeyError("Requested dataset item path is not found")
-        if subset is None:
-            subset = ''
-        return self._subsets[subset].items[item_id]
+        item_id = str(item_id)
+        subset = subset or ''
+        subset = self._subsets[subset]
+        return subset.items[item_id]
 
     def put(self, item, item_id=None, subset=None, path=None):
         if path:
@@ -567,7 +572,7 @@ class ProjectDataset(Dataset):
             rest_path = path[1:]
             return self._sources[source].get(
                 item_id=item_id, subset=subset, path=rest_path)
-        return self._subsets[subset].items[item_id]
+        return super().get(item_id, subset)
 
     def put(self, item, item_id=None, subset=None, path=None):
         if path is None:
@@ -606,31 +611,37 @@ class ProjectDataset(Dataset):
             project.config.remove('sources')
 
         save_dir = osp.abspath(save_dir)
-        os.makedirs(save_dir, exist_ok=True)
-
         dataset_save_dir = osp.join(save_dir, project.config.dataset_dir)
-        os.makedirs(dataset_save_dir, exist_ok=True)
 
         converter_kwargs = {
             'save_images': save_images,
         }
 
-        if merge:
-            # merge and save the resulting dataset
-            self.env.converters.get(DEFAULT_FORMAT).convert(
-                self, dataset_save_dir, **converter_kwargs)
-        else:
-            if recursive:
-                # children items should already be updated
-                # so we just save them recursively
-                for source in self._sources.values():
-                    if isinstance(source, ProjectDataset):
-                        source.save(**converter_kwargs)
+        save_dir_existed = osp.exists(save_dir)
+        try:
+            os.makedirs(save_dir, exist_ok=True)
+            os.makedirs(dataset_save_dir, exist_ok=True)
 
-            self.env.converters.get(DEFAULT_FORMAT).convert(
-                self.iterate_own(), dataset_save_dir, **converter_kwargs)
+            if merge:
+                # merge and save the resulting dataset
+                self.env.converters.get(DEFAULT_FORMAT).convert(
+                    self, dataset_save_dir, **converter_kwargs)
+            else:
+                if recursive:
+                    # children items should already be updated
+                    # so we just save them recursively
+                    for source in self._sources.values():
+                        if isinstance(source, ProjectDataset):
+                            source.save(**converter_kwargs)
 
-        project.save(save_dir)
+                self.env.converters.get(DEFAULT_FORMAT).convert(
+                    self.iterate_own(), dataset_save_dir, **converter_kwargs)
+
+            project.save(save_dir)
+        except BaseException:
+            if not save_dir_existed and osp.isdir(save_dir):
+                shutil.rmtree(save_dir, ignore_errors=True)
+            raise
 
     @property
     def env(self):
@@ -698,7 +709,7 @@ class ProjectDataset(Dataset):
         try:
             os.makedirs(save_dir, exist_ok=True)
             converter(dataset, save_dir)
-        except Exception:
+        except BaseException:
             if not save_dir_existed:
                 shutil.rmtree(save_dir)
             raise
@@ -743,7 +754,7 @@ class Project:
 
             config_path = osp.join(save_dir, config.project_filename)
             config.dump(config_path)
-        except Exception:
+        except BaseException:
             if not env_dir_existed:
                 shutil.rmtree(save_dir, ignore_errors=True)
             if not project_dir_existed:
@@ -752,9 +763,10 @@ class Project:
 
     @staticmethod
     def generate(save_dir, config=None):
+        config = Config(config)
+        config.project_dir = save_dir
         project = Project(config)
         project.save(save_dir)
-        project.config.project_dir = save_dir
         return project
 
     @staticmethod

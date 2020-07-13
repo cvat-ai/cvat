@@ -98,7 +98,6 @@ export enum UpdateReasons {
     IMAGE_FITTED = 'image_fitted',
     IMAGE_MOVED = 'image_moved',
     GRID_UPDATED = 'grid_updated',
-    SET_Z_LAYER = 'set_z_layer',
 
     OBJECTS_UPDATED = 'objects_updated',
     SHAPE_ACTIVATED = 'shape_activated',
@@ -148,11 +147,10 @@ export interface CanvasModel {
     geometry: Geometry;
     mode: Mode;
 
-    setZLayer(zLayer: number | null): void;
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
 
-    setup(frameData: any, objectStates: any[]): void;
+    setup(frameData: any, objectStates: any[], zLayer: number): void;
     activate(clientID: number | null, attributeID: number | null): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
@@ -258,11 +256,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         };
     }
 
-    public setZLayer(zLayer: number | null): void {
-        this.data.zLayer = zLayer;
-        this.notify(UpdateReasons.SET_Z_LAYER);
-    }
-
     public zoom(x: number, y: number, direction: number): void {
         const oldScale: number = this.data.scale;
         const newScale: number = direction > 0 ? oldScale * 6 / 5 : oldScale * 5 / 6;
@@ -337,7 +330,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.ZOOM_CANVAS);
     }
 
-    public setup(frameData: any, objectStates: any[]): void {
+    public setup(frameData: any, objectStates: any[], zLayer: number): void {
         if (this.data.imageID !== frameData.number) {
             if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -345,6 +338,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (frameData.number === this.data.imageID) {
+            this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
             return;
@@ -369,6 +363,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
             this.data.image = data;
             this.notify(UpdateReasons.IMAGE_CHANGED);
+            this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
         }).catch((exception: any): void => {
@@ -388,9 +383,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (typeof (clientID) === 'number') {
-            const [state] = this.data.objects
+            const [state] = this.objects
                 .filter((_state: any): boolean => _state.clientID === clientID);
-            if (!['rectangle', 'polygon', 'polyline', 'points', 'cuboid'].includes(state.shapeType)) {
+            if (!state || state.objectType === 'tag') {
                 return;
             }
         }

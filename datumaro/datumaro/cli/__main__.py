@@ -68,6 +68,7 @@ def make_parser():
         ('remove', commands.remove, "Remove source from project"),
         ('export', commands.export, "Export project"),
         ('explain', commands.explain, "Run Explainable AI algorithm for model"),
+        ('convert', commands.convert, "Convert dataset"),
     ]
 
     # Argparse doesn't support subparser groups:

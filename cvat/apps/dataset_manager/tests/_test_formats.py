@@ -77,7 +77,8 @@ from cvat.apps.engine.models import Task
 _setUpModule()
 
 from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import TaskData
+from cvat.apps.dataset_manager.bindings import TaskData, CvatTaskDataExtractor
+from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.engine.models import Task
 
 
@@ -405,6 +406,22 @@ class TaskExportTest(_DbTestBase):
 
                     self.assertEqual(len(dataset), task["size"])
                 self._test_export(check, task, format_name, save_images=False)
+
+    def test_can_skip_outside(self):
+        images = self._generate_task_images(3)
+        task = self._generate_task(images)
+        self._generate_annotations(task)
+        task_ann = TaskAnnotation(task["id"])
+        task_ann.init_from_db()
+        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task["id"]))
+
+        extractor = CvatTaskDataExtractor(task_data, include_outside=False)
+        dm_dataset = datumaro.components.project.Dataset.from_extractors(extractor)
+        self.assertEqual(4, len(dm_dataset.get("image_1").annotations))
+
+        extractor = CvatTaskDataExtractor(task_data, include_outside=True)
+        dm_dataset = datumaro.components.project.Dataset.from_extractors(extractor)
+        self.assertEqual(5, len(dm_dataset.get("image_1").annotations))
 
     def test_cant_make_rel_frame_id_from_unknown(self):
         images = self._generate_task_images(3)
