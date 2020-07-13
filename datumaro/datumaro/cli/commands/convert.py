@@ -12,7 +12,7 @@ from datumaro.components.project import Environment
 
 from ..contexts.project import FilterModes
 from ..util import CliException, MultilineFormatter, make_file_name
-from ..util.project import generate_next_dir_name
+from ..util.project import generate_next_file_name
 
 
 def build_parser(parser_ctor=argparse.ArgumentParser):
@@ -117,7 +117,7 @@ def convert_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to overwrite)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-%s' % \
+        dst_dir = generate_next_file_name('%s-%s' % \
             (osp.basename(source), make_file_name(args.output_format)))
     dst_dir = osp.abspath(dst_dir)
 
