@@ -550,11 +550,17 @@ def diff_command(args):
     dst_dir = osp.abspath(dst_dir)
     log.info("Saving diff to '%s'" % dst_dir)
 
-    visualizer = DiffVisualizer(save_dir=dst_dir, comparator=comparator,
-        output_format=args.format)
-    visualizer.save_dataset_diff(
-        first_project.make_dataset(),
-        second_project.make_dataset())
+    dst_dir_existed = osp.exists(dst_dir)
+    try:
+        visualizer = DiffVisualizer(save_dir=dst_dir, comparator=comparator,
+            output_format=args.format)
+        visualizer.save_dataset_diff(
+            first_project.make_dataset(),
+            second_project.make_dataset())
+    except BaseException:
+        if not dst_dir_existed and osp.isdir(dst_dir):
+            shutil.rmtree(dst_dir, ignore_errors=True)
+        raise
 
     return 0
 

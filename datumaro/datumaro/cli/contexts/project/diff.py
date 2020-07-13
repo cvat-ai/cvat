@@ -83,11 +83,20 @@ class DiffVisualizer:
         if self.output_format is Format.tensorboard:
             self.file_writer.reopen()
 
-        for i, (item_a, item_b) in enumerate(zip(extractor_a, extractor_b)):
-            if item_a.id != item_b.id or not item_a.id or not item_b.id:
-                print("Dataset items #%s '%s' '%s' do not match" % \
-                    (i + 1, item_a.id, item_b.id))
-                continue
+        ids_a = set((item.id, item.subset) for item in extractor_a)
+        ids_b = set((item.id, item.subset) for item in extractor_b)
+        ids = ids_a & ids_b
+
+        if len(ids) != len(ids_a):
+            print("Unmatched items in the first dataset: ")
+            print(ids_a - ids)
+        if len(ids) != len(ids_b):
+            print("Unmatched items in the second dataset: ")
+            print(ids_b - ids)
+
+        for item_id, item_subset in ids:
+            item_a = extractor_a.get(item_id, item_subset)
+            item_b = extractor_a.get(item_id, item_subset)
 
             label_diff = self.comparator.compare_item_labels(item_a, item_b)
             self.update_label_confusion(label_diff)
