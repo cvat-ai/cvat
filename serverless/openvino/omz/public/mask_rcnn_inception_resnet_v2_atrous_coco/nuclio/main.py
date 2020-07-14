@@ -79,12 +79,11 @@ def handler(context, event):
             contour = approximate_polygon(contour, tolerance=2.5)
             if len(contour) < 3:
                 continue
-            polygon = contour.ravel().tolist()
 
             results.append({
                 "confidence": str(obj_value),
                 "label": obj_label,
-                "points": polygon,
+                "points": contour.ravel().tolist(),
                 "type": "polygon",
             })
 

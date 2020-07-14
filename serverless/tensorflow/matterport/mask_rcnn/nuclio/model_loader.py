@@ -63,7 +63,6 @@ class ModelLoader:
                 contour = np.flip(contour, axis=1)
                 # Approximate the contour and reduce the number of points
                 contour = approximate_polygon(contour, tolerance=2.5)
-                polygon = contour.ravel().tolist()
                 if len(contour) < 3:
                     continue
                 label = self.labels[class_id]
@@ -71,7 +70,7 @@ class ModelLoader:
                 results.append({
                     "confidence": str(score),
                     "label": label,
-                    "points": polygon,
+                    "points": contour.ravel().tolist(),
                     "type": "polygon",
                 })
 
