@@ -350,6 +350,7 @@ class TaskData:
         _shape['attributes'] = [self._import_attribute(label_id, attrib)
             for attrib in _shape['attributes']
             if self._get_attribute_id(label_id, attrib.name)]
+        _shape['points'] = list(map(float, _shape['points']))
         return _shape
 
     def _import_track(self, track):
@@ -368,6 +369,7 @@ class TaskData:
             shape['attributes'] = [self._import_attribute(label_id, attrib)
                 for attrib in shape['attributes']
                 if self._get_mutable_attribute_id(label_id, attrib.name)]
+            shape['points'] = list(map(float, shape['points']))
 
         return _track
 

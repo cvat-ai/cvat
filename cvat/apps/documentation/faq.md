@@ -6,6 +6,8 @@
 - [How to make unassigned tasks not visible to all users](#how-to-make-unassigned-tasks-not-visible-to-all-users)
 - [Where are uploaded images/videos stored](#where-are-uploaded-imagesvideos-stored)
 - [Where are annotations stored](#where-are-annotations-stored)
+- [How to mark job/task as completed](#how-to-mark-jobtask-as-completed)
+- [How to install CVAT on Windows 10 Home](#how-to-install-cvat-on-windows-10-home)
 
 ## How to update CVAT
 Before upgrading, please follow the official docker
@@ -89,3 +91,11 @@ Annotations are stored in the PostgreSQL database. The database files are stored
 volumes:
   - cvat_db:/var/lib/postgresql/data
 ```
+
+## How to mark job/task as completed
+The status is set by the user in the [Info window](user_guide.md#info) of the job annotation view.
+There are three types of status: annotation, validation or completed.
+The status of the job changes the progress bar of the task.
+
+## How to install CVAT on Windows 10 Home
+Follow this [guide](installation.md#windows-10).
