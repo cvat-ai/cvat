@@ -67,6 +67,8 @@ class DEXTR_HANDLER:
         numpy_cropped = np.array(image.crop(bounding_box))
         resized = cv2.resize(numpy_cropped, (_DEXTR_SIZE, _DEXTR_SIZE),
             interpolation = cv2.INTER_CUBIC).astype(np.float32)
+        if len(resized.shape) == 2:
+            resized = cv2.cvtColor(resized, cv2.COLOR_GRAY2RGB)
 
         # Make a heatmap
         points = points - [min(points[:, 0]), min(points[:, 1])] + [padding, padding]
