@@ -104,7 +104,9 @@ volumes:
 ```
 
 ## How to mark job/task as completed
-The status is set by the user in the [Info window](user_guide.md#info) of the job annotation view. There are three types of status: annotation, validation or completed. The status of the job changes the progress bar of the task.
+The status is set by the user in the [Info window](user_guide.md#info) of the job annotation view.
+There are three types of status: annotation, validation or completed.
+The status of the job changes the progress bar of the task.
 
 ## How to install CVAT on Windows 10 Home
 Follow this [guide](installation.md#windows-10).
