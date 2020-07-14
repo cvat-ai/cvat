@@ -7,7 +7,7 @@ import numpy as np
 import sys
 from skimage.measure import find_contours, approximate_polygon
 
-# workarround for tf.placeholder() is not compatible with eager execution
+# workaround for tf.placeholder() is not compatible with eager execution
 # https://github.com/tensorflow/tensorflow/issues/18165
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
@@ -22,7 +22,7 @@ if MASK_RCNN_DIR:
     sys.path.append(MASK_RCNN_DIR)  # To find local version of the library
     sys.path.append(os.path.join(MASK_RCNN_DIR, 'samples/coco'))
 
-from mrcnn import model as modellib, utils
+from mrcnn import model as modellib
 import coco
 
 class ModelLoader:
@@ -51,7 +51,7 @@ class ModelLoader:
 
         results = []
         MASK_THRESHOLD = 0.5
-        for i, box in enumerate(output["rois"]):
+        for i in range(len(output["rois"])):
             score = output["scores"][i]
             class_id = output["class_ids"][i]
             mask = output["masks"][:,:,i]

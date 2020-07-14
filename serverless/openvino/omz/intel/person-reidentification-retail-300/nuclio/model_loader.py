@@ -52,3 +52,4 @@ class ModelLoader:
             return results[self._output_blob_name].copy()
         else:
             return results.copy()
+

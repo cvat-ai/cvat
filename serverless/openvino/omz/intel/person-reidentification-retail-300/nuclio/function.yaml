@@ -2,12 +2,13 @@ metadata:
   name: openvino.omz.intel.person-reidentification-retail-300
   namespace: cvat
   annotations:
+    name: Person reidentification
     type: reid
     framework: openvino
     spec:
 
 spec:
-  descripti on: Person reidentification model for a general scenario
+  description: Person reidentification model for a general scenario
   runtime: "python:3.6"
   handler: main:handler
   eventTimeout: 30s
@@ -41,6 +42,8 @@ spec:
       maxWorkers: 2
       kind: "http"
       workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
 
   platform:
       restartPolicy:
