@@ -5,14 +5,14 @@ import numpy as np
 
 
 class PixelLinkDecoder():
-    def __init__(self):
+    def __init__(self, pixel_threshold, link_threshold):
         four_neighbours = False
         if four_neighbours:
             self._get_neighbours = self._get_neighbours_4
         else:
             self._get_neighbours = self._get_neighbours_8
-        self.pixel_conf_threshold = 0.8
-        self.link_conf_threshold = 0.8
+        self.pixel_conf_threshold = pixel_threshold
+        self.link_conf_threshold = link_threshold
 
     def decode(self, height, width, detections: dict):
         self.image_height = height

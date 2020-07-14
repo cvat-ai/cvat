@@ -1,5 +1,5 @@
 metadata:
-  name: openvino.omz.intel.person-reidentification-retail-300
+  name: openvino.omz.intel.person-reidentification-retail-0300
   namespace: cvat
   annotations:
     name: Person reidentification
@@ -17,7 +17,7 @@ spec:
       value: /opt/nuclio/python3
 
   build:
-    image: cvat/openvino.omz.intel.person-reidentification-retail-300
+    image: cvat/openvino.omz.intel.person-reidentification-retail-0300
     baseImage: openvino/ubuntu18_dev:2020.2
 
     directives:
@@ -29,9 +29,9 @@ spec:
       - kind: RUN
         value: ln -s /usr/bin/pip3 /usr/bin/pip
       - kind: RUN
-        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name person-reidentification-retail-300 -o /opt/nuclio/open_model_zoo
+        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name person-reidentification-retail-0300 -o /opt/nuclio/open_model_zoo
       - kind: RUN
-        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/converter.py --name person-reidentification-retail-300 --precisions FP32 -d /opt/nuclio/open_model_zoo -o /opt/nuclio/open_model_zoo
+        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/converter.py --name person-reidentification-retail-0300 --precisions FP32 -d /opt/nuclio/open_model_zoo -o /opt/nuclio/open_model_zoo
 
       postCopy:
       - kind: USER

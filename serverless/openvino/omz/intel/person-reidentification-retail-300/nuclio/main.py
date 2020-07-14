@@ -9,16 +9,16 @@ from reid import ReID
 def init_context(context):
     context.logger.info("Init context...  0%")
 
-    base_dir = "/opt/nuclio/open_model_zoo/intel/person-reidentification-retail-300/FP32"
-    model_xml = os.path.join(base_dir, "person-reidentification-retail-300.xml")
-    model_bin = os.path.join(base_dir, "person-reidentification-retail-300.bin")
+    base_dir = "/opt/nuclio/open_model_zoo/intel/person-reidentification-retail-0300/FP32"
+    model_xml = os.path.join(base_dir, "person-reidentification-retail-0300.xml")
+    model_bin = os.path.join(base_dir, "person-reidentification-retail-0300.bin")
     model_handler = ReID(model_xml, model_bin)
     setattr(context.user_data, 'model_handler', model_handler)
 
     context.logger.info("Init context...100%")
 
 def handler(context, event):
-    context.logger.info("Run person-reidentification-retail-300 model")
+    context.logger.info("Run person-reidentification-retail-0300 model")
     data = event.body
     buf0 = io.BytesIO(base64.b64decode(data["images"][0].encode('utf-8')))
     buf1 = io.BytesIO(base64.b64decode(data["images"][1].encode('utf-8')))

@@ -1,9 +1,10 @@
 
-# Copyright (C) 2018-2019 Intel Corporation
+# Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import cv2
+import numpy as np
 from openvino.inference_engine import IECore
 
 class ModelLoader:
@@ -40,8 +41,12 @@ class ModelLoader:
         self._input_layout = input_type if isinstance(input_type, list) else input_type.shape
 
     def infer(self, image):
+        image = np.array(image)
         _, _, h, w = self._input_layout
         in_frame = image if image.shape[:-1] == (h, w) else cv2.resize(image, (w, h))
+        if len(in_frame.shape) < 3: # grayscale image
+            in_frame = in_frame[:, :, np.newaxis]
+
         in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
         inputs = {self._input_blob_name: in_frame}
         if self._input_info_name:
