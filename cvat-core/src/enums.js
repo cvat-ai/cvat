@@ -35,6 +35,26 @@
     });
 
     /**
+        * List of RQ statuses
+        * @enum {string}
+        * @name RQStatus
+        * @memberof module:API.cvat.enums
+        * @property {string} QUEUED 'queued'
+        * @property {string} STARTED 'started'
+        * @property {string} FINISHED 'finished'
+        * @property {string} FAILED 'failed'
+        * @property {string} UNKNOWN 'unknown'
+        * @readonly
+    */
+   const RQStatus = Object.freeze({
+        QUEUED: 'queued',
+        STARTED: 'started',
+        FINISHED: 'finished',
+        FAILED: 'failed',
+        UNKNOWN: 'unknown',
+    });
+
+    /**
         * Task modes
         * @enum {string}
         * @name TaskMode
@@ -217,6 +237,18 @@
     });
 
     /**
+     * Enum string values.
+     * @name ModelType
+     * @memberof module:API.cvat.enums
+     * @enum {string}
+     */
+    const ModelType = {
+        DETECTOR: 'detector',
+        INTERACTOR: 'interactor',
+        TRACKER: 'tracker',
+    };
+
+    /**
         * Array of hex colors
         * @name colors
         * @memberof module:API.cvat.enums
@@ -239,7 +271,9 @@
         ObjectType,
         ObjectShape,
         LogType,
+        ModelType,
         HistoryActions,
+        RQStatus,
         colors,
     };
 })();
