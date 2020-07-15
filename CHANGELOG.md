@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hidden points and cuboids can be selected to be groupped (<https://github.com/opencv/cvat/pull/1874>)
 - `outside` annotations should not be in exported images (<https://github.com/opencv/cvat/issues/1620>)
 - `CVAT for video format` import error with interpolation (<https://github.com/opencv/cvat/issues/1893>)
+- `Image compression` definition mismatch (<https://github.com/opencv/cvat/issues/1900>)
 
 ### Security
 -
