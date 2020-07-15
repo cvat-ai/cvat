@@ -152,7 +152,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     **Image Quality**. Use this option to specify quality of uploaded images.
     The option helps to load high resolution datasets faster.
-    Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
+    Use the value from ``5`` (almost completely compressed images) to ``100`` (not compressed images).
 
     **Overlap Size**. Use this option to make overlapped segments.
     The option makes tracks continuous from one segment into another.
