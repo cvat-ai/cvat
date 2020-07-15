@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Changed
--
+- Smaller object details (<https://github.com/opencv/cvat/pull/1877>)
 
 ### Deprecated
 -
