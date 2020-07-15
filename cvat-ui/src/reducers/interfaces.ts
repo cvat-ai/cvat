@@ -165,14 +165,6 @@ export interface ModelsState {
     activeRunTask: any;
 }
 
-export interface ModelFiles {
-    [key: string]: string | File;
-    xml: string | File;
-    bin: string | File;
-    py: string | File;
-    json: string | File;
-}
-
 export interface ErrorState {
     message: string;
     reason: string;

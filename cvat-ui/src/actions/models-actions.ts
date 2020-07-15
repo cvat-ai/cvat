@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { Model, ModelFiles, ActiveInference } from 'reducers/interfaces';
+import { Model, ActiveInference, RQStatus } from 'reducers/interfaces';
 import getCore from 'cvat-core-wrapper';
+import cvatApp from 'components/cvat-app';
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
@@ -35,18 +36,6 @@ export const modelsActions = {
     getModelsFailed: (error: any) => createAction(
         ModelsActionTypes.GET_MODELS_FAILED, {
             error,
-        },
-    ),
-    createModel: () => createAction(ModelsActionTypes.CREATE_MODEL),
-    createModelSuccess: () => createAction(ModelsActionTypes.CREATE_MODEL_SUCCESS),
-    createModelFailed: (error: any) => createAction(
-        ModelsActionTypes.CREATE_MODEL_FAILED, {
-            error,
-        },
-    ),
-    createModelUpdateStatus: (status: string) => createAction(
-        ModelsActionTypes.CREATE_MODEL_STATUS_UPDATED, {
-            status,
         },
     ),
     fetchMetaFailed: (error: any) => createAction(ModelsActionTypes.FETCH_META_FAILED, { error }),
@@ -90,192 +79,59 @@ export const modelsActions = {
 export type ModelsActions = ActionUnion<typeof modelsActions>;
 
 const core = getCore();
-const baseURL = core.config.backendAPI.slice(0, -7);
 
 export function getModelsAsync(): ThunkAction {
     return async (dispatch): Promise<void> => {
         dispatch(modelsActions.getModels());
-        const models: Model[] = [];
 
         try {
-            const response = await core.server.request(
-                `${core.config.backendAPI}/lambda/functions`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                },
-            );
-
-            for (const model of response) {
-                if (model.kind === 'detector') {
-                    models.push({
-                        id: model.id,
-                        name: model.name,
-                        description: model.description,
-                        framework: model.framework,
-                        labels: [...model.labels],
-                        type: model.kind,
-                    });
-                }
-            }
+            const models = (await core.lambda.list())
+                .filter((model: Model) => model.type === 'detector');
+            dispatch(modelsActions.getModelsSuccess(models));
         } catch (error) {
             dispatch(modelsActions.getModelsFailed(error));
             return;
         }
-
-        dispatch(modelsActions.getModelsSuccess(models));
     };
 }
 
-export function createModelAsync(name: string, files: ModelFiles, global: boolean): ThunkAction {
-    return async (dispatch): Promise<void> => {
-        async function checkCallback(id: string): Promise<void> {
-            try {
-                const data = await core.server.request(
-                    `${baseURL}/auto_annotation/check/${id}`, {
-                        method: 'GET',
-                    },
-                );
-
-                switch (data.status) {
-                    case 'failed':
-                        dispatch(modelsActions.createModelFailed(
-                            `Checking request has returned the "${data.status}" status. Message: ${data.error}`,
-                        ));
-                        break;
-                    case 'unknown':
-                        dispatch(modelsActions.createModelFailed(
-                            `Checking request has returned the "${data.status}" status.`,
-                        ));
-                        break;
-                    case 'finished':
-                        dispatch(modelsActions.createModelSuccess());
-                        break;
-                    default:
-                        if ('progress' in data) {
-                            modelsActions.createModelUpdateStatus(data.progress);
-                        }
-                        setTimeout(checkCallback.bind(null, id), 1000);
-                }
-            } catch (error) {
-                dispatch(modelsActions.createModelFailed(error));
-            }
-        }
-
-        dispatch(modelsActions.createModel());
-        const data = new FormData();
-        data.append('name', name);
-        data.append('storage', typeof files.bin === 'string' ? 'shared' : 'local');
-        data.append('shared', global.toString());
-        Object.keys(files).reduce((acc, key: string): FormData => {
-            acc.append(key, files[key]);
-            return acc;
-        }, data);
-
-        try {
-            dispatch(modelsActions.createModelUpdateStatus('Request is beign sent..'));
-            const response = await core.server.request(
-                `${baseURL}/auto_annotation/create`, {
-                    method: 'POST',
-                    data,
-                    contentType: false,
-                    processData: false,
-                },
-            );
-
-            dispatch(modelsActions.createModelUpdateStatus('Request is being processed..'));
-            setTimeout(checkCallback.bind(null, response.id), 1000);
-        } catch (error) {
-            dispatch(modelsActions.createModelFailed(error));
-        }
-    };
-}
 
 interface InferenceMeta {
-    active: boolean;
     taskID: number;
     requestID: string;
 }
 
-const timers: any = {};
-
-async function timeoutCallback(
-    url: string,
-    taskID: number,
-    dispatch: (action: ModelsActions) => void,
-): Promise<void> {
-    try {
-        delete timers[taskID];
-
-        const response = await core.server.request(url, {
-            method: 'GET',
-        });
-
-        const activeInference: ActiveInference = {
-            status: response.status,
-            progress: +response.progress || 0,
-            error: response.exc_info || '',
-            id: response.id,
-        };
-
-
-        if (activeInference.status === 'unknown') {
-            dispatch(modelsActions.getInferenceStatusFailed(
-                taskID,
-                new Error(
-                    `Inference status for the task ${taskID} is unknown.`,
-                ),
-            ));
-
-            return;
-        }
-
-        if (activeInference.status === 'failed') {
-            dispatch(modelsActions.getInferenceStatusFailed(
-                taskID,
-                new Error(
-                    `Inference status for the task ${taskID} is failed. ${activeInference.error}`,
-                ),
-            ));
-
-            return;
-        }
-
-        if (activeInference.status !== 'finished') {
-            timers[taskID] = setTimeout(
-                timeoutCallback.bind(
-                    null,
-                    url,
-                    taskID,
-                    dispatch,
-                ), 3000,
-            );
-        }
-
-        dispatch(modelsActions.getInferenceStatusSuccess(taskID, activeInference));
-    } catch (error) {
-        dispatch(modelsActions.getInferenceStatusFailed(taskID, new Error(
-            `Server request for the task ${taskID} was failed`,
-        )));
-    }
-}
-
-function subscribe(
+function listen(
     inferenceMeta: InferenceMeta,
     dispatch: (action: ModelsActions) => void,
 ): void {
-    if (!(inferenceMeta.taskID in timers)) {
-        const requestURL = `${core.config.backendAPI}/lambda/requests/${inferenceMeta.requestID}`;
-        timers[inferenceMeta.taskID] = setTimeout(
-            timeoutCallback.bind(
-                null,
-                requestURL,
-                inferenceMeta.taskID,
-                dispatch,
-            ),
-        );
-    }
+    const { taskID, requestID } = inferenceMeta;
+    core.lambda.listen(requestID, (status: RQStatus, progress: number, message: string) => {
+        if (status === RQStatus.failed || status === RQStatus.unknown) {
+            dispatch(modelsActions.getInferenceStatusFailed(
+                taskID,
+                new Error(
+                    `Inference status for the task ${taskID} is ${status}. ${message}`,
+                ),
+            ));
+
+            return;
+        }
+
+        dispatch(modelsActions.getInferenceStatusSuccess(taskID, {
+            status,
+            progress,
+            error: message,
+            id: requestID,
+        }));
+    }).catch((error: Error) => {
+        dispatch(modelsActions.getInferenceStatusFailed(taskID, {
+            status: 'unknown',
+            progress: 0,
+            error: error.toString(),
+            id: requestID,
+        }));
+    });
 }
 
 export function getInferenceStatusAsync(): ThunkAction {
@@ -285,21 +141,14 @@ export function getInferenceStatusAsync(): ThunkAction {
         };
 
         try {
-            const response = await core.server.request(
-                `${core.config.backendAPI}/lambda/requests`, {
-                    method: 'GET',
-                },
-            );
-
-            response
-                .map((request: any): InferenceMeta => ({
+            const requests = await core.lambda.requests();
+            requests
+                .map((request: any): object => ({
                     taskID: +request.function.task,
                     requestID: request.id,
-                    active: request.progress < 100,
                 }))
-                .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
                 .forEach((inferenceMeta: InferenceMeta): void => {
-                    subscribe(inferenceMeta, dispatchCallback);
+                    listen(inferenceMeta, dispatchCallback);
                 });
         } catch (error) {
             dispatch(modelsActions.fetchMetaFailed(error));
@@ -313,26 +162,23 @@ export function startInferenceAsync(
     mapping: {
         [index: string]: string;
     },
-    cleanOut: boolean,
+    cleanup: boolean,
 ): ThunkAction {
     return async (dispatch): Promise<void> => {
         try {
-            await core.server.request(
-                `${baseURL}/api/v1/lambda/requests`, {
-                    method: 'POST',
-                    data: JSON.stringify({
-                        cleanup: cleanOut,
-                        mapping,
-                        task: taskInstance.id,
-                        function: model.id,
-                    }),
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                },
-            );
+            const requestID: string = await core.lambda.run(taskInstance, model, {
+                mapping,
+                cleanup,
+            });
 
-            dispatch(getInferenceStatusAsync());
+            const dispatchCallback = (action: ModelsActions): void => {
+                dispatch(action);
+            };
+
+            listen({
+                taskID: taskInstance.id,
+                requestID,
+            }, dispatchCallback);
         } catch (error) {
             dispatch(modelsActions.startInferenceFailed(taskInstance.id, error));
         }
@@ -343,19 +189,7 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
         try {
             const inference = getState().models.inferences[taskID];
-            if (inference) {
-                await core.server.request(
-                    `${baseURL}/api/v1/lambda/requests/${inference.id}`, {
-                        method: 'DELETE',
-                    },
-                );
-
-                if (timers[taskID]) {
-                    clearTimeout(timers[taskID]);
-                    delete timers[taskID];
-                }
-            }
-
+            await core.lambda.cancel(inference.id);
             dispatch(modelsActions.cancelInferenceSuccess(taskID));
         } catch (error) {
             dispatch(modelsActions.cancelInferenceFailed(taskID, error));
