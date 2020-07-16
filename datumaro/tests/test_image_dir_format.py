@@ -20,7 +20,7 @@ class ImageDirFormatTest(TestCase):
         with TestDir() as test_dir:
             source_dataset = TestExtractor()
 
-            ImageDirConverter()(source_dataset, save_dir=test_dir)
+            ImageDirConverter.convert(source_dataset, save_dir=test_dir)
 
             project = Project.import_from(test_dir, 'image_dir')
             parsed_dataset = project.make_dataset()
@@ -39,7 +39,7 @@ class ImageDirFormatTest(TestCase):
         with TestDir() as test_dir:
             source_dataset = TestExtractor()
 
-            ImageDirConverter()(source_dataset, save_dir=test_dir)
+            ImageDirConverter.convert(source_dataset, save_dir=test_dir)
 
             project = Project.import_from(test_dir, 'image_dir')
             parsed_dataset = project.make_dataset()

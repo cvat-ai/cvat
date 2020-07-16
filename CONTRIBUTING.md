@@ -14,7 +14,7 @@ Next steps should work on clear Ubuntu 18.04.
 
 -   Install necessary dependencies:
     ```sh
-    $ sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev
+    sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev
     ```
     Also please make sure that you have installed ffmpeg with all necessary libav* libraries and pkg-config package.
     ```sh
@@ -70,7 +70,7 @@ for development
     cd .. && source .env/bin/activate && code
     ```
 
--   Install followig vscode extensions:
+-   Install following VS Code extensions:
     - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
     - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
     - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
@@ -85,6 +85,20 @@ for development
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 
+### Note for Windows users
+
+You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
+
+-   Install WSL using [this guide](https://docs.microsoft.com/ru-ru/windows/wsl/install-win10).
+
+-   Following this guide install Ubuntu 18.04 Linux distribution for WSL.
+
+-   Run Ubuntu using start menu link or execute next command
+    ```powershell
+    wsl -d Ubuntu-18.04
+    ```
+
+-   Run all commands from this isntallation guide in WSL Ubuntu shell.
 ## Setup additional components in development environment
 
 ### Automatic annotation
@@ -157,7 +171,7 @@ curl https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_co
 ## JavaScript/Typescript coding style
 
 We use the [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript) for JavaScript code with a
-litle exception - we prefere 4 spaces for indentation of nested blocks and statements.
+little exception - we prefer 4 spaces for indentation of nested blocks and statements.
 
 ## Branching model
 
@@ -247,7 +261,7 @@ accurate comments, etc.) and any other requirements (such as test coverage).
 Follow this process if you'd like your work considered for inclusion in the
 project:
 
-1.  [Fork](http://help.github.com/fork-a-repo/) the project, clone your fork,
+1.  [Fork](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) the project, clone your fork,
     and configure the remotes:
 
     ```bash
@@ -276,7 +290,7 @@ project:
 1.  Commit your changes in logical chunks. Please adhere to these [git commit
    message guidelines](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)
    or your code is unlikely be merged into the main project. Use Git's
-   [interactive rebase](https://help.github.com/articles/interactive-rebase)
+   [interactive rebase](https://docs.github.com/en/github/using-git/about-git-rebase)
    feature to tidy up your commits before making them public.
 
 1.  Locally merge (or rebase) the upstream development branch into your topic branch:
@@ -291,7 +305,7 @@ project:
     git push origin <topic-branch-name>
     ```
 
-1.  [Open a Pull Request](https://help.github.com/articles/using-pull-requests/)
+1.  [Open a Pull Request](hhttps://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests)
     with a clear title and description.
 
 **IMPORTANT**: By submitting a patch, you agree to allow the project owner to

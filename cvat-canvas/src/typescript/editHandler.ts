@@ -130,7 +130,7 @@ export class EditHandlerImpl implements EditHandler {
 
         this.setupEditEvents();
         if (this.autobordersEnabled) {
-            this.autoborderHandler.autoborder(true, this.editLine, true);
+            this.autoborderHandler.autoborder(true, this.editLine, this.editData.state.clientID);
         }
     }
 
@@ -376,7 +376,11 @@ export class EditHandlerImpl implements EditHandler {
             this.autobordersEnabled = configuration.autoborders;
             if (this.editLine) {
                 if (this.autobordersEnabled) {
-                    this.autoborderHandler.autoborder(true, this.editLine, true);
+                    this.autoborderHandler.autoborder(
+                        true,
+                        this.editLine,
+                        this.editData.state.clientID,
+                    );
                 } else {
                     this.autoborderHandler.autoborder(false);
                 }

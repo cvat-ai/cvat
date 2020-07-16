@@ -15,7 +15,6 @@ from datumaro.components.extractor import (SourceExtractor, DEFAULT_SUBSET_NAME,
 )
 from datumaro.components.extractor import Importer
 from datumaro.components.converter import Converter
-from datumaro.components.cli_plugin import CliPlugin
 from datumaro.util.image import Image, save_image
 from datumaro.util.mask_tools import load_mask, find_mask_bbox
 
@@ -254,8 +253,7 @@ class LabelMeImporter(Importer):
             params.update(extra_params)
 
             source_name = osp.splitext(osp.basename(subset_path))[0]
-            project.add_source(source_name,
-            {
+            project.add_source(source_name, {
                 'url': subset_path,
                 'format': self._EXTRACTOR_NAME,
                 'options': params,
@@ -285,34 +283,18 @@ class LabelMeImporter(Importer):
         return subset_paths
 
 
-class LabelMeConverter(Converter, CliPlugin):
-    @classmethod
-    def build_cmdline_parser(cls, **kwargs):
-        parser = super().build_cmdline_parser(**kwargs)
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-        return parser
+class LabelMeConverter(Converter):
+    DEFAULT_IMAGE_EXT = LabelMePath.IMAGE_EXT
 
-    def __init__(self, save_images=False):
-        super().__init__()
-
-        self._save_images = save_images
-
-    def __call__(self, extractor, save_dir):
-        self._extractor = extractor
-
-        subsets = extractor.subsets()
-        if len(subsets) == 0:
-            subsets = [ None ]
-
-        for subset_name in subsets:
+    def apply(self):
+        for subset_name in self._extractor.subsets() or [None]:
             if subset_name:
-                subset = extractor.get_subset(subset_name)
+                subset = self._extractor.get_subset(subset_name)
             else:
                 subset_name = DEFAULT_SUBSET_NAME
-                subset = extractor
+                subset = self._extractor
 
-            subset_dir = osp.join(save_dir, subset_name)
+            subset_dir = osp.join(self._save_dir, subset_name)
             os.makedirs(subset_dir, exist_ok=True)
             os.makedirs(osp.join(subset_dir, LabelMePath.MASKS_DIR),
                 exist_ok=True)
@@ -335,13 +317,12 @@ class LabelMeConverter(Converter, CliPlugin):
             raise Exception("Can't export item '%s': "
                 "LabelMe format only supports flat image layout" % item.id)
 
-        image_filename = item.id + LabelMePath.IMAGE_EXT
+        image_filename = self._make_image_filename(item)
         if self._save_images:
             if item.has_image and item.image.has_data:
-                save_image(osp.join(subset_dir, image_filename),
-                    item.image.data, create_dir=True)
+                self._save_image(item, osp.join(subset_dir, image_filename))
             else:
-                log.debug("Item '%s' has no image" % item.id)
+                log.debug("Item '%s' has no image", item.id)
 
         root_elem = ET.Element('annotation')
         ET.SubElement(root_elem, 'filename').text = image_filename

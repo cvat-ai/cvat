@@ -48,11 +48,10 @@ class DatumaroProjectExporter:
 
     def _export(self, task_data, save_dir, save_images=False):
         dataset = CvatTaskDataExtractor(task_data, include_images=save_images)
-        converter = dm_env.make_converter('datumaro_project',
-            save_images=save_images,
-            config={ 'project_name': task_data.db_task.name, }
+        dm_env.converters.get('datumaro_project').convert(dataset,
+            save_dir=save_dir, save_images=save_images,
+            project_config={ 'project_name': task_data.db_task.name, }
         )
-        converter(dataset, save_dir=save_dir)
 
         project = Project.load(save_dir)
         target_dir = project.config.project_dir

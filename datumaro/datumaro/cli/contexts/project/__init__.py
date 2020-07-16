@@ -5,6 +5,7 @@
 
 import argparse
 from enum import Enum
+import json
 import logging as log
 import os
 import os.path as osp
@@ -20,7 +21,7 @@ from datumaro.components.operations import mean_std
 from .diff import DiffVisualizer
 from ...util import add_subparser, CliException, MultilineFormatter, \
     make_file_name
-from ...util.project import load_project, generate_next_dir_name
+from ...util.project import load_project, generate_next_file_name
 
 
 def build_create_parser(parser_ctor=argparse.ArgumentParser):
@@ -329,7 +330,7 @@ def export_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-%s' % \
+        dst_dir = generate_next_file_name('%s-%s' % \
             (project.config.project_name, make_file_name(args.format)))
     dst_dir = osp.abspath(dst_dir)
 
@@ -339,9 +340,9 @@ def export_command(args):
         raise CliException("Converter for format '%s' is not found" % \
             args.format)
 
-    if hasattr(converter, 'from_cmdline'):
-        extra_args = converter.from_cmdline(args.extra_args)
-        converter = converter(**extra_args)
+    extra_args = converter.from_cmdline(args.extra_args)
+    def converter_proxy(extractor, save_dir):
+        return converter.convert(extractor, save_dir, **extra_args)
 
     filter_args = FilterModes.make_filter_args(args.filter_mode)
 
@@ -351,7 +352,7 @@ def export_command(args):
     log.info("Exporting the project...")
     dataset.export_project(
         save_dir=dst_dir,
-        converter=converter,
+        converter=converter_proxy,
         filter_expr=args.filter,
         **filter_args)
     log.info("Project exported to '%s' as '%s'" % \
@@ -425,7 +426,7 @@ def extract_command(args):
                 raise CliException("Directory '%s' already exists "
                     "(pass --overwrite to force creation)" % dst_dir)
         else:
-            dst_dir = generate_next_dir_name('%s-filter' % \
+            dst_dir = generate_next_file_name('%s-filter' % \
                 project.config.project_name)
         dst_dir = osp.abspath(dst_dir)
 
@@ -543,18 +544,24 @@ def diff_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-%s-diff' % (
+        dst_dir = generate_next_file_name('%s-%s-diff' % (
             first_project.config.project_name,
             second_project.config.project_name)
         )
     dst_dir = osp.abspath(dst_dir)
     log.info("Saving diff to '%s'" % dst_dir)
 
-    visualizer = DiffVisualizer(save_dir=dst_dir, comparator=comparator,
-        output_format=args.format)
-    visualizer.save_dataset_diff(
-        first_project.make_dataset(),
-        second_project.make_dataset())
+    dst_dir_existed = osp.exists(dst_dir)
+    try:
+        visualizer = DiffVisualizer(save_dir=dst_dir, comparator=comparator,
+            output_format=args.format)
+        visualizer.save_dataset_diff(
+            first_project.make_dataset(),
+            second_project.make_dataset())
+    except BaseException:
+        if not dst_dir_existed and osp.isdir(dst_dir):
+            shutil.rmtree(dst_dir, ignore_errors=True)
+        raise
 
     return 0
 
@@ -597,7 +604,7 @@ def transform_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite to force creation)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-%s' % \
+        dst_dir = generate_next_file_name('%s-%s' % \
             (project.config.project_name, make_file_name(args.transform)))
     dst_dir = osp.abspath(dst_dir)
 
@@ -627,7 +634,8 @@ def transform_command(args):
 def build_stats_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Get project statistics",
         description="""
-            Outputs project statistics.
+            Outputs various project statistics like image mean and std,
+            annotations count etc.
         """,
         formatter_class=MultilineFormatter)
 

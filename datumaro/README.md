@@ -133,8 +133,8 @@ project = Project.load('directory')
   ```bash
   # Download VOC dataset:
   # http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
-  datum project import --format voc --input-path <path/to/voc>
-  datum project export --format coco --filter '/item[annotation/label="cat"]'
+  datum convert --input-format voc --input-path <path/to/voc> \
+                --output-format coco --filter '/item[annotation/label="cat"]'
   ```
 
 - Convert only non-occluded annotations from a CVAT-annotated project to TFrecord:
@@ -161,8 +161,8 @@ project = Project.load('directory')
 
 - Annotate instance polygons in CVAT, export as masks in COCO:
   ```bash
-  datum project import --format cvat --input-path <path/to/cvat.xml>
-  datum project export --format coco -- --segmentation-mode masks
+  datum convert --input-format cvat --input-path <path/to/cvat.xml> \
+                --output-format coco -- --segmentation-mode masks
   ```
 
 - Apply an OpenVINO detection model to some COCO-like dataset,

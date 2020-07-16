@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import getCore from 'cvat-core-wrapper';
 import HeaderComponent from 'components/header/header';
@@ -32,7 +31,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onLogout: typeof logoutAsync;
+    onLogout: () => void;
     switchSettingsDialog: (show: boolean) => void;
 }
 
@@ -80,7 +79,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onLogout: logoutAsync,
+        onLogout: (): void => dispatch(logoutAsync()),
         switchSettingsDialog: (show: boolean): void => dispatch(switchSettingsDialog(show)),
     };
 }

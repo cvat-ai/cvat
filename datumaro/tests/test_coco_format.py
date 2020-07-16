@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 import os.path as osp
 
@@ -92,7 +93,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoCaptionsConverter(), test_dir)
+                CocoCaptionsConverter.convert, test_dir)
 
     def test_can_save_and_load_instances(self):
         label_categories = LabelCategories()
@@ -186,7 +187,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoInstancesConverter(), test_dir,
+                CocoInstancesConverter.convert, test_dir,
                 target_dataset=DstExtractor())
 
     def test_can_merge_polygons_on_loading(self):
@@ -237,7 +238,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(SrcExtractor(),
-                CocoInstancesConverter(), test_dir,
+                CocoInstancesConverter.convert, test_dir,
                 importer_args={'merge_instance_polygons': True},
                 target_dataset=DstExtractor())
 
@@ -295,8 +296,8 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(SrcTestExtractor(),
-                CocoInstancesConverter(crop_covered=True), test_dir,
-                target_dataset=DstTestExtractor())
+                partial(CocoInstancesConverter.convert, crop_covered=True),
+                test_dir, target_dataset=DstTestExtractor())
 
     def test_can_convert_polygons_to_mask(self):
         label_categories = LabelCategories()
@@ -345,8 +346,8 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(SrcTestExtractor(),
-                CocoInstancesConverter(segmentation_mode='mask'), test_dir,
-                target_dataset=DstTestExtractor())
+                partial(CocoInstancesConverter.convert, segmentation_mode='mask'),
+                test_dir, target_dataset=DstTestExtractor())
 
     def test_can_convert_masks_to_polygons(self):
         label_categories = LabelCategories()
@@ -395,8 +396,8 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(SrcExtractor(),
-                CocoInstancesConverter(segmentation_mode='polygons'), test_dir,
-                target_dataset=DstExtractor())
+                partial(CocoInstancesConverter.convert, segmentation_mode='polygons'),
+                test_dir, target_dataset=DstExtractor())
 
     def test_can_save_and_load_images(self):
         class TestExtractor(Extractor):
@@ -414,7 +415,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoImageInfoConverter(), test_dir)
+                CocoImageInfoConverter.convert, test_dir)
 
     def test_can_save_and_load_labels(self):
         class TestExtractor(Extractor):
@@ -438,7 +439,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoLabelsConverter(), test_dir)
+                CocoLabelsConverter.convert, test_dir)
 
     def test_can_save_and_load_keypoints(self):
         label_categories = LabelCategories()
@@ -517,7 +518,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoPersonKeypointsConverter(), test_dir,
+                CocoPersonKeypointsConverter.convert, test_dir,
                 target_dataset=DstTestExtractor())
 
     def test_can_save_dataset_with_no_subsets(self):
@@ -528,12 +529,9 @@ class CocoConverterTest(TestCase):
                     DatasetItem(id=2, attributes={'id': 2}),
                 ])
 
-            def categories(self):
-                return { AnnotationType.label: LabelCategories() }
-
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoConverter(), test_dir)
+                CocoConverter.convert, test_dir)
 
     def test_can_save_dataset_with_image_info(self):
         class TestExtractor(Extractor):
@@ -545,7 +543,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoConverter(tasks='image_info'), test_dir)
+                CocoImageInfoConverter.convert, test_dir)
 
     def test_relative_paths(self):
         class TestExtractor(Extractor):
@@ -561,7 +559,8 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoConverter(tasks='image_info', save_images=True), test_dir)
+                partial(CocoImageInfoConverter.convert, save_images=True),
+                test_dir)
 
     def test_preserve_coco_ids(self):
         class TestExtractor(Extractor):
@@ -573,7 +572,8 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoConverter(tasks='image_info', save_images=True), test_dir)
+                partial(CocoImageInfoConverter.convert, save_images=True),
+                test_dir)
 
     def test_annotation_attributes(self):
         class TestExtractor(Extractor):
@@ -593,4 +593,4 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoConverter(), test_dir)
+                CocoConverter.convert, test_dir)
