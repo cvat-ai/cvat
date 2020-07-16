@@ -39,9 +39,7 @@ class CocoImporterTest(TestCase):
                         id=2, group=2, attributes={'is_crowd': True}),
                 ]
             ),
-        ], categories={
-                        AnnotationType.label : LabelCategories.from_iterable('TEST'),
-                    })
+        ], categories=['TEST',])
 
         dataset = Project.import_from(DUMMY_DATASET_DIR, 'coco') \
             .make_dataset()
@@ -128,10 +126,7 @@ class CocoConverterTest(TestCase):
                         attributes={ 'is_crowd': True },
                         label=4, group=3, id=3),
                 ], attributes={'id': 1}),
-            ], categories={
-                AnnotationType.label: LabelCategories.from_iterable(
-                    str(i) for i in range(10)),
-            })
+            ], categories=[str(i) for i in range(10)])
 
         target_dataset = Dataset.from_iterable([
             DatasetItem(id=1, subset='train', image=np.ones((4, 4, 3)),
@@ -163,10 +158,7 @@ class CocoConverterTest(TestCase):
                         attributes={ 'is_crowd': True },
                         label=4, group=3, id=3),
                 ], attributes={'id': 1})
-            ], categories={
-                AnnotationType.label: LabelCategories.from_iterable(
-                    str(i) for i in range(10)),
-            })
+            ], categories=[str(i) for i in range(10)])
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
@@ -183,9 +175,7 @@ class CocoConverterTest(TestCase):
                         label=3, id=4, group=4),
                 ]
             ),
-        ], categories={
-            AnnotationType.label: LabelCategories.from_iterable(str(i) for i in range(10)),
-        })
+        ], categories=[str(i) for i in range(10)])
 
         target_dataset = Dataset.from_iterable([
             DatasetItem(id=1, image=np.zeros((6, 10, 3)),
@@ -204,10 +194,7 @@ class CocoConverterTest(TestCase):
                     attributes={ 'is_crowd': False }),
                 ], attributes={'id': 1}
             ),
-        ], categories={
-            AnnotationType.label: LabelCategories.from_iterable(
-                str(i) for i in range(10)),
-        })
+        ], categories=[str(i) for i in range(10)])
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
@@ -231,10 +218,7 @@ class CocoConverterTest(TestCase):
                         label=1, id=2, z_order=1),
                 ]
             ),
-        ], categories={
-            AnnotationType.label: LabelCategories.from_iterable(
-                str(i) for i in range(10)),
-        })
+        ], categories=[str(i) for i in range(10)])
 
         target_dataset = Dataset.from_iterable([
             DatasetItem(id=1, image=np.zeros((5, 5, 3)),
@@ -254,10 +238,7 @@ class CocoConverterTest(TestCase):
                         attributes={ 'is_crowd': False }),
                 ], attributes={'id': 1}
             ),
-        ], categories={
-            AnnotationType.label: LabelCategories.from_iterable(
-                str(i) for i in range(10)),
-        })
+        ], categories=[str(i) for i in range(10)])
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
@@ -274,10 +255,7 @@ class CocoConverterTest(TestCase):
                         label=3, id=4, group=4),
                 ]
             ),
-        ], categories={
-            AnnotationType.label: LabelCategories.from_iterable(
-                str(i) for i in range(10)),
-        })
+        ], categories=[str(i) for i in range(10)])
 
         target_dataset = Dataset.from_iterable([
             DatasetItem(id=1, image=np.zeros((6, 10, 3)),
@@ -296,10 +274,7 @@ class CocoConverterTest(TestCase):
                         label=3, id=4, group=4),
                 ], attributes={'id': 1}
             ),
-        ], categories={
-            AnnotationType.label: LabelCategories.from_iterable(
-                str(i) for i in range(10)),
-        })
+        ], categories=[str(i) for i in range(10)])
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
@@ -320,10 +295,7 @@ class CocoConverterTest(TestCase):
                         label=3, id=4, group=4),
                 ]
             ),
-        ], categories={
-            AnnotationType.label: LabelCategories.from_iterable(
-                str(i) for i in range(10)),
-        })
+        ], categories=[str(i) for i in range(10)])
 
         target_dataset = Dataset.from_iterable([
             DatasetItem(id=1, image=np.zeros((5, 10, 3)),
@@ -338,10 +310,7 @@ class CocoConverterTest(TestCase):
                         attributes={ 'is_crowd': False }),
                 ], attributes={'id': 1}
             ),
-        ], categories={
-            AnnotationType.label: LabelCategories.from_iterable(
-                str(i) for i in range(10)),
-        })
+        ], categories=[str(i) for i in range(10)])
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
@@ -371,10 +340,7 @@ class CocoConverterTest(TestCase):
                     Label(4, id=1, group=1),
                     Label(9, id=2, group=2),
                 ], attributes={'id': 1}),
-        ], categories={
-            AnnotationType.label: LabelCategories.from_iterable(
-                str(i) for i in range(10)),
-        })
+        ], categories=[str(i) for i in range(10)])
 
         with TestDir() as test_dir:
             self._test_save_and_load(expected_dataset,
@@ -506,10 +472,7 @@ class CocoConverterTest(TestCase):
                 Polygon([0, 0, 4, 0, 4, 4], label=5, group=1, id=1,
                     attributes={'is_crowd': False, 'x': 5, 'y': 'abc'}),
             ], attributes={'id': 1})
-        ], categories={
-            AnnotationType.label: LabelCategories.from_iterable(
-                str(i) for i in range(10)),
-        })
+        ], categories=[str(i) for i in range(10)])
 
         with TestDir() as test_dir:
             self._test_save_and_load(expected_dataset,
