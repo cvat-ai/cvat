@@ -18,7 +18,7 @@ import sys
 from datumaro.components.config import Config, DEFAULT_FORMAT
 from datumaro.components.config_model import (Model, Source,
     PROJECT_DEFAULT_CONFIG, PROJECT_SCHEMA)
-from datumaro.components.extractor import Extractor
+from datumaro.components.extractor import Extractor, LabelCategories
 from datumaro.components.launcher import ModelTransform
 from datumaro.components.dataset_filter import \
     XPathDatasetFilter, XPathAnnotationsFilter
@@ -326,6 +326,9 @@ class Dataset(Extractor):
         Returns:
             Dataset: Dataset object
         """
+
+        if isinstance(categories, list):
+            categories = LabelCategories.from_iterable(categories)
 
         if not categories:
             categories = {}
