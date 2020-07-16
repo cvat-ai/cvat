@@ -48,18 +48,18 @@ class TfrecordConverterTest(TestCase):
 
     def test_can_save_bboxes(self):
         test_dataset = Dataset.from_iterable([
-                    DatasetItem(id=1, subset='train',
-                        image=np.ones((16, 16, 3)),
-                        annotations=[
-                            Bbox(0, 4, 4, 8, label=2),
-                            Bbox(0, 4, 4, 4, label=3),
-                            Bbox(2, 4, 4, 4),
-                        ], attributes={'source_id': ''}
-                    ),
-                ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(
-                        'label_' + str(label) for label in range(10)),
-                })
+            DatasetItem(id=1, subset='train',
+                image=np.ones((16, 16, 3)),
+                annotations=[
+                    Bbox(0, 4, 4, 8, label=2),
+                    Bbox(0, 4, 4, 4, label=3),
+                    Bbox(2, 4, 4, 4),
+                ], attributes={'source_id': ''}
+            ),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                'label_' + str(label) for label in range(10)),
+        })
 
         with TestDir() as test_dir:
             self._test_save_and_load(
@@ -68,21 +68,21 @@ class TfrecordConverterTest(TestCase):
 
     def test_can_save_masks(self):
         test_dataset = Dataset.from_iterable([
-                    DatasetItem(id=1, subset='train', image=np.ones((4, 5, 3)),
-                        annotations=[
-                            Mask(image=np.array([
-                                [1, 0, 0, 1],
-                                [0, 1, 1, 0],
-                                [0, 1, 1, 0],
-                                [1, 0, 0, 1],
-                            ]), label=1),
-                        ],
-                        attributes={'source_id': ''}
-                    ),
-                ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(
-                        'label_' + str(label) for label in range(10)),
-                })
+            DatasetItem(id=1, subset='train', image=np.ones((4, 5, 3)),
+                annotations=[
+                    Mask(image=np.array([
+                        [1, 0, 0, 1],
+                        [0, 1, 1, 0],
+                        [0, 1, 1, 0],
+                        [1, 0, 0, 1],
+                    ]), label=1),
+                ],
+                attributes={'source_id': ''}
+            ),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                'label_' + str(label) for label in range(10)),
+        })
 
         with TestDir() as test_dir:
             self._test_save_and_load(
@@ -91,31 +91,31 @@ class TfrecordConverterTest(TestCase):
 
     def test_can_save_dataset_with_no_subsets(self):
         test_dataset = Dataset.from_iterable([
-                    DatasetItem(id=1,
-                        image=np.ones((16, 16, 3)),
-                        annotations=[
-                            Bbox(2, 1, 4, 4, label=2),
-                            Bbox(4, 2, 8, 4, label=3),
-                        ],
-                        attributes={'source_id': ''}
-                    ),
+            DatasetItem(id=1,
+                image=np.ones((16, 16, 3)),
+                annotations=[
+                    Bbox(2, 1, 4, 4, label=2),
+                    Bbox(4, 2, 8, 4, label=3),
+                ],
+                attributes={'source_id': ''}
+            ),
 
-                    DatasetItem(id=2,
-                        image=np.ones((8, 8, 3)) * 2,
-                        annotations=[
-                            Bbox(4, 4, 4, 4, label=3),
-                        ],
-                        attributes={'source_id': ''}
-                    ),
+            DatasetItem(id=2,
+                image=np.ones((8, 8, 3)) * 2,
+                annotations=[
+                    Bbox(4, 4, 4, 4, label=3),
+                ],
+                attributes={'source_id': ''}
+            ),
 
-                    DatasetItem(id=3,
-                        image=np.ones((8, 4, 3)) * 3,
-                        attributes={'source_id': ''}
-                    ),
-                ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(
-                        'label_' + str(label) for label in range(10)),
-                })
+            DatasetItem(id=3,
+                image=np.ones((8, 4, 3)) * 3,
+                attributes={'source_id': ''}
+            ),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                'label_' + str(label) for label in range(10)),
+        })
 
         with TestDir() as test_dir:
             self._test_save_and_load(
@@ -124,13 +124,13 @@ class TfrecordConverterTest(TestCase):
 
     def test_can_save_dataset_with_image_info(self):
         test_dataset = Dataset.from_iterable([
-                    DatasetItem(id='1/q.e',
-                        image=Image(path='1/q.e', size=(10, 15)),
-                        attributes={'source_id': ''}
-                    )
-                ], categories={
-                    AnnotationType.label: LabelCategories(),
-                })
+            DatasetItem(id='1/q.e',
+                image=Image(path='1/q.e', size=(10, 15)),
+                attributes={'source_id': ''}
+            )
+        ], categories={
+            AnnotationType.label: LabelCategories(),
+        })
 
         with TestDir() as test_dir:
             self._test_save_and_load(test_dataset,
@@ -173,32 +173,32 @@ class TfrecordImporterTest(TestCase):
 
     def test_can_import(self):
         target_dataset = Dataset.from_iterable([
-                    DatasetItem(id=1, subset='train',
-                        image=np.ones((16, 16, 3)),
-                        annotations=[
-                            Bbox(0, 4, 4, 8, label=2),
-                            Bbox(0, 4, 4, 4, label=3),
-                            Bbox(2, 4, 4, 4),
-                        ],
-                        attributes={'source_id': '1'}
-                    ),
+            DatasetItem(id=1, subset='train',
+                image=np.ones((16, 16, 3)),
+                annotations=[
+                    Bbox(0, 4, 4, 8, label=2),
+                    Bbox(0, 4, 4, 4, label=3),
+                    Bbox(2, 4, 4, 4),
+                ],
+                attributes={'source_id': '1'}
+            ),
 
-                    DatasetItem(id=2, subset='val',
-                        image=np.ones((8, 8, 3)),
-                        annotations=[
-                            Bbox(1, 2, 4, 2, label=3),
-                        ],
-                        attributes={'source_id': '2'}
-                    ),
+            DatasetItem(id=2, subset='val',
+                image=np.ones((8, 8, 3)),
+                annotations=[
+                    Bbox(1, 2, 4, 2, label=3),
+                ],
+                attributes={'source_id': '2'}
+            ),
 
-                    DatasetItem(id=3, subset='test',
-                        image=np.ones((5, 4, 3)) * 3,
-                        attributes={'source_id': '3'}
-                    ),
-                ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(
-                        'label_' + str(label) for label in range(10)),
-                })
+            DatasetItem(id=3, subset='test',
+                image=np.ones((5, 4, 3)) * 3,
+                attributes={'source_id': '3'}
+            ),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                'label_' + str(label) for label in range(10)),
+        })
 
         dataset = Project.import_from(DUMMY_DATASET_DIR, 'tf_detection_api') \
             .make_dataset()

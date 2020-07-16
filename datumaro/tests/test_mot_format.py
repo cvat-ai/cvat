@@ -28,76 +28,76 @@ class MotConverterTest(TestCase):
 
     def test_can_save_bboxes(self):
         source_dataset = Dataset.from_iterable([
-                    DatasetItem(id=1, subset='train',
-                        image=np.ones((16, 16, 3)),
-                        annotations=[
-                            Bbox(0, 4, 4, 8, label=2, attributes={
-                                'occluded': True,
-                            }),
-                            Bbox(0, 4, 4, 4, label=3, attributes={
-                                'visibility': 0.4,
-                            }),
-                            Bbox(2, 4, 4, 4, attributes={
-                                'ignored': True
-                            }),
-                        ]
-                    ),
+            DatasetItem(id=1, subset='train',
+                image=np.ones((16, 16, 3)),
+                annotations=[
+                    Bbox(0, 4, 4, 8, label=2, attributes={
+                        'occluded': True,
+                    }),
+                    Bbox(0, 4, 4, 4, label=3, attributes={
+                        'visibility': 0.4,
+                    }),
+                    Bbox(2, 4, 4, 4, attributes={
+                        'ignored': True
+                    }),
+                ]
+            ),
 
-                    DatasetItem(id=2, subset='val',
-                        image=np.ones((8, 8, 3)),
-                        annotations=[
-                            Bbox(1, 2, 4, 2, label=3),
-                        ]
-                    ),
+            DatasetItem(id=2, subset='val',
+                image=np.ones((8, 8, 3)),
+                annotations=[
+                    Bbox(1, 2, 4, 2, label=3),
+                ]
+            ),
 
-                    DatasetItem(id=3, subset='test',
-                        image=np.ones((5, 4, 3)) * 3,
-                    ),
-                ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(
-                        'label_' + str(label) for label in range(10)),
-                })
+            DatasetItem(id=3, subset='test',
+                image=np.ones((5, 4, 3)) * 3,
+            ),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                'label_' + str(label) for label in range(10)),
+        })
 
         target_dataset = Dataset.from_iterable([
-                    DatasetItem(id=1,
-                        image=np.ones((16, 16, 3)),
-                        annotations=[
-                            Bbox(0, 4, 4, 8, label=2, attributes={
-                                'occluded': True,
-                                'visibility': 0.0,
-                                'ignored': False,
-                            }),
-                            Bbox(0, 4, 4, 4, label=3, attributes={
-                                'occluded': False,
-                                'visibility': 0.4,
-                                'ignored': False,
-                            }),
-                            Bbox(2, 4, 4, 4, attributes={
-                                'occluded': False,
-                                'visibility': 1.0,
-                                'ignored': True,
-                            }),
-                        ]
-                    ),
+            DatasetItem(id=1,
+                image=np.ones((16, 16, 3)),
+                annotations=[
+                    Bbox(0, 4, 4, 8, label=2, attributes={
+                        'occluded': True,
+                        'visibility': 0.0,
+                        'ignored': False,
+                    }),
+                    Bbox(0, 4, 4, 4, label=3, attributes={
+                        'occluded': False,
+                        'visibility': 0.4,
+                        'ignored': False,
+                    }),
+                    Bbox(2, 4, 4, 4, attributes={
+                        'occluded': False,
+                        'visibility': 1.0,
+                        'ignored': True,
+                    }),
+                ]
+            ),
 
-                    DatasetItem(id=2,
-                        image=np.ones((8, 8, 3)),
-                        annotations=[
-                            Bbox(1, 2, 4, 2, label=3, attributes={
-                                'occluded': False,
-                                'visibility': 1.0,
-                                'ignored': False,
-                            }),
-                        ]
-                    ),
+            DatasetItem(id=2,
+                image=np.ones((8, 8, 3)),
+                annotations=[
+                    Bbox(1, 2, 4, 2, label=3, attributes={
+                        'occluded': False,
+                        'visibility': 1.0,
+                        'ignored': False,
+                    }),
+                ]
+            ),
 
-                    DatasetItem(id=3,
-                        image=np.ones((5, 4, 3)) * 3,
-                    ),
-                ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(
-                        'label_' + str(label) for label in range(10)),
-                })
+            DatasetItem(id=3,
+                image=np.ones((5, 4, 3)) * 3,
+            ),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                'label_' + str(label) for label in range(10)),
+        })
 
         with TestDir() as test_dir:
             self._test_save_and_load(
@@ -113,20 +113,20 @@ class MotImporterTest(TestCase):
 
     def test_can_import(self):
         expected_dataset = Dataset.from_iterable([
-                    DatasetItem(id=1,
-                        image=np.ones((16, 16, 3)),
-                        annotations=[
-                            Bbox(0, 4, 4, 8, label=2, attributes={
-                                'occluded': False,
-                                'visibility': 1.0,
-                                'ignored': False,
-                            }),
-                        ]
-                    ),
-                ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(
-                        'label_' + str(label) for label in range(10)),
-                })
+            DatasetItem(id=1,
+                image=np.ones((16, 16, 3)),
+                annotations=[
+                    Bbox(0, 4, 4, 8, label=2, attributes={
+                        'occluded': False,
+                        'visibility': 1.0,
+                        'ignored': False,
+                    }),
+                ]
+            ),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                'label_' + str(label) for label in range(10)),
+        })
 
         dataset = Project.import_from(DUMMY_DATASET_DIR, 'mot_seq') \
             .make_dataset()
