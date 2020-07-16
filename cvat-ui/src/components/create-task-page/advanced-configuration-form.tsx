@@ -142,7 +142,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form.Item label={<span>Image quality</span>}>
-                <Tooltip title='Defines image compression level'>
+                <Tooltip title='Defines image quality level'>
                     {form.getFieldDecorator('imageQuality', {
                         initialValue: 70,
                         rules: [{

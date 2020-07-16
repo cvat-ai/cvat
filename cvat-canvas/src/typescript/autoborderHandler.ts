@@ -13,14 +13,14 @@ interface TransformedShape {
 }
 
 export interface AutoborderHandler {
-    autoborder(enabled: boolean, currentShape?: SVG.Shape, ignoreCurrent?: boolean): void;
+    autoborder(enabled: boolean, currentShape?: SVG.Shape, currentID?: number): void;
     transform(geometry: Geometry): void;
     updateObjects(): void;
 }
 
 export class AutoborderHandlerImpl implements AutoborderHandler {
     private currentShape: SVG.Shape | null;
-    private ignoreCurrent: boolean;
+    private currentID?: number;
     private frameContent: SVGSVGElement;
     private enabled: boolean;
     private scale: number;
@@ -34,7 +34,7 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
 
     public constructor(frameContent: SVGSVGElement) {
         this.frameContent = frameContent;
-        this.ignoreCurrent = false;
+        this.currentID = undefined;
         this.currentShape = null;
         this.enabled = false;
         this.scale = 1;
@@ -231,7 +231,8 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
         this.removeMarkers();
 
         const currentClientID = this.currentShape.node.dataset.originClientId;
-        const shapes = Array.from(this.frameContent.getElementsByClassName('cvat_canvas_shape'));
+        const shapes = Array.from(this.frameContent.getElementsByClassName('cvat_canvas_shape'))
+            .filter((shape: HTMLElement): boolean => +shape.getAttribute('clientID') !== this.currentID);
         const transformedShapes = shapes.map((shape: HTMLElement): TransformedShape | null => {
             const color = shape.getAttribute('fill');
             const clientID = shape.getAttribute('clientID');
@@ -277,12 +278,12 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     public autoborder(
         enabled: boolean,
         currentShape?: SVG.Shape,
-        ignoreCurrent: boolean = false,
+        currentID?: number,
     ): void {
         if (enabled && !this.enabled && currentShape) {
             this.enabled = true;
             this.currentShape = currentShape;
-            this.ignoreCurrent = ignoreCurrent;
+            this.currentID = currentID;
             this.updateObjects();
         } else {
             this.release();
