@@ -74,6 +74,19 @@ class LabelCategories(Categories):
 
     @classmethod
     def from_iterable(cls, iterable):
+        """Generation of LabelCategories from iterable object
+
+        Args:
+            iterable ([type]): This iterable object can be:
+            1)simple str - will generate one Category with str as name
+            2)list of str - will interpreted as list of Category names
+            3)list of positional argumetns - will generate Categories
+            with this arguments
+
+
+        Returns:
+            LabelCategories: LabelCategories object
+        """
         temp_categories = cls()
 
         if isinstance(iterable, str):
@@ -498,6 +511,18 @@ class PointsCategories(Categories):
 
     @classmethod
     def from_iterable(cls, iterable):
+        """Generation of PointsCategories from iterable object
+
+        Args:
+            iterable ([type]): This iterable object can be:
+            1)simple int - will generate one Category with int as label
+            2)list of int - will interpreted as list of Category labels
+            3)list of positional argumetns - will generate Categories
+            with this arguments
+
+        Returns:
+            PointsCategories: PointsCategories object
+        """
         temp_categories = cls()
 
         if isinstance(iterable, int):

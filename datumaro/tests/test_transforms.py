@@ -356,7 +356,6 @@ class TransformsTest(TestCase):
             ])
 
     def test_remap_labels(self):
-        #! why this test brokes when I rewrite it on Dataset ?
         class SrcExtractor(Extractor):
             def __iter__(self):
                 return iter([
