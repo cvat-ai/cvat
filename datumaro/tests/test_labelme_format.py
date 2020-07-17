@@ -92,7 +92,7 @@ class LabelMeConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(
-                source_dataset, 
+                source_dataset,
                 partial(LabelMeConverter.convert, save_images=True),
                 test_dir, target_dataset=target_dataset)
 
