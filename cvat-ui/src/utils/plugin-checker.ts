@@ -27,13 +27,15 @@ class PluginChecker {
                 return isReachable(`${serverHost}/git/repository/meta/get`, 'OPTIONS');
             }
             case SupportedPlugins.DEXTR_SEGMENTATION: {
-                return isReachable(`${serverHost}/api/v1/lambda/functions/openvino.dextr`, 'GET');
+                const list = await core.lambda.list();
+                return list.map((func: any): boolean => func.name).includes('openvino.dextr');
             }
             case SupportedPlugins.ANALYTICS: {
                 return isReachable(`${serverHost}/analytics/app/kibana`, 'GET');
             }
             case SupportedPlugins.REID: {
-                return isReachable(`${serverHost}/api/v1/lambda/functions/omz.intel.reid`, 'GET');
+                const list = await core.lambda.list();
+                return list.map((func: any): boolean => func.type).includes('reid');
             }
             default:
                 return false;

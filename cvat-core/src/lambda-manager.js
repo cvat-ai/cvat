@@ -16,9 +16,14 @@ const { RQStatus } = require('./enums');
 class LambdaManager {
     constructor() {
         this.listening = {};
+        this.cachedList = null;
     }
 
     async list() {
+        if (Array.isArray(this.cachedList)) {
+            return [...this.cachedList];
+        }
+
         const result = await serverProxy.lambda.list();
         const models = [];
 
@@ -33,6 +38,7 @@ class LambdaManager {
             }));
         }
 
+        this.cachedList = models;
         return models;
     }
 
@@ -55,18 +61,19 @@ class LambdaManager {
             );
         }
 
-        const body = {};
-        body.cleanup = args ? (args.cleanup || false) : false;
-        body.mapping = args ? (args.mapping || {}) : {};
+        const body = args;
         body.task = task.id;
         body.function = model.id;
 
-        if (args && Number.isInteger(args.frame)) {
-            body.frame = args.frame;
-        }
-
         const result = await serverProxy.lambda.run(body);
         return result.id;
+    }
+
+    async call(task, model, args) {
+        const body = args;
+        body.task = task.id;
+        const result = await serverProxy.lambda.call(model.name, body);
+        return result;
     }
 
     async requests() {

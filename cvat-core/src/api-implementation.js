@@ -54,6 +54,7 @@
 
         cvat.lambda.list.implementation = lambdaManager.list.bind(lambdaManager);
         cvat.lambda.run.implementation = lambdaManager.run.bind(lambdaManager);
+        cvat.lambda.call.implementation = lambdaManager.call.bind(lambdaManager);
         cvat.lambda.cancel.implementation = lambdaManager.cancel.bind(lambdaManager);
         cvat.lambda.listen.implementation = lambdaManager.listen.bind(lambdaManager);
         cvat.lambda.requests.implementation = lambdaManager.requests.bind(lambdaManager);
