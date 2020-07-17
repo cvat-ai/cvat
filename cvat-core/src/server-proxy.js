@@ -682,11 +682,29 @@
                 }
             }
 
-            async function runLambdaFunction(body) {
+            async function runLambdaRequest(body) {
                 const { backendAPI } = config;
 
                 try {
                     const response = await Axios.post(`${backendAPI}/lambda/requests`,
+                        JSON.stringify(body), {
+                            proxy: config.proxy,
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                        });
+
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function callLambdaFunction(name, body) {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.post(`${backendAPI}/lambda/functions/${name}`,
                         JSON.stringify(body), {
                             proxy: config.proxy,
                             headers: {
@@ -816,7 +834,8 @@
                         list: getLambdaFunctions,
                         status: getRequestStatus,
                         requests: getLambdaRequests,
-                        run: runLambdaFunction,
+                        run: runLambdaRequest,
+                        call: callLambdaFunction,
                         cancel: cancelLambdaRequest,
                     }),
                     writable: false,

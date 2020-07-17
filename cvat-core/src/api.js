@@ -438,14 +438,6 @@ function build() {
             * @namespace lambda
             * @memberof module:API.cvat
         */
-        /**
-            * @typedef {Object} RunLambdaArguments
-            * @property {boolean} [cleanup] flag that means shall
-            * we remove previous annotation or not
-            * @property {Object} [mapping] label mapping [model label -> task label]
-            * @property {number} [frame] annotate only a specific frame
-            * @global
-        */
         lambda: {
             /**
                 * Method returns list of available serverless models
@@ -463,13 +455,13 @@ function build() {
             },
 
             /**
-                * Run serverless function on a specific task
+                * Run long-time request for a function on a specific task
                 * @method run
                 * @async
                 * @memberof module:API.cvat.lambda
                 * @param {module:API.cvat.classes.Task} task task to be annotated
                 * @param {module:API.cvat.classes.MLModel} model model used to get annotation
-                * @param {RunLambdaArguments} [arguments] extra arguments
+                * @param {object} [args] extra arguments
                 * @returns {string} requestID
                 * @throws {module:API.cvat.exceptions.ServerError}
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -478,6 +470,25 @@ function build() {
             async run(task, model, args) {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.lambda.run, task, model, args);
+                return result;
+            },
+
+            /**
+                * Run short-time request for a function on a specific task
+                * @method call
+                * @async
+                * @memberof module:API.cvat.lambda
+                * @param {module:API.cvat.classes.Task} task task to be annotated
+                * @param {module:API.cvat.classes.MLModel} model model used to get annotation
+                * @param {object} [args] extra arguments
+                * @returns {string} requestID
+                * @throws {module:API.cvat.exceptions.ServerError}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+            */
+            async call(task, model, args) {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.lambda.call, task, model, args);
                 return result;
             },
 
