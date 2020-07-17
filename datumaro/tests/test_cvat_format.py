@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 import os.path as osp
 
@@ -238,7 +239,7 @@ class CvatConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
-                CvatConverter(save_images=True), test_dir,
+                partial(CvatConverter.convert, save_images=True), test_dir,
                 target_dataset=target_dataset)
 
     def test_relative_paths(self):
@@ -261,7 +262,7 @@ class CvatConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
-                CvatConverter(save_images=True), test_dir,
+                partial(CvatConverter.convert, save_images=True), test_dir,
                 target_dataset=target_dataset)
 
     def test_preserve_frame_ids(self):
@@ -274,4 +275,4 @@ class CvatConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(expected_dataset,
-                CvatConverter(save_images=True), test_dir)
+                CvatConverter.convert, test_dir)

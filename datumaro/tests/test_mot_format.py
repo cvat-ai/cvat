@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 import os.path as osp
 
@@ -101,7 +102,7 @@ class MotConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(
-                source_dataset, MotSeqGtConverter(save_images=True),
+                source_dataset, MotSeqGtConverter.convert,
                 test_dir, target_dataset=target_dataset)
 
 

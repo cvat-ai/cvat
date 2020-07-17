@@ -46,6 +46,8 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         changeAttribute,
     } = props;
 
+    const attrNameStyle: React.CSSProperties = { wordBreak: 'break-word', lineHeight: '1em' };
+
     if (attrInputType === 'checkbox') {
         return (
             <Col span={24}>
@@ -57,7 +59,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                         changeAttribute(attrID, value);
                     }}
                 >
-                    <Text strong className='cvat-text'>
+                    <Text style={attrNameStyle} className='cvat-text'>
                         {attrName}
                     </Text>
                 </Checkbox>
@@ -70,7 +72,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
             <Col span={24}>
                 <fieldset className='cvat-object-item-radio-attribute'>
                     <legend>
-                        <Text strong className='cvat-text'>{attrName}</Text>
+                        <Text style={attrNameStyle} className='cvat-text'>{attrName}</Text>
                     </legend>
                     <Radio.Group
                         size='small'
@@ -94,12 +96,12 @@ function ItemAttributeComponent(props: Props): JSX.Element {
     if (attrInputType === 'select') {
         return (
             <>
-                <Col span={24}>
-                    <Text strong className='cvat-text'>
+                <Col span={8} style={attrNameStyle}>
+                    <Text className='cvat-text'>
                         {attrName}
                     </Text>
                 </Col>
-                <Col span={24}>
+                <Col span={16}>
                     <Select
                         size='small'
                         onChange={(value: string): void => {
@@ -125,12 +127,12 @@ function ItemAttributeComponent(props: Props): JSX.Element {
 
         return (
             <>
-                <Col span={24}>
-                    <Text strong className='cvat-text'>
+                <Col span={8} style={attrNameStyle}>
+                    <Text className='cvat-text'>
                         {attrName}
                     </Text>
                 </Col>
-                <Col span={24}>
+                <Col span={16}>
                     <InputNumber
                         size='small'
                         onChange={(value: number | undefined): void => {
@@ -153,18 +155,18 @@ function ItemAttributeComponent(props: Props): JSX.Element {
 
     return (
         <>
-            <Col span={24}>
-                <Text strong className='cvat-text'>
+            <Col span={8} style={attrNameStyle}>
+                <Text className='cvat-text'>
                     {attrName}
                 </Text>
             </Col>
-            <Col span={24}>
+            <Col span={16}>
                 <Input
                     size='small'
                     onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
                         changeAttribute(attrID, event.target.value);
                     }}
-                    value={attrValue}
+                    defaultValue={attrValue}
                     className='cvat-object-item-text-attribute'
                 />
             </Col>

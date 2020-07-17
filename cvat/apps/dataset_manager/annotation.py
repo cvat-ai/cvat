@@ -5,6 +5,7 @@
 from copy import copy, deepcopy
 
 import numpy as np
+from itertools import chain
 from scipy.optimize import linear_sum_assignment
 from shapely import geometry
 
@@ -442,11 +443,11 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def get_interpolated_shapes(track, start_frame, end_frame):
-        def copy_shape(source, frame, points = None):
+        def copy_shape(source, frame, points=None):
             copied = deepcopy(source)
             copied["keyframe"] = True
             copied["frame"] = frame
-            if points:
+            if points is not None:
                 copied["points"] = points
             return copied
 
@@ -523,7 +524,7 @@ class TrackManager(ObjectManager):
                 return matching
 
             def match_right_left(left_curve, right_curve, left_right_matching):
-                matched_right_points = left_right_matching.values()
+                matched_right_points = list(chain.from_iterable(left_right_matching.values()))
                 unmatched_right_points = filter(lambda x: x not in matched_right_points, range(len(right_curve)))
                 updated_matching = deepcopy(left_right_matching)
 

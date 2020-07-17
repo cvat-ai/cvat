@@ -40,6 +40,7 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
     canvasIsReady: boolean;
+    curZLayer: number;
 }
 
 interface DispatchToProps {
@@ -59,6 +60,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedAttributeID,
                 states,
+                zLayer: {
+                    cur,
+                },
             },
             job: {
                 instance: jobInstance,
@@ -85,6 +89,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         normalizedKeyMap,
         canvasInstance,
         canvasIsReady,
+        curZLayer: cur,
     };
 }
 
@@ -116,9 +121,12 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         normalizedKeyMap,
         canvasInstance,
         canvasIsReady,
+        curZLayer,
     } = props;
 
-    const filteredStates = states.filter((state) => !state.outside && !state.hidden);
+    const filteredStates = states.filter((state) => !state.outside
+        && !state.hidden
+        && state.zOrder <= curZLayer);
     const [labelAttrMap, setLabelAttrMap] = useState(
         labels.reduce((acc, label): LabelAttrMap => {
             acc[label.id] = label.attributes.length ? label.attributes[0] : null;

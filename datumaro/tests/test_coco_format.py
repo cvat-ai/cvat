@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 import os.path as osp
 
@@ -83,7 +84,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(expected_dataset,
-                CocoCaptionsConverter(), test_dir)
+                CocoCaptionsConverter.convert, test_dir)
 
     def test_can_save_and_load_instances(self):
         source_dataset = Dataset.from_iterable([
@@ -162,7 +163,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
-                CocoInstancesConverter(), test_dir,
+                CocoInstancesConverter.convert, test_dir,
                 target_dataset=target_dataset)
 
     def test_can_merge_polygons_on_loading(self):
@@ -198,7 +199,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
-                CocoInstancesConverter(), test_dir,
+                CocoInstancesConverter.convert, test_dir,
                 importer_args={'merge_instance_polygons': True},
                 target_dataset=target_dataset)
 
@@ -242,8 +243,8 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
-                CocoInstancesConverter(crop_covered=True), test_dir,
-                target_dataset=target_dataset)
+                 partial(CocoInstancesConverter.convert, crop_covered=True),
+                 test_dir, target_dataset=target_dataset)
 
     def test_can_convert_polygons_to_mask(self):
         source_dataset = Dataset.from_iterable([
@@ -278,8 +279,8 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
-                CocoInstancesConverter(segmentation_mode='mask'), test_dir,
-                target_dataset=target_dataset)
+                partial(CocoInstancesConverter.convert, segmentation_mode='mask'),
+                test_dir, target_dataset=target_dataset)
 
     def test_can_convert_masks_to_polygons(self):
         source_dataset = Dataset.from_iterable([
@@ -314,7 +315,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
-                CocoInstancesConverter(segmentation_mode='polygons'), test_dir,
+                CocoInstancesConverter.convert, test_dir,
                 target_dataset=target_dataset)
 
     def test_can_save_and_load_images(self):
@@ -331,7 +332,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(expected_dataset,
-                CocoImageInfoConverter(), test_dir)
+                CocoImageInfoConverter.convert, test_dir)
 
     def test_can_save_and_load_labels(self):
         expected_dataset = Dataset.from_iterable([
@@ -344,7 +345,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(expected_dataset,
-                CocoLabelsConverter(), test_dir)
+                CocoLabelsConverter.convert, test_dir)
 
     def test_can_save_and_load_keypoints(self):
 
@@ -419,7 +420,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
-                CocoPersonKeypointsConverter(), test_dir,
+                CocoPersonKeypointsConverter.convert, test_dir,
                 target_dataset=target_dataset)
 
     def test_can_save_dataset_with_no_subsets(self):
@@ -430,7 +431,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(expected_dataset,
-                CocoConverter(), test_dir)
+                CocoConverter.convert, test_dir)
 
     def test_can_save_dataset_with_image_info(self):
         expected_dataset = Dataset.from_iterable([
@@ -440,7 +441,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(expected_dataset,
-                CocoConverter(tasks='image_info'), test_dir)
+                CocoImageInfoConverter.convert, test_dir)
 
     def test_relative_paths(self):
         expected_dataset = Dataset.from_iterable([
@@ -454,7 +455,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(expected_dataset,
-                CocoConverter(tasks='image_info', save_images=True), test_dir)
+                partial(CocoImageInfoConverter.convert, save_images=True), test_dir)
 
     def test_preserve_coco_ids(self):
         expected_dataset = Dataset.from_iterable([
@@ -464,7 +465,7 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(expected_dataset,
-                CocoConverter(tasks='image_info', save_images=True), test_dir)
+                partial(CocoImageInfoConverter.convert, save_images=True), test_dir)
 
     def test_annotation_attributes(self):
         expected_dataset = Dataset.from_iterable([
@@ -476,4 +477,4 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(expected_dataset,
-                CocoConverter(), test_dir)
+                CocoConverter.convert, test_dir)

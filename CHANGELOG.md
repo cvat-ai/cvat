@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Changed
--
+- Smaller object details (<https://github.com/opencv/cvat/pull/1877>)
 
 ### Deprecated
 -
@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Some objects aren't shown on canvas sometimes. For example after propagation on of objects is invisible (<https://github.com/opencv/cvat/pull/1834>)
+- CVAT doesn't offer to restore state after an error (<https://github.com/opencv/cvat/pull/1874>)
+- Cannot read property 'shapeType' of undefined because of zOrder related issues (<https://github.com/opencv/cvat/pull/1874>)
+- Cannot read property 'pinned' of undefined because of zOrder related issues (<https://github.com/opencv/cvat/pull/1874>)
+- Do not iterate over hidden objects in aam (which are invisible because of zOrder) (<https://github.com/opencv/cvat/pull/1874>)
+- Cursor position is reset after changing a text field (<https://github.com/opencv/cvat/pull/1874>)
+- Hidden points and cuboids can be selected to be groupped (<https://github.com/opencv/cvat/pull/1874>)
+- `outside` annotations should not be in exported images (<https://github.com/opencv/cvat/issues/1620>)
+- `CVAT for video format` import error with interpolation (<https://github.com/opencv/cvat/issues/1893>)
+- `Image compression` definition mismatch (<https://github.com/opencv/cvat/issues/1900>)
+- Points are dublicated during polygon interpolation sometimes (<https://github.com/opencv/cvat/pull/1892>)
+- When redraw a shape with activated autobordering, previous points are visible (<https://github.com/opencv/cvat/pull/1892>)
 
 ### Security
 -
@@ -47,6 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added new tag annotation workspace (<https://github.com/opencv/cvat/pull/1570>)
 - Appearance block in attribute annotation mode (<https://github.com/opencv/cvat/pull/1820>)
 - Keyframe navigations and some switchers in attribute annotation mode (<https://github.com/opencv/cvat/pull/1820>)
+- [Datumaro] Added `convert` command to convert datasets directly (<https://github.com/opencv/cvat/pull/1837>)
+- [Datumaro] Added an option to specify image extension when exporting datasets (<https://github.com/opencv/cvat/pull/1799>)
+- [Datumaro] Added image copying when exporting datasets, if possible (<https://github.com/opencv/cvat/pull/1799>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
@@ -57,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for attributes in VOC XML format (https://github.com/opencv/cvat/pull/1792)
 - Added annotation attributes in COCO format (https://github.com/opencv/cvat/pull/1782)
 - Colorized object items in the side panel (<https://github.com/opencv/cvat/pull/1753>)
+- [Datumaro] Annotation-less files are not generated anymore in COCO format, unless tasks explicitly requested (<https://github.com/opencv/cvat/pull/1799>)
 
 ### Deprecated
 -
@@ -82,6 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Annotations aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
 - Labels aren't updated after reopening a task (<https://github.com/opencv/cvat/pull/1753>)
 - Canvas isn't fitted after collapsing side panel in attribute annotation mode (<https://github.com/opencv/cvat/pull/1753>)
+- Error when interpolating polygons (<https://github.com/opencv/cvat/pull/1878>)
 
 ### Security
 - SQL injection in Django `CVE-2020-9402` (<https://github.com/opencv/cvat/pull/1657>)

@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 import os.path as osp
 
@@ -91,7 +92,8 @@ class LabelMeConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(
-                source_dataset, LabelMeConverter(save_images=True),
+                source_dataset, 
+                partial(LabelMeConverter.convert, save_images=True),
                 test_dir, target_dataset=target_dataset)
 
     def test_cant_save_dataset_with_relative_paths(self):
@@ -104,7 +106,7 @@ class LabelMeConverterTest(TestCase):
         with self.assertRaisesRegex(Exception, r'only supports flat'):
             with TestDir() as test_dir:
                 self._test_save_and_load(expected_dataset,
-                    LabelMeConverter(save_images=True), test_dir)
+                    LabelMeConverter.convert, test_dir)
 
 
 DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__), 'assets', 'labelme_dataset')
