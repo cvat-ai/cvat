@@ -20,7 +20,7 @@ def init_context(context):
     context.logger.info("Init context...100%")
 
 def handler(context, event):
-    context.logger.info("Run faster_rcnn_inception_v2_coco model")
+    context.logger.info("Run yolo-v3-tf model")
     data = event.body
     buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
     threshold = float(data.get("threshold", 0.5))

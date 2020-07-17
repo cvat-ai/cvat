@@ -1,6 +1,0 @@
-#!/bin/bash
-
-args=$@
-
-. /opt/intel/openvino/bin/setupvars.sh
-/usr/bin/python3 $args

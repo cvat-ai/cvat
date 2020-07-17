@@ -4,14 +4,19 @@
 
 import math
 import numpy
-
+import os
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import euclidean, cosine
 
 from model_loader import ModelLoader
 
-class ReID:
-    def __init__(self, model_xml, model_bin):
+class ModelHandler:
+    def __init__(self):
+        base_dir = os.environ.get("MODEL_PATH",
+            "/opt/nuclio/open_model_zoo/intel/person-reidentification-retail-0300/FP32")
+        model_xml = os.path.join(base_dir, "person-reidentification-retail-0300.xml")
+        model_bin = os.path.join(base_dir, "person-reidentification-retail-0300.bin")
+
         self.model = ModelLoader(model_xml, model_bin)
 
     def infer(self, image0, boxes0, image1, boxes1, threshold, distance):

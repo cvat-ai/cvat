@@ -14,8 +14,8 @@ def init_context(context):
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
 
     # Read the DL model
-    model_handler = ModelHandler(labels)
-    setattr(context.user_data, 'model_handler', model_handler)
+    model = ModelHandler(labels)
+    setattr(context.user_data, 'model', model)
 
     context.logger.info("Init context...100%")
 
@@ -26,7 +26,7 @@ def handler(context, event):
     threshold = float(data.get("threshold", 0.5))
     image = Image.open(buf)
 
-    results = context.user_data.model_handler.infer(image, threshold)
+    results = context.user_data.model.infer(image, threshold)
 
     return context.Response(body=json.dumps(results), headers={},
         content_type='application/json', status_code=200)

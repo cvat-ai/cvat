@@ -2,7 +2,6 @@ import json
 import base64
 from PIL import Image
 import io
-import os
 from model_handler import ModelHandler
 import yaml
 
@@ -15,8 +14,8 @@ def init_context(context):
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
 
     # Read the DL model
-    model_handler = ModelHandler(labels)
-    setattr(context.user_data, 'model_handler', model_handler)
+    model = ModelHandler(labels)
+    setattr(context.user_data, 'model', model)
 
     context.logger.info("Init context...100%")
 
@@ -28,7 +27,7 @@ def handler(context, event):
     link_threshold = float(data.get("link_threshold", 0.8))
     image = Image.open(buf)
 
-    results = context.user_data.model_handler.infer(image,
+    results = context.user_data.model.infer(image,
         pixel_threshold, link_threshold)
 
     return context.Response(body=json.dumps(results), headers={},

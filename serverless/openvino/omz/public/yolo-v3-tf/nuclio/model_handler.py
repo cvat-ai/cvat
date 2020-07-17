@@ -1,28 +1,11 @@
-import json
-import base64
-from PIL import Image
-import io
-from model_loader import ModelLoader
+# Copyright (C) 2020 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
+import os
 import numpy as np
 from math import exp
-import yaml
-import os
-
-def init_context(context):
-    context.logger.info("Init context...  0%")
-
-    base_dir = "/opt/nuclio/open_model_zoo/public/yolo-v3-tf/FP32"
-    model_xml = os.path.join(base_dir, "yolo-v3-tf.xml")
-    model_bin = os.path.join(base_dir, "yolo-v3-tf.bin")
-    model_handler = ModelLoader(model_xml, model_bin)
-    setattr(context.user_data, 'model_handler', model_handler)
-
-    functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
-    labels_spec = functionconfig['metadata']['annotations']['spec']
-    labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
-    setattr(context.user_data, "labels", labels)
-
-    context.logger.info("Init context...100%")
+from model_loader import ModelLoader
 
 class YoloParams:
     # ------------------------------------------- Extracting layer parameters ------------------------------------------
@@ -128,51 +111,51 @@ def intersection_over_union(box_1, box_2):
     return area_of_overlap / area_of_union
 
 
-def handler(context, event):
-    context.logger.info("Run yolo-v3-tf model")
-    data = event.body
-    buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
-    threshold = float(data.get("threshold", 0.5))
-    image = Image.open(buf)
+class ModelHandler:
+    def __init__(self, labels):
+        base_dir = os.environ.get("MODEL_PATH",
+            "/opt/nuclio/open_model_zoo/public/yolo-v3-tf/FP32")
+        model_xml = os.path.join(base_dir, "yolo-v3-tf.xml")
+        model_bin = os.path.join(base_dir, "yolo-v3-tf.bin")
+        self.model = ModelLoader(model_xml, model_bin)
+        self.labels = labels
 
-    output_layer = context.user_data.model_handler.infer(np.array(image))
+    def infer(self, image, threshold):
+        output_layer = self.model.infer(image)
 
-    # Collecting object detection results
-    objects = []
-    model = context.user_data.model_handler
-    origin_im_size = (image.height, image.width)
-    for layer_name, out_blob in output_layer.items():
-        out_blob = out_blob.reshape(model.layers[model.layers[layer_name].parents[0]].shape)
-        layer_params = YoloParams(model.layers[layer_name].params, out_blob.shape[2])
-        objects += parse_yolo_region(out_blob, model.input_size(),
-                                        origin_im_size, layer_params,
-                                        threshold)
+        # Collecting object detection results
+        objects = []
+        origin_im_size = (image.height, image.width)
+        for layer_name, out_blob in output_layer.items():
+            out_blob = out_blob.reshape(self.model.layers[self.model.layers[layer_name].parents[0]].shape)
+            layer_params = YoloParams(self.model.layers[layer_name].params, out_blob.shape[2])
+            objects += parse_yolo_region(out_blob, self.model.input_size(),
+                origin_im_size, layer_params, threshold)
 
-    # Filtering overlapping boxes (non-maximum supression)
-    IOU_THRESHOLD = 0.4
-    objects = sorted(objects, key=lambda obj : obj['confidence'], reverse=True)
-    for i, obj in enumerate(objects):
-        if obj['confidence'] == 0:
-            continue
-        for j in range(i + 1, len(objects)):
-            if intersection_over_union(obj, objects[j]) > IOU_THRESHOLD:
-                objects[j]['confidence'] = 0
+        # Filtering overlapping boxes (non-maximum supression)
+        IOU_THRESHOLD = 0.4
+        objects = sorted(objects, key=lambda obj : obj['confidence'], reverse=True)
+        for i, obj in enumerate(objects):
+            if obj['confidence'] == 0:
+                continue
+            for j in range(i + 1, len(objects)):
+                if intersection_over_union(obj, objects[j]) > IOU_THRESHOLD:
+                    objects[j]['confidence'] = 0
 
-    results = []
-    for obj in objects:
-        if obj['confidence'] >= threshold:
-            xtl = max(obj['xmin'], 0)
-            ytl = max(obj['ymin'], 0)
-            xbr = min(obj['xmax'], image.width)
-            ybr = min(obj['ymax'], image.height)
-            obj_class = int(obj['class_id'])
+        results = []
+        for obj in objects:
+            if obj['confidence'] >= threshold:
+                xtl = max(obj['xmin'], 0)
+                ytl = max(obj['ymin'], 0)
+                xbr = min(obj['xmax'], image.width)
+                ybr = min(obj['ymax'], image.height)
+                obj_class = int(obj['class_id'])
 
-            results.append({
-                "confidence": str(obj['confidence']),
-                "label": context.user_data.labels.get(obj_class, "unknown"),
-                "points": [xtl, ytl, xbr, ybr],
-                "type": "rectangle",
-            })
+                results.append({
+                    "confidence": str(obj['confidence']),
+                    "label": self.labels.get(obj_class, "unknown"),
+                    "points": [xtl, ytl, xbr, ybr],
+                    "type": "rectangle",
+                })
 
-    return context.Response(body=json.dumps(results), headers={},
-        content_type='application/json', status_code=200)
+        return results
