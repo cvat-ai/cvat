@@ -2100,7 +2100,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": []
                 }
             ],
@@ -2109,7 +2109,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -2128,7 +2128,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -2140,7 +2140,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -2175,7 +2175,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "shapes": [
                         {
@@ -2225,7 +2225,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": []
                 }
             ],
@@ -2234,7 +2234,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -2253,7 +2253,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -2265,7 +2265,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -2300,7 +2300,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "shapes": [
                         {
@@ -2371,7 +2371,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": 11010101,
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                 }
             ],
@@ -2380,7 +2380,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": 32234234,
@@ -2399,7 +2399,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 1,
                     "label_id": 1212121,
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -2411,7 +2411,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": 0,
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "shapes": [
                         {
@@ -2445,7 +2445,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "shapes": [
                         {
@@ -2589,7 +2589,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                 }
             ],
@@ -2598,7 +2598,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -2617,7 +2617,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -2629,7 +2629,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -2665,7 +2665,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "shapes": [
                         {
@@ -2715,7 +2715,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                 }
             ],
@@ -2724,7 +2724,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -2743,7 +2743,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -2755,7 +2755,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -2790,7 +2790,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "shapes": [
                         {
@@ -2861,7 +2861,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 0,
                     "label_id": 11010101,
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                 }
             ],
@@ -2870,7 +2870,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": 32234234,
@@ -2889,7 +2889,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 1,
                     "label_id": 1212121,
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -2901,7 +2901,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 0,
                     "label_id": 0,
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "shapes": [
                         {
@@ -2935,7 +2935,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "shapes": [
                         {
@@ -2971,7 +2971,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "frame": 0,
                 "label_id": task["labels"][0]["id"],
                 "group": 0,
-                "annotation_type": "Manual",
+                "source": "manual",
                 "attributes": [
                     {
                         "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -3024,7 +3024,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "frame": 0,
                 "label_id": task["labels"][1]["id"],
                 "group": 0,
-                "annotation_type": "Manual",
+                "source": "manual",
                 "attributes": [],
                 "shapes": [
                     {
@@ -3058,7 +3058,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "frame": 0,
                 "label_id": task["labels"][0]["id"],
                 "group": 0,
-                "annotation_type": "Manual",
+                "source": "manual",
                 "attributes": [
                     {
                         "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -3078,7 +3078,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "frame": 1,
                 "label_id": task["labels"][1]["id"],
                 "group": 0,
-                "annotation_type": "Manual",
+                "source": "manual",
                 "attributes": [],
                 "points": [2.0, 2.1, 40, 50.7],
                 "type": "rectangle",
@@ -3089,7 +3089,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "frame": 1,
                 "label_id": task["labels"][1]["id"],
                 "group": 0,
-                "annotation_type": "Manual",
+                "source": "manual",
                 "attributes": [],
                 "points": [2.0, 2.1, 100, 30.22, 40, 77, 1, 3],
                 "type": "polygon",
@@ -3100,7 +3100,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "frame": 2,
                 "label_id": task["labels"][0]["id"],
                 "group": 1,
-                "annotation_type": "Manual",
+                "source": "manual",
                 "attributes": [
                     {
                         "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -3119,7 +3119,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "frame": 2,
                 "label_id": task["labels"][1]["id"],
                 "group": 1,
-                "annotation_type": "Manual",
+                "source": "manual",
                 "attributes": [],
                 "points": [4, 7, 10, 30, 4, 5.55],
                 "type": "polygon",
@@ -3130,14 +3130,14 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "frame": 2,
                 "label_id": task["labels"][1]["id"],
                 "group": 0,
-                "annotation_type": "Manual",
+                "source": "manual",
                 "attributes": [],
             }]
             tags_with_attrs = [{
                 "frame": 1,
                 "label_id": task["labels"][0]["id"],
                 "group": 3,
-                "annotation_type": "Manual",
+                "source": "manual",
                 "attributes": [
                     {
                         "spec_id": task["labels"][0]["attributes"][0]["id"],

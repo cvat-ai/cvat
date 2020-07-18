@@ -61,8 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Datumaro] Added `convert` command to convert datasets directly (<https://github.com/opencv/cvat/pull/1837>)
 - [Datumaro] Added an option to specify image extension when exporting datasets (<https://github.com/opencv/cvat/pull/1799>)
 - [Datumaro] Added image copying when exporting datasets, if possible (<https://github.com/opencv/cvat/pull/1799>)
-- Annotation type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
-- Annotation type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
+- Source type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
+- Source type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
@@ -472,8 +472,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.1] - 2020-04-14
 ### Added
 - Annotation type to determine whether a drawn shape is auto annotated using Tensorflow Object detection API or manually annotated by the user
-- Annotation_type field support for cvat dumper/loader
-- Annotation_type field support for tags
+- source field support for cvat dumper/loader
+- source field support for tags
 
 ## Template
 ```

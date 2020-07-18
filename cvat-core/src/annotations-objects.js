@@ -183,7 +183,7 @@
             this.removed = false;
             this.lock = false;
             this.color = color;
-            this.annotationType = data.annotation_type;
+            this.source = data.source;
             this.updated = Date.now();
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
@@ -296,19 +296,19 @@
             }, [this.clientID], frame);
         }
 
-        _saveAnnotationType(annotationType, frame) {
-            const undoAnnotationType = this.annotationType;
-            const redoAnnotationType = annotationType;
+        _saveSource(source, frame) {
+            const undoSource = this.source;
+            const redoSource = source;
 
-            this.history.do(HistoryActions.CHANGED_ANNOTATION_TYPE, () => {
-                this.annotationType = undoAnnotationType;
+            this.history.do(HistoryActions.CHANGED_SOURCE, () => {
+                this.source = undoSource;
                 this.updated = Date.now();
             }, () => {
-                this.annotationType = redoAnnotationType;
+                this.source = redoSource;
                 this.updated = Date.now();
             }, [this.clientID], frame);
 
-            this.annotationType = annotationType;
+            this.source = source;
         }
 
         _validateStateBeforeSave(frame, data, updated) {
@@ -397,8 +397,8 @@
                 }
             }
 
-            if (updated.annotationType) {
-                checkObjectType('annotationType', data.annotationType, 'string', null);
+            if (updated.source) {
+                checkObjectType('source', data.source, 'string', null);
             }
 
             return fittedPoints;
@@ -417,7 +417,7 @@
             const anyChanges = updated.label || updated.attributes || updated.points
                 || updated.outside || updated.occluded || updated.keyframe
                 || updated.zOrder || updated.hidden || updated.lock || updated.pinned
-                || updated.annotationType;
+                || updated.source;
 
             if (anyChanges) {
                 this.updated = Date.now();
@@ -513,7 +513,7 @@
                 frame: this.frame,
                 label_id: this.label.id,
                 group: this.group,
-                annotation_type: this.annotationType,
+                source: this.source,
             };
         }
 
@@ -542,7 +542,7 @@
                 updated: this.updated,
                 pinned: this.pinned,
                 frame,
-                annotationType: this.annotationType,
+                source: this.source,
             };
         }
 
@@ -642,8 +642,8 @@
                 this._saveHidden(data.hidden, frame);
             }
 
-            if (updated.annotationType) {
-                this._saveAnnotationType(data.annotationType, frame);
+            if (updated.source) {
+                this._saveSource(data.source, frame);
             }
 
             this.updateTimestamp(updated);
@@ -686,7 +686,7 @@
                 frame: this.frame,
                 label_id: this.label.id,
                 group: this.group,
-                annotation_type: this.annotationType,
+                source: this.source,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     if (!labelAttributes[attrId].mutable) {
                         attributeAccumulator.push({
@@ -754,7 +754,7 @@
                     last,
                 },
                 frame,
-                annotationType: this.annotationType,
+                source: this.source,
             };
         }
 
@@ -1063,7 +1063,7 @@
                 outside: current.outside,
                 occluded: current.occluded,
                 attributes: {},
-                annotationType: current.annotationType,
+                source: current.source,
             } : undefined;
 
             if (redoShape) {
@@ -1128,8 +1128,8 @@
                 this._saveAttributes(data.attributes, frame);
             }
 
-            if (updated.annotationType) {
-                this._saveAnnotationType(data.annotationType, frame);
+            if (updated.source) {
+                this._saveSource(data.source, frame);
             }
 
             if (updated.keyframe) {
@@ -1198,7 +1198,7 @@
                 frame: this.frame,
                 label_id: this.label.id,
                 group: this.group,
-                annotation_type: this.annotationType,
+                source: this.source,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     attributeAccumulator.push({
                         spec_id: attrId,
@@ -1229,7 +1229,7 @@
                 color: this.color,
                 updated: this.updated,
                 frame,
-                annotationType: this.annotationType,
+                source: this.source,
             };
         }
 
@@ -1264,8 +1264,8 @@
                 this._saveColor(data.color, frame);
             }
 
-            if (updated.annotationType) {
-                this._saveAnnotationType(data.annotationType, frame);
+            if (updated.source) {
+                this._saveSource(data.source, frame);
             }
 
             this.updateTimestamp(updated);

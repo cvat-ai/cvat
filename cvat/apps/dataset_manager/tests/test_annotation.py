@@ -13,7 +13,7 @@ class TrackManagerTest(TestCase):
             "frame": 0,
             "label_id": 0,
             "group": None,
-            "annotation_type": "Manual",
+            "source": "manual",
             "attributes": [],
             "shapes": [
                 {
@@ -45,7 +45,7 @@ class TrackManagerTest(TestCase):
             "label_id": 0,
             "group": None,
             "attributes": [],
-            "annotation_type": "Manual",
+            "source": "manual",
             "shapes": [
                 {
                     "frame": 0,
@@ -76,7 +76,7 @@ class TrackManagerTest(TestCase):
             "label_id": 0,
             "group": None,
             "attributes": [],
-            "annotation_type": "Manual",
+            "source": "manual",
             "shapes": [
                 {
                     "frame": 0,
@@ -107,7 +107,7 @@ class TrackManagerTest(TestCase):
             "label_id": 0,
             "group": None,
             "attributes": [],
-            "annotation_type": "Manual",
+            "source": "manual",
             "shapes": [
                 {
                     "frame": 0,

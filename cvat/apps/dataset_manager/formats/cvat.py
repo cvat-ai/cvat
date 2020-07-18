@@ -190,7 +190,7 @@ def dump_as_cvat_annotation(file_object, annotations):
             dump_data = OrderedDict([
                 ("label", shape.label),
                 ("occluded", str(int(shape.occluded))),
-                ("annotation_type", shape.annotation_type),
+                ("source", shape.source),
             ])
 
             if shape.type == "rectangle":
@@ -270,7 +270,7 @@ def dump_as_cvat_annotation(file_object, annotations):
         for tag in frame_annotation.tags:
             tag_data = OrderedDict([
                 ("label", tag.label),
-                ("annotation_type", tag.annotation_type),
+                ("source", tag.source),
             ])
             if tag.group:
                 tag_data["group_id"] = str(tag.group)
@@ -296,7 +296,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
         dump_data = OrderedDict([
             ("id", str(track_id)),
             ("label", track.label),
-            ("annotation_type", track.annotation_type),
+            ("source", track.source),
         ])
 
         if track.group:
@@ -388,7 +388,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
         dump_track(counter, annotations.Track(
             label=shape.label,
             group=shape.group,
-            annotation_type=shape.annotation_type,
+            source=shape.source,
             shapes=[annotations.TrackedShape(
                 type=shape.type,
                 points=shape.points,
@@ -434,7 +434,7 @@ def load(file_object, annotations):
                 track = annotations.Track(
                     label=el.attrib['label'],
                     group=int(el.attrib.get('group_id', 0)),
-                    annotation_type=el.attrib.get('annotation_type', 'Manual'),
+                    source=el.attrib.get('source', 'manual'),
                     shapes=[],
                 )
             elif el.tag == 'image':
@@ -453,7 +453,7 @@ def load(file_object, annotations):
                     'label': el.attrib['label'],
                     'group': int(el.attrib.get('group_id', 0)),
                     'attributes': attributes,
-                    'annotation_type': str(el.attrib.get('annotation_type', 'Manual'))
+                    'source': str(el.attrib.get('source', 'manual'))
                 }
         elif ev == 'end':
             if el.tag == 'attribute' and attributes is not None:
@@ -470,7 +470,7 @@ def load(file_object, annotations):
                     shape['frame'] = frame_id
                     shape['label'] = el.attrib['label']
                     shape['group'] = int(el.attrib.get('group_id', 0))
-                    shape['annotation_type'] = str(el.attrib.get('annotation_type', 'Manual'))
+                    shape['source'] = str(el.attrib.get('source', 'manual'))
 
                 shape['type'] = 'rectangle' if el.tag == 'box' else el.tag
                 shape['occluded'] = el.attrib['occluded'] == '1'

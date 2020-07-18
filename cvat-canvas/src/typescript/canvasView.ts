@@ -1732,14 +1732,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addText(state: any): SVG.Text {
         const { undefinedAttrValue } = this.configuration;
-        const { label, clientID, attributes, annotationType } = state;
+        const { label, clientID, attributes, source } = state;
         const attrNames = label.attributes.reduce((acc: any, val: any): void => {
             acc[val.id] = val.name;
             return acc;
         }, {});
 
         return this.adoptedText.text((block): void => {
-            block.tspan(`${label.name} ${clientID} (${annotationType})`).style('text-transform', 'uppercase');
+            block.tspan(`${label.name} ${clientID} (${source})`).style('text-transform', 'uppercase');
             for (const attrID of Object.keys(attributes)) {
                 const value = attributes[attrID] === undefinedAttrValue
                     ? '' : attributes[attrID];
@@ -1877,7 +1877,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             'pointer-events': 'none',
             'shape-rendering': 'geometricprecision',
             'stroke-width': 0,
-            fill: state.color, // to right fill property when call SVG.Shape::clone(
+            fill: state.color, // to right fill property when call SVG.Shape::clone()
         }).style({
             opacity: 0,
         });

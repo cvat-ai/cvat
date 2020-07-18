@@ -163,7 +163,7 @@ class TaskExportTest(_DbTestBase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -182,7 +182,7 @@ class TaskExportTest(_DbTestBase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -192,7 +192,7 @@ class TaskExportTest(_DbTestBase):
                     "frame": 1,
                     "label_id": task["labels"][0]["id"],
                     "group": 1,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "points": [100, 300.222, 400, 500, 1, 3],
                     "type": "points",
@@ -202,7 +202,7 @@ class TaskExportTest(_DbTestBase):
                     "frame": 1,
                     "label_id": task["labels"][0]["id"],
                     "group": 1,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "points": [2.0, 2.1, 400, 500, 1, 3],
                     "type": "polyline",
@@ -214,7 +214,7 @@ class TaskExportTest(_DbTestBase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -249,7 +249,7 @@ class TaskExportTest(_DbTestBase):
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
-                    "annotation_type": "Manual",
+                    "source": "manual",
                     "attributes": [],
                     "shapes": [
                         {
