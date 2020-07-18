@@ -43,7 +43,7 @@ class DatumaroConverterTest(TestCase):
     for index, _ in enumerate(label_categories.items):
         points_categories.add(index, ['cat1', 'cat2'], joints=[[0, 1]])
 
-    expected_dataset = Dataset.from_iterable([
+    test_dataset = Dataset.from_iterable([
         DatasetItem(id=100, subset='train', image=np.ones((10, 6, 3)),
             annotations=[
                 Caption('hello', id=1),
@@ -85,22 +85,22 @@ class DatumaroConverterTest(TestCase):
 
     def test_can_save_and_load(self):
         with TestDir() as test_dir:
-            self._test_save_and_load(self.expected_dataset,
+            self._test_save_and_load(self.test_dataset,
                 partial(DatumaroConverter.convert, save_images=True), test_dir)
 
     def test_can_detect(self):
         with TestDir() as test_dir:
-            DatumaroConverter.convert(self.TestExtractor(), save_dir=test_dir)
+            DatumaroConverter.convert(self.test_dataset, save_dir=test_dir)
 
             self.assertTrue(DatumaroImporter.detect(test_dir))
 
     def test_relative_paths(self):
-        expected_dataset = Dataset.from_iterable([
+        test_dataset = Dataset.from_iterable([
             DatasetItem(id='1', image=np.ones((4, 2, 3))),
             DatasetItem(id='subdir1/1', image=np.ones((2, 6, 3))),
             DatasetItem(id='subdir2/1', image=np.ones((5, 4, 3))),
         ])
 
         with TestDir() as test_dir:
-            self._test_save_and_load(expected_dataset,
+            self._test_save_and_load(test_dataset,
                 partial(DatumaroConverter.convert, save_images=True), test_dir)

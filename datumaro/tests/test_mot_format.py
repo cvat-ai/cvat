@@ -102,7 +102,8 @@ class MotConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(
-                source_dataset, MotSeqGtConverter.convert,
+                source_dataset,
+                partial(MotSeqGtConverter.convert, save_images=True),
                 test_dir, target_dataset=target_dataset)
 
 

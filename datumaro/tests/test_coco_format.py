@@ -315,7 +315,8 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(source_dataset,
-                CocoInstancesConverter.convert, test_dir,
+                partial(CocoInstancesConverter.convert, segmentation_mode='polygons'),
+                test_dir,
                 target_dataset=target_dataset)
 
     def test_can_save_and_load_images(self):
@@ -424,13 +425,13 @@ class CocoConverterTest(TestCase):
                 target_dataset=target_dataset)
 
     def test_can_save_dataset_with_no_subsets(self):
-        expected_dataset = Dataset.from_iterable([
+        test_dataset = Dataset.from_iterable([
             DatasetItem(id=1, attributes={'id': 1}),
             DatasetItem(id=2, attributes={'id': 2}),
-        ], categories={ AnnotationType.label: LabelCategories(), })
+        ])
 
         with TestDir() as test_dir:
-            self._test_save_and_load(expected_dataset,
+            self._test_save_and_load(test_dataset,
                 CocoConverter.convert, test_dir)
 
     def test_can_save_dataset_with_image_info(self):
