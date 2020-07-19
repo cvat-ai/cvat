@@ -9,8 +9,10 @@ from collections import OrderedDict
 from glob import glob
 from tempfile import TemporaryDirectory
 
+from cvat.apps.dataset_manager.bindings import match_dm_item
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameProvider
+from datumaro.components.extractor import DatasetItem
 from datumaro.util.image import save_image
 
 from .registry import exporter, importer
@@ -432,7 +434,7 @@ def load(file_object, annotations):
                 )
             elif el.tag == 'image':
                 image_is_opened = True
-                frame_id = int(el.attrib['id'])
+                frame_id = match_dm_item(DatasetItem(id=el.attrib['id'], image=el.attrib['name']), annotations)
             elif el.tag in supported_shapes and (track is not None or image_is_opened):
                 attributes = []
                 shape = {
