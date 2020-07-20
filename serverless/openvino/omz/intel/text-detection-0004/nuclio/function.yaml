@@ -47,6 +47,7 @@ spec:
         maxRequestBodySize: 33554432 # 32MB
 
   platform:
+    attributes:
       restartPolicy:
         name: always
         maximumRetryCount: 3
