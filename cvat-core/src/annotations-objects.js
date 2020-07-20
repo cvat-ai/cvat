@@ -1629,7 +1629,7 @@
             }
 
             function matchRightLeft(leftCurve, rightCurve, leftRightMatching) {
-                const matchedRightPoints = Object.values(leftRightMatching);
+                const matchedRightPoints = Object.values(leftRightMatching).flat();
                 const unmatchedRightPoints = rightCurve.map((_, index) => index)
                     .filter((index) => !matchedRightPoints.includes(index));
                 const updatedMatching = { ...leftRightMatching };
