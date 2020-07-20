@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta] - Unreleased
 ### Added
--
+- Source type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
+- Source type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
 
 ### Changed
 - Smaller object details (<https://github.com/opencv/cvat/pull/1877>)
@@ -61,8 +62,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Datumaro] Added `convert` command to convert datasets directly (<https://github.com/opencv/cvat/pull/1837>)
 - [Datumaro] Added an option to specify image extension when exporting datasets (<https://github.com/opencv/cvat/pull/1799>)
 - [Datumaro] Added image copying when exporting datasets, if possible (<https://github.com/opencv/cvat/pull/1799>)
-- Source type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
-- Source type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
 
 ### Changed
 - Removed information about e-mail from the basic user information (<https://github.com/opencv/cvat/pull/1627>)
