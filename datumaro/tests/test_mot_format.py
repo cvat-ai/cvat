@@ -3,7 +3,7 @@ import numpy as np
 import os.path as osp
 
 from unittest import TestCase
-
+from datumaro.components.project import Dataset
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, Bbox, LabelCategories
 )
@@ -28,96 +28,83 @@ class MotConverterTest(TestCase):
         compare_datasets(self, expected=target_dataset, actual=parsed_dataset)
 
     def test_can_save_bboxes(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, subset='train',
-                        image=np.ones((16, 16, 3)),
-                        annotations=[
-                            Bbox(0, 4, 4, 8, label=2, attributes={
-                                'occluded': True,
-                            }),
-                            Bbox(0, 4, 4, 4, label=3, attributes={
-                                'visibility': 0.4,
-                            }),
-                            Bbox(2, 4, 4, 4, attributes={
-                                'ignored': True
-                            }),
-                        ]
-                    ),
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, subset='train',
+                image=np.ones((16, 16, 3)),
+                annotations=[
+                    Bbox(0, 4, 4, 8, label=2, attributes={
+                        'occluded': True,
+                    }),
+                    Bbox(0, 4, 4, 4, label=3, attributes={
+                        'visibility': 0.4,
+                    }),
+                    Bbox(2, 4, 4, 4, attributes={
+                        'ignored': True
+                    }),
+                ]
+            ),
 
-                    DatasetItem(id=2, subset='val',
-                        image=np.ones((8, 8, 3)),
-                        annotations=[
-                            Bbox(1, 2, 4, 2, label=3),
-                        ]
-                    ),
+            DatasetItem(id=2, subset='val',
+                image=np.ones((8, 8, 3)),
+                annotations=[
+                    Bbox(1, 2, 4, 2, label=3),
+                ]
+            ),
 
-                    DatasetItem(id=3, subset='test',
-                        image=np.ones((5, 4, 3)) * 3,
-                    ),
-                ])
+            DatasetItem(id=3, subset='test',
+                image=np.ones((5, 4, 3)) * 3,
+            ),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                'label_' + str(label) for label in range(10)),
+        })
 
-            def categories(self):
-                label_cat = LabelCategories()
-                for label in range(10):
-                    label_cat.add('label_' + str(label))
-                return {
-                    AnnotationType.label: label_cat,
-                }
+        target_dataset = Dataset.from_iterable([
+            DatasetItem(id=1,
+                image=np.ones((16, 16, 3)),
+                annotations=[
+                    Bbox(0, 4, 4, 8, label=2, attributes={
+                        'occluded': True,
+                        'visibility': 0.0,
+                        'ignored': False,
+                    }),
+                    Bbox(0, 4, 4, 4, label=3, attributes={
+                        'occluded': False,
+                        'visibility': 0.4,
+                        'ignored': False,
+                    }),
+                    Bbox(2, 4, 4, 4, attributes={
+                        'occluded': False,
+                        'visibility': 1.0,
+                        'ignored': True,
+                    }),
+                ]
+            ),
 
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1,
-                        image=np.ones((16, 16, 3)),
-                        annotations=[
-                            Bbox(0, 4, 4, 8, label=2, attributes={
-                                'occluded': True,
-                                'visibility': 0.0,
-                                'ignored': False,
-                            }),
-                            Bbox(0, 4, 4, 4, label=3, attributes={
-                                'occluded': False,
-                                'visibility': 0.4,
-                                'ignored': False,
-                            }),
-                            Bbox(2, 4, 4, 4, attributes={
-                                'occluded': False,
-                                'visibility': 1.0,
-                                'ignored': True,
-                            }),
-                        ]
-                    ),
+            DatasetItem(id=2,
+                image=np.ones((8, 8, 3)),
+                annotations=[
+                    Bbox(1, 2, 4, 2, label=3, attributes={
+                        'occluded': False,
+                        'visibility': 1.0,
+                        'ignored': False,
+                    }),
+                ]
+            ),
 
-                    DatasetItem(id=2,
-                        image=np.ones((8, 8, 3)),
-                        annotations=[
-                            Bbox(1, 2, 4, 2, label=3, attributes={
-                                'occluded': False,
-                                'visibility': 1.0,
-                                'ignored': False,
-                            }),
-                        ]
-                    ),
-
-                    DatasetItem(id=3,
-                        image=np.ones((5, 4, 3)) * 3,
-                    ),
-                ])
-
-            def categories(self):
-                label_cat = LabelCategories()
-                for label in range(10):
-                    label_cat.add('label_' + str(label))
-                return {
-                    AnnotationType.label: label_cat,
-                }
+            DatasetItem(id=3,
+                image=np.ones((5, 4, 3)) * 3,
+            ),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                'label_' + str(label) for label in range(10)),
+        })
 
         with TestDir() as test_dir:
-            self._test_save_and_load(SrcExtractor(),
+            self._test_save_and_load(
+                source_dataset,
                 partial(MotSeqGtConverter.convert, save_images=True),
-                test_dir, target_dataset=DstExtractor())
+                test_dir, target_dataset=target_dataset)
 
 
 DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__), 'assets', 'mot_dataset')
@@ -127,30 +114,23 @@ class MotImporterTest(TestCase):
         self.assertTrue(MotSeqImporter.detect(DUMMY_DATASET_DIR))
 
     def test_can_import(self):
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1,
-                        image=np.ones((16, 16, 3)),
-                        annotations=[
-                            Bbox(0, 4, 4, 8, label=2, attributes={
-                                'occluded': False,
-                                'visibility': 1.0,
-                                'ignored': False,
-                            }),
-                        ]
-                    ),
-                ])
-
-            def categories(self):
-                label_cat = LabelCategories()
-                for label in range(10):
-                    label_cat.add('label_' + str(label))
-                return {
-                    AnnotationType.label: label_cat,
-                }
+        expected_dataset = Dataset.from_iterable([
+            DatasetItem(id=1,
+                image=np.ones((16, 16, 3)),
+                annotations=[
+                    Bbox(0, 4, 4, 8, label=2, attributes={
+                        'occluded': False,
+                        'visibility': 1.0,
+                        'ignored': False,
+                    }),
+                ]
+            ),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                'label_' + str(label) for label in range(10)),
+        })
 
         dataset = Project.import_from(DUMMY_DATASET_DIR, 'mot_seq') \
             .make_dataset()
 
-        compare_datasets(self, DstExtractor(), dataset)
+        compare_datasets(self, expected_dataset, dataset)
