@@ -20,6 +20,7 @@ import {
     Rotation,
     ContextMenuType,
     Workspace,
+    TrackerPayload
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core-wrapper';
@@ -189,7 +190,7 @@ export enum AnnotationActionTypes {
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
-    TRACKER_SETTINGS = 'TRACKER_SETTINGS',
+    OPEN_TRACKER_SETTINGS = 'OPEN_TRACKER_SETTINGS',
     RESET_TRACKER_SETTINGS = 'RESET_TRACKER_SETTINGS',
     DO_TRACKING = 'DO_TRACKING',
     DO_TRACKING_SUCCESS = 'DO_TRACKING_SUCCESS',
@@ -1543,7 +1544,7 @@ export function redrawShapeAsync(): ThunkAction {
 
 export function trackerSettings(name: string, value: string | number): AnyAction {
     return {
-        type: AnnotationActionTypes.TRACKER_SETTINGS,
+        type: AnnotationActionTypes.OPEN_TRACKER_SETTINGS,
         payload: {
             name,
             value,
@@ -1557,34 +1558,27 @@ export function resetTrackerSettings(): AnyAction {
     };
 }
 
-export function doTracking(body: any, taskId: string): ThunkAction {
+export function doTracking(body: TrackerPayload, taskId: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch({
             type: AnnotationActionTypes.DO_TRACKING,
         });
         const baseUrl = cvat.config.backendAPI.slice(0, -7);
-        try {
-            cvat.server.request(`${baseUrl}/api/v1/tasks/${taskId}/tracking/track`, {
-                method: 'POST',
-                data: JSON.stringify(body),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            }).then((response: any) => {
-                console.log(response)
-                dispatch({
-                    type: AnnotationActionTypes.DO_TRACKING_SUCCESS,
-                });
-            })
-            .catch((err: any) => {
-                dispatch({
-                    type: AnnotationActionTypes.DO_TRACKING_FAILURE,
-                });
-            })
-        } catch(error) {
+        cvat.server.request(`${baseUrl}/api/v1/tasks/${taskId}/tracking/track`, {
+            method: 'POST',
+            data: JSON.stringify(body),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }).then((response: any) => {
+            dispatch({
+                type: AnnotationActionTypes.DO_TRACKING_SUCCESS,
+            });
+        })
+        .catch((err: any) => {
             dispatch({
                 type: AnnotationActionTypes.DO_TRACKING_FAILURE,
             });
-        }
+        });
     };
 }

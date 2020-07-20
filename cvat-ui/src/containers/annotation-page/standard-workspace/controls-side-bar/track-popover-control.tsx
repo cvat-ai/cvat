@@ -19,9 +19,9 @@ interface DispatchToProps {
 }
 
 interface StateToProps {
-    tracker_type: string;
-    tracker_until: string;
-    tracker_frame_number: number;
+    trackerType: string;
+    trackUntil: string;
+    trackerFrameNumber: number;
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -39,17 +39,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             tracker: {
-                tracker_type,
-                tracker_until,
-                tracker_frame_number
+                trackerType,
+                trackUntil,
+                trackerFrameNumber
             }
         }
     } = state;
 
     return {
-        tracker_type,
-        tracker_until,
-        tracker_frame_number,
+        trackerType,
+        trackUntil,
+        trackerFrameNumber,
     };
 }
 

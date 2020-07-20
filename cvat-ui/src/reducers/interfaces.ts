@@ -394,9 +394,9 @@ export interface AnnotationState {
         data: any;
     };
     tracker: {
-        tracker_type: string;
-        tracker_until: string;
-        tracker_frame_number: number;
+        trackerType: string;
+        trackUntil: string;
+        trackerFrameNumber: number;
         tracking: boolean;
     };
     colors: any[];
@@ -407,9 +407,40 @@ export interface AnnotationState {
 }
 
 export enum TrackerInputs {
-    tracker_type = 'tracker_type',
-    tracker_until = 'tracker_until',
-    tracker_frame_number = 'tracker_frame_number',
+    trackerType = 'trackerType',
+    trackUntil = 'trackUntil',
+    trackerFrameNumber = 'trackerFrameNumber',
+}
+
+export interface TrackerPayload {
+    jobId: number;
+    trackingJob: {
+        startFrame: number;
+        stopFrame: number;
+        track: {
+            attributes: any;
+            frame: number;
+            group: number;
+            id: number;
+            label_id: number;
+            shapes: [
+                {
+                    frame: number;
+                    attributes: any;
+                    occluded: boolean;
+                    outside: boolean;
+                    points: number[];
+                    type: string;
+                    z_order: number;
+                }
+            ];
+        }
+    };
+
+    trackId: number;
+    trackerOptions: {
+        trackerType: string;
+    };
 }
 
 export enum Workspace {

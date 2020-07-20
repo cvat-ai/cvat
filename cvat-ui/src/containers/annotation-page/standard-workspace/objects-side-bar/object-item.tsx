@@ -14,6 +14,7 @@ import {
     CombinedState,
     ColorBy,
     ShapeType,
+    TrackerPayload
 } from 'reducers/interfaces';
 import {
     collapseObjectItems,
@@ -52,9 +53,9 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
-    tracker_type: string;
-    tracker_until: string;
-    tracker_frame_number: number;
+    trackerType: string;
+    trackUntil: string;
+    trackerFrameNumber: number;
     tracking: boolean;
 }
 
@@ -71,7 +72,7 @@ interface DispatchToProps {
     changeLabelColor(label: any, color: string): void;
     changeGroupColor(group: number, color: string): void;
     resetTracker(): void;
-    handleTracking(data: TrackerPayload, taskId: string): void;
+    handleTracking(data: TrackerPayload, taskId: number): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -101,9 +102,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 activeControl,
             },
             tracker: {
-                tracker_type,
-                tracker_until,
-                tracker_frame_number,
+                trackerType,
+                trackUntil,
+                trackerFrameNumber,
                 tracking,
             },
             colors,
@@ -140,9 +141,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
-        tracker_type,
-        tracker_until,
-        tracker_frame_number,
+        trackerType,
+        trackUntil,
+        trackerFrameNumber,
         tracking,
     };
 }
@@ -183,40 +184,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetTracker(): void {
             dispatch(resetTrackerSettings());
         },
-        handleTracking(data: TrackerPayload, taskId: string): void {
+        handleTracking(data: TrackerPayload, taskId: number): void {
             dispatch(doTracking(data, taskId));
         },
-    };
-}
-
-interface TrackerPayload {
-    jobId: number;
-    trackingJob: {
-        startFrame: number;
-        stopFrame: number;
-        track: {
-            attributes: any;
-            frame: number;
-            group: number;
-            id: number;
-            label_id: number;
-            shapes: [
-                {
-                    frame: number;
-                    attributes: any;
-                    occluded: boolean;
-                    outside: boolean;
-                    points: number[];
-                    type: string;
-                    z_order: number;
-                }
-            ];
-        }
-    };
-
-    trackId: number;
-    trackerOptions: {
-        trackerType: string;
     };
 }
 
@@ -428,9 +398,9 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private createTrackerPayload = (): TrackerPayload => {
         const {
-            tracker_type,
-            tracker_until,
-            tracker_frame_number,
+            trackerType,
+            trackUntil,
+            trackerFrameNumber,
             resetTracker,
             jobInstance,
             objectState,
@@ -443,7 +413,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             jobId: jobInstance.id,
             trackingJob: {
                 startFrame: frameNumber,
-                stopFrame: tracker_frame_number ? frameNumber + tracker_frame_number : frameNumber + 50,
+                stopFrame: trackerFrameNumber ? frameNumber + trackerFrameNumber : frameNumber + 50,
                 track: {
                     attributes: objectState.attributes,
                     frame: objectState.frame,
@@ -466,7 +436,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             },
             trackId: 4,
             trackerOptions: {
-                trackerType: tracker_type
+                trackerType: trackerType
             }
         }
     }
@@ -477,10 +447,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             handleTracking,
             resetTracker,
         } = this.props;
-        console.log(this.props);
         let payload: TrackerPayload = this.createTrackerPayload();
-        handleTracking(payload, match.params.tid);
-        // resetTracker();
+        handleTracking(payload, parseInt(match.params.tid));
     }
 
     public render(): JSX.Element {

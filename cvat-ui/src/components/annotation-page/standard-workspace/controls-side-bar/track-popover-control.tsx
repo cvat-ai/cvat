@@ -17,9 +17,9 @@ import Text from 'antd/lib/typography/Text';
 import { TrackerInputs } from 'reducers/interfaces';
 
 interface Props {
-    tracker_type: string | null;
-    tracker_until: string | null;
-    tracker_frame_number: number;
+    trackerType: string | null;
+    trackUntil: string | null;
+    trackerFrameNumber: number;
 
     handleChange(name: string, value: string | number): void;
 }
@@ -104,9 +104,9 @@ const trackUntilOptions = [
 
 function TrackPopoverComponent(props: Props) : JSX.Element {
     const {
-        tracker_type,
-        tracker_until,
-        tracker_frame_number,
+        trackerType,
+        trackUntil,
+        trackerFrameNumber,
         handleChange
     } = props;
 
@@ -123,9 +123,9 @@ function TrackPopoverComponent(props: Props) : JSX.Element {
             <Col span={6}>Tracker Type:</Col>
             <Col span={18}>
                 <Select
-                    value={tracker_type || ''}
+                    value={trackerType || ''}
                     style={{width: '100%'}}
-                    onChange={(value: string): void => handleChange(TrackerInputs.tracker_type, value)}
+                    onChange={(value: string): void => handleChange(TrackerInputs.trackerType, value)}
                 >
                     {trackTypeOptions.map(option =>
                         <Select.Option value={option.value} key={option.value}>{option.label}</Select.Option>
@@ -138,8 +138,8 @@ function TrackPopoverComponent(props: Props) : JSX.Element {
             <Col span={18}>
                 <Select
                     style={{width: '100%'}}
-                    value={tracker_until || ''}
-                    onChange={(value:string): void => handleChange(TrackerInputs.tracker_until, value)}
+                    value={trackUntil || ''}
+                    onChange={(value:string): void => handleChange(TrackerInputs.trackUntil, value)}
                 >
                     {trackUntilOptions.map(option =>
                         <Select.Option value={option.value} key={option.value}>{option.label}</Select.Option>
@@ -160,8 +160,8 @@ function TrackPopoverComponent(props: Props) : JSX.Element {
                         style={{width: '100%'}}
                         min={0}
                         placeholder='Select Frame Number'
-                        value={tracker_frame_number}
-                        onChange={(value: number | undefined): void => handleChange(TrackerInputs.tracker_frame_number, value || 0)}
+                        value={trackerFrameNumber}
+                        onChange={(value: number | undefined): void => handleChange(TrackerInputs.trackerFrameNumber, value || 0)}
                     />
                 </Tooltip>
             </Col>
