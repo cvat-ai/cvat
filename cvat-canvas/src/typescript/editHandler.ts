@@ -104,7 +104,6 @@ export class EditHandlerImpl implements EditHandler {
         });
 
         this.editLine = (this.canvas as any).polyline();
-
         if (this.editData.state.shapeType === 'polyline') {
             (this.editLine as any).on('drawpoint', (e: CustomEvent): void => {
                 const circle = (e.target as any).instance.remember('_paintHandler').set.last();
@@ -112,9 +111,11 @@ export class EditHandlerImpl implements EditHandler {
             });
         }
 
+        const strokeColor = this.editedShape.attr('stroke');
         (this.editLine as any).addClass('cvat_canvas_shape_drawing').style({
             'pointer-events': 'none',
             'fill-opacity': 0,
+            'stroke': strokeColor,
         }).attr({
             'data-origin-client-id': this.editData.state.clientID,
         }).on('drawstart drawpoint', (e: CustomEvent): void => {
