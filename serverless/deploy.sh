@@ -31,4 +31,10 @@ nuctl deploy --project-name cvat \
     --path $SCRIPT_DIR/openvino/dextr/nuclio \
     --volume $SCRIPT_DIR/openvino/common:/opt/nuclio/common
 
+nuctl deploy --project-name cvat \
+    --path $SCRIPT_DIR/tensorflow/matterport/mask_rcnn/nuclio
+
+nuctl deploy --project-name cvat \
+    --path $SCRIPT_DIR/tensorflow/faster_rcnn_inception_v2_coco/nuclio
+
 nuctl get function
