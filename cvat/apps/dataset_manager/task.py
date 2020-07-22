@@ -13,6 +13,7 @@ from django.utils import timezone
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.profiler import silk_profile
+from cvat.apps.voxel.commands.sync_labels import SyncLabels
 
 from .annotation import AnnotationIR, AnnotationManager
 from .bindings import TaskData
@@ -661,6 +662,8 @@ def put_job_data(pk, data):
     annotation = JobAnnotation(pk)
     annotation.put(data)
 
+    # Sync with Firestore
+
     return annotation.data
 
 @silk_profile(name="UPDATE job data")
@@ -672,6 +675,13 @@ def patch_job_data(pk, data, action):
         annotation.create(data)
     elif action == PatchAction.UPDATE:
         annotation.update(data)
+        # TODO: move this to execute once per save button click (new action type from client?)
+        # Sync with Firestore
+
+        with transaction.atomic():
+            task_annotation = TaskAnnotation(pk)
+            task_annotation.init_from_db()
+        SyncLabels(pk, None).execute(task_annotation)
     elif action == PatchAction.DELETE:
         annotation.delete(data)
 

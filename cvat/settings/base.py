@@ -429,6 +429,8 @@ LOGGING = {
     },
 }
 
+VOXEL_LABEL_FIRESTORE_COLLECTION = 'labels_dev'
+
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
     LOGGING['loggers']['cvat.client']['handlers'] += ['logstash']

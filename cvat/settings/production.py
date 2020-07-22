@@ -33,3 +33,5 @@ DATABASES = {
         'PASSWORD': os.getenv('CVAT_POSTGRES_PASSWORD', ''),
     }
 }
+
+VOXEL_LABEL_FIRESTORE_COLLECTION = 'labels'
