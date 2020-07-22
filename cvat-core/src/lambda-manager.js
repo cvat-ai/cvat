@@ -72,7 +72,7 @@ class LambdaManager {
     async call(task, model, args) {
         const body = args;
         body.task = task.id;
-        const result = await serverProxy.lambda.call(model.name, body);
+        const result = await serverProxy.lambda.call(model.id, body);
         return result;
     }
 

@@ -28,7 +28,7 @@ class PluginChecker {
             }
             case SupportedPlugins.DEXTR_SEGMENTATION: {
                 const list = await core.lambda.list();
-                return list.map((func: any): boolean => func.name).includes('openvino.dextr');
+                return list.map((func: any): boolean => func.id).includes('openvino.dextr');
             }
             case SupportedPlugins.ANALYTICS: {
                 return isReachable(`${serverHost}/analytics/app/kibana`, 'GET');

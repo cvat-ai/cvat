@@ -89,7 +89,7 @@ async function serverRequest(
 
     const reducedPoints = points.reduce(reducer, []);
     const models = await core.lambda.list();
-    const model = models.filter((func: any): boolean => func.name === 'openvino.dextr')[0];
+    const model = models.filter((func: any): boolean => func.id === 'openvino.dextr')[0];
     const result = await core.lambda.call(taskInstance, model, {
         task: taskInstance,
         frame,
