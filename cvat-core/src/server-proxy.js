@@ -700,11 +700,11 @@
                 }
             }
 
-            async function callLambdaFunction(name, body) {
+            async function callLambdaFunction(funId, body) {
                 const { backendAPI } = config;
 
                 try {
-                    const response = await Axios.post(`${backendAPI}/lambda/functions/${name}`,
+                    const response = await Axios.post(`${backendAPI}/lambda/functions/${funId}`,
                         JSON.stringify(body), {
                             proxy: config.proxy,
                             headers: {
