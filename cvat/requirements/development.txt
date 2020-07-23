@@ -1,7 +1,7 @@
 -r base.txt
 astroid==2.4.2
 isort==4.3.21
-lazy-object-proxy==1.5.0
+lazy-object-proxy==1.5.1
 mccabe==0.6.1
 pylint==2.5.3
 pylint-django==2.2.0
