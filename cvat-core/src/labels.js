@@ -217,6 +217,7 @@
             const object = {
                 name: this.name,
                 attributes: [...this.attributes.map((el) => el.toJSON())],
+                color: this.color,
             };
 
             if (typeof (this.id) !== 'undefined') {

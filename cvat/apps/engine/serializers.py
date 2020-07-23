@@ -39,7 +39,7 @@ class LabelSerializer(serializers.ModelSerializer):
         default=[])
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'attributes')
+        fields = ('id', 'name', 'color', 'attributes')
 
 class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:
