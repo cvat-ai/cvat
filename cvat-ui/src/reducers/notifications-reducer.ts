@@ -157,6 +157,25 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case AuthActionTypes.REGISTER_SUCCESS: {
+            if (action.payload.user.email_verification_required) {
+                return {
+                    ...state,
+                    messages: {
+                        ...state.messages,
+                        auth: {
+                            ...state.messages.auth,
+                            registerDone: `To use your account, you need to confirm the email address. \
+                                 We have sent an email with a confirmation link to ${action.payload.user.email}.`,
+                        },
+                    },
+                };
+            }
+
+            return {
+                ...state,
+            };
+        }
         case TasksActionTypes.EXPORT_DATASET_FAILED: {
             const taskID = action.payload.task.id;
             return {

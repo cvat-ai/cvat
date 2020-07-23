@@ -37,6 +37,7 @@ UI_URL = '{}://{}'.format(UI_SCHEME, UI_HOST)
 
 if UI_PORT and UI_PORT != '80':
     UI_URL += ':{}'.format(UI_PORT)
+LOGIN_URL = '{}/auth/login'.format(UI_URL)
 
 CORS_ORIGIN_WHITELIST = [UI_URL]
 CORS_REPLACE_HTTPS_REFERER = True

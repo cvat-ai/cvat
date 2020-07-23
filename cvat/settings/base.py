@@ -224,13 +224,13 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 # Django Auth
 DJANGO_AUTH_TYPE = 'BASIC'
 DJANGO_AUTH_DEFAULT_GROUPS = []
-LOGIN_URL = 'login'
+LOGIN_URL = '/auth/login'
 LOGIN_REDIRECT_URL = '/'
-AUTH_LOGIN_NOTE = '<p>Have not registered yet? <a href="/auth/register">Register here</a>.</p>'
 
 AUTHENTICATION_BACKENDS = [
     'rules.permissions.ObjectPermissionBackend',
-    'django.contrib.auth.backends.ModelBackend'
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 # https://github.com/pennersr/django-allauth
