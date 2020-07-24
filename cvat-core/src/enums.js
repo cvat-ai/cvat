@@ -105,6 +105,20 @@
     });
 
     /**
+        * Annotation type
+        * @enum {string}
+        * @name source
+        * @memberof module:API.cvat.enums
+        * @property {string} MANUAL 'manual'
+        * @property {string} AUTO 'auto'
+        * @readonly
+    */
+   const source = Object.freeze({
+    MANUAL:'manual',
+    AUTO:'auto',
+});
+
+    /**
         * Logger event types
         * @enum {string}
         * @name LogType
@@ -190,6 +204,7 @@
         * @property {string} CHANGED_LOCK Changed lock
         * @property {string} CHANGED_COLOR Changed color
         * @property {string} CHANGED_HIDDEN Changed hidden
+        * @property {string} CHANGED_SOURCE Changed source
         * @property {string} MERGED_OBJECTS Merged objects
         * @property {string} SPLITTED_TRACK Splitted track
         * @property {string} GROUPED_OBJECTS Grouped objects
@@ -209,6 +224,7 @@
         CHANGED_PINNED: 'Changed pinned',
         CHANGED_COLOR: 'Changed color',
         CHANGED_HIDDEN: 'Changed hidden',
+        CHANGED_SOURCE: 'Changed source',
         MERGED_OBJECTS: 'Merged objects',
         SPLITTED_TRACK: 'Splitted track',
         GROUPED_OBJECTS: 'Grouped objects',
@@ -241,5 +257,6 @@
         LogType,
         HistoryActions,
         colors,
+        source,
     };
 })();

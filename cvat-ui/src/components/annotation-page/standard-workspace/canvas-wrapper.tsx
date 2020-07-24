@@ -324,6 +324,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             .filter((label: any) => label.id === activeLabelID)[0];
         state.occluded = state.occluded || false;
         state.frame = frame;
+        state.source = 'manual';
         const objectState = new cvat.classes.ObjectState(state);
         onCreateAnnotations(jobInstance, frame, [objectState]);
     };
@@ -500,6 +501,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             points,
         } = event.detail;
         state.points = points;
+        state.source = 'manual';
         onUpdateAnnotations([state]);
     };
 

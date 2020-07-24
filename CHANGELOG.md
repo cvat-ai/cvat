@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta] - Unreleased
 ### Added
+- Source type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
+- Source type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
 - Intelligent polygon editing (<https://github.com/opencv/cvat/pull/1921>)
 
 ### Changed
@@ -30,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Image compression` definition mismatch (<https://github.com/opencv/cvat/issues/1900>)
 - Points are dublicated during polygon interpolation sometimes (<https://github.com/opencv/cvat/pull/1892>)
 - When redraw a shape with activated autobordering, previous points are visible (<https://github.com/opencv/cvat/pull/1892>)
+- No mapping between side object element and context menu in some attributes (<https://github.com/opencv/cvat/pull/1923>)
 
 ### Security
 -
