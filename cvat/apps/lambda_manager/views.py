@@ -1,6 +1,7 @@
 import base64
 import json
 from functools import wraps
+from enum import Enum
 
 import django_rq
 import requests
@@ -15,7 +16,17 @@ from cvat.apps.dataset_manager.task import delete_task_data, patch_task_data
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
+
+class LambdaType(Enum):
+    DETECTOR = "detector"
+    INTERACTOR = "interactor"
+    REID = "reid"
+    TRACKER = "tracker"
+    UNKNOWN = "unknown"
+
+    def __str__(self):
+        return self.value
 
 class LambdaGateway:
     NUCLIO_ROOT_URL = '/api/functions'
@@ -74,7 +85,11 @@ class LambdaFunction:
         # ID of the function (e.g. omz.public.yolo-v3)
         self.id = data['metadata']['name']
         # type of the function (e.g. detector, interactor)
-        self.kind = data['metadata']['annotations'].get('type')
+        kind = data['metadata']['annotations'].get('type')
+        try:
+            self.kind = LambdaType(kind)
+        except ValueError:
+            self.kind = LambdaType.UNKNOWN
         # dictionary of labels for the function (e.g. car, person)
         spec = json.loads(data['metadata']['annotations'].get('spec') or '[]')
         labels = [item['name'] for item in spec]
@@ -98,7 +113,7 @@ class LambdaFunction:
     def to_dict(self):
         response = {
             'id': self.id,
-            'kind': self.kind,
+            'kind': str(self.kind),
             'labels': self.labels,
             'state': self.state,
             'description': self.description,
@@ -108,16 +123,50 @@ class LambdaFunction:
 
         return response
 
-    def invoke(self, db_task, frame, quality, mapping, points=None):
-        payload = {
-            'image': self._get_image(db_task, frame, quality),
-            'points': points,
-        }
+    def invoke(self, db_task, data):
+        try:
+            payload = {}
+            threshold = data.get("threshold")
+            if threshold:
+                payload.update({
+                    "threshold": data.get("threshold"),
+                })
+            quality = data.get("quality")
+            mapping = data.get("mapping")
+            if self.kind == LambdaType.DETECTOR:
+                payload.update({
+                    "image": self._get_image(db_task, data["frame"], quality)
+                })
+            elif self.kind == LambdaType.INTERACTOR:
+                payload.update({
+                    "image": self._get_image(db_task, data["frame"], quality),
+                    "points": data["points"],
+                })
+            elif self.kind == LambdaType.REID:
+                payload.update({
+                    "images": [
+                        self._get_image(db_task, data["frame0"], quality),
+                        self._get_image(db_task, data["frame1"], quality),
+                    ],
+                    "max_distance": data.get("max_distance")
+                })
+            else:
+                raise ValidationError(
+                    '`{}` lambda function has incorrect type: {}'
+                    .format(self.id, self.kind),
+                    code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except KeyError as err:
+            raise ValidationError(
+                "`{}` lambda function was called without mandatory argument: {}"
+                .format(self.id, str(err)),
+                code=status.HTTP_400_BAD_REQUEST)
 
         response = self.gateway.invoke(self, payload)
-        if mapping:
-            for item in response:
-                item['label'] = mapping.get(item['label'], item['label'])
+        if self.kind == LambdaType.DETECTOR:
+            if mapping:
+                for item in response:
+                    item["label"] = mapping.get(item["label"])
+                response = [item for item in response if item["label"]]
 
         return response
 
@@ -134,6 +183,7 @@ class LambdaFunction:
 
         frame_provider = FrameProvider(db_task.data)
         image = frame_provider.get_frame(frame, quality=quality)
+
         return base64.b64encode(image[0].getvalue()).decode('utf-8')
 
 
@@ -283,35 +333,39 @@ class LambdaJob:
         results = Results(db_task.id)
 
         for frame in range(db_task.data.size):
-            annotations = function.invoke(db_task, frame, quality, mapping)
-            job = rq.get_current_job()
-            # If the job has been deleted, get_status will return None. Thus it will
-            # exist the loop.
-            if job.get_status() is None:
-                break
-            job.meta["progress"] = int((frame + 1) / db_task.data.size * 100)
-            job.save_meta()
+            if function.kind == LambdaType.DETECTOR:
+                annotations = function.invoke(db_task, data={
+                    "frame": frame, "quality": quality, "mapping": mapping})
+                job = rq.get_current_job()
+                # If the job has been deleted, get_status will return None. Thus it will
+                # exist the loop.
+                if job.get_status() is None:
+                    break
+                job.meta["progress"] = int((frame + 1) / db_task.data.size * 100)
+                job.save_meta()
 
-            for anno in annotations:
-                label_id = labels.get(anno["label"])
-                if label_id is not None:
-                    results.append_shape({
-                        "frame": frame,
-                        "label_id": label_id,
-                        "type": anno["type"],
-                        "occluded": False,
-                        "points": anno["points"],
-                        "z_order": 0,
-                        "group": None,
-                        "attributes": [],
-                        "source": "auto"
-                    })
+                for anno in annotations:
+                    label_id = labels.get(anno["label"])
+                    if label_id is not None:
+                        results.append_shape({
+                            "frame": frame,
+                            "label_id": label_id,
+                            "type": anno["type"],
+                            "occluded": False,
+                            "points": anno["points"],
+                            "z_order": 0,
+                            "group": None,
+                            "attributes": [],
+                            "source": "auto"
+                        })
 
-                # Accumulate data during 100 frames before sumbitting results.
-                # It is optimization to make fewer calls to our server. Also
-                # it isn't possible to keep all results in memory.
-                if frame % 100 == 0:
-                    results.submit()
+                    # Accumulate data during 100 frames before sumbitting results.
+                    # It is optimization to make fewer calls to our server. Also
+                    # it isn't possible to keep all results in memory.
+                    if frame % 100 == 0:
+                        results.submit()
+            elif function.kind == LambdaType.REID:
+                pass
 
             results.submit()
 
@@ -393,7 +447,7 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
-        return lambda_func.invoke(db_task, frame, quality, mapping, points)
+        return lambda_func.invoke(db_task, request.data)
 
 class RequestViewSet(viewsets.ViewSet):
     def get_permissions(self):

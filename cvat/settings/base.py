@@ -243,7 +243,7 @@ NUCLIO = {
     'SCHEME': 'http',
     'HOST': 'localhost',
     'PORT': 8070,
-    'DEFAULT_TIMEOUT': 60
+    'DEFAULT_TIMEOUT': 120
 }
 
 RQ_SHOW_ADMIN_LINK = True
