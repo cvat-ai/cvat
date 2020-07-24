@@ -303,7 +303,8 @@ class LambdaJob:
                         "points": anno["points"],
                         "z_order": 0,
                         "group": None,
-                        "attributes": []
+                        "attributes": [],
+                        "source": "auto"
                     })
 
                 # Accumulate data during 100 frames before sumbitting results.
