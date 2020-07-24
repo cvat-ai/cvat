@@ -285,6 +285,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             else:
                 slogger.task[instance.id].info("{} label was updated"
                     .format(db_label.name))
+                db_label.color = label.get('color', db_label.color)
+                db_label.save()
             for attr in attributes:
                 (db_attr, created) = models.AttributeSpec.objects.get_or_create(
                     label=db_label, name=attr['name'], defaults=attr)

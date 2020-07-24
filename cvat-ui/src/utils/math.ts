@@ -9,3 +9,13 @@ export function shift<T>(array: Array<T>, k: number): Array<T> {
     }
     return array;
 }
+
+export function funhash(s: string): number {
+    let h = 0xdeadbeef;
+    for (let i = 0; i < s.length; i++) {
+        // eslint-disable-next-line no-bitwise
+        h = Math.imul(h ^ s.charCodeAt(i), 2654435761);
+    }
+    // eslint-disable-next-line no-bitwise
+    return (h ^ h >>> 16) >>> 0;
+}

@@ -57,6 +57,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                 onSubmit({
                     name: formValues.labelName,
                     id: label ? label.id : idGenerator(),
+                    color: label ? label.color : '#ff0000',
                     attributes: formValues.keys.map((key: number, index: number): Attribute => {
                         let attrValues = formValues.values[key];
                         if (!Array.isArray(attrValues)) {
@@ -480,6 +481,14 @@ class LabelForm extends React.PureComponent<Props, {}> {
                 </Tooltip>
             </Col>
         );
+    }
+
+    private renderChangeColorButton(): JSX.Element {
+
+        return(
+            <div>
+            </div>
+        )
     }
 
     public render(): JSX.Element {

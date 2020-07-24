@@ -12,6 +12,7 @@
         AttributeType,
         colors,
     } = require('./enums');
+    const { funhash } = require('./common');
     const { ArgumentError } = require('./exceptions');
 
     /**
@@ -150,8 +151,8 @@
                 }
             }
 
-            if (typeof (data.id) !== 'undefined') {
-                data.color = colors[data.id % colors.length];
+            if (typeof (data.name) !== 'undefined') {
+                data.color = colors[funhash(data.name) % colors.length];
             }
             data.attributes = [];
 
@@ -193,10 +194,10 @@
                 color: {
                     get: () => data.color,
                     set: (color) => {
-                        if (colors.includes(color)) {
+                        if (typeof color === 'string' && color.match(/#[0-9a-f]{6}/)) {
                             data.color = color;
                         } else {
-                            throw new ArgumentError('Trying to set unknown color');
+                            throw new ArgumentError('Trying to set wrong color format');
                         }
                     },
                 },
