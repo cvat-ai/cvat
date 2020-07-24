@@ -3,6 +3,8 @@
 * SPDX-License-Identifier: MIT
 */
 
+const { Source } = require('./enums');
+
 /* global
     require:false
 */
@@ -39,7 +41,7 @@
                 color: null,
                 hidden: null,
                 pinned: null,
-                source: null,
+                source: Source.MANUAL,
                 keyframes: serialized.keyframes,
                 group: serialized.group,
                 updated: serialized.updated,
@@ -69,7 +71,6 @@
                     this.lock = false;
                     this.color = false;
                     this.hidden = false;
-                    this.source = false;
 
                     return reset;
                 },
@@ -114,16 +115,12 @@
                 source: {
                     /**
                         * @name source
-                        * @type {module:API.cvat.enums.source}
+                        * @type {module:API.cvat.enums.Source}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @readonly
                         * @instance
                     */
                     get: () => data.source,
-                    set: (source) => {
-                        data.updateFlags.source = true;
-                        data.source = source;
-                    },
                 },
                 clientID: {
                     /**
@@ -359,8 +356,10 @@
 
             this.label = serialized.label;
             this.lock = serialized.lock;
-            this.source = serialized.source;
 
+            if ([Source.MANUAL, Source.AUTO].includes(serialized.source)) {
+                data.source = serialized.source;
+            }
             if (typeof (serialized.zOrder) === 'number') {
                 this.zOrder = serialized.zOrder;
             }

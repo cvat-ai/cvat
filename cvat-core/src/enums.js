@@ -107,16 +107,16 @@
     /**
         * Annotation type
         * @enum {string}
-        * @name source
+        * @name Source
         * @memberof module:API.cvat.enums
         * @property {string} MANUAL 'manual'
         * @property {string} AUTO 'auto'
         * @readonly
     */
-   const source = Object.freeze({
-    MANUAL:'manual',
-    AUTO:'auto',
-});
+    const Source = Object.freeze({
+        MANUAL:'manual',
+        AUTO:'auto',
+    });
 
     /**
         * Logger event types
@@ -257,6 +257,6 @@
         LogType,
         HistoryActions,
         colors,
-        source,
+        Source,
     };
 })();
