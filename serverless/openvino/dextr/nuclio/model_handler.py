@@ -4,19 +4,15 @@
 
 import cv2
 import numpy as np
-from openvino.inference_engine import IECore
+import os
+from model_loader import ModelLoader
 
-class DEXTR_HANDLER:
+class ModelHandler:
     def __init__(self):
-        self._exec_network = None
-        self._input_blob = None
-        self._output_blob = None
-        self._plugin = IECore()
-        self._network = self._plugin.read_network('dextr.xml', 'dextr.bin')
-        self._input_blob = next(iter(self._network.inputs))
-        self._output_blob = next(iter(self._network.outputs))
-        self._exec_network = self._plugin.load_network(self._network,
-            "CPU", num_requests=2)
+        base_dir = os.environ.get("MODEL_PATH", "/opt/nuclio")
+        model_xml = os.path.join(base_dir, "dextr.xml")
+        model_bin = os.path.join(base_dir, "dextr.bin")
+        self.model = ModelLoader(model_xml, model_bin)
 
     # Input:
     #   image: PIL image
@@ -41,6 +37,10 @@ class DEXTR_HANDLER:
         numpy_cropped = np.array(image.crop(bounding_box))
         resized = cv2.resize(numpy_cropped, (DEXTR_SIZE, DEXTR_SIZE),
             interpolation = cv2.INTER_CUBIC).astype(np.float32)
+        if len(resized.shape) == 2: # support grayscale images
+            resized = cv2.cvtColor(resized, cv2.COLOR_GRAY2RGB)
+        elif resized.shape[2] == 4: # remove alpha channel
+            resized = resized[:, :, :3]
 
         # Make a heatmap
         points = points - [min(points[:, 0]), min(points[:, 1])] + [DEXTR_PADDING, DEXTR_PADDING]
@@ -57,7 +57,7 @@ class DEXTR_HANDLER:
         input_dextr = np.concatenate((resized, heatmap[:, :, np.newaxis].astype(resized.dtype)), axis=2)
         input_dextr = input_dextr.transpose((2,0,1))
 
-        pred = self._exec_network.infer(inputs={self._input_blob: input_dextr[np.newaxis, ...]})[self._output_blob][0, 0, :, :]
+        pred = self.model.infer(input_dextr[np.newaxis, ...], False)[0, 0, :, :]
         pred = cv2.resize(pred, tuple(reversed(numpy_cropped.shape[:2])), interpolation = cv2.INTER_CUBIC)
         result = np.zeros(numpy_image.shape[:2])
         result[bounding_box[1]:bounding_box[1] + pred.shape[0], bounding_box[0]:bounding_box[0] + pred.shape[1]] = pred > DEXTR_TRESHOLD

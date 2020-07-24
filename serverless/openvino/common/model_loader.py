@@ -41,18 +41,20 @@ class ModelLoader:
         input_type = network.inputs[self._input_blob_name]
         self._input_layout = input_type if isinstance(input_type, list) else input_type.shape
 
-    def infer(self, image):
+    def infer(self, image, preprocessing=True):
         image = np.array(image)
         _, _, h, w = self._input_layout
-        in_frame = image if image.shape[:-1] == (h, w) else cv2.resize(image, (w, h))
-        if len(in_frame.shape) < 3: # grayscale image
-            in_frame = in_frame[:, :, np.newaxis]
-        else:
-            if in_frame.shape[2] == 4: # the image has alpha channel
-                in_frame = in_frame[:, :, :3]
+        if preprocessing:
+            image = image if image.shape[:-1] == (h, w) else cv2.resize(image, (w, h))
+            if len(image.shape) < 3: # grayscale image
+                image = image[:, :, np.newaxis]
+            else:
+                if image.shape[2] == 4: # the image has alpha channel
+                    image = image[:, :, :3]
 
-        in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
-        inputs = {self._input_blob_name: in_frame}
+            image = image.transpose((2, 0, 1))  # Change data layout from HWC to CHW
+
+        inputs = {self._input_blob_name: image}
         if self._input_info_name:
             inputs[self._input_info_name] = [h, w, 1]
 
