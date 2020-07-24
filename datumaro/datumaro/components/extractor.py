@@ -378,7 +378,9 @@ class _Shape(Annotation):
             id=None, attributes=None, group=None):
         super().__init__(id=id, type=type,
             attributes=attributes, group=group)
-        self._points = points
+        if points is None:
+            points = []
+        self._points = list(points)
 
         if label is not None:
             label = int(label)

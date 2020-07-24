@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
@@ -124,7 +124,6 @@ function ItemAttributeComponent(props: Props): JSX.Element {
 
     if (attrInputType === 'number') {
         const [min, max, step] = attrValues.map((value: string): number => +value);
-
         return (
             <>
                 <Col span={8} style={attrNameStyle}>
@@ -153,6 +152,25 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         );
     }
 
+    const ref = useRef<Input>(null);
+    const [selection, setSelection] = useState<{
+        start: number | null;
+        end: number | null;
+        direction: 'forward' | 'backward' | 'none' | null;
+    }>({
+        start: null,
+        end: null,
+        direction: null,
+    });
+
+    useEffect(() => {
+        if (ref.current && ref.current.input) {
+            ref.current.input.selectionStart = selection.start;
+            ref.current.input.selectionEnd = selection.end;
+            ref.current.input.selectionDirection = selection.direction;
+        }
+    }, [attrValue]);
+
     return (
         <>
             <Col span={8} style={attrNameStyle}>
@@ -162,11 +180,20 @@ function ItemAttributeComponent(props: Props): JSX.Element {
             </Col>
             <Col span={16}>
                 <Input
+                    ref={ref}
                     size='small'
                     onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
+                        if (ref.current && ref.current.input) {
+                            setSelection({
+                                start: ref.current.input.selectionStart,
+                                end: ref.current.input.selectionEnd,
+                                direction: ref.current.input.selectionDirection,
+                            });
+                        }
+
                         changeAttribute(attrID, event.target.value);
                     }}
-                    defaultValue={attrValue}
+                    value={attrValue}
                     className='cvat-object-item-text-attribute'
                 />
             </Col>

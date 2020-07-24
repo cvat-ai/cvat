@@ -5,6 +5,7 @@
 
 import codecs
 from collections import OrderedDict
+import hashlib
 import logging as log
 import os
 import os.path as osp
@@ -180,15 +181,18 @@ class TfDetectionApiConverter(Converter):
 
         features.update({
             'image/encoded': bytes_feature(b''),
-            'image/format': bytes_feature(b'')
+            'image/format': bytes_feature(b''),
+            'image/key/sha256': bytes_feature(b''),
         })
         if self._save_images:
             if item.has_image and item.image.has_data:
                 buffer, fmt = self._save_image(item, filename)
+                key = hashlib.sha256(buffer).hexdigest()
 
                 features.update({
                     'image/encoded': bytes_feature(buffer),
                     'image/format': bytes_feature(fmt.encode('utf-8')),
+                    'image/key/sha256': bytes_feature(key.encode('utf8')),
                 })
             else:
                 log.warning("Item '%s' has no image" % item.id)
