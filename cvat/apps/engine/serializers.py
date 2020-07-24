@@ -409,6 +409,7 @@ class AnnotationSerializer(serializers.Serializer):
     frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(min_value=0, allow_null=True)
+    source = serializers.CharField(default = 'manual')
 
 class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,

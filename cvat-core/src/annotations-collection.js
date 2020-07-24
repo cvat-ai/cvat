@@ -402,6 +402,7 @@
                 frame: Math.min.apply(null, Object.keys(keyframes).map((frame) => +frame)),
                 shapes: Object.values(keyframes),
                 group: 0,
+                source: objectStates[0].source,
                 label_id: label.id,
                 attributes: Object.keys(objectStates[0].attributes)
                     .reduce((accumulator, attrID) => {
@@ -763,6 +764,7 @@
                             points: [...state.points],
                             type: state.shapeType,
                             z_order: state.zOrder,
+                            source: state.source,
                         });
                     } else if (state.objectType === 'track') {
                         constructed.tracks.push({
@@ -770,6 +772,7 @@
                                 .filter((attr) => !labelAttributes[attr.spec_id].mutable),
                             frame: state.frame,
                             group: 0,
+                            source: state.source,
                             label_id: state.label.id,
                             shapes: [{
                                 attributes: attributes
