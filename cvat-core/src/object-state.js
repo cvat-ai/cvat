@@ -22,7 +22,7 @@
             * </br> Necessary fields: objectType, shapeType, frame, updated, group
             * </br> Optional fields: keyframes, clientID, serverID
             * </br> Optional fields which can be set later: points, zOrder, outside,
-            * occluded, hidden, attributes, lock, label, color, keyframe
+            * occluded, hidden, attributes, lock, label, color, keyframe, source
         */
         constructor(serialized) {
             const data = {
@@ -39,6 +39,7 @@
                 color: null,
                 hidden: null,
                 pinned: null,
+                source: null,
                 keyframes: serialized.keyframes,
                 group: serialized.group,
                 updated: serialized.updated,
@@ -68,6 +69,7 @@
                     this.lock = false;
                     this.color = false;
                     this.hidden = false;
+                    this.source = false;
 
                     return reset;
                 },
@@ -108,6 +110,20 @@
                         * @instance
                     */
                     get: () => data.shapeType,
+                },
+                source: {
+                    /**
+                        * @name source
+                        * @type {module:API.cvat.enums.source}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @readonly
+                        * @instance
+                    */
+                    get: () => data.source,
+                    set: (source) => {
+                        data.updateFlags.source = true;
+                        data.source = source;
+                    },
                 },
                 clientID: {
                     /**
@@ -343,6 +359,7 @@
 
             this.label = serialized.label;
             this.lock = serialized.lock;
+            this.source = serialized.source;
 
             if (typeof (serialized.zOrder) === 'number') {
                 this.zOrder = serialized.zOrder;
