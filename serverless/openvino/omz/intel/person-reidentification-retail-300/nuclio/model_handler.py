@@ -26,7 +26,7 @@ class ModelHandler:
         results = [-1] * len(boxes0)
         for idx0, idx1 in zip(row_idx, col_idx):
             if similarity_matrix[idx0, idx1] <= threshold:
-                results[idx0] = idx1
+                results[idx0] = int(idx1)
 
         return results
 
@@ -58,14 +58,14 @@ class ModelHandler:
 
         matrix = numpy.full([len(boxes0), len(boxes1)], DISTANCE_INF, dtype=float)
         for row, box0 in enumerate(boxes0):
-            h0, w0 = image0.shape[:2]
+            w0, h0 = image0.size
             xtl0, xbr0, ytl0, ybr0 = (
                 _int(box0["points"][0], w0), _int(box0["points"][2], w0),
                 _int(box0["points"][1], h0), _int(box0["points"][3], h0)
             )
 
             for col, box1 in enumerate(boxes1):
-                h1, w1 = image1.shape[:2]
+                w1, h1 = image1.size
                 xtl1, xbr1, ytl1, ybr1 = (
                     _int(box1["points"][0], w1), _int(box1["points"][2], w1),
                     _int(box1["points"][1], h1), _int(box1["points"][3], h1)
@@ -74,8 +74,8 @@ class ModelHandler:
                 if not self._match_boxes(box0, box1, distance):
                     continue
 
-                crop0 = image0[ytl0:ybr0, xtl0:xbr0]
-                crop1 = image1[ytl1:ybr1, xtl1:xbr1]
+                crop0 = image0.crop((xtl0, ytl0, xbr0, ybr0))
+                crop1 = image1.crop((xtl1, ytl1, xbr1, ybr1))
                 matrix[row][col] = self._match_crops(crop0, crop1)
 
         return matrix

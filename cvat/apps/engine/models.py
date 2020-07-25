@@ -302,7 +302,7 @@ class ShapeType(str, Enum):
     def __str__(self):
         return self.value
 
-class source(str, Enum):
+class SourceType(str, Enum):
     AUTO = 'auto'
     MANUAL = 'manual'
 
@@ -319,7 +319,8 @@ class Annotation(models.Model):
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     group = models.PositiveIntegerField(null=True)
-    source = models.CharField(max_length=16, choices=source.choices(), default="manual", null=True)
+    source = models.CharField(max_length=16, choices=SourceType.choices(),
+        default=str(SourceType.MANUAL), null=True)
 
     class Meta:
         abstract = True

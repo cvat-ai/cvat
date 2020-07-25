@@ -12,11 +12,12 @@ from rest_framework import status, viewsets
 from rest_framework.response import Response
 
 from cvat.apps.authentication import auth
-from cvat.apps.dataset_manager.task import delete_task_data, patch_task_data
+import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from rest_framework.permissions import IsAuthenticated
+from cvat.apps.engine.models import ShapeType, SourceType
 
 class LambdaType(Enum):
     DETECTOR = "detector"
@@ -129,7 +130,7 @@ class LambdaFunction:
             threshold = data.get("threshold")
             if threshold:
                 payload.update({
-                    "threshold": data.get("threshold"),
+                    "threshold": threshold,
                 })
             quality = data.get("quality")
             mapping = data.get("mapping")
@@ -144,12 +145,16 @@ class LambdaFunction:
                 })
             elif self.kind == LambdaType.REID:
                 payload.update({
-                    "images": [
-                        self._get_image(db_task, data["frame0"], quality),
-                        self._get_image(db_task, data["frame1"], quality),
-                    ],
-                    "max_distance": data.get("max_distance")
+                    "image0": self._get_image(db_task, data["frame0"], quality),
+                    "image1": self._get_image(db_task, data["frame1"], quality),
+                    "boxes0": data["boxes0"],
+                    "boxes1": data["boxes1"]
                 })
+                max_distance = data.get("max_distance")
+                if max_distance:
+                    payload.update({
+                        "max_distance": max_distance
+                    })
             else:
                 raise ValidationError(
                     '`{}` lambda function has incorrect type: {}'
@@ -299,14 +304,7 @@ class LambdaJob:
         self.job.delete()
 
     @staticmethod
-    def __call__(function, threshold, task, quality, cleanup, mapping):
-        # TODO: need logging
-        db_task = TaskModel.objects.get(pk=task)
-        if cleanup:
-            delete_task_data(db_task.id)
-        db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
-        labels = {db_label.name:db_label.id for db_label in db_labels}
-
+    def _call_detector(function, db_task, labels, quality, threshold, mapping):
         class Results:
             def __init__(self, task_id):
                 self.task_id = task_id
@@ -319,7 +317,7 @@ class LambdaJob:
                 if not self.is_empty():
                     serializer = LabeledDataSerializer(data=self.data)
                     if serializer.is_valid(raise_exception=True):
-                        patch_task_data(self.task_id, serializer.data, "create")
+                        dm.task.patch_task_data(self.task_id, serializer.data, "create")
                     self.reset()
 
             def is_empty(self):
@@ -333,41 +331,143 @@ class LambdaJob:
         results = Results(db_task.id)
 
         for frame in range(db_task.data.size):
-            if function.kind == LambdaType.DETECTOR:
-                annotations = function.invoke(db_task, data={
-                    "frame": frame, "quality": quality, "mapping": mapping})
-                job = rq.get_current_job()
-                # If the job has been deleted, get_status will return None. Thus it will
-                # exist the loop.
-                if job.get_status() is None:
-                    break
-                job.meta["progress"] = int((frame + 1) / db_task.data.size * 100)
-                job.save_meta()
+            annotations = function.invoke(db_task, data={
+                "frame": frame, "quality": quality, "mapping": mapping,
+                "threshold": threshold})
+            progress = (frame + 1) / db_task.data.size
+            if not LambdaJob._update_progress(progress):
+                break
 
-                for anno in annotations:
-                    label_id = labels.get(anno["label"])
-                    if label_id is not None:
-                        results.append_shape({
-                            "frame": frame,
-                            "label_id": label_id,
-                            "type": anno["type"],
-                            "occluded": False,
-                            "points": anno["points"],
-                            "z_order": 0,
-                            "group": None,
-                            "attributes": [],
-                            "source": "auto"
-                        })
+            for anno in annotations:
+                label_id = labels.get(anno["label"])
+                if label_id is not None:
+                    results.append_shape({
+                        "frame": frame,
+                        "label_id": label_id,
+                        "type": anno["type"],
+                        "occluded": False,
+                        "points": anno["points"],
+                        "z_order": 0,
+                        "group": None,
+                        "attributes": [],
+                        "source": "auto"
+                    })
 
-                    # Accumulate data during 100 frames before sumbitting results.
-                    # It is optimization to make fewer calls to our server. Also
-                    # it isn't possible to keep all results in memory.
-                    if frame % 100 == 0:
-                        results.submit()
-            elif function.kind == LambdaType.REID:
-                pass
+                # Accumulate data during 100 frames before sumbitting results.
+                # It is optimization to make fewer calls to our server. Also
+                # it isn't possible to keep all results in memory.
+                if frame % 100 == 0:
+                    results.submit()
 
-            results.submit()
+        results.submit()
+
+    @staticmethod
+    # progress is in [0, 1] range
+    def _update_progress(progress):
+        job = rq.get_current_job()
+        # If the job has been deleted, get_status will return None. Thus it will
+        # exist the loop.
+        job.meta["progress"] = int(progress * 100)
+        job.save_meta()
+
+        return job.get_status()
+
+
+    @staticmethod
+    def _call_reid(function, db_task, quality, threshold, max_distance):
+        data = dm.task.get_task_data(db_task.id)
+        boxes_by_frame = [[] for _ in range(db_task.data.size)]
+        shapes_without_boxes = []
+        for shape in data["shapes"]:
+            if shape["type"] == str(ShapeType.RECTANGLE):
+                boxes_by_frame[shape["frame"]].append(shape)
+            else:
+                shapes_without_boxes.append(shape)
+
+        paths = {}
+        for frame in range(db_task.data.size - 1):
+            boxes0 = boxes_by_frame[frame]
+            for box in boxes0:
+                if "path_id" not in box:
+                    path_id = len(paths)
+                    paths[path_id] = [box]
+                    box["path_id"] = path_id
+
+            boxes1 = boxes_by_frame[frame + 1]
+            if boxes0 and boxes1:
+                matching = function.invoke(db_task, data={
+                    "frame0": frame, "frame1": frame + 1, "quality": quality,
+                    "boxes0": boxes0, "boxes1": boxes1, "threshold": threshold,
+                    "max_distance": max_distance})
+
+                for idx0, idx1 in enumerate(matching):
+                    if idx1 >= 0:
+                        path_id = boxes0[idx0]["path_id"]
+                        boxes1[idx1]["path_id"] = path_id
+                        paths[path_id].append(boxes1[idx1])
+
+            progress = (frame + 2) / db_task.data.size
+            if not LambdaJob._update_progress(progress):
+                break
+
+
+        for box in boxes_by_frame[db_task.data.size - 1]:
+            if "path_id" not in box:
+                path_id = len(paths)
+                paths[path_id] = [box]
+                box["path_id"] = path_id
+
+        tracks = []
+        for path_id in paths:
+            box0 = paths[path_id][0]
+            tracks.append({
+                "label_id": box0["label_id"],
+                "group": None,
+                "attributes": [],
+                "frame": box0["frame"],
+                "shapes": paths[path_id],
+                "source": str(SourceType.AUTO)
+            })
+
+            for box in tracks[-1]["shapes"]:
+                box.pop("id", None)
+                box.pop("path_id")
+                box.pop("group")
+                box.pop("label_id")
+                box.pop("source")
+                box["outside"] = False
+                box["attributes"] = []
+
+        for track in tracks:
+            if track["shapes"][-1]["frame"] != db_task.data.size - 1:
+                box = track["shapes"][-1].copy()
+                box["outside"] = True
+                box["frame"] += 1
+                track["shapes"].append(box)
+
+        if tracks:
+            data["shapes"] = shapes_without_boxes
+            data["tracks"].extend(tracks)
+
+            serializer = LabeledDataSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                dm.task.put_task_data(db_task.id, serializer.data)
+
+    @staticmethod
+    def __call__(function, task, quality, cleanup, **kwargs):
+        # TODO: need logging
+        db_task = TaskModel.objects.get(pk=task)
+        if cleanup:
+            dm.task.delete_task_data(db_task.id)
+        db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
+        labels = {db_label.name:db_label.id for db_label in db_labels}
+
+        if function.kind == LambdaType.DETECTOR:
+            LambdaJob._call_detector(function, db_task, labels, quality,
+                kwargs.get("threshold"), kwargs.get("mapping"))
+        elif function.kind == LambdaType.REID:
+            LambdaJob._call_reid(function, db_task, quality,
+                kwargs.get("threshold"), kwargs.get("max_distance"))
 
 
 def return_response(success_code=status.HTTP_200_OK):
@@ -425,16 +525,8 @@ class FunctionViewSet(viewsets.ViewSet):
     @return_response()
     def call(self, request, func_id):
         try:
-            # Mandatory parameters
-            task = request.data['task']
-            frame = request.data['frame']
-
-            # Optional parameters
-            points = request.data.get('points')
-            quality = request.data.get('quality')
-            mapping = request.data.get('mapping')
-
-            db_task = TaskModel.objects.get(pk=task)
+            task_id = request.data['task']
+            db_task = TaskModel.objects.get(pk=task_id)
             # Check that the user has enough permissions to read
             # data from the task.
             self.check_object_permissions(self.request, db_task)
