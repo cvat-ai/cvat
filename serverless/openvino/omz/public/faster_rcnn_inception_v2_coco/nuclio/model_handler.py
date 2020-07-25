@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import os
-import numpy as np
 from model_loader import ModelLoader
 
 class ModelHandler:
