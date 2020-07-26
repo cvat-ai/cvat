@@ -677,11 +677,10 @@ def patch_job_data(pk, data, action):
         annotation.update(data)
         # TODO: move this to execute once per save button click (new action type from client?)
         # Sync with Firestore
-
-        with transaction.atomic():
-            task_annotation = TaskAnnotation(pk)
-            task_annotation.init_from_db()
-        SyncLabels(pk, None).execute(task_annotation)
+        # with transaction.atomic():
+        #     task_annotation = TaskAnnotation(pk)
+        #     task_annotation.init_from_db()
+        # SyncLabels(pk, None).execute(task_annotation)
     elif action == PatchAction.DELETE:
         annotation.delete(data)
 

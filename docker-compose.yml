@@ -52,7 +52,8 @@ services:
       DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
       CVAT_REDIS_HOST: 'cvat_redis'
-      CVAT_POSTGRES_HOST: 'cvat_db'
+      CVAT_POSTGRES_HOST: '10.41.0.3'
+      CVAT_POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
