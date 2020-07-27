@@ -550,30 +550,40 @@
         _saveOccluded(occluded, frame) {
             const undoOccluded = this.occluded;
             const redoOccluded = occluded;
+            const undoSource = this.source;
+            const redoSource = Source.MANUAL;
 
             this.history.do(HistoryActions.CHANGED_OCCLUDED, () => {
                 this.occluded = undoOccluded;
+                this.source = undoSource;
                 this.updated = Date.now();
             }, () => {
                 this.occluded = redoOccluded;
+                this.source = redoSource;
                 this.updated = Date.now();
             }, [this.clientID], frame);
 
+            this.source = Source.MANUAL;
             this.occluded = occluded;
         }
 
         _saveZOrder(zOrder, frame) {
             const undoZOrder = this.zOrder;
             const redoZOrder = zOrder;
+            const undoSource = this.source;
+            const redoSource = Source.MANUAL;
 
             this.history.do(HistoryActions.CHANGED_ZORDER, () => {
                 this.zOrder = undoZOrder;
+                this.source = undoSource;
                 this.updated = Date.now();
             }, () => {
                 this.zOrder = redoZOrder;
+                this.source = redoSource;
                 this.updated = Date.now();
             }, [this.clientID], frame);
 
+            this.source = Source.MANUAL;
             this.zOrder = zOrder;
         }
 
