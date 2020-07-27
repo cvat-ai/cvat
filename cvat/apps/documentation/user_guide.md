@@ -32,6 +32,7 @@
     - [Linear interpolation with one point](#linear-interpolation-with-one-point)
   - [Annotation with cuboids](#annotation-with-cuboids)
   - [Annotation with tags](#annotation-with-tags)
+  - [Track mode with polygons](#track-mode-with-polygons)
   - [Automatic annotation](#automatic-annotation)
   - [Shape grouping](#shape-grouping)
   - [Filter](#filter)
@@ -1294,7 +1295,7 @@ Polygons in the track mode allow you to mark moving objects more accurately othe
     ![](static/documentation/images/image184.jpg)
 
 1. Create a polygon the same way as in the case of [Annotation with polygons](#annotation-with-polygons).
- Press N to complete the polygon.
+ Press ``N`` to complete the polygon.
 
 1. Pay attention to the fact that the created polygon has a starting point and a direction,
  these elements are important for annotation of the following frames.
@@ -1302,7 +1303,7 @@ Polygons in the track mode allow you to mark moving objects more accurately othe
 1. After going a few frames forward press ``Shift+N``, the old polygon will disappear and you can create a new polygon.
  The new starting point should match the starting point of the previously created polygon
  (in this example, the top of the left mirror). The direction must also match (in this example, clockwise).
-  After creating the polygon, press N and the intermediate frames will be interpolated automatically.
+  After creating the polygon, press ``N`` and the intermediate frames will be interpolated automatically.
 
     ![](static/documentation/images/image185_detrac.jpg)
 
