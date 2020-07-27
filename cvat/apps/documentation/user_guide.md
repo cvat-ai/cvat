@@ -1508,8 +1508,8 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 |                                | _Operations with objects_                                                       |
 | ``Ctrl``                       | Switch automatic bordering for polygons and polylines during drawing/editing    |
 | Hold ``Ctrl``                  | When the shape is active and fix it                                             |
-| ``Ctrl+Click`` on point | Deleting a point (used when hovering over a point of polygon, polyline, points) |
-| ``Shift+Click`` on point| Editing a shape (used when hovering over a point of polygon, polyline or points)|
+| ``Ctrl+Click`` on point        | Deleting a point (used when hovering over a point of polygon, polyline, points) |
+| ``Shift+Click`` on point       | Editing a shape (used when hovering over a point of polygon, polyline or points)|
 | ``Right-Click`` on shape       | Display of an object element from objects sidebar                               |
 | ``T+L``                        | Change locked state for all objects in the sidebar                              |
 | ``L``                          | Change locked state for an active object                                        |
