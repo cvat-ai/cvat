@@ -37,6 +37,8 @@ class TrackManagerTest(TestCase):
         interpolated = TrackManager.get_interpolated_shapes(track, 0, 2)
 
         self.assertEqual(len(interpolated), 3)
+        self.assertTrue(interpolated[0]["keyframe"])
+        self.assertFalse(interpolated[1]["keyframe"])
 
     def test_polygon_interpolation(self):
         track = {
@@ -67,6 +69,8 @@ class TrackManagerTest(TestCase):
         interpolated = TrackManager.get_interpolated_shapes(track, 0, 2)
 
         self.assertEqual(len(interpolated), 3)
+        self.assertTrue(interpolated[0]["keyframe"])
+        self.assertFalse(interpolated[1]["keyframe"])
 
     def test_bbox_interpolation(self):
         track = {
@@ -97,6 +101,8 @@ class TrackManagerTest(TestCase):
         interpolated = TrackManager.get_interpolated_shapes(track, 0, 2)
 
         self.assertEqual(len(interpolated), 3)
+        self.assertTrue(interpolated[0]["keyframe"])
+        self.assertFalse(interpolated[1]["keyframe"])
 
     def test_line_interpolation(self):
         track = {
@@ -127,3 +133,5 @@ class TrackManagerTest(TestCase):
         interpolated = TrackManager.get_interpolated_shapes(track, 0, 2)
 
         self.assertEqual(len(interpolated), 3)
+        self.assertTrue(interpolated[0]["keyframe"])
+        self.assertFalse(interpolated[1]["keyframe"])
