@@ -180,10 +180,8 @@ class CVAT_API_V1():
     """ Build parameterized API URLs """
 
     def __init__(self, host, https=False):
-        if https:
-            self.base = 'https://{}/api/v1/'.format(host)
-        else:
-            self.base = 'http://{}/api/v1/'.format(host)
+        prefix = 'https' if https else 'http'
+        self.base = '{}://{}/api/v1/'.format(prefix, host)
 
     @property
     def tasks(self):
