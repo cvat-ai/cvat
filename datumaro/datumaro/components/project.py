@@ -18,7 +18,8 @@ import sys
 from datumaro.components.config import Config, DEFAULT_FORMAT
 from datumaro.components.config_model import (Model, Source,
     PROJECT_DEFAULT_CONFIG, PROJECT_SCHEMA)
-from datumaro.components.extractor import Extractor
+from datumaro.components.extractor import Extractor, LabelCategories,\
+    AnnotationType
 from datumaro.components.launcher import ModelTransform
 from datumaro.components.dataset_filter import \
     XPathDatasetFilter, XPathAnnotationsFilter
@@ -319,6 +320,35 @@ class Subset(Extractor):
         return self._parent.categories()
 
 class Dataset(Extractor):
+    @classmethod
+    def from_iterable(cls, iterable, categories=None):
+        """Generation of Dataset from iterable object
+
+        Args:
+            iterable: Iterable object contains DatasetItems
+            categories (dict, optional): You can pass dict of categories or
+            you can pass list of names. It'll interpreted as list of names of
+            LabelCategories. Defaults to {}.
+
+        Returns:
+            Dataset: Dataset object
+        """
+
+        if isinstance(categories, list):
+            categories = {AnnotationType.label : LabelCategories.from_iterable(categories)}
+
+        if not categories:
+            categories = {}
+
+        class tmpExtractor(Extractor):
+            def __iter__(self):
+                return iter(iterable)
+
+            def categories(self):
+                return categories
+
+        return cls.from_extractors(tmpExtractor())
+
     @classmethod
     def from_extractors(cls, *sources):
         # merge categories

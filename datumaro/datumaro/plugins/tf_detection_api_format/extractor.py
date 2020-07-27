@@ -85,6 +85,10 @@ class TfDetectionApiExtractor(SourceExtractor):
             'image/width': tf.io.FixedLenFeature([], tf.int64),
             'image/encoded': tf.io.FixedLenFeature([], tf.string),
             'image/format': tf.io.FixedLenFeature([], tf.string),
+
+            # use varlen to avoid errors when this field is missing
+            'image/key/sha256': tf.io.VarLenFeature(tf.string),
+
             # Object boxes and classes.
             'image/object/bbox/xmin': tf.io.VarLenFeature(tf.float32),
             'image/object/bbox/xmax': tf.io.VarLenFeature(tf.float32),

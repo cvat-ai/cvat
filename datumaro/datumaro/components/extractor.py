@@ -72,6 +72,33 @@ class Categories:
 class LabelCategories(Categories):
     Category = namedtuple('Category', ['name', 'parent', 'attributes'])
 
+    @classmethod
+    def from_iterable(cls, iterable):
+        """Generation of LabelCategories from iterable object
+
+        Args:
+            iterable ([type]): This iterable object can be:
+            1)simple str - will generate one Category with str as name
+            2)list of str - will interpreted as list of Category names
+            3)list of positional argumetns - will generate Categories
+            with this arguments
+
+
+        Returns:
+            LabelCategories: LabelCategories object
+        """
+        temp_categories = cls()
+
+        if isinstance(iterable, str):
+            iterable = [[iterable]]
+
+        for category in iterable:
+            if isinstance(category, str):
+                category = [category]
+            temp_categories.add(*category)
+
+        return temp_categories
+
     def __init__(self, items=None, attributes=None):
         super().__init__(attributes=attributes)
 
@@ -351,7 +378,9 @@ class _Shape(Annotation):
             id=None, attributes=None, group=None):
         super().__init__(id=id, type=type,
             attributes=attributes, group=group)
-        self._points = points
+        if points is None:
+            points = []
+        self._points = list(points)
 
         if label is not None:
             label = int(label)
@@ -481,6 +510,31 @@ class Bbox(_Shape):
 
 class PointsCategories(Categories):
     Category = namedtuple('Category', ['labels', 'joints'])
+
+    @classmethod
+    def from_iterable(cls, iterable):
+        """Generation of PointsCategories from iterable object
+
+        Args:
+            iterable ([type]): This iterable object can be:
+            1)simple int - will generate one Category with int as label
+            2)list of int - will interpreted as list of Category labels
+            3)list of positional argumetns - will generate Categories
+            with this arguments
+
+        Returns:
+            PointsCategories: PointsCategories object
+        """
+        temp_categories = cls()
+
+        if isinstance(iterable, int):
+            iterable = [[iterable]]
+
+        for category in iterable:
+            if isinstance(category, int):
+                category = [category]
+            temp_categories.add(*category)
+        return temp_categories
 
     def __init__(self, items=None, attributes=None):
         super().__init__(attributes=attributes)

@@ -54,6 +54,7 @@ def _import(src_file, task_data):
                         group=0,
                         frame=frame_number,
                         attributes=[],
+                        source='manual',
                     ))
                     continue
 
@@ -66,12 +67,13 @@ def _import(src_file, task_data):
                     z_order=ann.z_order,
                     frame=frame_number,
                     attributes=[],
+                    source='manual',
                 )
 
                 # build trajectories as lists of shapes in track dict
                 if track_id not in tracks:
                     tracks[track_id] = task_data.Track(
-                        label_cat.items[ann.label].name, 0, [])
+                        label_cat.items[ann.label].name, 0, 'manual', [])
                 tracks[track_id].shapes.append(shape)
 
         for track in tracks.values():
