@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta] - Unreleased
 ### Added
--
+- Ability to configure email verification for new users (<https://github.com/opencv/cvat/pull/1929>)
 
 ### Changed
 - Smaller object details (<https://github.com/opencv/cvat/pull/1877>)
