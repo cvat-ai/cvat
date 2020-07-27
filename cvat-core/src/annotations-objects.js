@@ -183,6 +183,7 @@
             this.removed = false;
             this.lock = false;
             this.color = color;
+            this.source = data.source;
             this.updated = Date.now();
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
@@ -295,6 +296,21 @@
             }, [this.clientID], frame);
         }
 
+        _saveSource(source, frame) {
+            const undoSource = this.source;
+            const redoSource = source;
+
+            this.history.do(HistoryActions.CHANGED_SOURCE, () => {
+                this.source = undoSource;
+                this.updated = Date.now();
+            }, () => {
+                this.source = redoSource;
+                this.updated = Date.now();
+            }, [this.clientID], frame);
+
+            this.source = source;
+        }
+
         _validateStateBeforeSave(frame, data, updated) {
             let fittedPoints = [];
 
@@ -381,6 +397,10 @@
                 }
             }
 
+            if (updated.source) {
+                checkObjectType('source', data.source, 'string', null);
+            }
+
             return fittedPoints;
         }
 
@@ -396,7 +416,8 @@
         updateTimestamp(updated) {
             const anyChanges = updated.label || updated.attributes || updated.points
                 || updated.outside || updated.occluded || updated.keyframe
-                || updated.zOrder || updated.hidden || updated.lock || updated.pinned;
+                || updated.zOrder || updated.hidden || updated.lock || updated.pinned
+                || updated.source;
 
             if (anyChanges) {
                 this.updated = Date.now();
@@ -492,6 +513,7 @@
                 frame: this.frame,
                 label_id: this.label.id,
                 group: this.group,
+                source: this.source,
             };
         }
 
@@ -520,6 +542,7 @@
                 updated: this.updated,
                 pinned: this.pinned,
                 frame,
+                source: this.source,
             };
         }
 
@@ -619,6 +642,10 @@
                 this._saveHidden(data.hidden, frame);
             }
 
+            if (updated.source) {
+                this._saveSource(data.source, frame);
+            }
+
             this.updateTimestamp(updated);
             updated.reset();
 
@@ -659,6 +686,7 @@
                 frame: this.frame,
                 label_id: this.label.id,
                 group: this.group,
+                source: this.source,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     if (!labelAttributes[attrId].mutable) {
                         attributeAccumulator.push({
@@ -726,6 +754,7 @@
                     last,
                 },
                 frame,
+                source: this.source,
             };
         }
 
@@ -1034,6 +1063,7 @@
                 outside: current.outside,
                 occluded: current.occluded,
                 attributes: {},
+                source: current.source,
             } : undefined;
 
             if (redoShape) {
@@ -1096,6 +1126,10 @@
 
             if (updated.attributes) {
                 this._saveAttributes(data.attributes, frame);
+            }
+
+            if (updated.source) {
+                this._saveSource(data.source, frame);
             }
 
             if (updated.keyframe) {
@@ -1164,6 +1198,7 @@
                 frame: this.frame,
                 label_id: this.label.id,
                 group: this.group,
+                source: this.source,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     attributeAccumulator.push({
                         spec_id: attrId,
@@ -1194,6 +1229,7 @@
                 color: this.color,
                 updated: this.updated,
                 frame,
+                source: this.source,
             };
         }
 
@@ -1226,6 +1262,10 @@
 
             if (updated.color) {
                 this._saveColor(data.color, frame);
+            }
+
+            if (updated.source) {
+                this._saveSource(data.source, frame);
             }
 
             this.updateTimestamp(updated);

@@ -104,7 +104,6 @@ export class EditHandlerImpl implements EditHandler {
         });
 
         this.editLine = (this.canvas as any).polyline();
-
         if (this.editData.state.shapeType === 'polyline') {
             (this.editLine as any).on('drawpoint', (e: CustomEvent): void => {
                 const circle = (e.target as any).instance.remember('_paintHandler').set.last();
@@ -112,9 +111,11 @@ export class EditHandlerImpl implements EditHandler {
             });
         }
 
+        const strokeColor = this.editedShape.attr('stroke');
         (this.editLine as any).addClass('cvat_canvas_shape_drawing').style({
             'pointer-events': 'none',
             'fill-opacity': 0,
+            'stroke': strokeColor,
         }).attr({
             'data-origin-client-id': this.editData.state.clientID,
         }).on('drawstart drawpoint', (e: CustomEvent): void => {
@@ -180,23 +181,87 @@ export class EditHandlerImpl implements EditHandler {
         const [start, stop] = [this.editData.pointID, stopPointID]
             .sort((a, b): number => +a - +b);
 
-        if (this.editData.state.shapeType === 'polygon') {
-            if (start !== this.editData.pointID) {
-                linePoints.reverse();
+        if (this.editData.state.shapeType !== 'polygon') {
+            let points = null;
+            const { offset } = this.geometry;
+
+            if (this.editData.state.shapeType === 'polyline') {
+                if (start !== this.editData.pointID) {
+                    linePoints.reverse();
+                }
+                points = oldPoints.slice(0, start)
+                    .concat(linePoints)
+                    .concat(oldPoints.slice(stop + 1));
+            } else {
+                points = oldPoints.concat(linePoints.slice(0, -1));
             }
 
-            const firstPart = oldPoints.slice(0, start)
-                .concat(linePoints)
-                .concat(oldPoints.slice(stop + 1));
+            points = pointsToNumberArray(points.join(' '))
+                .map((coord: number): number => coord - offset);
 
-            const secondPart = oldPoints.slice(start, stop)
-                .concat(linePoints.slice(1).reverse());
+            const { state } = this.editData;
+            this.edit({
+                enabled: false,
+            });
+            this.onEditDone(state, points);
 
-            if (firstPart.length < 3 || secondPart.length < 3) {
-                this.cancel();
-                return;
+            return;
+        }
+
+        const cutIndexes1 = oldPoints.reduce((acc: string[], _: string, i: number) =>
+            i >= stop || i <= start ? [...acc, i] : acc, []);
+        const cutIndexes2 = oldPoints.reduce((acc: string[], _: string, i: number) =>
+            i <= stop && i >= start ? [...acc, i] : acc, []);
+
+        const curveLength = (indexes: number[]) => {
+            const points = indexes.map((index: number): string => oldPoints[index])
+                .map((point: string): string[] => point.split(','))
+                .map((point: string[]): number[] => [+point[0], +point[1]]);
+            let length = 0;
+            for (let i = 1; i < points.length; i++) {
+                length += Math.sqrt(
+                    (points[i][0] - points[i - 1][0]) ** 2
+                    + (points[i][1] - points[i - 1][1]) ** 2,
+                );
             }
 
+            return length;
+        }
+
+        const pointsCriteria = cutIndexes1.length > cutIndexes2.length;
+        const lengthCriteria = curveLength(cutIndexes1) > curveLength(cutIndexes2);
+
+        if (start !== this.editData.pointID) {
+            linePoints.reverse();
+        }
+
+        const firstPart = oldPoints.slice(0, start)
+            .concat(linePoints)
+            .concat(oldPoints.slice(stop + 1));
+        const secondPart = oldPoints.slice(start, stop)
+            .concat(linePoints.slice(1).reverse());
+
+        if (firstPart.length < 3 || secondPart.length < 3) {
+            this.cancel();
+            return;
+        }
+
+        // We do not need these events any more
+        this.canvas.off('mousedown.edit');
+        this.canvas.off('mousemove.edit');
+
+        (this.editLine as any).draw('stop');
+        this.editLine.remove();
+        this.editLine = null;
+
+        if (pointsCriteria && lengthCriteria) {
+            this.clones.push(this.canvas.polygon(firstPart.join(' ')));
+            this.selectPolygon(this.clones[0]);
+            // left indexes1 and
+        } else if (!pointsCriteria && !lengthCriteria) {
+            this.clones.push(this.canvas.polygon(secondPart.join(' ')));
+            this.selectPolygon(this.clones[0]);
+        } else {
             for (const points of [firstPart, secondPart]) {
                 this.clones.push(this.canvas.polygon(points.join(' '))
                     .attr('fill', this.editedShape.attr('fill'))
@@ -212,39 +277,9 @@ export class EditHandlerImpl implements EditHandler {
                     clone.removeClass('cvat_canvas_shape_splitting');
                 });
             }
-
-            // We do not need these events any more
-            this.canvas.off('mousedown.edit');
-            this.canvas.off('mousemove.edit');
-
-            (this.editLine as any).draw('stop');
-            this.editLine.remove();
-            this.editLine = null;
-
-            return;
         }
 
-        let points = null;
-        const { offset } = this.geometry;
-        if (this.editData.state.shapeType === 'polyline') {
-            if (start !== this.editData.pointID) {
-                linePoints.reverse();
-            }
-            points = oldPoints.slice(0, start)
-                .concat(linePoints)
-                .concat(oldPoints.slice(stop + 1));
-        } else {
-            points = oldPoints.concat(linePoints.slice(0, -1));
-        }
-
-        points = pointsToNumberArray(points.join(' '))
-            .map((coord: number): number => coord - offset);
-
-        const { state } = this.editData;
-        this.edit({
-            enabled: false,
-        });
-        this.onEditDone(state, points);
+        return;
     }
 
     private setupPoints(enabled: boolean): void {

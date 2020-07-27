@@ -21,13 +21,13 @@ from .annotation import AnnotationManager, TrackManager
 class TaskData:
     Attribute = namedtuple('Attribute', 'name, value')
     LabeledShape = namedtuple(
-        'LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order')
+        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, group, z_order')
     LabeledShape.__new__.__defaults__ = (0, 0)
     TrackedShape = namedtuple(
-        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, group, z_order, label, track_id')
-    TrackedShape.__new__.__defaults__ = (0, 0, None, 0)
-    Track = namedtuple('Track', 'label, group, shapes')
-    Tag = namedtuple('Tag', 'frame, label, attributes, group')
+        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, source, group, z_order, label, track_id')
+    TrackedShape.__new__.__defaults__ = ('manual', 0, 0, None, 0)
+    Track = namedtuple('Track', 'label, group, source, shapes')
+    Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
         'Frame', 'idx, frame, name, width, height, labeled_shapes, tags')
@@ -217,6 +217,7 @@ class TaskData:
             outside=shape.get("outside", False),
             keyframe=shape.get("keyframe", True),
             track_id=shape["track_id"],
+            source=shape.get("source", "manual"),
             attributes=self._export_attributes(shape["attributes"]),
         )
 
@@ -229,6 +230,7 @@ class TaskData:
             occluded=shape["occluded"],
             z_order=shape.get("z_order", 0),
             group=shape.get("group", 0),
+            source=shape["source"],
             attributes=self._export_attributes(shape["attributes"]),
         )
 
@@ -237,6 +239,7 @@ class TaskData:
             frame=self.abs_frame_id(tag["frame"]),
             label=self._get_label_name(tag["label_id"]),
             group=tag.get("group", 0),
+            source=tag["source"],
             attributes=self._export_attributes(tag["attributes"]),
         )
 
@@ -290,11 +293,13 @@ class TaskData:
                 tracked_shape["attributes"] += track["attributes"]
                 tracked_shape["track_id"] = idx
                 tracked_shape["group"] = track["group"]
+                tracked_shape["source"] = track["source"]
                 tracked_shape["label_id"] = track["label_id"]
 
             yield TaskData.Track(
                 label=self._get_label_name(track["label_id"]),
                 group=track["group"],
+                source=track["source"],
                 shapes=[self._export_tracked_shape(shape)
                     for shape in tracked_shapes],
             )
@@ -650,6 +655,7 @@ def import_dm_annotations(dm_dataset, task_data):
                     occluded=ann.attributes.get('occluded') == True,
                     z_order=ann.z_order,
                     group=group_map.get(ann.group, 0),
+                    source='manual',
                     attributes=[task_data.Attribute(name=n, value=str(v))
                         for n, v in ann.attributes.items()],
                 ))
@@ -658,6 +664,7 @@ def import_dm_annotations(dm_dataset, task_data):
                     frame=frame_number,
                     label=label_cat.items[ann.label].name,
                     group=group_map.get(ann.group, 0),
+                    source='manual',
                     attributes=[task_data.Attribute(name=n, value=str(v))
                         for n, v in ann.attributes.items()],
                 ))
