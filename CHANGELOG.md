@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Image compression` definition mismatch (<https://github.com/opencv/cvat/issues/1900>)
 - Points are dublicated during polygon interpolation sometimes (<https://github.com/opencv/cvat/pull/1892>)
 - When redraw a shape with activated autobordering, previous points are visible (<https://github.com/opencv/cvat/pull/1892>)
+- Interpolated shapes exported as `keyframe = True` (https://github.com/opencv/cvat/pull/1937)
 
 ### Security
 -
