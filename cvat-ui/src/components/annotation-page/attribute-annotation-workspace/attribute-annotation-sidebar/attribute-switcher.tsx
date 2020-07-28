@@ -28,16 +28,16 @@ function AttributeSwitcher(props: Props): JSX.Element {
     const title = `${currentAttribute} [${currentIndex + 1}/${attributesCount}]`;
     return (
         <div className='attribute-annotation-sidebar-switcher'>
-            <Tooltip title={`Previous attribute ${normalizedKeyMap.PREVIOUS_ATTRIBUTE}`}>
+            <Tooltip title={`Previous attribute ${normalizedKeyMap.PREVIOUS_ATTRIBUTE}`} mouseLeaveDelay={0}>
                 <Button disabled={attributesCount <= 1} onClick={() => nextAttribute(-1)}>
                     <Icon type='left' />
                 </Button>
             </Tooltip>
-            <Tooltip title={title}>
+            <Tooltip title={title} mouseLeaveDelay={0}>
                 <Text className='cvat-text'>{currentAttribute}</Text>
                 <Text strong>{` [${currentIndex + 1}/${attributesCount}]`}</Text>
             </Tooltip>
-            <Tooltip title={`Next attribute ${normalizedKeyMap.NEXT_ATTRIBUTE}`}>
+            <Tooltip title={`Next attribute ${normalizedKeyMap.NEXT_ATTRIBUTE}`} mouseLeaveDelay={0}>
                 <Button disabled={attributesCount <= 1} onClick={() => nextAttribute(1)}>
                     <Icon type='right' />
                 </Button>

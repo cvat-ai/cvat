@@ -186,7 +186,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     <Tag color={colors[modelLabel]}>{taskLabel}</Tag>
                 </Col>
                 <Col span={1} offset={1}>
-                    <Tooltip title='Remove the mapped values'>
+                    <Tooltip title='Remove the mapped values' mouseLeaveDelay={0}>
                         <Icon
                             className='cvat-run-model-dialog-remove-mapping-icon'
                             type='close-circle'
@@ -288,7 +288,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     )}
                 </Col>
                 <Col span={1} offset={1}>
-                    <Tooltip title='Specify a label mapping between model labels and task labels'>
+                    <Tooltip title='Specify a label mapping between model labels and task labels' mouseLeaveDelay={0}>
                         <Icon className='cvat-info-circle-icon' type='question-circle' />
                     </Tooltip>
                 </Col>

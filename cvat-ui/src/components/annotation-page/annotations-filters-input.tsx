@@ -147,7 +147,7 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
             placeholder={
                 underCursor ? (
                     <>
-                        <Tooltip title='Click to open help'>
+                        <Tooltip title='Click to open help' mouseLeaveDelay={0}>
                             <Icon
                                 type='filter'
                                 onClick={(e: React.MouseEvent) => {

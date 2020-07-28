@@ -19,7 +19,7 @@ function FitControl(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Tooltip title='Fit the image [Double Click]' placement='right'>
+        <Tooltip title='Fit the image [Double Click]' placement='right' mouseLeaveDelay={0}>
             <Icon component={FitIcon} onClick={(): void => canvasInstance.fit()} />
         </Tooltip>
     );

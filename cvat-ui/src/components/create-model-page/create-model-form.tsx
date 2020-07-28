@@ -57,7 +57,7 @@ export class CreateModelForm extends React.PureComponent<Props> {
                     </Col>
                     <Col span={8} offset={2}>
                         <Form.Item>
-                            <Tooltip title='Will this model be availabe for everyone?'>
+                            <Tooltip title='Will this model be availabe for everyone?' mouseLeaveDelay={0}>
                                 { getFieldDecorator('global', {
                                     initialValue: false,
                                     valuePropName: 'checked',
