@@ -189,7 +189,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private onEditDone(state: any, points: number[]): void {
-        if (state && points)  {
+        if (state && points) {
             const event: CustomEvent = new CustomEvent('canvas.edited', {
                 bubbles: false,
                 cancelable: true,
@@ -1732,7 +1732,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addText(state: any): SVG.Text {
         const { undefinedAttrValue } = this.configuration;
-        const { label, clientID, attributes, source } = state;
+        const {
+            label,
+            clientID,
+            attributes,
+            source,
+        } = state;
         const attrNames = label.attributes.reduce((acc: any, val: any): void => {
             acc[val.id] = val.name;
             return acc;

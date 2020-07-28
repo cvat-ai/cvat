@@ -79,6 +79,12 @@ parser.add_argument(
     help='port (default: %(default)s)'
 )
 parser.add_argument(
+    '--https',
+    default=False,
+    action='store_true',
+    help='using https connection (default: %(default)s)'
+)
+parser.add_argument(
     '--debug',
     action='store_const',
     dest='loglevel',

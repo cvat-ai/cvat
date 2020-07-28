@@ -11,6 +11,10 @@
         "selector-type-no-unknown": [true, {
             "ignoreTypes": ["first-child"]
         }]
-    }
-
+    },
+    "ignoreFiles": [
+        "**/*.js",
+        "**/*.ts",
+        "**/*.py"
+    ]
 }
