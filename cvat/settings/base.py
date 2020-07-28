@@ -333,6 +333,9 @@ os.makedirs(DATA_ROOT, exist_ok=True)
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
 
+CACHE_ROOT = os.path.join(DATA_ROOT, 'cache')
+os.makedirs(CACHE_ROOT, exist_ok=True)
+
 TASKS_ROOT = os.path.join(DATA_ROOT, 'tasks')
 os.makedirs(TASKS_ROOT, exist_ok=True)
 
@@ -431,3 +434,17 @@ RESTRICTIONS = {
         'engine.role.admin',
         ),
 }
+
+CACHES = {
+   'default' : {
+       'BACKEND' : 'diskcache.DjangoCache',
+       'LOCATION' : CACHE_ROOT,
+       'TIMEOUT' : None,
+       'OPTIONS' : {
+            #'statistics' :True,
+            'size_limit' : 2 ** 40, # 1 тб
+       }
+   }
+}
+
+USE_CACHE = True
