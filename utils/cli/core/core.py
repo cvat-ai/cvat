@@ -179,8 +179,9 @@ class CLI():
 class CVAT_API_V1():
     """ Build parameterized API URLs """
 
-    def __init__(self, host):
-        self.base = 'http://{}/api/v1/'.format(host)
+    def __init__(self, host, https=False):
+        prefix = 'https' if https else 'http'
+        self.base = '{}://{}/api/v1/'.format(prefix, host)
 
     @property
     def tasks(self):

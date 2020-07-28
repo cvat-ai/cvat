@@ -445,7 +445,7 @@ class TrackManager(ObjectManager):
     def get_interpolated_shapes(track, start_frame, end_frame):
         def copy_shape(source, frame, points=None):
             copied = deepcopy(source)
-            copied["keyframe"] = True
+            copied["keyframe"] = False
             copied["frame"] = frame
             if points is not None:
                 copied["points"] = points

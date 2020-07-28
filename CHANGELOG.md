@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DL models as serverless functions (<https://github.com/opencv/cvat/pull/1767>)
 - Source type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
 - Source type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
+- Intelligent polygon editing (<https://github.com/opencv/cvat/pull/1921>)
+- python cli over https (<https://github.com/opencv/cvat/pull/1942>)
 
 ### Changed
 - Smaller object details (<https://github.com/opencv/cvat/pull/1877>)
@@ -34,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Points are dublicated during polygon interpolation sometimes (<https://github.com/opencv/cvat/pull/1892>)
 - When redraw a shape with activated autobordering, previous points are visible (<https://github.com/opencv/cvat/pull/1892>)
 - No mapping between side object element and context menu in some attributes (<https://github.com/opencv/cvat/pull/1923>)
+- Interpolated shapes exported as `keyframe = True` (<https://github.com/opencv/cvat/pull/1937>)
+- Stylelint filetype scans (<https://github.com/opencv/cvat/pull/1952>)
 
 ### Security
 -

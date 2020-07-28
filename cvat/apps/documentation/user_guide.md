@@ -32,6 +32,7 @@
     - [Linear interpolation with one point](#linear-interpolation-with-one-point)
   - [Annotation with cuboids](#annotation-with-cuboids)
   - [Annotation with tags](#annotation-with-tags)
+  - [Track mode with polygons](#track-mode-with-polygons)
   - [Automatic annotation](#automatic-annotation)
   - [Shape grouping](#shape-grouping)
   - [Filter](#filter)
@@ -1067,7 +1068,7 @@ Before starting, you need to select ``Polygon`` on the controls sidebar and choo
   delete the previous point by right-clicking on it.
 - Press ``N`` again for completing the shape.
 - After creating the polygon, you can move the points or delete them by right-clicking and selecting ``Delete point``
-  or double-clicking with pressed ``Ctrl`` key in the context menu.
+  or clicking with pressed ``Ctrl`` key in the context menu.
 
 ### Drawing using automatic borders
 
@@ -1126,7 +1127,7 @@ Used to create a polygon semi-automatically.
 
 ### Edit polygon
 
-To edit a polygon you have to double-click with pressed ``Shift``, it will open the polygon editor.
+To edit a polygon you have to click with pressed ``Shift``, it will open the polygon editor.
 - There you can create new points or delete part of a polygon closing the line on another point.
 - After closing the polygon, you can select the part of the polygon that you want to leave.
 - You can press ``Esc`` to cancel editing.
@@ -1147,8 +1148,8 @@ you either create points by clicking or by dragging a mouse on the screen while 
 When ``Shift`` isn't pressed, you can zoom in/out (when scrolling the mouse wheel)
 and move (when clicking the mouse wheel and moving the mouse), you can delete
 previous points by right-clicking on it. Press ``N`` again to complete the shape.
-You can delete a point by double-clicking on it with pressed ``Ctrl`` or right-clicking on a point
-and selecting ``Delete point``. Double-click with pressed ``Shift`` will open a polyline editor.
+You can delete a point by clicking on it with pressed ``Ctrl`` or right-clicking on a point
+and selecting ``Delete point``. Click with pressed ``Shift`` will open a polyline editor.
 There you can create new points(by clicking or dragging) or delete part of a polygon closing
 the red line on another point. Press ``Esc`` to cancel editing.
 
@@ -1167,8 +1168,8 @@ in the ``Number of points`` field, then drawing will be stopped automatically.
 
 Click ``Shape`` to entering the drawing mode. Now you can start annotation of the necessary area.
 Points are automatically grouped — all points will be considered linked between each start and finish.
-Press ``N`` again to finish marking the area. You can delete a point by double-clicking with pressed ``Ctrl``
-or right-clicking on a point and selecting ``Delete point``. Double-clicking with pressed ``Shift`` will open the points
+Press ``N`` again to finish marking the area. You can delete a point by clicking with pressed ``Ctrl``
+or right-clicking on a point and selecting ``Delete point``. Clicking with pressed ``Shift`` will open the points
 shape editor. There you can add new points into an existing shape. You can zoom in/out (when scrolling the mouse wheel)
 and move (when clicking the mouse wheel and moving the mouse) while drawing. You can drag an object after
 it has been drawn and change the position of individual points after finishing an object.
@@ -1284,6 +1285,35 @@ You can use the lock function and change label and attribute.
 Other functions such as propagate, make a copy and remove are available in the action menu.
 
 ![](static/documentation/images/image135.jpg)
+
+## Track mode with polygons
+
+Polygons in the track mode allow you to mark moving objects more accurately other than using a rectangle
+ ([Tracking mode (basic)](#track-mode-basics); [Tracking mode (advanced)](#track-mode-advanced)).
+1. To create a polygon in the track mode, click the ``Track`` button.
+
+    ![](static/documentation/images/image184.jpg)
+
+1. Create a polygon the same way as in the case of [Annotation with polygons](#annotation-with-polygons).
+ Press ``N`` to complete the polygon.
+
+1. Pay attention to the fact that the created polygon has a starting point and a direction,
+ these elements are important for annotation of the following frames.
+
+1. After going a few frames forward press ``Shift+N``, the old polygon will disappear and you can create a new polygon.
+ The new starting point should match the starting point of the previously created polygon
+ (in this example, the top of the left mirror). The direction must also match (in this example, clockwise).
+  After creating the polygon, press ``N`` and the intermediate frames will be interpolated automatically.
+
+    ![](static/documentation/images/image185_detrac.jpg)
+
+1. If you need to change the starting point, right-click on the desired point and select ``Set starting point``.
+ To change the direction, right-click on the desired point and select switch orientation.
+
+    ![](static/documentation/images/image186_detrac.jpg)
+
+There is no need to redraw the polygon every time using ``Shift+N``,
+ instead you can simply move the points or edit a part of the polygon by pressing ``Shift+Click``.
 
 ## Automatic annotation
 
@@ -1479,8 +1509,8 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 |                                | _Operations with objects_                                                       |
 | ``Ctrl``                       | Switch automatic bordering for polygons and polylines during drawing/editing    |
 | Hold ``Ctrl``                  | When the shape is active and fix it                                             |
-| ``Ctrl+Double-Click`` on point | Deleting a point (used when hovering over a point of polygon, polyline, points) |
-| ``Shift+Double-Click`` on point| Editing a shape (used when hovering over a point of polygon, polyline or points)|
+| ``Ctrl+Click`` on point        | Deleting a point (used when hovering over a point of polygon, polyline, points) |
+| ``Shift+Click`` on point       | Editing a shape (used when hovering over a point of polygon, polyline or points)|
 | ``Right-Click`` on shape       | Display of an object element from objects sidebar                               |
 | ``T+L``                        | Change locked state for all objects in the sidebar                              |
 | ``L``                          | Change locked state for an active object                                        |

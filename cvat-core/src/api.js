@@ -33,7 +33,7 @@ function build() {
         HistoryActions,
         RQStatus,
         colors,
-        source,
+        Source,
     } = require('./enums');
 
     const {
@@ -656,7 +656,7 @@ function build() {
             HistoryActions,
             RQStatus,
             colors,
-            source,
+            Source,
         },
         /**
             * Namespace is used for access to exceptions
