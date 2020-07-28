@@ -29,10 +29,11 @@ Try it online [cvat.org](https://cvat.org).
 
 ## Screencasts
 
-- [Introduction](https://youtu.be/L9_IvUIHGwM)
-- [Annotation mode](https://youtu.be/6h7HxGL6Ct4)
-- [Interpolation mode](https://youtu.be/U3MYDhESHo4)
-- [Attribute mode](https://youtu.be/UPNfWl8Egd8)
+- [Introduction](https://youtu.be/JERohTFp-NI)
+- [Annotation mode](https://youtu.be/vH_639N67HI)
+- [Interpolation of bounding boxes](https://youtu.be/Hc3oudNuDsY)
+- [Interpolation of polygons](https://youtu.be/K4nis9lk92s)
+- [Attribute mode](https://youtu.be/iIkJsOkDzVA)
 - [Segmentation mode](https://youtu.be/Fh8oKuSUIPs)
 - [Tutorial for polygons](https://www.youtube.com/watch?v=XTwfXDh4clI)
 - [Semi-automatic segmentation](https://www.youtube.com/watch?v=vnqXZ-Z-VTQ)

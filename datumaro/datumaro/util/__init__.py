@@ -62,6 +62,10 @@ def to_snake_case(s):
             name.append(char)
     return ''.join(name)
 
+def pairwise(iterable):
+    a = iter(iterable)
+    return zip(a, a)
+
 def take_by(iterable, count):
     """
     Returns elements from the input iterable by batches of N items.

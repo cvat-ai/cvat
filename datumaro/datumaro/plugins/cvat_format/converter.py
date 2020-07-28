@@ -3,24 +3,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict
 import logging as log
 import os
 import os.path as osp
+from collections import OrderedDict
 from xml.sax.saxutils import XMLGenerator
 
-from datumaro.components.cli_plugin import CliPlugin
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import DEFAULT_SUBSET_NAME, AnnotationType
-from datumaro.util import cast
-from datumaro.util.image import save_image
+from datumaro.util import cast, pairwise
 
 from .format import CvatPath
 
-
-def pairwise(iterable):
-    a = iter(iterable)
-    return zip(a, a)
 
 class XmlAnnotationWriter:
     VERSION = '1.1'
@@ -163,15 +157,6 @@ class _SubsetWriter:
 
         self._writer.close_root()
 
-    def _save_image(self, item, filename):
-        image = item.image.data
-        if image is None:
-            log.warning("Item '%s' has no image" % item.id)
-            return ''
-
-        save_image(osp.join(self._context._images_dir, filename), image,
-            create_dir=True)
-
     def _write_item(self, item, index):
         image_info = OrderedDict([
             ("id", str(cast(item.attributes.get('frame'), int, index))),
@@ -186,9 +171,10 @@ class _SubsetWriter:
                 image_info["height"] = str(h)
 
             if self._context._save_images:
-                self._save_image(item, filename)
+                self._context._save_image(item,
+                    osp.join(self._context._images_dir, filename))
         else:
-            log.debug("Item '%s' has no image info" % item.id)
+            log.debug("Item '%s' has no image info", item.id)
         self._writer.open_image(image_info)
 
         for ann in item.annotations:
@@ -321,15 +307,10 @@ class _SubsetWriter:
 
         self._writer.close_tag()
 
-class _Converter:
-    def __init__(self, extractor, save_dir, save_images=False):
-        self._extractor = extractor
-        self._save_dir = save_dir
-        self._save_images = save_images
+class CvatConverter(Converter):
+    DEFAULT_IMAGE_EXT = CvatPath.IMAGE_EXT
 
-    def convert(self):
-        os.makedirs(self._save_dir, exist_ok=True)
-
+    def apply(self):
         images_dir = osp.join(self._save_dir, CvatPath.IMAGES_DIR)
         os.makedirs(images_dir, exist_ok=True)
         self._images_dir = images_dir
@@ -348,22 +329,3 @@ class _Converter:
             with open(osp.join(self._save_dir, '%s.xml' % subset_name), 'w') as f:
                 writer = _SubsetWriter(f, subset_name, subset, self)
                 writer.write()
-
-class CvatConverter(Converter, CliPlugin):
-    @classmethod
-    def build_cmdline_parser(cls, **kwargs):
-        parser = super().build_cmdline_parser(**kwargs)
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-        return parser
-
-    def __init__(self, save_images=False):
-        super().__init__()
-
-        self._options = {
-            'save_images': save_images,
-        }
-
-    def __call__(self, extractor, save_dir):
-        converter = _Converter(extractor, save_dir, **self._options)
-        converter.convert()

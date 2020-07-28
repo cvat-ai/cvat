@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
@@ -46,6 +46,8 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         changeAttribute,
     } = props;
 
+    const attrNameStyle: React.CSSProperties = { wordBreak: 'break-word', lineHeight: '1em' };
+
     if (attrInputType === 'checkbox') {
         return (
             <Col span={24}>
@@ -57,7 +59,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                         changeAttribute(attrID, value);
                     }}
                 >
-                    <Text strong className='cvat-text'>
+                    <Text style={attrNameStyle} className='cvat-text'>
                         {attrName}
                     </Text>
                 </Checkbox>
@@ -70,7 +72,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
             <Col span={24}>
                 <fieldset className='cvat-object-item-radio-attribute'>
                     <legend>
-                        <Text strong className='cvat-text'>{attrName}</Text>
+                        <Text style={attrNameStyle} className='cvat-text'>{attrName}</Text>
                     </legend>
                     <Radio.Group
                         size='small'
@@ -94,12 +96,12 @@ function ItemAttributeComponent(props: Props): JSX.Element {
     if (attrInputType === 'select') {
         return (
             <>
-                <Col span={24}>
-                    <Text strong className='cvat-text'>
+                <Col span={8} style={attrNameStyle}>
+                    <Text className='cvat-text'>
                         {attrName}
                     </Text>
                 </Col>
-                <Col span={24}>
+                <Col span={16}>
                     <Select
                         size='small'
                         onChange={(value: string): void => {
@@ -122,15 +124,14 @@ function ItemAttributeComponent(props: Props): JSX.Element {
 
     if (attrInputType === 'number') {
         const [min, max, step] = attrValues.map((value: string): number => +value);
-
         return (
             <>
-                <Col span={24}>
-                    <Text strong className='cvat-text'>
+                <Col span={8} style={attrNameStyle}>
+                    <Text className='cvat-text'>
                         {attrName}
                     </Text>
                 </Col>
-                <Col span={24}>
+                <Col span={16}>
                     <InputNumber
                         size='small'
                         onChange={(value: number | undefined): void => {
@@ -151,20 +152,48 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         );
     }
 
+    const ref = useRef<Input>(null);
+    const [selection, setSelection] = useState<{
+        start: number | null;
+        end: number | null;
+        direction: 'forward' | 'backward' | 'none' | null;
+    }>({
+        start: null,
+        end: null,
+        direction: null,
+    });
+
+    useEffect(() => {
+        if (ref.current && ref.current.input) {
+            ref.current.input.selectionStart = selection.start;
+            ref.current.input.selectionEnd = selection.end;
+            ref.current.input.selectionDirection = selection.direction;
+        }
+    }, [attrValue]);
+
     return (
         <>
-            <Col span={24}>
-                <Text strong className='cvat-text'>
+            <Col span={8} style={attrNameStyle}>
+                <Text className='cvat-text'>
                     {attrName}
                 </Text>
             </Col>
-            <Col span={24}>
+            <Col span={16}>
                 <Input
+                    ref={ref}
                     size='small'
                     onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
+                        if (ref.current && ref.current.input) {
+                            setSelection({
+                                start: ref.current.input.selectionStart,
+                                end: ref.current.input.selectionEnd,
+                                direction: ref.current.input.selectionDirection,
+                            });
+                        }
+
                         changeAttribute(attrID, event.target.value);
                     }}
-                    defaultValue={attrValue}
+                    value={attrValue}
                     className='cvat-object-item-text-attribute'
                 />
             </Col>

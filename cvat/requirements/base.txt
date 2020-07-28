@@ -2,7 +2,7 @@ click==7.1.2
 Django==2.2.13
 django-appconf==1.0.4
 django-auth-ldap==2.2.0
-django-cacheops==5.0
+django-cacheops==5.0.1
 django-compressor==2.4
 django-rq==2.0.0
 EasyProcess==0.3
@@ -20,7 +20,7 @@ rq-scheduler==0.10.0
 scipy==1.4.1
 sqlparse==0.3.1
 django-sendfile==0.3.11
-dj-pagination==2.4.0
+dj-pagination==2.5.0
 python-logstash==0.4.6
 django-revproxy==0.10.0
 rules==2.2
@@ -35,7 +35,7 @@ Shapely==1.7.0
 pdf2image==1.13.1
 pascal_voc_writer==0.1.4
 django-rest-auth[with_social]==0.9.5
-cython==0.29.20
+cython==0.29.21
 matplotlib==3.0.3
 scikit-image==0.15.0
 tensorflow==2.2.0

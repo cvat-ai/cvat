@@ -3,15 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict
 import logging as log
 import os
 import os.path as osp
+from collections import OrderedDict
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import AnnotationType
-from datumaro.components.cli_plugin import CliPlugin
-from datumaro.util.image import save_image
 
 from .format import YoloPath
 
@@ -26,21 +24,14 @@ def _make_yolo_bbox(img_size, box):
     h = (box[3] - box[1]) / img_size[1]
     return x, y, w, h
 
-class YoloConverter(Converter, CliPlugin):
+class YoloConverter(Converter):
     # https://github.com/AlexeyAB/darknet#how-to-train-to-detect-your-custom-objects
+    DEFAULT_IMAGE_EXT = '.jpg'
 
-    @classmethod
-    def build_cmdline_parser(cls, **kwargs):
-        parser = super().build_cmdline_parser(**kwargs)
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-        return parser
+    def apply(self):
+        extractor = self._extractor
+        save_dir = self._save_dir
 
-    def __init__(self, save_images=False):
-        super().__init__()
-        self._save_images = save_images
-
-    def __call__(self, extractor, save_dir):
         os.makedirs(save_dir, exist_ok=True)
 
         label_categories = extractor.categories()[AnnotationType.label]
@@ -50,13 +41,9 @@ class YoloConverter(Converter, CliPlugin):
             f.writelines('%s\n' % l[0]
                 for l in sorted(label_ids.items(), key=lambda x: x[1]))
 
-        subsets = extractor.subsets()
-        if len(subsets) == 0:
-            subsets = [ None ]
-
         subset_lists = OrderedDict()
 
-        for subset_name in subsets:
+        for subset_name in extractor.subsets() or [None]:
             if subset_name and subset_name in YoloPath.SUBSET_NAMES:
                 subset = extractor.get_subset(subset_name)
             elif not subset_name:
@@ -80,11 +67,10 @@ class YoloConverter(Converter, CliPlugin):
                         "item has no image info" % item.id)
                 height, width = item.image.size
 
-                image_name = item.id + '.jpg'
+                image_name = self._make_image_filename(item)
                 if self._save_images:
                     if item.has_image and item.image.has_data:
-                        save_image(osp.join(subset_dir, image_name),
-                            item.image.data, create_dir=True)
+                        self._save_image(item, osp.join(subset_dir, image_name))
                     else:
                         log.warning("Item '%s' has no image" % item.id)
                 image_paths[item.id] = osp.join('data',

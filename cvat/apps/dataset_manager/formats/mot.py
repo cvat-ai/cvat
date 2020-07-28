@@ -19,9 +19,8 @@ def _export(dst_file, task_data, save_images=False):
     extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
     extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
-        converter = dm_env.make_converter('mot_seq_gt',
-            save_images=save_images)
-        converter(extractor, save_dir=temp_dir)
+        dm_env.converters.get('mot_seq_gt').convert(extractor,
+            save_dir=temp_dir, save_images=save_images)
 
         make_zip_archive(temp_dir, dst_file)
 
@@ -55,6 +54,7 @@ def _import(src_file, task_data):
                         group=0,
                         frame=frame_number,
                         attributes=[],
+                        source='manual',
                     ))
                     continue
 
@@ -67,12 +67,13 @@ def _import(src_file, task_data):
                     z_order=ann.z_order,
                     frame=frame_number,
                     attributes=[],
+                    source='manual',
                 )
 
                 # build trajectories as lists of shapes in track dict
                 if track_id not in tracks:
                     tracks[track_id] = task_data.Track(
-                        label_cat.items[ann.label].name, 0, [])
+                        label_cat.items[ann.label].name, 0, 'manual', [])
                 tracks[track_id].shapes.append(shape)
 
         for track in tracks.values():

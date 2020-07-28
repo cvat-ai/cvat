@@ -3,4 +3,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from . import add, create, explain, export, remove
+from . import add, create, explain, export, remove, convert

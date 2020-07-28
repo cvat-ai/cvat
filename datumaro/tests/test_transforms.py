@@ -2,7 +2,7 @@ import logging as log
 import numpy as np
 
 from unittest import TestCase
-
+from datumaro.components.project import Dataset
 from datumaro.components.extractor import (Extractor, DatasetItem,
     Mask, Polygon, PolyLine, Points, Bbox, Label,
     LabelCategories, MaskCategories, AnnotationType
@@ -67,304 +67,269 @@ class TransformsTest(TestCase):
         compare_datasets(self, DstExtractor(), actual)
 
     def test_mask_to_polygons_small_polygons_message(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                items = [
-                    DatasetItem(id=1, image=np.zeros((5, 10, 3)),
-                        annotations=[
-                            Mask(np.array([
-                                    [0, 0, 0],
-                                    [0, 1, 0],
-                                    [0, 0, 0],
-                                ]),
-                            ),
-                        ]
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 10, 3)),
+                annotations=[
+                    Mask(np.array([
+                            [0, 0, 0],
+                            [0, 1, 0],
+                            [0, 0, 0],
+                        ]),
                     ),
                 ]
-                return iter(items)
+            ),
+        ])
 
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([ DatasetItem(id=1, image=np.zeros((5, 10, 3))), ])
+        target_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 10, 3))), ])
 
         with self.assertLogs(level=log.DEBUG) as logs:
-            actual = transforms.MasksToPolygons(SrcExtractor())
+            actual = transforms.MasksToPolygons(source_dataset)
 
-            compare_datasets(self, DstExtractor(), actual)
+            compare_datasets(self, target_dataset, actual)
             self.assertRegex('\n'.join(logs.output), 'too small polygons')
 
     def test_polygons_to_masks(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, image=np.zeros((5, 10, 3)),
-                        annotations=[
-                            Polygon([0, 0, 4, 0, 4, 4]),
-                            Polygon([5, 0, 9, 0, 5, 5]),
-                        ]
-                    ),
-                ])
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 10, 3)),
+                annotations=[
+                    Polygon([0, 0, 4, 0, 4, 4]),
+                    Polygon([5, 0, 9, 0, 5, 5]),
+                ]
+            ),
+        ])
 
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, image=np.zeros((5, 10, 3)),
-                        annotations=[
-                            Mask(np.array([
-                                    [0, 0, 0, 0, 0, 1, 1, 1, 1, 0],
-                                    [0, 0, 0, 0, 0, 1, 1, 1, 0, 0],
-                                    [0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
-                                    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                ]),
-                            ),
-                            Mask(np.array([
-                                    [0, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-                                    [0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
-                                    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                ]),
-                            ),
-                        ]
+        target_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 10, 3)),
+                annotations=[
+                    Mask(np.array([
+                            [0, 0, 0, 0, 0, 1, 1, 1, 1, 0],
+                            [0, 0, 0, 0, 0, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        ]),
                     ),
-                ])
+                    Mask(np.array([
+                            [0, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        ]),
+                    ),
+                ]
+            ),
+        ])
 
-        actual = transforms.PolygonsToMasks(SrcExtractor())
-        compare_datasets(self, DstExtractor(), actual)
+        actual = transforms.PolygonsToMasks(source_dataset)
+        compare_datasets(self, target_dataset, actual)
 
     def test_crop_covered_segments(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
-                        annotations=[
-                            # The mask is partially covered by the polygon
-                            Mask(np.array([
-                                    [0, 0, 1, 1, 1],
-                                    [0, 0, 1, 1, 1],
-                                    [1, 1, 1, 1, 1],
-                                    [1, 1, 1, 0, 0],
-                                    [1, 1, 1, 0, 0]],
-                                ),
-                                z_order=0),
-                            Polygon([1, 1, 4, 1, 4, 4, 1, 4],
-                                z_order=1),
-                        ]
-                    ),
-                ])
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                annotations=[
+                    # The mask is partially covered by the polygon
+                    Mask(np.array([
+                            [0, 0, 1, 1, 1],
+                            [0, 0, 1, 1, 1],
+                            [1, 1, 1, 1, 1],
+                            [1, 1, 1, 0, 0],
+                            [1, 1, 1, 0, 0]],
+                        ),
+                        z_order=0),
+                    Polygon([1, 1, 4, 1, 4, 4, 1, 4],
+                        z_order=1),
+                ]
+            ),
+        ])
 
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
-                        annotations=[
-                            Mask(np.array([
-                                    [0, 0, 1, 1, 1],
-                                    [0, 0, 0, 0, 1],
-                                    [1, 0, 0, 0, 1],
-                                    [1, 0, 0, 0, 0],
-                                    [1, 1, 1, 0, 0]],
-                                ),
-                                z_order=0),
-                            Polygon([1, 1, 4, 1, 4, 4, 1, 4],
-                                z_order=1),
-                        ]
-                    ),
-                ])
+        target_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                annotations=[
+                    Mask(np.array([
+                            [0, 0, 1, 1, 1],
+                            [0, 0, 0, 0, 1],
+                            [1, 0, 0, 0, 1],
+                            [1, 0, 0, 0, 0],
+                            [1, 1, 1, 0, 0]],
+                        ),
+                        z_order=0),
+                    Polygon([1, 1, 4, 1, 4, 4, 1, 4],
+                        z_order=1),
+                ]
+            ),
+        ])
 
-        actual = transforms.CropCoveredSegments(SrcExtractor())
-        compare_datasets(self, DstExtractor(), actual)
+        actual = transforms.CropCoveredSegments(source_dataset)
+        compare_datasets(self, target_dataset, actual)
 
     def test_merge_instance_segments(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
-                        annotations=[
-                            Mask(np.array([
-                                    [0, 0, 1, 1, 1],
-                                    [0, 0, 0, 0, 1],
-                                    [1, 0, 0, 0, 1],
-                                    [1, 0, 0, 0, 0],
-                                    [1, 1, 1, 0, 0]],
-                                ),
-                                z_order=0, group=1),
-                            Polygon([1, 1, 4, 1, 4, 4, 1, 4],
-                                z_order=1, group=1),
-                            Polygon([0, 0, 0, 2, 2, 2, 2, 0],
-                                z_order=1),
-                        ]
-                    ),
-                ])
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                annotations=[
+                    Mask(np.array([
+                            [0, 0, 1, 1, 1],
+                            [0, 0, 0, 0, 1],
+                            [1, 0, 0, 0, 1],
+                            [1, 0, 0, 0, 0],
+                            [1, 1, 1, 0, 0]],
+                        ),
+                        z_order=0, group=1),
+                    Polygon([1, 1, 4, 1, 4, 4, 1, 4],
+                        z_order=1, group=1),
+                    Polygon([0, 0, 0, 2, 2, 2, 2, 0],
+                        z_order=1),
+                ]
+            ),
+        ])
 
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
-                        annotations=[
-                            Mask(np.array([
-                                    [0, 0, 1, 1, 1],
-                                    [0, 1, 1, 1, 1],
-                                    [1, 1, 1, 1, 1],
-                                    [1, 1, 1, 1, 0],
-                                    [1, 1, 1, 0, 0]],
-                                ),
-                                z_order=0, group=1),
-                            Mask(np.array([
-                                    [1, 1, 0, 0, 0],
-                                    [1, 1, 0, 0, 0],
-                                    [0, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0]],
-                                ),
-                                z_order=1),
-                        ]
-                    ),
-                ])
+        target_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                annotations=[
+                    Mask(np.array([
+                            [0, 0, 1, 1, 1],
+                            [0, 1, 1, 1, 1],
+                            [1, 1, 1, 1, 1],
+                            [1, 1, 1, 1, 0],
+                            [1, 1, 1, 0, 0]],
+                        ),
+                        z_order=0, group=1),
+                    Mask(np.array([
+                            [1, 1, 0, 0, 0],
+                            [1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0]],
+                        ),
+                        z_order=1),
+                ]
+            ),
+        ])
 
-        actual = transforms.MergeInstanceSegments(SrcExtractor(),
+        actual = transforms.MergeInstanceSegments(source_dataset,
             include_polygons=True)
-        compare_datasets(self, DstExtractor(), actual)
+        compare_datasets(self, target_dataset, actual)
 
     def test_map_subsets(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, subset='a'),
-                    DatasetItem(id=2, subset='b'),
-                    DatasetItem(id=3, subset='c'),
-                ])
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, subset='a'),
+            DatasetItem(id=2, subset='b'),
+            DatasetItem(id=3, subset='c'),
+        ])
 
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, subset=''),
-                    DatasetItem(id=2, subset='a'),
-                    DatasetItem(id=3, subset='c'),
-                ])
+        target_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, subset=''),
+            DatasetItem(id=2, subset='a'),
+            DatasetItem(id=3, subset='c'),
+        ])
 
-        actual = transforms.MapSubsets(SrcExtractor(),
+        actual = transforms.MapSubsets(source_dataset,
             { 'a': '', 'b': 'a' })
-        compare_datasets(self, DstExtractor(), actual)
+        compare_datasets(self, target_dataset, actual)
 
     def test_shapes_to_boxes(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
-                        annotations=[
-                            Mask(np.array([
-                                    [0, 0, 1, 1, 1],
-                                    [0, 0, 0, 0, 1],
-                                    [1, 0, 0, 0, 1],
-                                    [1, 0, 0, 0, 0],
-                                    [1, 1, 1, 0, 0]],
-                                ), id=1),
-                            Polygon([1, 1, 4, 1, 4, 4, 1, 4], id=2),
-                            PolyLine([1, 1, 2, 1, 2, 2, 1, 2], id=3),
-                            Points([2, 2, 4, 2, 4, 4, 2, 4], id=4),
-                        ]
-                    ),
-                ])
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                annotations=[
+                    Mask(np.array([
+                            [0, 0, 1, 1, 1],
+                            [0, 0, 0, 0, 1],
+                            [1, 0, 0, 0, 1],
+                            [1, 0, 0, 0, 0],
+                            [1, 1, 1, 0, 0]],
+                        ), id=1),
+                    Polygon([1, 1, 4, 1, 4, 4, 1, 4], id=2),
+                    PolyLine([1, 1, 2, 1, 2, 2, 1, 2], id=3),
+                    Points([2, 2, 4, 2, 4, 4, 2, 4], id=4),
+                ]
+            ),
+        ])
 
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
-                        annotations=[
-                            Bbox(0, 0, 4, 4, id=1),
-                            Bbox(1, 1, 3, 3, id=2),
-                            Bbox(1, 1, 1, 1, id=3),
-                            Bbox(2, 2, 2, 2, id=4),
-                        ]
-                    ),
-                ])
+        target_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                annotations=[
+                    Bbox(0, 0, 4, 4, id=1),
+                    Bbox(1, 1, 3, 3, id=2),
+                    Bbox(1, 1, 1, 1, id=3),
+                    Bbox(2, 2, 2, 2, id=4),
+                ]
+            ),
+        ])
 
-        actual = transforms.ShapesToBoxes(SrcExtractor())
-        compare_datasets(self, DstExtractor(), actual)
+        actual = transforms.ShapesToBoxes(source_dataset)
+        compare_datasets(self, target_dataset, actual)
 
     def test_id_from_image(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, image='path.jpg'),
-                    DatasetItem(id=2),
-                ])
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image='path.jpg'),
+            DatasetItem(id=2),
+        ])
+        target_dataset = Dataset.from_iterable([
+            DatasetItem(id='path', image='path.jpg'),
+            DatasetItem(id=2),
+        ])
 
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id='path', image='path.jpg'),
-                    DatasetItem(id=2),
-                ])
-
-        actual = transforms.IdFromImageName(SrcExtractor())
-        compare_datasets(self, DstExtractor(), actual)
+        actual = transforms.IdFromImageName(source_dataset)
+        compare_datasets(self, target_dataset, actual)
 
     def test_boxes_to_masks(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
-                        annotations=[
-                            Bbox(0, 0, 3, 3, z_order=1),
-                            Bbox(0, 0, 3, 1, z_order=2),
-                            Bbox(0, 2, 3, 1, z_order=3),
-                        ]
-                    ),
-                ])
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                annotations=[
+                    Bbox(0, 0, 3, 3, z_order=1),
+                    Bbox(0, 0, 3, 1, z_order=2),
+                    Bbox(0, 2, 3, 1, z_order=3),
+                ]
+            ),
+        ])
 
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, image=np.zeros((5, 5, 3)),
-                        annotations=[
-                            Mask(np.array([
-                                    [1, 1, 1, 0, 0],
-                                    [1, 1, 1, 0, 0],
-                                    [1, 1, 1, 0, 0],
-                                    [0, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0]],
-                                ),
-                                z_order=1),
-                            Mask(np.array([
-                                    [1, 1, 1, 0, 0],
-                                    [0, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0]],
-                                ),
-                                z_order=2),
-                            Mask(np.array([
-                                    [0, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0],
-                                    [1, 1, 1, 0, 0],
-                                    [0, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0]],
-                                ),
-                                z_order=3),
-                        ]
-                    ),
-                ])
+        target_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, image=np.zeros((5, 5, 3)),
+                annotations=[
+                    Mask(np.array([
+                            [1, 1, 1, 0, 0],
+                            [1, 1, 1, 0, 0],
+                            [1, 1, 1, 0, 0],
+                            [0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0]],
+                        ),
+                        z_order=1),
+                    Mask(np.array([
+                            [1, 1, 1, 0, 0],
+                            [0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0]],
+                        ),
+                        z_order=2),
+                    Mask(np.array([
+                            [0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0],
+                            [1, 1, 1, 0, 0],
+                            [0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0]],
+                        ),
+                        z_order=3),
+                ]
+            ),
+        ])
 
-        actual = transforms.BoxesToMasks(SrcExtractor())
-        compare_datasets(self, DstExtractor(), actual)
+        actual = transforms.BoxesToMasks(source_dataset)
+        compare_datasets(self, target_dataset, actual)
 
     def test_random_split(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, subset="a"),
-                    DatasetItem(id=2, subset="a"),
-                    DatasetItem(id=3, subset="b"),
-                    DatasetItem(id=4, subset="b"),
-                    DatasetItem(id=5, subset="b"),
-                    DatasetItem(id=6, subset=""),
-                    DatasetItem(id=7, subset=""),
-                ])
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, subset="a"),
+            DatasetItem(id=2, subset="a"),
+            DatasetItem(id=3, subset="b"),
+            DatasetItem(id=4, subset="b"),
+            DatasetItem(id=5, subset="b"),
+            DatasetItem(id=6, subset=""),
+            DatasetItem(id=7, subset=""),
+        ])
 
-        actual = transforms.RandomSplit(SrcExtractor(), splits=[
+        actual = transforms.RandomSplit(source_dataset, splits=[
             ('train', 4.0 / 7.0),
             ('test', 3.0 / 7.0),
         ])
@@ -373,21 +338,19 @@ class TransformsTest(TestCase):
         self.assertEqual(3, len(actual.get_subset('test')))
 
     def test_random_split_gives_error_on_wrong_ratios(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([DatasetItem(id=1)])
+        source_dataset = Dataset.from_iterable([DatasetItem(id=1)])
 
         with self.assertRaises(Exception):
-            transforms.RandomSplit(SrcExtractor(), splits=[
+            transforms.RandomSplit(source_dataset, splits=[
                 ('train', 0.5),
                 ('test', 0.7),
             ])
 
         with self.assertRaises(Exception):
-            transforms.RandomSplit(SrcExtractor(), splits=[])
+            transforms.RandomSplit(source_dataset, splits=[])
 
         with self.assertRaises(Exception):
-            transforms.RandomSplit(SrcExtractor(), splits=[
+            transforms.RandomSplit(source_dataset, splits=[
                 ('train', -0.5),
                 ('test', 1.5),
             ])
@@ -462,24 +425,19 @@ class TransformsTest(TestCase):
         compare_datasets(self, DstExtractor(), actual)
 
     def test_remap_labels_delete_unspecified(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([ DatasetItem(id=1, annotations=[ Label(0) ]) ])
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, annotations=[ Label(0) ])
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable('label0'),
+        })
 
-            def categories(self):
-                label_cat = LabelCategories()
-                label_cat.add('label0')
+        target_dataset = Dataset.from_iterable([
+                DatasetItem(id=1, annotations=[]),
+            ], categories={
+                AnnotationType.label: LabelCategories(),
+            })
 
-                return { AnnotationType.label: label_cat }
-
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([ DatasetItem(id=1, annotations=[]) ])
-
-            def categories(self):
-                return { AnnotationType.label: LabelCategories() }
-
-        actual = transforms.RemapLabels(SrcExtractor(),
+        actual = transforms.RemapLabels(source_dataset,
             mapping={}, default='delete')
 
-        compare_datasets(self, DstExtractor(), actual)
+        compare_datasets(self, target_dataset, actual)

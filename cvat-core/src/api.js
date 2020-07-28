@@ -31,6 +31,7 @@ function build() {
         LogType,
         HistoryActions,
         colors,
+        Source,
     } = require('./enums');
 
     const {
@@ -531,6 +532,7 @@ function build() {
             LogType,
             HistoryActions,
             colors,
+            Source,
         },
         /**
             * Namespace is used for access to exceptions

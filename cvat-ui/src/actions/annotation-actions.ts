@@ -485,6 +485,7 @@ export function propagateObjectAsync(
                 label: objectState.label,
                 zOrder: objectState.zOrder,
                 frame: from,
+                source: objectState.source,
             };
 
             await sessionInstance.logger.log(
