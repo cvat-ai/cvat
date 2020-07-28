@@ -54,7 +54,8 @@ class _SubsetWriter:
         if item.has_image:
             path = item.image.path
             if self._context._save_images:
-                path = self._context._save_image(item)
+                path = self._context._make_image_filename(item)
+                self._context._save_image(item, path)
 
             item_desc['image'] = {
                 'size': item.image.size,
