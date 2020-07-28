@@ -8,14 +8,15 @@
 
 describe('Check server availability', () => {
   it('Server web interface is available', () => {
-    cy.visit('http://localhost:8080')
+    cy.visit('/')
+    cy.wait(30000)
   })
 
   it('"/auth/login" contains in the URL', () => {
     cy.url().should('include', '/auth/login')
   })
 
-  it('"Sign in" buttun is exists', () => {
+  it('"Sign in" button is exists', () => {
     cy.get('[type="submit"]')
   })
 
@@ -27,7 +28,7 @@ describe('Check server availability', () => {
     cy.get('[type="password"]')
   })
 
-  it('Click to "Sign in" buttun', () => {
+  it('Click to "Sign in" button', () => {
     cy.get('[type="submit"]').click()
   })
 })
