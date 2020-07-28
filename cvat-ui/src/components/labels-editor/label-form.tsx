@@ -10,10 +10,13 @@ import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
 import Select from 'antd/lib/select';
+import Popover from 'antd/lib/popover';
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
+import { SketchPicker } from 'react-color';
 
 import patterns from 'utils/validation-patterns';
+import consts from 'consts';
 import {
     equalArrayHead,
     idGenerator,
@@ -484,11 +487,28 @@ class LabelForm extends React.PureComponent<Props, {}> {
     }
 
     private renderChangeColorButton(): JSX.Element {
+        const { label } = this.props;
 
-        return(
-            <div>
-            </div>
-        )
+        return (
+            <Col offset={1}>
+                <Popover
+                    content={(
+                        <SketchPicker
+                            // colors={consts.CANVAS_BACKGROUND_COLORS}
+                            color={label && label.color ? label.color : '#ff0000'}
+                            disableAlpha
+                        />
+                    )}
+                    overlayClassName='canvas-background-color-picker-popover'
+                    trigger='click'
+                >
+
+                    <Tooltip title='Change color of the label'>
+                        <Button type='default'>Label color</Button>
+                    </Tooltip>
+                </Popover>
+            </Col>
+        );
     }
 
     public render(): JSX.Element {
@@ -512,6 +532,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                     { this.renderLabelNameInput() }
                     <Col span={1} />
                     { this.renderNewAttributeButton() }
+                    { this.renderChangeColorButton() }
                 </Row>
                 { attributeItems.length > 0
                     && (
