@@ -14,7 +14,6 @@ const defaultState: PluginsState = {
         GIT_INTEGRATION: false,
         DEXTR_SEGMENTATION: false,
         ANALYTICS: false,
-        REID: false,
     },
 };
 

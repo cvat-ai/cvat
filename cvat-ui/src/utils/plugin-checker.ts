@@ -33,10 +33,6 @@ class PluginChecker {
             case SupportedPlugins.ANALYTICS: {
                 return isReachable(`${serverHost}/analytics/app/kibana`, 'GET');
             }
-            case SupportedPlugins.REID: {
-                const list = await core.lambda.list();
-                return list.map((func: any): boolean => func.type).includes('reid');
-            }
             default:
                 return false;
         }

@@ -30,7 +30,6 @@ export function checkPluginsAsync(): ThunkAction {
         const plugins: PluginObjects = {
             ANALYTICS: false,
             GIT_INTEGRATION: false,
-            REID: false,
             DEXTR_SEGMENTATION: false,
         };
 
@@ -38,12 +37,11 @@ export function checkPluginsAsync(): ThunkAction {
             PluginChecker.check(SupportedPlugins.ANALYTICS),
             PluginChecker.check(SupportedPlugins.GIT_INTEGRATION),
             PluginChecker.check(SupportedPlugins.DEXTR_SEGMENTATION),
-            PluginChecker.check(SupportedPlugins.REID),
         ];
 
         const values = await Promise.all(promises);
         [plugins.ANALYTICS, plugins.GIT_INTEGRATION,
-            plugins.DEXTR_SEGMENTATION, plugins.REID] = values;
+            plugins.DEXTR_SEGMENTATION] = values;
         dispatch(pluginActions.checkedAllPlugins(plugins));
     };
 }
