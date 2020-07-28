@@ -85,11 +85,10 @@ export function getModelsAsync(): ThunkAction {
 
         try {
             const models = (await core.lambda.list())
-                .filter((model: Model) => model.type === 'detector');
+                .filter((model: Model) => ['detector', 'reid'].includes(model.type));
             dispatch(modelsActions.getModelsSuccess(models));
         } catch (error) {
             dispatch(modelsActions.getModelsFailed(error));
-            return;
         }
     };
 }
@@ -158,17 +157,11 @@ export function getInferenceStatusAsync(): ThunkAction {
 export function startInferenceAsync(
     taskInstance: any,
     model: Model,
-    mapping: {
-        [index: string]: string;
-    },
-    cleanup: boolean,
+    body: object,
 ): ThunkAction {
     return async (dispatch): Promise<void> => {
         try {
-            const requestID: string = await core.lambda.run(taskInstance, model, {
-                mapping,
-                cleanup,
-            });
+            const requestID: string = await core.lambda.run(taskInstance, model, body);
 
             const dispatchCallback = (action: ModelsActions): void => {
                 dispatch(action);
