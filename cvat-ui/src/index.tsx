@@ -26,6 +26,7 @@ import {
     resetErrors,
     resetMessages,
 } from './actions/notification-actions';
+import { loadAuthActionsAsync } from 'actions/auth-actions';
 
 import {
     CombinedState,
@@ -48,6 +49,8 @@ interface StateToProps {
     formatsFetching: boolean;
     userAgreementsInitialized: boolean;
     userAgreementsFetching: boolean;
+    authActionsFetching: boolean;
+    authActionsInitialized: boolean;
     installedAutoAnnotation: boolean;
     installedTFSegmentation: boolean;
     installedTFAnnotation: boolean;
@@ -67,6 +70,7 @@ interface DispatchToProps {
     switchShortcutsDialog: () => void;
     loadUserAgreements: () => void;
     switchSettingsDialog: (show: boolean) => void;
+    loadAuthActions: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -91,6 +95,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         formatsFetching: formats.fetching,
         userAgreementsInitialized: userAgreements.initialized,
         userAgreementsFetching: userAgreements.fetching,
+        authActionsFetching: auth.authActionsFetching,
+        authActionsInitialized: auth.authActionsInitialized,
         installedAutoAnnotation: plugins.list.AUTO_ANNOTATION,
         installedTFSegmentation: plugins.list.TF_SEGMENTATION,
         installedTFAnnotation: plugins.list.TF_ANNOTATION,
@@ -112,6 +118,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetMessages: (): void => dispatch(resetMessages()),
         switchShortcutsDialog: (): void => dispatch(shortcutsActions.switchShortcutsDialog()),
         switchSettingsDialog: (): void => dispatch(switchSettingsDialog()),
+        loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
     };
 }
 

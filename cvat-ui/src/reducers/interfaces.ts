@@ -13,6 +13,10 @@ export interface AuthState {
     initialized: boolean;
     fetching: boolean;
     user: any;
+    authActionsFetching: boolean;
+    authActionsInitialized: boolean,
+    showChangePasswordDialog: boolean;
+    allowChangePassword: boolean;
 }
 
 export interface TasksQuery {
@@ -195,6 +199,8 @@ export interface NotificationsState {
             login: null | ErrorState;
             logout: null | ErrorState;
             register: null | ErrorState;
+            changePassword: null | ErrorState;
+            loadAuthActions: null | ErrorState;
         };
         tasks: {
             fetching: null | ErrorState;

@@ -9,6 +9,7 @@ import HeaderComponent from 'components/header/header';
 import { SupportedPlugins, CombinedState } from 'reducers/interfaces';
 import { logoutAsync } from 'actions/auth-actions';
 import { switchSettingsDialog } from 'actions/settings-actions';
+import { authActions } from 'actions/auth-actions';
 
 const core = getCore();
 
@@ -28,20 +29,27 @@ interface StateToProps {
     uiVersion: string;
     switchSettingsShortcut: string;
     settingsDialogShown: boolean;
+    changePasswordDialogShown: boolean;
+    changePasswordFetching: boolean;
+    renderChangePasswordItem: boolean,
 }
 
 interface DispatchToProps {
     onLogout: () => void;
     switchSettingsDialog: (show: boolean) => void;
+    switchChangePasswordDialog: (show: boolean) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         auth: {
             fetching: logoutFetching,
+            fetching: changePasswordFetching,
             user: {
                 username,
             },
+            showChangePasswordDialog: changePasswordDialogShown,
+            allowChangePassword: renderChangePasswordItem,
         },
         plugins: {
             list,
@@ -74,6 +82,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         uiVersion: packageVersion.ui,
         switchSettingsShortcut: normalizedKeyMap.OPEN_SETTINGS,
         settingsDialogShown,
+        changePasswordFetching,
+        changePasswordDialogShown,
+        renderChangePasswordItem: renderChangePasswordItem,
     };
 }
 
@@ -81,6 +92,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onLogout: (): void => dispatch(logoutAsync()),
         switchSettingsDialog: (show: boolean): void => dispatch(switchSettingsDialog(show)),
+        switchChangePasswordDialog: (show: boolean): void => dispatch(authActions.switchChangePasswordDialog(show)),
     };
 }
 
