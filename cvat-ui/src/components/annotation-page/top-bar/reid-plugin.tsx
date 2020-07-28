@@ -189,6 +189,8 @@ function ReIDPlugin(props: StateToProps & DispatchToProps): JSX.Element {
                             });
                             await jobInstance.annotations.clear();
                             updateAnnotations(); // one more call to do not confuse canvas
+                            // False positive of no-unsanitized/method
+                            // eslint-disable-next-line no-unsanitized/method
                             await jobInstance.annotations.import(merged);
                             updateAnnotations();
                         } catch (error) {

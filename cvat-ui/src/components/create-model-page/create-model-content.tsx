@@ -18,8 +18,8 @@ import ConnectedFileManager, {
 } from 'containers/file-manager/file-manager';
 import { ModelFiles } from 'reducers/interfaces';
 
-import CreateModelForm, {
-    CreateModelForm as WrappedCreateModelForm,
+import WrappedCreateModelForm, {
+    CreateModelForm,
 } from './create-model-form';
 
 interface Props {
@@ -29,12 +29,12 @@ interface Props {
 }
 
 export default class CreateModelContent extends React.PureComponent<Props> {
-    private modelForm: WrappedCreateModelForm;
+    private modelForm: CreateModelForm;
     private fileManagerContainer: FileManagerContainer;
 
     public constructor(props: Props) {
         super(props);
-        this.modelForm = null as any as WrappedCreateModelForm;
+        this.modelForm = null as any as CreateModelForm;
         this.fileManagerContainer = null as any as FileManagerContainer;
     }
 
@@ -119,9 +119,9 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                     </Tooltip>
                 </Col>
                 <Col span={24}>
-                    <CreateModelForm
+                    <WrappedCreateModelForm
                         wrappedComponentRef={
-                            (ref: WrappedCreateModelForm): void => {
+                            (ref: CreateModelForm): void => {
                                 this.modelForm = ref;
                             }
                         }

@@ -189,6 +189,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 description: error.length > 200 ? 'Open the Browser Console to get details' : error,
             });
 
+            // eslint-disable-next-line no-console
             console.error(error);
         }
 
