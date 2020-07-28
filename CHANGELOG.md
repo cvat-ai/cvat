@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Source type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
 - Source type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
 - Intelligent polygon editing (<https://github.com/opencv/cvat/pull/1921>)
+- Python cli over https (<https://github.com/opencv/cvat/pull/1942>)
 - Ability to change user password (<https://github.com/opencv/cvat/pull/1954>)
+
 
 ### Changed
 - Smaller object details (<https://github.com/opencv/cvat/pull/1877>)
