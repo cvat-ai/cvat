@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No mapping between side object element and context menu in some attributes (<https://github.com/opencv/cvat/pull/1923>)
 - Interpolated shapes exported as `keyframe = True` (<https://github.com/opencv/cvat/pull/1937>)
 - Stylelint filetype scans (<https://github.com/opencv/cvat/pull/1952>)
+- Fixed toolip closing issue (<https://github.com/opencv/cvat/pull/1955>)
 
 ### Security
 -
