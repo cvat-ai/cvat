@@ -113,6 +113,18 @@ task_create_parser.add_argument(
     help='string or file containing JSON labels specification'
 )
 task_create_parser.add_argument(
+    '--overlap',
+    default=0,
+    type=int,
+    help='the number of intersected frames between different segments'
+)
+task_create_parser.add_argument(
+    '--segment_size',
+    default=0,
+    type=int,
+    help='the number of frames in a segment'
+)
+task_create_parser.add_argument(
     '--bug',
     default='',
     type=str,

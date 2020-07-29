@@ -58,7 +58,7 @@ class CLI():
             response = self.session.get(url)
             response.raise_for_status()
 
-    def tasks_create(self, name, labels, bug, resource_type, resources,
+    def tasks_create(self, name, labels, overlap, segment_size, bug, resource_type, resources,
                      annotation_path='', annotation_format='CVAT XML 1.1',
                      completion_verification_period=20, **kwargs):
         """ Create a new task with the given name and labels JSON and
@@ -66,6 +66,8 @@ class CLI():
         url = self.api.tasks
         data = {'name': name,
                 'labels': labels,
+                'overlap': overlap,
+                'segment_size': segment_size,
                 'bug_tracker': bug,
         }
         response = self.session.post(url, json=data)
