@@ -1,4 +1,3 @@
 {
-    "video": false,
-    "baseUrl": "http://cvat_ui"
+    "baseUrl": "http://localhost:8080"
 }
