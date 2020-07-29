@@ -28,7 +28,7 @@ def main():
     args = parser.parse_args()
     config_log(args.loglevel)
     with requests.Session() as session:
-        api = CVAT_API_V1('%s:%s' % (args.server_host, args.server_port))
+        api = CVAT_API_V1('%s:%s' % (args.server_host, args.server_port), args.https)
         cli = CLI(session, api, args.auth)
         try:
             actions[args.action](cli, **args.__dict__)

@@ -4,13 +4,10 @@
 - [How to change default CVAT hostname or port](#how-to-change-default-cvat-hostname-or-port)
 - [How to configure connected share folder on Windows](#how-to-configure-connected-share-folder-on-windows)
 - [How to make unassigned tasks not visible to all users](#how-to-make-unassigned-tasks-not-visible-to-all-users)
-- [Can Nvidia GPU be used to run inference with my own model](#can-nvidia-gpu-be-used-to-run-inference-with-my-own-model)
-- [What versions of OpenVINO toolkit are supported](#what-versions-of-openvino-toolkit-are-supported)
 - [Where are uploaded images/videos stored](#where-are-uploaded-imagesvideos-stored)
 - [Where are annotations stored](#where-are-annotations-stored)
 - [How to mark job/task as completed](#how-to-mark-jobtask-as-completed)
 - [How to install CVAT on Windows 10 Home](#how-to-install-cvat-on-windows-10-home)
-
 
 ## How to update CVAT
 Before upgrading, please follow the official docker
@@ -80,14 +77,6 @@ volumes:
 
 ## How to make unassigned tasks not visible to all users
 Set [reduce_task_visibility](../../settings/base.py#L424) variable to `True`.
-
-## Can Nvidia GPU be used to run inference with my own model
-Nvidia GPU can be used to accelerate inference of [tf_annotation](../../../components/tf_annotation/README.md) and [auto_segmentation](../../../components/auto_segmentation/README.md) models.
-
-OpenVino doesn't support Nvidia cards, so you can run your own models only on CPU.
-
-## What versions of OpenVINO toolkit are supported
-These versions are supported: `2019 R3`, `2019 R3.1`, `2020 1`, `2020 2`
 
 ## Where are uploaded images/videos stored
 The uploaded data is stored in the `cvat_data` docker volume:

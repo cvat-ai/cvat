@@ -4,6 +4,7 @@
   - [Mac OS Mojave](#mac-os-mojave)
   - [Advanced topics](#advanced-topics)
     - [Additional components](#additional-components)
+    - [Semi-automatic and automatic annotation](#semi-automatic-and-automatic-annotation)
     - [Stop all containers](#stop-all-containers)
     - [Advanced settings](#advanced-settings)
     - [Share path](#share-path)
@@ -246,21 +247,51 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 ### Additional components
 
-- [Auto annotation using DL models in OpenVINO toolkit format](/cvat/apps/auto_annotation/README.md)
 - [Analytics: management and monitoring of data annotation team](/components/analytics/README.md)
-- [TF Object Detection API: auto annotation](/components/tf_annotation/README.md)
-- [Support for NVIDIA GPUs](/components/cuda/README.md)
-- [Semi-automatic segmentation with Deep Extreme Cut](/cvat/apps/dextr_segmentation/README.md)
-- [Auto segmentation: Keras+Tensorflow Mask R-CNN Segmentation](/components/auto_segmentation/README.md)
 
 ```bash
-# Build and run containers with CUDA and OpenVINO support
-# IMPORTANT: need to download OpenVINO package before running the command
-docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml -f components/openvino/docker-compose.openvino.yml up -d --build
-
 # Build and run containers with Analytics component support:
 docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d --build
 ```
+
+### Semi-automatic and automatic annotation
+
+- You have to install `nuctl` command line tool to build and deploy serverless
+functions. Download [the latest release](https://github.com/nuclio/nuclio/releases).
+- Create `cvat` project inside nuclio dashboard where you will deploy new
+serverless functions and deploy a couple of DL models. Commands below should
+be run only after CVAT has been installed using docker-compose because it
+runs nuclio dashboard which manages all serverless functions.
+
+```bash
+nuctl create project cvat
+```
+
+```bash
+nuctl deploy --project-name cvat \
+    --path serverless/openvino/dextr/nuclio \
+    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common
+```
+
+```bash
+nuctl deploy --project-name cvat \
+    --path serverless/openvino/omz/public/yolo-v3-tf/nuclio \
+    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common
+```
+
+Note: see [deploy.sh](/serverless/deploy.sh) script for more examples.
+
+List of DL models as serverless functions:
+
+- [Deep Extreme Cut (OpenVINO)](/serverless/openvino/dextr/nuclio)
+- [Faster RCNN (TensorFlow)](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)
+- [Mask RCNN (OpenVINO)](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)
+- [YOLO v3 (OpenVINO)](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)
+- [Faster RCNN (OpenVINO)](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)
+- [Text detection v4 (OpenVINO)](/serverless/openvino/omz/intel/text-detection-0004/nuclio)
+- [Semantic segmentation for ADAS (OpenVINO)](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio)
+- [Mask RCNN (TensorFlow)](/serverless/tensorflow/matterport/mask_rcnn/nuclio)
+- [Person ReID (OpenVINO)](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)
 
 ### Stop all containers
 
@@ -327,9 +358,9 @@ our server connection.
 
 We assume that
 
--   you have sudo access on your server machine,
--   you have an IP address to use for remote access, and
--   that the local CVAT installation works on your server.
+- you have sudo access on your server machine,
+- you have an IP address to use for remote access, and
+- that the local CVAT installation works on your server.
 
 If this is not the case, please complete the steps in the installation manual first.
 
@@ -525,7 +556,7 @@ server {
     proxy_set_header        Host $http_host;
     proxy_pass_header       Set-Cookie;
 
-    location ~* /api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*  {
+    location ~* /api/.*|git/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*  {
         proxy_pass              http://cvat:8080;
     }
 
@@ -550,6 +581,6 @@ server {
 
 Start cvat_proxy container with https enabled.
 
-```
+```bash
 docker start cvat_proxy
 ```

@@ -1,0 +1,57 @@
+metadata:
+  name: pth.foolwood.siammask
+  namespace: cvat
+  annotations:
+    name: SiamMask
+    type: tracker
+    spec:
+    framework: pytorch
+
+spec:
+  description: Fast Online Object Tracking and Segmentation
+  runtime: "python:3.6"
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/SiamMask:/opt/nuclio/SiamMask/experiments/siammask_sharp
+
+  build:
+    image: cvat/pth.foolwood.siammask
+    baseImage: continuumio/miniconda3
+
+    directives:
+      preCopy:
+      - kind: WORKDIR
+        value: /opt/nuclio
+      - kind: RUN
+        value: conda create -y -n siammask python=3.6
+      - kind: RUN
+        value: source activate siammask
+      - kind: RUN
+        value: git clone https://github.com/foolwood/SiamMask.git
+      - kind: RUN
+        value: pip install -r SiamMask/requirements.txt
+      - kind: RUN
+        value: conda install -y gcc_linux-64
+      - kind: RUN
+        value: cd SiamMask && bash make.sh && cd -
+      - kind: RUN
+        value: wget -P SiamMask/experiments/siammask_sharp http://www.robots.ox.ac.uk/~qwang/SiamMask_DAVIS.pth
+
+      - kind: WORKDIR
+        value: /opt/nuclio/pysot
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: "http"
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3

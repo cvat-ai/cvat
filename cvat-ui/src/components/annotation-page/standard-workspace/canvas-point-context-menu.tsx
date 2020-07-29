@@ -111,7 +111,7 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
     return visible && contextMenuFor && type === ContextMenuType.CANVAS_SHAPE_POINT
         ? (ReactDOM.createPortal(
             <div className='cvat-canvas-point-context-menu' style={{ top, left }}>
-                <Tooltip title='Delete point [Ctrl + dblclick]'>
+                <Tooltip title='Delete point [Ctrl + dblclick]' mouseLeaveDelay={0}>
                     <Button type='link' icon='delete' onClick={onPointDelete}>
                         Delete point
                     </Button>

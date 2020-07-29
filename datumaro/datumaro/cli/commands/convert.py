@@ -67,9 +67,9 @@ def convert_command(args):
     except KeyError:
         raise CliException("Converter for format '%s' is not found" % \
             args.output_format)
-    if hasattr(converter, 'from_cmdline'):
-        extra_args = converter.from_cmdline(args.extra_args)
-        converter = converter(**extra_args)
+    extra_args = converter.from_cmdline(args.extra_args)
+    def converter_proxy(extractor, save_dir):
+        return converter.convert(extractor, save_dir, **extra_args)
 
     filter_args = FilterModes.make_filter_args(args.filter_mode)
 
@@ -127,7 +127,7 @@ def convert_command(args):
     log.info("Exporting the dataset")
     dataset.export_project(
         save_dir=dst_dir,
-        converter=converter,
+        converter=converter_proxy,
         filter_expr=args.filter,
         **filter_args)
 

@@ -145,7 +145,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                                     />
                                 </Col>
                                 <Col span={1} className='close-auto-annotation-icon'>
-                                    <Tooltip title='Cancel automatic annotation'>
+                                    <Tooltip title='Cancel automatic annotation' mouseLeaveDelay={0}>
                                         <Icon
                                             type='close'
                                             onClick={() => {

@@ -1,4 +1,4 @@
-FROM cvat
+FROM cvat/server
 
 ENV DJANGO_CONFIGURATION=testing
 USER root
@@ -14,6 +14,7 @@ RUN curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - &
         nodejs \
         python3-dev \
         ruby \
+        xvfb \
         && \
     rm -rf /var/lib/apt/lists/*;
 
@@ -36,6 +37,7 @@ RUN mkdir -p tests && cd tests && npm install \
         karma-junit-reporter \
         karma-qunit \
         qunit; \
+        CI=true npm install cypress; \
     echo "export PATH=~/tests/node_modules/.bin:${PATH}" >> ~/.bashrc;
 
 ENTRYPOINT []

@@ -79,6 +79,12 @@ parser.add_argument(
     help='port (default: %(default)s)'
 )
 parser.add_argument(
+    '--https',
+    default=False,
+    action='store_true',
+    help='using https connection (default: %(default)s)'
+)
+parser.add_argument(
     '--debug',
     action='store_const',
     dest='loglevel',
@@ -105,6 +111,18 @@ task_create_parser.add_argument(
     default='[]',
     type=parse_label_arg,
     help='string or file containing JSON labels specification'
+)
+task_create_parser.add_argument(
+    '--overlap',
+    default=0,
+    type=int,
+    help='the number of intersected frames between different segments'
+)
+task_create_parser.add_argument(
+    '--segment_size',
+    default=0,
+    type=int,
+    help='the number of frames in a segment'
 )
 task_create_parser.add_argument(
     '--bug',

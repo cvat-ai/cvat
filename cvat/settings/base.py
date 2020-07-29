@@ -99,6 +99,7 @@ INSTALLED_APPS = [
     'cvat.apps.engine',
     'cvat.apps.git',
     'cvat.apps.restrictions',
+    'cvat.apps.lambda_manager',
     'django_rq',
     'compressor',
     'cacheops',
@@ -160,24 +161,8 @@ REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'cvat.apps.restrictions.serializers.RestrictedRegisterSerializer'
 }
 
-if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
-    INSTALLED_APPS += ['cvat.apps.tf_annotation']
-
-if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
-    INSTALLED_APPS += ['cvat.apps.auto_annotation']
-
-if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no') and os.environ.get('REID_MODEL_DIR', ''):
-    INSTALLED_APPS += ['cvat.apps.reid']
-
-if 'yes' == os.environ.get('WITH_DEXTR', 'no'):
-    INSTALLED_APPS += ['cvat.apps.dextr_segmentation']
-
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
-
-# new feature by Mohammad
-if 'yes' == os.environ.get('AUTO_SEGMENTATION', 'no'):
-    INSTALLED_APPS += ['cvat.apps.auto_segmentation']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -252,6 +237,13 @@ RQ_QUEUES = {
         'DB': 0,
         'DEFAULT_TIMEOUT': '24h'
     }
+}
+
+NUCLIO = {
+    'SCHEME': 'http',
+    'HOST': 'localhost',
+    'PORT': 8070,
+    'DEFAULT_TIMEOUT': 120
 }
 
 RQ_SHOW_ADMIN_LINK = True

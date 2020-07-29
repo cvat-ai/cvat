@@ -71,7 +71,6 @@ are visible to users.
 
 Disabled features:
 - [Analytics: management and monitoring of data annotation team](/components/analytics/README.md)
-- [Support for NVIDIA GPUs](/components/cuda/README.md)
 
 Limitations:
 - No more than 10 tasks per user

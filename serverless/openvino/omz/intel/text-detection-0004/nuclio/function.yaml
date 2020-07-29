@@ -1,0 +1,53 @@
+metadata:
+  name: openvino.omz.intel.text-detection-0004
+  namespace: cvat
+  annotations:
+    name: Text detection v4
+    type: detector
+    framework: openvino
+    spec: |
+      [
+        { "id": 1, "name": "text" }
+      ]
+
+spec:
+  description: Text detector based on PixelLink architecture with MobileNetV2-like as a backbone for indoor/outdoor scenes.
+  runtime: "python:3.6"
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: NUCLIO_PYTHON_EXE_PATH
+      value: /opt/nuclio/common/python3
+
+  build:
+    image: cvat/openvino.omz.intel.text-detection-0004
+    baseImage: openvino/ubuntu18_dev:2020.2
+
+    directives:
+      preCopy:
+      - kind: USER
+        value: root
+      - kind: WORKDIR
+        value: /opt/nuclio
+      - kind: RUN
+        value: ln -s /usr/bin/pip3 /usr/bin/pip
+      - kind: RUN
+        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name text-detection-0004 -o /opt/nuclio/open_model_zoo
+
+      postCopy:
+      - kind: USER
+        value: openvino
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: "http"
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
