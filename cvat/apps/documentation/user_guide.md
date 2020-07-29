@@ -1272,7 +1272,7 @@ Simply drag the faces to move them independently from the rest of the cuboid.
 
 ![](static/documentation/images/gif020_mapillary_vistas.gif)
 
-You can also use cuboids in track mode, similar to rectangles in track mode ([basics](#track-mode-basics) and [advanced](#track-mode-advanced))
+You can also use cuboids in track mode, similar to rectangles in track mode ([basics](#track-mode-basics) and [advanced](#track-mode-advanced)) or [Track mode with polygons](#track-mode-with-polygons)
 
 ## Annotation with Tags
 
