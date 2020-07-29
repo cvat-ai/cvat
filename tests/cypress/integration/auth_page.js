@@ -9,7 +9,6 @@
 describe('Check server availability', () => {
   it('Server web interface is available', () => {
     cy.visit('/')
-    cy.wait(30000)
   })
 
   it('"/auth/login" contains in the URL', () => {

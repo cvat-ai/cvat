@@ -168,6 +168,22 @@ curl https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_co
     export AUTO_SEGMENTATION_PATH="/path/to/dir" # dir must contain mask_rcnn_coco.h5 file
 ```
 
+### Run Cypress tests
+- Install Сypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
+- Setting the address of the local CVAT server:
+Change value for ``baseUrl`` parameter in the ``<cvat_local_repository>/tests/cypress.json``
+
+Example:
+```sh
+    "baseUrl": "http://localhost:8080"
+```
+- Run cypress tests:
+```sh
+    cd <cvat_local_repository>/tests
+    <cypress_installation_directory>/node_modules/.bin/cypress run --headless --browser chrome
+```
+For more information, see the [documentation](https://docs.cypress.io/).
+
 ## JavaScript/Typescript coding style
 
 We use the [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript) for JavaScript code with a
