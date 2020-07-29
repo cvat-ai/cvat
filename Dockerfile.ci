@@ -1,4 +1,4 @@
-FROM cvat
+FROM cvat/server
 
 ENV DJANGO_CONFIGURATION=testing
 USER root

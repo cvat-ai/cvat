@@ -361,21 +361,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ModelsActionTypes.DELETE_MODEL_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    models: {
-                        ...state.errors.models,
-                        deleting: {
-                            message: 'Could not delete the model',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
             if (action.payload.activeInference.status === 'finished') {
                 const { taskID } = action.payload;
@@ -420,7 +405,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         inferenceStatusFetching: {
-                            message: 'Could not fetch inference status for the '
+                            message: 'Fetching inference status for the '
                                 + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },

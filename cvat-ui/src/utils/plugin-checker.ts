@@ -26,23 +26,12 @@ class PluginChecker {
             case SupportedPlugins.GIT_INTEGRATION: {
                 return isReachable(`${serverHost}/git/repository/meta/get`, 'OPTIONS');
             }
-            case SupportedPlugins.AUTO_ANNOTATION: {
-                return isReachable(`${serverHost}/auto_annotation/meta/get`, 'OPTIONS');
-            }
-            case SupportedPlugins.TF_ANNOTATION: {
-                return isReachable(`${serverHost}/tensorflow/annotation/meta/get`, 'OPTIONS');
-            }
-            case SupportedPlugins.TF_SEGMENTATION: {
-                return isReachable(`${serverHost}/tensorflow/segmentation/meta/get`, 'OPTIONS');
-            }
             case SupportedPlugins.DEXTR_SEGMENTATION: {
-                return isReachable(`${serverHost}/dextr/enabled`, 'GET');
+                const list = await core.lambda.list();
+                return list.map((func: any): boolean => func.id).includes('openvino.dextr');
             }
             case SupportedPlugins.ANALYTICS: {
                 return isReachable(`${serverHost}/analytics/app/kibana`, 'GET');
-            }
-            case SupportedPlugins.REID: {
-                return isReachable(`${serverHost}/reid/enabled`, 'GET');
             }
             default:
                 return false;

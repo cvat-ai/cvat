@@ -10,6 +10,8 @@ INSTALLED_APPS += [
     'mod_wsgi.server',
 ]
 
+NUCLIO['HOST'] = os.getenv('CVAT_NUCLIO_HOST', 'nuclio')
+
 for key in RQ_QUEUES:
     RQ_QUEUES[key]['HOST'] = os.getenv('CVAT_REDIS_HOST', 'cvat_redis')
 

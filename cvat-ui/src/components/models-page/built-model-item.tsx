@@ -20,7 +20,7 @@ export default function BuiltModelItemComponent(props: Props): JSX.Element {
     return (
         <Row className='cvat-models-list-item' type='flex'>
             <Col span={4} xxl={3}>
-                <Tag color='orange'>Tensorflow</Tag>
+                <Tag color='orange'>{model.framework}</Tag>
             </Col>
             <Col span={6} xxl={7}>
                 <Text className='cvat-text-color'>

@@ -30,7 +30,6 @@ router.register('tasks', views.TaskViewSet)
 router.register('jobs', views.JobViewSet)
 router.register('users', views.UserViewSet)
 router.register('server', views.ServerViewSet, basename='server')
-router.register('plugins', views.PluginViewSet)
 router.register('restrictions', RestrictionsViewSet, basename='restrictions')
 
 urlpatterns = [

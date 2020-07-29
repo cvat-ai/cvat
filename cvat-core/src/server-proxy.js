@@ -162,7 +162,6 @@
                     response = await Axios.get(`${backendAPI}/restrictions/user-agreements`, {
                         proxy: config.proxy,
                     });
-
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -170,7 +169,15 @@
                 return response.data;
             }
 
-            async function register(username, firstName, lastName, email, password1, password2, confirmations) {
+            async function register(
+                username,
+                firstName,
+                lastName,
+                email,
+                password1,
+                password2,
+                confirmations,
+            ) {
                 let response = null;
                 try {
                     const data = JSON.stringify({
@@ -662,6 +669,96 @@
                 }
             }
 
+            async function getLambdaFunctions() {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.get(`${backendAPI}/lambda/functions`, {
+                        proxy: config.proxy,
+                    });
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function runLambdaRequest(body) {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.post(`${backendAPI}/lambda/requests`,
+                        JSON.stringify(body), {
+                            proxy: config.proxy,
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                        });
+
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function callLambdaFunction(funId, body) {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.post(`${backendAPI}/lambda/functions/${funId}`,
+                        JSON.stringify(body), {
+                            proxy: config.proxy,
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                        });
+
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function getLambdaRequests() {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.get(`${backendAPI}/lambda/requests`, {
+                        proxy: config.proxy,
+                    });
+
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function getRequestStatus(requestID) {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.get(`${backendAPI}/lambda/requests/${requestID}`, {
+                        proxy: config.proxy,
+                    });
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function cancelLambdaRequest(requestId) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.delete(
+                        `${backendAPI}/lambda/requests/${requestId}`, {
+                            method: 'DELETE',
+                        },
+                    );
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             Object.defineProperties(this, Object.freeze({
                 server: {
                     value: Object.freeze({
@@ -728,6 +825,18 @@
                 logs: {
                     value: Object.freeze({
                         save: saveLogs,
+                    }),
+                    writable: false,
+                },
+
+                lambda: {
+                    value: Object.freeze({
+                        list: getLambdaFunctions,
+                        status: getRequestStatus,
+                        requests: getLambdaRequests,
+                        run: runLambdaRequest,
+                        call: callLambdaFunction,
+                        cancel: cancelLambdaRequest,
                     }),
                     writable: false,
                 },

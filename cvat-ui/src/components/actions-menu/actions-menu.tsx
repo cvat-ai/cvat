@@ -15,16 +15,11 @@ interface Props {
     taskID: number;
     taskMode: string;
     bugTracker: string;
-
     loaders: any[];
     dumpers: any[];
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
-
-    installedTFAnnotation: boolean;
-    installedTFSegmentation: boolean;
-    installedAutoAnnotation: boolean;
     inferenceIsActive: boolean;
 
     onClickMenu: (params: ClickParam, file?: File) => void;
@@ -44,12 +39,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
         taskID,
         taskMode,
         bugTracker,
-
-        installedAutoAnnotation,
-        installedTFAnnotation,
-        installedTFSegmentation,
         inferenceIsActive,
-
         dumpers,
         loaders,
         onClickMenu,
@@ -57,9 +47,6 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
         exportActivities,
         loadActivity,
     } = props;
-
-    const renderModelRunner = installedAutoAnnotation
-        || installedTFAnnotation || installedTFSegmentation;
 
     let latestParams: ClickParam | null = null;
     function onClickMenuWrapper(params: ClickParam | null, file?: File): void {
@@ -137,17 +124,12 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                 })
             }
             {!!bugTracker && <Menu.Item key={Actions.OPEN_BUG_TRACKER}>Open bug tracker</Menu.Item>}
-            {
-                renderModelRunner
-                    && (
-                        <Menu.Item
-                            disabled={inferenceIsActive}
-                            key={Actions.RUN_AUTO_ANNOTATION}
-                        >
-                            Automatic annotation
-                        </Menu.Item>
-                    )
-            }
+            <Menu.Item
+                disabled={inferenceIsActive}
+                key={Actions.RUN_AUTO_ANNOTATION}
+            >
+                Automatic annotation
+            </Menu.Item>
             <hr />
             <Menu.Item key={Actions.DELETE_TASK}>Delete</Menu.Item>
         </Menu>
