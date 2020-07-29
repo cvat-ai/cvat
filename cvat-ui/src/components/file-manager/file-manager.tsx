@@ -129,6 +129,8 @@ export default class FileManager extends React.PureComponent<Props, State> {
 
     private renderShareSelector(): JSX.Element {
         function renderTreeNodes(data: TreeNodeNormal[]): JSX.Element[] {
+            // sort alphabetically
+            data.sort((a, b) => (a.key > b.key) ? 1 : -1)
             return data.map((item: TreeNodeNormal) => {
                 if (item.children) {
                     return (
