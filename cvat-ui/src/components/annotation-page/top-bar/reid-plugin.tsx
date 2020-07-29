@@ -41,7 +41,7 @@ function InputModal(props: InputModalProps): JSX.Element {
         >
             <Row type='flex'>
                 <Col span={10}>
-                    <Tooltip title='Similarity of objects on neighbour frames is calculated using AI model'>
+                    <Tooltip title='Similarity of objects on neighbour frames is calculated using AI model' mouseLeaveDelay={0}>
                         <Text>Similarity threshold: </Text>
                     </Tooltip>
                 </Col>
@@ -62,7 +62,7 @@ function InputModal(props: InputModalProps): JSX.Element {
             </Row>
             <Row type='flex'>
                 <Col span={10}>
-                    <Tooltip title='The value defines max distance to merge (between centers of two objects on neighbour frames)'>
+                    <Tooltip title='The value defines max distance to merge (between centers of two objects on neighbour frames)' mouseLeaveDelay={0}>
                         <Text>Max pixel distance: </Text>
                     </Tooltip>
                 </Col>
@@ -189,6 +189,8 @@ function ReIDPlugin(props: StateToProps & DispatchToProps): JSX.Element {
                             });
                             await jobInstance.annotations.clear();
                             updateAnnotations(); // one more call to do not confuse canvas
+                            // False positive of no-unsanitized/method
+                            // eslint-disable-next-line no-unsanitized/method
                             await jobInstance.annotations.import(merged);
                             updateAnnotations();
                         } catch (error) {
