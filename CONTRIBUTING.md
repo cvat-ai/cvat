@@ -189,10 +189,11 @@ nuctl get function
 
 </details>
 
-- Test your deployed DL model as a serverless function
+- Test your deployed DL model as a serverless function. The command below
+should work on Linux and Mac OS.
 
 ```bash
-image=$(curl https://upload.wikimedia.org/wikipedia/en/7/7d/Lenna_%28test_image%29.png --output - | base64)
+image=$(curl https://upload.wikimedia.org/wikipedia/en/7/7d/Lenna_%28test_image%29.png --output - | base64 | tr -d '\n')
 cat << EOF > /tmp/input.json
 {"image": "$image"}
 EOF
