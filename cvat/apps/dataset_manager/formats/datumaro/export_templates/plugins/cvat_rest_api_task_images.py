@@ -100,7 +100,7 @@ class cvat_rest_api_task_images(SourceExtractor):
             if entry.get('height') and entry.get('width'):
                 size = (entry['height'], entry['width'])
             image = Image(data=self._make_image_loader(item_id),
-                path=item_filename, size=size)
+                path=self._image_local_path(item_id), size=size)
             item = DatasetItem(id=item_id, image=image)
             items.append((item.id, item))
 

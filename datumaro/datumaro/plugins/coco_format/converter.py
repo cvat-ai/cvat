@@ -298,8 +298,8 @@ class _InstancesConverter(_TaskConverter):
                 rles = mask_utils.merge(rles)
             area = mask_utils.area(rles)
         else:
-            x, y, w, h = bbox
-            segmentation = [[x, y, x + w, y, x + w, y + h, x, y + h]]
+            _, _, w, h = bbox
+            segmentation = []
             area = w * h
 
         elem = {
