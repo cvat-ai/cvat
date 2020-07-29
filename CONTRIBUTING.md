@@ -230,7 +230,14 @@ Server = nuclio
 ]
 ```
 
-</details>
+### Run Cypress tests
+- Install Сypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
+- Run cypress tests:
+```sh
+    cd <cvat_local_repository>/tests
+    <cypress_installation_directory>/node_modules/.bin/cypress run --headless --browser chrome
+```
+For more information, see the [documentation](https://docs.cypress.io/).
 
 ## JavaScript/Typescript coding style
 

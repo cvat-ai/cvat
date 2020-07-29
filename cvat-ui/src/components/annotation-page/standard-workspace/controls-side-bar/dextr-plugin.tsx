@@ -62,7 +62,7 @@ function DEXTRPlugin(props: StateToProps & DispatchToProps): JSX.Element | null 
 
     return (
         pluginEnabled ? (
-            <Tooltip title='Make AI polygon from at least 4 extreme points using deep extreme cut'>
+            <Tooltip title='Make AI polygon from at least 4 extreme points using deep extreme cut' mouseLeaveDelay={0}>
                 <Checkbox
                     style={{ marginTop: 5 }}
                     checked={pluginActivated}

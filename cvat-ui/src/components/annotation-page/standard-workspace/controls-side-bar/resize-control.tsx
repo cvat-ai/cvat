@@ -22,7 +22,7 @@ function ResizeControl(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Tooltip title='Select a region of interest' placement='right'>
+        <Tooltip title='Select a region of interest' placement='right' mouseLeaveDelay={0}>
             <Icon
                 component={ZoomIcon}
                 className={activeControl === ActiveControl.ZOOM_CANVAS

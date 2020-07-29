@@ -62,19 +62,19 @@ function PlayerNavigation(props: Props): JSX.Element {
                 </Row>
                 <Row type='flex' justify='center'>
                     <Col className='cvat-player-filename-wrapper'>
-                        <Tooltip title={frameFilename}>
+                        <Tooltip title={frameFilename} mouseLeaveDelay={0}>
                             <Text type='secondary'>{frameFilename}</Text>
                         </Tooltip>
                     </Col>
                     <Col offset={1}>
-                        <Tooltip title='Create frame URL'>
+                        <Tooltip title='Create frame URL' mouseLeaveDelay={0}>
                             <Icon className='cvat-player-frame-url-icon' type='link' onClick={onURLIconClick} />
                         </Tooltip>
                     </Col>
                 </Row>
             </Col>
             <Col>
-                <Tooltip title={`Press ${focusFrameInputShortcut} to focus here`}>
+                <Tooltip title={`Press ${focusFrameInputShortcut} to focus here`} mouseLeaveDelay={0}>
                     <InputNumber
                         className='cvat-player-frame-selector'
                         type='number'

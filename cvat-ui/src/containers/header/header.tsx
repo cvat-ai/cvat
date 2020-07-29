@@ -66,7 +66,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         coreVersion: packageVersion.core,
         canvasVersion: packageVersion.canvas,
         uiVersion: packageVersion.ui,
-        switchSettingsShortcut: normalizedKeyMap.OPEN_SETTINGS,
+        switchSettingsShortcut: normalizedKeyMap.SWITCH_SETTINGS,
         settingsDialogShown,
     };
 }

@@ -61,7 +61,7 @@ function SetupTagPopover(props: Props): JSX.Element {
             </Row>
             <Row type='flex' justify='space-around'>
                 <Col span={24}>
-                    <Tooltip title={`Press ${repeatShapeShortcut} to add a tag again`}>
+                    <Tooltip title={`Press ${repeatShapeShortcut} to add a tag again`} mouseLeaveDelay={0}>
                         <Button onClick={() => onSetup(selectedLabeID)}>
                             Tag
                         </Button>

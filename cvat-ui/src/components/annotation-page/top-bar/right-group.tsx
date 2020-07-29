@@ -49,7 +49,7 @@ function RightGroup(props: Props): JSX.Element {
                     value={workspace}
                 >
                     {Object.values(Workspace).map((ws) => (
-                        <Select.Option key={ws} value={ws} >
+                        <Select.Option key={ws} value={ws}>
                             {ws}
                         </Select.Option>
                     ))}
