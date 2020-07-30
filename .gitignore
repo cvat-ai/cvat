@@ -13,6 +13,7 @@
 node_modules
 /Mask_RCNN/
 /letsencrypt-webroot/
+.vscode/settings.json
 
 # Ignore temporary files
 docker-compose.override.yml
