@@ -8,6 +8,8 @@
 - [Where are annotations stored](#where-are-annotations-stored)
 - [How to mark job/task as completed](#how-to-mark-jobtask-as-completed)
 - [How to install CVAT on Windows 10 Home](#how-to-install-cvat-on-windows-10-home)
+- [I do not have the Analytics tab on the header section. How can I add analytics](#i-do-not-have-the-analytics-tab-on-the-header-section-how-can-i-add-analytics)
+- [How to upload annotations to an entire task from UI when there are multiple jobs in the task](#how-to-upload-annotations-to-an-entire-task-from-ui-when-there-are-multiple-jobs-in-the-task)
 
 ## How to update CVAT
 Before upgrading, please follow the official docker
@@ -99,3 +101,10 @@ The status of the job changes the progress bar of the task.
 
 ## How to install CVAT on Windows 10 Home
 Follow this [guide](installation.md#windows-10).
+
+## I do not have the Analytics tab on the header section. How can I add analytics
+You should build CVAT images with ['Analytics' component](../../../components/analytics).
+
+## How to upload annotations to an entire task from UI when there are multiple jobs in the task
+You can upload annotation for a multi-job task from the Dasboard view or the Task view.
+Uploading of annotation from the Annotation view only affects the current job.
