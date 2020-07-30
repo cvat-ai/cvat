@@ -11,7 +11,12 @@
     const PluginRegistry = require('./plugins');
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
-    const { getFrame, getRanges, getPreview } = require('./frames');
+    const {
+        getFrame,
+        getRanges,
+        getPreview,
+        clear: clearFrames,
+    } = require('./frames');
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
@@ -1593,6 +1598,7 @@
     };
 
     Task.prototype.close.implementation = function closeTask() {
+        clearFrames(this.id);
         for (const job of this.jobs) {
             closeSession(job);
         }
