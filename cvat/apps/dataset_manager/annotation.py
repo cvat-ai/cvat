@@ -316,7 +316,10 @@ class ShapeManager(ObjectManager):
     def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
         def _calc_polygons_similarity(p0, p1):
             overlap_area = p0.intersection(p1).area
-            return overlap_area / (p0.area + p1.area - overlap_area)
+            if p0.area == 0 or p1.area == 0: # a line with many points
+                return 0
+            else:
+                return overlap_area / (p0.area + p1.area - overlap_area)
 
         has_same_type  = obj0["type"] == obj1["type"]
         has_same_label = obj0.get("label_id") == obj1.get("label_id")
@@ -328,7 +331,7 @@ class ShapeManager(ObjectManager):
                 return _calc_polygons_similarity(p0, p1)
             elif obj0["type"] == ShapeType.POLYGON:
                 p0 = geometry.Polygon(pairwise(obj0["points"]))
-                p1 = geometry.Polygon(pairwise(obj0["points"]))
+                p1 = geometry.Polygon(pairwise(obj1["points"]))
 
                 return _calc_polygons_similarity(p0, p1)
             else:
@@ -445,7 +448,7 @@ class TrackManager(ObjectManager):
     def get_interpolated_shapes(track, start_frame, end_frame):
         def copy_shape(source, frame, points=None):
             copied = deepcopy(source)
-            copied["keyframe"] = True
+            copied["keyframe"] = False
             copied["frame"] = frame
             if points is not None:
                 copied["points"] = points

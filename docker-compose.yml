@@ -32,7 +32,7 @@ services:
 
   cvat:
     container_name: cvat
-    image: cvat
+    image: cvat/server
     restart: always
     depends_on:
       - cvat_redis
@@ -44,12 +44,9 @@ services:
         https_proxy:
         no_proxy:
         socks_proxy:
-        TF_ANNOTATION: "no"
-        AUTO_SEGMENTATION: "no"
         USER: "django"
         DJANGO_CONFIGURATION: "production"
         TZ: "Etc/UTC"
-        OPENVINO_TOOLKIT: "no"
         CLAM_AV: "no"
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
@@ -64,6 +61,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
+    image: cvat/ui
     restart: always
     build:
       context: .
@@ -96,6 +94,22 @@ services:
       - ./cvat_proxy/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./cvat_proxy/conf.d/cvat.conf.template:/etc/nginx/conf.d/cvat.conf.template:ro
     command: /bin/sh -c "envsubst '$$CVAT_HOST' < /etc/nginx/conf.d/cvat.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+
+  serverless:
+    container_name: nuclio
+    image: quay.io/nuclio/dashboard:1.4.8-amd64
+    restart: always
+    networks:
+      default:
+        aliases:
+          - nuclio
+    volumes:
+      - /tmp:/tmp
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      NUCLIO_CHECK_FUNCTION_CONTAINERS_HEALTHINESS: "true"
+    ports:
+      - "8070:8070"
 
 volumes:
   cvat_db:

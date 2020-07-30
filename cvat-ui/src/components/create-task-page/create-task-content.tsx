@@ -10,7 +10,7 @@ import Collapse from 'antd/lib/collapse';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 
-import FileManagerContainer from 'containers/file-manager/file-manager';
+import ConnectedFileManager from 'containers/file-manager/file-manager';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import AdvancedConfigurationForm, { AdvancedConfiguration } from './advanced-configuration-form';
 import LabelsEditor from '../labels-editor/labels-editor';
@@ -184,7 +184,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
             <Col span={24}>
                 <Text type='danger'>* </Text>
                 <Text className='cvat-text-color'>Select files:</Text>
-                <FileManagerContainer
+                <ConnectedFileManager
                     ref={
                         (container: any): void => { this.fileManagerContainer = container; }
                     }

@@ -54,19 +54,19 @@ function PlayerButtons(props: Props): JSX.Element {
 
     return (
         <Col className='cvat-player-buttons'>
-            <Tooltip title='Go to the first frame'>
+            <Tooltip title='Go to the first frame' mouseLeaveDelay={0}>
                 <Icon component={FirstIcon} onClick={onFirstFrame} />
             </Tooltip>
-            <Tooltip title={`Go back with a step ${backwardShortcut}`}>
+            <Tooltip title={`Go back with a step ${backwardShortcut}`} mouseLeaveDelay={0}>
                 <Icon component={BackJumpIcon} onClick={onBackward} />
             </Tooltip>
-            <Tooltip title={`Go back ${previousFrameShortcut}`}>
+            <Tooltip title={`Go back ${previousFrameShortcut}`} mouseLeaveDelay={0}>
                 <Icon component={PreviousIcon} onClick={onPrevFrame} />
             </Tooltip>
 
             {!playing
                 ? (
-                    <Tooltip title={`Play ${playPauseShortcut}`}>
+                    <Tooltip title={`Play ${playPauseShortcut}`} mouseLeaveDelay={0}>
                         <Icon
                             component={PlayIcon}
                             onClick={onSwitchPlay}
@@ -74,7 +74,7 @@ function PlayerButtons(props: Props): JSX.Element {
                     </Tooltip>
                 )
                 : (
-                    <Tooltip title={`Pause ${playPauseShortcut}`}>
+                    <Tooltip title={`Pause ${playPauseShortcut}`} mouseLeaveDelay={0}>
                         <Icon
                             component={PauseIcon}
                             onClick={onSwitchPlay}
@@ -82,13 +82,13 @@ function PlayerButtons(props: Props): JSX.Element {
                     </Tooltip>
                 )}
 
-            <Tooltip title={`Go next ${nextFrameShortcut}`}>
+            <Tooltip title={`Go next ${nextFrameShortcut}`} mouseLeaveDelay={0}>
                 <Icon component={NextIcon} onClick={onNextFrame} />
             </Tooltip>
-            <Tooltip title={`Go next with a step ${forwardShortcut}`}>
+            <Tooltip title={`Go next with a step ${forwardShortcut}`} mouseLeaveDelay={0}>
                 <Icon component={ForwardJumpIcon} onClick={onForward} />
             </Tooltip>
-            <Tooltip title='Go to the last frame'>
+            <Tooltip title='Go to the last frame' mouseLeaveDelay={0}>
                 <Icon component={LastIcon} onClick={onLastFrame} />
             </Tooltip>
         </Col>

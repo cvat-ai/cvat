@@ -324,7 +324,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             .filter((label: any) => label.id === activeLabelID)[0];
         state.occluded = state.occluded || false;
         state.frame = frame;
-        state.source = 'manual';
         const objectState = new cvat.classes.ObjectState(state);
         onCreateAnnotations(jobInstance, frame, [objectState]);
     };
@@ -501,7 +500,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             points,
         } = event.detail;
         state.points = points;
-        state.source = 'manual';
         onUpdateAnnotations([state]);
     };
 
@@ -878,7 +876,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                         defaultValue={0}
                         onChange={(value: SliderValue): void => onSwitchZLayer(value as number)}
                     />
-                    <Tooltip title={`Add new layer ${maxZLayer + 1} and switch to it`}>
+                    <Tooltip title={`Add new layer ${maxZLayer + 1} and switch to it`} mouseLeaveDelay={0}>
                         <Icon type='plus-circle' onClick={onAddZLayer} />
                     </Tooltip>
                 </div>

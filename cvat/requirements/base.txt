@@ -4,7 +4,7 @@ django-appconf==1.0.4
 django-auth-ldap==2.2.0
 django-cacheops==5.0.1
 django-compressor==2.4
-django-rq==2.0.0
+django-rq==2.3.2
 EasyProcess==0.3
 Pillow==7.2.0
 numpy==1.18.5
@@ -15,7 +15,7 @@ rcssmin==1.0.6
 redis==3.5.3
 rjsmin==1.1.0
 requests==2.24.0
-rq==1.0.0
+rq==1.4.2
 rq-scheduler==0.10.0
 scipy==1.4.1
 sqlparse==0.3.1
