@@ -235,8 +235,9 @@ export interface NotificationsState {
         userAgreements: {
             fetching: null | ErrorState;
         };
-
-        [index: string]: any;
+        plugins: {
+            initializationError: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -245,8 +246,6 @@ export interface NotificationsState {
         models: {
             inferenceDone: string;
         };
-
-        [index: string]: any;
     };
 }
 
