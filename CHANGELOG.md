@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intelligent polygon editing (<https://github.com/opencv/cvat/pull/1921>)
 - Support creating multiple jobs for each task through python cli (https://github.com/opencv/cvat/pull/1950)
 - python cli over https (<https://github.com/opencv/cvat/pull/1942>)
+- Error message when plugins weren't able to initialize instead of infinite loading (<https://github.com/opencv/cvat/pull/1966>)
 
 ### Changed
 - Smaller object details (<https://github.com/opencv/cvat/pull/1877>)
@@ -42,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Interpolated shapes exported as `keyframe = True` (<https://github.com/opencv/cvat/pull/1937>)
 - Stylelint filetype scans (<https://github.com/opencv/cvat/pull/1952>)
 - Fixed toolip closing issue (<https://github.com/opencv/cvat/pull/1955>)
+- Clearing frame cache when close a task (<https://github.com/opencv/cvat/pull/1966>)
 
 ### Security
 -
