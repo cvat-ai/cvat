@@ -81,9 +81,10 @@
 
         cvat.server.register.implementation = async (username, firstName, lastName,
             email, password1, password2, userConfirmations) => {
-            const result = await serverProxy.server.register(username, firstName,
+            const user = await serverProxy.server.register(username, firstName,
                 lastName, email, password1, password2, userConfirmations);
-            return result;
+
+            return new User(user);
         };
 
         cvat.server.login.implementation = async (username, password) => {

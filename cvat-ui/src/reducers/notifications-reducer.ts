@@ -158,7 +158,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case AuthActionTypes.REGISTER_SUCCESS: {
-            if (action.payload.user.email_verification_required) {
+            if (!action.payload.user.isVerified) {
                 return {
                     ...state,
                     messages: {
