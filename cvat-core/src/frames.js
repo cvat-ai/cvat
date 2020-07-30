@@ -605,10 +605,18 @@
         };
     }
 
+    function clear(taskID) {
+        if (taskID in frameDataCache) {
+            frameDataCache[taskID].frameBuffer.clear();
+            delete frameDataCache[taskID];
+        }
+    }
+
     module.exports = {
         FrameData,
         getFrame,
         getRanges,
         getPreview,
+        clear,
     };
 })();
