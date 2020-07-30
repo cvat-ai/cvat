@@ -99,3 +99,10 @@ The status of the job changes the progress bar of the task.
 
 ## How to install CVAT on Windows 10 Home
 Follow this [guide](installation.md#windows-10).
+
+## I do not have the 'Analytics' tabs on the header section, I only have the Tasks tab. how can I add analytics?
+You should build CVAT images with ['Analytics' component](../../../components/analytics).
+
+## How to upload annotations to an entire task from UI when there are multiple jobs in the task?
+You can upload annotation for a multi-job task from the Dasboard view or the Task view.
+Uploading of annotation from the Annotation view only affects the current job.
