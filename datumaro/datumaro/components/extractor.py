@@ -463,8 +463,8 @@ class Polygon(_Shape):
     def get_area(self):
         import pycocotools.mask as mask_utils
 
-        _, _, w, h = self.get_bbox()
-        rle = mask_utils.frPyObjects([self.points], h, w)
+        x, y, w, h = self.get_bbox()
+        rle = mask_utils.frPyObjects([self.points], y + h, x + w)
         area = mask_utils.area(rle)[0]
         return area
 
