@@ -44,7 +44,6 @@ from cvat.apps.engine.serializers import (
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, RqStatusSerializer,
     TaskSerializer, UserSerializer)
-from cvat.settings.base import CSS_3RDPARTY, JS_3RDPARTY
 from cvat.apps.engine.utils import av_scan_paths
 
 from . import models, task
