@@ -26,8 +26,4 @@ describe('Check server availability', () => {
   it('Check plaseholder "Password"', () => {
     cy.get('[type="password"]')
   })
-
-  it('Click to "Sign in" button', () => {
-    cy.get('[type="submit"]').click()
-  })
 })

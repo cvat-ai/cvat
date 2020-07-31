@@ -1,4 +1,8 @@
 {
     "video": false,
-    "baseUrl": "http://cvat_ui"
+    "baseUrl": "http://cvat_ui",
+    "testFiles": [
+        "auth_page.js",
+        "create_new_task.js"
+    ]
 }

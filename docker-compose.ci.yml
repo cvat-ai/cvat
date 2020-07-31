@@ -19,4 +19,5 @@ services:
       TRAVIS_PULL_REQUEST:
       CONTAINER_COVERAGE_DATA_DIR:
     volumes:
-      - ${HOST_COVERAGE_DATA_DIR}:${CONTAINER_COVERAGE_DATA_DIR}
+      # - ${HOST_COVERAGE_DATA_DIR}:${CONTAINER_COVERAGE_DATA_DIR}
+      - C:\Users\dkruchix\OneDrive - Intel Corporation\Desktop\IOTG\cypress\cypress\screenshots_cvat:/home/django/tests/cypress/screenshots
