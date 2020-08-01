@@ -27,8 +27,7 @@ COPY .coveragerc .
 # RUN all commands below as 'django' user
 USER ${USER}
 
-RUN mkdir -p tests && cd tests && npm install \
-        CI=true npm install cypress; \
+RUN mkdir -p tests && cd tests && CI=true npm install cypress; \
     echo "export PATH=~/tests/node_modules/.bin:${PATH}" >> ~/.bashrc;
 
 ENTRYPOINT []
