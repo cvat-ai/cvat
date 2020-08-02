@@ -39,17 +39,34 @@ export function checkPluginsAsync(): ThunkAction {
             DEXTR_SEGMENTATION: false,
         };
 
-        const promises: Promise<boolean>[] = [
-            PluginChecker.check(SupportedPlugins.ANALYTICS),
-            PluginChecker.check(SupportedPlugins.GIT_INTEGRATION),
-            PluginChecker.check(SupportedPlugins.DEXTR_SEGMENTATION),
-        ];
-
         try {
+            let pluginCheckError: any = null;
+
+            const promises: Promise<boolean>[] = [
+                PluginChecker.check(SupportedPlugins.ANALYTICS).catch((err) => {
+                    pluginCheckError = err;
+                    return false;
+                }),
+                PluginChecker.check(SupportedPlugins.GIT_INTEGRATION).catch(
+                    (err) => {
+                        pluginCheckError = err;
+                        return false;
+                    },
+                ),
+                PluginChecker.check(SupportedPlugins.DEXTR_SEGMENTATION).catch(
+                    (err) => {
+                        pluginCheckError = err;
+                        return false;
+                    },
+                ),
+            ];
+
             const values = await Promise.all(promises);
             [plugins.ANALYTICS, plugins.GIT_INTEGRATION,
                 plugins.DEXTR_SEGMENTATION] = values;
             dispatch(pluginActions.checkedAllPlugins(plugins));
+
+            if (pluginCheckError instanceof Error) throw pluginCheckError;
         } catch (error) {
             dispatch(pluginActions.raisePluginCheckError(error));
         }
