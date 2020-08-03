@@ -13,11 +13,9 @@ import django_rq
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseNotFound
-from django.shortcuts import render
+from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.generic import RedirectView
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
@@ -34,7 +32,6 @@ from sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views # pylint: disable=unused-import
 from cvat.apps.authentication import auth
-from cvat.apps.authentication.decorators import login_required
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, StatusChoice, Task
@@ -44,48 +41,10 @@ from cvat.apps.engine.serializers import (
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, RqStatusSerializer,
     TaskSerializer, UserSerializer)
-from cvat.settings.base import CSS_3RDPARTY, JS_3RDPARTY
 from cvat.apps.engine.utils import av_scan_paths
 
 from . import models, task
 from .log import clogger, slogger
-
-
-# drf-yasg component doesn't handle correctly URL_FORMAT_OVERRIDE and
-# send requests with ?format=openapi suffix instead of ?scheme=openapi.
-# We map the required paramater explicitly and add it into query arguments
-# on the server side.
-def wrap_swagger(view):
-    @login_required
-    def _map_format_to_schema(request, scheme=None):
-        if 'format' in request.GET:
-            request.GET = request.GET.copy()
-            format_alias = settings.REST_FRAMEWORK['URL_FORMAT_OVERRIDE']
-            request.GET[format_alias] = request.GET['format']
-
-        return view(request, format=scheme)
-
-    return _map_format_to_schema
-
-# Server REST API
-@login_required
-def dispatch_request(request):
-    """An entry point to dispatch legacy requests"""
-    if 'dashboard' in request.path or (request.path == '/' and 'id' not in request.GET):
-        return RedirectView.as_view(
-            url=settings.UI_URL,
-            permanent=True,
-            query_string=True
-        )(request)
-    elif request.method == 'GET' and 'id' in request.GET and request.path == '/':
-        return render(request, 'engine/annotation.html', {
-            'css_3rdparty': CSS_3RDPARTY.get('engine', []),
-            'js_3rdparty': JS_3RDPARTY.get('engine', []),
-            'status_list': [str(i) for i in StatusChoice],
-            'ui_url': settings.UI_URL
-        })
-    else:
-        return HttpResponseNotFound()
 
 
 class ServerViewSet(viewsets.ViewSet):

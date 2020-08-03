@@ -82,10 +82,6 @@ try:
 except Exception:
     pass
 
-# Application definition
-JS_3RDPARTY = {}
-CSS_3RDPARTY = {}
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -209,7 +205,7 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 # Django Auth
 DJANGO_AUTH_TYPE = 'BASIC'
 DJANGO_AUTH_DEFAULT_GROUPS = []
-LOGIN_URL = 'login'
+LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 AUTH_LOGIN_NOTE = '<p>Have not registered yet? <a href="/auth/register">Register here</a>.</p>'
 
