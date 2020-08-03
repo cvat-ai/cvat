@@ -141,7 +141,7 @@ class IntersectMerge(MergingStrategy):
     conf = attrib(converter=ensure_cls(Conf), factory=Conf)
 
     # Error trackers:
-    errors = attrib(default=[], init=False)
+    errors = attrib(factory=list, init=False)
     def add_item_error(self, error, *args, **kwargs):
         self.errors.append(error(self._item_id, *args, **kwargs))
 
