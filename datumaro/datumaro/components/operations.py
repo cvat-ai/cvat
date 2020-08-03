@@ -12,7 +12,7 @@ import numpy as np
 from attr import attrib, attrs
 
 from datumaro.components.cli_plugin import CliPlugin
-from datumaro.components.extractor import AnnotationType, Bbox, LabelCategories
+from datumaro.components.extractor import AnnotationType, Bbox
 from datumaro.components.project import Dataset
 from datumaro.util import find, ensure_cls
 from datumaro.util.annotation_util import (segment_iou, bbox_iou,
