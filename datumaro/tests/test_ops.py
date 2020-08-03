@@ -1,7 +1,8 @@
 import numpy as np
 
 from datumaro.components.extractor import (Extractor, DatasetItem, Label,
-    Mask, Bbox, Points, LabelCategories, AnnotationType, Caption)
+    Mask, Bbox, Points, Caption)
+from datumaro.components.project import Dataset
 from datumaro.components.operations import mean_std, compute_ann_statistics
 
 from unittest import TestCase
@@ -128,6 +129,6 @@ class TestOperations(TestCase):
             },
         }
 
-        actual = compute_ann_statistics(TestExtractor())
+        actual = compute_ann_statistics(dataset)
 
         self.assertEqual(expected, actual)
