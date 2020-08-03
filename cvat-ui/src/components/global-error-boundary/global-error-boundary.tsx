@@ -153,7 +153,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                             </Paragraph>
                             <ul>
                                 <li>
-                                    <Tooltip title='Copied!' trigger='click'>
+                                    <Tooltip title='Copied!' trigger='click' mouseLeaveDelay={0}>
                                         {/* eslint-disable-next-line */}
                                         <a onClick={() => {copy(message)}}> Copy </a>
                                     </Tooltip>

@@ -20,6 +20,8 @@ script:
   # FIXME: Git package and application name conflict in PATH and try to leave only one python test execution
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps && coverage run -a manage.py test --pattern="_test*.py" cvat/apps/dataset_manager/tests cvat/apps/engine/tests utils/cli && coverage run -a manage.py test datumaro/ && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && coveralls-lcov -v -n ./reports/coverage/lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
+  # Run cypress tests
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ~/tests && ./node_modules/.bin/cypress run --headless --browser chrome --config-file=cypress_ci.json'
 
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html

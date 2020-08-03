@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2019 Intel Corporation
+* Copyright (C) 2019-2020 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -12,6 +12,7 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
+    const lambdaManager = require('./lambda-manager');
     const {
         isBoolean,
         isInteger,
@@ -20,10 +21,7 @@
         checkFilter,
     } = require('./common');
 
-    const {
-        TaskStatus,
-        TaskMode,
-    } = require('./enums');
+    const { TaskStatus, TaskMode } = require('./enums');
 
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats.js');
@@ -53,6 +51,13 @@
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
         cvat.plugins.register.implementation = PluginRegistry.register.bind(cvat);
+
+        cvat.lambda.list.implementation = lambdaManager.list.bind(lambdaManager);
+        cvat.lambda.run.implementation = lambdaManager.run.bind(lambdaManager);
+        cvat.lambda.call.implementation = lambdaManager.call.bind(lambdaManager);
+        cvat.lambda.cancel.implementation = lambdaManager.cancel.bind(lambdaManager);
+        cvat.lambda.listen.implementation = lambdaManager.listen.bind(lambdaManager);
+        cvat.lambda.requests.implementation = lambdaManager.requests.bind(lambdaManager);
 
         cvat.server.about.implementation = async () => {
             const result = await serverProxy.server.about();

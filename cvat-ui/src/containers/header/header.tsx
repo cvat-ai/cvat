@@ -16,9 +16,6 @@ const core = getCore();
 interface StateToProps {
     logoutFetching: boolean;
     installedAnalytics: boolean;
-    installedAutoAnnotation: boolean;
-    installedTFSegmentation: boolean;
-    installedTFAnnotation: boolean;
     username: string;
     toolName: string;
     serverHost: string;
@@ -69,9 +66,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         logoutFetching,
         installedAnalytics: list[SupportedPlugins.ANALYTICS],
-        installedAutoAnnotation: list[SupportedPlugins.AUTO_ANNOTATION],
-        installedTFSegmentation: list[SupportedPlugins.TF_SEGMENTATION],
-        installedTFAnnotation: list[SupportedPlugins.TF_ANNOTATION],
         username,
         toolName: server.name as string,
         serverHost: core.config.backendAPI.slice(0, -7),
@@ -80,7 +74,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         coreVersion: packageVersion.core,
         canvasVersion: packageVersion.canvas,
         uiVersion: packageVersion.ui,
-        switchSettingsShortcut: normalizedKeyMap.OPEN_SETTINGS,
+        switchSettingsShortcut: normalizedKeyMap.SWITCH_SETTINGS,
         settingsDialogShown,
         changePasswordFetching,
         changePasswordDialogShown,

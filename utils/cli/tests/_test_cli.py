@@ -27,7 +27,7 @@ class TestCLI(APITestCase):
         self.taskname = 'test_task'
         self.cli.tasks_create(self.taskname,
                               [{'name' : 'car'}, {'name': 'person'}],
-                              '',
+                              0, 0, '',
                               ResourceType.LOCAL,
                               [self.img_file])
         # redirect logging to mocked stdout to test program output

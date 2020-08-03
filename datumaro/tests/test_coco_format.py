@@ -4,8 +4,8 @@ import os.path as osp
 
 from unittest import TestCase
 
-from datumaro.components.project import (Project, Dataset)
-from datumaro.components.extractor import (Extractor, DatasetItem,
+from datumaro.components.project import Project, Dataset
+from datumaro.components.extractor import (DatasetItem,
     AnnotationType, Label, Mask, Points, Polygon, Bbox, Caption,
     LabelCategories, PointsCategories
 )
@@ -26,7 +26,6 @@ DUMMY_DATASET_DIR = osp.join(osp.dirname(__file__), 'assets', 'coco_dataset')
 
 class CocoImporterTest(TestCase):
     def test_can_import(self):
-
         expected_dataset = Dataset.from_iterable([
             DatasetItem(id='000000000001', image=np.ones((10, 5, 3)),
                 subset='val', attributes={'id': 1},
@@ -349,7 +348,6 @@ class CocoConverterTest(TestCase):
                 CocoLabelsConverter.convert, test_dir)
 
     def test_can_save_and_load_keypoints(self):
-
         source_dataset = Dataset.from_iterable([
             DatasetItem(id=1, subset='train', image=np.zeros((5, 5, 3)),
                 annotations=[
@@ -373,11 +371,11 @@ class CocoConverterTest(TestCase):
                     Points([0, 0, 1, 2, 3, 4], [0, 1, 2], id=5),
                 ]),
             ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(
-                        str(i) for i in range(10)),
-                    AnnotationType.points: PointsCategories.from_iterable(
-                        (i, None, [[0, 1], [1, 2]]) for i in range(10)
-                    ),
+                AnnotationType.label: LabelCategories.from_iterable(
+                    str(i) for i in range(10)),
+                AnnotationType.points: PointsCategories.from_iterable(
+                    (i, None, [[0, 1], [1, 2]]) for i in range(10)
+                ),
             })
 
         target_dataset = Dataset.from_iterable([
@@ -393,30 +391,30 @@ class CocoConverterTest(TestCase):
                     Points([1, 2, 3, 4, 2, 3],
                         group=2, id=2,
                         attributes={'is_crowd': False}),
-                    Polygon([1, 2, 3, 2, 3, 4, 1, 4],
+                    Bbox(1, 2, 2, 2,
                         group=2, id=2,
                         attributes={'is_crowd': False}),
 
                     Points([1, 2, 0, 2, 4, 1],
                         label=5, group=3, id=3,
                         attributes={'is_crowd': False}),
-                    Polygon([0, 1, 4, 1, 4, 2, 0, 2],
+                    Bbox(0, 1, 4, 1,
                         label=5, group=3, id=3,
                         attributes={'is_crowd': False}),
 
                     Points([0, 0, 1, 2, 3, 4], [0, 1, 2],
                         group=5, id=5,
                         attributes={'is_crowd': False}),
-                    Polygon([1, 2, 3, 2, 3, 4, 1, 4],
+                    Bbox(1, 2, 2, 2,
                         group=5, id=5,
                         attributes={'is_crowd': False}),
                 ], attributes={'id': 1}),
             ], categories={
-                    AnnotationType.label: LabelCategories.from_iterable(
-                        str(i) for i in range(10)),
-                    AnnotationType.points: PointsCategories.from_iterable(
-                        (i, None, [[0, 1], [1, 2]]) for i in range(10)
-                    ),
+                AnnotationType.label: LabelCategories.from_iterable(
+                    str(i) for i in range(10)),
+                AnnotationType.points: PointsCategories.from_iterable(
+                    (i, None, [[0, 1], [1, 2]]) for i in range(10)
+                ),
             })
 
         with TestDir() as test_dir:

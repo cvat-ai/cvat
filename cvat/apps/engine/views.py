@@ -37,13 +37,13 @@ from cvat.apps.authentication import auth
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, Plugin, StatusChoice, Task
+from cvat.apps.engine.models import Job, StatusChoice, Task
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
-    LogEventSerializer, PluginSerializer, ProjectSerializer,
-    RqStatusSerializer, TaskSerializer, UserSerializer)
+    LogEventSerializer, ProjectSerializer, RqStatusSerializer,
+    TaskSerializer, UserSerializer)
 from cvat.settings.base import CSS_3RDPARTY, JS_3RDPARTY
 from cvat.apps.engine.utils import av_scan_paths
 
@@ -389,7 +389,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-    @swagger_auto_schema(method='post', operation_summary='Method permanently attaches images or video to a task')
+    @swagger_auto_schema(method='post', operation_summary='Method permanently attaches images or video to a task',
+        request_body=DataSerializer,
+    )
     @swagger_auto_schema(method='get', operation_summary='Method returns data for a specific task',
         manual_parameters=[
             openapi.Parameter('type', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
@@ -756,33 +758,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
-
-class PluginViewSet(viewsets.ModelViewSet):
-    queryset = Plugin.objects.all()
-    serializer_class = PluginSerializer
-
-    # @action(detail=True, methods=['GET', 'PATCH', 'PUT'], serializer_class=None)
-    # def config(self, request, name):
-    #     pass
-
-    # @action(detail=True, methods=['GET', 'POST'], serializer_class=None)
-    # def data(self, request, name):
-    #     pass
-
-    # @action(detail=True, methods=['GET', 'DELETE', 'PATCH', 'PUT'],
-    #     serializer_class=None, url_path='data/(?P<id>\d+)')
-    # def data_detail(self, request, name, id):
-    #     pass
-
-
-    @action(detail=True, methods=['GET', 'POST'], serializer_class=RqStatusSerializer)
-    def requests(self, request, name):
-        pass
-
-    @action(detail=True, methods=['GET', 'DELETE'],
-        serializer_class=RqStatusSerializer, url_path='requests/(?P<id>\d+)')
-    def request_detail(self, request, name, rq_id):
-        pass
 
 def rq_handler(job, exc_type, exc_value, tb):
     job.exc_info = "".join(

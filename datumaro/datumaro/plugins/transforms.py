@@ -322,6 +322,7 @@ class RandomSplit(Transform, CliPlugin):
         parser = super().build_cmdline_parser(**kwargs)
         parser.add_argument('-s', '--subset', action='append',
             type=cls._split_arg, dest='splits',
+            default=[('train', 0.67), ('test', 0.33)],
             help="Subsets in the form of: '<subset>:<ratio>' (repeatable)")
         parser.add_argument('--seed', type=int, help="Random seed")
         return parser

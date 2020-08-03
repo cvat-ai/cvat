@@ -4,13 +4,12 @@
 - [How to change default CVAT hostname or port](#how-to-change-default-cvat-hostname-or-port)
 - [How to configure connected share folder on Windows](#how-to-configure-connected-share-folder-on-windows)
 - [How to make unassigned tasks not visible to all users](#how-to-make-unassigned-tasks-not-visible-to-all-users)
-- [Can Nvidia GPU be used to run inference with my own model](#can-nvidia-gpu-be-used-to-run-inference-with-my-own-model)
-- [What versions of OpenVINO toolkit are supported](#what-versions-of-openvino-toolkit-are-supported)
 - [Where are uploaded images/videos stored](#where-are-uploaded-imagesvideos-stored)
 - [Where are annotations stored](#where-are-annotations-stored)
 - [How to mark job/task as completed](#how-to-mark-jobtask-as-completed)
 - [How to install CVAT on Windows 10 Home](#how-to-install-cvat-on-windows-10-home)
-
+- [I do not have the Analytics tab on the header section. How can I add analytics](#i-do-not-have-the-analytics-tab-on-the-header-section-how-can-i-add-analytics)
+- [How to upload annotations to an entire task from UI when there are multiple jobs in the task](#how-to-upload-annotations-to-an-entire-task-from-ui-when-there-are-multiple-jobs-in-the-task)
 
 ## How to update CVAT
 Before upgrading, please follow the official docker
@@ -81,14 +80,6 @@ volumes:
 ## How to make unassigned tasks not visible to all users
 Set [reduce_task_visibility](../../settings/base.py#L424) variable to `True`.
 
-## Can Nvidia GPU be used to run inference with my own model
-Nvidia GPU can be used to accelerate inference of [tf_annotation](../../../components/tf_annotation/README.md) and [auto_segmentation](../../../components/auto_segmentation/README.md) models.
-
-OpenVino doesn't support Nvidia cards, so you can run your own models only on CPU.
-
-## What versions of OpenVINO toolkit are supported
-These versions are supported: `2019 R3`, `2019 R3.1`, `2020 1`, `2020 2`
-
 ## Where are uploaded images/videos stored
 The uploaded data is stored in the `cvat_data` docker volume:
 ```yml
@@ -110,3 +101,10 @@ The status of the job changes the progress bar of the task.
 
 ## How to install CVAT on Windows 10 Home
 Follow this [guide](installation.md#windows-10).
+
+## I do not have the Analytics tab on the header section. How can I add analytics
+You should build CVAT images with ['Analytics' component](../../../components/analytics).
+
+## How to upload annotations to an entire task from UI when there are multiple jobs in the task
+You can upload annotation for a multi-job task from the Dasboard view or the Task view.
+Uploading of annotation from the Annotation view only affects the current job.
