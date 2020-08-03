@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging as log
 from copy import deepcopy
 
 import cv2
@@ -94,12 +95,30 @@ def compute_image_statistics(dataset):
     }
 
     def _extractor_stats(extractor):
-        mean, std = mean_std(extractor)
-        return {
+        available = True
+        for item in extractor:
+            if not (item.has_image and item.image.has_data):
+                available = False
+                log.warn("Item %s has no image. Image stats won't be computed",
+                    item.id)
+                break
+
+        stats = {
             'images count': len(extractor),
-            'image mean': [float(n) for n in mean[::-1]],
-            'image std': [float(n) for n in std[::-1]],
         }
+
+        if available:
+            mean, std = mean_std(extractor)
+            stats.update({
+                'image mean': [float(n) for n in mean[::-1]],
+                'image std': [float(n) for n in std[::-1]],
+            })
+        else:
+            stats.update({
+                'image mean': 'n/a',
+                'image std': 'n/a',
+            })
+        return stats
 
     stats['dataset'].update(_extractor_stats(dataset))
 

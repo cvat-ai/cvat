@@ -650,13 +650,14 @@ def stats_command(args):
     project = load_project(args.project_dir)
 
     dataset = project.make_dataset()
-    stats = compute_image_statistics(dataset)
+    stats = {}
+    stats.update(compute_image_statistics(dataset))
     stats.update(compute_ann_statistics(dataset))
 
     dst_file = generate_next_file_name('statistics', ext='.json')
     log.info("Writing project statistics to '%s'" % dst_file)
     with open(dst_file, 'w') as f:
-        json.dump(stats, f)
+        json.dump(stats, f, indent=4, sort_keys=True)
 
 def build_info_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Get project info",
