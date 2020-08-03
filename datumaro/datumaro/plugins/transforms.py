@@ -17,7 +17,7 @@ from datumaro.components.extractor import (Transform, AnnotationType,
 )
 from datumaro.components.cli_plugin import CliPlugin
 import datumaro.util.mask_tools as mask_tools
-from datumaro.util.annotation_tools import find_group_leader, find_instances
+from datumaro.util.annotation_util import find_group_leader, find_instances
 
 
 class CropCoveredSegments(Transform, CliPlugin):
@@ -513,7 +513,7 @@ class RemapLabels(Transform, CliPlugin):
             } and ann.label is not None:
                 conv_label = self._map_id(ann.label)
                 if conv_label is not None:
-                    ann._label = conv_label
+                    ann.label = conv_label
                     annotations.append(ann)
             else:
                 annotations.append(ann)

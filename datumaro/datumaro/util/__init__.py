@@ -62,7 +62,7 @@ def to_snake_case(s):
             name.append(char)
     return ''.join(name)
 
-def pairwise(iterable):
+def pairs(iterable):
     a = iter(iterable)
     return zip(a, a)
 
@@ -88,3 +88,11 @@ def str_to_bool(s):
         return False
     else:
         raise ValueError("Can't convert value '%s' to bool" % s)
+
+def ensure_cls(c):
+    def converter(arg):
+        if isinstance(arg, c):
+            return arg
+        else:
+            return c(**arg)
+    return converter

@@ -9,6 +9,7 @@ import numpy as np
 
 from datumaro.util.image import Image
 
+
 AnnotationType = Enum('AnnotationType',
     [
         'label',
@@ -52,6 +53,9 @@ class Annotation:
             (self.attributes == other.attributes) and \
             (self.group == other.group)
 
+    def __repr__(self):
+        return str(vars(self))
+
 class Categories:
     def __init__(self, attributes=None):
         if attributes is None:
@@ -68,6 +72,9 @@ class Categories:
             return False
         return \
             (self.attributes == other.attributes)
+
+    def __repr__(self):
+        return str(vars(self))
 
 class LabelCategories(Categories):
     Category = namedtuple('Category', ['name', 'parent', 'attributes'])
@@ -117,7 +124,7 @@ class LabelCategories(Categories):
         self._indices = indices
 
     def add(self, name, parent=None, attributes=None):
-        assert name not in self._indices
+        assert name not in self._indices, name
         if attributes is None:
             attributes = set()
         else:
@@ -138,6 +145,9 @@ class LabelCategories(Categories):
         if index:
             return index, self.items[index]
         return index, None
+
+    def __iter__(self):
+        return iter(self.items)
 
     def __eq__(self, other):
         if not super().__eq__(other):
@@ -204,13 +214,13 @@ class Mask(Annotation):
 
         if label is not None:
             label = int(label)
-        self._label = label
+        self.label = label
 
         if z_order is None:
             z_order = 0
         else:
             z_order = int(z_order)
-        self._z_order = z_order
+        self.z_order = z_order
     # pylint: enable=redefined-builtin
 
     @property
@@ -218,14 +228,6 @@ class Mask(Annotation):
         if callable(self._image):
             return self._image()
         return self._image
-
-    @property
-    def label(self):
-        return self._label
-
-    @property
-    def z_order(self):
-        return self._z_order
 
     def as_class_mask(self, label_id=None):
         if label_id is None:
@@ -263,7 +265,7 @@ class RleMask(Mask):
         super().__init__(image=lazy_decode, label=label, z_order=z_order,
             id=id, attributes=attributes, group=group)
 
-        self._rle = rle
+        self.rle = rle
     # pylint: enable=redefined-builtin
 
     @staticmethod
@@ -273,20 +275,16 @@ class RleMask(Mask):
 
     def get_area(self):
         from pycocotools import mask as mask_utils
-        return mask_utils.area(self._rle)
+        return mask_utils.area(self.rle)
 
     def get_bbox(self):
         from pycocotools import mask as mask_utils
-        return mask_utils.toBbox(self._rle)
-
-    @property
-    def rle(self):
-        return self._rle
+        return mask_utils.toBbox(self.rle)
 
     def __eq__(self, other):
         if not isinstance(other, __class__):
             return super().__eq__(other)
-        return self._rle == other._rle
+        return self.rle == other.rle
 
 class CompiledMask:
     @staticmethod
@@ -354,24 +352,6 @@ class CompiledMask:
     def lazy_extract(self, instance_id):
         return lambda: self.extract(instance_id)
 
-def compute_iou(bbox_a, bbox_b):
-    aX, aY, aW, aH = bbox_a
-    bX, bY, bW, bH = bbox_b
-    in_right = min(aX + aW, bX + bW)
-    in_left = max(aX, bX)
-    in_top = max(aY, bY)
-    in_bottom = min(aY + aH, bY + bH)
-
-    in_w = max(0, in_right - in_left)
-    in_h = max(0, in_bottom - in_top)
-    intersection = in_w * in_h
-
-    a_area = aW * aH
-    b_area = bW * bH
-    union = a_area + b_area - intersection
-
-    return intersection / max(1.0, union)
-
 class _Shape(Annotation):
     # pylint: disable=redefined-builtin
     def __init__(self, type, points=None, label=None, z_order=None,
@@ -380,30 +360,18 @@ class _Shape(Annotation):
             attributes=attributes, group=group)
         if points is None:
             points = []
-        self._points = list(points)
+        self.points = list(points)
 
         if label is not None:
             label = int(label)
-        self._label = label
+        self.label = label
 
         if z_order is None:
             z_order = 0
         else:
             z_order = int(z_order)
-        self._z_order = z_order
+        self.z_order = z_order
     # pylint: enable=redefined-builtin
-
-    @property
-    def points(self):
-        return self._points
-
-    @property
-    def label(self):
-        return self._label
-
-    @property
-    def z_order(self):
-        return self._z_order
 
     def get_area(self):
         raise NotImplementedError()
@@ -506,7 +474,8 @@ class Bbox(_Shape):
         ]
 
     def iou(self, other):
-        return compute_iou(self.get_bbox(), other.get_bbox())
+        from datumaro.util.annotation_util import bbox_iou
+        return bbox_iou(self.get_bbox(), other.get_bbox())
 
 class PointsCategories(Categories):
     Category = namedtuple('Category', ['labels', 'joints'])

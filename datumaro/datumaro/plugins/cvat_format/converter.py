@@ -11,7 +11,7 @@ from xml.sax.saxutils import XMLGenerator
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import DEFAULT_SUBSET_NAME, AnnotationType
-from datumaro.util import cast, pairwise
+from datumaro.util import cast, pairs
 
 from .format import CvatPath
 
@@ -246,7 +246,7 @@ class _SubsetWriter:
                     ','.join((
                         "{:.2f}".format(x),
                         "{:.2f}".format(y)
-                    )) for x, y in pairwise(shape.points))
+                    )) for x, y in pairs(shape.points))
                 )),
             ]))
 
