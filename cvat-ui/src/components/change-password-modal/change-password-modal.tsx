@@ -3,12 +3,26 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { RouteComponentProps } from 'react-router';
-import { withRouter } from 'react-router-dom';
+import { connect } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Title from 'antd/lib/typography/Title';
 
+import { changePasswordAsync } from 'actions/auth-actions';
+import { CombinedState } from 'reducers/interfaces';
 import ChangePasswordForm, { ChangePasswordData } from './change-password-form';
+
+
+interface StateToProps {
+    fetching: boolean;
+    visible: boolean;
+}
+
+interface DispatchToProps {
+    onChangePassword(
+        oldPassword: string,
+        newPassword1: string,
+        newPassword2: string): void;
+}
 
 interface ChangePasswordPageComponentProps {
     fetching: boolean;
@@ -17,7 +31,22 @@ interface ChangePasswordPageComponentProps {
     onClose(): void;
 }
 
-function ChangePasswordComponent(props: ChangePasswordPageComponentProps & RouteComponentProps): JSX.Element {
+function mapStateToProps(state: CombinedState): StateToProps {
+    return {
+        fetching: state.auth.fetching,
+        visible: state.auth.showChangePasswordDialog,
+    };
+}
+
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+    return ({
+        onChangePassword(oldPassword: string, newPassword1: string, newPassword2: string): void {
+            dispatch(changePasswordAsync(oldPassword, newPassword1, newPassword2));
+        },
+    });
+}
+
+function ChangePasswordComponent(props: ChangePasswordPageComponentProps): JSX.Element {
     const {
         fetching,
         onChangePassword,
@@ -49,4 +78,7 @@ function ChangePasswordComponent(props: ChangePasswordPageComponentProps & Route
         );
 }
 
-export default withRouter(ChangePasswordComponent);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps,
+)(ChangePasswordComponent);

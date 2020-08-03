@@ -99,6 +99,9 @@ const defaultState: NotificationsState = {
         models: {
             inferenceDone: '',
         },
+        auth: {
+            changePasswordDone: '',
+        }
     },
 };
 

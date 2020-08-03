@@ -22,7 +22,7 @@ type ChangePasswordFormProps = {
 } & FormComponentProps;
 
 class ChangePasswordFormComponent extends React.PureComponent<ChangePasswordFormProps> {
-    private validateConfirmation = (rule: any, value: any, callback: any): void => {
+    private validateConfirmation = (_: any, value: string, callback: Function): void => {
         const { form } = this.props;
         if (value && value !== form.getFieldValue('newPassword1')) {
             callback('Two passwords that you enter is inconsistent!');
@@ -31,7 +31,7 @@ class ChangePasswordFormComponent extends React.PureComponent<ChangePasswordForm
         }
     };
 
-    private validatePassword = (_: any, value: any, callback: any): void => {
+    private validatePassword = (_: any, value: string, callback: Function): void => {
         const { form } = this.props;
         if (!patterns.validatePasswordLength.pattern.test(value)) {
             callback(patterns.validatePasswordLength.message);
@@ -86,7 +86,7 @@ class ChangePasswordFormComponent extends React.PureComponent<ChangePasswordForm
                     }],
                 })(<Input.Password
                     autoComplete='new-password'
-                    prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)' }} />}
+                    prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                     placeholder='Current password'
                 />)}
             </Form.Item>
@@ -107,7 +107,7 @@ class ChangePasswordFormComponent extends React.PureComponent<ChangePasswordForm
                     }],
                 })(<Input.Password
                     autoComplete='new-password'
-                    prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)' }} />}
+                    prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                     placeholder='New password'
                 />)}
             </Form.Item>
@@ -128,7 +128,7 @@ class ChangePasswordFormComponent extends React.PureComponent<ChangePasswordForm
                     }],
                 })(<Input.Password
                     autoComplete='new-password'
-                    prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)' }} />}
+                    prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                     placeholder='Confirm new password'
                 />)}
             </Form.Item>

@@ -18,7 +18,7 @@ import Text from 'antd/lib/typography/Text';
 import { CVATLogo, AccountIcon } from 'icons';
 import consts from 'consts';
 import SettingsModal from './settings-modal/settings-modal';
-import ChangePasswordDialog from 'containers/change-password-dialog/change-password-dialog';
+import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 
 interface HeaderContainerProps {
     onLogout: () => void;

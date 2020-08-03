@@ -14,7 +14,7 @@ export interface AuthState {
     fetching: boolean;
     user: any;
     authActionsFetching: boolean;
-    authActionsInitialized: boolean,
+    authActionsInitialized: boolean;
     showChangePasswordDialog: boolean;
     allowChangePassword: boolean;
 }
@@ -251,6 +251,9 @@ export interface NotificationsState {
         };
         models: {
             inferenceDone: string;
+        };
+        auth: {
+            changePasswordDone: string;
         };
     };
 }
