@@ -12,7 +12,8 @@ import numpy as np
 from attr import attrib, attrs
 
 from datumaro.components.cli_plugin import CliPlugin
-from datumaro.components.extractor import AnnotationType, Bbox
+from datumaro.components.extractor import (AnnotationType, Bbox, Label,
+    LabelCategories)
 from datumaro.components.project import Dataset
 from datumaro.util import find, ensure_cls
 from datumaro.util.annotation_util import (segment_iou, bbox_iou,
@@ -86,7 +87,7 @@ class TooCloseError(QualityError):
 
 @attrs
 class MergeError(DatasetError):
-    sources = attrib()
+    sources = attrib(converter=set)
 
 @attrs
 class NoMatchingAnnError(MergeError):
@@ -137,8 +138,6 @@ class IntersectMerge(MergingStrategy):
 
         groups = attrib(converter=list, factory=list)
         close_distance = attrib(converter=float, default=0.75)
-
-        check_anno_presence = attrib(converter=bool, default=False)
     conf = attrib(converter=ensure_cls(Conf), factory=Conf)
 
     # Error trackers:
@@ -165,8 +164,7 @@ class IntersectMerge(MergingStrategy):
             self._item_id = item_id
 
             if len(items) < len(datasets):
-                missing_sources = set(id(s) for s in datasets) - \
-                    set(item_map[id(i)][1] for i in items)
+                missing_sources = set(id(s) for s in datasets) - set(items)
                 missing_sources = [self._dataset_map[s][1]
                     for s in missing_sources]
                 self.add_item_error(NoMatchingItemError, missing_sources)
@@ -275,10 +273,10 @@ class IntersectMerge(MergingStrategy):
 
     def _make_mergers(self, sources):
         def _make(c, **kwargs):
-            kwargs['context'] = self
             kwargs.update(attr.asdict(self.conf))
             fields = attr.fields_dict(c)
-            return c(**{ k: v for k, v in kwargs.items() if k in fields })
+            return c(**{ k: v for k, v in kwargs.items() if k in fields },
+                context=self)
 
         def _for_type(t, **kwargs):
             if t is AnnotationType.label:
@@ -302,7 +300,10 @@ class IntersectMerge(MergingStrategy):
         for s in sources:
             s_instances = find_instances(s)
             for inst in s_instances:
-                inst_bbox = max_bbox(inst)
+                inst_bbox = max_bbox([a for a in inst if a.type in
+                    {AnnotationType.polygon,
+                     AnnotationType.mask, AnnotationType.bbox}
+                ])
                 for ann in inst:
                     instance_map[id(ann)] = [inst, inst_bbox]
 
@@ -355,16 +356,23 @@ class IntersectMerge(MergingStrategy):
         for s in cluster:
             for name, value in s.attributes.items():
                 votes = attr_votes.get(name, {})
-                votes[value] = 1.0 + votes.get(value, 0.0)
+                votes[value] = 1 + votes.get(value, 0)
                 attr_votes[name] = votes
 
         attributes = {}
         for name, votes in attr_votes.items():
             winner, count = max(votes.items(), key=lambda e: e[1])
             if count < quorum:
-                missing_sources = set(
-                    self.get_ann_source(id(a)) for a in cluster
-                    if s.attributes.get(name) != winner)
+                if sum(votes.values()) < quorum:
+                    # blame provokers
+                    missing_sources = set(
+                        self.get_ann_source(id(a)) for a in cluster
+                        if s.attributes.get(name) == winner)
+                else:
+                    # blame outliers
+                    missing_sources = set(
+                        self.get_ann_source(id(a)) for a in cluster
+                        if s.attributes.get(name) != winner)
                 missing_sources = [self._dataset_map[s][1]
                     for s in missing_sources]
                 self.add_item_error(FailedAttrVotingError,
@@ -408,8 +416,12 @@ class AnnotationMatcher:
 
 @attrs
 class LabelMatcher(AnnotationMatcher):
+    @staticmethod
+    def distance(a, b):
+        return a.label == b.label
+
     def match_annotations(self, sources):
-        return sum(sources)
+        return [sum(sources, [])]
 
 @attrs(kw_only=True)
 class _ShapeMatcher(AnnotationMatcher):
@@ -539,7 +551,7 @@ class AnnotationMerger:
         raise NotImplementedError()
 
 @attrs(kw_only=True)
-class LabelMerger(AnnotationMerger):
+class LabelMerger(AnnotationMerger, LabelMatcher):
     quorum = attrib(converter=int, default=0)
 
     def merge_clusters(self, clusters):
@@ -549,21 +561,23 @@ class LabelMerger(AnnotationMerger):
 
         votes = {} # label -> score
         for label_ann in clusters[0]:
-            votes[label_ann.label] = 1.0 + votes.get(value, 0.0)
+            votes[label_ann.label] = 1.0 + votes.get(label_ann.label, 0.0)
 
-        labels = {}
-        for name, votes in votes.items():
-            count, label = max(votes.items(), key=lambda e: e[1])
-            if self.quorum <= count:
-                labels[name] = label
-            else:
+        merged = []
+        for label, count in votes.items():
+            if count < self.quorum:
                 sources = set(self.get_ann_source(id(a)) for a in clusters[0]
-                        if label not in [l.label for l in a])
+                    if label not in [l.label for l in a])
                 sources = [self._context._dataset_map[s][1] for s in sources]
                 self._context.add_item_error(FailedLabelVotingError,
                     sources, votes)
+                continue
 
-        return labels
+            merged.append(Label(label, attributes={
+                'score': count / len(self._context._dataset_map)
+            }))
+
+        return merged
 
 @attrs(kw_only=True)
 class _ShapeMerger(AnnotationMerger, _ShapeMatcher):
@@ -575,6 +589,7 @@ class _ShapeMerger(AnnotationMerger, _ShapeMatcher):
             label, label_score = self.find_cluster_label(cluster)
             shape, shape_score = self.merge_cluster_shape(cluster)
 
+            shape.z_order = max(cluster, key=lambda a: a.z_order).z_order
             shape.label = label
             shape.attributes['score'] = label_score * shape_score \
                 if label is not None else shape_score

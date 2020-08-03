@@ -121,7 +121,7 @@ def segment_iou(a, b):
             elif isinstance(ann, RleMask):
                 return [ann._rle]
             elif ann.type == AnnotationType.mask:
-                return mask_utils.frPyObjects(mask_to_rle(ann.image), h, w)
+                return mask_utils.frPyObjects([mask_to_rle(ann.image)], h, w)
             else:
                 raise TypeError("Unexpected arguments: %s, %s" % (a, b))
         a = _to_rle(a)
