@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stylelint filetype scans (<https://github.com/opencv/cvat/pull/1952>)
 - Fixed toolip closing issue (<https://github.com/opencv/cvat/pull/1955>)
 - Clearing frame cache when close a task (<https://github.com/opencv/cvat/pull/1966>)
+- Increase rate of throttling policy for unauthenticated users (<https://github.com/opencv/cvat/pull/1969>)
 
 ## [1.1.0-alpha] - 2020-06-30
 ### Added
