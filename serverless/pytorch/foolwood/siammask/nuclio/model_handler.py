@@ -6,6 +6,7 @@ from tools.test import *
 import os
 from copy import copy
 import jsonpickle
+import numpy as np
 
 class ModelHandler:
     def __init__(self):
@@ -43,6 +44,7 @@ class ModelHandler:
         return state
 
     def infer(self, image, shape, state):
+        image = np.array(image)
         if state is None: # init tracking
             xtl, ytl, xbr, ybr = shape
             target_pos = np.array([(xtl + xbr) / 2, (ytl + ybr) / 2])
@@ -53,9 +55,9 @@ class ModelHandler:
             state = self.encode_state(state)
         else: # track
             state = self.decode_state(state)
-            state = siamese_track(state, image, state['net'], mask_enable=True,
+            state = siamese_track(state, image, mask_enable=True,
                 refine_enable=True, device=self.device)
-            shape = state['ploygon'].flatten()
+            shape = state['ploygon'].flatten().tolist()
             state = self.encode_state(state)
 
         return {"shape": shape, "state": state}
