@@ -9,8 +9,8 @@
 CVAT is free, online, interactive video and image annotation
 tool for computer vision. It is being used by our team to
 annotate million of objects with different properties. Many UI
-and UX decisions are based on feedbacks from professional data annotation team.
-Try it online [cvat.org](https://cvat.org).
+and UX decisions are based on feedbacks from professional data
+annotation team. Try it online [cvat.org](https://cvat.org).
 
 ![CVAT screenshot](cvat/apps/documentation/static/documentation/images/cvat.jpg)
 
@@ -57,10 +57,18 @@ via its command line tool and Python library.
 | [MOT](https://motchallenge.net/)                                                           | X      | X      |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                     | X      | X      |
 
-## Links
-- [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
-- [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
-- [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
+## Deep learning models for automatic labeling
+
+| Name                                                                                                    | Type       | Framework  |
+| ------------------------------------------------------------------------------------------------------- | ---------- | ---------- |
+| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   |
+| [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow |
+| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   |
+| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   |
+| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   |
+| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   |
+| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow |
+| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   |
 
 ## Online demo: [cvat.org](https://cvat.org)
 
@@ -103,3 +111,8 @@ If you are not sure or just want to browse other users common questions,
 Other ways to ask questions and get our support:
 * [\#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow*
 * [Forum on Intel Developer Zone](https://software.intel.com/en-us/forums/computer-vision)
+
+## Links
+- [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
+- [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
+- [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
