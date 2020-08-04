@@ -9,7 +9,7 @@
 context('Create an annotation task', () => {
     before(() => {
         cy.visit('auth/login')
-        cy.login('admin', '12qwaszx')
+        cy.login()
         cy.get('[type="submit"]').click()
     })
 

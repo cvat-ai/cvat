@@ -1,4 +1,5 @@
 {
+    "video": false,
     "baseUrl": "http://localhost:8080",
     "testFiles": [
         "auth_page.js",

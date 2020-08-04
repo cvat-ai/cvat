@@ -8,7 +8,7 @@
 
 import "cypress-file-upload"
 
-Cypress.Commands.add('login', (username, password) => {
+Cypress.Commands.add('login', (username='admin', password='12qwaszx') => {
     cy.get('[placeholder="Username"]').type(username)
     cy.get('[placeholder="Password"]').type(password)
 })
