@@ -174,14 +174,14 @@ class TestMultimerge(TestCase):
         compare_datasets(self, expected, merged, ignored_attrs={'score'})
         self.assertEqual(
             [
-                NoMatchingAnnError(item_id=('1', ''), sources={1, 2},
-                    ann=source0.get('1').annotations[0]),
                 NoMatchingAnnError(item_id=('1', ''), sources={2},
                     ann=source0.get('1').annotations[5]),
+                NoMatchingAnnError(item_id=('1', ''), sources={1, 2},
+                    ann=source0.get('1').annotations[0]),
             ],
             sorted((e for e in merger.errors
                     if isinstance(e, NoMatchingAnnError)),
-                key=lambda e: e.item_id)
+                key=lambda e: len(e.sources))
         )
 
     def test_attributes(self):
