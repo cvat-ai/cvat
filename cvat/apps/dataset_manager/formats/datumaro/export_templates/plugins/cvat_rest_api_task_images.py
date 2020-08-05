@@ -42,7 +42,7 @@ class cvat_rest_api_task_images(SourceExtractor):
             frame_ids=[item_id], outdir=self._cache_dir, quality='original')
 
     def _connect(self):
-        if self._session is not None:
+        if self._cvat_cli is not None:
             return
 
         print("Enter credentials for '%s' to read task data:" % \
