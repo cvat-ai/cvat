@@ -27,7 +27,9 @@ class ModelHandler:
 
     def encode_state(self, state):
         state['net.zf'] = state['net'].zf
-        del state['net']
+        state.pop('net', None)
+        state.pop('mask', None)
+
         for k,v in state.items():
             state[k] = jsonpickle.encode(v)
 
