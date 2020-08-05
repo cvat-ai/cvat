@@ -34,7 +34,7 @@ context('Create an annotation task', () => {
             cy.contains('button', 'Done').click()
         })
         it('Upload file', () => {
-            const image = 'cars.jpg'
+            const image = 'image.jpg'
             cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
         })
         it('Click to "Submit" button', () => {
