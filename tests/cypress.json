@@ -3,7 +3,6 @@
     "baseUrl": "http://localhost:8080",
     "testFiles": [
         "auth_page.js",
-        "create_new_task.js",
-        "issue_*.js"
+        "issue_1599_*.js"
     ]
 }
