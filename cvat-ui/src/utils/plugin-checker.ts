@@ -4,7 +4,7 @@
 
 import getCore from 'cvat-core-wrapper';
 import { SupportedPlugins } from 'reducers/interfaces';
-import { isReachable } from './url-checker'
+import isReachable from './url-checker';
 
 const core = getCore();
 

@@ -88,13 +88,13 @@ export default function (state = defaultState, action: AuthActions | boundariesA
         case AuthActionTypes.CHANGE_PASSWORD_FAILED:
             return {
                 ...state,
-                fetching: false
+                fetching: false,
             };
         case AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG:
             return {
                 ...state,
-                showChangePasswordDialog: typeof action.payload.showChangePasswordDialog === 'undefined' ?
-                    !state.showChangePasswordDialog
+                showChangePasswordDialog: typeof action.payload.showChangePasswordDialog === 'undefined'
+                    ? !state.showChangePasswordDialog
                     : action.payload.showChangePasswordDialog,
             };
         case AuthActionTypes.LOAD_AUTH_ACTIONS:

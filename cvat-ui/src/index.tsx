@@ -14,7 +14,10 @@ import createRootReducer from 'reducers/root-reducer';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import logger, { LogType } from 'cvat-logger';
 
-import { authorizedAsync } from 'actions/auth-actions';
+import {
+    authorizedAsync,
+    loadAuthActionsAsync,
+} from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';
 import { checkPluginsAsync } from 'actions/plugins-actions';
 import { getUsersAsync } from 'actions/users-actions';
@@ -26,7 +29,7 @@ import {
     resetErrors,
     resetMessages,
 } from './actions/notification-actions';
-import { loadAuthActionsAsync } from 'actions/auth-actions';
+
 
 import {
     CombinedState,

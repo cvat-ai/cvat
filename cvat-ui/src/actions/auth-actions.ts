@@ -5,7 +5,7 @@
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { UserConfirmation } from 'components/register-page/register-form';
 import getCore from 'cvat-core-wrapper';
-import { isReachable } from 'utils/url-checker';
+import isReachable from 'utils/url-checker';
 
 const cvat = getCore();
 
@@ -44,13 +44,19 @@ export const authActions = {
     logoutFailed: (error: any) => createAction(AuthActionTypes.LOGOUT_FAILED, { error }),
     changePassword: () => createAction(AuthActionTypes.CHANGE_PASSWORD),
     changePasswordSuccess: () => createAction(AuthActionTypes.CHANGE_PASSWORD_SUCCESS),
-    changePasswordFailed: (error: any) => createAction(AuthActionTypes.CHANGE_PASSWORD_FAILED, { error }),
-    switchChangePasswordDialog: (showChangePasswordDialog: boolean) =>
-        createAction(AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG, { showChangePasswordDialog }),
+    changePasswordFailed: (error: any) => (
+        createAction(AuthActionTypes.CHANGE_PASSWORD_FAILED, { error })
+    ),
+    switchChangePasswordDialog: (showChangePasswordDialog: boolean) => (
+        createAction(AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG, { showChangePasswordDialog })
+    ),
     loadServerAuthActions: () => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS),
-    loadServerAuthActionsSuccess: (allowChangePassword: boolean) =>
-        createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_SUCCESS, { allowChangePassword }),
-    loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
+    loadServerAuthActionsSuccess: (allowChangePassword: boolean) => (
+        createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_SUCCESS, { allowChangePassword })
+    ),
+    loadServerAuthActionsFailed: (error: any) => (
+        createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error })
+    ),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -118,7 +124,8 @@ export const authorizedAsync = (): ThunkAction => async (dispatch) => {
     }
 };
 
-export const changePasswordAsync = (oldPassword: string, newPassword1: string, newPassword2: string): ThunkAction => async (dispatch) => {
+export const changePasswordAsync = (oldPassword: string,
+    newPassword1: string, newPassword2: string): ThunkAction => async (dispatch) => {
     dispatch(authActions.changePassword());
 
     try {
@@ -139,8 +146,7 @@ export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
         const [allowChangePassword] = await Promise.all(promises);
 
         dispatch(authActions.loadServerAuthActionsSuccess(allowChangePassword));
-
     } catch (error) {
         dispatch(authActions.loadServerAuthActionsFailed(error));
     }
-}
+};

@@ -7,9 +7,8 @@ import { connect } from 'react-redux';
 import getCore from 'cvat-core-wrapper';
 import HeaderComponent from 'components/header/header';
 import { SupportedPlugins, CombinedState } from 'reducers/interfaces';
-import { logoutAsync } from 'actions/auth-actions';
+import { logoutAsync, authActions } from 'actions/auth-actions';
 import { switchSettingsDialog } from 'actions/settings-actions';
-import { authActions } from 'actions/auth-actions';
 
 const core = getCore();
 
@@ -28,7 +27,7 @@ interface StateToProps {
     settingsDialogShown: boolean;
     changePasswordDialogShown: boolean;
     changePasswordFetching: boolean;
-    renderChangePasswordItem: boolean,
+    renderChangePasswordItem: boolean;
 }
 
 interface DispatchToProps {
@@ -78,7 +77,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settingsDialogShown,
         changePasswordFetching,
         changePasswordDialogShown,
-        renderChangePasswordItem: renderChangePasswordItem,
+        renderChangePasswordItem,
     };
 }
 
@@ -86,7 +85,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onLogout: (): void => dispatch(logoutAsync()),
         switchSettingsDialog: (show: boolean): void => dispatch(switchSettingsDialog(show)),
-        switchChangePasswordDialog: (show: boolean): void => dispatch(authActions.switchChangePasswordDialog(show)),
+        switchChangePasswordDialog: (show: boolean): void => (
+            dispatch(authActions.switchChangePasswordDialog(show))
+        ),
     };
 }
 

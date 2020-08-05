@@ -6,7 +6,7 @@ import getCore from 'cvat-core-wrapper';
 
 const core = getCore();
 
-export const isReachable = async (url: string, method: string): Promise<boolean> => {
+export default async (url: string, method: string): Promise<boolean> => {
     try {
         await core.server.request(url, {
             method,

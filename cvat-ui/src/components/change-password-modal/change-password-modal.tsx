@@ -55,27 +55,27 @@ function ChangePasswordComponent(props: ChangePasswordPageComponentProps): JSX.E
     } = props;
 
     return (
-            <Modal
-                title={<Title level={3}>Change password</Title>}
-                okType='primary'
-                okText='Submit'
-                footer={null}
-                visible={visible}
-                destroyOnClose={true}
-                onCancel={onClose}
-            >
-                <ChangePasswordForm
-                        onSubmit={(changePasswordData: ChangePasswordData): void => {
-                            onChangePassword(
-                                changePasswordData.oldPassword,
-                                changePasswordData.newPassword1,
-                                changePasswordData.newPassword2,
-                            );
-                        }}
-                        fetching={fetching}
-                    />
-            </Modal>
-        );
+        <Modal
+            title={<Title level={3}>Change password</Title>}
+            okType='primary'
+            okText='Submit'
+            footer={null}
+            visible={visible}
+            destroyOnClose
+            onCancel={onClose}
+        >
+            <ChangePasswordForm
+                onSubmit={(changePasswordData: ChangePasswordData): void => {
+                    onChangePassword(
+                        changePasswordData.oldPassword,
+                        changePasswordData.newPassword1,
+                        changePasswordData.newPassword2,
+                    );
+                }}
+                fetching={fetching}
+            />
+        </Modal>
+    );
 }
 
 export default connect(

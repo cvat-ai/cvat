@@ -17,8 +17,8 @@ import Text from 'antd/lib/typography/Text';
 
 import { CVATLogo, AccountIcon } from 'icons';
 import consts from 'consts';
-import SettingsModal from './settings-modal/settings-modal';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
+import SettingsModal from './settings-modal/settings-modal';
 
 interface HeaderContainerProps {
     onLogout: () => void;
@@ -61,7 +61,6 @@ function HeaderContainer(props: Props): JSX.Element {
         switchSettingsShortcut,
         switchSettingsDialog,
         switchChangePasswordDialog,
-        changePasswordDialogShown,
         renderChangePasswordItem,
     } = props;
 
@@ -251,12 +250,12 @@ function HeaderContainer(props: Props): JSX.Element {
                 visible={settingsDialogShown}
                 onClose={() => switchSettingsDialog(false)}
             />
-            {renderChangePasswordItem
+            { renderChangePasswordItem
                 && (
                     <ChangePasswordDialog
                         onClose={() => switchChangePasswordDialog(false)}
                     />
-            )}
+                )}
 
         </Layout.Header>
     );

@@ -141,7 +141,8 @@ class ChangePasswordFormComponent extends React.PureComponent<ChangePasswordForm
         return (
             <Form
                 onSubmit={this.handleSubmit}
-                className='change-password-form'>
+                className='change-password-form'
+            >
                 {this.renderOldPasswordField()}
                 {this.renderNewPasswordField()}
                 {this.renderNewPasswordConfirmationField()}

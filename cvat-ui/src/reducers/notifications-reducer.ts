@@ -101,7 +101,7 @@ const defaultState: NotificationsState = {
         },
         auth: {
             changePasswordDone: '',
-        }
+        },
     },
 };
 
