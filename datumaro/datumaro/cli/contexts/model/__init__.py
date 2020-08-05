@@ -146,6 +146,30 @@ def run_command(args):
 
     return 0
 
+def build_info_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
+    parser.add_argument('-n', '--name',
+        help="Model name")
+    parser.add_argument('-v', '--verbose', action='store_true',
+        help="Show details")
+    parser.add_argument('-p', '--project', dest='project_dir', default='.',
+        help="Directory of the project to operate on (default: current dir)")
+    parser.set_defaults(command=info_command)
+
+    return parser
+
+def info_command(args):
+    project = load_project(args.project_dir)
+
+    if args.name:
+        model = project.get_model(args.name)
+        print(model)
+    else:
+        for name, conf in project.config.models.items():
+            print(name)
+            if args.verbose:
+                print(dict(conf))
 
 def build_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor()
@@ -154,5 +178,6 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
     add_subparser(subparsers, 'add', build_add_parser)
     add_subparser(subparsers, 'remove', build_remove_parser)
     add_subparser(subparsers, 'run', build_run_parser)
+    add_subparser(subparsers, 'info', build_info_parser)
 
     return parser
