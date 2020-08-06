@@ -7,6 +7,8 @@ from collections import namedtuple
 from enum import Enum
 import numpy as np
 
+from attr import attrs, attrib
+
 from datumaro.util.image import Image
 
 AnnotationType = Enum('AnnotationType',
@@ -20,7 +22,10 @@ AnnotationType = Enum('AnnotationType',
         'caption',
     ])
 
+@attrs
 class Annotation:
+    id = attrib(converter=int, default=None, kw_only=True)
+    type = attrib(type=AnnotationType)
     # pylint: disable=redefined-builtin
     def __init__(self, id=None, type=None, attributes=None, group=None):
         if id is not None:
@@ -178,10 +183,7 @@ class MaskCategories(Categories):
         from datumaro.util.mask_tools import invert_colormap
         if self._inverse_colormap is None:
             if self.colormap is not None:
-                try:
-                    self._inverse_colormap = invert_colormap(self.colormap)
-                except Exception:
-                    pass
+                self._inverse_colormap = invert_colormap(self.colormap)
         return self._inverse_colormap
 
     def __eq__(self, other):
