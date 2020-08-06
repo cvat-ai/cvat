@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 Intel Corporation
+# Copyright (C) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,10 +7,10 @@ from django.conf import settings
 from rest_auth.views import (
     LoginView, LogoutView, PasswordChangeView,
     PasswordResetView, PasswordResetConfirmView)
-
-from cvat.apps.authentication.views import SigningView, RegisterView
 from allauth.account.views import ConfirmEmailView, EmailVerificationSentView
 from allauth.account import app_settings as allauth_settings
+
+from cvat.apps.authentication.views import SigningView, RegisterView
 
 urlpatterns = [
     path('login', LoginView.as_view(), name='rest_login'),

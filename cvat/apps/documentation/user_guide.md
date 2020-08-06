@@ -639,6 +639,7 @@ To open the settings open the user menu in the header and select the settings it
 In tab ``Player`` you can:
 -   Control step of ``C`` and ``V`` shortcuts.
 -   Control speed of ``Space``/``Play`` button.
+-   Select canvas background color. You can choose a background color or enter manually (in RGB or HEX format).
 -   Show ``Grid``, change grid size, choose color and transparency:
 
     ![](static/documentation/images/image068_mapillary_vistas.jpg)
@@ -799,7 +800,7 @@ Switching between user interface modes.
 |Icon                                         |Description   |Links to section  |
 |--                                           |--            |--                |
 |![](static/documentation/images/image167.jpg)|``Rectangle``|[Shape mode](#shape-mode-basics); [Track mode](#track-mode-basics);<br/> [Drawing by 4 points](#annotation-with-rectangle-by-4-points)|
-|![](static/documentation/images/image168.jpg)|``Polygon``  |[Annotation with polygons](#annotation-with-polygons)  |
+|![](static/documentation/images/image168.jpg)|``Polygon``  |[Annotation with polygons](#annotation-with-polygons); [Track mode with polygons](#track-mode-with-polygons)  |
 |![](static/documentation/images/image169.jpg)|``Polyline`` |[Annotation with polylines](#annotation-with-polylines)|
 |![](static/documentation/images/image170.jpg)|``Points``   |[Annotation with points](#annotation-with-points)      |
 |![](static/documentation/images/image176.jpg)|``Cuboid``   |[Annotation with cuboids](#annotation-with-cuboids)    |
@@ -1271,20 +1272,23 @@ Simply drag the faces to move them independently from the rest of the cuboid.
 
 ![](static/documentation/images/gif020_mapillary_vistas.gif)
 
-You can also use cuboids in track mode, similar to rectangles in track mode ([basics](#track-mode-basics) and [advanced](#track-mode-advanced))
+You can also use cuboids in track mode, similar to rectangles in track mode ([basics](#track-mode-basics) and [advanced](#track-mode-advanced)) or [Track mode with polygons](#track-mode-with-polygons)
 
 ## Annotation with Tags
 
-Used to annotate frames, does not have a shape in the workspace.
-Before you start, you have to make sure that Tag is selected.
+It is used to annotate frames, tags are not displayed in the workspace.
+Before you start, open the drop-down list in the top panel and select ``Tag annotation``.
+
+![](static/documentation/images/image183.jpg)
+
+The objects sidebar will be replaced with a special panel for working with tags.
+Here you can select a label for a tag and add it by clicking on the ``Add tag`` button.
+You can also customize hotkeys for each label.
 
 ![](static/documentation/images/image181.jpg)
 
-Click tag to create. You can work with Tag only on the sidebar.
-You can use the lock function and change label and attribute.
-Other functions such as propagate, make a copy and remove are available in the action menu.
-
-![](static/documentation/images/image135.jpg)
+If you need to use only one label for one frame, then enable the ``Automatically go to the next frame``
+checkbox, then after you add the tag the frame will automatically switch to the next.
 
 ## Track mode with polygons
 
@@ -1491,6 +1495,7 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 |                                | _Modes_                                                                         |
 | ``N``                          | Repeat the latest procedure of drawing with the same parameters                 |
 | ``M``                          | Activate or deactivate mode to merging shapes                                   |
+| ``Alt+M``                      | Activate or deactivate mode to spliting shapes                                  |
 | ``G``                          | Activate or deactivate mode to grouping shapes                                  |
 | ``Shift+G``                    | Reset group for selected shapes (in group mode)                                 |
 | ``Esc``                        | Cancel any active canvas mode                                                   |
