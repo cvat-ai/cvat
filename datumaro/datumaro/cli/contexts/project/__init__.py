@@ -17,7 +17,8 @@ from datumaro.components.comparator import Comparator
 from datumaro.components.dataset_filter import DatasetItemEncoder
 from datumaro.components.extractor import AnnotationType
 from datumaro.components.cli_plugin import CliPlugin
-from datumaro.components.operations import mean_std
+from datumaro.components.operations import \
+    compute_image_statistics, compute_ann_statistics
 from .diff import DiffVisualizer
 from ...util import add_subparser, CliException, MultilineFormatter, \
     make_file_name
@@ -648,22 +649,16 @@ def build_stats_parser(parser_ctor=argparse.ArgumentParser):
 
 def stats_command(args):
     project = load_project(args.project_dir)
+
     dataset = project.make_dataset()
+    stats = {}
+    stats.update(compute_image_statistics(dataset))
+    stats.update(compute_ann_statistics(dataset))
 
-    def print_extractor_info(extractor, indent=''):
-        mean, std = mean_std(dataset)
-        print("%sImage mean:" % indent, ', '.join('%.3f' % n for n in mean))
-        print("%sImage std:" % indent, ', '.join('%.3f' % n for n in std))
-
-    print("Dataset: ")
-    print_extractor_info(dataset)
-
-    if 1 < len(dataset.subsets()):
-        print("Subsets: ")
-        for subset_name in dataset.subsets():
-            subset = dataset.get_subset(subset_name)
-            print("  %s:" % subset_name)
-            print_extractor_info(subset, " " * 4)
+    dst_file = generate_next_file_name('statistics', ext='.json')
+    log.info("Writing project statistics to '%s'" % dst_file)
+    with open(dst_file, 'w') as f:
+        json.dump(stats, f, indent=4, sort_keys=True)
 
 def build_info_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Get project info",
