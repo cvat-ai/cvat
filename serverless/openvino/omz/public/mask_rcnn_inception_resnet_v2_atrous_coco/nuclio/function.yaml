@@ -123,8 +123,6 @@ spec:
         value: apt update && DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y python3-skimage
       - kind: RUN
         value: pip3 install "numpy<1.16.0" # workaround for skimage
-      - kind: USER
-        value: openvino
 
   triggers:
     myHttpTrigger:
