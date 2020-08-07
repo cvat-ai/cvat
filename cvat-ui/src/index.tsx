@@ -14,7 +14,10 @@ import createRootReducer from 'reducers/root-reducer';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import logger, { LogType } from 'cvat-logger';
 
-import { authorizedAsync } from 'actions/auth-actions';
+import {
+    authorizedAsync,
+    loadAuthActionsAsync,
+} from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';
 import { checkPluginsAsync } from 'actions/plugins-actions';
 import { getUsersAsync } from 'actions/users-actions';
@@ -26,6 +29,7 @@ import {
     resetErrors,
     resetMessages,
 } from './actions/notification-actions';
+
 
 import {
     CombinedState,
@@ -48,6 +52,9 @@ interface StateToProps {
     formatsFetching: boolean;
     userAgreementsInitialized: boolean;
     userAgreementsFetching: boolean;
+    authActionsFetching: boolean;
+    authActionsInitialized: boolean;
+    allowChangePassword: boolean;
     notifications: NotificationsState;
     user: any;
     keyMap: Record<string, ExtendedKeyMapOptions>;
@@ -64,6 +71,7 @@ interface DispatchToProps {
     switchShortcutsDialog: () => void;
     loadUserAgreements: () => void;
     switchSettingsDialog: () => void;
+    loadAuthActions: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -88,6 +96,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         formatsFetching: formats.fetching,
         userAgreementsInitialized: userAgreements.initialized,
         userAgreementsFetching: userAgreements.fetching,
+        authActionsFetching: auth.authActionsFetching,
+        authActionsInitialized: auth.authActionsInitialized,
+        allowChangePassword: auth.allowChangePassword,
         notifications: state.notifications,
         user: auth.user,
         keyMap: shortcuts.keyMap,
@@ -106,6 +117,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetMessages: (): void => dispatch(resetMessages()),
         switchShortcutsDialog: (): void => dispatch(shortcutsActions.switchShortcutsDialog()),
         switchSettingsDialog: (): void => dispatch(switchSettingsDialog()),
+        loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
     };
 }
 
