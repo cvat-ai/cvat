@@ -356,86 +356,58 @@ class TransformsTest(TestCase):
             ])
 
     def test_remap_labels(self):
-        class SrcExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, annotations=[
-                        # Should be remapped
-                        Label(1),
-                        Bbox(1, 2, 3, 4, label=2),
-                        Mask(image=np.array([1]), label=3),
+        src_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, annotations=[
+                # Should be remapped
+                Label(1),
+                Bbox(1, 2, 3, 4, label=2),
+                Mask(image=np.array([1]), label=3),
 
-                        # Should be kept
-                        Polygon([1, 1, 2, 2, 3, 4], label=4),
-                        PolyLine([1, 3, 4, 2, 5, 6], label=None)
-                    ]),
-                ])
+                # Should be kept
+                Polygon([1, 1, 2, 2, 3, 4], label=4),
+                PolyLine([1, 3, 4, 2, 5, 6])
+            ])
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                'label%s' % i for i in range(5)),
+            AnnotationType.mask: MaskCategories(
+                colormap=mask_tools.generate_colormap(5)),
+        })
 
-            def categories(self):
-                label_cat = LabelCategories()
-                label_cat.add('label0')
-                label_cat.add('label1')
-                label_cat.add('label2')
-                label_cat.add('label3')
-                label_cat.add('label4')
+        dst_dataset = Dataset.from_iterable([
+            DatasetItem(id=1, annotations=[
+                Label(1),
+                Bbox(1, 2, 3, 4, label=0),
+                Mask(image=np.array([1]), label=1),
 
-                mask_cat = MaskCategories(
-                    colormap=mask_tools.generate_colormap(5))
+                Polygon([1, 1, 2, 2, 3, 4], label=2),
+                PolyLine([1, 3, 4, 2, 5, 6], label=None)
+            ]),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(
+                ['label0', 'label9', 'label4']),
+            AnnotationType.mask: MaskCategories(colormap={
+                k: v for k, v in mask_tools.generate_colormap(5).items()
+                if k in { 0, 1, 3, 4 }
+            })
+        })
 
-                return {
-                    AnnotationType.label: label_cat,
-                    AnnotationType.mask: mask_cat,
-                }
-
-        class DstExtractor(Extractor):
-            def __iter__(self):
-                return iter([
-                    DatasetItem(id=1, annotations=[
-                        Label(1),
-                        Bbox(1, 2, 3, 4, label=0),
-                        Mask(image=np.array([1]), label=1),
-
-                        Polygon([1, 1, 2, 2, 3, 4], label=2),
-                        PolyLine([1, 3, 4, 2, 5, 6], label=None)
-                    ]),
-                ])
-
-            def categories(self):
-                label_cat = LabelCategories()
-                label_cat.add('label0')
-                label_cat.add('label9')
-                label_cat.add('label4')
-
-                mask_cat = MaskCategories(colormap={
-                    k: v for k, v in mask_tools.generate_colormap(5).items()
-                    if k in { 0, 1, 3, 4 }
-                })
-
-                return {
-                    AnnotationType.label: label_cat,
-                    AnnotationType.mask: mask_cat,
-                }
-
-        actual = transforms.RemapLabels(SrcExtractor(), mapping={
+        actual = transforms.RemapLabels(src_dataset, mapping={
             'label1': 'label9',
             'label2': 'label0',
             'label3': 'label9',
         }, default='keep')
 
-        compare_datasets(self, DstExtractor(), actual)
+        compare_datasets(self, dst_dataset, actual)
 
     def test_remap_labels_delete_unspecified(self):
         source_dataset = Dataset.from_iterable([
             DatasetItem(id=1, annotations=[ Label(0) ])
-        ], categories={
-            AnnotationType.label: LabelCategories.from_iterable('label0'),
-        })
+        ], categories=['label0'])
 
         target_dataset = Dataset.from_iterable([
-                DatasetItem(id=1, annotations=[]),
-            ], categories={
-                AnnotationType.label: LabelCategories(),
-            })
+            DatasetItem(id=1),
+        ], categories=[])
 
         actual = transforms.RemapLabels(source_dataset,
             mapping={}, default='delete')

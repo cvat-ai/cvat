@@ -504,7 +504,6 @@ class RemapLabels(Transform, CliPlugin):
         return self._categories
 
     def transform_item(self, item):
-        # TODO: provide non-inplace version
         annotations = []
         for ann in item.annotations:
             if ann.type in { AnnotationType.label, AnnotationType.mask,
@@ -513,9 +512,7 @@ class RemapLabels(Transform, CliPlugin):
             } and ann.label is not None:
                 conv_label = self._map_id(ann.label)
                 if conv_label is not None:
-                    ann._label = conv_label
-                    annotations.append(ann)
+                    annotations.append(ann.wrap(label=conv_label))
             else:
-                annotations.append(ann)
-        item._annotations = annotations
-        return item
+                annotations.append(ann.wrap())
+        return item.wrap(annotations=annotations)

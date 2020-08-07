@@ -83,7 +83,7 @@ class LabelMeExtractor(SourceExtractor):
                     else:
                         try:
                             value = float(value)
-                        except Exception:
+                        except ValueError:
                             pass
                     parsed.append((name, value))
                 else:
