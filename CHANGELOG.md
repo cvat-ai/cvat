@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - Unreleased
 ### Added
+- Siammask tracker as DL serverless function (<https://github.com/opencv/cvat/pull/1988>)
 - [Datumaro] Added model info and source info commands (<https://github.com/opencv/cvat/pull/1973>)
 
 ### Changed
