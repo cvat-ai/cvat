@@ -42,7 +42,7 @@ script:
   # Create superuser
   - docker exec -it cvat bash -ic "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
   # Install Cypress and run tests
-  - cd ./tests && npm install cypress-file-upload && CI=true npm install cypress
+  - cd ./tests && npm install
   - $(npm bin)/cypress run --headless --browser chrome && cd ..
 
 after_success:
