@@ -24,6 +24,8 @@ from distutils.dir_util import copy_tree
 
 from . import models
 from .log import slogger
+from .prepare import PrepareInfo
+from diskcache import Cache
 
 ############################# Low Level server API
 
@@ -229,6 +231,22 @@ def _create_thread(tid, data):
     job = rq.get_current_job()
     job.meta['status'] = 'Media files are being extracted...'
     job.save_meta()
+
+    if settings.USE_CACHE:
+        for media_type, media_files in media.items():
+            if media_files:
+                if task_mode == MEDIA_TYPES['video']['mode']:
+                    meta_info = PrepareInfo(source_path=os.path.join(upload_dir, media_files[0]),
+                                        meta_path=os.path.join(upload_dir, 'meta_info.txt'))
+                    meta_info.save_meta_info()
+                # else:
+                #     with Cache(settings.CACHE_ROOT) as cache:
+                #         counter_ = itertools.count(start=1)
+
+                          #TODO: chunk size
+                #         for chunk_number, media_paths in itertools.groupby(media_files, lambda x: next(counter_) // db_data.chunk_size):
+                #             cache.set('{}_{}'.format(tid, chunk_number), media_paths, tag='dummy')
+    #else:
 
     db_images = []
     extractor = None
