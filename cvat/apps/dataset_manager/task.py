@@ -536,6 +536,14 @@ class JobAnnotation:
     def data(self):
         return self.ir_data.data
 
+    def export(self, dst_file, exporter, host='', **options):
+        task_data = TaskData(
+            annotation_ir=self.ir_data,
+            db_task=self.db_job.segment.task,
+            host=host,
+        )
+        exporter(dst_file, task_data, **options)
+
     def import_annotations(self, src_file, importer):
         task_data = TaskData(
             annotation_ir=AnnotationIR(),
@@ -674,6 +682,21 @@ def delete_job_data(pk):
     annotation = JobAnnotation(pk)
     annotation.delete()
 
+def export_job(job_id, dst_file, format_name,
+        server_url=None, save_images=False):
+    # For big tasks dump function may run for a long time and
+    # we dont need to acquire lock after the task has been initialized from DB.
+    # But there is the bug with corrupted dump file in case 2 or
+    # more dump request received at the same time:
+    # https://github.com/opencv/cvat/issues/217
+    with transaction.atomic():
+        job = JobAnnotation(job_id)
+        job.init_from_db()
+
+    exporter = make_exporter(format_name)
+    with open(dst_file, 'wb') as f:
+        job.export(f, exporter, host=server_url, save_images=save_images)
+
 @silk_profile(name="GET task data")
 @transaction.atomic
 def get_task_data(pk):
@@ -722,8 +745,7 @@ def export_task(task_id, dst_file, format_name,
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
-        task.export(f, exporter, host=server_url,
-            save_images=save_images)
+        task.export(f, exporter, host=server_url, save_images=save_images)
 
 @transaction.atomic
 def import_task_annotations(task_id, src_file, format_name):

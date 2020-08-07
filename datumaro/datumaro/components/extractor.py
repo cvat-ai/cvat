@@ -24,6 +24,9 @@ AnnotationType = Enum('AnnotationType',
         'caption',
     ])
 
+_COORDINATE_ROUNDING_DIGITS = 2
+
+
 @attrs
 class Annotation:
     id = attrib(converter=int, default=0, kw_only=True)
@@ -292,7 +295,8 @@ def compute_iou(bbox_a, bbox_b):
 
 @attrs
 class _Shape(Annotation):
-    points = attrib(converter=list)
+    points = attrib(converter=lambda x:
+        [round(p, _COORDINATE_ROUNDING_DIGITS) for p in x])
     label = attrib(converter=attr.converters.optional(int),
         default=None, kw_only=True)
     z_order = attrib(converter=int, default=0, kw_only=True)
@@ -327,17 +331,16 @@ class PolyLine(_Shape):
 class Polygon(_Shape):
     _type = AnnotationType.polygon
 
-    points = attrib(converter=list)
-    @points.validator
-    def _points_validator(self, attribute, points):
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
         # keep the message on a single line to produce informative output
-        assert len(points) % 2 == 0 and 3 <= len(points) // 2, "Wrong polygon points: %s" % points
+        assert len(self.points) % 2 == 0 and 3 <= len(self.points) // 2, "Wrong polygon points: %s" % self.points
 
     def get_area(self):
         import pycocotools.mask as mask_utils
 
-        _, _, w, h = self.get_bbox()
-        rle = mask_utils.frPyObjects([self.points], h, w)
+        x, y, w, h = self.get_bbox()
+        rle = mask_utils.frPyObjects([self.points], y + h, x + w)
         area = mask_utils.area(rle)[0]
         return area
 
@@ -443,11 +446,6 @@ class Points(_Shape):
     ])
     _type = AnnotationType.points
 
-    points = attrib(converter=list)
-    @points.validator
-    def _points_validator(self, attribute, points):
-        assert len(points) % 2 == 0, points
-
     visibility = attrib(type=list, default=None)
     @visibility.validator
     def _visibility_validator(self, attribute, visibility):
@@ -459,6 +457,10 @@ class Points(_Shape):
                     visibility[i] = self.Visibility(v)
         assert len(visibility) == len(self.points) // 2
         self.visibility = visibility
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        assert len(self.points) % 2 == 0, self.points
 
     def get_area(self):
         return 0
