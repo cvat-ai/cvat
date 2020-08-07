@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Issue loading openvino models for semi-automatic and automatic annotation (<https://github.com/opencv/cvat/pull/1996>)
 
 ### Security
 -
