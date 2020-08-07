@@ -26,21 +26,20 @@ spec:
         value: /opt/nuclio
       - kind: RUN
         value: conda create -y -n siammask python=3.6
-      - kind: RUN
-        value: source activate siammask
+      - kind: SHELL
+        value: '["conda", "run", "-n", "siammask", "/bin/bash", "-c"]'
       - kind: RUN
         value: git clone https://github.com/foolwood/SiamMask.git
       - kind: RUN
-        value: pip install -r SiamMask/requirements.txt
+        value: pip install -r SiamMask/requirements.txt jsonpickle
       - kind: RUN
         value: conda install -y gcc_linux-64
       - kind: RUN
         value: cd SiamMask && bash make.sh && cd -
       - kind: RUN
         value: wget -P SiamMask/experiments/siammask_sharp http://www.robots.ox.ac.uk/~qwang/SiamMask_DAVIS.pth
-
-      - kind: WORKDIR
-        value: /opt/nuclio/pysot
+      - kind: ENTRYPOINT
+        value: '["conda", "run", "-n", "siammask"]'
 
   triggers:
     myHttpTrigger:

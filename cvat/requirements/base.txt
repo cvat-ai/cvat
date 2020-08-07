@@ -28,7 +28,7 @@ GitPython==3.1.3
 coreapi==2.3.3
 django-filter==2.3.0
 Markdown==3.2.2
-djangorestframework==3.11.0
+djangorestframework==3.11.1
 Pygments==2.6.1
 drf-yasg==1.17.1
 Shapely==1.7.0

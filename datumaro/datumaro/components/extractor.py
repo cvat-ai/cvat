@@ -26,7 +26,6 @@ AnnotationType = Enum('AnnotationType',
 
 _COORDINATE_ROUNDING_DIGITS = 2
 
-
 @attrs
 class Annotation:
     id = attrib(converter=int, default=0, kw_only=True)
