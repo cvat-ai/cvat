@@ -17,12 +17,15 @@ import Text from 'antd/lib/typography/Text';
 
 import { CVATLogo, AccountIcon } from 'icons';
 import consts from 'consts';
+import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import SettingsModal from './settings-modal/settings-modal';
 
 interface HeaderContainerProps {
     onLogout: () => void;
     switchSettingsDialog: (show: boolean) => void;
+    switchChangePasswordDialog: (show: boolean) => void;
     logoutFetching: boolean;
+    changePasswordFetching: boolean;
     installedAnalytics: boolean;
     serverHost: string;
     username: string;
@@ -34,6 +37,8 @@ interface HeaderContainerProps {
     uiVersion: string;
     switchSettingsShortcut: string;
     settingsDialogShown: boolean;
+    changePasswordDialogShown: boolean;
+    renderChangePasswordItem: boolean;
 }
 
 type Props = HeaderContainerProps & RouteComponentProps;
@@ -51,9 +56,12 @@ function HeaderContainer(props: Props): JSX.Element {
         uiVersion,
         onLogout,
         logoutFetching,
+        changePasswordFetching,
         settingsDialogShown,
         switchSettingsShortcut,
         switchSettingsDialog,
+        switchChangePasswordDialog,
+        renderChangePasswordItem,
     } = props;
 
     const {
@@ -136,6 +144,16 @@ function HeaderContainer(props: Props): JSX.Element {
                 <Icon type='info-circle' />
                 About
             </Menu.Item>
+            {renderChangePasswordItem && (
+                <Menu.Item
+                    onClick={(): void => switchChangePasswordDialog(true)}
+                    disabled={changePasswordFetching}
+                >
+                    {changePasswordFetching ? <Icon type='loading' /> : <Icon type='edit' />}
+                    Change password
+                </Menu.Item>
+            )}
+
             <Menu.Item
                 onClick={onLogout}
                 disabled={logoutFetching}
@@ -232,6 +250,13 @@ function HeaderContainer(props: Props): JSX.Element {
                 visible={settingsDialogShown}
                 onClose={() => switchSettingsDialog(false)}
             />
+            { renderChangePasswordItem
+                && (
+                    <ChangePasswordDialog
+                        onClose={() => switchChangePasswordDialog(false)}
+                    />
+                )}
+
         </Layout.Header>
     );
 }

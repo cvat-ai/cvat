@@ -46,4 +46,8 @@ nuctl deploy --project-name cvat \
     --path $SCRIPT_DIR/tensorflow/faster_rcnn_inception_v2_coco/nuclio \
     --platform local
 
+nuctl deploy --project-name cvat \
+    --path $SCRIPT_DIR/pytorch/foolwood/siammask/nuclio \
+    --platform local
+
 nuctl get function
