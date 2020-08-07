@@ -82,10 +82,6 @@ try:
 except Exception:
     pass
 
-# Application definition
-JS_3RDPARTY = {}
-CSS_3RDPARTY = {}
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -153,7 +149,7 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.AnonRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
+        'anon': '100/minute',
     },
 }
 
@@ -209,7 +205,7 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 # Django Auth
 DJANGO_AUTH_TYPE = 'BASIC'
 DJANGO_AUTH_DEFAULT_GROUPS = []
-LOGIN_URL = 'login'
+LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 AUTH_LOGIN_NOTE = '<p>Have not registered yet? <a href="/auth/register">Register here</a>.</p>'
 
@@ -220,6 +216,7 @@ AUTHENTICATION_BACKENDS = [
 
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
+OLD_PASSWORD_FIELD_ENABLED = True
 
 # Django-RQ
 # https://github.com/rq/django-rq

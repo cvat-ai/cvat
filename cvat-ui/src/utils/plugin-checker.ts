@@ -4,6 +4,7 @@
 
 import getCore from 'cvat-core-wrapper';
 import { SupportedPlugins } from 'reducers/interfaces';
+import isReachable from './url-checker';
 
 const core = getCore();
 
@@ -11,16 +12,6 @@ const core = getCore();
 class PluginChecker {
     public static async check(plugin: SupportedPlugins): Promise<boolean> {
         const serverHost = core.config.backendAPI.slice(0, -7);
-        const isReachable = async (url: string, method: string): Promise<boolean> => {
-            try {
-                await core.server.request(url, {
-                    method,
-                });
-                return true;
-            } catch (error) {
-                return ![0, 404].includes(error.code);
-            }
-        };
 
         switch (plugin) {
             case SupportedPlugins.GIT_INTEGRATION: {

@@ -21,6 +21,9 @@ AnnotationType = Enum('AnnotationType',
         'caption',
     ])
 
+_COORDINATE_ROUNDING_DIGITS = 2
+
+
 class Annotation:
     # pylint: disable=redefined-builtin
     def __init__(self, id=None, type=None, attributes=None, group=None):
@@ -358,9 +361,9 @@ class _Shape(Annotation):
             id=None, attributes=None, group=None):
         super().__init__(id=id, type=type,
             attributes=attributes, group=group)
-        if points is None:
-            points = []
-        self.points = list(points)
+        if points is not None:
+            points = [round(p, _COORDINATE_ROUNDING_DIGITS) for p in points]
+        self.points = points
 
         if label is not None:
             label = int(label)
@@ -428,8 +431,8 @@ class Polygon(_Shape):
     def get_area(self):
         import pycocotools.mask as mask_utils
 
-        _, _, w, h = self.get_bbox()
-        rle = mask_utils.frPyObjects([self.points], h, w)
+        x, y, w, h = self.get_bbox()
+        rle = mask_utils.frPyObjects([self.points], y + h, x + w)
         area = mask_utils.area(rle)[0]
         return area
 

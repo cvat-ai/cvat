@@ -54,15 +54,6 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                 >
                     {`Job #${id}`}
                 </Button>
-                |
-                <Tooltip
-                    title='Old version of UI is deprecated and will be removed from
-                           new versions of UI. We still recomend it only if you use
-                           specific features from it like cuboids annotation.'
-                    mouseLeaveDelay={0}
-                >
-                    <Button type='link' href={`${baseURL}/?id=${id}`}>Old UI</Button>
-                </Tooltip>
             </div>
         ),
     }, {
