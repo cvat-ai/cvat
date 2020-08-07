@@ -251,7 +251,7 @@ class CvatExtractor(SourceExtractor):
 
     @classmethod
     def _parse_shape_ann(cls, ann, categories):
-        ann_id = ann.get('id')
+        ann_id = ann.get('id', 0)
         ann_type = ann['type']
 
         attributes = ann.get('attributes') or {}
