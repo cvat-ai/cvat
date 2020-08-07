@@ -38,6 +38,7 @@ interface CVATAppProps {
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
     switchSettingsDialog: () => void;
+    loadAuthActions: () => void;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     userInitialized: boolean;
     userFetching: boolean;
@@ -51,6 +52,9 @@ interface CVATAppProps {
     aboutFetching: boolean;
     userAgreementsFetching: boolean;
     userAgreementsInitialized: boolean;
+    authActionsFetching: boolean;
+    authActionsInitialized: boolean;
+    allowChangePassword: boolean;
     notifications: NotificationsState;
     user: any;
 }
@@ -84,6 +88,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout,
             loadUserAgreements,
             initPlugins,
+            loadAuthActions,
             userInitialized,
             userFetching,
             formatsInitialized,
@@ -97,6 +102,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             user,
             userAgreementsFetching,
             userAgreementsInitialized,
+            authActionsFetching,
+            authActionsInitialized,
         } = this.props;
 
         this.showErrors();
@@ -114,6 +121,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (user == null) {
             return;
+        }
+
+        if (!authActionsInitialized && !authActionsFetching) {
+            loadAuthActions();
         }
 
         if (!formatsInitialized && !formatsFetching) {

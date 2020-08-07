@@ -33,10 +33,6 @@ spec:
       - kind: RUN
         value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/converter.py --name person-reidentification-retail-0300 --precisions FP32 -d /opt/nuclio/open_model_zoo -o /opt/nuclio/open_model_zoo
 
-      postCopy:
-      - kind: USER
-        value: openvino
-
   triggers:
     myHttpTrigger:
       maxWorkers: 2

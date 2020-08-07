@@ -34,10 +34,6 @@ spec:
       - kind: RUN
         value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name text-detection-0004 -o /opt/nuclio/open_model_zoo
 
-      postCopy:
-      - kind: USER
-        value: openvino
-
   triggers:
     myHttpTrigger:
       maxWorkers: 2

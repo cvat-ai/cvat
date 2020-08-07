@@ -36,8 +36,6 @@ spec:
         value: unzip dextr_model_v1.zip
       - kind: RUN
         value: pip3 install Pillow
-      - kind: USER
-        value: openvino
 
   triggers:
     myHttpTrigger:

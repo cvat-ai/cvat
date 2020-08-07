@@ -246,6 +246,24 @@
                 Axios.defaults.headers.common.Authorization = '';
             }
 
+            async function changePassword(oldPassword, newPassword1, newPassword2) {
+                try {
+                    const data = JSON.stringify({
+                        old_password: oldPassword,
+                        new_password1: newPassword1,
+                        new_password2:newPassword2,
+                    });
+                    await Axios.post(`${config.backendAPI}/auth/password/change`, data, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             async function authorized() {
                 try {
                     await module.exports.users.getSelf();
@@ -768,6 +786,7 @@
                         exception,
                         login,
                         logout,
+                        changePassword,
                         authorized,
                         register,
                         request: serverRequest,

@@ -56,7 +56,7 @@ def create_command(args):
     if osp.isdir(project_env_dir) and os.listdir(project_env_dir):
         if not args.overwrite:
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % project_env_dir)
+                "(pass --overwrite to overwrite)" % project_env_dir)
         else:
             shutil.rmtree(project_env_dir, ignore_errors=True)
 
@@ -64,7 +64,7 @@ def create_command(args):
     if osp.isdir(own_dataset_dir) and os.listdir(own_dataset_dir):
         if not args.overwrite:
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % own_dataset_dir)
+                "(pass --overwrite to overwrite)" % own_dataset_dir)
         else:
             # NOTE: remove the dir to avoid using data from previous project
             shutil.rmtree(own_dataset_dir)
@@ -150,7 +150,7 @@ def import_command(args):
     if osp.isdir(project_env_dir) and os.listdir(project_env_dir):
         if not args.overwrite:
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % project_env_dir)
+                "(pass --overwrite to overwrite)" % project_env_dir)
         else:
             shutil.rmtree(project_env_dir, ignore_errors=True)
 
@@ -158,7 +158,7 @@ def import_command(args):
     if osp.isdir(own_dataset_dir) and os.listdir(own_dataset_dir):
         if not args.overwrite:
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % own_dataset_dir)
+                "(pass --overwrite to overwrite)" % own_dataset_dir)
         else:
             # NOTE: remove the dir to avoid using data from previous project
             shutil.rmtree(own_dataset_dir)
@@ -329,7 +329,7 @@ def export_command(args):
     if dst_dir:
         if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % dst_dir)
+                "(pass --overwrite to overwrite)" % dst_dir)
     else:
         dst_dir = generate_next_file_name('%s-%s' % \
             (project.config.project_name, make_file_name(args.format)))
@@ -425,7 +425,7 @@ def extract_command(args):
         if dst_dir:
             if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
                 raise CliException("Directory '%s' already exists "
-                    "(pass --overwrite to force creation)" % dst_dir)
+                    "(pass --overwrite to overwrite)" % dst_dir)
         else:
             dst_dir = generate_next_file_name('%s-filter' % \
                 project.config.project_name)
@@ -454,10 +454,10 @@ def extract_command(args):
     return 0
 
 def build_merge_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor(help="Merge projects",
+    parser = parser_ctor(help="Merge two projects",
         description="""
             Updates items of the current project with items
-            from the other project.|n
+            from other project.|n
             |n
             Examples:|n
             - Update a project with items from other project:|n
@@ -465,8 +465,8 @@ def build_merge_parser(parser_ctor=argparse.ArgumentParser):
         """,
         formatter_class=MultilineFormatter)
 
-    parser.add_argument('other_project_dir',
-        help="Directory of the project to get data updates from")
+    parser.add_argument('other_project',
+        help="Path to a project")
     parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Output directory (default: current project's dir)")
     parser.add_argument('--overwrite', action='store_true',
@@ -485,11 +485,12 @@ def merge_command(args):
     if dst_dir:
         if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % dst_dir)
+                "(pass --overwrite to overwrite)" % dst_dir)
 
     first_dataset = first_project.make_dataset()
-    first_dataset.update(second_project.make_dataset())
+    second_dataset = second_project.make_dataset()
 
+    first_dataset.update(second_dataset)
     first_dataset.save(save_dir=dst_dir)
 
     if dst_dir is None:
@@ -543,7 +544,7 @@ def diff_command(args):
     if dst_dir:
         if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % dst_dir)
+                "(pass --overwrite to overwrite)" % dst_dir)
     else:
         dst_dir = generate_next_file_name('%s-%s-diff' % (
             first_project.config.project_name,
@@ -603,7 +604,7 @@ def transform_command(args):
     if dst_dir:
         if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % dst_dir)
+                "(pass --overwrite to overwrite)" % dst_dir)
     else:
         dst_dir = generate_next_file_name('%s-%s' % \
             (project.config.project_name, make_file_name(args.transform)))
