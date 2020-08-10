@@ -102,6 +102,9 @@ class Data(models.Model):
     def get_preview_path(self):
         return os.path.join(self.get_data_dirname(), 'preview.jpeg')
 
+    def get_meta_path(self):
+        return os.path.join(self.get_upload_dirname(), 'meta_info.txt')
+
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
     path = models.CharField(max_length=1024, default='')
