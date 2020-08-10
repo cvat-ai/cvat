@@ -99,10 +99,6 @@ services:
     container_name: nuclio
     image: quay.io/nuclio/dashboard:1.4.8-amd64
     restart: always
-    environment:
-      http_proxy:
-      https_proxy:
-      no_proxy: 172.28.0.1,${no_proxy}
     networks:
       default:
         aliases:
@@ -111,6 +107,9 @@ services:
       - /tmp:/tmp
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
+      http_proxy:
+      https_proxy:
+      no_proxy: 172.28.0.1,${no_proxy}
       NUCLIO_CHECK_FUNCTION_CONTAINERS_HEALTHINESS: "true"
     ports:
       - "8070:8070"
