@@ -3,6 +3,7 @@
   - [Windows 10](#windows-10)
   - [Mac OS Mojave](#mac-os-mojave)
   - [Advanced topics](#advanced-topics)
+    - [Deploying CVAT behind a proxy](#deploying-cvat-behind-a-proxy)
     - [Additional components](#additional-components)
     - [Semi-automatic and automatic annotation](#semi-automatic-and-automatic-annotation)
     - [Stop all containers](#stop-all-containers)
