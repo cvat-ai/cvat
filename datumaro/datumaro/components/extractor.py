@@ -29,9 +29,9 @@ _COORDINATE_ROUNDING_DIGITS = 2
 
 @attrs
 class Annotation:
-    id = attrib(converter=int, default=0, kw_only=True)
-    attributes = attrib(converter=dict, factory=dict, kw_only=True)
-    group = attrib(converter=int, default=0, kw_only=True)
+    id = attrib(default=0, validator=default_if_none(int), kw_only=True)
+    attributes = attrib(factory=dict, validator=default_if_none(dict), kw_only=True)
+    group = attrib(default=0, validator=default_if_none(int), kw_only=True)
 
     def __attrs_post_init__(self):
         assert isinstance(self.type, AnnotationType)
@@ -149,7 +149,7 @@ class Mask(Annotation):
     _image = attrib()
     label = attrib(converter=attr.converters.optional(int),
         default=None, kw_only=True)
-    z_order = attrib(converter=int, default=0, kw_only=True)
+    z_order = attrib(default=0, validator=default_if_none(int), kw_only=True)
 
     @property
     def image(self):
@@ -281,7 +281,7 @@ class _Shape(Annotation):
         [round(p, _COORDINATE_ROUNDING_DIGITS) for p in x])
     label = attrib(converter=attr.converters.optional(int),
         default=None, kw_only=True)
-    z_order = attrib(converter=int, default=0, kw_only=True)
+    z_order = attrib(default=0, validator=default_if_none(int), kw_only=True)
 
     def get_area(self):
         raise NotImplementedError()
