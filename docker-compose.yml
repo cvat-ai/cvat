@@ -42,7 +42,7 @@ services:
       args:
         http_proxy:
         https_proxy:
-        no_proxy:
+        no_proxy: nuclio,${no_proxy}
         socks_proxy:
         USER: "django"
         DJANGO_CONFIGURATION: "production"
@@ -99,6 +99,10 @@ services:
     container_name: nuclio
     image: quay.io/nuclio/dashboard:1.4.8-amd64
     restart: always
+    environment:
+      http_proxy:
+      https_proxy:
+      no_proxy: 172.28.0.1,${no_proxy}
     networks:
       default:
         aliases:
@@ -110,6 +114,13 @@ services:
       NUCLIO_CHECK_FUNCTION_CONTAINERS_HEALTHINESS: "true"
     ports:
       - "8070:8070"
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+          gateway: 172.28.0.1
 
 volumes:
   cvat_db:
