@@ -34,6 +34,7 @@ interface CVATAppProps {
     verifyAuthorized: () => void;
     loadUserAgreements: () => void;
     initPlugins: () => void;
+    initModels: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
@@ -44,6 +45,8 @@ interface CVATAppProps {
     userFetching: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
+    modelsInitialized: boolean;
+    modelsFetching: boolean;
     formatsInitialized: boolean;
     formatsFetching: boolean;
     usersInitialized: boolean;
@@ -88,6 +91,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout,
             loadUserAgreements,
             initPlugins,
+            initModels,
             loadAuthActions,
             userInitialized,
             userFetching,
@@ -99,6 +103,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             aboutFetching,
             pluginsInitialized,
             pluginsFetching,
+            modelsInitialized,
+            modelsFetching,
             user,
             userAgreementsFetching,
             userAgreementsInitialized,
@@ -139,6 +145,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout();
         }
 
+        if (!modelsInitialized && !modelsFetching) {
+            initModels();
+        }
+
         if (!pluginsInitialized && !pluginsFetching) {
             initPlugins();
         }
@@ -166,8 +176,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         let shown = false;
         for (const where of Object.keys(notifications.messages)) {
-            for (const what of Object.keys(notifications.messages[where])) {
-                const message = notifications.messages[where][what];
+            for (const what of Object.keys((notifications as any).messages[where])) {
+                const message = (notifications as any).messages[where][what];
                 shown = shown || !!message;
                 if (message) {
                     showMessage(message);
@@ -207,8 +217,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         let shown = false;
         for (const where of Object.keys(notifications.errors)) {
-            for (const what of Object.keys(notifications.errors[where])) {
-                const error = notifications.errors[where][what];
+            for (const what of Object.keys((notifications as any).errors[where])) {
+                const error = (notifications as any).errors[where][what];
                 shown = shown || !!error;
                 if (error) {
                     showError(error.message, error.reason);

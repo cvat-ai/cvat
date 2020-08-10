@@ -15,7 +15,6 @@ import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
-import { PluginsActionTypes } from 'actions/plugins-actions';
 
 import { NotificationsState } from './interfaces';
 
@@ -87,9 +86,6 @@ const defaultState: NotificationsState = {
         },
         userAgreements: {
             fetching: null,
-        },
-        plugins: {
-            initializationError: null,
         },
     },
     messages: {
@@ -851,21 +847,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.userAgreements,
                         fetching: {
                             message: 'Could not get user agreements from the server',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case PluginsActionTypes.RAISE_PLUGIN_CHECK_ERROR: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    plugins: {
-                        ...state.errors.plugins,
-                        initializationError: {
-                            message: 'Could not initialize plugins state',
                             reason: action.payload.error.toString(),
                         },
                     },
