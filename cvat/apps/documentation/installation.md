@@ -248,8 +248,8 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 ### Deploying CVAT behind a proxy
 If you deploy CVAT behind a proxy and do not plan to use any of [serverless functions](#semi-automatic-and-automatic-annotation)
-for automatic annotation, the exported enviroment variables
-`http_proxy`, `https_proxy` and `no_proxy` should be enuagh to build images.
+for automatic annotation, the exported environment variables
+`http_proxy`, `https_proxy` and `no_proxy` should be enough to build images.
 Otherwise please create or edit the file `~/.docker/config.json` in the home directory of the user
 which starts containers and add JSON such as the following:
 ```json
@@ -265,7 +265,7 @@ which starts containers and add JSON such as the following:
  }
 }
 ```
-These environment variables are set automatically within the any container.
+These environment variables are set automatically within any container.
 Please see the [Docker documentation](https://docs.docker.com/network/proxy/) for more details.
 
 ### Additional components
