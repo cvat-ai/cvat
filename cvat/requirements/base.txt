@@ -40,7 +40,7 @@ matplotlib==3.0.3
 scikit-image==0.15.0
 tensorflow==2.2.0
 keras==2.4.2
-opencv-python==4.3.0.36
+opencv-python==4.3.0.38
 h5py==2.10.0
 imgaug==0.4.0
 django-cors-headers==3.4.0
