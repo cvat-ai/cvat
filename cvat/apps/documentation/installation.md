@@ -270,28 +270,18 @@ nuctl create project cvat
 ```bash
 nuctl deploy --project-name cvat \
     --path serverless/openvino/dextr/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common
+    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
+    --platform local
 ```
 
 ```bash
 nuctl deploy --project-name cvat \
     --path serverless/openvino/omz/public/yolo-v3-tf/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common
+    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
+    --platform local
 ```
 
 Note: see [deploy.sh](/serverless/deploy.sh) script for more examples.
-
-List of DL models as serverless functions:
-
-- [Deep Extreme Cut (OpenVINO)](/serverless/openvino/dextr/nuclio)
-- [Faster RCNN (TensorFlow)](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)
-- [Mask RCNN (OpenVINO)](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)
-- [YOLO v3 (OpenVINO)](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)
-- [Faster RCNN (OpenVINO)](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)
-- [Text detection v4 (OpenVINO)](/serverless/openvino/omz/intel/text-detection-0004/nuclio)
-- [Semantic segmentation for ADAS (OpenVINO)](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio)
-- [Mask RCNN (TensorFlow)](/serverless/tensorflow/matterport/mask_rcnn/nuclio)
-- [Person ReID (OpenVINO)](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)
 
 ### Stop all containers
 

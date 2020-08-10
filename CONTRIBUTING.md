@@ -121,7 +121,8 @@ nuctl create project cvat
 ```bash
 nuctl deploy --project-name cvat \
     --path serverless/openvino/dextr/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common
+    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
+    --platform local
 ```
 
 <details>
@@ -148,7 +149,8 @@ nuctl deploy --project-name cvat \
 ```bash
 nuctl deploy --project-name cvat \
     --path serverless/openvino/omz/public/yolo-v3-tf/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common
+    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
+    --platform local
 ```
 
 <details>

@@ -155,6 +155,12 @@ class LambdaFunction:
                     payload.update({
                         "max_distance": max_distance
                     })
+            elif self.kind == LambdaType.TRACKER:
+                payload.update({
+                    "image": self._get_image(db_task, data["frame"], quality),
+                    "shape": data.get("shape", None),
+                    "state": data.get("state", None)
+                })
             else:
                 raise ValidationError(
                     '`{}` lambda function has incorrect type: {}'
@@ -468,7 +474,6 @@ class LambdaJob:
         elif function.kind == LambdaType.REID:
             LambdaJob._call_reid(function, db_task, quality,
                 kwargs.get("threshold"), kwargs.get("max_distance"))
-
 
 def return_response(success_code=status.HTTP_200_OK):
     def wrap_response(func):

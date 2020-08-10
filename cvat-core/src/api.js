@@ -194,6 +194,19 @@ function build() {
                 return result;
             },
             /**
+                * Method allows to change user password
+                * @method changePassword
+                * @async
+                * @memberof module:API.cvat.server
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async changePassword(oldPassword, newPassword1, newPassword2) {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.server.changePassword, oldPassword, newPassword1, newPassword2);
+                return result;
+            },
+            /**
                 * Method allows to know whether you are authorized on the server
                 * @method authorized
                 * @async
