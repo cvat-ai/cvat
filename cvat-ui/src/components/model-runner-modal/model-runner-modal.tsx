@@ -11,7 +11,6 @@ import Checkbox from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
 import Modal from 'antd/lib/modal';
 import Tag from 'antd/lib/tag';
-import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
@@ -22,13 +21,10 @@ import {
 } from 'reducers/interfaces';
 
 interface Props {
-    modelsFetching: boolean;
-    modelsInitialized: boolean;
     models: Model[];
     activeProcesses: StringObject;
     visible: boolean;
     taskInstance: any;
-    getModels(): void;
     closeDialog(): void;
     runInference(
         taskInstance: any,
@@ -93,20 +89,13 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
             taskInstance,
-            modelsInitialized,
-            modelsFetching,
             models,
             visible,
-            getModels,
         } = this.props;
 
         const {
             selectedModel,
         } = this.state;
-
-        if (!modelsInitialized && !modelsFetching) {
-            getModels();
-        }
 
         if (!prevProps.visible && visible) {
             this.setState({
@@ -428,7 +417,6 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
             models,
             visible,
             taskInstance,
-            modelsInitialized,
             runInference,
             closeDialog,
         } = this.props;
@@ -466,9 +454,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     title='Automatic annotation'
                     visible
                 >
-                    {!modelsInitialized
-                        && <Spin size='large' className='cvat-spinner' />}
-                    {modelsInitialized && this.renderContent()}
+                    { this.renderContent() }
                 </Modal>
             )
         );
