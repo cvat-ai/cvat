@@ -8,6 +8,7 @@
 
 require('cypress-file-upload')
 require('../plugins/imageGenerator/imageGeneratorCommand')
+require('../plugins/createZipArchive/createZipArchiveCommand')
 
 Cypress.Commands.add('login', (username='admin', password='12qwaszx') => {
     cy.get('[placeholder="Username"]').type(username)
