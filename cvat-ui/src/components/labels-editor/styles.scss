@@ -87,3 +87,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 .cvat-delete-attribute-button:hover > i {
     color: $danger-icon-color;
 }
+
+.cvat-new-attribute-button {
+    width: 100%;
+}

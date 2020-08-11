@@ -10,9 +10,7 @@
 (() => {
     const {
         AttributeType,
-        colors,
     } = require('./enums');
-    const { funhash } = require('./common');
     const { ArgumentError } = require('./exceptions');
 
     /**
@@ -151,9 +149,6 @@
                 }
             }
 
-            if (typeof (data.name) !== 'undefined') {
-                data.color = colors[funhash(data.name) % colors.length];
-            }
             data.attributes = [];
 
             if (Object.prototype.hasOwnProperty.call(initialData, 'attributes')

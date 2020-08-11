@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { Ref } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
@@ -16,7 +16,6 @@ import Text from 'antd/lib/typography/Text';
 import { SketchPicker } from 'react-color';
 
 import patterns from 'utils/validation-patterns';
-import consts from 'consts';
 import {
     equalArrayHead,
     idGenerator,
@@ -60,7 +59,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                 onSubmit({
                     name: formValues.labelName,
                     id: label ? label.id : idGenerator(),
-                    color: label ? label.color : '#ff0000',
+                    color: formValues.labelColor,
                     attributes: formValues.keys.map((key: number, index: number): Attribute => {
                         let attrValues = formValues.values[key];
                         if (!Array.isArray(attrValues)) {
@@ -412,9 +411,13 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
     private renderNewAttributeButton(): JSX.Element {
         return (
-            <Col span={3}>
+            <Col span={6}>
                 <Form.Item>
-                    <Button type='ghost' onClick={this.addAttribute}>
+                    <Button
+                        type='ghost'
+                        onClick={this.addAttribute}
+                        className='cvat-new-attribute-button'
+                    >
                         Add an attribute
                         <Icon type='plus' />
                     </Button>
@@ -487,26 +490,44 @@ class LabelForm extends React.PureComponent<Props, {}> {
     }
 
     private renderChangeColorButton(): JSX.Element {
-        const { label } = this.props;
+        interface ColorPickerProps {
+            value?: string;
+            onChange?: (value: string) => void;
+        }
+
+        const ColorPicker = React.forwardRef(
+            (props: ColorPickerProps, ref: Ref<any>): JSX.Element => (
+                <SketchPicker
+                    color={props.value}
+                    onChange={(color) => {
+                        if (typeof props.onChange === 'function') props.onChange(color.hex);
+                    }}
+                    ref={ref}
+                    disableAlpha
+                />
+            ),
+        );
+
+        const { label, form } = this.props;
 
         return (
-            <Col offset={1}>
-                <Popover
-                    content={(
-                        <SketchPicker
-                            // colors={consts.CANVAS_BACKGROUND_COLORS}
-                            color={label && label.color ? label.color : '#ff0000'}
-                            disableAlpha
-                        />
-                    )}
-                    overlayClassName='canvas-background-color-picker-popover'
-                    trigger='click'
-                >
+            <Col span={4}>
+                <Form.Item>
+                    <Popover
+                        content={(
+                            form.getFieldDecorator('labelColor', {
+                                initialValue: (label && label.color) ? label.color : undefined,
+                            })(<ColorPicker />)
+                        )}
+                        overlayClassName='canvas-background-color-picker-popover'
+                        trigger='click'
+                    >
 
-                    <Tooltip title='Change color of the label'>
-                        <Button type='default'>Label color</Button>
-                    </Tooltip>
-                </Popover>
+                        <Tooltip title='Change color of the label'>
+                            <Button type='default'>Label color</Button>
+                        </Tooltip>
+                    </Popover>
+                </Form.Item>
             </Col>
         );
     }
@@ -532,6 +553,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                     { this.renderLabelNameInput() }
                     <Col span={1} />
                     { this.renderNewAttributeButton() }
+                    <Col span={1} />
                     { this.renderChangeColorButton() }
                 </Row>
                 { attributeItems.length > 0

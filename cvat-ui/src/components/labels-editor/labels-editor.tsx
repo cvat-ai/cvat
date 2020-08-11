@@ -199,6 +199,7 @@ export default class LabelsEditor
             return {
                 name: label.name,
                 id: label.id < 0 ? undefined : label.id,
+                color: label.color,
                 attributes: label.attributes.map((attr: Attribute): any => (
                     {
                         name: attr.name,
