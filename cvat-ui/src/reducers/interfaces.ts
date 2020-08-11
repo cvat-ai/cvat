@@ -241,9 +241,6 @@ export interface NotificationsState {
         userAgreements: {
             fetching: null | ErrorState;
         };
-        plugins: {
-            initializationError: null | ErrorState;
-        };
     };
     messages: {
         tasks: {

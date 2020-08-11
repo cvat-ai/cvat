@@ -4,7 +4,6 @@
 
 import './styles.scss';
 import React from 'react';
-import Spin from 'antd/lib/spin';
 
 import TopBarComponent from './top-bar';
 import DeployedModelsList from './deployed-models-list';
@@ -13,27 +12,11 @@ import FeedbackComponent from '../feedback/feedback';
 import { Model } from '../../reducers/interfaces';
 
 interface Props {
-    modelsInitialized: boolean;
-    modelsFetching: boolean;
     deployedModels: Model[];
-    getModels(): void;
 }
 
 export default function ModelsPageComponent(props: Props): JSX.Element {
-    const {
-        modelsInitialized,
-        modelsFetching,
-        deployedModels,
-    } = props;
-
-    if (!modelsInitialized) {
-        if (!modelsFetching) {
-            props.getModels();
-        }
-        return (
-            <Spin size='large' className='cvat-spinner' />
-        );
-    }
+    const { deployedModels } = props;
 
     return (
         <div className='cvat-models-page'>
