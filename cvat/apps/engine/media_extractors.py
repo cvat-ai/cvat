@@ -10,7 +10,6 @@ import io
 from abc import ABC, abstractmethod
 
 import av
-import av.datasets
 import numpy as np
 from pyunpack import Archive
 from PIL import Image, ImageFile
@@ -234,7 +233,7 @@ class VideoReader(IMediaReader):
         return pos / stream.duration if stream.duration else None
 
     def _get_av_container(self):
-        return av.open(av.datasets.curated(self._source_path[0]))
+        return av.open(self._source_path[0])
 
     def get_preview(self):
         container = self._get_av_container()

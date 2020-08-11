@@ -18,7 +18,8 @@ import sys
 from datumaro.components.config import Config, DEFAULT_FORMAT
 from datumaro.components.config_model import (Model, Source,
     PROJECT_DEFAULT_CONFIG, PROJECT_SCHEMA)
-from datumaro.components.extractor import Extractor
+from datumaro.components.extractor import Extractor, LabelCategories,\
+    AnnotationType
 from datumaro.components.launcher import ModelTransform
 from datumaro.components.dataset_filter import \
     XPathDatasetFilter, XPathAnnotationsFilter
@@ -320,6 +321,35 @@ class Subset(Extractor):
 
 class Dataset(Extractor):
     @classmethod
+    def from_iterable(cls, iterable, categories=None):
+        """Generation of Dataset from iterable object
+
+        Args:
+            iterable: Iterable object contains DatasetItems
+            categories (dict, optional): You can pass dict of categories or
+            you can pass list of names. It'll interpreted as list of names of
+            LabelCategories. Defaults to {}.
+
+        Returns:
+            Dataset: Dataset object
+        """
+
+        if isinstance(categories, list):
+            categories = {AnnotationType.label : LabelCategories.from_iterable(categories)}
+
+        if not categories:
+            categories = {}
+
+        class tmpExtractor(Extractor):
+            def __iter__(self):
+                return iter(iterable)
+
+            def categories(self):
+                return categories
+
+        return cls.from_extractors(tmpExtractor())
+
+    @classmethod
     def from_extractors(cls, *sources):
         # merge categories
         # TODO: implement properly with merging and annotations remapping
@@ -611,33 +641,37 @@ class ProjectDataset(Dataset):
             project.config.remove('sources')
 
         save_dir = osp.abspath(save_dir)
-        os.makedirs(save_dir, exist_ok=True)
-
         dataset_save_dir = osp.join(save_dir, project.config.dataset_dir)
-        os.makedirs(dataset_save_dir, exist_ok=True)
 
         converter_kwargs = {
             'save_images': save_images,
         }
 
-        if merge:
-            # merge and save the resulting dataset
-            converter = self.env.make_converter(
-                DEFAULT_FORMAT, **converter_kwargs)
-            converter(self, dataset_save_dir)
-        else:
-            if recursive:
-                # children items should already be updated
-                # so we just save them recursively
-                for source in self._sources.values():
-                    if isinstance(source, ProjectDataset):
-                        source.save(**converter_kwargs)
+        save_dir_existed = osp.exists(save_dir)
+        try:
+            os.makedirs(save_dir, exist_ok=True)
+            os.makedirs(dataset_save_dir, exist_ok=True)
 
-            converter = self.env.make_converter(
-                DEFAULT_FORMAT, **converter_kwargs)
-            converter(self.iterate_own(), dataset_save_dir)
+            if merge:
+                # merge and save the resulting dataset
+                self.env.converters.get(DEFAULT_FORMAT).convert(
+                    self, dataset_save_dir, **converter_kwargs)
+            else:
+                if recursive:
+                    # children items should already be updated
+                    # so we just save them recursively
+                    for source in self._sources.values():
+                        if isinstance(source, ProjectDataset):
+                            source.save(**converter_kwargs)
 
-        project.save(save_dir)
+                self.env.converters.get(DEFAULT_FORMAT).convert(
+                    self.iterate_own(), dataset_save_dir, **converter_kwargs)
+
+            project.save(save_dir)
+        except BaseException:
+            if not save_dir_existed and osp.isdir(save_dir):
+                shutil.rmtree(save_dir, ignore_errors=True)
+            raise
 
     @property
     def env(self):
@@ -705,7 +739,7 @@ class ProjectDataset(Dataset):
         try:
             os.makedirs(save_dir, exist_ok=True)
             converter(dataset, save_dir)
-        except Exception:
+        except BaseException:
             if not save_dir_existed:
                 shutil.rmtree(save_dir)
             raise
@@ -750,7 +784,7 @@ class Project:
 
             config_path = osp.join(save_dir, config.project_filename)
             config.dump(config_path)
-        except Exception:
+        except BaseException:
             if not env_dir_existed:
                 shutil.rmtree(save_dir, ignore_errors=True)
             if not project_dir_existed:

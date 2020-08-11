@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 import getCore from 'cvat-core-wrapper';
 import HeaderComponent from 'components/header/header';
 import { SupportedPlugins, CombinedState } from 'reducers/interfaces';
-import { logoutAsync } from 'actions/auth-actions';
+import { logoutAsync, authActions } from 'actions/auth-actions';
 import { switchSettingsDialog } from 'actions/settings-actions';
 
 const core = getCore();
@@ -15,9 +15,6 @@ const core = getCore();
 interface StateToProps {
     logoutFetching: boolean;
     installedAnalytics: boolean;
-    installedAutoAnnotation: boolean;
-    installedTFSegmentation: boolean;
-    installedTFAnnotation: boolean;
     username: string;
     toolName: string;
     serverHost: string;
@@ -28,20 +25,27 @@ interface StateToProps {
     uiVersion: string;
     switchSettingsShortcut: string;
     settingsDialogShown: boolean;
+    changePasswordDialogShown: boolean;
+    changePasswordFetching: boolean;
+    renderChangePasswordItem: boolean;
 }
 
 interface DispatchToProps {
     onLogout: () => void;
     switchSettingsDialog: (show: boolean) => void;
+    switchChangePasswordDialog: (show: boolean) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         auth: {
             fetching: logoutFetching,
+            fetching: changePasswordFetching,
             user: {
                 username,
             },
+            showChangePasswordDialog: changePasswordDialogShown,
+            allowChangePassword: renderChangePasswordItem,
         },
         plugins: {
             list,
@@ -61,9 +65,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         logoutFetching,
         installedAnalytics: list[SupportedPlugins.ANALYTICS],
-        installedAutoAnnotation: list[SupportedPlugins.AUTO_ANNOTATION],
-        installedTFSegmentation: list[SupportedPlugins.TF_SEGMENTATION],
-        installedTFAnnotation: list[SupportedPlugins.TF_ANNOTATION],
         username,
         toolName: server.name as string,
         serverHost: core.config.backendAPI.slice(0, -7),
@@ -72,8 +73,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
         coreVersion: packageVersion.core,
         canvasVersion: packageVersion.canvas,
         uiVersion: packageVersion.ui,
-        switchSettingsShortcut: normalizedKeyMap.OPEN_SETTINGS,
+        switchSettingsShortcut: normalizedKeyMap.SWITCH_SETTINGS,
         settingsDialogShown,
+        changePasswordFetching,
+        changePasswordDialogShown,
+        renderChangePasswordItem,
     };
 }
 
@@ -81,6 +85,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onLogout: (): void => dispatch(logoutAsync()),
         switchSettingsDialog: (show: boolean): void => dispatch(switchSettingsDialog(show)),
+        switchChangePasswordDialog: (show: boolean): void => (
+            dispatch(authActions.switchChangePasswordDialog(show))
+        ),
     };
 }
 

@@ -104,7 +104,7 @@
 
             const keys = ['id', 'label_id', 'group', 'frame',
                 'occluded', 'z_order', 'points', 'type', 'shapes',
-                'attributes', 'value', 'spec_id', 'outside'];
+                'attributes', 'value', 'spec_id', 'source', 'outside'];
 
             // Find created and updated objects
             for (const type of Object.keys(exported)) {

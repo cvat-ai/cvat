@@ -74,7 +74,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                 <Text type='secondary' style={{ fontSize: 10 }}>{type}</Text>
             </Col>
             <Col span={12}>
-                <Tooltip title='Change current label'>
+                <Tooltip title='Change current label' mouseLeaveDelay={0}>
                     <Select
                         size='small'
                         value={`${labelID}`}

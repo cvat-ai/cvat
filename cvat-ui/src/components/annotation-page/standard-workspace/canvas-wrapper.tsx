@@ -876,7 +876,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                         defaultValue={0}
                         onChange={(value: SliderValue): void => onSwitchZLayer(value as number)}
                     />
-                    <Tooltip title={`Add new layer ${maxZLayer + 1} and switch to it`}>
+                    <Tooltip title={`Add new layer ${maxZLayer + 1} and switch to it`} mouseLeaveDelay={0}>
                         <Icon type='plus-circle' onClick={onAddZLayer} />
                     </Tooltip>
                 </div>

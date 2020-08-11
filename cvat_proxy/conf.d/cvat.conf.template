@@ -12,7 +12,7 @@ server {
     proxy_set_header        Host $http_host;
     proxy_pass_header       Set-Cookie;
 
-    location ~* /api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*  {
+    location ~* /api/.*|git/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*  {
         proxy_pass              http://cvat:8080;
     }
 

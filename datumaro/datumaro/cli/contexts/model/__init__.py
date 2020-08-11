@@ -13,7 +13,8 @@ from datumaro.components.config import DEFAULT_FORMAT
 from datumaro.components.project import Environment
 
 from ...util import CliException, MultilineFormatter, add_subparser
-from ...util.project import load_project, generate_next_dir_name
+from ...util.project import load_project, \
+    generate_next_name, generate_next_file_name
 
 
 def build_add_parser(parser_ctor=argparse.ArgumentParser):
@@ -53,10 +54,8 @@ def add_command(args):
             raise CliException("Model '%s' already exists "
                 "(pass --overwrite to overwrite)" % args.name)
     else:
-        existing_ids = [int(n.split('-')[1]) for n in project.config.models
-            if re.match(r'model-\d+', n)]
-        max_idx = max(existing_ids, default=len(project.config.models))
-        args.name = 'model-%d' % (max_idx + 1)
+        args.name = generate_next_name(
+            project.config.models, 'model', '-', default=0)
         assert args.name not in project.config.models, args.name
 
     try:
@@ -79,13 +78,11 @@ def add_command(args):
             log.error("Can't copy: copying is not available for '%s' models" % \
                 args.launcher)
 
-    log.info("Adding the model")
+    log.info("Checking the model")
     project.add_model(args.name, {
         'launcher': args.launcher,
         'options': model_args,
     })
-
-    log.info("Checking the model")
     project.make_executable_model(args.name)
 
     project.save()
@@ -138,8 +135,8 @@ def run_command(args):
             raise CliException("Directory '%s' already exists "
                 "(pass --overwrite overwrite)" % dst_dir)
     else:
-        dst_dir = generate_next_dir_name('%s-inference' % \
-            (project.config.project_name))
+        dst_dir = generate_next_file_name('%s-inference' % \
+            project.config.project_name)
 
     project.make_dataset().apply_model(
         save_dir=osp.abspath(dst_dir),
@@ -149,6 +146,30 @@ def run_command(args):
 
     return 0
 
+def build_info_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
+    parser.add_argument('-n', '--name',
+        help="Model name")
+    parser.add_argument('-v', '--verbose', action='store_true',
+        help="Show details")
+    parser.add_argument('-p', '--project', dest='project_dir', default='.',
+        help="Directory of the project to operate on (default: current dir)")
+    parser.set_defaults(command=info_command)
+
+    return parser
+
+def info_command(args):
+    project = load_project(args.project_dir)
+
+    if args.name:
+        model = project.get_model(args.name)
+        print(model)
+    else:
+        for name, conf in project.config.models.items():
+            print(name)
+            if args.verbose:
+                print(dict(conf))
 
 def build_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor()
@@ -157,5 +178,6 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
     add_subparser(subparsers, 'add', build_add_parser)
     add_subparser(subparsers, 'remove', build_remove_parser)
     add_subparser(subparsers, 'run', build_run_parser)
+    add_subparser(subparsers, 'info', build_info_parser)
 
     return parser

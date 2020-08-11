@@ -237,7 +237,7 @@ export default class LabelsEditor
                 tabBarStyle={{ marginBottom: '0px' }}
                 tabBarExtraContent={(
                     <>
-                        <Tooltip title='Copied to clipboard!' trigger='click'>
+                        <Tooltip title='Copied to clipboard!' trigger='click' mouseLeaveDelay={0}>
                             <Button
                                 type='link'
                                 icon='copy'

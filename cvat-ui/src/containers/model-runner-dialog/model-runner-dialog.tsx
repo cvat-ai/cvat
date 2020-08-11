@@ -31,10 +31,7 @@ interface DispatchToProps {
     runInference(
         taskInstance: any,
         model: Model,
-        mapping: {
-            [index: string]: string;
-        },
-        cleanOut: boolean,
+        body: object,
     ): void;
     getModels(): void;
     closeDialog(): void;
@@ -58,12 +55,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         runInference(
             taskInstance: any,
             model: Model,
-            mapping: {
-                [index: string]: string;
-            },
-            cleanOut: boolean,
+            body: object,
         ): void {
-            dispatch(startInferenceAsync(taskInstance, model, mapping, cleanOut));
+            dispatch(startInferenceAsync(taskInstance, model, body));
         },
         getModels(): void {
             dispatch(getModelsAsync());

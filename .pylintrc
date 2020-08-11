@@ -20,7 +20,7 @@ persistent=yes
 
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
-load-plugins=
+load-plugins=pylint_django
 
 # Use multiple processes to speed up Pylint.
 jobs=1
@@ -66,8 +66,8 @@ enable= E0001,E0100,E0101,E0102,E0103,E0104,E0105,E0106,E0107,E0110,
         W0122,W0124,W0150,W0199,W0221,W0222,W0233,W0404,W0410,W0601,
         W0602,W0604,W0611,W0612,W0622,W0623,W0702,W0705,W0711,W1300,
         W1301,W1302,W1303,,W1305,W1306,W1307
-        R0102,R0201,R0202,R0203
-        
+        R0102,R0202,R0203
+
 
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifiers separated by comma (,) or put this
