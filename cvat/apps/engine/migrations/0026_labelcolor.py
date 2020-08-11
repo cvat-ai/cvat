@@ -9,9 +9,7 @@ def alter_label_colors(apps, schema_editor):
 
     for task in Task.objects.all():
         for label_id, label in enumerate(Label.objects.filter(task_id=task.id)):
-            color = rgb2hex(get_color_from_label_name(label.name, label_id))
-            print('Color:',color, sep=' ')
-            label.color = color
+            label.color = rgb2hex(get_color_from_label_name(label.name, label_id))
             label.save()
 
 class Migration(migrations.Migration):
@@ -24,7 +22,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='label',
             name='color',
-            field=models.CharField(default='', max_length=32),
+            field=models.CharField(default='', max_length=8),
         ),
         migrations.RunPython(
             code=alter_label_colors,
