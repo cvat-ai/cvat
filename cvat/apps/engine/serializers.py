@@ -11,6 +11,7 @@ from django.contrib.auth.models import User, Group
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
+from cvat.apps.dataset_manager.formats.utils import get_color_from_label_name, rgb2hex
 
 
 class AttributeSerializer(serializers.ModelSerializer):
@@ -37,6 +38,7 @@ class AttributeSerializer(serializers.ModelSerializer):
 class LabelSerializer(serializers.ModelSerializer):
     attributes = AttributeSerializer(many=True, source='attributespec_set',
         default=[])
+    color = serializers.CharField(allow_blank=True, required=False)
     class Meta:
         model = models.Label
         fields = ('id', 'name', 'color', 'attributes')
@@ -249,8 +251,13 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
         db_task = models.Task.objects.create(**validated_data)
-        for label in labels:
+        for label_id, label in enumerate(labels):
             attributes = label.pop('attributespec_set')
+            if not label.get('color', None):
+                label['color'] = rgb2hex(
+                    get_color_from_label_name(label['name'],
+                    label_id + 1,
+                ))
             db_label = models.Label.objects.create(task=db_task, **label)
             for attr in attributes:
                 models.AttributeSpec.objects.create(label=db_label, **attr)
@@ -282,6 +289,14 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if created:
                 slogger.task[instance.id].info("New {} label was created"
                     .format(db_label.name))
+                if not label.get('color', None):
+                    db_label.color = rgb2hex(
+                        get_color_from_label_name(label['name'],
+                        models.Label.objects.filter(task_id=instance.id).count() + 1,
+                    ))
+                else:
+                    db_label.color = label.get('color')
+                db_label.save()
             else:
                 slogger.task[instance.id].info("{} label was updated"
                     .format(db_label.name))

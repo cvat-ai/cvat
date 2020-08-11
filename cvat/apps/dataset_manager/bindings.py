@@ -152,6 +152,7 @@ class TaskData:
                 ("labels", [
                     ("label", OrderedDict([
                         ("name", db_label.name),
+                        ("color", db_label.color),
                         ("attributes", [
                             ("attribute", OrderedDict([
                                 ("name", db_attr.name),
