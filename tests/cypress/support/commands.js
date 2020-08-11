@@ -20,7 +20,7 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               textDefaultValue='Some default value for type Text',
                                               image='image.png') => {
     cy.contains('button', 'Create new task').click()
-    cy.url().should('include', 'tasks/create')
+    cy.url().should('include', '/tasks/create')
     cy.get('[id="name"]').type(taksName)
     cy.contains('button', 'Add label').click()
     cy.get('[placeholder="Label name"]').type(labelName)
@@ -34,9 +34,7 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
     cy.contains('button', 'Submit').click()
     cy.contains('The task has been created', {timeout: '8000'})
     cy.get('button[value="tasks"]').click()
-    cy.url().should('include', 'tasks?page=')
-    cy.contains('strong', taksName)
-    cy.contains('a', 'Open')
+    cy.url().should('include', '/tasks?page=')
 })
 
 Cypress.Commands.add('createShape', (ferstX, ferstY, lastX, lastY) => {

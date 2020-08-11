@@ -19,11 +19,11 @@ describe('Check server availability', () => {
         cy.get('[type="submit"]')
     })
 
-    it('Check plaseholder "Username"', () => {
+    it('Check placeholder "Username"', () => {
         cy.get('input').invoke('attr', 'placeholder').should('contain', 'Username')
     })
 
-    it('Check plaseholder "Password"', () => {
+    it('Check placeholder "Password"', () => {
         cy.get('[type="password"]')
     })
 

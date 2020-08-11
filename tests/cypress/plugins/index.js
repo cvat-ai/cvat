@@ -5,12 +5,9 @@
  */
 
 /// <reference types="cypress" />
-/**
- * @type {Cypress.PluginConfig}
- */
 
 const {imageGenerator} = require('../plugins/imageGenerator/addPlugin')
 
-module.exports = (on, config) => {
+module.exports = (on) => {
     on('task', {imageGenerator})
 }

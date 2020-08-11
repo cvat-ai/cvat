@@ -7,44 +7,44 @@
 /// <reference types="cypress" />
 
 context('Issue 1599 (Polish alphabet).', () => {
-  before(() => {
-      cy.visit('auth/register')
-      cy.url().should('include', '/auth/register')
-  })
+    before(() => {
+        cy.visit('auth/register')
+        cy.url().should('include', '/auth/register')
+    })
 
-  describe('User registration using the Polish alphabet.', () => {
-      it('Filling in the plaseholder "First name"', () => {
-        cy.get('[placeholder="First name"]').type('Świętobor')
-        cy.contains('Please specify a first name').should('not.exist')
-      })
+    describe('User registration using the Polish alphabet.', () => {
+        it('Filling in the placeholder "First name"', () => {
+            cy.get('[placeholder="First name"]').type('Świętobor')
+            .should('not.have.class', 'has-error')
+        })
 
-      it('Filling in the plaseholder "Last name"', () => {
+        it('Filling in the placeholder "Last name"', () => {
             cy.get('[placeholder="Last name"]').type('Сzcić')
-            cy.contains('Please specify a last name').should('not.exist')
-      })
+            .should('not.have.class', 'has-error')
+        })
 
-      it('Filling in the plaseholder "Username"', () => {
+        it('Filling in the placeholder "Username"', () => {
             cy.get('[placeholder="Username"]').type('Testuser_pl')
-      })
+        })
 
-      it('Filling in the plaseholder "Email address"', () => {
+        it('Filling in the placeholder "Email address"', () => {
             cy.get('[placeholder="Email address"]').type('Testuser_pl@local.local')
-      })
+        })
 
-      it('Filling in the plaseholder "Password"', () => {
+        it('Filling in the placeholder "Password"', () => {
             cy.get('[placeholder="Password"]').type('Qwerty123!')
-      })
+        })
 
-      it('Filling in the plaseholder "Confirm password"', () => {
+        it('Filling in the placeholder "Confirm password"', () => {
             cy.get('[placeholder="Confirm password"]').type('Qwerty123!')
-      })
+        })
 
-      it('Click to "Submit" button', () => {
+        it('Click to "Submit" button', () => {
             cy.get('[type="submit"]').click()
-      })
+        })
 
-      it('Successful registration', () => {
-            cy.url().should('include', 'task')
-      })
-  })
+        it('Successful registration', () => {
+            cy.url().should('include', '/task')
+        })
+    })
 })
