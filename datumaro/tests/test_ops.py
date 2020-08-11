@@ -3,7 +3,7 @@ from unittest import TestCase
 import numpy as np
 
 from datumaro.components.extractor import (Bbox, Caption, DatasetItem,
-    Extractor, Label, Mask, Points, Polygon)
+    Extractor, Label, Mask, Points, Polygon, PolyLine)
 from datumaro.components.operations import (FailedAttrVotingError,
     IntersectMerge, NoMatchingAnnError, NoMatchingItemError,
     compute_ann_statistics, mean_std)
@@ -210,6 +210,8 @@ class TestMultimerge(TestCase):
                 Bbox(4, 5, 2, 4, label=2, z_order=1, group=1),
                 Points([5, 6], label=0, group=1),
                 Points([6, 8], label=1, group=1),
+
+                PolyLine([1, 1, 2, 1, 3, 1]),
             ]),
         ], categories=['a', 'b', 'c'])
 
@@ -228,6 +230,8 @@ class TestMultimerge(TestCase):
                 Bbox(4, 4, 2, 5, label=2, z_order=1, group=2),
                 Points([5.5, 6.5], label=0, group=2),
                 Points([6, 8], label=1, group=2),
+
+                PolyLine([1, 1.5, 2, 1.5]),
             ]),
         ], categories=['a', 'b', 'c'])
 
@@ -245,6 +249,8 @@ class TestMultimerge(TestCase):
                 # an instance with keypoints, one is missing
                 Bbox(3, 6, 2, 3, label=2, z_order=4, group=3),
                 Points([4.5, 5.5], label=0, group=3),
+
+                PolyLine([1, 1.25, 3, 1, 4, 2]),
             ]),
         ], categories=['a', 'b', 'c'])
 
@@ -257,16 +263,18 @@ class TestMultimerge(TestCase):
                 # nearest to mean bbox
                 Mask(label=3, z_order=3, image=np.array([
                     [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [1, 1, 1, 0],
-                    [1, 1, 1, 0],
+                    [0, 1, 1, 1],
+                    [0, 1, 1, 1],
+                    [0, 1, 1, 1],
                 ])),
-                Polygon([3, 1, 2, 2, 0, 1]),
+                Polygon([1, 0, 3, 2, 1, 2]),
 
                 # an instance with keypoints
-                Bbox(3, 6, 2, 3, label=2, z_order=4, group=2),
+                Bbox(4, 5, 2, 4, label=2, z_order=4, group=2),
                 Points([5, 6], label=0, group=2),
                 Points([6, 8], label=1, group=2),
+
+                PolyLine([1, 1.25, 3, 1, 4, 2]),
             ]),
         ], categories=['a', 'b', 'c'])
 

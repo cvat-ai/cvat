@@ -174,3 +174,40 @@ def OKS(a, b, sigma=None, bbox=None, scale=None):
 
     dists = np.linalg.norm(p1 - p2, axis=1)
     return np.sum(np.exp(-(dists ** 2) / (2 * scale * (2 * sigma) ** 2)))
+
+def smooth_line(points, segments):
+    assert 2 <= len(points) // 2 and len(points) % 2 == 0
+
+    if len(points) // 2 == segments:
+        return points
+
+    points = list(points)
+    if len(points) == 2:
+        points.extend(points)
+    points = np.array(points).reshape((-1, 2))
+
+    lengths = np.linalg.norm(points[1:] - points[:-1], axis=1)
+    dists = [0]
+    for l in lengths:
+        dists.append(dists[-1] + l)
+
+    step = dists[-1] / segments
+
+    new_points = np.zeros((segments + 1, 2))
+    new_points[0] = points[0]
+
+    old_segment = 0
+    for new_segment in range(1, segments + 1):
+        pos = new_segment * step
+        while dists[old_segment + 1] < pos and old_segment + 2 < len(dists):
+            old_segment += 1
+
+        segment_start = dists[old_segment]
+        segment_len = lengths[old_segment]
+        prev_p = points[old_segment]
+        next_p = points[old_segment + 1]
+        r = (pos - segment_start) / segment_len
+
+        new_points[new_segment] = prev_p * (1 - r) + next_p * r
+
+    return new_points, step

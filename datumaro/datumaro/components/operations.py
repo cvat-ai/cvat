@@ -13,12 +13,11 @@ import numpy as np
 from attr import attrib, attrs
 
 from datumaro.components.cli_plugin import CliPlugin
-from datumaro.components.extractor import (AnnotationType, Bbox, Label,
-    LabelCategories)
+from datumaro.components.extractor import AnnotationType, Bbox, Label
 from datumaro.components.project import Dataset
 from datumaro.util import find, ensure_cls
 from datumaro.util.annotation_util import (segment_iou, bbox_iou,
-    mean_bbox, OKS, find_instances, max_bbox)
+    mean_bbox, OKS, find_instances, max_bbox, smooth_line)
 
 def get_ann_type(anns, t):
     return [a for a in anns if a.type == t]
@@ -526,17 +525,21 @@ class PointsMatcher(_ShapeMatcher):
 class LineMatcher(_ShapeMatcher):
     @staticmethod
     def distance(a, b):
-        point_count = max(max(len(a.points) // 2, len(b.points) // 2), 100)
-        a = smooth_line(a.points, point_count)
-        b = smooth_line(b.points, point_count)
+        a_bbox = a.get_bbox()
+        b_bbox = b.get_bbox()
+        bbox = max_bbox([a_bbox, b_bbox])
+        area = bbox[2] * bbox[3]
+        if not area:
+            return 1
 
-        p1 = np.linalg.norm(a, axis=1)
-        p1 /= np.linalg.norm(p1)
-
-        p2 = np.linalg.norm(b, axis=1)
-        p2 /= np.linalg.norm(p2)
-
-        return abs(np.dot(p1, p2))
+        # compute inter-line area, normalize by common bbox
+        point_count = max(max(len(a.points) // 2, len(b.points) // 2), 5)
+        a, sa = smooth_line(a.points, point_count)
+        b, sb = smooth_line(b.points, point_count)
+        dists = np.linalg.norm(a - b, axis=1)
+        dists = (dists[:-1] + dists[1:]) * 0.5
+        s = np.sum(dists) * 0.5 * (sa + sb) / area
+        return abs(1 - s)
 
 @attrs
 class CaptionsMatcher(AnnotationMatcher):
@@ -616,8 +619,8 @@ class _ShapeMerger(AnnotationMerger, _ShapeMatcher):
     def _merge_cluster_shape_mean_box_nearest(cluster):
         mbbox = Bbox(*mean_bbox(cluster))
         dist = (segment_iou(mbbox, s) for s in cluster)
-        min_dist_pos, _ = min(enumerate(dist), key=lambda e: e[1])
-        return cluster[min_dist_pos]
+        nearest_pos, _ = max(enumerate(dist), key=lambda e: e[1])
+        return cluster[nearest_pos]
 
     def merge_cluster_shape(self, cluster):
         shape = self._merge_cluster_shape_mean_box_nearest(cluster)
@@ -648,45 +651,6 @@ class LineMerger(_ShapeMerger, LineMatcher):
 @attrs
 class CaptionsMerger(AnnotationMerger, CaptionsMatcher):
     pass
-
-def smooth_line(points, segments):
-    assert 2 <= len(points) // 2 and len(points) % 2 == 0
-
-    if len(points) // 2 == segments:
-        return points
-
-    points = list(points)
-    if len(points) == 2:
-        points.extend(points)
-    points = np.array(points).reshape((-1, 2))
-
-    lengths = np.sqrt(np.square(points[1:] - points[:-1]))
-    dists = [0]
-    for l in lengths:
-        dists.append(dists[-1] + l)
-
-    length = np.sum(lengths)
-    step = length / segments
-
-    new_points = np.zeros((segments + 1, 2))
-    new_points[0] = points[0]
-
-    last_segment = 0
-    for segment_idx in range(segments):
-        pos = segment_idx * step
-
-        while dists[last_segment + 1] < pos:
-            last_segment += 1
-
-        segment_start = dists[last_segment]
-        segment_len = lengths[segment_idx]
-        prev_p = points[last_segment]
-        next_p = points[last_segment + 1]
-        r = (pos - segment_start) / segment_len
-
-        new_points[segment_idx + 1] = prev_p * (1 - r) + next_p * r
-
-    return new_points
 
 def match_segments(a_segms, b_segms, distance='iou', dist_thresh=1.0):
     if distance == 'iou':
