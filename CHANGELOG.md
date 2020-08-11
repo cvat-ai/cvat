@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - python cli over https (<https://github.com/opencv/cvat/pull/1942>)
 - Error message when plugins weren't able to initialize instead of infinite loading (<https://github.com/opencv/cvat/pull/1966>)
 - Ability to change user password (<https://github.com/opencv/cvat/pull/1954>)
+- Ability to change label color in task and predefined labels (<https://github.com/opencv/cvat/pull/2014>)
 
 ### Changed
 - Smaller object details (<https://github.com/opencv/cvat/pull/1877>)
