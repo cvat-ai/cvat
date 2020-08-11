@@ -1,3 +1,10 @@
 {
-    "baseUrl": "http://localhost:8080"
+    "video": false,
+    "baseUrl": "http://localhost:8080",
+    "viewportWidth": 1300,
+    "viewportHeight": 960,
+    "testFiles": [
+        "auth_page.js",
+        "issue_*.js"
+    ]
 }

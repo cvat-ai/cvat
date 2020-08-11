@@ -14,7 +14,6 @@ RUN curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - &
         nodejs \
         python3-dev \
         ruby \
-        xvfb \
         && \
     rm -rf /var/lib/apt/lists/*;
 
@@ -23,11 +22,5 @@ RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGUR
 RUN gem install coveralls-lcov
 
 COPY .coveragerc .
-
-# RUN all commands below as 'django' user
-USER ${USER}
-
-RUN mkdir -p tests && cd tests && CI=true npm install cypress; \
-    echo "export PATH=~/tests/node_modules/.bin:${PATH}" >> ~/.bashrc;
 
 ENTRYPOINT []
