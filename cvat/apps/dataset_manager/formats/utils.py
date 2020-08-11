@@ -36,8 +36,6 @@ def hex2rgb(color):
     return tuple(int(color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
 
 def make_colormap(task_data):
-    predefined = parse_default_colors()
-
     labels = sorted([label
         for _, label in task_data.meta['task']['labels']],
         key=lambda l: l['name'])
@@ -46,7 +44,7 @@ def make_colormap(task_data):
     if 'background' not in label_names:
         labels.insert(0, {
                 'name': 'background',
-                'color': rgb2hex(predefined.pop('background'))
+                'color': '#000000',
             }
         )
 
@@ -55,7 +53,7 @@ def make_colormap(task_data):
 def get_color_from_label_name(label_name, offset=1):
     predefined = parse_default_colors()
 
-    color = predefined.get(label_name, None)
+    color = predefined.get(normalize_label(label_name), None)
 
     if color is None:
         colors = generate_colormap(DEFAULT_COLORMAP_CAPACITY + offset + 1)
