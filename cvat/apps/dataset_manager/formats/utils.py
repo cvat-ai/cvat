@@ -5,8 +5,19 @@
 import os.path as osp
 
 from datumaro.cli.util import make_file_name
-from datumaro.util.mask_tools import generate_colormap
 
+def get_color_from_index(index):
+    def get_bit(number, index):
+        return (number >> index) & 1
+
+    color = [0, 0, 0]
+
+    for j in range(7, -1, -1):
+        for c in range(3):
+            color[c] |= get_bit(index, c) << j
+        index >>= 3
+
+    return tuple(color)
 
 DEFAULT_COLORMAP_CAPACITY = 2000
 DEFAULT_COLORMAP_PATH = osp.join(osp.dirname(__file__), 'predefined_colors.txt')
@@ -36,9 +47,7 @@ def hex2rgb(color):
     return tuple(int(color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
 
 def make_colormap(task_data):
-    labels = sorted([label
-        for _, label in task_data.meta['task']['labels']],
-        key=lambda l: l['name'])
+    labels = [label for _, label in task_data.meta['task']['labels']]
     label_names = [label['name'] for label in labels]
 
     if 'background' not in label_names:
@@ -56,7 +65,6 @@ def get_color_from_label_name(label_name, offset=1):
     color = predefined.get(normalize_label(label_name), None)
 
     if color is None:
-        colors = generate_colormap(DEFAULT_COLORMAP_CAPACITY + offset + 1)
-        color = colors[DEFAULT_COLORMAP_CAPACITY + offset]
+        color = get_color_from_index(DEFAULT_COLORMAP_CAPACITY + offset)
 
     return color
