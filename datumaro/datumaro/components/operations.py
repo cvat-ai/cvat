@@ -216,12 +216,12 @@ class IntersectMerge(MergingStrategy):
                 attributes.update(merged_ann.attributes)
                 merged_ann.attributes = attributes
 
-                new_group_id, (_, cluster_groups) = find(enumerate(group_map),
+                new_group_id = find(enumerate(group_map),
                     lambda e: id(cluster) in e[1][0])
-                if not cluster_groups or cluster_groups == {0}:
+                if new_group_id is None:
                     new_group_id = 0
                 else:
-                    new_group_id += 1
+                    new_group_id = new_group_id[0] + 1
                 merged_ann.group = new_group_id
 
             if self.conf.close_distance:
@@ -343,6 +343,8 @@ class IntersectMerge(MergingStrategy):
                     cluster_group.add( id(cluster_b) )
                     visited.add(b_idx)
 
+            if a_groups == {0}:
+                continue # skip annotations without a group
             cluster_groups.append( (cluster_group, a_groups) )
         return cluster_groups
 

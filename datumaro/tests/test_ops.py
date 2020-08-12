@@ -270,9 +270,9 @@ class TestMultimerge(TestCase):
                 Polygon([1, 0, 3, 2, 1, 2]),
 
                 # an instance with keypoints
-                Bbox(4, 5, 2, 4, label=2, z_order=4, group=2),
-                Points([5, 6], label=0, group=2),
-                Points([6, 8], label=1, group=2),
+                Bbox(4, 5, 2, 4, label=2, z_order=4, group=1),
+                Points([5, 6], label=0, group=1),
+                Points([6, 8], label=1, group=1),
 
                 PolyLine([1, 1.25, 3, 1, 4, 2]),
             ]),
