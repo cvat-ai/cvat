@@ -12,6 +12,7 @@ require('../plugins/imageGenerator/imageGeneratorCommand')
 Cypress.Commands.add('login', (username='admin', password='12qwaszx') => {
     cy.get('[placeholder="Username"]').type(username)
     cy.get('[placeholder="Password"]').type(password)
+    cy.get('[type="submit"]').click()
 })
 
 Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
@@ -35,6 +36,23 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
     cy.contains('The task has been created', {timeout: '8000'})
     cy.get('button[value="tasks"]').click()
     cy.url().should('include', '/tasks?page=')
+})
+
+Cypress.Commands.add('openTask', (taskName) => {
+    cy.contains('strong', taskName)
+    .parents('.cvat-tasks-list-item')
+    .contains('a', 'Open')
+    .click()
+})
+
+Cypress.Commands.add('openJob', () => {
+    cy.contains('a', 'Job #').click()
+    cy.url().should('include', '/jobs')
+})
+
+Cypress.Commands.add('openTaskJob', (taskName) => {
+    cy.openTask(taskName)
+    cy.openJob()
 })
 
 Cypress.Commands.add('createShape', (ferstX, ferstY, lastX, lastY) => {
