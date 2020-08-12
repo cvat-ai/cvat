@@ -257,7 +257,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 normalized_names = [normalize_label(l['name']) for l in labels]
                 label['color'] = rgb2hex(
                     get_color_from_label_name(label['name'],
-                        abs(hash(normalize_label(label['name']))) + normalized_names.count(normalize_label(l['name'])),
+                        abs(hash(normalize_label(label['name'])))
+                        + normalized_names.count(normalize_label(label['name'])),
                     )
                 )
             db_label = models.Label.objects.create(task=db_task, **label)
