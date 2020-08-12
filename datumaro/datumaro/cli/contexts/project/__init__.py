@@ -465,7 +465,7 @@ def build_merge_parser(parser_ctor=argparse.ArgumentParser):
         """,
         formatter_class=MultilineFormatter)
 
-    parser.add_argument('other_project',
+    parser.add_argument('other_project_dir',
         help="Path to a project")
     parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Output directory (default: current project's dir)")
