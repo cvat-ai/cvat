@@ -37,12 +37,19 @@ type Props = FormComponentProps & {
     onSubmit: (label: Label | null) => void;
 };
 
-class LabelForm extends React.PureComponent<Props, {}> {
+interface LabelFormState {
+    pickerVisible: boolean;
+}
+
+class LabelForm extends React.PureComponent<Props, LabelFormState> {
     private continueAfterSubmit: boolean;
 
     constructor(props: Props) {
         super(props);
         this.continueAfterSubmit = false;
+        this.state = {
+            pickerVisible: false,
+        };
     }
 
     private handleSubmit = (e: React.FormEvent): void => {
@@ -509,6 +516,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
         );
 
         const { label, form } = this.props;
+        const { pickerVisible } = this.state;
 
         return (
             <Col span={4}>
@@ -519,7 +527,31 @@ class LabelForm extends React.PureComponent<Props, {}> {
                                 initialValue: (label && label.color) ? label.color : undefined,
                             })(<ColorPicker />)
                         )}
+                        title={(
+                            <Row type='flex' justify='space-between' align='middle'>
+                                <Col span={12}>
+                                    <Text strong>
+                                        Select color
+                                    </Text>
+                                </Col>
+                                <Col span={4}>
+                                    <Button
+                                        type='link'
+                                        onClick={() => {
+                                            this.setState({ pickerVisible: false });
+                                        }}
+                                    >
+                                        <Icon type='close' />
+                                    </Button>
+                                </Col>
+                            </Row>
+
+                        )}
                         overlayClassName='canvas-background-color-picker-popover'
+                        visible={pickerVisible}
+                        onVisibleChange={() => {
+                            this.setState({ pickerVisible: !pickerVisible });
+                        }}
                         trigger='click'
                     >
 
