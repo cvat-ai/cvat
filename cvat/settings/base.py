@@ -149,7 +149,7 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.AnonRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
+        'anon': '100/minute',
     },
 }
 
@@ -205,7 +205,7 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 # Django Auth
 DJANGO_AUTH_TYPE = 'BASIC'
 DJANGO_AUTH_DEFAULT_GROUPS = []
-LOGIN_URL = '/auth/login'
+LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
 AUTHENTICATION_BACKENDS = [
@@ -216,6 +216,8 @@ AUTHENTICATION_BACKENDS = [
 
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
+# set UI url to redirect after a successful e-mail confirmation
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/login'
 
 # Django-RQ
 # https://github.com/rq/django-rq
