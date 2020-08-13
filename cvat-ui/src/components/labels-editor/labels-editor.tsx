@@ -221,6 +221,7 @@ export default class LabelsEditor
     }
 
     public render(): JSX.Element {
+        const { labels } = this.props;
         const {
             savedLabels,
             unsavedLabels,
@@ -319,6 +320,7 @@ export default class LabelsEditor
                         constructorMode === ConstructorMode.CREATE
                             && (
                                 <ConstructorCreator
+                                    labelNames={labels.map((l) => l.name)}
                                     onCreate={this.handleCreate}
                                 />
                             )
