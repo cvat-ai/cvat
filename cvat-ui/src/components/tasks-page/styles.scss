@@ -6,7 +6,10 @@
 
 .cvat-tasks-page {
     padding-top: 15px;
+    padding-bottom: 40px;
     height: 100%;
+    position: fixed;
+    width: 100%;
 
     > div:nth-child(1) {
         padding-bottom: 10px;
