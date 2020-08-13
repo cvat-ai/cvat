@@ -34,15 +34,19 @@ interface CVATAppProps {
     verifyAuthorized: () => void;
     loadUserAgreements: () => void;
     initPlugins: () => void;
+    initModels: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
     switchSettingsDialog: () => void;
+    loadAuthActions: () => void;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     userInitialized: boolean;
     userFetching: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
+    modelsInitialized: boolean;
+    modelsFetching: boolean;
     formatsInitialized: boolean;
     formatsFetching: boolean;
     usersInitialized: boolean;
@@ -51,6 +55,9 @@ interface CVATAppProps {
     aboutFetching: boolean;
     userAgreementsFetching: boolean;
     userAgreementsInitialized: boolean;
+    authActionsFetching: boolean;
+    authActionsInitialized: boolean;
+    allowChangePassword: boolean;
     notifications: NotificationsState;
     user: any;
 }
@@ -84,6 +91,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout,
             loadUserAgreements,
             initPlugins,
+            initModels,
+            loadAuthActions,
             userInitialized,
             userFetching,
             formatsInitialized,
@@ -94,9 +103,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             aboutFetching,
             pluginsInitialized,
             pluginsFetching,
+            modelsInitialized,
+            modelsFetching,
             user,
             userAgreementsFetching,
             userAgreementsInitialized,
+            authActionsFetching,
+            authActionsInitialized,
         } = this.props;
 
         this.showErrors();
@@ -116,6 +129,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
+        if (!authActionsInitialized && !authActionsFetching) {
+            loadAuthActions();
+        }
+
         if (!formatsInitialized && !formatsFetching) {
             loadFormats();
         }
@@ -126,6 +143,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!aboutInitialized && !aboutFetching) {
             loadAbout();
+        }
+
+        if (!modelsInitialized && !modelsFetching) {
+            initModels();
         }
 
         if (!pluginsInitialized && !pluginsFetching) {
@@ -155,8 +176,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         let shown = false;
         for (const where of Object.keys(notifications.messages)) {
-            for (const what of Object.keys(notifications.messages[where])) {
-                const message = notifications.messages[where][what];
+            for (const what of Object.keys((notifications as any).messages[where])) {
+                const message = (notifications as any).messages[where][what];
                 shown = shown || !!message;
                 if (message) {
                     showMessage(message);
@@ -196,8 +217,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         let shown = false;
         for (const where of Object.keys(notifications.errors)) {
-            for (const what of Object.keys(notifications.errors[where])) {
-                const error = notifications.errors[where][what];
+            for (const what of Object.keys((notifications as any).errors[where])) {
+                const error = (notifications as any).errors[where][what];
                 shown = shown || !!error;
                 if (error) {
                     showError(error.message, error.reason);
@@ -252,7 +273,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <GlobalErrorBoundary>
                         <Layout>
                             <HeaderContainer> </HeaderContainer>
-                            <Layout.Content>
+                            <Layout.Content style={{ height: '100%' }}>
                                 <ShorcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>

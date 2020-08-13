@@ -35,10 +35,10 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
                         <Col span={3}>
                             <Text strong>Type</Text>
                         </Col>
-                        <Col span={8}>
+                        <Col span={10}>
                             <Text strong>Description</Text>
                         </Col>
-                        <Col span={4}>
+                        <Col span={5}>
                             <Text strong>Labels</Text>
                         </Col>
                     </Row>

@@ -42,7 +42,7 @@ services:
       args:
         http_proxy:
         https_proxy:
-        no_proxy:
+        no_proxy: nuclio,${no_proxy}
         socks_proxy:
         USER: "django"
         DJANGO_CONFIGURATION: "production"
@@ -107,9 +107,19 @@ services:
       - /tmp:/tmp
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
+      http_proxy:
+      https_proxy:
+      no_proxy: 172.28.0.1,${no_proxy}
       NUCLIO_CHECK_FUNCTION_CONTAINERS_HEALTHINESS: "true"
     ports:
       - "8070:8070"
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+          gateway: 172.28.0.1
 
 volumes:
   cvat_db:

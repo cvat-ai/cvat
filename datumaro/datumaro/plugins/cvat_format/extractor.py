@@ -102,7 +102,7 @@ class CvatExtractor(SourceExtractor):
                     else:
                         try:
                             attr_value = float(attr_value)
-                        except Exception:
+                        except ValueError:
                             pass
                     attributes[el.attrib['name']] = attr_value
                 elif el.tag in cls._SUPPORTED_SHAPES:
@@ -251,7 +251,7 @@ class CvatExtractor(SourceExtractor):
 
     @classmethod
     def _parse_shape_ann(cls, ann, categories):
-        ann_id = ann.get('id')
+        ann_id = ann.get('id', 0)
         ann_type = ann['type']
 
         attributes = ann.get('attributes') or {}

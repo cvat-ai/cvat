@@ -6,7 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - Unreleased
 ### Added
+- Siammask tracker as DL serverless function (<https://github.com/opencv/cvat/pull/1988>)
 - [Datumaro] Added model info and source info commands (<https://github.com/opencv/cvat/pull/1973>)
+- [Datumaro] Dataset statistics (<https://github.com/opencv/cvat/pull/1668>)
 - Ability to configure email verification for new users (<https://github.com/opencv/cvat/pull/1929>)
 
 ### Changed
@@ -20,7 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Issue loading openvino models for semi-automatic and automatic annotation (<https://github.com/opencv/cvat/pull/1996>)
+- Basic functions of CVAT works without activated nuclio dashboard
 
 ### Security
 -
@@ -34,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support creating multiple jobs for each task through python cli (https://github.com/opencv/cvat/pull/1950)
 - python cli over https (<https://github.com/opencv/cvat/pull/1942>)
 - Error message when plugins weren't able to initialize instead of infinite loading (<https://github.com/opencv/cvat/pull/1966>)
+- Ability to change user password (<https://github.com/opencv/cvat/pull/1954>)
 
 ### Changed
 - Smaller object details (<https://github.com/opencv/cvat/pull/1877>)

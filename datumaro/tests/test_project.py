@@ -133,15 +133,15 @@ class ProjectTest(TestCase):
             self.assertTrue('project1' in dataset.sources)
 
     def test_can_batch_launch_custom_model(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                for i in range(5):
-                    yield DatasetItem(id=i, subset='train', image=np.array([i]))
+        dataset = Dataset.from_iterable([
+            DatasetItem(id=i, subset='train', image=np.array([i]))
+            for i in range(5)
+        ], categories=['label'])
 
         class TestLauncher(Launcher):
             def launch(self, inputs):
                 for i, inp in enumerate(inputs):
-                    yield [ Label(attributes={'idx': i, 'data': inp.item()}) ]
+                    yield [ Label(0, attributes={'idx': i, 'data': inp.item()}) ]
 
         model_name = 'model'
         launcher_name = 'custom_launcher'
@@ -150,10 +150,9 @@ class ProjectTest(TestCase):
         project.env.launchers.register(launcher_name, TestLauncher)
         project.add_model(model_name, { 'launcher': launcher_name })
         model = project.make_executable_model(model_name)
-        extractor = TestExtractor()
 
         batch_size = 3
-        executor = ModelTransform(extractor, model, batch_size=batch_size)
+        executor = ModelTransform(dataset, model, batch_size=batch_size)
 
         for item in executor:
             self.assertEqual(1, len(item.annotations))

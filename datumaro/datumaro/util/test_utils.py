@@ -43,19 +43,6 @@ class TestDir(FileRemover):
 
         super().__init__(path, is_dir=True, ignore_errors=ignore_errors)
 
-def ann_to_str(ann):
-    return vars(ann)
-
-def item_to_str(item):
-    return '\n'.join(
-        [
-            '%s' % vars(item)
-        ] + [
-            'ann[%s]: %s' % (i, ann_to_str(a))
-            for i, a in enumerate(item.annotations)
-        ]
-    )
-
 def compare_categories(test, expected, actual):
     test.assertEqual(
         sorted(expected, key=lambda t: t.value),
@@ -92,12 +79,11 @@ def compare_datasets(test, expected, actual):
         for ann_a in item_a.annotations:
             # We might find few corresponding items, so check them all
             ann_b_matches = [x for x in item_b.annotations
-                if x.id == ann_a.id and \
-                    x.type == ann_a.type and x.group == ann_a.group]
+                if x.type == ann_a.type]
             test.assertFalse(len(ann_b_matches) == 0, 'ann id: %s' % ann_a.id)
 
             ann_b = find(ann_b_matches, lambda x: x == ann_a)
-            test.assertEqual(ann_a, ann_b, 'ann: %s' % ann_to_str(ann_a))
+            test.assertEqual(ann_a, ann_b, 'ann %s, candidates %s' % (ann_a, ann_b_matches))
             item_b.annotations.remove(ann_b) # avoid repeats
 
 def compare_datasets_strict(test, expected, actual):
@@ -115,4 +101,4 @@ def compare_datasets_strict(test, expected, actual):
         for idx, (item_a, item_b) in enumerate(zip(e_subset, a_subset)):
             test.assertEqual(item_a, item_b,
                 '%s:\n%s\nvs.\n%s\n' % \
-                (idx, item_to_str(item_a), item_to_str(item_b)))
+                (idx, item_a, item_b))

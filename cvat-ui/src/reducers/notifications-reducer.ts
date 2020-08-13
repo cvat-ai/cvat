@@ -15,7 +15,6 @@ import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
-import { PluginsActionTypes } from 'actions/plugins-actions';
 
 import { NotificationsState } from './interfaces';
 
@@ -27,6 +26,8 @@ const defaultState: NotificationsState = {
             login: null,
             logout: null,
             register: null,
+            changePassword: null,
+            loadAuthActions: null,
         },
         tasks: {
             fetching: null,
@@ -86,9 +87,6 @@ const defaultState: NotificationsState = {
         userAgreements: {
             fetching: null,
         },
-        plugins: {
-            initializationError: null,
-        },
     },
     messages: {
         tasks: {
@@ -96,6 +94,10 @@ const defaultState: NotificationsState = {
         },
         models: {
             inferenceDone: '',
+        },
+        auth: {
+            changePasswordDone: '',
+            registerDone: '',
         },
     },
 };
@@ -179,6 +181,48 @@ export default function (state = defaultState, action: AnyAction): Notifications
 
             return {
                 ...state,
+            };
+        }
+        case AuthActionTypes.CHANGE_PASSWORD_SUCCESS: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    auth: {
+                        ...state.messages.auth,
+                        changePasswordDone: 'New password has been saved.',
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.CHANGE_PASSWORD_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        changePassword: {
+                            message: 'Could not change password',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        loadAuthActions: {
+                            message: 'Could not check available auth actions',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
             };
         }
         case TasksActionTypes.EXPORT_DATASET_FAILED: {
@@ -823,21 +867,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.userAgreements,
                         fetching: {
                             message: 'Could not get user agreements from the server',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case PluginsActionTypes.RAISE_PLUGIN_CHECK_ERROR: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    plugins: {
-                        ...state.errors.plugins,
-                        initializationError: {
-                            message: 'Could not initialize plugins state',
                             reason: action.payload.error.toString(),
                         },
                     },
