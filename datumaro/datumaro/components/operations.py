@@ -437,22 +437,14 @@ class IntersectMerge(MergingStrategy):
                     self.add_item_error(TooCloseError, a_ann, b_ann, d)
 
     def _check_groups(self, annotations):
-        groups = find_instances(annotations)
-        for group in groups:
-            group_labels = set()
-            for ann in group:
-                if not ann.group:
-                    break
-                if hasattr(ann, 'label'):
-                    group_labels.add(self._get_label_name(ann.label))
+        check_groups = []
+        for check_group_raw in self.conf.groups:
+            check_group = set(l[0] for l in check_group_raw)
+            optional = set(l[0] for l in check_group_raw if l[1])
+            check_groups.append((check_group, optional))
 
-            if not group_labels:
-                continue
-
-            for check_group_raw in self.conf.groups:
-                check_group = set(l[0] for l in check_group_raw)
-                optional = set(l[0] for l in check_group_raw if l[1])
-
+        def _check_group(group_labels, group):
+            for check_group, optional in check_groups:
                 common = check_group & group_labels
                 real_miss = check_group - common - optional
                 extra = group_labels - check_group
@@ -460,6 +452,23 @@ class IntersectMerge(MergingStrategy):
                     self.add_item_error(WrongGroupError, group_labels,
                         check_group, group)
                     break
+
+        groups = find_instances(annotations)
+        for group in groups:
+            group_labels = set()
+            for ann in group:
+                if not hasattr(ann, 'label'):
+                    continue
+                label = self._get_label_name(ann.label)
+
+                if ann.group:
+                    group_labels.add(label)
+                else:
+                    _check_group({label}, [ann])
+
+            if not group_labels:
+                continue
+            _check_group(group_labels, group)
 
     def _get_label_name(self, label_id):
         return self._categories[AnnotationType.label].items[label_id].name
@@ -631,7 +640,7 @@ class LabelMerger(AnnotationMerger, LabelMatcher):
 
         votes = {} # label -> score
         for label_ann in clusters[0]:
-            votes[label_ann.label] = 1.0 + votes.get(label_ann.label, 0.0)
+            votes[label_ann.label] = 1 + votes.get(label_ann.label, 0)
 
         merged = []
         for label, count in votes.items():

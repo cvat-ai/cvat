@@ -5,7 +5,7 @@ import numpy as np
 from datumaro.components.extractor import (Bbox, Caption, DatasetItem,
     Extractor, Label, Mask, Points, Polygon, PolyLine)
 from datumaro.components.operations import (FailedAttrVotingError,
-    IntersectMerge, NoMatchingAnnError, NoMatchingItemError,
+    IntersectMerge, NoMatchingAnnError, NoMatchingItemError, WrongGroupError,
     compute_ann_statistics, mean_std)
 from datumaro.components.project import Dataset
 from datumaro.util.test_utils import compare_datasets
@@ -338,4 +338,30 @@ class TestMultimerge(TestCase):
         compare_datasets(self, expected, merged, ignored_attrs={'score'})
         self.assertEqual(2, len([e for e in merger.errors
             if isinstance(e, FailedAttrVotingError)])
+        )
+
+    def test_group_checks(self):
+        dataset = Dataset.from_iterable([
+            DatasetItem(1, annotations=[
+                Bbox(0, 0, 0, 0, label=0, group=1), # misses an optional label
+                Bbox(0, 0, 0, 0, label=1, group=1),
+
+                Bbox(0, 0, 0, 0, label=2, group=2), # misses a mandatory label - error
+                Bbox(0, 0, 0, 0, label=2, group=2),
+
+                Bbox(0, 0, 0, 0, label=4), # misses an optional label
+                Bbox(0, 0, 0, 0, label=5), # misses a mandatory label - error
+                Bbox(0, 0, 0, 0, label=0), # misses a mandatory label - error
+
+                Bbox(0, 0, 0, 0, label=3), # not listed - not checked
+            ]),
+        ], categories=['a', 'a_g1', 'a_g2_opt', 'b', 'c', 'c_g1_opt'])
+
+        merger = IntersectMerge(conf={'groups': [
+            ['a', 'a_g1', 'a_g2_opt?'], ['c', 'c_g1_opt?']
+        ]})
+        merger([dataset, dataset])
+
+        self.assertEqual(3, len([e for e in merger.errors
+            if isinstance(e, WrongGroupError)]), merger.errors
         )
