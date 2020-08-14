@@ -15,7 +15,8 @@ from attr import attrib, attrs
 from datumaro.components.cli_plugin import CliPlugin
 from datumaro.components.extractor import AnnotationType, Bbox, Label
 from datumaro.components.project import Dataset
-from datumaro.util import find, ensure_cls
+from datumaro.util import find
+from datumaro.util.attrs_util import ensure_cls
 from datumaro.util.annotation_util import (segment_iou, bbox_iou,
     mean_bbox, OKS, find_instances, max_bbox, smooth_line)
 
@@ -86,6 +87,17 @@ class TooCloseError(QualityError):
             (self.item_id, self.a, self.b, self.distance)
 
 @attrs
+class WrongGroupError(QualityError):
+    found = attrib(converter=set)
+    expected = attrib(converter=set)
+    group = attrib(converter=list)
+
+    def __str__(self):
+        return "Item %s: annotation group has wrong labels: " \
+            "found %s, expected %s, group %s" % \
+            (self.item_id, self.found, self.expected, self.group)
+
+@attrs
 class MergeError(DatasetError):
     sources = attrib(converter=set)
 
@@ -136,7 +148,17 @@ class IntersectMerge(MergingStrategy):
         quorum = attrib(converter=int, default=0)
         ignored_attributes = attrib(converter=set, factory=set)
 
-        groups = attrib(converter=list, factory=list)
+        def _groups_conveter(value):
+            result = []
+            for group in value:
+                rg = set()
+                for label in group:
+                    optional = label.endswith('?')
+                    name = label if not optional else label[:-1]
+                    rg.add((name, optional))
+                result.append(rg)
+            return result
+        groups = attrib(converter=_groups_conveter, factory=list)
         close_distance = attrib(converter=float, default=0.75)
     conf = attrib(converter=ensure_cls(Conf), factory=Conf)
 
@@ -152,9 +174,14 @@ class IntersectMerge(MergingStrategy):
     _item_id = attrib(init=False)
     _item = attrib(init=False)
 
+    # Misc.
+    _categories = attrib(init=False) # merged categories
+
     def __call__(self, datasets):
-        merged = Dataset(
-            categories=merge_categories(d.categories() for d in datasets))
+        self._categories = merge_categories(d.categories() for d in datasets)
+        merged = Dataset(categories=self._categories)
+
+        self._check_groups_definition()
 
         item_matches, item_map = self.match_items(datasets)
         self._item_map = item_map
@@ -229,10 +256,8 @@ class IntersectMerge(MergingStrategy):
 
             annotations += merged_clusters
 
-        # TODO: group consistence checks
-        # if self.conf.check_groups:
-            # instances = find_instances(annotations)
-            # for inst in instances:
+        if self.conf.groups:
+            self._check_groups(annotations)
 
         return annotations
 
@@ -410,6 +435,45 @@ class IntersectMerge(MergingStrategy):
                 d = self._mergers[t].distance(a_ann, b_ann)
                 if self.conf.close_distance < d:
                     self.add_item_error(TooCloseError, a_ann, b_ann, d)
+
+    def _check_groups(self, annotations):
+        groups = find_instances(annotations)
+        for group in groups:
+            group_labels = set()
+            for ann in group:
+                if not ann.group:
+                    break
+                if hasattr(ann, 'label'):
+                    group_labels.add(self._get_label_name(ann.label))
+
+            if not group_labels:
+                continue
+
+            for check_group_raw in self.conf.groups:
+                check_group = set(l[0] for l in check_group_raw)
+                optional = set(l[0] for l in check_group_raw if l[1])
+
+                common = check_group & group_labels
+                real_miss = check_group - common - optional
+                extra = group_labels - check_group
+                if common and (extra or real_miss):
+                    self.add_item_error(WrongGroupError, group_labels,
+                        check_group, group)
+                    break
+
+    def _get_label_name(self, label_id):
+        return self._categories[AnnotationType.label].items[label_id].name
+
+    def _check_groups_definition(self):
+        for group in self.conf.groups:
+            for label, _ in group:
+                _, entry = self._categories[AnnotationType.label].find(label)
+                if entry is None:
+                    raise ValueError("Datasets do not contain "
+                        "label '%s', available labels %s" % \
+                        (label, [i.name for i in
+                            self._categories[AnnotationType.label].items])
+                    )
 
 @attrs
 class AnnotationMatcher:

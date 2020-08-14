@@ -28,9 +28,15 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
             |n
             Examples:|n
             - Merge annotations from 3 (or more) annotators:|n
-            |s|smerge project1/ project2/ project3/
+            |s|smerge project1/ project2/ project3/|n
+            - Check groups of the merged dataset for consistence:|n
+            |s|s|slook for groups consising of 'person', 'hand' 'head', 'foot'|n
+            |s|smerge project1/ project2/ -g 'person,hand?,head,foot?'
         """,
         formatter_class=MultilineFormatter)
+
+    def _group(s):
+        return s.split(',')
 
     parser.add_argument('project', nargs='+', action=at_least(2),
         help="Path to a project (repeatable)")
@@ -43,6 +49,11 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
     parser.add_argument('--quorum', default=0, type=int,
         help="Minimum count for a label and attribute voting "
             "results to be counted (default: %(default)s)")
+    parser.add_argument('-g', '--groups', action='append', type=_group,
+        default=[],
+        help="A comma-separated list of labels in "
+            "annotation groups to check. '?' postfix can be added to a label to"
+            "make it optional in the group (repeatable)")
     parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Output directory (default: current project's dir)")
     parser.add_argument('--overwrite', action='store_true',
@@ -68,9 +79,9 @@ def merge_command(args):
         source_datasets.append(p.make_dataset())
 
     merger = IntersectMerge(conf=IntersectMerge.Conf(
-        pairwise_dist=args.iou_thresh,
-        output_conf_thresh=args.output_conf_thresh, quorum=args.quorum)
-    )
+        pairwise_dist=args.iou_thresh, groups=args.groups,
+        output_conf_thresh=args.output_conf_thresh, quorum=args.quorum
+    ))
     merged_dataset = merger(source_datasets)
 
     merged_project = Project()

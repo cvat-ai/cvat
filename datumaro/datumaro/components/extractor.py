@@ -111,7 +111,7 @@ class LabelCategories(Categories):
 
     def find(self, name):
         index = self._indices.get(name)
-        if index:
+        if index is not None:
             return index, self.items[index]
         return index, None
 
