@@ -76,3 +76,15 @@ Cypress.Commands.add('createShape', (ferstX, ferstY, lastX, lastY) => {
     cy.get('.cvat-canvas-container')
     .click(lastX, lastY)
 })
+
+Cypress.Commands.add('createTrack', (ferstX, ferstY, lastX, lastY) => {
+    cy.get('.cvat-draw-rectangle-control').click()
+    cy.get('.cvat-draw-shape-popover-content')
+    .find('button')
+    .contains('Track')
+    .click({force: true})
+    cy.get('.cvat-canvas-container')
+    .click(ferstX, ferstY)
+    cy.get('.cvat-canvas-container')
+    .click(lastX, lastY)
+})
