@@ -37,7 +37,7 @@ from cvat.apps.authentication import auth
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, Plugin, StatusChoice, Task, DataChoice
+from cvat.apps.engine.models import Job, Plugin, StatusChoice, Task, DataChoice, StorageMethodChoice
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
@@ -419,6 +419,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             db_task.save()
             data = {k:v for k, v in serializer.data.items()}
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+            data['use_cache'] = serializer.validated_data['use_cache']
+            if data['use_cache']:
+                db_task.data.storage_method = StorageMethodChoice.CACHE
+                db_task.data.save(update_fields=['storage_method'])
+
             # if the value of stop_frame is 0, then inside the function we cannot know
             # the value specified by the user or it's default value from the database
             if 'stop_frame' not in serializer.validated_data:
@@ -455,7 +460,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
                     path = os.path.realpath(frame_provider.get_chunk(data_id, data_quality))
                     #TODO: av.FFmpegError processing
-                    if settings.USE_CACHE:
+                    if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
                         with Cache(settings.CACHE_ROOT) as cache:
                             buff = None
                             chunk, tag = cache.get('{}_{}_{}'.format(db_task.id, data_id, quality), tag=True)

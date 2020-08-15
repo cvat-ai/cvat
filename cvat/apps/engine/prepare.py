@@ -4,7 +4,7 @@ import hashlib
 class WorkWithVideo:
     def __init__(self, **kwargs):
         if not kwargs.get('source_path'):
-            raise Exeption('No sourse path')
+            raise Exception('No sourse path')
         self.source_path = kwargs.get('source_path')
 
     def _open_video_container(self, sourse_path, mode, options=None):

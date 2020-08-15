@@ -167,11 +167,13 @@ class DataSerializer(serializers.ModelSerializer):
     client_files = ClientFileSerializer(many=True, default=[])
     server_files = ServerFileSerializer(many=True, default=[])
     remote_files = RemoteFileSerializer(many=True, default=[])
+    use_cache = serializers.BooleanField(default=False)
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks')
+            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
+            'use_cache')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -199,6 +201,7 @@ class DataSerializer(serializers.ModelSerializer):
         server_files = validated_data.pop('server_files')
         remote_files = validated_data.pop('remote_files')
         validated_data.pop('use_zip_chunks')
+        validated_data.pop('use_cache')
         db_data = models.Data.objects.create(**validated_data)
 
         data_path = db_data.get_data_dirname()

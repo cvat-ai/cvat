@@ -125,22 +125,21 @@ class DirectoryReader(ImageListReader):
 
 class ArchiveReader(DirectoryReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
-        self._tmp_dir = create_tmp_dir()
         self._archive_source = source_path[0]
-        Archive(self._archive_source).extractall(self._tmp_dir)
+        Archive(self._archive_source).extractall(os.path.dirname(source_path[0]))
         super().__init__(
-            source_path=[self._tmp_dir],
+            source_path=[os.path.dirname(source_path[0])],
             step=step,
             start=start,
             stop=stop,
         )
 
     def __del__(self):
-        delete_tmp_dir(self._tmp_dir)
+        os.remove(self._archive_source)
 
     def get_path(self, i):
         base_dir = os.path.dirname(self._archive_source)
-        return os.path.join(base_dir, os.path.relpath(self._source_path[i], self._tmp_dir))
+        return os.path.join(base_dir, os.path.relpath(self._source_path[i], base_dir))
 
 class PdfReader(DirectoryReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
@@ -192,6 +191,10 @@ class ZipReader(ImageListReader):
 
     def get_path(self, i):
         return os.path.join(os.path.dirname(self._zip_source.filename), self._source_path[i])
+
+    def extract(self):
+        self._zip_source.extractall(os.path.dirname(self._zip_source.filename))
+        os.remove(self._zip_source.filename)
 
 class VideoReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
@@ -312,7 +315,7 @@ class ZipCompressedChunkWriter(IChunkWriter):
 
     def save_as_chunk_to_buff(self, images, format_='jpeg'):
         buff = io.BytesIO()
-        with zipfile.ZipFile(buff, 'w') as zip_file:
+        with zipfile.ZipFile(buff, 'x') as zip_file:
             for idx, image in enumerate(images):
                 (_, _, image_buf) = self._compress_image(image, self._image_quality)
                 arcname = '{:06d}.{}'.format(idx, format_)
@@ -451,6 +454,52 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
         self._encode_images(images, output_container, output_v_stream)
         output_container.close()
         return [(input_w, input_h)]
+
+    def save_as_chunk_to_buff(self, frames, format_):
+        if not frames:
+            raise Exception('no images to save')
+
+        buff = io.BytesIO()
+        input_w = frames[0].width
+        input_h = frames[0].height
+
+        downscale_factor = 1
+        while input_h / downscale_factor >= 1080:
+            downscale_factor *= 2
+
+        output_h = input_h // downscale_factor
+        output_w = input_w // downscale_factor
+
+
+        output_container, output_v_stream = self._create_av_container(
+            path=buff,
+            w=output_w,
+            h=output_h,
+            rate=self._output_fps,
+            options={
+                'profile': 'baseline',
+                'coder': '0',
+                'crf': str(self._image_quality),
+                'wpredp': '0',
+                'flags': '-loop'
+            },
+            f=format_,
+        )
+
+        for frame in frames:
+            # let libav set the correct pts and time_base
+            frame.pts = None
+            frame.time_base = None
+
+            for packet in output_v_stream.encode(frame):
+                output_container.mux(packet)
+
+        # Flush streams
+        for packet in output_v_stream.encode():
+            output_container.mux(packet)
+        output_container.close()
+        buff.seek(0)
+        return buff
 
 def _is_archive(path):
     mime = mimetypes.guess_type(path)

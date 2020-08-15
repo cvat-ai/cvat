@@ -14,7 +14,7 @@ from urllib import parse as urlparse
 from urllib import request as urlrequest
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
-from cvat.apps.engine.models import DataChoice
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice
 from cvat.apps.engine.utils import av_scan_paths
 
 import django_rq
@@ -245,6 +245,8 @@ def _create_thread(tid, data):
                 start=db_data.start_frame,
                 stop=data['stop_frame'],
             )
+    if extractor.__class__ == MEDIA_TYPES['zip']['extractor']:
+        extractor.extract()
     db_task.mode = task_mode
     db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
@@ -278,25 +280,22 @@ def _create_thread(tid, data):
         else:
             db_data.chunk_size = 36
 
-    #it's better to add the field to the Task model
-    video_suitable_on_the_fly_processing = True
 
     video_path = ""
     video_size = (0, 0)
 
-    if settings.USE_CACHE:
+    if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
        for media_type, media_files in media.items():
             if media_files:
                 if task_mode == MEDIA_TYPES['video']['mode']:
                     try:
-                        analizer = AnalyzeVideo(source_path=os.path.join(upload_dir, media_files[0]))
-                        analizer.check_type_first_frame()
-                        analizer.check_video_timestamps_sequences()
+                        analyzer = AnalyzeVideo(source_path=os.path.join(upload_dir, media_files[0]))
+                        analyzer.check_type_first_frame()
+                        analyzer.check_video_timestamps_sequences()
 
                         meta_info = PrepareInfo(source_path=os.path.join(upload_dir, media_files[0]),
                                                 meta_path=os.path.join(upload_dir, 'meta_info.txt'))
                         meta_info.save_key_frames()
-                        #meta_info.test_seek()
                         meta_info.check_seek_key_frames()
                         meta_info.save_meta_info()
 
@@ -306,13 +305,16 @@ def _create_thread(tid, data):
                         video_size = (frame.width, frame.height)
 
                     except AssertionError as ex:
-                        video_suitable_on_the_fly_processing = False
+                        db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
                     except Exception as ex:
-                        video_suitable_on_the_fly_processing = False
+                        db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
 
-                else:#images, TODO:archive
+                else:#images,archive
                     with Cache(settings.CACHE_ROOT) as cache:
                         counter_ = itertools.count()
+
+                        if extractor.__class__ in [MEDIA_TYPES['archive']['extractor'], MEDIA_TYPES['zip']['extractor']]:
+                            media_files = [os.path.join(upload_dir, f) for f in extractor._source_path]
 
                         for chunk_number, media_paths in itertools.groupby(media_files, lambda x: next(counter_) // db_data.chunk_size):
                             media_paths = list(media_paths)
@@ -321,20 +323,20 @@ def _create_thread(tid, data):
                             img_sizes = []
                             from PIL import Image
                             for media_path  in media_paths:
-                                img_sizes += [Image.open(os.path.join(upload_dir, media_path)).size]
+                                img_sizes += [Image.open(media_path).size]
                             db_data.size += len(media_paths)
                             db_images.extend([
                                 models.Image(
                                     data=db_data,
-                                    path=data[1],
+                                    path=os.path.basename(data[1]),
                                     frame=data[0],
                                     width=size[0],
                                     height=size[1])
-                                for data, size in zip(enumerate(media_paths), img_sizes)
+                                for data, size in zip(enumerate(media_paths, start=len(db_images)), img_sizes)
                             ])
 
 
-    if db_task.mode == 'interpolation' and not video_suitable_on_the_fly_processing or not settings.USE_CACHE:
+    if db_data.storage_method == StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
         counter = itertools.count()
         generator = itertools.groupby(extractor, lambda x: next(counter) // db_data.chunk_size)
         for chunk_idx, chunk_data in generator:
