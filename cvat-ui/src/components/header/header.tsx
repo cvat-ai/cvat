@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { MouseEvent } from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
@@ -174,8 +174,12 @@ function HeaderContainer(props: Props): JSX.Element {
                     className='cvat-header-button'
                     type='link'
                     value='tasks'
+                    href='/tasks?page=1'
                     onClick={
-                        (): void => props.history.push('/tasks?page=1')
+                        (event: React.MouseEvent): void => {
+                            event.preventDefault();
+                            props.history.push('/tasks?page=1');
+                        }
                     }
                 >
                     Tasks
@@ -184,8 +188,12 @@ function HeaderContainer(props: Props): JSX.Element {
                     className='cvat-header-button'
                     type='link'
                     value='models'
+                    href='/models'
                     onClick={
-                        (): void => props.history.push('/models')
+                        (event: React.MouseEvent): void => {
+                            event.preventDefault();
+                            props.history.push('/models');
+                        }
                     }
                 >
                     Models
@@ -195,8 +203,10 @@ function HeaderContainer(props: Props): JSX.Element {
                         <Button
                             className='cvat-header-button'
                             type='link'
+                            href={`${serverHost}/analytics/app/kibana`}
                             onClick={
-                                (): void => {
+                                (event: React.MouseEvent): void => {
+                                    event.preventDefault();
                                     // false positive
                                     // eslint-disable-next-line
                                     window.open(`${serverHost}/analytics/app/kibana`, '_blank');
@@ -211,8 +221,10 @@ function HeaderContainer(props: Props): JSX.Element {
                 <Button
                     className='cvat-header-button'
                     type='link'
+                    href={GITHUB_URL}
                     onClick={
-                        (): void => {
+                        (event: React.MouseEvent): void => {
+                            event.preventDefault();
                             // false positive
                             // eslint-disable-next-line security/detect-non-literal-fs-filename
                             window.open(GITHUB_URL, '_blank');
@@ -225,8 +237,10 @@ function HeaderContainer(props: Props): JSX.Element {
                 <Button
                     className='cvat-header-button'
                     type='link'
+                    href={`${serverHost}/documentation/user_guide.html`}
                     onClick={
-                        (): void => {
+                        (event: React.MouseEvent): void => {
+                            event.preventDefault();
                             // false positive
                             // eslint-disable-next-line
                             window.open(`${serverHost}/documentation/user_guide.html`, '_blank')
