@@ -306,12 +306,13 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def validate_labels(self, data):
-        if not data:
+    def validate_labels(self, value):
+        if not value:
             raise serializers.ValidationError('Label set must not be empty')
-        label_names = [label['name'] for label in data]
+        label_names = [label['name'] for label in value]
         if len(label_names) != len(set(label_names)):
             raise serializers.ValidationError('All label names must be unique for the task')
+        return value
 
 
 class ProjectSerializer(serializers.ModelSerializer):
