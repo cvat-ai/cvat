@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Siammask tracker as DL serverless function (<https://github.com/opencv/cvat/pull/1988>)
 - [Datumaro] Added model info and source info commands (<https://github.com/opencv/cvat/pull/1973>)
 - [Datumaro] Dataset statistics (<https://github.com/opencv/cvat/pull/1668>)
+- [Datumaro] Multi-dataset merge (https://github.com/opencv/cvat/pull/1695)
 
 ### Changed
 - Shape coordinates are rounded to 2 digits in dumped annotations (<https://github.com/opencv/cvat/pull/1970>)

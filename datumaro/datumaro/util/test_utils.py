@@ -65,7 +65,22 @@ def compare_categories(test, expected, actual):
             actual[AnnotationType.points].items,
         )
 
-def compare_datasets(test, expected, actual):
+def _compare_annotations(expected, actual, ignored_attrs=None):
+    if not ignored_attrs:
+        return expected == actual
+
+    a_attr = expected.attributes
+    b_attr = actual.attributes
+
+    expected.attributes = {k:v for k,v in a_attr.items() if k not in ignored_attrs}
+    actual.attributes = {k:v for k,v in b_attr.items() if k not in ignored_attrs}
+    r = expected == actual
+
+    expected.attributes = a_attr
+    actual.attributes = b_attr
+    return r
+
+def compare_datasets(test, expected, actual, ignored_attrs=None):
     compare_categories(test, expected.categories(), actual.categories())
 
     test.assertEqual(sorted(expected.subsets()), sorted(actual.subsets()))
@@ -82,8 +97,11 @@ def compare_datasets(test, expected, actual):
                 if x.type == ann_a.type]
             test.assertFalse(len(ann_b_matches) == 0, 'ann id: %s' % ann_a.id)
 
-            ann_b = find(ann_b_matches, lambda x: x == ann_a)
-            test.assertEqual(ann_a, ann_b, 'ann %s, candidates %s' % (ann_a, ann_b_matches))
+            ann_b = find(ann_b_matches, lambda x:
+                _compare_annotations(x, ann_a, ignored_attrs=ignored_attrs))
+            if ann_b is None:
+                test.assertEqual(ann_a, ann_b,
+                    'ann %s, candidates %s' % (ann_a, ann_b_matches))
             item_b.annotations.remove(ann_b) # avoid repeats
 
 def compare_datasets_strict(test, expected, actual):

@@ -9,7 +9,7 @@ import_tf() # prevent TF loading and potential interpeter crash
 import accuracy_checker.representation as ac
 
 import datumaro.components.extractor as dm
-from datumaro.util.annotation_tools import softmax
+from datumaro.util.annotation_util import softmax
 
 def import_predictions(predictions):
     # Convert Accuracy checker predictions to Datumaro annotations

@@ -17,7 +17,7 @@ from datumaro.components.extractor import (Transform, AnnotationType,
 )
 from datumaro.components.cli_plugin import CliPlugin
 import datumaro.util.mask_tools as mask_tools
-from datumaro.util.annotation_tools import find_group_leader, find_instances
+from datumaro.util.annotation_util import find_group_leader, find_instances
 
 
 class CropCoveredSegments(Transform, CliPlugin):

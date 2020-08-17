@@ -9,6 +9,7 @@ import numpy as np
 from math import ceil
 
 from datumaro.components.extractor import AnnotationType
+from datumaro.util.annotation_util import nms
 
 
 def flatmatvec(mat):
@@ -51,24 +52,6 @@ class RISE:
                 bboxes.append(r)
         return labels, bboxes
 
-    @staticmethod
-    def nms(boxes, iou_thresh=0.5):
-        indices = np.argsort([b.attributes['score'] for b in boxes])
-        ious = np.array([[a.iou(b) for b in boxes] for a in boxes])
-
-        predictions = []
-        while len(indices) != 0:
-            i = len(indices) - 1
-            pred_idx = indices[i]
-            to_remove = [i]
-            predictions.append(boxes[pred_idx])
-            for i, box_idx in enumerate(indices[:i]):
-                if iou_thresh < ious[pred_idx, box_idx]:
-                    to_remove.append(i)
-            indices = np.delete(indices, to_remove)
-
-        return predictions
-
     def normalize_hmaps(self, heatmaps, counts):
         eps = np.finfo(heatmaps.dtype).eps
         mhmaps = flatmatvec(heatmaps)
@@ -106,7 +89,7 @@ class RISE:
             result_bboxes = [b for b in result_bboxes \
                 if self.det_conf_thresh <= b.attributes['score']]
         if 0 < self.nms_thresh:
-            result_bboxes = self.nms(result_bboxes, self.nms_thresh)
+            result_bboxes = nms(result_bboxes, self.nms_thresh)
 
         predicted_labels = set()
         if len(result_labels) != 0:
@@ -194,7 +177,7 @@ class RISE:
                         result_bboxes = [b for b in result_bboxes \
                             if self.det_conf_thresh <= b.attributes['score']]
                     if 0 < self.nms_thresh:
-                        result_bboxes = self.nms(result_bboxes, self.nms_thresh)
+                        result_bboxes = nms(result_bboxes, self.nms_thresh)
 
                     for detection in result_bboxes:
                         for pred_idx, pred in enumerate(predicted_bboxes):
@@ -202,7 +185,7 @@ class RISE:
                                 continue
 
                             iou = pred.iou(detection)
-                            assert 0 <= iou and iou <= 1
+                            assert iou == -1 or 0 <= iou and iou <= 1
                             if iou < iou_thresh:
                                 continue
 
