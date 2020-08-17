@@ -19,11 +19,11 @@ function imageGenerator(args) {
     const posY = args.posY
     const message = args.message
     const file = path.join(directory, fileName)
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         const image = new jimp(width, height, color, function (err, image) {
-            if (err) throw err
+            if (err) reject(err)
             jimp.loadFont(jimp.FONT_SANS_64_BLACK, function (err, font) {
-                if (err) throw err
+                if (err) reject(err)
                 image.print(font, Number(posX), Number(posY), message)
                 .write(file)
             })
