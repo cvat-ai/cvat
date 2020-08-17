@@ -24,7 +24,7 @@ context('Check propagation work from the latest frame', () => {
     const archiveName = `images_issue_${issueId}.zip`
     const archivePath = `cypress/fixtures/${archiveName}`
     const imagesFolder = `cypress/fixtures/image_issue_${issueId}`
-    const lastElement = images[images.length - 1]
+    const directoryToArchive = imagesFolder
 
     before(() => {
         cy.visit('auth/login')
@@ -33,19 +33,18 @@ context('Check propagation work from the latest frame', () => {
             cy.imageGenerator(imagesFolder, img, width, height, color, posX, posY, labelName)
         }
         cy.wait(2000)
-        cy.createZipArchive(imagesFolder, archivePath)
+        cy.createZipArchive(directoryToArchive, archivePath)
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName)
         cy.openTaskJob(taskName)
     })
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Go to the last frame', () => {
-            cy.get('.cvat-annotation-header')
+            cy.get('.cvat-player-buttons')
             .find(':nth-child(7)')
             .click()
-            cy.get('.cvat-player-controls')
-            .find('.ant-typography')
-            .should('contain.text', lastElement)
+            cy.get('.ant-input-number-input')
+            .should('have.value', '2')
         })
         it('Create a shape', () => {
             cy.createShape(309, 431, 616, 671)
