@@ -40,11 +40,12 @@ context('Check propagation work from the latest frame', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Go to the last frame', () => {
-            cy.get('.cvat-player-buttons')
-            .find(':nth-child(7)')
+            cy.get('.cvat-player-last-button')
             .click()
-            cy.get('.ant-input-number-input')
-            .should('have.value', '2')
+            cy.get('.cvat-player-frame-selector').within(() => {
+                cy.get('input[role="spinbutton"]')
+                .should('have.value', '2')
+            })
         })
         it('Create a shape', () => {
             cy.createShape(309, 431, 616, 671)

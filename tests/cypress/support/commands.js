@@ -57,8 +57,11 @@ Cypress.Commands.add('openTaskJob', (taskName) => {
 })
 
 Cypress.Commands.add('createShape', (ferstX, ferstY, lastX, lastY) => {
-    cy.get(':nth-child(8) > svg').trigger('mousemove').click()
-    cy.get(':nth-child(6) > :nth-child(1) > .ant-btn').click()
+    cy.get('.cvat-draw-rectangle-control').click()
+    cy.get('.cvat-draw-shape-popover-content')
+    .find('button')
+    .contains('Shape')
+    .click({force: true})
     cy.get('.cvat-canvas-container')
     .click(ferstX, ferstY)
     cy.get('.cvat-canvas-container')
