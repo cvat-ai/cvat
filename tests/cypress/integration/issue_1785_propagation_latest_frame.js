@@ -32,7 +32,6 @@ context('Check propagation work from the latest frame', () => {
         for (let img of images) {
             cy.imageGenerator(imagesFolder, img, width, height, color, posX, posY, labelName)
         }
-        cy.wait(2000)
         cy.createZipArchive(directoryToArchive, archivePath)
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName)
         cy.openTaskJob(taskName)
