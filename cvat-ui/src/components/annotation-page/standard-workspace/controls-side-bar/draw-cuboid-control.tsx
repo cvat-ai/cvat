@@ -47,6 +47,7 @@ function DrawPolygonControl(props: Props): JSX.Element {
             )}
         >
             <Icon
+                className='cvat-draw-cuboid-control'
                 {...dynamicIconProps}
                 component={CubeIcon}
             />

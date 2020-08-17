@@ -43,6 +43,7 @@ function DrawPolylineControl(props: Props): JSX.Element {
             )}
         >
             <Icon
+                className='cvat-draw-polyline-control'
                 {...dynamicIconProps}
                 component={PolylineIcon}
             />
