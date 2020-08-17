@@ -32,7 +32,6 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
         for (let img of images) {
             cy.imageGenerator(imagesFolder, img, width, height, color, posX, posY, labelName)
         }
-        cy.wait(2000)
         cy.createZipArchive(directoryToArchive, archivePath)
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName)
         cy.openTaskJob(taskName)
@@ -53,29 +52,31 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
             .should('contain.text', 'Attribute annotation')
         })
         it('Go to next frame', () => {
-            cy.get('.cvat-player-buttons')
-            .find(':nth-child(5)')
+            cy.get('.cvat-player-next-button')
             .click()
-            cy.get('.ant-input-number-input')
-            .should('have.value', '1')
+            cy.get('.cvat-player-frame-selector').within(() => {
+                cy.get('input[role="spinbutton"]')
+                .should('have.value', '1')
+            })
         })
         it('Go to previous frame', () => {
-            cy.get('.cvat-player-buttons')
-            .find(':nth-child(3)')
+            cy.get('.cvat-player-previous-button')
             .click()
-            cy.get('.ant-input-number-input')
-            .should('have.value', '0')
+            cy.get('.cvat-player-frame-selector').within(() => {
+                cy.get('input[role="spinbutton"]')
+                .should('have.value', '0')
+            })
         })
         it('Go to next object', () => {
-            cy.get('.ant-layout-sider-children > :nth-child(3)')
+            cy.get('.attribute-annotation-sidebar-object-switcher')
             .should('contain', `${labelName} 1 [1/2]`)
-            .find('i[aria-label="icon: right"]')
+            .find('.anticon-right')
             .click({force: true})
         })
         it('Page with the error is missing', () => {
             cy.contains('Oops, something went wrong')
             .should('not.exist')
-            cy.get('.ant-layout-sider-children > :nth-child(3)')
+            cy.get('.attribute-annotation-sidebar-object-switcher')
             .should('contain', `${labelName} 2 [2/2]`)
         })
     })
