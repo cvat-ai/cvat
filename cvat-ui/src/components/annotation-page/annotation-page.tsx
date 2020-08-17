@@ -80,17 +80,17 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 <AnnotationTopBarContainer />
             </Layout.Header>
             { workspace === Workspace.STANDARD && (
-                <Layout.Content>
+                <Layout.Content style={{ height: '100%' }}>
                     <StandardWorkspaceComponent />
                 </Layout.Content>
             )}
             { workspace === Workspace.ATTRIBUTE_ANNOTATION && (
-                <Layout.Content>
+                <Layout.Content style={{ height: '100%' }}>
                     <AttributeAnnotationWorkspace />
                 </Layout.Content>
             )}
             { workspace === Workspace.TAG_ANNOTATION && (
-                <Layout.Content>
+                <Layout.Content style={{ height: '100%' }}>
                     <TagAnnotationWorkspace />
                 </Layout.Content>
             )}

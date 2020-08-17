@@ -13,6 +13,7 @@ from attr import attrs, attrib
 from datumaro.util.image import Image
 from datumaro.util.attrs_util import not_empty, default_if_none
 
+
 AnnotationType = Enum('AnnotationType',
     [
         'label',
@@ -28,9 +29,9 @@ _COORDINATE_ROUNDING_DIGITS = 2
 
 @attrs
 class Annotation:
-    id = attrib(converter=int, default=0, kw_only=True)
-    attributes = attrib(converter=dict, factory=dict, kw_only=True)
-    group = attrib(converter=int, default=0, kw_only=True)
+    id = attrib(default=0, validator=default_if_none(int), kw_only=True)
+    attributes = attrib(factory=dict, validator=default_if_none(dict), kw_only=True)
+    group = attrib(default=0, validator=default_if_none(int), kw_only=True)
 
     def __attrs_post_init__(self):
         assert isinstance(self.type, AnnotationType)
@@ -92,7 +93,7 @@ class LabelCategories(Categories):
         self._indices = indices
 
     def add(self, name, parent=None, attributes=None):
-        assert name not in self._indices
+        assert name not in self._indices, name
         if attributes is None:
             attributes = set()
         else:
@@ -110,7 +111,7 @@ class LabelCategories(Categories):
 
     def find(self, name):
         index = self._indices.get(name)
-        if index:
+        if index is not None:
             return index, self.items[index]
         return index, None
 
@@ -148,7 +149,7 @@ class Mask(Annotation):
     _image = attrib()
     label = attrib(converter=attr.converters.optional(int),
         default=None, kw_only=True)
-    z_order = attrib(converter=int, default=0, kw_only=True)
+    z_order = attrib(default=0, validator=default_if_none(int), kw_only=True)
 
     @property
     def image(self):
@@ -274,31 +275,13 @@ class CompiledMask:
     def lazy_extract(self, instance_id):
         return lambda: self.extract(instance_id)
 
-def compute_iou(bbox_a, bbox_b):
-    aX, aY, aW, aH = bbox_a
-    bX, bY, bW, bH = bbox_b
-    in_right = min(aX + aW, bX + bW)
-    in_left = max(aX, bX)
-    in_top = max(aY, bY)
-    in_bottom = min(aY + aH, bY + bH)
-
-    in_w = max(0, in_right - in_left)
-    in_h = max(0, in_bottom - in_top)
-    intersection = in_w * in_h
-
-    a_area = aW * aH
-    b_area = bW * bH
-    union = a_area + b_area - intersection
-
-    return intersection / max(1.0, union)
-
 @attrs
 class _Shape(Annotation):
     points = attrib(converter=lambda x:
         [round(p, _COORDINATE_ROUNDING_DIGITS) for p in x])
     label = attrib(converter=attr.converters.optional(int),
         default=None, kw_only=True)
-    z_order = attrib(converter=int, default=0, kw_only=True)
+    z_order = attrib(default=0, validator=default_if_none(int), kw_only=True)
 
     def get_area(self):
         raise NotImplementedError()
@@ -386,7 +369,8 @@ class Bbox(_Shape):
         ]
 
     def iou(self, other):
-        return compute_iou(self.get_bbox(), other.get_bbox())
+        from datumaro.util.annotation_util import bbox_iou
+        return bbox_iou(self.get_bbox(), other.get_bbox())
 
     def wrap(item, **kwargs):
         d = {'x': item.x, 'y': item.y, 'w': item.w, 'h': item.h}

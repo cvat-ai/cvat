@@ -273,7 +273,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <GlobalErrorBoundary>
                         <Layout>
                             <HeaderContainer> </HeaderContainer>
-                            <Layout.Content>
+                            <Layout.Content style={{ height: '100%' }}>
                                 <ShorcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>

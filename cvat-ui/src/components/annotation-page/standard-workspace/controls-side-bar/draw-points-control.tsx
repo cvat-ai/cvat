@@ -43,6 +43,7 @@ function DrawPointsControl(props: Props): JSX.Element {
             )}
         >
             <Icon
+                className='cvat-draw-points-control'
                 {...dynamicIconProps}
                 component={PointIcon}
             />
