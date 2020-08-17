@@ -12,7 +12,20 @@ interface Props {
     onCreate: (label: Label | null) => void;
 }
 
-export default function ConstructorCreator(props: Props): JSX.Element {
+function compareProps(prevProps: Props, nextProps: Props): boolean {
+    if (prevProps.onCreate !== nextProps.onCreate) {
+        return false;
+    }
+    if (!(prevProps.labelNames.length === nextProps.labelNames.length
+        && prevProps.labelNames.map((value, index) => value === nextProps.labelNames[index])
+            .reduce((prevValue, curValue) => prevValue && curValue, true)
+    )) {
+        return false;
+    }
+    return true;
+}
+
+function ConstructorCreator(props: Props): JSX.Element {
     const { onCreate, labelNames } = props;
     return (
         <div className='cvat-label-constructor-creator'>
@@ -20,3 +33,5 @@ export default function ConstructorCreator(props: Props): JSX.Element {
         </div>
     );
 }
+
+export default React.memo(ConstructorCreator, compareProps);
