@@ -43,8 +43,7 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
             cy.createShape(200, 300, 300, 400)
         })
         it('Go to AAM', () => {
-            cy.get('.cvat-annotation-header-right-group')
-            .find('.ant-select-selection-selected-value')
+            cy.get('.cvat-workspace-selector')
             .click()
             cy.get('.ant-select-dropdown-menu-item')
             .contains('Attribute annotation')
