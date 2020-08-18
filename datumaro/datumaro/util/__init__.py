@@ -88,3 +88,14 @@ def str_to_bool(s):
         return False
     else:
         raise ValueError("Can't convert value '%s' to bool" % s)
+
+def ensure_cls(c):
+    def converter(arg):
+        if isinstance(arg, c):
+            return arg
+        else:
+            return c(**arg)
+    return converter
+
+def filter_dict(d, exclude_keys):
+    return { k: v for k, v in d.items() if k not in exclude_keys }

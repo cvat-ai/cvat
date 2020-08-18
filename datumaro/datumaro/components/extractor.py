@@ -46,7 +46,7 @@ class Annotation:
 @attrs
 class Categories:
     attributes = attrib(factory=set, validator=default_if_none(set),
-        kw_only=True)
+        kw_only=True, eq=False)
 
 @attrs
 class LabelCategories(Categories):
