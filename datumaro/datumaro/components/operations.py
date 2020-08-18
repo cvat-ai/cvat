@@ -11,11 +11,12 @@ import attr
 import cv2
 import numpy as np
 from attr import attrib, attrs
+from unittest import TestCase
 
 from datumaro.components.cli_plugin import CliPlugin
 from datumaro.components.extractor import AnnotationType, Bbox, Label
 from datumaro.components.project import Dataset
-from datumaro.util import find
+from datumaro.util import find, filter_dict
 from datumaro.util.attrs_util import ensure_cls
 from datumaro.util.annotation_util import (segment_iou, bbox_iou,
     mean_bbox, OKS, find_instances, max_bbox, smooth_line)
