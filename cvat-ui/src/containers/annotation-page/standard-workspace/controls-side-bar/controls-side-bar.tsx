@@ -25,6 +25,7 @@ interface StateToProps {
     activeControl: ActiveControl;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
+    showTrakcerSettings: boolean;
 }
 
 interface DispatchToProps {
@@ -45,6 +46,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 instance: canvasInstance,
                 activeControl,
             },
+            tracker: {
+                showTrakcerSettings,
+            }
         },
         settings: {
             player: {
@@ -63,6 +67,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeControl,
         normalizedKeyMap,
         keyMap,
+        showTrakcerSettings,
     };
 }
 

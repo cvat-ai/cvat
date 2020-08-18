@@ -97,6 +97,7 @@ const defaultState: AnnotationState = {
         trackUntil: '',
         trackerFrameNumber: 0,
         tracking: false,
+        showTrakcerSettings: false
     },
     colors: [],
     sidebarCollapsed: false,
@@ -1131,6 +1132,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 tracker: {
                     ...state.tracker,
                     tracking: false,
+                }
+            }
+        }
+        case AnnotationActionTypes.SHOW_TRACKER_SETTINGS: {
+            return {
+                ...state,
+                tracker: {
+                    ...state.tracker,
+                    showTrakcerSettings: action.payload.showTrakcerSettings,
                 }
             }
         }

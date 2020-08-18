@@ -195,6 +195,7 @@ export enum AnnotationActionTypes {
     DO_TRACKING = 'DO_TRACKING',
     DO_TRACKING_SUCCESS = 'DO_TRACKING_SUCCESS',
     DO_TRACKING_FAILURE = 'DO_TRACKING_FAILURE',
+    SHOW_TRACKER_SETTINGS = 'SHOW_TRACKER_SETTINGS',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -1579,6 +1580,20 @@ export function doTracking(body: TrackerPayload, taskId: number): ThunkAction {
             dispatch({
                 type: AnnotationActionTypes.DO_TRACKING_FAILURE,
             });
+        });
+    };
+}
+
+export function showTrackerSettings(): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+
+        // TODO:- Service call to check if tracker is available on server
+        // If success return true (shows tracker settings icon), default false
+        dispatch({
+            type: AnnotationActionTypes.SHOW_TRACKER_SETTINGS,
+            payload: {
+                showTrakcerSettings: false,
+            },
         });
     };
 }
