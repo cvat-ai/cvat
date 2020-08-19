@@ -316,7 +316,7 @@ def _create_thread(tid, data):
 
                     numbers_sequence = range(db_data.start_frame, min(data['stop_frame'] if data['stop_frame'] else len(media_files), len(media_files)), db_data.get_frame_step())
                     m_paths = []
-                    m_paths = [(path, numb) for numb, path in enumerate(media_files) if numb in numbers_sequence]
+                    m_paths = [(path, numb) for numb, path in enumerate(sorted(media_files)) if numb in numbers_sequence]
 
                     for chunk_number, media_paths in itertools.groupby(m_paths, lambda x: next(counter_) // db_data.chunk_size):
                         media_paths = list(media_paths)

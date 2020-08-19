@@ -159,9 +159,9 @@ class PrepareInfo(WorkWithVideo):
                 frame_number += 1
                 if frame_number < start_chunk_frame_number:
                     continue
-                elif frame_number < end_chunk_frame_number and not (frame_number % step):
+                elif frame_number < end_chunk_frame_number and not ((frame_number - start_chunk_frame_number) % step):
                     yield frame
-                elif frame_number % step:
+                elif (frame_number - start_chunk_frame_number) % step:
                     continue
                 else:
                     self._close_video_container(container)
