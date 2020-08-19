@@ -44,7 +44,7 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
     cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
     cy.contains('button', 'Submit').click()
     cy.contains('The task has been created', {timeout: '8000'})
-    cy.get('button[value="tasks"]').click()
+    cy.get('[value="tasks"]').click()
     cy.url().should('include', '/tasks?page=')
 })
 

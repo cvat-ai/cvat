@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Issue loading openvino models for semi-automatic and automatic annotation (<https://github.com/opencv/cvat/pull/1996>)
 - Basic functions of CVAT works without activated nuclio dashboard
+- Fixed error with creating task with labels with the same name (<https://github.com/opencv/cvat/pull/2031>)
 
 ### Security
 -
