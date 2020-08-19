@@ -16,6 +16,7 @@ import { MergeHandler, MergeHandlerImpl } from './mergeHandler';
 import { SplitHandler, SplitHandlerImpl } from './splitHandler';
 import { GroupHandler, GroupHandlerImpl } from './groupHandler';
 import { ZoomHandler, ZoomHandlerImpl } from './zoomHandler';
+import { InteractionHandler, InteractionHandlerImpl } from './interactionHandler';
 import { AutoborderHandler, AutoborderHandlerImpl } from './autoborderHandler';
 import consts from './consts';
 import {
@@ -42,6 +43,8 @@ import {
     Mode,
     Size,
     Configuration,
+    InteractionResult,
+    InteractionData,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -72,6 +75,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private groupHandler: GroupHandler;
     private zoomHandler: ZoomHandler;
     private autoborderHandler: AutoborderHandler;
+    private interactionHandler: InteractionHandler;
     private activeElement: ActiveElement;
     private configuration: Configuration;
     private serviceFlags: {
@@ -124,6 +128,35 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 }
             }
+        }
+    }
+
+    private onStopInteraction(): void {
+        const event: CustomEvent = new CustomEvent('canvas.canceled', {
+            bubbles: false,
+            cancelable: true,
+        });
+
+        this.canvas.dispatchEvent(event);
+        this.mode = Mode.IDLE;
+        this.controller.interact({
+            enabled: false,
+        });
+    }
+
+    private onInteraction(shapes: InteractionResult[] | null): void {
+        const { zLayer } = this.controller;
+        if (Array.isArray(shapes)) {
+            const event: CustomEvent = new CustomEvent('canvas.interacted', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    shapes,
+                    zOrder: zLayer || 0,
+                },
+            });
+
+            this.canvas.dispatchEvent(event);
         }
     }
 
@@ -373,6 +406,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.drawHandler.transform(this.geometry);
         this.editHandler.transform(this.geometry);
         this.zoomHandler.transform(this.geometry);
+        this.autoborderHandler.transform(this.geometry);
+        this.interactionHandler.transform(this.geometry);
     }
 
     private transformCanvas(): void {
@@ -438,7 +473,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Transform handlers
         this.drawHandler.transform(this.geometry);
         this.editHandler.transform(this.geometry);
+        this.zoomHandler.transform(this.geometry);
         this.autoborderHandler.transform(this.geometry);
+        this.interactionHandler.transform(this.geometry);
     }
 
     private resizeCanvas(): void {
@@ -846,6 +883,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.adoptedContent,
             this.geometry,
         );
+        this.interactionHandler = new InteractionHandlerImpl(
+            this.onInteraction.bind(this),
+            this.onStopInteraction.bind(this),
+            this.adoptedContent,
+            this.geometry,
+        );
 
         // Setup event handlers
         this.content.addEventListener('dblclick', (e: MouseEvent): void => {
@@ -1063,6 +1106,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.drawHandler.draw(data, this.geometry);
                 }
             }
+        } else if (reason === UpdateReasons.INTERACT) {
+            const data: InteractionData = this.controller.interactionData;
+            if (data.enabled && this.mode === Mode.IDLE) {
+                this.canvas.style.cursor = 'crosshair';
+                this.mode = Mode.INTERACT;
+                this.interactionHandler.interact(data);
+            } else {
+                this.canvas.style.cursor = '';
+                if (this.mode !== Mode.IDLE) {
+                    this.interactionHandler.interact(data);
+                }
+            }
         } else if (reason === UpdateReasons.MERGE) {
             const data: MergeData = this.controller.mergeData;
             if (data.enabled) {
@@ -1101,6 +1156,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAW) {
                 this.drawHandler.cancel();
+            } else if (this.mode === Mode.INTERACT) {
+                this.interactionHandler.cancel();
             } else if (this.mode === Mode.MERGE) {
                 this.mergeHandler.cancel();
             } else if (this.mode === Mode.SPLIT) {

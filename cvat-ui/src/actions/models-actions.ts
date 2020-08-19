@@ -84,8 +84,7 @@ export function getModelsAsync(): ThunkAction {
         dispatch(modelsActions.getModels());
 
         try {
-            const models = (await core.lambda.list())
-                .filter((model: Model) => ['detector', 'reid'].includes(model.type));
+            const models = await core.lambda.list();
             dispatch(modelsActions.getModelsSuccess(models));
         } catch (error) {
             dispatch(modelsActions.getModelsFailed(error));

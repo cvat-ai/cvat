@@ -161,6 +161,7 @@ export interface ModelsState {
     fetching: boolean;
     creatingStatus: string;
     models: Model[];
+    interactors: Model[];
     inferences: {
         [index: number]: ActiveInference;
     };
@@ -268,6 +269,7 @@ export enum ActiveControl {
     GROUP = 'group',
     SPLIT = 'split',
     EDIT = 'edit',
+    INTERACTION = 'interaction',
 }
 
 export enum ShapeType {
@@ -340,6 +342,7 @@ export interface AnnotationState {
         frameAngles: number[];
     };
     drawing: {
+        activeInteractor?: Model;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeNumOfPoints?: number;

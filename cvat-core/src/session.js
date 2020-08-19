@@ -170,6 +170,11 @@
                             .apiWrapper.call(this, prototype.actions.redo, count);
                         return result;
                     },
+                    async freeze(frozen) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.actions.freeze, frozen);
+                        return result;
+                    },
                     async clear() {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.actions.clear);
@@ -546,6 +551,14 @@
                 * @async
             */
             /**
+                * Freeze history (do not save new actions)
+                * @method freeze
+                * @memberof Session.actions
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+            /**
                 * Remove all actions from history
                 * @method clear
                 * @memberof Session.actions
@@ -745,6 +758,7 @@
             this.actions = {
                 undo: Object.getPrototypeOf(this).actions.undo.bind(this),
                 redo: Object.getPrototypeOf(this).actions.redo.bind(this),
+                freeze: Object.getPrototypeOf(this).actions.freeze.bind(this),
                 clear: Object.getPrototypeOf(this).actions.clear.bind(this),
                 get: Object.getPrototypeOf(this).actions.get.bind(this),
             };
@@ -1299,6 +1313,7 @@
             this.actions = {
                 undo: Object.getPrototypeOf(this).actions.undo.bind(this),
                 redo: Object.getPrototypeOf(this).actions.redo.bind(this),
+                freeze: Object.getPrototypeOf(this).actions.freeze.bind(this),
                 clear: Object.getPrototypeOf(this).actions.clear.bind(this),
                 get: Object.getPrototypeOf(this).actions.get.bind(this),
             };
@@ -1390,6 +1405,7 @@
         exportDataset,
         undoActions,
         redoActions,
+        freezeHistory,
         clearActions,
         getActions,
         closeSession,
@@ -1579,6 +1595,11 @@
 
     Job.prototype.actions.redo.implementation = function (count) {
         const result = redoActions(this, count);
+        return result;
+    };
+
+    Job.prototype.actions.freeze.implementation = function (frozen) {
+        const result = freezeHistory(this, frozen);
         return result;
     };
 
@@ -1843,6 +1864,11 @@
 
     Task.prototype.actions.redo.implementation = function (count) {
         const result = redoActions(this, count);
+        return result;
+    };
+
+    Task.prototype.actions.freeze.implementation = function (frozen) {
+        const result = freezeHistory(this, frozen);
         return result;
     };
 

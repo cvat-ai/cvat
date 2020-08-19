@@ -1,0 +1,248 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import * as SVG from 'svg.js';
+import consts from './consts';
+import Crosshair from './crosshair';
+import { translateToSVG } from './shared';
+import { InteractionData, InteractionResult, Geometry } from './canvasModel';
+
+export interface InteractionHandler {
+    transform(geometry: Geometry): void;
+    interact(interactData: InteractionData): void;
+    cancel(): void;
+}
+
+export class InteractionHandlerImpl implements InteractionHandler {
+    private onInteraction: (shapes: InteractionResult[] | null) => void;
+    onStopInteraction: () => void;
+    private geometry: Geometry;
+    private canvas: SVG.Container;
+    private interactionData: InteractionData;
+    private cursorPosition: { x: number; y: number };
+    private interactionShapes: SVG.Shape[];
+    private currentInteractionShape: SVG.Shape | null;
+    private crosshair: Crosshair;
+
+    private prepareResult(): InteractionResult[] {
+        return this.interactionShapes.map((shape: SVG.Shape): InteractionResult => {
+            if (shape.type === 'circle') {
+                const points = [(shape as SVG.Circle).cx(), (shape as SVG.Circle).cy()];
+                return {
+                    points: points.map((coord: number): number => coord - this.geometry.offset),
+                    shapeType: 'points',
+                    button: (shape.style('stroke') as any as string) === 'red' ? 2 : 0,
+                };
+            } else {
+                const bbox = (shape.node as any as SVGRectElement).getBBox();
+                const points = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height];
+                return {
+                    points: points.map((coord: number): number => coord - this.geometry.offset),
+                    shapeType: 'rectangle',
+                    button: 0,
+                };
+            }
+        });
+    }
+
+    private addCrosshair(): void {
+        const { x, y } = this.cursorPosition;
+        this.crosshair.show(this.canvas, x, y, this.geometry.scale);
+    }
+
+    private removeCrosshair(): void {
+        this.crosshair.hide();
+    }
+
+    private interactPoints(): void {
+        const eventListener = (e: MouseEvent): void => {
+            if ((e.button === 0 || e.button === 2) && !e.altKey) {
+                const [cx, cy] = translateToSVG(this.canvas.node as any as SVGSVGElement, [e.clientX, e.clientY]);
+                this.currentInteractionShape = this.canvas
+                    .circle(consts.BASE_POINT_SIZE * 2 / this.geometry.scale).center(cx, cy)
+                    .fill('white')
+                    .stroke(e.button === 0 ? 'green' : 'red')
+                    .addClass('cvat_interaction_point')
+                    .attr({
+                        'stroke-width': consts.POINTS_STROKE_WIDTH / this.geometry.scale,
+                    });
+
+                this.interactionShapes.push(this.currentInteractionShape);
+                if (this.interactionData.result === 'immediate') {
+                    this.onInteraction(this.prepareResult());
+                }
+
+                if (typeof (this.interactionData.numberOfShapes) !== 'undefined'
+                    && this.interactionShapes.length >= this.interactionData.numberOfShapes) {
+                        if (this.interactionData.result !== 'immediate') {
+                            this.onInteraction(this.prepareResult());
+                        }
+
+                        this.interact({ enabled: false });
+                        return;
+                }
+
+                const self = this.currentInteractionShape;
+                self.on('mouseenter', (): void => {
+                    self.attr({
+                        'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
+                    });
+
+                    self.on('mousedown', (e: MouseEvent) => {
+                        e.stopPropagation();
+                        self.remove();
+                        this.interactionShapes = this.interactionShapes.filter(
+                            (shape: SVG.Shape): boolean => shape !== self
+                        );
+                    });
+                });
+
+                self.on('mouseleave', (): void => {
+                    self.attr({
+                        'stroke-width': consts.POINTS_STROKE_WIDTH / this.geometry.scale,
+                    });
+
+                    self.off('mousedown');
+                });
+            }
+        };
+
+        // clear this listener in relese()
+        this.canvas.on('mousedown.interaction', eventListener);
+    }
+
+    private interactRectangle(): void {
+        let initialized = false;
+        const eventListener = (e: MouseEvent): void => {
+            if (e.button === 0 && !e.altKey) {
+                if (!initialized) {
+                    (this.currentInteractionShape as any).draw(e, { snapToGrid: 0.1 });
+                    initialized = true;
+                } else {
+                    (this.currentInteractionShape as any).draw(e);
+                }
+            }
+        };
+
+        this.currentInteractionShape = this.canvas.rect();
+        this.canvas.on('mousedown.interaction', eventListener);
+        this.currentInteractionShape.on('drawstop', (): void => {
+            this.interactionShapes.push(this.currentInteractionShape);
+
+            this.canvas.off('mousedown.interaction', eventListener);
+            if (this.interactionData.result === 'immediate') {
+                this.onInteraction(this.prepareResult());
+            }
+
+            if (typeof (this.interactionData.numberOfShapes) === 'undefined'
+                || this.interactionShapes.length < this.interactionData.numberOfShapes) {
+                this.interactRectangle();
+            } else {
+                this.interact({ enabled: false });
+            }
+        }).addClass('cvat_canvas_shape_drawing').attr({
+            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+        });
+    }
+
+    private initInteraction(): void {
+        if (this.interactionData.crosshair) {
+            this.addCrosshair();
+        }
+    }
+
+    private startInteraction(): void {
+        if (this.interactionData.shapeType === 'rectangle') {
+            this.interactRectangle();
+        } else if (this.interactionData.shapeType === 'points') {
+            this.interactPoints();
+        } else {
+            throw new Error('Interactor implementation supports only rectangle and points');
+        }
+    }
+
+    private release(): void {
+        if (this.crosshair) {
+            this.removeCrosshair();
+        }
+
+        this.canvas.off('mousedown.interaction');
+        this.interactionShapes.forEach((shape: SVG.Shape): SVG.Shape => shape.remove());
+        this.interactionShapes = [];
+        if (this.currentInteractionShape) {
+            this.currentInteractionShape.remove();
+            this.currentInteractionShape = null;
+        }
+
+        this.onStopInteraction();
+    }
+
+    public constructor(
+        onInteraction: (shapes: InteractionResult[] | null) => void,
+        onStopInteraction: () => void,
+        canvas: SVG.Container,
+        geometry: Geometry,
+    ) {
+        this.onInteraction = onInteraction;
+        this.onStopInteraction = onStopInteraction;
+        this.canvas = canvas;
+        this.geometry = geometry;
+        this.interactionShapes = [];
+        this.currentInteractionShape = null;
+        this.crosshair = new Crosshair();
+        this.cursorPosition = {
+            x: 0,
+            y: 0,
+        };
+
+        this.canvas.on('mousemove.interaction', (e: MouseEvent): void => {
+            const [x, y] = translateToSVG(
+                this.canvas.node as any as SVGSVGElement,
+                [e.clientX, e.clientY],
+            );
+            this.cursorPosition = { x, y };
+            if (this.crosshair) {
+                this.crosshair.move(x, y);
+            }
+        });
+    }
+
+    public transform(geometry: Geometry): void {
+        this.geometry = geometry;
+
+        if (this.crosshair) {
+            this.crosshair.scale(this.geometry.scale);
+        }
+
+        const shapesToBeScaled = this.currentInteractionShape ?
+            [...this.interactionShapes, this.currentInteractionShape] : [...this.interactionShapes];
+        for (const shape of shapesToBeScaled) {
+            if (shape.type === 'circle') {
+                (shape as SVG.Circle).radius(consts.BASE_POINT_SIZE / this.geometry.scale);
+                shape.attr('stroke-width', consts.POINTS_STROKE_WIDTH / this.geometry.scale);
+            } else {
+                shape.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
+            }
+        }
+    }
+
+    public interact(interactionData: InteractionData): void {
+        if (interactionData.enabled) {
+            this.interactionData = interactionData;
+            this.initInteraction();
+            this.startInteraction();
+        } else {
+            if (this.interactionData.result !== 'immediate') {
+                this.onInteraction(this.prepareResult());
+            }
+
+            this.release();
+            this.interactionData = interactionData;
+        }
+    }
+
+    public cancel(): void {
+        this.release();
+    }
+}

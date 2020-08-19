@@ -9,7 +9,7 @@ import Tooltip from 'antd/lib/tooltip';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState } from 'reducers/interfaces';
-import { activate as activatePlugin, deactivate as deactivatePlugin } from 'utils/dextr-utils';
+import { activate as activatePlugin, deactivate as deactivatePlugin, isActivated } from 'utils/dextr-utils';
 
 
 interface StateToProps {
@@ -58,7 +58,8 @@ function DEXTRPlugin(props: StateToProps & DispatchToProps): JSX.Element | null 
         activate,
         deactivate,
     } = props;
-    const [pluginActivated, setActivated] = useState(false);
+
+    const [pluginActivated, setActivated] = useState(isActivated());
 
     return (
         pluginEnabled ? (

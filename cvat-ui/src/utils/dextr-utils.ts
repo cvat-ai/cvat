@@ -31,11 +31,6 @@ interface DEXTRPlugin {
     };
 }
 
-interface Point {
-    x: number;
-    y: number;
-}
-
 const antModalRoot = document.createElement('div');
 const antModalMask = document.createElement('div');
 antModalMask.classList.add('ant-modal-mask');
@@ -207,6 +202,10 @@ export function deactivate(canvasInstance: Canvas): void {
         canvasInstance.draw = Object.getPrototypeOf(canvasInstance).draw;
         plugin.data.enabled = false;
     }
+}
+
+export function isActivated(): boolean {
+    return plugin.data.enabled;
 }
 
 export function registerDEXTRPlugin(): void {
