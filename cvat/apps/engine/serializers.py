@@ -292,24 +292,22 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if created:
                 slogger.task[instance.id].info("New {} label was created"
                     .format(db_label.name))
-                if not label.get('color', None):
-                    normalized_names = [normalize_label(l.name)
-                        for l in models.Label.objects.filter(task_id=instance.id)
-                    ]
-                    db_label.color = rgb2hex(
-                        get_color_from_label_name(db_label.name,
-                            abs(hash(normalize_label(db_label.name)))
-                            + normalized_names.count(normalize_label(db_label.name)),
-                        )
-                    )
-                else:
-                    db_label.color = label.get('color')
-                db_label.save()
             else:
                 slogger.task[instance.id].info("{} label was updated"
                     .format(db_label.name))
+            if not label.get('color', None):
+                normalized_names = [normalize_label(l.name)
+                    for l in models.Label.objects.filter(task_id=instance.id)
+                ]
+                db_label.color = rgb2hex(
+                    get_color_from_label_name(db_label.name,
+                        abs(hash(normalize_label(db_label.name)))
+                        + normalized_names.count(normalize_label(db_label.name)),
+                    )
+                )
+            else:
                 db_label.color = label.get('color', db_label.color)
-                db_label.save()
+            db_label.save()
             for attr in attributes:
                 (db_attr, created) = models.AttributeSpec.objects.get_or_create(
                     label=db_label, name=attr['name'], defaults=attr)

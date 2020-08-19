@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { Ref } from 'react';
+import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
@@ -10,12 +10,14 @@ import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
 import Select from 'antd/lib/select';
-import Popover from 'antd/lib/popover';
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
-import { SketchPicker } from 'react-color';
+import Badge from 'antd/lib/badge';
+import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 
+import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
+import consts from 'consts';
 import {
     equalArrayHead,
     idGenerator,
@@ -37,19 +39,12 @@ type Props = FormComponentProps & {
     onSubmit: (label: Label | null) => void;
 };
 
-interface LabelFormState {
-    pickerVisible: boolean;
-}
-
-class LabelForm extends React.PureComponent<Props, LabelFormState> {
+class LabelForm extends React.PureComponent<Props, {}> {
     private continueAfterSubmit: boolean;
 
     constructor(props: Props) {
         super(props);
         this.continueAfterSubmit = false;
-        this.state = {
-            pickerVisible: false,
-        };
     }
 
     private handleSubmit = (e: React.FormEvent): void => {
@@ -497,68 +492,31 @@ class LabelForm extends React.PureComponent<Props, LabelFormState> {
     }
 
     private renderChangeColorButton(): JSX.Element {
-        interface ColorPickerProps {
-            value?: string;
-            onChange?: (value: string) => void;
-        }
-
-        const ColorPicker = React.forwardRef(
-            (props: ColorPickerProps, ref: Ref<any>): JSX.Element => (
-                <SketchPicker
-                    color={props.value}
-                    onChange={(color) => {
-                        if (typeof props.onChange === 'function') props.onChange(color.hex);
-                    }}
-                    ref={ref}
-                    disableAlpha
-                />
-            ),
-        );
-
         const { label, form } = this.props;
-        const { pickerVisible } = this.state;
 
         return (
-            <Col span={4}>
+            <Col span={3}>
                 <Form.Item>
-                    <Popover
-                        content={(
-                            form.getFieldDecorator('labelColor', {
-                                initialValue: (label && label.color) ? label.color : undefined,
-                            })(<ColorPicker />)
-                        )}
-                        title={(
-                            <Row type='flex' justify='space-between' align='middle'>
-                                <Col span={12}>
-                                    <Text strong>
-                                        Select color
-                                    </Text>
-                                </Col>
-                                <Col span={4}>
+                    {
+                        form.getFieldDecorator('labelColor', {
+                            initialValue: (label && label.color) ? label.color : undefined,
+                        })(
+                            <ColorPicker placement='bottom'>
+                                <Tooltip title='Change color of the label'>
                                     <Button
-                                        type='link'
-                                        onClick={() => {
-                                            this.setState({ pickerVisible: false });
-                                        }}
+                                        type='default'
+                                        className='cvat-change-task-label-color-button'
                                     >
-                                        <Icon type='close' />
+                                        <Badge
+                                            className='cvat-change-task-label-color-badge'
+                                            color={form.getFieldValue('labelColor') || consts.NEW_LABEL_COLOR}
+                                            text={(<Icon component={ColorizeIcon} />)}
+                                        />
                                     </Button>
-                                </Col>
-                            </Row>
-
-                        )}
-                        overlayClassName='canvas-background-color-picker-popover'
-                        visible={pickerVisible}
-                        onVisibleChange={() => {
-                            this.setState({ pickerVisible: !pickerVisible });
-                        }}
-                        trigger='click'
-                    >
-
-                        <Tooltip title='Change color of the label'>
-                            <Button type='default'>Label color</Button>
-                        </Tooltip>
-                    </Popover>
+                                </Tooltip>
+                            </ColorPicker>,
+                        )
+                    }
                 </Form.Item>
             </Col>
         );
@@ -584,9 +542,9 @@ class LabelForm extends React.PureComponent<Props, LabelFormState> {
                 <Row type='flex' justify='start' align='middle'>
                     { this.renderLabelNameInput() }
                     <Col span={1} />
-                    { this.renderNewAttributeButton() }
-                    <Col span={1} />
                     { this.renderChangeColorButton() }
+                    <Col span={1} />
+                    { this.renderNewAttributeButton() }
                 </Row>
                 { attributeItems.length > 0
                     && (

@@ -189,7 +189,7 @@
                 color: {
                     get: () => data.color,
                     set: (color) => {
-                        if (typeof color === 'string' && color.match(/#[0-9a-f]{6}/)) {
+                        if (typeof color === 'string' && color.match(/^#[0-9a-f]{6}$|^$/)) {
                             data.color = color;
                         } else {
                             throw new ArgumentError('Trying to set wrong color format');

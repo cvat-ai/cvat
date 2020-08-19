@@ -10,7 +10,7 @@ import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
 
-import { ObjectType, ShapeType } from 'reducers/interfaces';
+import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
 import ItemMenu from './object-item-menu';
 
 interface Props {
@@ -20,14 +20,18 @@ interface Props {
     labels: any[];
     shapeType: ShapeType;
     objectType: ObjectType;
+    color: string;
+    colorBy: ColorBy;
     type: string;
     locked: boolean;
+    changeColorShortcut: string;
     copyShortcut: string;
     pasteShortcut: string;
     propagateShortcut: string;
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
     removeShortcut: string;
+    changeColor(color: string): void;
     changeLabel(labelID: string): void;
     copy(): void;
     remove(): void;
@@ -47,14 +51,18 @@ function ItemTopComponent(props: Props): JSX.Element {
         labels,
         shapeType,
         objectType,
+        color,
+        colorBy,
         type,
         locked,
+        changeColorShortcut,
         copyShortcut,
         pasteShortcut,
         propagateShortcut,
         toBackgroundShortcut,
         toForegroundShortcut,
         removeShortcut,
+        changeColor,
         changeLabel,
         copy,
         remove,
@@ -105,12 +113,16 @@ function ItemTopComponent(props: Props): JSX.Element {
                         locked,
                         shapeType,
                         objectType,
+                        color,
+                        colorBy,
+                        changeColorShortcut,
                         copyShortcut,
                         pasteShortcut,
                         propagateShortcut,
                         toBackgroundShortcut,
                         toForegroundShortcut,
                         removeShortcut,
+                        changeColor,
                         copy,
                         remove,
                         propagate,
