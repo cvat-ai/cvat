@@ -1592,7 +1592,7 @@ export function showTrackerSettings(): ThunkAction {
         dispatch({
             type: AnnotationActionTypes.SHOW_TRACKER_SETTINGS,
             payload: {
-                showTrakcerSettings: false,
+                showTrackerSettings: false,
             },
         });
     };

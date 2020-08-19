@@ -30,7 +30,7 @@ interface Props {
     activeControl: ActiveControl;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
-    showTrakcerSettings: boolean;
+    showTrackerSettings: boolean;
 
     mergeObjects(enabled: boolean): void;
     groupObjects(enabled: boolean): void;
@@ -48,7 +48,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         activeControl,
         normalizedKeyMap,
         keyMap,
-        showTrakcerSettings,
+        showTrackerSettings,
         mergeObjects,
         groupObjects,
         splitTrack,
@@ -229,7 +229,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 splitTrack={splitTrack}
             />
             {
-                showTrakcerSettings ?
+                showTrackerSettings ?
                     <TrackControl /> : null
             }
         </Layout.Sider>
