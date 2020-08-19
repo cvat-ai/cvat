@@ -65,14 +65,26 @@ Cypress.Commands.add('openTaskJob', (taskName) => {
     cy.openJob()
 })
 
-Cypress.Commands.add('createShape', (ferstX, ferstY, lastX, lastY) => {
+Cypress.Commands.add('createShape', (firstX, firstY, lastX, lastY) => {
     cy.get('.cvat-draw-rectangle-control').click()
     cy.get('.cvat-draw-shape-popover-content')
     .find('button')
     .contains('Shape')
     .click({force: true})
     cy.get('.cvat-canvas-container')
-    .click(ferstX, ferstY)
+    .click(firstX, firstY)
+    cy.get('.cvat-canvas-container')
+    .click(lastX, lastY)
+})
+
+Cypress.Commands.add('createTrack', (firstX, firstY, lastX, lastY) => {
+    cy.get('.cvat-draw-rectangle-control').click()
+    cy.get('.cvat-draw-shape-popover-content')
+    .find('button')
+    .contains('Track')
+    .click({force: true})
+    cy.get('.cvat-canvas-container')
+    .click(firstX, firstY)
     cy.get('.cvat-canvas-container')
     .click(lastX, lastY)
 })
