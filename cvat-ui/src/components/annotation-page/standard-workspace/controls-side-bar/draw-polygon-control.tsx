@@ -43,6 +43,7 @@ function DrawPolygonControl(props: Props): JSX.Element {
             )}
         >
             <Icon
+                className='cvat-draw-polygon-control'
                 {...dynamicIconProps}
                 component={PolygonIcon}
             />

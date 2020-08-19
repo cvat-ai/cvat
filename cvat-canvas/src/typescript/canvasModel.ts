@@ -526,6 +526,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.data.interactionData = interactionData;
+        this.data.interactionData.crosshair = true;
         this.notify(UpdateReasons.INTERACT);
     }
 

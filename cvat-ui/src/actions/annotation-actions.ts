@@ -1464,7 +1464,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
         let activeControl = ActiveControl.CURSOR;
         if (activeInteractor) {
-            canvasInstance.interact({ enabled: true, shapeType: 'points', result: 'deferred' });
+            canvasInstance.interact({ enabled: true });
             dispatch(interactWithCanvas(activeInteractor, activeLabelID));
             return;
         }
@@ -1502,7 +1502,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 rectDrawingMethod: activeRectDrawingMethod,
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
-                crosshair: activeShapeType === ShapeType.RECTANGLE,
+                crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(activeShapeType),
             });
         }
     };
@@ -1549,7 +1549,7 @@ export function redrawShapeAsync(): ThunkAction {
                     enabled: true,
                     redraw: activatedStateID,
                     shapeType: state.shapeType,
-                    crosshair: state.shapeType === ShapeType.RECTANGLE,
+                    crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(state.shapeType),
                 });
             }
         }

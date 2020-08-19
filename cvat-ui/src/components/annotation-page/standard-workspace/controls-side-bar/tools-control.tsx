@@ -14,7 +14,6 @@ import notification from 'antd/lib/notification';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
-import configProvider from 'utils/interactors/config-provider';
 import {
     CombinedState,
     ActiveControl,
@@ -25,11 +24,6 @@ import {
 import { interactWithCanvas, fetchAnnotationsAsync, updateAnnotationsAsync } from 'actions/annotation-actions';
 import { InteractionResult } from 'cvat-canvas/src/typescript/canvas';
 
-interface Interactor {
-    model: Model;
-    config: object;
-}
-
 interface StateToProps {
     canvasInstance: Canvas;
     labels: any[];
@@ -38,7 +32,7 @@ interface StateToProps {
     jobInstance: any;
     isInteraction: boolean;
     frame: number;
-    interactors: Interactor[];
+    interactors: Model[];
 }
 
 interface DispatchToProps {
@@ -58,10 +52,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { interactors } = models;
 
     return {
-        interactors: interactors.map((model: Model): Interactor => ({
-            model,
-            config: configProvider(model.id),
-        })),
+        interactors,
         isInteraction: activeControl === ActiveControl.INTERACTION,
         activeLabelID: annotation.drawing.activeLabelID,
         labels: annotation.job.labels,
@@ -104,7 +95,7 @@ function convertShapesForInteractor(shapes: InteractionResult[]): number[][] {
 
 type Props = StateToProps & DispatchToProps;
 interface State {
-    activeInteractor: Interactor | null;
+    activeInteractor: Model | null;
     activeLabelID: number;
     interactiveStateID: number | null;
     fetching: boolean;
@@ -173,8 +164,8 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                 throw Error('Canvas raises "canvas.interacted" when interaction is off');
             }
 
-            const interactor = activeInteractor as Interactor;
-            const result = await core.lambda.call(jobInstance.task, interactor.model, {
+            const interactor = activeInteractor as Model;
+            const result = await core.lambda.call(jobInstance.task, interactor, {
                 task: jobInstance.task,
                 frame,
                 points: convertShapesForInteractor((e as CustomEvent).detail.shapes),
@@ -221,7 +212,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { interactors } = this.props;
         this.setState({
             activeInteractor: interactors.filter(
-                (interactor: Interactor) => interactor.model.id === key,
+                (interactor: Model) => interactor.id === key,
             )[0],
         });
     };
@@ -294,14 +285,14 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                     <Col span={24}>
                         <Select
                             style={{ width: '100%' }}
-                            defaultValue={interactors[0].model.name}
+                            defaultValue={interactors[0].name}
                             onChange={this.setActiveInteractor}
                         >
-                            {interactors.map((interactor: Interactor): JSX.Element => (
+                            {interactors.map((interactor: Model): JSX.Element => (
                                 <Select.Option
-                                    key={interactor.model.id}
+                                    key={interactor.id}
                                 >
-                                    {interactor.model.name}
+                                    {interactor.name}
                                 </Select.Option>
                             ))}
                         </Select>
@@ -317,11 +308,12 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 if (activeInteractor) {
                                     canvasInstance.cancel();
                                     canvasInstance.interact({
-                                        ...activeInteractor.config,
+                                        shapeType: 'points',
+                                        numberOfShapes: 4, // TODO: Add parameter to server
                                         enabled: true,
                                     });
 
-                                    onInteractionStart(activeInteractor.model, activeLabelID);
+                                    onInteractionStart(activeInteractor, activeLabelID);
                                 }
                             }}
                         >

@@ -75,7 +75,6 @@ export interface FormatsState {
 // eslint-disable-next-line import/prefer-default-export
 export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
-    DEXTR_SEGMENTATION = 'DEXTR_SEGMENTATION',
     ANALYTICS = 'ANALYTICS',
 }
 
