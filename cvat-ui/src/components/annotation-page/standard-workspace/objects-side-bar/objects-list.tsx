@@ -64,7 +64,7 @@ function ObjectListComponent(props: Props): JSX.Element {
             />
             <div className='cvat-objects-sidebar-states-list'>
                 { sortedStatesID.map((id: number): JSX.Element => (
-                    <ObjectItemContainer key={id} clientID={id} />
+                    <ObjectItemContainer key={id} clientID={id} initialCollapsed={statesCollapsed} />
                 ))}
             </div>
         </div>
