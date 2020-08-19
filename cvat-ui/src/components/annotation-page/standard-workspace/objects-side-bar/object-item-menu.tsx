@@ -25,6 +25,7 @@ interface Props {
     objectType: ObjectType;
     color: string;
     colorBy: ColorBy;
+    colorPickerVisible: boolean;
     changeColorShortcut: string;
     copyShortcut: string;
     pasteShortcut: string;
@@ -41,6 +42,7 @@ interface Props {
     toBackground: (() => void);
     toForeground: (() => void);
     resetCuboidPerspective: (() => void);
+    changeColorPickerVisible: (visible: boolean) => void;
 }
 
 export default function ItemMenu(props: Props): JSX.Element {
@@ -51,6 +53,7 @@ export default function ItemMenu(props: Props): JSX.Element {
         objectType,
         color,
         colorBy,
+        colorPickerVisible,
         changeColorShortcut,
         copyShortcut,
         pasteShortcut,
@@ -67,6 +70,7 @@ export default function ItemMenu(props: Props): JSX.Element {
         toBackground,
         toForeground,
         resetCuboidPerspective,
+        changeColorPickerVisible,
     } = props;
 
     return (
@@ -130,6 +134,9 @@ export default function ItemMenu(props: Props): JSX.Element {
                     <ColorPicker
                         value={color}
                         onChange={changeColor}
+                        visible={colorPickerVisible}
+                        onVisibleChange={changeColorPickerVisible}
+                        resetVisible={false}
                     >
                         <Tooltip title={`${changeColorShortcut}`} mouseLeaveDelay={0}>
                             <Button type='link'>

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
 import Select, { OptionProps } from 'antd/lib/select';
@@ -74,6 +74,21 @@ function ItemTopComponent(props: Props): JSX.Element {
         resetCuboidPerspective,
     } = props;
 
+    const [menuVisible, setMenuVisible] = useState(false);
+    const [colorPickerVisible, setColorPickerVisible] = useState(false);
+
+    const changeMenuVisible = (visible: boolean): void => {
+        if (!visible && colorPickerVisible) return;
+        setMenuVisible(visible);
+    };
+
+    const changeColorPickerVisible = (visible: boolean): void => {
+        if (!visible) {
+            setMenuVisible(false);
+        }
+        setColorPickerVisible(visible);
+    };
+
     return (
         <Row type='flex' align='middle'>
             <Col span={10}>
@@ -107,6 +122,8 @@ function ItemTopComponent(props: Props): JSX.Element {
             </Col>
             <Col span={2}>
                 <Dropdown
+                    visible={menuVisible}
+                    onVisibleChange={changeMenuVisible}
                     placement='bottomLeft'
                     overlay={ItemMenu({
                         serverID,
@@ -115,6 +132,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         objectType,
                         color,
                         colorBy,
+                        colorPickerVisible,
                         changeColorShortcut,
                         copyShortcut,
                         pasteShortcut,
@@ -131,6 +149,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         toBackground,
                         toForeground,
                         resetCuboidPerspective,
+                        changeColorPickerVisible,
                     })}
                 >
                     <Icon type='more' />

@@ -15,9 +15,12 @@ import getCore from 'cvat-core-wrapper';
 const core = getCore();
 
 interface Props {
-    value?: string;
     children: React.ReactNode;
+    value?: string;
+    visible?: boolean;
+    resetVisible?: boolean;
     onChange?: (value: string) => void;
+    onVisibleChange?: (visible: boolean) => void;
     placement?: 'left' | 'top' | 'right' | 'bottom' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight' | 'leftTop' | 'leftBottom' | 'rightTop' | 'rightBottom' | undefined;
 }
 
@@ -25,7 +28,10 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
     const {
         children,
         value,
+        visible,
+        resetVisible,
         onChange,
+        onVisibleChange,
         placement,
     } = props;
 
@@ -33,6 +39,14 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
     const [pickerVisible, setPickerVisible] = useState(false);
 
     const colors = [...core.enums.colors];
+
+    const changeVisible = (_visible: boolean): void => {
+        if (typeof onVisibleChange === 'function') {
+            onVisibleChange(_visible);
+        } else {
+            setPickerVisible(_visible);
+        }
+    };
 
     return (
         <Popover
@@ -46,14 +60,25 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                         disableAlpha
                     />
                     <Row>
-                        <Col span={18}>
+                        <Col span={9}>
+                            {resetVisible !== false && (
+                                <Button
+                                    onClick={() => {
+                                        if (typeof onChange === 'function') onChange('');
+                                        changeVisible(false);
+                                    }}
+                                >
+                                    Reset
+                                </Button>
+                            )}
+                        </Col>
+                        <Col span={9}>
                             <Button
                                 onClick={() => {
-                                    if (typeof onChange === 'function') onChange('');
-                                    setPickerVisible(false);
+                                    changeVisible(false);
                                 }}
                             >
-                                Reset to default
+                                Cancel
                             </Button>
                         </Col>
                         <Col span={6}>
@@ -61,7 +86,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                                 type='primary'
                                 onClick={() => {
                                     if (typeof onChange === 'function') onChange(colorState || '');
-                                    setPickerVisible(false);
+                                    changeVisible(false);
                                 }}
                             >
                                 Ok
@@ -82,7 +107,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                             <Button
                                 type='link'
                                 onClick={() => {
-                                    setPickerVisible(false);
+                                    changeVisible(false);
                                 }}
                             >
                                 <Icon type='close' />
@@ -94,9 +119,9 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
             )}
             placement={placement || 'left'}
             overlayClassName='cvat-label-color-picker'
-            visible={pickerVisible}
-            onVisibleChange={(visible) => setPickerVisible(visible)}
             trigger='click'
+            visible={typeof visible === 'boolean' ? visible : pickerVisible}
+            onVisibleChange={changeVisible}
         >
             {children}
         </Popover>
