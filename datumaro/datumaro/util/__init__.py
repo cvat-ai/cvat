@@ -62,7 +62,7 @@ def to_snake_case(s):
             name.append(char)
     return ''.join(name)
 
-def pairwise(iterable):
+def pairs(iterable):
     a = iter(iterable)
     return zip(a, a)
 

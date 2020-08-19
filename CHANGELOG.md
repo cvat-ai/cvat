@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Datumaro] Added model info and source info commands (<https://github.com/opencv/cvat/pull/1973>)
 - [Datumaro] Dataset statistics (<https://github.com/opencv/cvat/pull/1668>)
 - Ability to change label color in tasks and predefined labels (<https://github.com/opencv/cvat/pull/2014>)
+- [Datumaro] Multi-dataset merge (https://github.com/opencv/cvat/pull/1695)
 
 ### Changed
 - Shape coordinates are rounded to 2 digits in dumped annotations (<https://github.com/opencv/cvat/pull/1970>)

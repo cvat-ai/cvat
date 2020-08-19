@@ -295,7 +295,26 @@ class FrameProvider {
                     worker.terminate();
                 };
 
-                worker.onmessage = (event) => {
+                worker.onmessage = async (event) => {
+                    if (event.data.isRaw) {
+                        // safary doesn't support createImageBitmap
+                        // there is a way to polyfill it with using document.createElement
+                        // but document.createElement doesn't work in worker
+                        // so, we get raw data and decode it here, no other way
+
+                        const createImageBitmap = async function(blob) {
+                            return new Promise((resolve,reject) => {
+                                let img = document.createElement('img');
+                                img.addEventListener('load', function() {
+                                    resolve(this);
+                                });
+                                img.src = URL.createObjectURL(blob);
+                            });
+                        };
+
+                        event.data.data = await createImageBitmap(event.data.data);
+                    }
+
                     this._frames[event.data.index] = event.data.data;
 
                     if (this._decodingBlocks[`${start}:${end}`].resolveCallback) {

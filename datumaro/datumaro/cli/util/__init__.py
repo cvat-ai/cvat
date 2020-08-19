@@ -37,6 +37,28 @@ class MultilineFormatter(argparse.HelpFormatter):
             multiline_text += formatted_paragraph
         return multiline_text
 
+def required_count(nmin=0, nmax=0):
+    assert 0 <= nmin and 0 <= nmax and nmin or nmax
+
+    class RequiredCount(argparse.Action):
+        def __call__(self, parser, args, values, option_string=None):
+            k = len(values)
+            if not ((nmin and (nmin <= k) or not nmin) and \
+                    (nmax and (k <= nmax) or not nmax)):
+                msg = "Argument '%s' requires" % self.dest
+                if nmin and nmax:
+                    msg += " from %s to %s arguments" % (nmin, nmax)
+                elif nmin:
+                    msg += " at least %s arguments" % nmin
+                else:
+                    msg += " no more %s arguments" % nmax
+                raise argparse.ArgumentTypeError(msg)
+            setattr(args, self.dest, values)
+    return RequiredCount
+
+def at_least(n):
+    return required_count(n, 0)
+
 def make_file_name(s):
     # adapted from
     # https://docs.djangoproject.com/en/2.1/_modules/django/utils/text/#slugify

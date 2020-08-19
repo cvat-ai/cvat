@@ -45,6 +45,7 @@ function DrawRectangleControl(props: Props): JSX.Element {
             )}
         >
             <Icon
+                className='cvat-draw-rectangle-control'
                 {...dynamicIconProps}
                 component={RectangleIcon}
             />

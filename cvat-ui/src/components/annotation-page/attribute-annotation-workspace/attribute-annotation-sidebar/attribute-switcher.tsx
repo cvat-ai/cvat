@@ -27,7 +27,7 @@ function AttributeSwitcher(props: Props): JSX.Element {
 
     const title = `${currentAttribute} [${currentIndex + 1}/${attributesCount}]`;
     return (
-        <div className='attribute-annotation-sidebar-switcher'>
+        <div className='attribute-annotation-sidebar-attribute-switcher'>
             <Tooltip title={`Previous attribute ${normalizedKeyMap.PREVIOUS_ATTRIBUTE}`} mouseLeaveDelay={0}>
                 <Button disabled={attributesCount <= 1} onClick={() => nextAttribute(-1)}>
                     <Icon type='left' />
