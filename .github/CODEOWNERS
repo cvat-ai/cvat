@@ -23,7 +23,7 @@
 /datumaro/      @zhiltsov-max
 /cvat/apps/dataset_manager/ @zhiltsov-max
 
-# Advanced components (e.g. OpenVINO)
+# Advanced components (e.g. analytics)
 /components/    @azhavoro
 
 # Infrastructure

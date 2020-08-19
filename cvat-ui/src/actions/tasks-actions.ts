@@ -102,13 +102,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         const promises = array
             .map((task): string => (task as any).frames.preview());
 
-        dispatch(
-            getInferenceStatusAsync(
-                array.map(
-                    (task: any): number => task.id,
-                ),
-            ),
-        );
+        dispatch(getInferenceStatusAsync());
 
         for (const promise of promises) {
             try {

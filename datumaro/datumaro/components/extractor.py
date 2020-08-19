@@ -7,7 +7,12 @@ from collections import namedtuple
 from enum import Enum
 import numpy as np
 
+import attr
+from attr import attrs, attrib
+
 from datumaro.util.image import Image
+from datumaro.util.attrs_util import not_empty, default_if_none
+
 
 AnnotationType = Enum('AnnotationType',
     [
@@ -20,57 +25,35 @@ AnnotationType = Enum('AnnotationType',
         'caption',
     ])
 
+_COORDINATE_ROUNDING_DIGITS = 2
+
+@attrs
 class Annotation:
-    # pylint: disable=redefined-builtin
-    def __init__(self, id=None, type=None, attributes=None, group=None):
-        if id is not None:
-            id = int(id)
-        self.id = id
+    id = attrib(default=0, validator=default_if_none(int), kw_only=True)
+    attributes = attrib(factory=dict, validator=default_if_none(dict), kw_only=True)
+    group = attrib(default=0, validator=default_if_none(int), kw_only=True)
 
-        assert type in AnnotationType
-        self.type = type
+    def __attrs_post_init__(self):
+        assert isinstance(self.type, AnnotationType)
 
-        if attributes is None:
-            attributes = {}
-        else:
-            attributes = dict(attributes)
-        self.attributes = attributes
+    @property
+    def type(self):
+        return self._type # must be set in subclasses
 
-        if group is None:
-            group = 0
-        else:
-            group = int(group)
-        self.group = group
-    # pylint: enable=redefined-builtin
+    def wrap(item, **kwargs):
+        return attr.evolve(item, **kwargs)
 
-    def __eq__(self, other):
-        if not isinstance(other, Annotation):
-            return False
-        return \
-            (self.id == other.id) and \
-            (self.type == other.type) and \
-            (self.attributes == other.attributes) and \
-            (self.group == other.group)
-
+@attrs
 class Categories:
-    def __init__(self, attributes=None):
-        if attributes is None:
-            attributes = set()
-        else:
-            if not isinstance(attributes, set):
-                attributes = set(attributes)
-            for attr in attributes:
-                assert isinstance(attr, str)
-        self.attributes = attributes
+    attributes = attrib(factory=set, validator=default_if_none(set),
+        kw_only=True)
 
-    def __eq__(self, other):
-        if not isinstance(other, Categories):
-            return False
-        return \
-            (self.attributes == other.attributes)
-
+@attrs
 class LabelCategories(Categories):
     Category = namedtuple('Category', ['name', 'parent', 'attributes'])
+
+    items = attrib(factory=list, validator=default_if_none(list))
+    _indices = attrib(factory=dict, init=False, eq=False)
 
     @classmethod
     def from_iterable(cls, iterable):
@@ -99,14 +82,7 @@ class LabelCategories(Categories):
 
         return temp_categories
 
-    def __init__(self, items=None, attributes=None):
-        super().__init__(attributes=attributes)
-
-        if items is None:
-            items = []
-        self.items = items
-
-        self._indices = {}
+    def __attrs_post_init__(self):
         self._reindex()
 
     def _reindex(self):
@@ -117,7 +93,7 @@ class LabelCategories(Categories):
         self._indices = indices
 
     def add(self, name, parent=None, attributes=None):
-        assert name not in self._indices
+        assert name not in self._indices, name
         if attributes is None:
             attributes = set()
         else:
@@ -135,53 +111,27 @@ class LabelCategories(Categories):
 
     def find(self, name):
         index = self._indices.get(name)
-        if index:
+        if index is not None:
             return index, self.items[index]
         return index, None
 
-    def __eq__(self, other):
-        if not super().__eq__(other):
-            return False
-        return \
-            (self.items == other.items)
-
+@attrs
 class Label(Annotation):
-    # pylint: disable=redefined-builtin
-    def __init__(self, label=None,
-            id=None, attributes=None, group=None):
-        super().__init__(id=id, type=AnnotationType.label,
-            attributes=attributes, group=group)
+    _type = AnnotationType.label
+    label = attrib(converter=int)
 
-        if label is not None:
-            label = int(label)
-        self.label = label
-    # pylint: enable=redefined-builtin
-
-    def __eq__(self, other):
-        if not super().__eq__(other):
-            return False
-        return \
-            (self.label == other.label)
-
+@attrs(eq=False)
 class MaskCategories(Categories):
-    def __init__(self, colormap=None, inverse_colormap=None, attributes=None):
-        super().__init__(attributes=attributes)
-
-        # colormap: label id -> color
-        if colormap is None:
-            colormap = {}
-        self.colormap = colormap
-        self._inverse_colormap = inverse_colormap
+    colormap = attrib(factory=dict, validator=default_if_none(dict))
+    _inverse_colormap = attrib(default=None,
+        validator=attr.validators.optional(dict))
 
     @property
     def inverse_colormap(self):
         from datumaro.util.mask_tools import invert_colormap
         if self._inverse_colormap is None:
             if self.colormap is not None:
-                try:
-                    self._inverse_colormap = invert_colormap(self.colormap)
-                except Exception:
-                    pass
+                self._inverse_colormap = invert_colormap(self.colormap)
         return self._inverse_colormap
 
     def __eq__(self, other):
@@ -193,39 +143,19 @@ class MaskCategories(Categories):
                 return False
         return True
 
+@attrs(eq=False)
 class Mask(Annotation):
-    # pylint: disable=redefined-builtin
-    def __init__(self, image=None, label=None, z_order=None,
-            id=None, attributes=None, group=None):
-        super().__init__(type=AnnotationType.mask,
-            id=id, attributes=attributes, group=group)
-
-        self._image = image
-
-        if label is not None:
-            label = int(label)
-        self._label = label
-
-        if z_order is None:
-            z_order = 0
-        else:
-            z_order = int(z_order)
-        self._z_order = z_order
-    # pylint: enable=redefined-builtin
+    _type = AnnotationType.mask
+    _image = attrib()
+    label = attrib(converter=attr.converters.optional(int),
+        default=None, kw_only=True)
+    z_order = attrib(default=0, validator=default_if_none(int), kw_only=True)
 
     @property
     def image(self):
         if callable(self._image):
             return self._image()
         return self._image
-
-    @property
-    def label(self):
-        return self._label
-
-    @property
-    def z_order(self):
-        return self._z_order
 
     def as_class_mask(self, label_id=None):
         if label_id is None:
@@ -252,19 +182,14 @@ class Mask(Annotation):
         return \
             (self.label == other.label) and \
             (self.z_order == other.z_order) and \
-            (self.image is not None and other.image is not None and \
-                np.array_equal(self.image, other.image))
+            (np.array_equal(self.image, other.image))
 
+@attrs(eq=False)
 class RleMask(Mask):
-    # pylint: disable=redefined-builtin
-    def __init__(self, rle=None, label=None, z_order=None,
-            id=None, attributes=None, group=None):
-        lazy_decode = self._lazy_decode(rle)
-        super().__init__(image=lazy_decode, label=label, z_order=z_order,
-            id=id, attributes=attributes, group=group)
-
-        self._rle = rle
-    # pylint: enable=redefined-builtin
+    rle = attrib()
+    _image = attrib(default=attr.Factory(
+        lambda self: self._lazy_decode(self.rle),
+        takes_self=True), init=False)
 
     @staticmethod
     def _lazy_decode(rle):
@@ -273,20 +198,16 @@ class RleMask(Mask):
 
     def get_area(self):
         from pycocotools import mask as mask_utils
-        return mask_utils.area(self._rle)
+        return mask_utils.area(self.rle)
 
     def get_bbox(self):
         from pycocotools import mask as mask_utils
-        return mask_utils.toBbox(self._rle)
-
-    @property
-    def rle(self):
-        return self._rle
+        return mask_utils.toBbox(self.rle)
 
     def __eq__(self, other):
         if not isinstance(other, __class__):
             return super().__eq__(other)
-        return self._rle == other._rle
+        return self.rle == other.rle
 
 class CompiledMask:
     @staticmethod
@@ -354,56 +275,13 @@ class CompiledMask:
     def lazy_extract(self, instance_id):
         return lambda: self.extract(instance_id)
 
-def compute_iou(bbox_a, bbox_b):
-    aX, aY, aW, aH = bbox_a
-    bX, bY, bW, bH = bbox_b
-    in_right = min(aX + aW, bX + bW)
-    in_left = max(aX, bX)
-    in_top = max(aY, bY)
-    in_bottom = min(aY + aH, bY + bH)
-
-    in_w = max(0, in_right - in_left)
-    in_h = max(0, in_bottom - in_top)
-    intersection = in_w * in_h
-
-    a_area = aW * aH
-    b_area = bW * bH
-    union = a_area + b_area - intersection
-
-    return intersection / max(1.0, union)
-
+@attrs
 class _Shape(Annotation):
-    # pylint: disable=redefined-builtin
-    def __init__(self, type, points=None, label=None, z_order=None,
-            id=None, attributes=None, group=None):
-        super().__init__(id=id, type=type,
-            attributes=attributes, group=group)
-        if points is None:
-            points = []
-        self._points = list(points)
-
-        if label is not None:
-            label = int(label)
-        self._label = label
-
-        if z_order is None:
-            z_order = 0
-        else:
-            z_order = int(z_order)
-        self._z_order = z_order
-    # pylint: enable=redefined-builtin
-
-    @property
-    def points(self):
-        return self._points
-
-    @property
-    def label(self):
-        return self._label
-
-    @property
-    def z_order(self):
-        return self._z_order
+    points = attrib(converter=lambda x:
+        [round(p, _COORDINATE_ROUNDING_DIGITS) for p in x])
+    label = attrib(converter=attr.converters.optional(int),
+        default=None, kw_only=True)
+    z_order = attrib(default=0, validator=default_if_none(int), kw_only=True)
 
     def get_area(self):
         raise NotImplementedError()
@@ -421,22 +299,9 @@ class _Shape(Annotation):
         y1 = max(ys)
         return [x0, y0, x1 - x0, y1 - y0]
 
-    def __eq__(self, other):
-        if not super().__eq__(other):
-            return False
-        return \
-            (np.array_equal(self.points, other.points)) and \
-            (self.z_order == other.z_order) and \
-            (self.label == other.label)
-
+@attrs
 class PolyLine(_Shape):
-    # pylint: disable=redefined-builtin
-    def __init__(self, points=None, label=None, z_order=None,
-            id=None, attributes=None, group=None):
-        super().__init__(type=AnnotationType.polyline,
-            points=points, label=label, z_order=z_order,
-            id=id, attributes=attributes, group=group)
-    # pylint: enable=redefined-builtin
+    _type = AnnotationType.polyline
 
     def as_polygon(self):
         return self.points[:]
@@ -444,35 +309,33 @@ class PolyLine(_Shape):
     def get_area(self):
         return 0
 
+@attrs
 class Polygon(_Shape):
-    # pylint: disable=redefined-builtin
-    def __init__(self, points=None, label=None,
-            z_order=None, id=None, attributes=None, group=None):
-        if points is not None:
-            # keep the message on the single line to produce
-            # informative output
-            assert len(points) % 2 == 0 and 3 <= len(points) // 2, "Wrong polygon points: %s" % points
-        super().__init__(type=AnnotationType.polygon,
-            points=points, label=label, z_order=z_order,
-            id=id, attributes=attributes, group=group)
-    # pylint: enable=redefined-builtin
+    _type = AnnotationType.polygon
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        # keep the message on a single line to produce informative output
+        assert len(self.points) % 2 == 0 and 3 <= len(self.points) // 2, "Wrong polygon points: %s" % self.points
 
     def get_area(self):
         import pycocotools.mask as mask_utils
 
-        _, _, w, h = self.get_bbox()
-        rle = mask_utils.frPyObjects([self.points], h, w)
+        x, y, w, h = self.get_bbox()
+        rle = mask_utils.frPyObjects([self.points], y + h, x + w)
         area = mask_utils.area(rle)[0]
         return area
 
+@attrs
 class Bbox(_Shape):
-    # pylint: disable=redefined-builtin
-    def __init__(self, x=0, y=0, w=0, h=0, label=None, z_order=None,
-            id=None, attributes=None, group=None):
-        super().__init__(type=AnnotationType.bbox,
-            points=[x, y, x + w, y + h], label=label, z_order=z_order,
-            id=id, attributes=attributes, group=group)
-    # pylint: enable=redefined-builtin
+    _type = AnnotationType.bbox
+
+    # will be overridden by attrs, then will be overridden again by us
+    # attrs' method will be renamed to __attrs_init__
+    def __init__(self, x, y, w, h, *args, **kwargs):
+        kwargs.pop('points', None) # comes from wrap()
+        self.__attrs_init__([x, y, x + w, y + h], *args, **kwargs)
+    __actual_init__ = __init__ # save pointer
 
     @property
     def x(self):
@@ -506,10 +369,23 @@ class Bbox(_Shape):
         ]
 
     def iou(self, other):
-        return compute_iou(self.get_bbox(), other.get_bbox())
+        from datumaro.util.annotation_util import bbox_iou
+        return bbox_iou(self.get_bbox(), other.get_bbox())
 
+    def wrap(item, **kwargs):
+        d = {'x': item.x, 'y': item.y, 'w': item.w, 'h': item.h}
+        d.update(kwargs)
+        return attr.evolve(item, **d)
+
+assert not hasattr(Bbox, '__attrs_init__') # hopefully, it will be supported
+setattr(Bbox, '__attrs_init__', Bbox.__init__)
+setattr(Bbox, '__init__', Bbox.__actual_init__)
+
+@attrs
 class PointsCategories(Categories):
     Category = namedtuple('Category', ['labels', 'joints'])
+
+    items = attrib(factory=dict, validator=default_if_none(dict))
 
     @classmethod
     def from_iterable(cls, iterable):
@@ -536,13 +412,6 @@ class PointsCategories(Categories):
             temp_categories.add(*category)
         return temp_categories
 
-    def __init__(self, items=None, attributes=None):
-        super().__init__(attributes=attributes)
-
-        if items is None:
-            items = {}
-        self.items = items
-
     def add(self, label_id, labels=None, joints=None):
         if labels is None:
             labels = []
@@ -551,41 +420,30 @@ class PointsCategories(Categories):
         joints = set(map(tuple, joints))
         self.items[label_id] = self.Category(labels, joints)
 
-    def __eq__(self, other):
-        if not super().__eq__(other):
-            return False
-        return \
-            (self.items == other.items)
-
+@attrs
 class Points(_Shape):
     Visibility = Enum('Visibility', [
         ('absent', 0),
         ('hidden', 1),
         ('visible', 2),
     ])
+    _type = AnnotationType.points
 
-    # pylint: disable=redefined-builtin
-    def __init__(self, points=None, visibility=None, label=None, z_order=None,
-            id=None, attributes=None, group=None):
-        if points is not None:
-            assert len(points) % 2 == 0
-
-            if visibility is not None:
-                assert len(visibility) == len(points) // 2
-                for i, v in enumerate(visibility):
-                    if not isinstance(v, self.Visibility):
-                        visibility[i] = self.Visibility(v)
-            else:
-                visibility = []
-                for _ in range(len(points) // 2):
-                    visibility.append(self.Visibility.visible)
-
-        super().__init__(type=AnnotationType.points,
-            points=points, label=label, z_order=z_order,
-            id=id, attributes=attributes, group=group)
-
+    visibility = attrib(type=list, default=None)
+    @visibility.validator
+    def _visibility_validator(self, attribute, visibility):
+        if visibility is None:
+            visibility = [self.Visibility.visible] * (len(self.points) // 2)
+        else:
+            for i, v in enumerate(visibility):
+                if not isinstance(v, self.Visibility):
+                    visibility[i] = self.Visibility(v)
+        assert len(visibility) == len(self.points) // 2
         self.visibility = visibility
-    # pylint: enable=redefined-builtin
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        assert len(self.points) % 2 == 0, self.points
 
     def get_area(self):
         return 0
@@ -601,117 +459,37 @@ class Points(_Shape):
         y1 = max(ys, default=0)
         return [x0, y0, x1 - x0, y1 - y0]
 
-    def __eq__(self, other):
-        if not super().__eq__(other):
-            return False
-        return \
-            (self.visibility == other.visibility)
-
+@attrs
 class Caption(Annotation):
-    # pylint: disable=redefined-builtin
-    def __init__(self, caption=None,
-            id=None, attributes=None, group=None):
-        super().__init__(id=id, type=AnnotationType.caption,
-            attributes=attributes, group=group)
+    _type = AnnotationType.caption
+    caption = attrib(converter=str)
 
-        if caption is None:
-            caption = ''
-        else:
-            caption = str(caption)
-        self.caption = caption
-    # pylint: enable=redefined-builtin
-
-    def __eq__(self, other):
-        if not super().__eq__(other):
-            return False
-        return \
-            (self.caption == other.caption)
-
+@attrs
 class DatasetItem:
-    # pylint: disable=redefined-builtin
-    def __init__(self, id=None, annotations=None,
-            subset=None, path=None, image=None, attributes=None):
-        assert id is not None
-        self._id = str(id).replace('\\', '/')
+    id = attrib(converter=lambda x: str(x).replace('\\', '/'),
+        type=str, validator=not_empty)
+    annotations = attrib(factory=list, validator=default_if_none(list))
+    subset = attrib(default='', validator=default_if_none(str))
+    path = attrib(factory=list, validator=default_if_none(list))
 
-        if subset is None:
-            subset = ''
-        else:
-            subset = str(subset)
-        self._subset = subset
-
-        if path is None:
-            path = []
-        else:
-            path = list(path)
-        self._path = path
-
-        if annotations is None:
-            annotations = []
-        else:
-            annotations = list(annotations)
-        self._annotations = annotations
-
+    image = attrib(type=Image, default=None)
+    @image.validator
+    def _image_validator(self, attribute, image):
         if callable(image) or isinstance(image, np.ndarray):
             image = Image(data=image)
         elif isinstance(image, str):
             image = Image(path=image)
         assert image is None or isinstance(image, Image)
-        self._image = image
+        self.image = image
 
-        if attributes is None:
-            attributes = {}
-        else:
-            attributes = dict(attributes)
-        self._attributes = attributes
-    # pylint: enable=redefined-builtin
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def subset(self):
-        return self._subset
-
-    @property
-    def path(self):
-        return self._path
-
-    @property
-    def annotations(self):
-        return self._annotations
-
-    @property
-    def image(self):
-        return self._image
+    attributes = attrib(factory=dict, validator=default_if_none(dict))
 
     @property
     def has_image(self):
-        return self._image is not None
-
-    @property
-    def attributes(self):
-        return self._attributes
-
-    def __eq__(self, other):
-        if not isinstance(other, __class__):
-            return False
-        return \
-            (self.id == other.id) and \
-            (self.subset == other.subset) and \
-            (self.path == other.path) and \
-            (self.annotations == other.annotations) and \
-            (self.image == other.image) and \
-            (self.attributes == other.attributes)
+        return self.image is not None
 
     def wrap(item, **kwargs):
-        expected_args = {'id', 'annotations', 'subset',
-            'path', 'image', 'attributes'}
-        for k in expected_args:
-            if k not in kwargs:
-                kwargs[k] = getattr(item, k)
-        return DatasetItem(**kwargs)
+        return attr.evolve(item, **kwargs)
 
 class IExtractor:
     def __iter__(self):

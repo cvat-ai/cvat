@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
 import { Row, Col } from 'antd/lib/grid';
@@ -86,38 +86,41 @@ const ShortcutsSelect = (props: Props): JSX.Element => {
                     <Text strong>Shortcuts for labels:</Text>
                 </Col>
             </Row>
-            {shift(Object.keys(shortcutLabelMap), 1).slice(0, Math.min(labels.length, 10)).map((id) => (
-                <Row key={id}>
-                    <Col>
-                        <Text strong>{`Key ${id}:`}</Text>
-                        <Select
-                            value={`${shortcutLabelMap[Number.parseInt(id, 10)]}`}
-                            onChange={(value: string) => {
-                                onChangeShortcutLabel(value, Number.parseInt(id, 10));
-                            }}
-                            size='default'
-                            style={{ width: 200 }}
-                            className='cvat-tag-annotation-label-select'
-                        >
-                            <Select.Option value=''>
-                                <Text type='secondary'>
-                                    None
-                                </Text>
-                            </Select.Option>
-                            {
-                                (labels as any[]).map((label: any) => (
-                                    <Select.Option
-                                        key={label.id}
-                                        value={`${label.id}`}
-                                    >
-                                        {label.name}
+            {
+                shift(Object.keys(shortcutLabelMap), 1).slice(0, Math.min(labels.length, 10))
+                    .map((id) => (
+                        <Row key={id}>
+                            <Col>
+                                <Text strong>{`Key ${id}:`}</Text>
+                                <Select
+                                    value={`${shortcutLabelMap[Number.parseInt(id, 10)]}`}
+                                    onChange={(value: string) => {
+                                        onChangeShortcutLabel(value, Number.parseInt(id, 10));
+                                    }}
+                                    size='default'
+                                    style={{ width: 200 }}
+                                    className='cvat-tag-annotation-label-select'
+                                >
+                                    <Select.Option value=''>
+                                        <Text type='secondary'>
+                                            None
+                                        </Text>
                                     </Select.Option>
-                                ))
-                            }
-                        </Select>
-                    </Col>
-                </Row>
-            ))}
+                                    {
+                                        (labels as any[]).map((label: any) => (
+                                            <Select.Option
+                                                key={label.id}
+                                                value={`${label.id}`}
+                                            >
+                                                {label.name}
+                                            </Select.Option>
+                                        ))
+                                    }
+                                </Select>
+                            </Col>
+                        </Row>
+                    ))
+            }
         </div>
     );
 };

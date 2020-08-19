@@ -17,16 +17,16 @@ import Text from 'antd/lib/typography/Text';
 
 import { CVATLogo, AccountIcon } from 'icons';
 import consts from 'consts';
+import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import SettingsModal from './settings-modal/settings-modal';
 
 interface HeaderContainerProps {
     onLogout: () => void;
     switchSettingsDialog: (show: boolean) => void;
+    switchChangePasswordDialog: (show: boolean) => void;
     logoutFetching: boolean;
+    changePasswordFetching: boolean;
     installedAnalytics: boolean;
-    installedAutoAnnotation: boolean;
-    installedTFAnnotation: boolean;
-    installedTFSegmentation: boolean;
     serverHost: string;
     username: string;
     toolName: string;
@@ -37,15 +37,14 @@ interface HeaderContainerProps {
     uiVersion: string;
     switchSettingsShortcut: string;
     settingsDialogShown: boolean;
+    changePasswordDialogShown: boolean;
+    renderChangePasswordItem: boolean;
 }
 
 type Props = HeaderContainerProps & RouteComponentProps;
 
 function HeaderContainer(props: Props): JSX.Element {
     const {
-        installedTFSegmentation,
-        installedAutoAnnotation,
-        installedTFAnnotation,
         installedAnalytics,
         username,
         toolName,
@@ -57,14 +56,13 @@ function HeaderContainer(props: Props): JSX.Element {
         uiVersion,
         onLogout,
         logoutFetching,
+        changePasswordFetching,
         settingsDialogShown,
         switchSettingsShortcut,
         switchSettingsDialog,
+        switchChangePasswordDialog,
+        renderChangePasswordItem,
     } = props;
-
-    const renderModels = installedAutoAnnotation
-        || installedTFAnnotation
-        || installedTFSegmentation;
 
     const {
         CHANGELOG_URL,
@@ -146,6 +144,16 @@ function HeaderContainer(props: Props): JSX.Element {
                 <Icon type='info-circle' />
                 About
             </Menu.Item>
+            {renderChangePasswordItem && (
+                <Menu.Item
+                    onClick={(): void => switchChangePasswordDialog(true)}
+                    disabled={changePasswordFetching}
+                >
+                    {changePasswordFetching ? <Icon type='loading' /> : <Icon type='edit' />}
+                    Change password
+                </Menu.Item>
+            )}
+
             <Menu.Item
                 onClick={onLogout}
                 disabled={logoutFetching}
@@ -172,19 +180,16 @@ function HeaderContainer(props: Props): JSX.Element {
                 >
                     Tasks
                 </Button>
-                { renderModels
-                    && (
-                        <Button
-                            className='cvat-header-button'
-                            type='link'
-                            value='models'
-                            onClick={
-                                (): void => props.history.push('/models')
-                            }
-                        >
-                            Models
-                        </Button>
-                    )}
+                <Button
+                    className='cvat-header-button'
+                    type='link'
+                    value='models'
+                    onClick={
+                        (): void => props.history.push('/models')
+                    }
+                >
+                    Models
+                </Button>
                 { installedAnalytics
                     && (
                         <Button
@@ -245,6 +250,13 @@ function HeaderContainer(props: Props): JSX.Element {
                 visible={settingsDialogShown}
                 onClose={() => switchSettingsDialog(false)}
             />
+            { renderChangePasswordItem
+                && (
+                    <ChangePasswordDialog
+                        onClose={() => switchChangePasswordDialog(false)}
+                    />
+                )}
+
         </Layout.Header>
     );
 }

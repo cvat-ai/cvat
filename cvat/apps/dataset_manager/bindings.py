@@ -531,7 +531,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             return dm_attr
 
         for tag_obj in cvat_frame_anno.tags:
-            anno_group = tag_obj.group
+            anno_group = tag_obj.group or 0
             anno_label = map_label(tag_obj.label)
             anno_attr = convert_attrs(tag_obj.label, tag_obj.attributes)
 
@@ -540,7 +540,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             item_anno.append(anno)
 
         for shape_obj in cvat_frame_anno.labeled_shapes:
-            anno_group = shape_obj.group
+            anno_group = shape_obj.group or 0
             anno_label = map_label(shape_obj.label)
             anno_attr = convert_attrs(shape_obj.label, shape_obj.attributes)
             anno_attr['occluded'] = shape_obj.occluded

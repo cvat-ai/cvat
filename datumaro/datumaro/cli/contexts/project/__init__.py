@@ -17,7 +17,8 @@ from datumaro.components.comparator import Comparator
 from datumaro.components.dataset_filter import DatasetItemEncoder
 from datumaro.components.extractor import AnnotationType
 from datumaro.components.cli_plugin import CliPlugin
-from datumaro.components.operations import mean_std
+from datumaro.components.operations import \
+    compute_image_statistics, compute_ann_statistics
 from .diff import DiffVisualizer
 from ...util import add_subparser, CliException, MultilineFormatter, \
     make_file_name
@@ -55,7 +56,7 @@ def create_command(args):
     if osp.isdir(project_env_dir) and os.listdir(project_env_dir):
         if not args.overwrite:
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % project_env_dir)
+                "(pass --overwrite to overwrite)" % project_env_dir)
         else:
             shutil.rmtree(project_env_dir, ignore_errors=True)
 
@@ -63,7 +64,7 @@ def create_command(args):
     if osp.isdir(own_dataset_dir) and os.listdir(own_dataset_dir):
         if not args.overwrite:
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % own_dataset_dir)
+                "(pass --overwrite to overwrite)" % own_dataset_dir)
         else:
             # NOTE: remove the dir to avoid using data from previous project
             shutil.rmtree(own_dataset_dir)
@@ -149,7 +150,7 @@ def import_command(args):
     if osp.isdir(project_env_dir) and os.listdir(project_env_dir):
         if not args.overwrite:
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % project_env_dir)
+                "(pass --overwrite to overwrite)" % project_env_dir)
         else:
             shutil.rmtree(project_env_dir, ignore_errors=True)
 
@@ -157,7 +158,7 @@ def import_command(args):
     if osp.isdir(own_dataset_dir) and os.listdir(own_dataset_dir):
         if not args.overwrite:
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % own_dataset_dir)
+                "(pass --overwrite to overwrite)" % own_dataset_dir)
         else:
             # NOTE: remove the dir to avoid using data from previous project
             shutil.rmtree(own_dataset_dir)
@@ -328,7 +329,7 @@ def export_command(args):
     if dst_dir:
         if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % dst_dir)
+                "(pass --overwrite to overwrite)" % dst_dir)
     else:
         dst_dir = generate_next_file_name('%s-%s' % \
             (project.config.project_name, make_file_name(args.format)))
@@ -424,7 +425,7 @@ def extract_command(args):
         if dst_dir:
             if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
                 raise CliException("Directory '%s' already exists "
-                    "(pass --overwrite to force creation)" % dst_dir)
+                    "(pass --overwrite to overwrite)" % dst_dir)
         else:
             dst_dir = generate_next_file_name('%s-filter' % \
                 project.config.project_name)
@@ -453,10 +454,10 @@ def extract_command(args):
     return 0
 
 def build_merge_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor(help="Merge projects",
+    parser = parser_ctor(help="Merge two projects",
         description="""
             Updates items of the current project with items
-            from the other project.|n
+            from other project.|n
             |n
             Examples:|n
             - Update a project with items from other project:|n
@@ -465,7 +466,7 @@ def build_merge_parser(parser_ctor=argparse.ArgumentParser):
         formatter_class=MultilineFormatter)
 
     parser.add_argument('other_project_dir',
-        help="Directory of the project to get data updates from")
+        help="Path to a project")
     parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Output directory (default: current project's dir)")
     parser.add_argument('--overwrite', action='store_true',
@@ -484,11 +485,12 @@ def merge_command(args):
     if dst_dir:
         if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % dst_dir)
+                "(pass --overwrite to overwrite)" % dst_dir)
 
     first_dataset = first_project.make_dataset()
-    first_dataset.update(second_project.make_dataset())
+    second_dataset = second_project.make_dataset()
 
+    first_dataset.update(second_dataset)
     first_dataset.save(save_dir=dst_dir)
 
     if dst_dir is None:
@@ -542,7 +544,7 @@ def diff_command(args):
     if dst_dir:
         if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % dst_dir)
+                "(pass --overwrite to overwrite)" % dst_dir)
     else:
         dst_dir = generate_next_file_name('%s-%s-diff' % (
             first_project.config.project_name,
@@ -602,7 +604,7 @@ def transform_command(args):
     if dst_dir:
         if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
             raise CliException("Directory '%s' already exists "
-                "(pass --overwrite to force creation)" % dst_dir)
+                "(pass --overwrite to overwrite)" % dst_dir)
     else:
         dst_dir = generate_next_file_name('%s-%s' % \
             (project.config.project_name, make_file_name(args.transform)))
@@ -647,22 +649,16 @@ def build_stats_parser(parser_ctor=argparse.ArgumentParser):
 
 def stats_command(args):
     project = load_project(args.project_dir)
+
     dataset = project.make_dataset()
+    stats = {}
+    stats.update(compute_image_statistics(dataset))
+    stats.update(compute_ann_statistics(dataset))
 
-    def print_extractor_info(extractor, indent=''):
-        mean, std = mean_std(dataset)
-        print("%sImage mean:" % indent, ', '.join('%.3f' % n for n in mean))
-        print("%sImage std:" % indent, ', '.join('%.3f' % n for n in std))
-
-    print("Dataset: ")
-    print_extractor_info(dataset)
-
-    if 1 < len(dataset.subsets()):
-        print("Subsets: ")
-        for subset_name in dataset.subsets():
-            subset = dataset.get_subset(subset_name)
-            print("  %s:" % subset_name)
-            print_extractor_info(subset, " " * 4)
+    dst_file = generate_next_file_name('statistics', ext='.json')
+    log.info("Writing project statistics to '%s'" % dst_file)
+    with open(dst_file, 'w') as f:
+        json.dump(stats, f, indent=4, sort_keys=True)
 
 def build_info_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Get project info",

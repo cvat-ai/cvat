@@ -18,7 +18,6 @@ import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
 import TaskPageContainer from 'containers/task-page/task-page';
 import ModelsPageContainer from 'containers/models-page/models-page';
-import CreateModelPageContainer from 'containers/create-model-page/create-model-page';
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
@@ -35,26 +34,30 @@ interface CVATAppProps {
     verifyAuthorized: () => void;
     loadUserAgreements: () => void;
     initPlugins: () => void;
+    initModels: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
     switchSettingsDialog: () => void;
+    loadAuthActions: () => void;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     userInitialized: boolean;
     userFetching: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
+    modelsInitialized: boolean;
+    modelsFetching: boolean;
     formatsInitialized: boolean;
     formatsFetching: boolean;
     usersInitialized: boolean;
     usersFetching: boolean;
     aboutInitialized: boolean;
     aboutFetching: boolean;
-    installedAutoAnnotation: boolean;
-    installedTFAnnotation: boolean;
-    installedTFSegmentation: boolean;
     userAgreementsFetching: boolean;
     userAgreementsInitialized: boolean;
+    authActionsFetching: boolean;
+    authActionsInitialized: boolean;
+    allowChangePassword: boolean;
     notifications: NotificationsState;
     user: any;
 }
@@ -88,6 +91,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout,
             loadUserAgreements,
             initPlugins,
+            initModels,
+            loadAuthActions,
             userInitialized,
             userFetching,
             formatsInitialized,
@@ -98,9 +103,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             aboutFetching,
             pluginsInitialized,
             pluginsFetching,
+            modelsInitialized,
+            modelsFetching,
             user,
             userAgreementsFetching,
             userAgreementsInitialized,
+            authActionsFetching,
+            authActionsInitialized,
         } = this.props;
 
         this.showErrors();
@@ -120,6 +129,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
+        if (!authActionsInitialized && !authActionsFetching) {
+            loadAuthActions();
+        }
+
         if (!formatsInitialized && !formatsFetching) {
             loadFormats();
         }
@@ -130,6 +143,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!aboutInitialized && !aboutFetching) {
             loadAbout();
+        }
+
+        if (!modelsInitialized && !modelsFetching) {
+            initModels();
         }
 
         if (!pluginsInitialized && !pluginsFetching) {
@@ -159,8 +176,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         let shown = false;
         for (const where of Object.keys(notifications.messages)) {
-            for (const what of Object.keys(notifications.messages[where])) {
-                const message = notifications.messages[where][what];
+            for (const what of Object.keys((notifications as any).messages[where])) {
+                const message = (notifications as any).messages[where][what];
                 shown = shown || !!message;
                 if (message) {
                     showMessage(message);
@@ -189,6 +206,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 description: error.length > 200 ? 'Open the Browser Console to get details' : error,
             });
 
+            // eslint-disable-next-line no-console
             console.error(error);
         }
 
@@ -199,8 +217,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         let shown = false;
         for (const where of Object.keys(notifications.errors)) {
-            for (const what of Object.keys(notifications.errors[where])) {
-                const error = notifications.errors[where][what];
+            for (const what of Object.keys((notifications as any).errors[where])) {
+                const error = (notifications as any).errors[where][what];
                 shown = shown || !!error;
                 if (error) {
                     showError(error.message, error.reason);
@@ -221,9 +239,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             aboutInitialized,
             pluginsInitialized,
             formatsInitialized,
-            installedAutoAnnotation,
-            installedTFSegmentation,
-            installedTFAnnotation,
             switchShortcutsDialog,
             switchSettingsDialog,
             user,
@@ -233,9 +248,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const readyForRender = (userInitialized && user == null)
             || (userInitialized && formatsInitialized
                 && pluginsInitialized && usersInitialized && aboutInitialized);
-
-        const withModels = installedAutoAnnotation
-            || installedTFAnnotation || installedTFSegmentation;
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
@@ -261,7 +273,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <GlobalErrorBoundary>
                         <Layout>
                             <HeaderContainer> </HeaderContainer>
-                            <Layout.Content>
+                            <Layout.Content style={{ height: '100%' }}>
                                 <ShorcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>
@@ -269,10 +281,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                        {withModels
-                                            && <Route exact path='/models' component={ModelsPageContainer} />}
-                                        {installedAutoAnnotation
-                                            && <Route exact path='/models/create' component={CreateModelPageContainer} />}
+                                        <Route exact path='/models' component={ModelsPageContainer} />
                                         <Redirect push to='/tasks' />
                                     </Switch>
                                 </GlobalHotKeys>

@@ -4,20 +4,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0-beta] - Unreleased
+## [1.1.0] - Unreleased
 ### Added
-- Source type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
-- Source type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
-- Intelligent polygon editing (<https://github.com/opencv/cvat/pull/1921>)
+- Siammask tracker as DL serverless function (<https://github.com/opencv/cvat/pull/1988>)
+- [Datumaro] Added model info and source info commands (<https://github.com/opencv/cvat/pull/1973>)
+- [Datumaro] Dataset statistics (<https://github.com/opencv/cvat/pull/1668>)
+- [Datumaro] Multi-dataset merge (https://github.com/opencv/cvat/pull/1695)
 
 ### Changed
-- Smaller object details (<https://github.com/opencv/cvat/pull/1877>)
+- Shape coordinates are rounded to 2 digits in dumped annotations (<https://github.com/opencv/cvat/pull/1970>)
+- COCO format does not produce polygon points for bbox annotations (<https://github.com/opencv/cvat/pull/1953>)
 
 ### Deprecated
 -
 
 ### Removed
 -
+
+### Fixed
+- Issue loading openvino models for semi-automatic and automatic annotation (<https://github.com/opencv/cvat/pull/1996>)
+- Basic functions of CVAT works without activated nuclio dashboard
+
+### Security
+-
+
+## [1.1.0-beta] - 2020-08-03
+### Added
+- DL models as serverless functions (<https://github.com/opencv/cvat/pull/1767>)
+- Source type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
+- Source type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
+- Intelligent polygon editing (<https://github.com/opencv/cvat/pull/1921>)
+- Support creating multiple jobs for each task through python cli (https://github.com/opencv/cvat/pull/1950)
+- python cli over https (<https://github.com/opencv/cvat/pull/1942>)
+- Error message when plugins weren't able to initialize instead of infinite loading (<https://github.com/opencv/cvat/pull/1966>)
+- Ability to change user password (<https://github.com/opencv/cvat/pull/1954>)
+
+### Changed
+- Smaller object details (<https://github.com/opencv/cvat/pull/1877>)
+- `COCO` format does not convert bboxes to polygons on export (<https://github.com/opencv/cvat/pull/1953>)
+- It is impossible to submit a DL model in OpenVINO format using UI. Now you can deploy new models on the server using serverless functions (<https://github.com/opencv/cvat/pull/1767>)
+- Files and folders under share path are now alphabetically sorted
+
+### Removed
+- Removed OpenVINO and CUDA components because they are not necessary anymore (<https://github.com/opencv/cvat/pull/1767>)
+- Removed the old UI code (<https://github.com/opencv/cvat/pull/1964>)
 
 ### Fixed
 - Some objects aren't shown on canvas sometimes. For example after propagation on of objects is invisible (<https://github.com/opencv/cvat/pull/1834>)
@@ -33,10 +63,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Points are dublicated during polygon interpolation sometimes (<https://github.com/opencv/cvat/pull/1892>)
 - When redraw a shape with activated autobordering, previous points are visible (<https://github.com/opencv/cvat/pull/1892>)
 - No mapping between side object element and context menu in some attributes (<https://github.com/opencv/cvat/pull/1923>)
-- Interpolated shapes exported as `keyframe = True` (https://github.com/opencv/cvat/pull/1937)
-
-### Security
--
+- Interpolated shapes exported as `keyframe = True` (<https://github.com/opencv/cvat/pull/1937>)
+- Stylelint filetype scans (<https://github.com/opencv/cvat/pull/1952>)
+- Fixed toolip closing issue (<https://github.com/opencv/cvat/pull/1955>)
+- Clearing frame cache when close a task (<https://github.com/opencv/cvat/pull/1966>)
+- Increase rate of throttling policy for unauthenticated users (<https://github.com/opencv/cvat/pull/1969>)
 
 ## [1.1.0-alpha] - 2020-06-30
 ### Added
@@ -76,12 +107,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added annotation attributes in COCO format (https://github.com/opencv/cvat/pull/1782)
 - Colorized object items in the side panel (<https://github.com/opencv/cvat/pull/1753>)
 - [Datumaro] Annotation-less files are not generated anymore in COCO format, unless tasks explicitly requested (<https://github.com/opencv/cvat/pull/1799>)
-
-### Deprecated
--
-
-### Removed
--
 
 ### Fixed
 - Problem with exported frame stepped image task (<https://github.com/opencv/cvat/issues/1613>)

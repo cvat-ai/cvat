@@ -18,6 +18,7 @@ import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 
 import { NotificationsState } from './interfaces';
 
+
 const defaultState: NotificationsState = {
     errors: {
         auth: {
@@ -25,6 +26,8 @@ const defaultState: NotificationsState = {
             login: null,
             logout: null,
             register: null,
+            changePassword: null,
+            loadAuthActions: null,
         },
         tasks: {
             fetching: null,
@@ -92,6 +95,9 @@ const defaultState: NotificationsState = {
         models: {
             inferenceDone: '',
         },
+        auth: {
+            changePasswordDone: '',
+        },
     },
 };
 
@@ -151,6 +157,48 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.auth,
                         register: {
                             message: 'Could not register on the server',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.CHANGE_PASSWORD_SUCCESS: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    auth: {
+                        ...state.messages.auth,
+                        changePasswordDone: 'New password has been saved.',
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.CHANGE_PASSWORD_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        changePassword: {
+                            message: 'Could not change password',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        loadAuthActions: {
+                            message: 'Could not check available auth actions',
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -361,21 +409,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ModelsActionTypes.DELETE_MODEL_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    models: {
-                        ...state.errors.models,
-                        deleting: {
-                            message: 'Could not delete the model',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
             if (action.payload.activeInference.status === 'finished') {
                 const { taskID } = action.payload;
@@ -420,7 +453,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         inferenceStatusFetching: {
-                            message: 'Could not fetch inference status for the '
+                            message: 'Fetching inference status for the '
                                 + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },

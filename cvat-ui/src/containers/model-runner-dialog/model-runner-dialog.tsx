@@ -5,20 +5,10 @@
 import { connect } from 'react-redux';
 
 import ModelRunnerModalComponent from 'components/model-runner-modal/model-runner-modal';
-import {
-    Model,
-    CombinedState,
-} from 'reducers/interfaces';
-import {
-    getModelsAsync,
-    startInferenceAsync,
-    modelsActions,
-} from 'actions/models-actions';
-
+import { Model, CombinedState } from 'reducers/interfaces';
+import { startInferenceAsync, modelsActions } from 'actions/models-actions';
 
 interface StateToProps {
-    modelsFetching: boolean;
-    modelsInitialized: boolean;
     models: Model[];
     activeProcesses: {
         [index: string]: string;
@@ -31,12 +21,8 @@ interface DispatchToProps {
     runInference(
         taskInstance: any,
         model: Model,
-        mapping: {
-            [index: string]: string;
-        },
-        cleanOut: boolean,
+        body: object,
     ): void;
-    getModels(): void;
     closeDialog(): void;
 }
 
@@ -44,8 +30,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
 
     return {
-        modelsFetching: models.fetching,
-        modelsInitialized: models.initialized,
         models: models.models,
         activeProcesses: {},
         taskInstance: models.activeRunTask,
@@ -58,15 +42,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         runInference(
             taskInstance: any,
             model: Model,
-            mapping: {
-                [index: string]: string;
-            },
-            cleanOut: boolean,
+            body: object,
         ): void {
-            dispatch(startInferenceAsync(taskInstance, model, mapping, cleanOut));
-        },
-        getModels(): void {
-            dispatch(getModelsAsync());
+            dispatch(startInferenceAsync(taskInstance, model, body));
         },
         closeDialog(): void {
             dispatch(modelsActions.closeRunModelDialog());

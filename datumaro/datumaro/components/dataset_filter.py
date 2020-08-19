@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging as log
-from lxml import etree as ET # NOTE: lxml has proper XPath implementation
+from lxml import etree as ET # lxml has proper XPath implementation
 from datumaro.components.extractor import (Transform,
     Annotation, AnnotationType,
     Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,

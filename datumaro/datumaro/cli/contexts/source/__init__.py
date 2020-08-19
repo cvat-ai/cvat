@@ -225,6 +225,31 @@ def remove_command(args):
 
     return 0
 
+def build_info_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor()
+
+    parser.add_argument('-n', '--name',
+        help="Source name")
+    parser.add_argument('-v', '--verbose', action='store_true',
+        help="Show details")
+    parser.add_argument('-p', '--project', dest='project_dir', default='.',
+        help="Directory of the project to operate on (default: current dir)")
+    parser.set_defaults(command=info_command)
+
+    return parser
+
+def info_command(args):
+    project = load_project(args.project_dir)
+
+    if args.name:
+        source = project.get_source(args.name)
+        print(source)
+    else:
+        for name, conf in project.config.sources.items():
+            print(name)
+            if args.verbose:
+                print(dict(conf))
+
 def build_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(description="""
             Manipulate data sources inside of a project.|n
@@ -243,5 +268,6 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
     subparsers = parser.add_subparsers()
     add_subparser(subparsers, 'add', build_add_parser)
     add_subparser(subparsers, 'remove', build_remove_parser)
+    add_subparser(subparsers, 'info', build_info_parser)
 
     return parser

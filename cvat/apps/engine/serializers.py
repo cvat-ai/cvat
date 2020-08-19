@@ -454,12 +454,6 @@ class FileInfoSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024)
     type = serializers.ChoiceField(choices=["REG", "DIR"])
 
-class PluginSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Plugin
-        fields = ('name', 'description', 'maintainer', 'created_at',
-            'updated_at')
-
 class LogEventSerializer(serializers.Serializer):
     job_id = serializers.IntegerField(required=False)
     task_id = serializers.IntegerField(required=False)

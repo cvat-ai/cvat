@@ -44,39 +44,6 @@ export default function (
                 fetching: false,
             };
         }
-        case ModelsActionTypes.DELETE_MODEL_SUCCESS: {
-            return {
-                ...state,
-                models: state.models.filter(
-                    (model): boolean => model.id !== action.payload.id,
-                ),
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL: {
-            return {
-                ...state,
-                creatingStatus: '',
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL_STATUS_UPDATED: {
-            return {
-                ...state,
-                creatingStatus: action.payload.status,
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL_FAILED: {
-            return {
-                ...state,
-                creatingStatus: '',
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL_SUCCESS: {
-            return {
-                ...state,
-                initialized: false,
-                creatingStatus: 'CREATED',
-            };
-        }
         case ModelsActionTypes.SHOW_RUN_MODEL_DIALOG: {
             return {
                 ...state,

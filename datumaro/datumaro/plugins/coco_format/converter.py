@@ -12,15 +12,14 @@ from itertools import groupby
 
 import pycocotools.mask as mask_utils
 
-import datumaro.util.annotation_tools as anno_tools
+import datumaro.util.annotation_util as anno_tools
 import datumaro.util.mask_tools as mask_tools
 from datumaro.components.converter import Converter
-from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, AnnotationType,
-    Points)
+from datumaro.components.extractor import (_COORDINATE_ROUNDING_DIGITS,
+    DEFAULT_SUBSET_NAME, AnnotationType, Points)
 from datumaro.util import cast, find, str_to_bool
 
 from .format import CocoPath, CocoTask
-
 
 SegmentationMode = Enum('SegmentationMode', ['guess', 'polygons', 'mask'])
 
@@ -203,7 +202,7 @@ class _InstancesConverter(_TaskConverter):
 
         anns = boxes + polygons + masks
         leader = anno_tools.find_group_leader(anns)
-        bbox = anno_tools.compute_bbox(anns)
+        bbox = anno_tools.max_bbox(anns)
         mask = None
         polygons = [p.points for p in polygons]
 
@@ -298,8 +297,8 @@ class _InstancesConverter(_TaskConverter):
                 rles = mask_utils.merge(rles)
             area = mask_utils.area(rles)
         else:
-            x, y, w, h = bbox
-            segmentation = [[x, y, x + w, y, x + w, y + h, x, y + h]]
+            _, _, w, h = bbox
+            segmentation = []
             area = w * h
 
         elem = {
@@ -308,7 +307,7 @@ class _InstancesConverter(_TaskConverter):
             'category_id': cast(ann.label, int, -1) + 1,
             'segmentation': segmentation,
             'area': float(area),
-            'bbox': list(map(float, bbox)),
+            'bbox': [round(float(n), _COORDINATE_ROUNDING_DIGITS) for n in bbox],
             'iscrowd': int(is_crowd),
         }
         if 'score' in ann.attributes:
@@ -336,7 +335,6 @@ class _KeypointsConverter(_InstancesConverter):
                 'supercategory': cast(label_cat.parent, str, ''),
                 'keypoints': [],
                 'skeleton': [],
-
             }
 
             if point_categories is not None:

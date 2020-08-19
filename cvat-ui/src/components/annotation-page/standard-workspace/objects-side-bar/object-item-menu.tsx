@@ -63,14 +63,14 @@ export default function ItemMenu(props: Props): JSX.Element {
                 </Button>
             </Menu.Item>
             <Menu.Item>
-                <Tooltip title={`${copyShortcut} and ${pasteShortcut}`}>
+                <Tooltip title={`${copyShortcut} and ${pasteShortcut}`} mouseLeaveDelay={0}>
                     <Button type='link' icon='copy' onClick={copy}>
                         Make a copy
                     </Button>
                 </Tooltip>
             </Menu.Item>
             <Menu.Item>
-                <Tooltip title={`${propagateShortcut}`}>
+                <Tooltip title={`${propagateShortcut}`} mouseLeaveDelay={0}>
                     <Button type='link' icon='block' onClick={propagate}>
                         Propagate
                     </Button>
@@ -93,7 +93,7 @@ export default function ItemMenu(props: Props): JSX.Element {
             )}
             {objectType !== ObjectType.TAG && (
                 <Menu.Item>
-                    <Tooltip title={`${toBackgroundShortcut}`}>
+                    <Tooltip title={`${toBackgroundShortcut}`} mouseLeaveDelay={0}>
                         <Button type='link' onClick={toBackground}>
                             <Icon component={BackgroundIcon} />
                             To background
@@ -103,7 +103,7 @@ export default function ItemMenu(props: Props): JSX.Element {
             )}
             {objectType !== ObjectType.TAG && (
                 <Menu.Item>
-                    <Tooltip title={`${toForegroundShortcut}`}>
+                    <Tooltip title={`${toForegroundShortcut}`} mouseLeaveDelay={0}>
                         <Button type='link' onClick={toForeground}>
                             <Icon component={ForegroundIcon} />
                             To foreground
@@ -112,7 +112,7 @@ export default function ItemMenu(props: Props): JSX.Element {
                 </Menu.Item>
             )}
             <Menu.Item>
-                <Tooltip title={`${removeShortcut}`}>
+                <Tooltip title={`${removeShortcut}`} mouseLeaveDelay={0}>
                     <Button
                         type='link'
                         icon='delete'

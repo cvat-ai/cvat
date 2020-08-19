@@ -6,8 +6,10 @@
 
 .cvat-models-page {
     padding-top: 30px;
-    height: 100%;
+    height: 90%;
     overflow: auto;
+    position: fixed;
+    width: 100%;
 
     > div:nth-child(1) {
         margin-bottom: 10px;
@@ -52,7 +54,7 @@
 
 .cvat-models-list-item {
     width: 100%;
-    height: 60px;
+    height: auto;
     border: 1px solid $border-color-1;
     border-radius: 3px;
     margin-bottom: 15px;

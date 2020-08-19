@@ -4,11 +4,10 @@
 
 import getCore from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { ShapeType, RQStatus, CombinedState } from 'reducers/interfaces';
+import { ShapeType, CombinedState } from 'reducers/interfaces';
 import { getCVATStore } from 'cvat-store';
 
 const core = getCore();
-const baseURL = core.config.backendAPI.slice(0, -7);
 
 interface DEXTRPlugin {
     name: string;
@@ -71,79 +70,33 @@ antModal.append(antModalContent);
 antModalWrap.append(antModal);
 antModalRoot.append(antModalMask, antModalWrap);
 
-
-function serverRequest(
-    plugin: DEXTRPlugin,
-    jid: number,
+async function serverRequest(
+    taskInstance: any,
     frame: number,
     points: number[],
 ): Promise<number[]> {
-    return new Promise((resolve, reject) => {
-        const reducer = (acc: Point[], _: number, index: number, array: number[]): Point[] => {
-            if (!(index % 2)) { // 0, 2, 4
-                acc.push({
-                    x: array[index],
-                    y: array[index + 1],
-                });
-            }
+    const reducer = (acc: number[][],
+        _: number, index: number,
+        array: number[]): number[][] => {
+        if (!(index % 2)) { // 0, 2, 4
+            acc.push([
+                array[index],
+                array[index + 1],
+            ]);
+        }
+        return acc;
+    };
 
-            return acc;
-        };
-
-        const reducedPoints = points.reduce(reducer, []);
-        core.server.request(
-            `${baseURL}/dextr/create/${jid}`, {
-                method: 'POST',
-                data: JSON.stringify({
-                    frame,
-                    points: reducedPoints,
-                }),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            },
-        ).then(() => {
-            const timeoutCallback = (): void => {
-                core.server.request(
-                    `${baseURL}/dextr/check/${jid}`, {
-                        method: 'GET',
-                    },
-                ).then((response: any) => {
-                    const { status } = response;
-                    if (status === RQStatus.finished) {
-                        resolve(response.result.split(/\s|,/).map((coord: string) => +coord));
-                    } else if (status === RQStatus.failed) {
-                        reject(new Error(response.stderr));
-                    } else if (status === RQStatus.unknown) {
-                        reject(new Error('Unknown DEXTR status has been received'));
-                    } else {
-                        if (status === RQStatus.queued) {
-                            antModalButton.disabled = false;
-                        }
-                        if (!plugin.data.canceled) {
-                            setTimeout(timeoutCallback, 1000);
-                        } else {
-                            core.server.request(
-                                `${baseURL}/dextr/cancel/${jid}`, {
-                                    method: 'GET',
-                                },
-                            ).then(() => {
-                                resolve(points);
-                            }).catch((error: Error) => {
-                                reject(error);
-                            });
-                        }
-                    }
-                }).catch((error: Error) => {
-                    reject(error);
-                });
-            };
-
-            setTimeout(timeoutCallback, 1000);
-        }).catch((error: Error) => {
-            reject(error);
-        });
+    const reducedPoints = points.reduce(reducer, []);
+    const models = await core.lambda.list();
+    const model = models.filter((func: any): boolean => func.id === 'openvino.dextr')[0];
+    const result = await core.lambda.call(taskInstance, model, {
+        task: taskInstance,
+        frame,
+        points: reducedPoints,
     });
+
+    return result.flat();
 }
 
 async function enter(this: any, self: DEXTRPlugin, objects: any[]): Promise<void> {
@@ -159,8 +112,7 @@ async function enter(this: any, self: DEXTRPlugin, objects: any[]): Promise<void
             for (let i = 0; i < objects.length; i++) {
                 if (objects[i].points.length >= 8) {
                     promises[i] = serverRequest(
-                        self,
-                        this.id,
+                        this.task,
                         objects[i].frame,
                         objects[i].points,
                     );

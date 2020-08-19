@@ -13,6 +13,10 @@ export interface AuthState {
     initialized: boolean;
     fetching: boolean;
     user: any;
+    authActionsFetching: boolean;
+    authActionsInitialized: boolean;
+    showChangePasswordDialog: boolean;
+    allowChangePassword: boolean;
 }
 
 export interface TasksQuery {
@@ -71,12 +75,8 @@ export interface FormatsState {
 // eslint-disable-next-line import/prefer-default-export
 export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
-    AUTO_ANNOTATION = 'AUTO_ANNOTATION',
-    TF_ANNOTATION = 'TF_ANNOTATION',
-    TF_SEGMENTATION = 'TF_SEGMENTATION',
     DEXTR_SEGMENTATION = 'DEXTR_SEGMENTATION',
     ANALYTICS = 'ANALYTICS',
-    REID = 'REID',
 }
 
 export interface PluginsState {
@@ -133,13 +133,12 @@ export interface ShareState {
 }
 
 export interface Model {
-    id: number | null; // null for preinstalled models
-    ownerID: number | null; // null for preinstalled models
+    id: string;
     name: string;
-    primary: boolean;
-    uploadDate: string;
-    updateDate: string;
     labels: string[];
+    framework: string;
+    description: string;
+    type: string;
 }
 
 export enum RQStatus {
@@ -150,17 +149,11 @@ export enum RQStatus {
     failed = 'failed',
 }
 
-export enum ModelType {
-    OPENVINO = 'openvino',
-    RCNN = 'rcnn',
-    MASK_RCNN = 'mask_rcnn',
-}
-
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
     error: string;
-    modelType: ModelType;
+    id: string;
 }
 
 export interface ModelsState {
@@ -175,14 +168,6 @@ export interface ModelsState {
     activeRunTask: any;
 }
 
-export interface ModelFiles {
-    [key: string]: string | File;
-    xml: string | File;
-    bin: string | File;
-    py: string | File;
-    json: string | File;
-}
-
 export interface ErrorState {
     message: string;
     reason: string;
@@ -195,6 +180,8 @@ export interface NotificationsState {
             login: null | ErrorState;
             logout: null | ErrorState;
             register: null | ErrorState;
+            changePassword: null | ErrorState;
+            loadAuthActions: null | ErrorState;
         };
         tasks: {
             fetching: null | ErrorState;
@@ -254,8 +241,6 @@ export interface NotificationsState {
         userAgreements: {
             fetching: null | ErrorState;
         };
-
-        [index: string]: any;
     };
     messages: {
         tasks: {
@@ -264,8 +249,9 @@ export interface NotificationsState {
         models: {
             inferenceDone: string;
         };
-
-        [index: string]: any;
+        auth: {
+            changePasswordDone: string;
+        };
     };
 }
 
