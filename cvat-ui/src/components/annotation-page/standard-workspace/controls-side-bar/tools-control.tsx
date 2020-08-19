@@ -12,6 +12,7 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 
+import { AITools } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import {
@@ -118,13 +119,6 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        const icon = window.document.getElementsByClassName('cvat-tools-control')[0];
-        if (icon) {
-            const svg: SVGSVGElement = icon.children[0] as SVGSVGElement;
-            svg.setAttribute('width', '40px');
-            svg.setAttribute('height', '40px');
-        }
-
         const { isInteraction, jobInstance } = this.props;
         const { interactiveStateID } = this.state;
         if (prevProps.isInteraction && !isInteraction) {
@@ -365,7 +359,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                 overlayClassName='cvat-tools-control-popover'
                 content={interactors.length && this.renderPopoverContent()}
             >
-                <Icon {...dynamicIconProps} type='tool' />
+                <Icon {...dynamicIconProps} component={AITools} />
             </Popover>
         );
     }
