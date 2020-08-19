@@ -8,11 +8,21 @@
 
 require('cypress-file-upload')
 require('../plugins/imageGenerator/imageGeneratorCommand')
+require('../plugins/createZipArchive/createZipArchiveCommand')
 
-Cypress.Commands.add('login', (username='admin', password='12qwaszx') => {
+Cypress.Commands.add('login', (username=Cypress.env('user'), password=Cypress.env('password')) => {
     cy.get('[placeholder="Username"]').type(username)
     cy.get('[placeholder="Password"]').type(password)
     cy.get('[type="submit"]').click()
+})
+
+Cypress.Commands.add('logout', (username=Cypress.env('user')) => {
+    cy.get('.cvat-right-header')
+    .find('.cvat-header-menu-dropdown')
+    .should('have.text', username)
+    .trigger('mouseover', {which: 1})
+    cy.get('.anticon-logout')
+    .click()
 })
 
 Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
@@ -34,7 +44,7 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
     cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
     cy.contains('button', 'Submit').click()
     cy.contains('The task has been created', {timeout: '8000'})
-    cy.get('button[value="tasks"]').click()
+    cy.get('[value="tasks"]').click()
     cy.url().should('include', '/tasks?page=')
 })
 
@@ -55,11 +65,26 @@ Cypress.Commands.add('openTaskJob', (taskName) => {
     cy.openJob()
 })
 
-Cypress.Commands.add('createShape', (ferstX, ferstY, lastX, lastY) => {
-    cy.get(':nth-child(8) > svg').trigger('mousemove').click()
-    cy.get(':nth-child(6) > :nth-child(1) > .ant-btn').click()
+Cypress.Commands.add('createShape', (firstX, firstY, lastX, lastY) => {
+    cy.get('.cvat-draw-rectangle-control').click()
+    cy.get('.cvat-draw-shape-popover-content')
+    .find('button')
+    .contains('Shape')
+    .click({force: true})
     cy.get('.cvat-canvas-container')
-    .click(ferstX, ferstY)
+    .click(firstX, firstY)
+    cy.get('.cvat-canvas-container')
+    .click(lastX, lastY)
+})
+
+Cypress.Commands.add('createTrack', (firstX, firstY, lastX, lastY) => {
+    cy.get('.cvat-draw-rectangle-control').click()
+    cy.get('.cvat-draw-shape-popover-content')
+    .find('button')
+    .contains('Track')
+    .click({force: true})
+    cy.get('.cvat-canvas-container')
+    .click(firstX, firstY)
     cy.get('.cvat-canvas-container')
     .click(lastX, lastY)
 })
