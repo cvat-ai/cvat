@@ -27,12 +27,10 @@ export default class Crosshair {
         this.canvas = canvas;
         this.x = this.canvas.line(0, y, this.canvas.node.clientWidth, y).attr({
             'stroke-width': consts.BASE_STROKE_WIDTH / (2 * scale),
-            zOrder: Number.MAX_SAFE_INTEGER,
         }).addClass('cvat_canvas_crosshair');
 
         this.y = this.canvas.line(x, 0, x, this.canvas.node.clientHeight).attr({
             'stroke-width': consts.BASE_STROKE_WIDTH / (2 * scale),
-            zOrder: Number.MAX_SAFE_INTEGER,
         }).addClass('cvat_canvas_crosshair');
     }
 

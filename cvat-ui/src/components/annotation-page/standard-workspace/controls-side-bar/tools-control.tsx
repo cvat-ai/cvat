@@ -303,7 +303,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     canvasInstance.cancel();
                                     canvasInstance.interact({
                                         shapeType: 'points',
-                                        numberOfShapes: 4, // TODO: Add parameter to server
+                                        minVertices: 4, // TODO: Add parameter to interactor
                                         enabled: true,
                                     });
 

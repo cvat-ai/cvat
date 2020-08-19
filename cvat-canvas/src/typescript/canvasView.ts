@@ -1462,6 +1462,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             [state, +state.getAttribute('data-z-order')]
         ));
 
+        const crosshair = Array.from(this.content.getElementsByClassName('cvat_canvas_crosshair'));
+        crosshair.forEach((line: SVGLineElement): void => this.content.append(line));
+        const interaction = Array.from(this.content.getElementsByClassName('cvat_interaction_point'));
+        interaction.forEach((circle: SVGCircleElement): void => this.content.append(circle));
+
         const needSort = states.some((pair): boolean => pair[1] !== states[0][1]);
         if (!states.length || !needSort) {
             return;

@@ -73,7 +73,7 @@ export interface InteractionData {
     enabled: boolean;
     shapeType?: string;
     crosshair?: boolean;
-    numberOfShapes?: number;
+    minVertices?: number;
     result?: 'immediate' | 'deferred';
 }
 

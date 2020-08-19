@@ -21,6 +21,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private canvas: SVG.Container;
     private interactionData: InteractionData;
     private cursorPosition: { x: number; y: number };
+    private shapesWereUpdated: boolean;
     private interactionShapes: SVG.Shape[];
     private currentInteractionShape: SVG.Shape | null;
     private crosshair: Crosshair;
@@ -46,6 +47,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
         });
     }
 
+    private shouldRaiseEvent(ctrlKey: boolean): boolean {
+        const { interactionData, interactionShapes, shapesWereUpdated } = this;
+        const { minVertices, enabled } = interactionData;
+
+        const minimumVerticesAchieved = typeof (minVertices) === 'undefined'
+            || minVertices <= interactionShapes.length;
+        return enabled && !ctrlKey && minimumVerticesAchieved && shapesWereUpdated;
+    }
+
     private addCrosshair(): void {
         const { x, y } = this.cursorPosition;
         this.crosshair.show(this.canvas, x, y, this.geometry.scale);
@@ -69,18 +79,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     });
 
                 this.interactionShapes.push(this.currentInteractionShape);
-                if (this.interactionData.result === 'immediate') {
+                this.shapesWereUpdated = true;
+                if (this.shouldRaiseEvent(e.ctrlKey)) {
                     this.onInteraction(this.prepareResult());
-                }
-
-                if (typeof (this.interactionData.numberOfShapes) !== 'undefined'
-                    && this.interactionShapes.length >= this.interactionData.numberOfShapes) {
-                        if (this.interactionData.result !== 'immediate') {
-                            this.onInteraction(this.prepareResult());
-                        }
-
-                        this.interact({ enabled: false });
-                        return;
                 }
 
                 const self = this.currentInteractionShape;
@@ -89,12 +90,16 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
                     });
 
-                    self.on('mousedown', (e: MouseEvent) => {
-                        e.stopPropagation();
+                    self.on('mousedown', (_e: MouseEvent) => {
+                        _e.stopPropagation();
                         self.remove();
                         this.interactionShapes = this.interactionShapes.filter(
                             (shape: SVG.Shape): boolean => shape !== self
                         );
+                        this.shapesWereUpdated = true;
+                        if (this.shouldRaiseEvent(_e.ctrlKey)) {
+                            this.onInteraction(this.prepareResult());
+                        }
                     });
                 });
 
@@ -129,18 +134,14 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.canvas.on('mousedown.interaction', eventListener);
         this.currentInteractionShape.on('drawstop', (): void => {
             this.interactionShapes.push(this.currentInteractionShape);
+            this.shapesWereUpdated = true;
 
             this.canvas.off('mousedown.interaction', eventListener);
             if (this.interactionData.result === 'immediate') {
                 this.onInteraction(this.prepareResult());
             }
 
-            if (typeof (this.interactionData.numberOfShapes) === 'undefined'
-                || this.interactionShapes.length < this.interactionData.numberOfShapes) {
-                this.interactRectangle();
-            } else {
-                this.interact({ enabled: false });
-            }
+            this.interact({ enabled: false });
         }).addClass('cvat_canvas_shape_drawing').attr({
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
         });
@@ -184,11 +185,16 @@ export class InteractionHandlerImpl implements InteractionHandler {
         canvas: SVG.Container,
         geometry: Geometry,
     ) {
-        this.onInteraction = onInteraction;
+        this.onInteraction = (shapes: InteractionResult[] | null) => {
+            this.shapesWereUpdated = false;
+            onInteraction(shapes);
+        };
         this.onStopInteraction = onStopInteraction;
         this.canvas = canvas;
         this.geometry = geometry;
+        this.shapesWereUpdated = false;
         this.interactionShapes = [];
+        this.interactionData = { enabled: false };
         this.currentInteractionShape = null;
         this.crosshair = new Crosshair();
         this.cursorPosition = {
@@ -204,6 +210,12 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.cursorPosition = { x, y };
             if (this.crosshair) {
                 this.crosshair.move(x, y);
+            }
+        });
+
+        document.body.addEventListener('keyup', (e: KeyboardEvent): void => {
+            if (e.keyCode === 17 && this.shouldRaiseEvent(false)) { // 17 is ctrl
+                this.onInteraction(this.prepareResult());
             }
         });
     }

@@ -73,12 +73,7 @@ Canvas itself handles:
 
     interface InteractionData {
         shapeType: string;
-        numberOfShapes?: number;
-        mouse: {
-            right: 'positive' | 'negative' | 'cancel';
-            left: 'positive' | 'negative' | 'cancel';
-            center: 'positive' | 'negative' | 'cancel';
-        };
+        minVertices?: number;
     }
 
     interface GroupData {
