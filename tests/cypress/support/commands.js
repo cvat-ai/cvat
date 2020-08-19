@@ -10,10 +10,19 @@ require('cypress-file-upload')
 require('../plugins/imageGenerator/imageGeneratorCommand')
 require('../plugins/createZipArchive/createZipArchiveCommand')
 
-Cypress.Commands.add('login', (username='admin', password='12qwaszx') => {
+Cypress.Commands.add('login', (username=Cypress.env('user'), password=Cypress.env('password')) => {
     cy.get('[placeholder="Username"]').type(username)
     cy.get('[placeholder="Password"]').type(password)
     cy.get('[type="submit"]').click()
+})
+
+Cypress.Commands.add('logout', (username=Cypress.env('user')) => {
+    cy.get('.cvat-right-header')
+    .find('.cvat-header-menu-dropdown')
+    .should('have.text', username)
+    .trigger('mouseover', {which: 1})
+    cy.get('.anticon-logout')
+    .click()
 })
 
 Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
