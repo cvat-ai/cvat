@@ -25,7 +25,6 @@ from distutils.dir_util import copy_tree
 from . import models
 from .log import slogger
 from .prepare import PrepareInfo, AnalyzeVideo
-from diskcache import Cache
 
 ############################# Low Level server API
 
@@ -299,7 +298,8 @@ def _create_thread(tid, data):
                         meta_info.check_seek_key_frames()
                         meta_info.save_meta_info()
 
-                        db_data.size = meta_info.get_task_size()
+                        all_frames = meta_info.get_task_size()
+                        db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 if data['stop_frame'] else all_frames, all_frames), db_data.get_frame_step()))
                         video_path = os.path.join(upload_dir, media_files[0])
                         frame = meta_info.key_frames.get(next(iter(meta_info.key_frames)))
                         video_size = (frame.width, frame.height)
@@ -310,31 +310,33 @@ def _create_thread(tid, data):
                         db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
 
                 else:#images,archive
-                    with Cache(settings.CACHE_ROOT) as cache:
-                        counter_ = itertools.count()
+                    counter_ = itertools.count()
+                    if extractor.__class__ in [MEDIA_TYPES['archive']['extractor'], MEDIA_TYPES['zip']['extractor']]:
+                        media_files = [os.path.join(upload_dir, f) for f in extractor._source_path]
 
-                        if extractor.__class__ in [MEDIA_TYPES['archive']['extractor'], MEDIA_TYPES['zip']['extractor']]:
-                            media_files = [os.path.join(upload_dir, f) for f in extractor._source_path]
+                    numbers_sequence = range(db_data.start_frame, min(data['stop_frame'] if data['stop_frame'] else len(media_files), len(media_files)), db_data.get_frame_step())
+                    m_paths = []
+                    m_paths = [(path, numb) for numb, path in enumerate(media_files) if numb in numbers_sequence]
 
-                        for chunk_number, media_paths in itertools.groupby(media_files, lambda x: next(counter_) // db_data.chunk_size):
-                            media_paths = list(media_paths)
-                            cache.set('{}_{}'.format(tid, chunk_number), [os.path.join(upload_dir, file_name) for file_name in media_paths], tag='dummy')
+                    for chunk_number, media_paths in itertools.groupby(m_paths, lambda x: next(counter_) // db_data.chunk_size):
+                        media_paths = list(media_paths)
+                        img_sizes = []
+                        from PIL import Image
+                        with open(db_data.get_dummy_chunk_path(chunk_number), 'w') as dummy_chunk:
+                            for path, _ in media_paths:
+                                dummy_chunk.write(os.path.join(upload_dir, path)+'\n')
+                                img_sizes += [Image.open(os.path.join(upload_dir, path)).size]
 
-                            img_sizes = []
-                            from PIL import Image
-                            for media_path  in media_paths:
-                                img_sizes += [Image.open(media_path).size]
-                            db_data.size += len(media_paths)
-                            db_images.extend([
-                                models.Image(
-                                    data=db_data,
-                                    path=os.path.basename(data[1]),
-                                    frame=data[0],
-                                    width=size[0],
-                                    height=size[1])
-                                for data, size in zip(enumerate(media_paths, start=len(db_images)), img_sizes)
-                            ])
-
+                        db_data.size += len(media_paths)
+                        db_images.extend([
+                            models.Image(
+                                data=db_data,
+                                path=os.path.basename(data[0]),
+                                frame=data[1],
+                                width=size[0],
+                                height=size[1])
+                            for data, size in zip(media_paths, img_sizes)
+                        ])
 
     if db_data.storage_method == StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
         counter = itertools.count()

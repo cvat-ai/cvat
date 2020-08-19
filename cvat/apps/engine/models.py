@@ -117,6 +117,9 @@ class Data(models.Model):
     def get_meta_path(self):
         return os.path.join(self.get_upload_dirname(), 'meta_info.txt')
 
+    def get_dummy_chunk_path(self, chunk_number):
+        return os.path.join(self.get_upload_dirname(), 'dummy_{}.txt'.format(chunk_number))
+
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
     path = models.CharField(max_length=1024, default='')

@@ -144,11 +144,11 @@ class PrepareInfo(WorkWithVideo):
 
         return int(start_decode_frame_number), int(start_decode_timestamp)
 
-    def decode_needed_frames(self, chunk_number, chunk_size):
-        start_chunk_frame_number = chunk_number * chunk_size
-        end_chunk_frame_number = start_chunk_frame_number + chunk_size
+    def decode_needed_frames(self, chunk_number, db_data):
+        step = db_data.get_frame_step()
+        start_chunk_frame_number = db_data.start_frame + chunk_number * db_data.chunk_size * step
+        end_chunk_frame_number = min(start_chunk_frame_number + (db_data.chunk_size - 1) * step + 1, db_data.stop_frame + 1)
         start_decode_frame_number, start_decode_timestamp = self.get_nearest_left_key_frame(start_chunk_frame_number)
-
         container = self._open_video_container(self.source_path, mode='r')
         video_stream = self._get_video_stream(container)
         container.seek(offset=start_decode_timestamp, stream=video_stream)
@@ -159,8 +159,10 @@ class PrepareInfo(WorkWithVideo):
                 frame_number += 1
                 if frame_number < start_chunk_frame_number:
                     continue
-                elif frame_number < end_chunk_frame_number:
+                elif frame_number < end_chunk_frame_number and not (frame_number % step):
                     yield frame
+                elif frame_number % step:
+                    continue
                 else:
                     self._close_video_container(container)
                     return

@@ -37,7 +37,7 @@ from cvat.apps.authentication import auth
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, Plugin, StatusChoice, Task, DataChoice, StorageMethodChoice
+from cvat.apps.engine.models import Job, Plugin, StatusChoice, Task, StorageMethodChoice
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
@@ -49,13 +49,6 @@ from cvat.apps.engine.utils import av_scan_paths
 
 from . import models, task
 from .log import clogger, slogger
-from .media_extractors import (
-    Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
-    ZipCompressedChunkWriter, ZipChunkWriter)
-from .prepare import PrepareInfo
-from diskcache import Cache
-#from cvat.apps.engine.mime_types import mimetypes
-
 
 # drf-yasg component doesn't handle correctly URL_FORMAT_OVERRIDE and
 # send requests with ?format=openapi suffix instead of ?scheme=openapi.
@@ -458,56 +451,14 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     data_quality = FrameProvider.Quality.COMPRESSED \
                         if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
 
-                    path = os.path.realpath(frame_provider.get_chunk(data_id, data_quality))
                     #TODO: av.FFmpegError processing
                     if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
-                        with Cache(settings.CACHE_ROOT) as cache:
-                            buff = None
-                            chunk, tag = cache.get('{}_{}_{}'.format(db_task.id, data_id, quality), tag=True)
-
-                            if not chunk:
-                                extractor_classes = {
-                                    'compressed' : Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter,
-                                    'original' : Mpeg4ChunkWriter if db_data.original_chunk_type == DataChoice.VIDEO else ZipChunkWriter,
-                                }
-
-                                image_quality = 100 if extractor_classes[quality] in [Mpeg4ChunkWriter, ZipChunkWriter] else db_data.image_quality
-                                file_extension = 'mp4' if extractor_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter] else 'jpeg'
-                                mime_type = 'video/mp4' if extractor_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter] else 'application/zip'
-
-                                extractor = extractor_classes[quality](image_quality)
-
-                                if 'interpolation' == db_task.mode:
-
-                                    meta = PrepareInfo(source_path=os.path.join(db_data.get_upload_dirname(), db_data.video.path),
-                                                    meta_path=db_data.get_meta_path())
-
-                                    frames = []
-                                    for frame in meta.decode_needed_frames(data_id,db_data.chunk_size):
-                                        frames.append(frame)
-
-
-                                    buff = extractor.save_as_chunk_to_buff(frames,
-                                                                           format_=file_extension)
-                                    cache.set('{}_{}_{}'.format(db_task.id, data_id, quality), buff, tag=mime_type)
-
-                                else:
-                                    img_paths = cache.get('{}_{}'.format(db_task.id, data_id))
-                                    buff = extractor.save_as_chunk_to_buff(img_paths,
-                                                                           format_=file_extension)
-                                    cache.set('{}_{}_{}'.format(db_task.id, data_id, quality), buff, tag=mime_type)
-
-
-
-                            elif 'process_creating' == tag:
-                                pass
-                            else:
-                                buff, mime_type = cache.get('{}_{}_{}'.format(db_task.id, data_id, quality), tag=True)
-
-                            return HttpResponse(buff.getvalue(), content_type=mime_type)
+                        buff, mime_type = frame_provider.get_chunk(data_id, data_quality)
+                        return HttpResponse(buff.getvalue(), content_type=mime_type)
 
                     # Follow symbol links if the chunk is a link on a real image otherwise
                     # mimetype detection inside sendfile will work incorrectly.
+                    path = os.path.realpath(frame_provider.get_chunk(data_id, data_quality))
                     return sendfile(request, path)
 
                 elif data_type == 'frame':

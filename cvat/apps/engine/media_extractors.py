@@ -190,7 +190,10 @@ class ZipReader(ImageListReader):
         return io.BytesIO(self._zip_source.read(self._source_path[i]))
 
     def get_path(self, i):
-        return os.path.join(os.path.dirname(self._zip_source.filename), self._source_path[i])
+        if  self._zip_source.filename:
+            return os.path.join(os.path.dirname(self._zip_source.filename), self._source_path[i])
+        else: #для определения mime_type
+            return self._source_path[i]
 
     def extract(self):
         self._zip_source.extractall(os.path.dirname(self._zip_source.filename))
