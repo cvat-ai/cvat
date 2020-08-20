@@ -32,6 +32,7 @@ export enum AttributeType {
 
 type Props = FormComponentProps & {
     label: Label | null;
+    labelNames?: string[];
     onSubmit: (label: Label | null) => void;
 };
 
@@ -384,6 +385,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
         const {
             label,
             form,
+            labelNames,
         } = this.props;
         const value = label ? label.name : '';
         const locked = label ? label.id >= 0 : false;
@@ -399,6 +401,13 @@ class LabelForm extends React.PureComponent<Props, {}> {
                         }, {
                             pattern: patterns.validateAttributeName.pattern,
                             message: patterns.validateAttributeName.message,
+                        }, {
+                            validator:
+                                async (_rule: any, labelName: string, callback: Function) => {
+                                    if (labelNames && labelNames.includes(labelName)) {
+                                        callback('Label name must be unique for the task');
+                                    }
+                                },
                         }],
                     })(<Input disabled={locked} placeholder='Label name' />)}
                 </Form.Item>

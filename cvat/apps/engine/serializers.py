@@ -37,6 +37,7 @@ class AttributeSerializer(serializers.ModelSerializer):
 class LabelSerializer(serializers.ModelSerializer):
     attributes = AttributeSerializer(many=True, source='attributespec_set',
         default=[])
+
     class Meta:
         model = models.Label
         fields = ('id', 'name', 'attributes')
@@ -304,6 +305,15 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+    def validate_labels(self, value):
+        if not value:
+            raise serializers.ValidationError('Label set must not be empty')
+        label_names = [label['name'] for label in value]
+        if len(label_names) != len(set(label_names)):
+            raise serializers.ValidationError('All label names must be unique for the task')
+        return value
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
