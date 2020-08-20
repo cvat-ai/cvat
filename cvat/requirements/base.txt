@@ -47,7 +47,6 @@ imgaug==0.4.0
 django-cors-headers==3.4.0
 furl==2.1.0
 av==6.2.0
-wheel==0.35.1
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
