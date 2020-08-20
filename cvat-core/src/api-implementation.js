@@ -97,6 +97,14 @@
             await serverProxy.server.changePassword(oldPassword, newPassword1, newPassword2);
         };
 
+        cvat.server.resetPassword.implementation = async (email) => {
+            await serverProxy.server.resetPassword(email);
+        };
+
+        cvat.server.resetPasswordConfirm.implementation = async(newPassword1, newPassword2, uid, token) => {
+            await serverProxy.server.resetPasswordConfirm(newPassword1, newPassword2, uid, token);
+        };
+
         cvat.server.authorized.implementation = async () => {
             const result = await serverProxy.server.authorized();
             return result;

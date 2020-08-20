@@ -17,6 +17,7 @@ export interface AuthState {
     authActionsInitialized: boolean;
     showChangePasswordDialog: boolean;
     allowChangePassword: boolean;
+    allowResetPassword: boolean;
 }
 
 export interface TasksQuery {
@@ -182,6 +183,8 @@ export interface NotificationsState {
             logout: null | ErrorState;
             register: null | ErrorState;
             changePassword: null | ErrorState;
+            resetPassword: null | ErrorState;
+            resetPasswordConfirm: null | ErrorState;
             loadAuthActions: null | ErrorState;
         };
         tasks: {
@@ -252,6 +255,8 @@ export interface NotificationsState {
         };
         auth: {
             changePasswordDone: string;
+            resetPasswordDone: string;
+            resetPasswordConfirmDone: string;
         };
     };
 }

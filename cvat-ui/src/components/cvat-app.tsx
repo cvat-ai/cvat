@@ -21,6 +21,8 @@ import ModelsPageContainer from 'containers/models-page/models-page';
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
+import ResetPasswordPageContainer from 'components/reset-password-page/reset-password-page';
+import ResetPasswordPageConfirmContainer from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import HeaderContainer from 'containers/header/header';
 import { customWaViewHit } from 'utils/enviroment';
 
@@ -57,7 +59,6 @@ interface CVATAppProps {
     userAgreementsInitialized: boolean;
     authActionsFetching: boolean;
     authActionsInitialized: boolean;
-    allowChangePassword: boolean;
     notifications: NotificationsState;
     user: any;
 }
@@ -125,12 +126,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (user == null) {
-            return;
-        }
-
         if (!authActionsInitialized && !authActionsFetching) {
             loadAuthActions();
+        }
+
+        if (user == null) {
+            return;
         }
 
         if (!formatsInitialized && !formatsFetching) {
@@ -298,6 +299,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <Switch>
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
                         <Route exact path='/auth/login' component={LoginPageContainer} />
+                        <Route exact path='/auth/password/reset' component={ResetPasswordPageContainer} />
+                        <Route exact path='/auth/password/reset/confirm' component={ResetPasswordPageConfirmContainer} />
                         <Redirect to='/auth/login' />
                     </Switch>
                 </GlobalErrorBoundary>
