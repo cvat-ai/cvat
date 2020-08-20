@@ -47,7 +47,6 @@ RUN apt-get update && \
         pkg-config \
         python3-dev \
         python3-pip \
-        python3-wheel \
         tzdata \
         p7zip-full \
         git \
