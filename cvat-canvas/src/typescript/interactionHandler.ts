@@ -137,7 +137,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.shapesWereUpdated = true;
 
             this.canvas.off('mousedown.interaction', eventListener);
-            if (this.interactionData.result === 'immediate') {
+            if (this.shouldRaiseEvent(false)) {
                 this.onInteraction(this.prepareResult());
             }
 
@@ -245,7 +245,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.initInteraction();
             this.startInteraction();
         } else {
-            if (this.interactionData.result !== 'immediate') {
+            if (this.shouldRaiseEvent(false)) {
                 this.onInteraction(this.prepareResult());
             }
 

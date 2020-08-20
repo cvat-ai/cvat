@@ -74,7 +74,6 @@ export interface InteractionData {
     shapeType?: string;
     crosshair?: boolean;
     minVertices?: number;
-    result?: 'immediate' | 'deferred';
 }
 
 export interface InteractionResult {

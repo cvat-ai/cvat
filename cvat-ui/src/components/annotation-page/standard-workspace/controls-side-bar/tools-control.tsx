@@ -8,6 +8,7 @@ import Icon from 'antd/lib/icon';
 import Popover from 'antd/lib/popover';
 import Select, { OptionProps } from 'antd/lib/select';
 import Button from 'antd/lib/button';
+import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
@@ -336,6 +337,8 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const { interactors, isInteraction, canvasInstance } = this.props;
+        const { fetching } = this.state;
+
         if (!interactors.length) return null;
 
         const dynamcPopoverPros = isInteraction ? {
@@ -354,14 +357,26 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         };
 
         return (
-            <Popover
-                {...dynamcPopoverPros}
-                placement='right'
-                overlayClassName='cvat-tools-control-popover'
-                content={interactors.length && this.renderPopoverContent()}
-            >
-                <Icon {...dynamicIconProps} component={AITools} />
-            </Popover>
+            <>
+                <Modal
+                    title='Interaction request'
+                    zIndex={Number.MAX_SAFE_INTEGER}
+                    visible={fetching}
+                    closable={false}
+                    footer={[]}
+                >
+                    <Text>Waiting for a server response..</Text>
+                    <Icon style={{ marginLeft: '10px' }} type='loading' />
+                </Modal>
+                <Popover
+                    {...dynamcPopoverPros}
+                    placement='right'
+                    overlayClassName='cvat-tools-control-popover'
+                    content={interactors.length && this.renderPopoverContent()}
+                >
+                    <Icon {...dynamicIconProps} component={AITools} />
+                </Popover>
+            </>
         );
     }
 }
