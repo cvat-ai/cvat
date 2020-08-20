@@ -11,8 +11,10 @@ const defaultState: ModelsState = {
     initialized: false,
     fetching: false,
     creatingStatus: '',
-    models: [],
     interactors: [],
+    detectors: [],
+    trackers: [],
+    reid: [],
     visibleRunWindows: false,
     activeRunTask: null,
     inferences: {},
@@ -33,8 +35,10 @@ export default function (
         case ModelsActionTypes.GET_MODELS_SUCCESS: {
             return {
                 ...state,
-                models: action.payload.models.filter((model: Model) => ['detector', 'reid'].includes(model.type)),
                 interactors: action.payload.models.filter((model: Model) => ['interactor'].includes(model.type)),
+                detectors: action.payload.models.filter((model: Model) => ['detector'].includes(model.type)),
+                trackers: action.payload.models.filter((model: Model) => ['tracker'].includes(model.type)),
+                reid: action.payload.models.filter((model: Model) => ['reid'].includes(model.type)),
                 initialized: true,
                 fetching: false,
             };

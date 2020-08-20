@@ -159,8 +159,10 @@ export interface ModelsState {
     initialized: boolean;
     fetching: boolean;
     creatingStatus: string;
-    models: Model[];
     interactors: Model[];
+    detectors: Model[];
+    trackers: Model[];
+    reid: Model[];
     inferences: {
         [index: number]: ActiveInference;
     };
@@ -205,9 +207,7 @@ export interface NotificationsState {
             fetching: null | ErrorState;
         };
         models: {
-            creating: null | ErrorState;
             starting: null | ErrorState;
-            deleting: null | ErrorState;
             fetching: null | ErrorState;
             canceling: null | ErrorState;
             metaFetching: null | ErrorState;

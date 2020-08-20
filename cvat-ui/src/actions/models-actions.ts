@@ -10,11 +10,6 @@ export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
     GET_MODELS_SUCCESS = 'GET_MODELS_SUCCESS',
     GET_MODELS_FAILED = 'GET_MODELS_FAILED',
-    DELETE_MODEL = 'DELETE_MODEL',
-    CREATE_MODEL = 'CREATE_MODEL',
-    CREATE_MODEL_SUCCESS = 'CREATE_MODEL_SUCCESS',
-    CREATE_MODEL_FAILED = 'CREATE_MODEL_FAILED',
-    CREATE_MODEL_STATUS_UPDATED = 'CREATE_MODEL_STATUS_UPDATED',
     START_INFERENCE_FAILED = 'START_INFERENCE_FAILED',
     GET_INFERENCE_STATUS_SUCCESS = 'GET_INFERENCE_STATUS_SUCCESS',
     GET_INFERENCE_STATUS_FAILED = 'GET_INFERENCE_STATUS_FAILED',
@@ -161,7 +156,6 @@ export function startInferenceAsync(
     return async (dispatch): Promise<void> => {
         try {
             const requestID: string = await core.lambda.run(taskInstance, model, body);
-
             const dispatchCallback = (action: ModelsActions): void => {
                 dispatch(action);
             };
