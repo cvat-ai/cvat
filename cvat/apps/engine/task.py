@@ -311,8 +311,10 @@ def _create_thread(tid, data):
 
                 else:#images,archive
                     counter_ = itertools.count()
-                    if extractor.__class__ in [MEDIA_TYPES['archive']['extractor'], MEDIA_TYPES['zip']['extractor']]:
-                        media_files = [os.path.join(upload_dir, f) for f in extractor._source_path]
+                    if isinstance(extractor, MEDIA_TYPES['archive']['extractor']):
+                        media_files = [os.path.relpath(path, upload_dir) for path in extractor._source_path]
+                    elif isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
+                        media_files = extractor._source_path
 
                     numbers_sequence = range(db_data.start_frame, min(data['stop_frame'] if data['stop_frame'] else len(media_files), len(media_files)), db_data.get_frame_step())
                     m_paths = []
@@ -324,14 +326,14 @@ def _create_thread(tid, data):
                         from PIL import Image
                         with open(db_data.get_dummy_chunk_path(chunk_number), 'w') as dummy_chunk:
                             for path, _ in media_paths:
-                                dummy_chunk.write(os.path.join(upload_dir, path)+'\n')
+                                dummy_chunk.write(path+'\n')
                                 img_sizes += [Image.open(os.path.join(upload_dir, path)).size]
 
                         db_data.size += len(media_paths)
                         db_images.extend([
                             models.Image(
                                 data=db_data,
-                                path=os.path.basename(data[0]),
+                                path=data[0],
                                 frame=data[1],
                                 width=size[0],
                                 height=size[1])

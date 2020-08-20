@@ -53,7 +53,7 @@ class CacheInteraction:
         else:
             img_paths = None
             with open(db_data.get_dummy_chunk_path(chunk_number), 'r') as dummy_file:
-                img_paths = [line.strip() for line in dummy_file]
+                img_paths = [os.path.join(db_data.get_upload_dirname(), line.strip()) for line in dummy_file]
             buff = extractor.save_as_chunk_to_buff(img_paths, file_extension)
         return buff, mime_type
 
