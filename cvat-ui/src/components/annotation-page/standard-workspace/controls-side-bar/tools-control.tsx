@@ -125,9 +125,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         if (prevProps.isInteraction && !isInteraction) {
             if (interactiveStateID !== null) {
                 jobInstance.actions.freeze(false);
-                this.setState({
-                    interactiveStateID: null,
-                });
+                this.setState({ interactiveStateID: null });
             }
         }
     }
@@ -151,9 +149,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { activeInteractor, interactiveStateID } = this.state;
 
         try {
-            this.setState({
-                fetching: true,
-            });
+            this.setState({ fetching: true });
 
             if (!isInteraction) {
                 throw Error('Canvas raises "canvas.interacted" when interaction is off');
@@ -166,6 +162,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                 points: convertShapesForInteractor((e as CustomEvent).detail.shapes),
             });
 
+            // no shape yet, then create it and save to collection
             if (interactiveStateID === null) {
                 const object = new core.classes.ObjectState({
                     frame,
@@ -177,19 +174,21 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                     occluded: false,
                     zOrder: (e as CustomEvent).detail.zOrder,
                 });
+                // need a clientID of a created object, so, we do not use createAnnotationAction
                 const [clientID] = await jobInstance.annotations.put([object]);
+
+                // update annotations on a canvas
                 fetchAnnotations();
-                await jobInstance.actions.freeze(true); // only if still interaction
-                this.setState({
-                    interactiveStateID: clientID,
-                });
+
+                // freeze history for interaction time
+                // (points updating shouldn't cause adding new actions to history)
+                await jobInstance.actions.freeze(true);
+                this.setState({ interactiveStateID: clientID });
             } else {
                 const state = states
                     .filter((_state: any): boolean => _state.clientID === interactiveStateID)[0];
-
                 state.points = result.flat();
                 await updateAnnotations([state]);
-                // TODO: disable switching between frames
             }
         } catch (err) {
             notification.error({
@@ -197,9 +196,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                 message: 'Interaction error occured',
             });
         } finally {
-            this.setState({
-                fetching: false,
-            });
+            this.setState({ fetching: false });
         }
     };
 
@@ -250,10 +247,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                         >
                             {
                                 labels.map((label: any) => (
-                                    <Select.Option
-                                        key={label.id}
-                                        value={`${label.id}`}
-                                    >
+                                    <Select.Option key={label.id} value={`${label.id}`}>
                                         {label.name}
                                     </Select.Option>
                                 ))
@@ -284,10 +278,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                             onChange={this.setActiveInteractor}
                         >
                             {interactors.map((interactor: Model): JSX.Element => (
-                                <Select.Option
-                                    title={interactor.description}
-                                    key={interactor.id}
-                                >
+                                <Select.Option title={interactor.description} key={interactor.id}>
                                     {interactor.name}
                                 </Select.Option>
                             ))}

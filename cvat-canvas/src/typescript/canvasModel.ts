@@ -606,7 +606,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE].includes(this.data.mode)
+        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode)
             || (this.data.mode === Mode.DRAW && typeof (this.data.drawData.redraw) === 'number');
 
         return !isUnable;
