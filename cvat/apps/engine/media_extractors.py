@@ -137,10 +137,6 @@ class ArchiveReader(DirectoryReader):
     def __del__(self):
         os.remove(self._archive_source)
 
-    def get_path(self, i):
-        base_dir = os.path.dirname(self._archive_source)
-        return os.path.join(base_dir, os.path.relpath(self._source_path[i], base_dir))
-
 class PdfReader(DirectoryReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
         if not source_path:
