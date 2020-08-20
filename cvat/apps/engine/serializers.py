@@ -11,7 +11,7 @@ from django.contrib.auth.models import User, Group
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
-from cvat.apps.dataset_manager.formats.utils import get_color_from_label_name, rgb2hex, normalize_label
+from cvat.apps.dataset_manager.formats.utils import get_label_color
 
 
 class AttributeSerializer(serializers.ModelSerializer):
@@ -252,16 +252,12 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
         db_task = models.Task.objects.create(**validated_data)
+        label_names = list()
         for label in labels:
             attributes = label.pop('attributespec_set')
             if not label.get('color', None):
-                normalized_names = [normalize_label(l['name']) for l in labels]
-                label['color'] = rgb2hex(
-                    get_color_from_label_name(label['name'],
-                        abs(hash(normalize_label(label['name'])))
-                        + normalized_names.count(normalize_label(label['name'])),
-                    )
-                )
+                label['color'] = get_label_color(label['name'], label_names)
+            label_names.append(label['name'])
             db_label = models.Label.objects.create(task=db_task, **label)
             for attr in attributes:
                 models.AttributeSpec.objects.create(label=db_label, **attr)
@@ -297,15 +293,10 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 slogger.task[instance.id].info("{} label was updated"
                     .format(db_label.name))
             if not label.get('color', None):
-                normalized_names = [normalize_label(l.name)
-                    for l in models.Label.objects.filter(task_id=instance.id)
+                label_names = [l.name for l in
+                    models.Label.objects.filter(task_id=instance.id).exclude(id=db_label.id).order_by('id')
                 ]
-                db_label.color = rgb2hex(
-                    get_color_from_label_name(db_label.name,
-                        abs(hash(normalize_label(db_label.name)))
-                        + normalized_names.count(normalize_label(db_label.name)),
-                    )
-                )
+                db_label.color = get_label_color(db_label.name, label_names)
             else:
                 db_label.color = label.get('color', db_label.color)
             db_label.save()

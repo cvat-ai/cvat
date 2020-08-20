@@ -3,8 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
+from pyhash import murmur3_32
 
 from datumaro.cli.util import make_file_name
+
+hasher = murmur3_32()
 
 def get_color_from_index(index):
     def get_bit(number, index):
@@ -59,12 +62,18 @@ def make_colormap(task_data):
 
     return {label['name']: [hex2rgb(label['color']), [], []] for label in labels}
 
-def get_color_from_label_name(label_name, offset=1):
-    predefined = parse_default_colors()
 
-    color = predefined.get(normalize_label(label_name), None)
+def get_label_color(label_name, label_names):
+    predefined = parse_default_colors()
+    normalized_names = [normalize_label(l_name) for l_name in label_names]
+    normalized_name = normalize_label(label_name)
+
+    color = predefined.get(normalized_name, None)
+    offset = hasher(normalized_name) + normalized_names.count(normalized_name)
 
     if color is None:
         color = get_color_from_index(DEFAULT_COLORMAP_CAPACITY + offset)
+    elif normalized_names.count(normalized_name):
+        color = get_color_from_index(DEFAULT_COLORMAP_CAPACITY + offset - 1)
 
-    return color
+    return rgb2hex(color)
