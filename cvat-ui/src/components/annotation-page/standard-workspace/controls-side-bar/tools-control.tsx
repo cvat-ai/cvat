@@ -284,6 +284,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                         >
                             {interactors.map((interactor: Model): JSX.Element => (
                                 <Select.Option
+                                    title={interactor.description}
                                     key={interactor.id}
                                 >
                                     {interactor.name}
