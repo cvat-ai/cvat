@@ -10,13 +10,13 @@ export default class Crosshair {
     private y: SVG.Line | null;
     private canvas: SVG.Container | null;
 
-    constructor() {
+    public constructor() {
         this.x = null;
         this.y = null;
         this.canvas = null;
     }
 
-    show(canvas: SVG.Container, x: number, y: number, scale: number) {
+    public show(canvas: SVG.Container, x: number, y: number, scale: number): void {
         if (this.canvas && this.canvas !== canvas) {
             if (this.x) this.x.remove();
             if (this.y) this.y.remove();
@@ -34,7 +34,7 @@ export default class Crosshair {
         }).addClass('cvat_canvas_crosshair');
     }
 
-    hide() {
+    public hide(): void {
         if (this.x) {
             this.x.remove();
             this.x = null;
@@ -48,7 +48,7 @@ export default class Crosshair {
         this.canvas = null;
     }
 
-    move(x: number, y: number) {
+    public move(x: number, y: number): void {
         if (this.x) {
             this.x.attr({ y1: y, y2: y });
         }
@@ -58,7 +58,7 @@ export default class Crosshair {
         }
     }
 
-    scale(scale: number) {
+    public scale(scale: number): void {
         if (this.x) {
             this.x.attr('stroke-width', consts.BASE_STROKE_WIDTH / (2 * scale));
         }

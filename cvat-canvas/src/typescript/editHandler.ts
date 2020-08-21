@@ -115,7 +115,7 @@ export class EditHandlerImpl implements EditHandler {
         (this.editLine as any).addClass('cvat_canvas_shape_drawing').style({
             'pointer-events': 'none',
             'fill-opacity': 0,
-            'stroke': strokeColor,
+            stroke: strokeColor,
         }).attr({
             'data-origin-client-id': this.editData.state.clientID,
         }).on('drawstart drawpoint', (e: CustomEvent): void => {
@@ -213,20 +213,20 @@ export class EditHandlerImpl implements EditHandler {
         const cutIndexes2 = oldPoints.reduce((acc: string[], _: string, i: number) =>
             i <= stop && i >= start ? [...acc, i] : acc, []);
 
-        const curveLength = (indexes: number[]) => {
+        const curveLength = (indexes: number[]): number => {
             const points = indexes.map((index: number): string => oldPoints[index])
                 .map((point: string): string[] => point.split(','))
                 .map((point: string[]): number[] => [+point[0], +point[1]]);
             let length = 0;
             for (let i = 1; i < points.length; i++) {
                 length += Math.sqrt(
-                    (points[i][0] - points[i - 1][0]) ** 2
-                    + (points[i][1] - points[i - 1][1]) ** 2,
+                    ((points[i][0] - points[i - 1][0]) ** 2)
+                    + ((points[i][1] - points[i - 1][1]) ** 2),
                 );
             }
 
             return length;
-        }
+        };
 
         const pointsCriteria = cutIndexes1.length > cutIndexes2.length;
         const lengthCriteria = curveLength(cutIndexes1) > curveLength(cutIndexes2);
@@ -278,8 +278,6 @@ export class EditHandlerImpl implements EditHandler {
                 });
             }
         }
-
-        return;
     }
 
     private setupPoints(enabled: boolean): void {

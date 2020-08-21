@@ -16,7 +16,7 @@ export interface InteractionHandler {
 
 export class InteractionHandlerImpl implements InteractionHandler {
     private onInteraction: (shapes: InteractionResult[] | null) => void;
-    onStopInteraction: () => void;
+    private onStopInteraction: () => void;
     private geometry: Geometry;
     private canvas: SVG.Container;
     private interactionData: InteractionData;
@@ -35,15 +35,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     shapeType: 'points',
                     button: (shape.style('stroke') as any as string) === 'red' ? 2 : 0,
                 };
-            } else {
-                const bbox = (shape.node as any as SVGRectElement).getBBox();
-                const points = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height];
-                return {
-                    points: points.map((coord: number): number => coord - this.geometry.offset),
-                    shapeType: 'rectangle',
-                    button: 0,
-                };
             }
+
+            const bbox = (shape.node as any as SVGRectElement).getBBox();
+            const points = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height];
+            return {
+                points: points.map((coord: number): number => coord - this.geometry.offset),
+                shapeType: 'rectangle',
+                button: 0,
+            };
         });
     }
 
@@ -68,7 +68,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private interactPoints(): void {
         const eventListener = (e: MouseEvent): void => {
             if ((e.button === 0 || e.button === 2) && !e.altKey) {
-                const [cx, cy] = translateToSVG(this.canvas.node as any as SVGSVGElement, [e.clientX, e.clientY]);
+                const [cx, cy] = translateToSVG(
+                    this.canvas.node as any as SVGSVGElement,
+                    [e.clientX, e.clientY],
+                );
                 this.currentInteractionShape = this.canvas
                     .circle(consts.BASE_POINT_SIZE * 2 / this.geometry.scale).center(cx, cy)
                     .fill('white')
@@ -90,11 +93,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
                     });
 
-                    self.on('mousedown', (_e: MouseEvent) => {
+                    self.on('mousedown', (_e: MouseEvent): void => {
                         _e.stopPropagation();
                         self.remove();
                         this.interactionShapes = this.interactionShapes.filter(
-                            (shape: SVG.Shape): boolean => shape !== self
+                            (shape: SVG.Shape): boolean => shape !== self,
                         );
                         this.shapesWereUpdated = true;
                         if (this.shouldRaiseEvent(_e.ctrlKey)) {
@@ -185,7 +188,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         canvas: SVG.Container,
         geometry: Geometry,
     ) {
-        this.onInteraction = (shapes: InteractionResult[] | null) => {
+        this.onInteraction = (shapes: InteractionResult[] | null): void => {
             this.shapesWereUpdated = false;
             onInteraction(shapes);
         };
@@ -227,8 +230,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.crosshair.scale(this.geometry.scale);
         }
 
-        const shapesToBeScaled = this.currentInteractionShape ?
-            [...this.interactionShapes, this.currentInteractionShape] : [...this.interactionShapes];
+        const shapesToBeScaled = this.currentInteractionShape
+            ? [...this.interactionShapes, this.currentInteractionShape]
+            : [...this.interactionShapes];
         for (const shape of shapesToBeScaled) {
             if (shape.type === 'circle') {
                 (shape as SVG.Circle).radius(consts.BASE_POINT_SIZE / this.geometry.scale);

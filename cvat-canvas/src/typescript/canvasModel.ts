@@ -80,7 +80,7 @@ export interface InteractionResult {
     points: number[];
     shapeType: string;
     button: number;
-};
+}
 
 export interface EditData {
     enabled: boolean;
