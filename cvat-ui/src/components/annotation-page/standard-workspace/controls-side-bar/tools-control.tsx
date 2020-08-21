@@ -13,7 +13,7 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 
-import { AITools } from 'icons';
+import { AIToolsIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import {
@@ -209,17 +209,9 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         });
     };
 
-    private setActiveLabel = (key: string): void => {
-        const { labels } = this.props;
-        this.setState({
-            activeLabelID: labels.filter(
-                (label: any) => label.id === +key,
-            )[0],
-        });
-    };
-
     private renderLabelBlock(): JSX.Element {
-        const { labels, activeLabelID } = this.props;
+        const { labels } = this.props;
+        const { activeLabelID } = this.state;
         return (
             <>
                 <Row type='flex' justify='start'>
@@ -243,7 +235,9 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }
                             }
                             value={`${activeLabelID}`}
-                            onChange={this.setActiveLabel}
+                            onChange={(value: string) => {
+                                this.setState({ activeLabelID: +value });
+                            }}
                         >
                             {
                                 labels.map((label: any) => (
@@ -365,7 +359,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                     overlayClassName='cvat-tools-control-popover'
                     content={interactors.length && this.renderPopoverContent()}
                 >
-                    <Icon {...dynamicIconProps} component={AITools} />
+                    <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </Popover>
             </>
         );
