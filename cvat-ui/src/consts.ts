@@ -14,6 +14,7 @@ const GITHUB_IMAGE_URL = 'https://raw.githubusercontent.com/opencv/cvat/develop/
 const SHARE_MOUNT_GUIDE_URL = 'https://github.com/opencv/cvat/blob/master/cvat/apps/documentation/installation.md#share-path';
 const NUCLIO_GUIDE = 'https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/installation.md#semi-automatic-and-automatic-annotation';
 const CANVAS_BACKGROUND_COLORS = ['#ffffff', '#f1f1f1', '#e5e5e5', '#d8d8d8', '#CCCCCC', '#B3B3B3', '#999999'];
+const NEW_LABEL_COLOR = '#b3b3b3';
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
@@ -27,5 +28,6 @@ export default {
     GITHUB_IMAGE_URL,
     SHARE_MOUNT_GUIDE_URL,
     CANVAS_BACKGROUND_COLORS,
+    NEW_LABEL_COLOR,
     NUCLIO_GUIDE,
 };

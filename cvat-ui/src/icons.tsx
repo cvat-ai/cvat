@@ -41,7 +41,9 @@ import SVGBackgroundIcon from './assets/background-icon.svg';
 import SVGForegroundIcon from './assets/foreground-icon.svg';
 import SVGCubeIcon from './assets/cube-icon.svg';
 import SVGResetPerspectiveIcon from './assets/reset-perspective.svg';
+import SVGColorizeIcon from './assets/colorize-icon.svg';
 import SVGAITools from './assets/ai-tools.svg';
+
 
 export const CVATLogo = React.memo(
     (): JSX.Element => <SVGCVATLogo />,
@@ -156,4 +158,7 @@ export const ResetPerspectiveIcon = React.memo(
 );
 export const AITools = React.memo(
     (): JSX.Element => <SVGAITools />,
+);
+export const ColorizeIcon = React.memo(
+    (): JSX.Element => <SVGColorizeIcon />,
 );
