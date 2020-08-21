@@ -5,32 +5,26 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
-import Popover from 'antd/lib/popover';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
-import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
 
 interface Props {
     labelName: string;
     labelColor: string;
-    labelColors: string[];
     visible: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
-    changeColorShortcut: string;
     hideStates(): void;
     showStates(): void;
     lockStates(): void;
     unlockStates(): void;
-    changeColor(color: string): void;
 }
 
 function LabelItemComponent(props: Props): JSX.Element {
     const {
         labelName,
         labelColor,
-        labelColors,
         visible,
         statesHidden,
         statesLocked,
@@ -38,8 +32,6 @@ function LabelItemComponent(props: Props): JSX.Element {
         showStates,
         lockStates,
         unlockStates,
-        changeColor,
-        changeColorShortcut,
     } = props;
 
     return (
@@ -51,19 +43,7 @@ function LabelItemComponent(props: Props): JSX.Element {
             style={{ display: visible ? 'flex' : 'none' }}
         >
             <Col span={4}>
-                <Popover
-                    placement='left'
-                    trigger='click'
-                    content={(
-                        <ColorChanger
-                            shortcut={changeColorShortcut}
-                            onChange={changeColor}
-                            colors={labelColors}
-                        />
-                    )}
-                >
-                    <Button style={{ background: labelColor }} className='cvat-label-item-color-button' />
-                </Popover>
+                <Button style={{ background: labelColor }} className='cvat-label-item-color-button' />
             </Col>
             <Col span={14}>
                 <Text strong className='cvat-text'>{labelName}</Text>
