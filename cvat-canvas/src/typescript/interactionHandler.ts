@@ -68,6 +68,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private interactPoints(): void {
         const eventListener = (e: MouseEvent): void => {
             if ((e.button === 0 || e.button === 2) && !e.altKey) {
+                e.preventDefault();
                 const [cx, cy] = translateToSVG(
                     this.canvas.node as any as SVGSVGElement,
                     [e.clientX, e.clientY],
