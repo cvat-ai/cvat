@@ -1,3 +1,7 @@
+# Copyright (C) 2020 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from diskcache import Cache
 from django.conf import settings
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter, ZipChunkWriter,
