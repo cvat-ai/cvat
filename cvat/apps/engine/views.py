@@ -408,7 +408,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
                 if data_type == 'chunk':
                     data_id = int(data_id)
-                    quality = data_quality
 
                     data_quality = FrameProvider.Quality.COMPRESSED \
                         if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL

@@ -66,9 +66,8 @@ class FrameProvider:
             return self.chunk_reader
 
     class BuffChunkLoader(ChunkLoader):
-        def __init__(self, reader_class, path_getter, buff_mime_getter, quality, db_data):
+        def __init__(self, reader_class, path_getter, quality, db_data):
             super().__init__(reader_class, path_getter)
-            self.get_chunk = buff_mime_getter
             self.quality = quality
             self.db_data = db_data
 
@@ -76,7 +75,7 @@ class FrameProvider:
             if self.chunk_id != chunk_id:
                 self.chunk_id = chunk_id
                 self.chunk_reader = RandomAccessIterator(
-                    self.reader_class([self.get_chunk_path(chunk_id, self.quality, self.db_data)]))
+                    self.reader_class([self.get_chunk_path(chunk_id, self.quality, self.db_data)[0]]))
             return self.chunk_reader
 
     def __init__(self, db_data):
@@ -93,13 +92,11 @@ class FrameProvider:
 
             self._loaders[self.Quality.COMPRESSED] = self.BuffChunkLoader(
                 reader_class[db_data.compressed_chunk_type],
-                cache.get_buff,
                 cache.get_buff_mime,
                 self.Quality.COMPRESSED,
                 self._db_data)
             self._loaders[self.Quality.ORIGINAL] = self.BuffChunkLoader(
                 reader_class[db_data.original_chunk_type],
-                cache.get_buff,
                 cache.get_buff_mime,
                 self.Quality.ORIGINAL,
                 self._db_data)
@@ -161,7 +158,7 @@ class FrameProvider:
     def get_chunk(self, chunk_number, quality=Quality.ORIGINAL):
         chunk_number = self._validate_chunk_number(chunk_number)
         if self._db_data.storage_method == StorageMethodChoice.CACHE:
-            return self._loaders[quality].get_chunk(chunk_number, quality, self._db_data)
+            return self._loaders[quality].get_chunk_path(chunk_number, quality, self._db_data)
         return self._loaders[quality].get_chunk_path(chunk_number)
 
     def get_frame(self, frame_number, quality=Quality.ORIGINAL,

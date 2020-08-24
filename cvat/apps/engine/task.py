@@ -304,9 +304,7 @@ def _create_thread(tid, data):
                         frame = meta_info.key_frames.get(next(iter(meta_info.key_frames)))
                         video_size = (frame.width, frame.height)
 
-                    except AssertionError as ex:
-                        db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
-                    except Exception as ex:
+                    except Exception:
                         db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
 
                 else:#images,archive

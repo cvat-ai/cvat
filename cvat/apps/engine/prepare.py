@@ -93,7 +93,7 @@ class PrepareInfo(WorkWithVideo):
 
         key_frames_copy = self.key_frames.copy()
 
-        for _, key_frame in key_frames_copy.items():
+        for index, key_frame in key_frames_copy.items():
             container.seek(offset=key_frame.pts, stream=video_stream)
             flag = True
             for packet in container.demux(video_stream):

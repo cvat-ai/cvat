@@ -287,12 +287,12 @@ class ZipChunkWriter(IChunkWriter):
         # and does not decode it to know img size.
         return []
 
-    def save_as_chunk_to_buff(self, images, format_='jpeg'):
+    def save_as_chunk_to_buff(self, images):
         buff = io.BytesIO()
 
         with zipfile.ZipFile(buff, 'w') as zip_file:
             for idx, image in enumerate(images):
-                arcname = '{:06d}.{}'.format(idx, format_)
+                arcname = '{:06d}.{}'.format(idx, os.path.splitext(image)[1])
                 if isinstance(image, av.VideoFrame):
                     zip_file.writestr(arcname, image.to_image().tobytes().getvalue())
                 else:
@@ -312,12 +312,12 @@ class ZipCompressedChunkWriter(IChunkWriter):
 
         return image_sizes
 
-    def save_as_chunk_to_buff(self, images, format_='jpeg'):
+    def save_as_chunk_to_buff(self, images):
         buff = io.BytesIO()
         with zipfile.ZipFile(buff, 'x') as zip_file:
             for idx, image in enumerate(images):
                 (_, _, image_buf) = self._compress_image(image, self._image_quality)
-                arcname = '{:06d}.{}'.format(idx, format_)
+                arcname = '{:06d}.jpeg'.format(idx)
                 zip_file.writestr(arcname, image_buf.getvalue())
         buff.seek(0)
         return buff
@@ -366,7 +366,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
         output_container.close()
         return [(input_w, input_h)]
 
-    def save_as_chunk_to_buff(self, frames, format_):
+    def save_as_chunk_to_buff(self, frames):
         if not frames:
             raise Exception('no images to save')
 
@@ -383,7 +383,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 "crf": str(self._image_quality),
                 "preset": "ultrafast",
             },
-            f=format_,
+            f='mp4',
         )
 
         for frame in frames:
@@ -454,7 +454,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
         output_container.close()
         return [(input_w, input_h)]
 
-    def save_as_chunk_to_buff(self, frames, format_):
+    def save_as_chunk_to_buff(self, frames):
         if not frames:
             raise Exception('no images to save')
 
@@ -482,7 +482,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
                 'wpredp': '0',
                 'flags': '-loop'
             },
-            f=format_,
+            f='mp4',
         )
 
         for frame in frames:
