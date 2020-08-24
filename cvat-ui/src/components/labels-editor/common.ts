@@ -12,6 +12,7 @@ export interface Attribute {
 
 export interface Label {
     name: string;
+    color: string;
     id: number;
     attributes: Attribute[];
 }
@@ -59,6 +60,11 @@ export function validateParsedLabel(label: Label): void {
     if (!['number', 'undefined'].includes(typeof (label.id))) {
         throw new Error(`Label "${label.name}". `
         + `Type of label id must be only a number or undefined. Got value ${label.id}`);
+    }
+
+    if (!label.color.match(/^#[0-9a-f]{6}$|^$/)) {
+        throw new Error(`Label "${label.name}". `
+        + `Type of label color must be only a valid color string. Got value ${label.color}`);
     }
 
     if (!Array.isArray(label.attributes)) {

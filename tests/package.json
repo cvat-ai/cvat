@@ -4,6 +4,7 @@
     "cypress-file-upload": "^4.0.7"
   },
   "dependencies": {
+    "archiver": "^5.0.0",
     "jimp": "^0.14.0"
   }
 }
