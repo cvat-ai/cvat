@@ -258,6 +258,7 @@ class Job(models.Model):
 class Label(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     name = SafeCharField(max_length=64)
+    color = models.CharField(default='', max_length=8)
 
     def __str__(self):
         return self.name

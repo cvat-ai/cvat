@@ -555,21 +555,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.CHANGE_LABEL_COLOR_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        changingLabelColor: {
-                            message: 'Could not change label color',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
         case AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED: {
             return {
                 ...state,
