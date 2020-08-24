@@ -21,7 +21,7 @@ import ModelsPageContainer from 'containers/models-page/models-page';
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
-import HeaderContainer from 'containers/header/header';
+import Header from 'components/header/header';
 import { customWaViewHit } from 'utils/enviroment';
 
 import getCore from 'cvat-core-wrapper';
@@ -272,7 +272,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 return (
                     <GlobalErrorBoundary>
                         <Layout>
-                            <HeaderContainer> </HeaderContainer>
+                            <Header />
                             <Layout.Content style={{ height: '100%' }}>
                                 <ShorcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
