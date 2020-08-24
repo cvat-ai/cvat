@@ -386,7 +386,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item help='Using cache to store data.'>
                 {form.getFieldDecorator('useCache', {
-                    initialValue: true,
+                    initialValue: false,
                     valuePropName: 'checked',
                 })(
                     <Checkbox>
