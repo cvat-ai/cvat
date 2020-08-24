@@ -103,9 +103,6 @@ export interface AboutState {
     };
     fetching: boolean;
     initialized: boolean;
-    browserName: string | undefined;
-    browserVersion: string | undefined;
-    os: string | undefined;
 }
 
 export interface UserAgreement {

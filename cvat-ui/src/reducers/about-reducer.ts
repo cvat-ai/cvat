@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import platform from 'platform';
-
 import getCore from 'cvat-core-wrapper';
 import { CanvasVersion } from 'cvat-canvas-wrapper';
 import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
@@ -21,9 +19,6 @@ const defaultState: AboutState = {
     },
     fetching: false,
     initialized: false,
-    browserName: platform.name,
-    browserVersion: platform.version,
-    os: platform.os ? platform.os.toString() : undefined,
 };
 
 export default function (
