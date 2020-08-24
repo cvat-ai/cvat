@@ -12,24 +12,11 @@ server {
     proxy_set_header        Host $http_host;
     proxy_pass_header       Set-Cookie;
 
-    location ~* /api/.*|git/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*  {
+    location ~* /api/.*|git/.*|analytics/.*|static/.*|admin(?:/(.*))?.*|documentation/.*|django-rq(?:/(.*))? {
         proxy_pass              http://cvat:8080;
-    }
-
-    # workaround for match location by arguments
-    location = / {
-        error_page 418 = @annotation_ui;
-
-        if ( $query_string ~ "^id=\d+.*" ) { return 418; }
-        proxy_pass              http://cvat_ui;
     }
 
     location / {
         proxy_pass              http://cvat_ui;
-    }
-
-    # old annotation ui, will be removed in the future.
-    location @annotation_ui {
-        proxy_pass              http://cvat:8080;
     }
 }

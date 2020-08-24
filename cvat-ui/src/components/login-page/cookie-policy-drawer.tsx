@@ -39,7 +39,7 @@ function CookieDrawer(): JSX.Element {
                 This site uses cookies for functionality, analytics, and advertising purposes
                 as described in our Cookie and Similar Technologies Notice.
                 To see what cookies we serve and set your preferences, please visit our
-                <a href='https://www.intel.com/cookies'>Cookie Consent Tool</a>
+                <a href='https://www.intel.com/cookies'> Cookie Consent Tool</a>
                 . By continuing to use our website, you agree to our use of cookies.
             </Paragraph>
             <Button onClick={onClose} size='large' type='primary'>

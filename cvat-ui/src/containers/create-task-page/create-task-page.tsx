@@ -10,6 +10,7 @@ import { CreateTaskData } from 'components/create-task-page/create-task-content'
 import { createTaskAsync } from 'actions/tasks-actions';
 
 interface StateToProps {
+    taskId: number | null;
     status: string;
     error: string;
     installedGit: boolean;

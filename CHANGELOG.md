@@ -9,7 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Siammask tracker as DL serverless function (<https://github.com/opencv/cvat/pull/1988>)
 - [Datumaro] Added model info and source info commands (<https://github.com/opencv/cvat/pull/1973>)
 - [Datumaro] Dataset statistics (<https://github.com/opencv/cvat/pull/1668>)
+- Ability to change label color in tasks and predefined labels (<https://github.com/opencv/cvat/pull/2014>)
 - [Datumaro] Multi-dataset merge (https://github.com/opencv/cvat/pull/1695)
+- Link to django admin page from UI (<https://github.com/opencv/cvat/pull/2068>)
+- Notification message when users use wrong browser (<https://github.com/opencv/cvat/pull/2070>)
 
 ### Changed
 - Shape coordinates are rounded to 2 digits in dumped annotations (<https://github.com/opencv/cvat/pull/1970>)
@@ -24,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Issue loading openvino models for semi-automatic and automatic annotation (<https://github.com/opencv/cvat/pull/1996>)
 - Basic functions of CVAT works without activated nuclio dashboard
+- Fixed error with creating task with labels with the same name (<https://github.com/opencv/cvat/pull/2031>)
+- Django RQ dashboard view (<https://github.com/opencv/cvat/pull/2069>)
 
 ### Security
 -

@@ -10,17 +10,28 @@ require('cypress-file-upload')
 require('../plugins/imageGenerator/imageGeneratorCommand')
 require('../plugins/createZipArchive/createZipArchiveCommand')
 
-Cypress.Commands.add('login', (username='admin', password='12qwaszx') => {
+Cypress.Commands.add('login', (username=Cypress.env('user'), password=Cypress.env('password')) => {
     cy.get('[placeholder="Username"]').type(username)
     cy.get('[placeholder="Password"]').type(password)
     cy.get('[type="submit"]').click()
+})
+
+Cypress.Commands.add('logout', (username=Cypress.env('user')) => {
+    cy.get('.cvat-right-header')
+    .find('.cvat-header-menu-dropdown')
+    .should('have.text', username)
+    .trigger('mouseover', {which: 1})
+    cy.get('.anticon-logout')
+    .click()
 })
 
 Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               labelName='Some label',
                                               attrName='Some attr name',
                                               textDefaultValue='Some default value for type Text',
-                                              image='image.png') => {
+                                              image='image.png',
+                                              multiJobs=false,
+                                              segmentSize=1) => {
     cy.contains('button', 'Create new task').click()
     cy.url().should('include', '/tasks/create')
     cy.get('[id="name"]').type(taksName)
@@ -33,9 +44,14 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
     cy.get('[placeholder="Default value"]').type(textDefaultValue)
     cy.contains('button', 'Done').click()
     cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
+    if (multiJobs) {
+        cy.contains('Advanced configuration').click()
+        cy.get('#segmentSize')
+        .type(segmentSize)
+    }
     cy.contains('button', 'Submit').click()
     cy.contains('The task has been created', {timeout: '8000'})
-    cy.get('button[value="tasks"]').click()
+    cy.get('[value="tasks"]').click()
     cy.url().should('include', '/tasks?page=')
 })
 
@@ -46,24 +62,40 @@ Cypress.Commands.add('openTask', (taskName) => {
     .click()
 })
 
-Cypress.Commands.add('openJob', () => {
-    cy.contains('a', 'Job #').click()
+Cypress.Commands.add('openJob', (jobNumber=0) => {
+    cy.get('.ant-table-tbody')
+    .find('tr')
+    .eq(jobNumber)
+    .contains('a', 'Job #')
+    .click()
     cy.url().should('include', '/jobs')
 })
 
-Cypress.Commands.add('openTaskJob', (taskName) => {
+Cypress.Commands.add('openTaskJob', (taskName, jobNumber=0) => {
     cy.openTask(taskName)
-    cy.openJob()
+    cy.openJob(jobNumber)
 })
 
-Cypress.Commands.add('createShape', (ferstX, ferstY, lastX, lastY) => {
+Cypress.Commands.add('createShape', (firstX, firstY, lastX, lastY) => {
     cy.get('.cvat-draw-rectangle-control').click()
     cy.get('.cvat-draw-shape-popover-content')
     .find('button')
     .contains('Shape')
     .click({force: true})
     cy.get('.cvat-canvas-container')
-    .click(ferstX, ferstY)
+    .click(firstX, firstY)
+    cy.get('.cvat-canvas-container')
+    .click(lastX, lastY)
+})
+
+Cypress.Commands.add('createTrack', (firstX, firstY, lastX, lastY) => {
+    cy.get('.cvat-draw-rectangle-control').click()
+    cy.get('.cvat-draw-shape-popover-content')
+    .find('button')
+    .contains('Track')
+    .click({force: true})
+    cy.get('.cvat-canvas-container')
+    .click(firstX, firstY)
     cy.get('.cvat-canvas-container')
     .click(lastX, lastY)
 })
