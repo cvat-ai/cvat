@@ -10,6 +10,8 @@ import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { GlobalHotKeys, ExtendedKeyMapOptions, configure } from 'react-hotkeys';
 import Spin from 'antd/lib/spin';
 import Layout from 'antd/lib/layout';
+import { Row, Col } from 'antd/lib/grid';
+import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
@@ -23,9 +25,11 @@ import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import Header from 'components/header/header';
 import { customWaViewHit } from 'utils/enviroment';
+import showPlatformNotification, { stopNotifications, platformInfo } from 'utils/platform-checker';
 
 import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from 'reducers/interfaces';
+import Modal from 'antd/lib/modal';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -266,6 +270,36 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 switchSettingsDialog();
             },
         };
+
+        if (showPlatformNotification()) {
+            stopNotifications(false);
+            const info = platformInfo();
+            Modal.warning({
+                title: 'Unsupported platform detected',
+                content: (
+                    <>
+                        <Row>
+                            <Col>
+                                <Text>
+                                    {`The browser you are using is ${info.name} ${info.version} based on ${info.engine} .`
+                                        + ' CVAT was tested in the latest versions of Chrome and Firefox.'
+                                        + ' We recommend to use Chrome (or another Chromium based browser)'}
+                                </Text>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col>
+                                <Text type='secondary'>
+                                    {`The operating system is ${info.os}`}
+                                </Text>
+                            </Col>
+                        </Row>
+                    </>
+                ),
+                onOk: () => stopNotifications(true),
+            });
+        }
+
 
         if (readyForRender) {
             if (user) {
