@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Datumaro] Multi-dataset merge (https://github.com/opencv/cvat/pull/1695)
 - Link to django admin page from UI (<https://github.com/opencv/cvat/pull/2068>)
 - Notification message when users use wrong browser (<https://github.com/opencv/cvat/pull/2070>)
+- Annotation in process outline color wheel (<https://github.com/opencv/cvat/pull/2084>)
 
 ### Changed
 - Shape coordinates are rounded to 2 digits in dumped annotations (<https://github.com/opencv/cvat/pull/1970>)
@@ -29,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic functions of CVAT works without activated nuclio dashboard
 - Fixed error with creating task with labels with the same name (<https://github.com/opencv/cvat/pull/2031>)
 - Django RQ dashboard view (<https://github.com/opencv/cvat/pull/2069>)
+- Object's details menu settings (<https://github.com/opencv/cvat/pull/2084>)
+-
 
 ### Security
 -
