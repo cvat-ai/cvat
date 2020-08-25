@@ -444,7 +444,8 @@ export interface ShapesSettingsState {
     colorBy: ColorBy;
     opacity: number;
     selectedOpacity: number;
-    blackBorders: boolean;
+    outlined: boolean;
+    outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
 }
