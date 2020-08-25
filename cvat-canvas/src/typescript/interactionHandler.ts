@@ -33,7 +33,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 return {
                     points: points.map((coord: number): number => coord - this.geometry.offset),
                     shapeType: 'points',
-                    button: (shape.style('stroke') as any as string) === 'red' ? 2 : 0,
+                    button: shape.attr('stroke') === 'green' ? 0 : 2,
                 };
             }
 
@@ -49,10 +49,20 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     private shouldRaiseEvent(ctrlKey: boolean): boolean {
         const { interactionData, interactionShapes, shapesWereUpdated } = this;
-        const { minVertices, enabled } = interactionData;
+        const { minPosVertices, minNegVertices, enabled } = interactionData;
 
-        const minimumVerticesAchieved = typeof (minVertices) === 'undefined'
-            || minVertices <= interactionShapes.length;
+        const positiveShapes = interactionShapes
+            .filter((shape: SVG.Shape): boolean => (shape as any).attr('stroke') === 'green');
+        const negativeShapes = interactionShapes
+            .filter((shape: SVG.Shape): boolean => (shape as any).attr('stroke') !== 'green');
+
+        if (interactionData.shapeType === 'rectangle') {
+            return enabled && !ctrlKey && !!interactionShapes.length;
+        }
+
+        const minimumVerticesAchieved = (typeof (minPosVertices) === 'undefined'
+        || minPosVertices <= positiveShapes.length) && (typeof (minNegVertices) === 'undefined'
+        || minPosVertices <= negativeShapes.length);
         return enabled && !ctrlKey && minimumVerticesAchieved && shapesWereUpdated;
     }
 
@@ -95,6 +105,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     });
 
                     self.on('mousedown', (_e: MouseEvent): void => {
+                        _e.preventDefault();
                         _e.stopPropagation();
                         self.remove();
                         this.interactionShapes = this.interactionShapes.filter(

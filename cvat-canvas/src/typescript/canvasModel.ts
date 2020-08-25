@@ -73,7 +73,8 @@ export interface InteractionData {
     enabled: boolean;
     shapeType?: string;
     crosshair?: boolean;
-    minVertices?: number;
+    minPosVertices?: number;
+    minNegVertices?: number;
 }
 
 export interface InteractionResult {
@@ -525,7 +526,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.data.interactionData = interactionData;
-        this.data.interactionData.crosshair = true;
+        if (typeof (this.data.interactionData.crosshair) !== 'boolean') {
+            this.data.interactionData.crosshair = true;
+        }
+
         this.notify(UpdateReasons.INTERACT);
     }
 

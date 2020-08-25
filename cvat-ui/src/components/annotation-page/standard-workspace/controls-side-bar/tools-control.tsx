@@ -90,7 +90,7 @@ function convertShapesForInteractor(shapes: InteractionResult[]): number[][] {
         return acc;
     };
 
-    return shapes.filter((shape: InteractionResult): boolean => shape.shapeType === 'points')
+    return shapes.filter((shape: InteractionResult): boolean => shape.shapeType === 'points' && shape.button === 0)
         .map((shape: InteractionResult): number[] => shape.points)
         .flat().reduce(reducer, []);
 }
@@ -123,10 +123,13 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { isInteraction, jobInstance } = this.props;
         const { interactiveStateID } = this.state;
         if (prevProps.isInteraction && !isInteraction) {
+            window.removeEventListener('contextmenu', this.contextmenuDisabler);
             if (interactiveStateID !== null) {
                 jobInstance.actions.freeze(false);
                 this.setState({ interactiveStateID: null });
             }
+        } else if (!prevProps.isInteraction && isInteraction) {
+            window.addEventListener('contextmenu', this.contextmenuDisabler);
         }
     }
 
@@ -134,6 +137,13 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { canvasInstance } = this.props;
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
     }
+
+    private contextmenuDisabler = (e: MouseEvent): void => {
+        if (e.target && (e.target as Element).classList
+            && (e.target as Element).classList.toString().includes('ant-modal')) {
+            e.preventDefault();
+        }
+    };
 
     private interactionListener = async (e: Event): Promise<void> => {
         const {
@@ -290,7 +300,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     canvasInstance.cancel();
                                     canvasInstance.interact({
                                         shapeType: 'points',
-                                        minVertices: 4, // TODO: Add parameter to interactor
+                                        minPosVertices: 4, // TODO: Add parameter to interactor
                                         enabled: true,
                                     });
 
@@ -349,6 +359,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                     visible={fetching}
                     closable={false}
                     footer={[]}
+
                 >
                     <Text>Waiting for a server response..</Text>
                     <Icon style={{ marginLeft: '10px' }} type='loading' />
