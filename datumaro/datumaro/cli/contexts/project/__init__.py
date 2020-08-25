@@ -579,7 +579,7 @@ def build_transform_parser(parser_ctor=argparse.ArgumentParser):
             |n
             Examples:|n
             - Convert instance polygons to masks:|n
-            |s|stransform -n polygons_to_masks
+            |s|stransform -t polygons_to_masks
         """ % ', '.join(builtins),
         formatter_class=MultilineFormatter)
 

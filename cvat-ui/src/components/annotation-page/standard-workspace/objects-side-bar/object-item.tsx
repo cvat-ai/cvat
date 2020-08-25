@@ -3,11 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Popover from 'antd/lib/popover';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
-import ColorChanger from 'components/annotation-page/standard-workspace/objects-side-bar/color-changer';
-import { ObjectType, ShapeType } from 'reducers/interfaces';
+import {
+    ObjectType,
+    ShapeType,
+    ColorBy,
+} from 'reducers/interfaces';
 import ItemDetails, { attrValuesAreEqual } from './object-item-details';
 import ItemBasics from './object-item-basics';
 
@@ -23,7 +25,7 @@ interface Props {
     locked: boolean;
     attrValues: Record<number, string>;
     color: string;
-    colors: string[];
+    colorBy: ColorBy;
 
     labels: any[];
     attributes: any[];
@@ -57,6 +59,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         && nextProps.labels === prevProps.labels
         && nextProps.attributes === prevProps.attributes
         && nextProps.normalizedKeyMap === prevProps.normalizedKeyMap
+        && nextProps.colorBy === prevProps.colorBy
         && attrValuesAreEqual(nextProps.attrValues, prevProps.attrValues);
 }
 
@@ -71,7 +74,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         attrValues,
         labelID,
         color,
-        colors,
+        colorBy,
 
         attributes,
         labels,
@@ -101,22 +104,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
 
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
-            <Popover
-                placement='left'
-                trigger='click'
-                content={(
-                    <ColorChanger
-                        shortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
-                        onChange={changeColor}
-                        colors={colors}
-                    />
-                )}
-            >
-                <div
-                    className='cvat-objects-sidebar-state-item-color'
-                    style={{ background: `${color}` }}
-                />
-            </Popover>
+            <div
+                className='cvat-objects-sidebar-state-item-color'
+                style={{ background: `${color}` }}
+            />
             <div
                 onMouseEnter={activate}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
@@ -130,6 +121,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     labels={labels}
                     shapeType={shapeType}
                     objectType={objectType}
+                    color={color}
+                    colorBy={colorBy}
                     type={type}
                     locked={locked}
                     copyShortcut={normalizedKeyMap.COPY_SHAPE}
@@ -138,7 +131,9 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toBackgroundShortcut={normalizedKeyMap.TO_BACKGROUND}
                     toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
                     removeShortcut={normalizedKeyMap.DELETE_OBJECT}
+                    changeColorShortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                     changeLabel={changeLabel}
+                    changeColor={changeColor}
                     copy={copy}
                     remove={remove}
                     propagate={propagate}
