@@ -23,7 +23,7 @@ def unzip(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0027_auto_20200719_1552'),
+        ('engine', '0028_labelcolor'),
     ]
 
     operations = [
