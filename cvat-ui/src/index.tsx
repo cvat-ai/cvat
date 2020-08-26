@@ -144,20 +144,17 @@ ReactDOM.render(
     document.getElementById('root'),
 );
 
-window.onerror = (
-    message: Event | string,
-    source?: string,
-    lineno?: number,
-    colno?: number,
-    error?: Error,
-) => {
-    if (typeof (message) === 'string' && source && typeof (lineno) === 'number' && (typeof (colno) === 'number') && error) {
+window.addEventListener('error', (errorEvent: ErrorEvent) => {
+    if (errorEvent.filename
+        && typeof (errorEvent.lineno) === 'number'
+        && typeof (errorEvent.colno) === 'number'
+        && errorEvent.error) {
         const logPayload = {
-            filename: source,
-            line: lineno,
-            message: error.message,
-            column: colno,
-            stack: error.stack,
+            filename: errorEvent.filename,
+            line: errorEvent.lineno,
+            message: errorEvent.error.message,
+            column: errorEvent.colno,
+            stack: errorEvent.error.stack,
         };
 
         const store = getCVATStore();
@@ -171,4 +168,4 @@ window.onerror = (
             logger.log(LogType.sendException, logPayload);
         }
     }
-};
+});
