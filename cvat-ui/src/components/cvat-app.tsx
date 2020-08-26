@@ -21,8 +21,8 @@ import ModelsPageContainer from 'containers/models-page/models-page';
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
-import ResetPasswordPageContainer from 'components/reset-password-page/reset-password-page';
-import ResetPasswordPageConfirmContainer from 'components/reset-password-confirm-page/reset-password-confirm-page';
+import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
+import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import HeaderContainer from 'containers/header/header';
 import { customWaViewHit } from 'utils/enviroment';
 
@@ -299,8 +299,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <Switch>
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
                         <Route exact path='/auth/login' component={LoginPageContainer} />
-                        <Route exact path='/auth/password/reset' component={ResetPasswordPageContainer} />
-                        <Route exact path='/auth/password/reset/confirm' component={ResetPasswordPageConfirmContainer} />
+                        <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
+                        <Route exact path='/auth/password/reset/confirm' component={ResetPasswordPageConfirmComponent} />
                         <Redirect to='/auth/login' />
                     </Switch>
                 </GlobalErrorBoundary>

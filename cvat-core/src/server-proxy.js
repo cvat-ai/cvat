@@ -264,7 +264,7 @@
                 }
             }
 
-            async function resetPassword(email) {
+            async function requestPasswordReset(email) {
                 try {
                     const data = JSON.stringify({
                         email,
@@ -280,7 +280,7 @@
                 }
             }
 
-            async function resetPasswordConfirm(newPassword1, newPassword2, uid, token) {
+            async function resetPassword(newPassword1, newPassword2, uid, token) {
                 try {
                     const data = JSON.stringify({
                         new_password1: newPassword1,
@@ -822,8 +822,8 @@
                         login,
                         logout,
                         changePassword,
+                        requestPasswordReset,
                         resetPassword,
-                        resetPasswordConfirm,
                         authorized,
                         register,
                         request: serverRequest,

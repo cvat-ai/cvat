@@ -10,7 +10,7 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
 import { CombinedState } from 'reducers/interfaces';
-import { resetPasswordConfirmAsync } from 'actions/auth-actions';
+import { resetPasswordAsync } from 'actions/auth-actions';
 
 import ResetPasswordConfirmForm, { ResetPasswordConfirmData } from './reset-password-confirm-form';
 
@@ -19,7 +19,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onResetPasswordConfirm: typeof resetPasswordConfirmAsync;
+    onResetPasswordConfirm: typeof resetPasswordAsync;
 }
 
 interface ResetPasswordConfirmPageComponentProps {
@@ -38,7 +38,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 }
 
 const mapDispatchToProps: DispatchToProps = {
-    onResetPasswordConfirm: resetPasswordConfirmAsync,
+    onResetPasswordConfirm: resetPasswordAsync,
 };
 
 function ResetPasswordPagePageComponent(
@@ -58,32 +58,30 @@ function ResetPasswordPagePageComponent(
     } = props;
 
     return (
-        <>
-            <Row type='flex' justify='center' align='middle'>
-                <Col {...sizes}>
-                    <Title level={2}> Change password </Title>
-                    <ResetPasswordConfirmForm
-                        fetching={fetching}
-                        onSubmit={(resetPasswordConfirmData: ResetPasswordConfirmData): void => {
-                            onResetPasswordConfirm(
-                                resetPasswordConfirmData.newPassword1,
-                                resetPasswordConfirmData.newPassword2,
-                                resetPasswordConfirmData.uid,
-                                resetPasswordConfirmData.token,
-                            );
-                        }}
-                    />
-                    <Row type='flex' justify='start' align='top'>
-                        <Col>
-                            <Text strong>
-                                Already have an account?
-                                <Link to='/auth/login'> Login </Link>
-                            </Text>
-                        </Col>
-                    </Row>
-                </Col>
-            </Row>
-        </>
+        <Row type='flex' justify='center' align='middle'>
+            <Col {...sizes}>
+                <Title level={2}> Change password </Title>
+                <ResetPasswordConfirmForm
+                    fetching={fetching}
+                    onSubmit={(resetPasswordConfirmData: ResetPasswordConfirmData): void => {
+                        onResetPasswordConfirm(
+                            resetPasswordConfirmData.newPassword1,
+                            resetPasswordConfirmData.newPassword2,
+                            resetPasswordConfirmData.uid,
+                            resetPasswordConfirmData.token,
+                        );
+                    }}
+                />
+                <Row type='flex' justify='start' align='top'>
+                    <Col>
+                        <Text strong>
+                            Already have an account?
+                            <Link to='/auth/login'> Login </Link>
+                        </Text>
+                    </Col>
+                </Row>
+            </Col>
+        </Row>
     );
 }
 

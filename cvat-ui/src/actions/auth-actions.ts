@@ -25,12 +25,12 @@ export enum AuthActionTypes {
     CHANGE_PASSWORD_SUCCESS = 'CHANGE_PASSWORD_SUCCESS',
     CHANGE_PASSWORD_FAILED = 'CHANGE_PASSWORD_FAILED',
     SWITCH_CHANGE_PASSWORD_DIALOG = 'SWITCH_CHANGE_PASSWORD_DIALOG',
-    RESET_PASSWORD = 'RESET_PASSWORD',
-    RESET_PASSWORD_SUCCESS = 'RESET_PASSWORD_SUCCESS',
-    RESET_PASSWORD_FAILED = 'RESET_PASSWORD_FAILED',
-    RESET_PASSWORD_CONFIRM = 'RESET_PASSWORD_CONFIRM',
-    RESET_PASSWORD_CONFIRM_SUCCESS = 'RESET_PASSWORD_CONFIRM_SUCCESS',
-    RESET_PASSWORD_CONFIRM_FAILED = 'RESET_PASSWORD_CONFIRM_FAILED',
+    REQUEST_PASSWORD_RESET = 'REQUEST_PASSWORD_RESET',
+    REQUEST_PASSWORD_RESET_SUCCESS = 'REQUEST_PASSWORD_RESET_SUCCESS',
+    REQUEST_PASSWORD_RESET_FAILED = 'REQUEST_PASSWORD_RESET_FAILED',
+    RESET_PASSWORD = 'RESET_PASSWORD_CONFIRM',
+    RESET_PASSWORD_SUCCESS = 'RESET_PASSWORD_CONFIRM_SUCCESS',
+    RESET_PASSWORD_FAILED = 'RESET_PASSWORD_CONFIRM_FAILED',
     LOAD_AUTH_ACTIONS = 'LOAD_AUTH_ACTIONS',
     LOAD_AUTH_ACTIONS_SUCCESS = 'LOAD_AUTH_ACTIONS_SUCCESS',
     LOAD_AUTH_ACTIONS_FAILED = 'LOAD_AUTH_ACTIONS_FAILED',
@@ -56,15 +56,15 @@ export const authActions = {
     switchChangePasswordDialog: (showChangePasswordDialog: boolean) => (
         createAction(AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG, { showChangePasswordDialog })
     ),
+    requestPasswordReset: () => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET),
+    requestPasswordResetSuccess: () => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET_SUCCESS),
+    requestPasswordResetFailed: (error: any) => (
+        createAction(AuthActionTypes.REQUEST_PASSWORD_RESET_FAILED, { error })
+    ),
     resetPassword: () => createAction(AuthActionTypes.RESET_PASSWORD),
     resetPasswordSuccess: () => createAction(AuthActionTypes.RESET_PASSWORD_SUCCESS),
     resetPasswordFailed: (error: any) => (
         createAction(AuthActionTypes.RESET_PASSWORD_FAILED, { error })
-    ),
-    resetPasswordConfirm: () => createAction(AuthActionTypes.RESET_PASSWORD_CONFIRM),
-    resetPasswordConfirmSuccess: () => createAction(AuthActionTypes.RESET_PASSWORD_CONFIRM_SUCCESS),
-    resetPasswordConfirmFailed: (error: any) => (
-        createAction(AuthActionTypes.RESET_PASSWORD_CONFIRM_FAILED, { error })
     ),
     loadServerAuthActions: () => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS),
     loadServerAuthActionsSuccess: (allowChangePassword: boolean, allowResetPassword: boolean) => (
@@ -155,30 +155,30 @@ export const changePasswordAsync = (oldPassword: string,
     }
 };
 
-export const resetPasswordAsync = (email: string): ThunkAction => async (dispatch) => {
-    dispatch(authActions.resetPassword());
+export const requestPasswordResetAsync = (email: string): ThunkAction => async (dispatch) => {
+    dispatch(authActions.requestPasswordReset());
 
     try {
-        await cvat.server.resetPassword(email);
-        dispatch(authActions.resetPasswordSuccess());
+        await cvat.server.requestPasswordReset(email);
+        dispatch(authActions.requestPasswordResetSuccess());
     } catch (error) {
-        dispatch(authActions.resetPasswordFailed(error));
+        dispatch(authActions.requestPasswordResetFailed(error));
     }
 };
 
-export const resetPasswordConfirmAsync = (
+export const resetPasswordAsync = (
     newPassword1: string,
     newPassword2: string,
     uid: string,
     token: string,
 ): ThunkAction => async (dispatch) => {
-    dispatch(authActions.resetPasswordConfirm());
+    dispatch(authActions.resetPassword());
 
     try {
-        await cvat.server.resetPasswordConfirm(newPassword1, newPassword2, uid, token);
-        dispatch(authActions.resetPasswordConfirmSuccess());
+        await cvat.server.resetPassword(newPassword1, newPassword2, uid, token);
+        dispatch(authActions.resetPasswordSuccess());
     } catch (error) {
-        dispatch(authActions.resetPasswordConfirmFailed(error));
+        dispatch(authActions.resetPasswordFailed(error));
     }
 };
 
@@ -189,16 +189,14 @@ export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
         const promises: Promise<boolean>[] = [
             isReachable(`${cvat.config.backendAPI}/auth/password/change`, 'OPTIONS'),
             isReachable(`${cvat.config.backendAPI}/auth/password/reset`, 'OPTIONS'),
-            isReachable(`${cvat.config.backendAPI}/auth/password/reset/confirm`, 'OPTIONS'),
         ];
         const [
             allowChangePassword,
-            allowResetPassword,
-            allowResetPasswordConfirm] = await Promise.all(promises);
+            allowResetPassword] = await Promise.all(promises);
 
         dispatch(authActions.loadServerAuthActionsSuccess(
             allowChangePassword,
-            allowResetPassword && allowResetPasswordConfirm,
+            allowResetPassword,
         ));
     } catch (error) {
         dispatch(authActions.loadServerAuthActionsFailed(error));

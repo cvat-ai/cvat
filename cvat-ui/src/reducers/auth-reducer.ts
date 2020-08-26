@@ -97,6 +97,21 @@ export default function (state = defaultState, action: AuthActions | boundariesA
                     ? !state.showChangePasswordDialog
                     : action.payload.showChangePasswordDialog,
             };
+        case AuthActionTypes.REQUEST_PASSWORD_RESET:
+            return {
+                ...state,
+                fetching: true,
+            };
+        case AuthActionTypes.REQUEST_PASSWORD_RESET_SUCCESS:
+            return {
+                ...state,
+                fetching: false,
+            };
+        case AuthActionTypes.REQUEST_PASSWORD_RESET_FAILED:
+            return {
+                ...state,
+                fetching: false,
+            };
         case AuthActionTypes.RESET_PASSWORD:
             return {
                 ...state,
@@ -108,21 +123,6 @@ export default function (state = defaultState, action: AuthActions | boundariesA
                 fetching: false,
             };
         case AuthActionTypes.RESET_PASSWORD_FAILED:
-            return {
-                ...state,
-                fetching: false,
-            };
-        case AuthActionTypes.RESET_PASSWORD_CONFIRM:
-            return {
-                ...state,
-                fetching: true,
-            };
-        case AuthActionTypes.RESET_PASSWORD_CONFIRM_SUCCESS:
-            return {
-                ...state,
-                fetching: false,
-            };
-        case AuthActionTypes.RESET_PASSWORD_CONFIRM_FAILED:
             return {
                 ...state,
                 fetching: false,

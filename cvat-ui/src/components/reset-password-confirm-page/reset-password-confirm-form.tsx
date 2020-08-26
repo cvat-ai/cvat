@@ -75,7 +75,6 @@ class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswor
                     ...values,
                     uid,
                     token,
-                    confirmations: [],
                 };
 
                 onSubmit(validatedFields);
@@ -131,7 +130,7 @@ class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswor
         return (
             <Form
                 onSubmit={this.handleSubmit}
-                className='reset-password-confirm-form'
+                className='cvat-reset-password-confirm-form'
             >
                 {this.renderNewPasswordField()}
                 {this.renderNewPasswordConfirmationField()}
@@ -140,7 +139,7 @@ class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswor
                     <Button
                         type='primary'
                         htmlType='submit'
-                        className='reset-password-confirm-form-button'
+                        className='cvat-reset-password-confirm-form-button'
                         loading={fetching}
                         disabled={fetching}
                     >

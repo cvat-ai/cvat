@@ -183,8 +183,8 @@ export interface NotificationsState {
             logout: null | ErrorState;
             register: null | ErrorState;
             changePassword: null | ErrorState;
+            requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
-            resetPasswordConfirm: null | ErrorState;
             loadAuthActions: null | ErrorState;
         };
         tasks: {
@@ -255,8 +255,8 @@ export interface NotificationsState {
         };
         auth: {
             changePasswordDone: string;
+            requestPasswordResetDone: string;
             resetPasswordDone: string;
-            resetPasswordConfirmDone: string;
         };
     };
 }

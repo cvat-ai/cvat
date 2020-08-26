@@ -59,7 +59,7 @@ class ResetPasswordFormComponent extends React.PureComponent<ResetPasswordFormPr
     public render(): JSX.Element {
         const { fetching } = this.props;
         return (
-            <Form onSubmit={this.handleSubmit} className='reset-password-form'>
+            <Form onSubmit={this.handleSubmit} className='cvat-reset-password-form'>
                 {this.renderEmailField()}
 
                 <Form.Item>
@@ -68,7 +68,7 @@ class ResetPasswordFormComponent extends React.PureComponent<ResetPasswordFormPr
                         loading={fetching}
                         disabled={fetching}
                         htmlType='submit'
-                        className='reset-password-form-button'
+                        className='cvat-reset-password-form-button'
                     >
                         Reset password
                     </Button>

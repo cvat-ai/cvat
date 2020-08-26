@@ -27,8 +27,8 @@ const defaultState: NotificationsState = {
             logout: null,
             register: null,
             changePassword: null,
+            requestPasswordReset: null,
             resetPassword: null,
-            resetPasswordConfirm: null,
             loadAuthActions: null,
         },
         tasks: {
@@ -99,8 +99,8 @@ const defaultState: NotificationsState = {
         },
         auth: {
             changePasswordDone: '',
+            requestPasswordResetDone: '',
             resetPasswordDone: '',
-            resetPasswordConfirmDone: '',
         },
     },
 };
@@ -194,6 +194,34 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case AuthActionTypes.REQUEST_PASSWORD_RESET_SUCCESS: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    auth: {
+                        ...state.messages.auth,
+                        requestPasswordResetDone: `Check your email for a link to reset your password.
+                            If it doesn’t appear within a few minutes, check your spam folder.`,
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.REQUEST_PASSWORD_RESET_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        requestPasswordReset: {
+                            message: 'Could not reset password on the server.',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
         case AuthActionTypes.RESET_PASSWORD_SUCCESS: {
             return {
                 ...state,
@@ -201,8 +229,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     auth: {
                         ...state.messages.auth,
-                        resetPasswordDone: `If your email address exists in our database,
-                            you will receive a password recovery link at your email address in a few minutes.`,
+                        resetPasswordDone: 'Password has been reset with the new password.',
                     },
                 },
             };
@@ -215,33 +242,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     auth: {
                         ...state.errors.auth,
                         resetPassword: {
-                            message: 'Could not reset password on the server.',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case AuthActionTypes.RESET_PASSWORD_CONFIRM_SUCCESS: {
-            return {
-                ...state,
-                messages: {
-                    ...state.messages,
-                    auth: {
-                        ...state.messages.auth,
-                        resetPasswordConfirmDone: 'Password has been reset with the new password.',
-                    },
-                },
-            };
-        }
-        case AuthActionTypes.RESET_PASSWORD_CONFIRM_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    auth: {
-                        ...state.errors.auth,
-                        resetPasswordConfirm: {
                             message: 'Could not set new password on the server.',
                             reason: action.payload.error.toString(),
                         },

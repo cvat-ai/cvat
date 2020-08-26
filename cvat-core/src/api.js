@@ -211,21 +211,21 @@ function build() {
             },
             /**
                 * Method allows to reset user password
-                * @method resetPassword
+                * @method requestPasswordReset
                 * @async
                 * @memberof module:API.cvat.server
                 * @param {string} email A email address for the account
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
-            async resetPassword(email) {
+            async requestPasswordReset(email) {
                 const result = await PluginRegistry
-                    .apiWrapper(cvat.server.resetPassword, email);
+                    .apiWrapper(cvat.server.requestPasswordReset, email);
                 return result;
             },
             /**
                 * Method allows to confirm reset user password
-                * @method resetPasswordConfirm
+                * @method resetPassword
                 * @async
                 * @memberof module:API.cvat.server
                 * @param {string} newPassword1 New password for the account
@@ -235,9 +235,9 @@ function build() {
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
-            async resetPasswordConfirm(newPassword1, newPassword2, uid, token) {
+            async resetPassword(newPassword1, newPassword2, uid, token) {
                 const result = await PluginRegistry
-                    .apiWrapper(cvat.server.resetPasswordConfirm, newPassword1, newPassword2,
+                    .apiWrapper(cvat.server.resetPassword, newPassword1, newPassword2,
                         uid, token);
                 return result;
             },
