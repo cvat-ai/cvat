@@ -9,6 +9,7 @@
     - [Stop all containers](#stop-all-containers)
     - [Advanced settings](#advanced-settings)
     - [Share path](#share-path)
+    - [Email verification](#email-verification)
     - [Serving over HTTPS](#serving-over-https)
       - [Prerequisites](#prerequisites)
       - [Roadmap](#roadmap)
@@ -362,6 +363,26 @@ You can change the share device path to your actual share. For user convenience
 we have defined the environment variable $CVAT_SHARE_URL. This variable
 contains a text (url for example) which is shown in the client-share browser.
 
+### Email verification
+
+You can enable email verification for newly registered users.
+Specify these options in the [settings file](../../settings/base.py) to configure Django allauth
+to enable email verification (ACCOUNT_EMAIL_VERIFICATION = 'mandatory').
+Access is denied until the user's email address is verified.
+```python
+ACCOUNT_AUTHENTICATION_METHOD = 'username'
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+
+# Email backend settings for Django
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+```
+Also you need to configure the Django email backend to send emails.
+This depends on the email server you are using and is not covered in this tutorial, please see
+[Django SMTP backend configuration](https://docs.djangoproject.com/en/3.1/topics/email/#django.core.mail.backends.smtp.EmailBackend)
+for details.
+
 ### Serving over HTTPS
 
 We will add [letsencrypt.org](https://letsencrypt.org/) issued certificate to secure
@@ -569,25 +590,12 @@ server {
     proxy_set_header        Host $http_host;
     proxy_pass_header       Set-Cookie;
 
-    location ~* /api/.*|git/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*  {
+    location ~* /api/.*|git/.*|analytics/.*|static/.*|admin(?:/(.*))?.*|documentation/.*|django-rq(?:/(.*))? {
         proxy_pass              http://cvat:8080;
-    }
-
-    # workaround for match location by arguments
-    location = / {
-        error_page 418 = @annotation_ui;
-
-        if ( $query_string ~ "^id=\d+.*" ) { return 418; }
-        proxy_pass              http://cvat_ui;
     }
 
     location / {
         proxy_pass              http://cvat_ui;
-    }
-
-    # old annotation ui, will be removed in the future.
-    location @annotation_ui {
-        proxy_pass              http://cvat:8080;
     }
 }
 ```

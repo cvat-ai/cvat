@@ -5,6 +5,8 @@
 from rest_framework import views
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_auth.registration.views import RegisterView as _RegisterView
+from allauth.account import app_settings as allauth_settings
 from furl import furl
 
 from . import signature
@@ -43,3 +45,12 @@ class SigningView(views.APIView):
 
         url = furl(url).add({signature.QUERY_PARAM: sign}).url
         return Response(url)
+
+
+class RegisterView(_RegisterView):
+    def get_response_data(self, user):
+        data = self.get_serializer(user).data
+        data['email_verification_required'] = allauth_settings.EMAIL_VERIFICATION == \
+            allauth_settings.EmailVerificationMethod.MANDATORY
+
+        return data

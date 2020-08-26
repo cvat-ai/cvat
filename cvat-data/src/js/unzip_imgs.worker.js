@@ -20,13 +20,22 @@ onmessage = (e) => {
                 const fileIndex = index++;
                 if (fileIndex <= end) {
                     _zip.file(relativePath).async('blob').then((fileData) => {
-                        createImageBitmap(fileData).then((img) => {
+                        if (self.createImageBitmap) {
+                            createImageBitmap(fileData).then((img) => {
+                                postMessage({
+                                    fileName: relativePath,
+                                    index: fileIndex,
+                                    data: img,
+                                });
+                            });
+                        } else {
                             postMessage({
                                 fileName: relativePath,
                                 index: fileIndex,
-                                data: img,
+                                data: fileData,
+                                isRaw: true,
                             });
-                        });
+                        }
                     });
                 }
             });

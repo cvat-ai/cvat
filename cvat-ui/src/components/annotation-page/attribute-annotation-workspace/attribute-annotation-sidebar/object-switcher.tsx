@@ -31,7 +31,7 @@ function ObjectSwitcher(props: Props): JSX.Element {
 
     const title = `${currentLabel} ${clientID} [${currentIndex + 1}/${objectsCount}]`;
     return (
-        <div className='attribute-annotation-sidebar-switcher'>
+        <div className='attribute-annotation-sidebar-object-switcher'>
             <Tooltip title={`Previous object ${normalizedKeyMap.PREVIOUS_OBJECT}`} mouseLeaveDelay={0}>
                 <Button disabled={objectsCount <= 1} onClick={() => nextObject(-1)}>
                     <Icon type='left' />

@@ -60,6 +60,7 @@ export interface TasksState {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
         creates: {
+            taskId: number | null;
             status: string;
             error: string;
         };
@@ -251,6 +252,7 @@ export interface NotificationsState {
         };
         auth: {
             changePasswordDone: string;
+            registerDone: string;
         };
     };
 }

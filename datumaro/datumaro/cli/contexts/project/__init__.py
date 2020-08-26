@@ -465,7 +465,7 @@ def build_merge_parser(parser_ctor=argparse.ArgumentParser):
         """,
         formatter_class=MultilineFormatter)
 
-    parser.add_argument('other_project',
+    parser.add_argument('other_project_dir',
         help="Path to a project")
     parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Output directory (default: current project's dir)")
@@ -579,7 +579,7 @@ def build_transform_parser(parser_ctor=argparse.ArgumentParser):
             |n
             Examples:|n
             - Convert instance polygons to masks:|n
-            |s|stransform -n polygons_to_masks
+            |s|stransform -t polygons_to_masks
         """ % ', '.join(builtins),
         formatter_class=MultilineFormatter)
 

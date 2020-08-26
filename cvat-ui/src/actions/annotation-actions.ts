@@ -148,8 +148,6 @@ export enum AnnotationActionTypes {
     GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
     SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
-    CHANGE_LABEL_COLOR_SUCCESS = 'CHANGE_LABEL_COLOR_SUCCESS',
-    CHANGE_LABEL_COLOR_FAILED = 'CHANGE_LABEL_COLOR_FAILED',
     UPDATE_TAB_CONTENT_HEIGHT = 'UPDATE_TAB_CONTENT_HEIGHT',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
@@ -1280,44 +1278,6 @@ ThunkAction {
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.SPLIT_ANNOTATIONS_FAILED,
-                payload: {
-                    error,
-                },
-            });
-        }
-    };
-}
-
-export function changeLabelColorAsync(
-    label: any,
-    color: string,
-): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            const {
-                filters,
-                showAllInterpolationTracks,
-                jobInstance,
-                frame,
-            } = receiveAnnotationsParameters();
-
-            const updatedLabel = label;
-            updatedLabel.color = color;
-            const states = await jobInstance.annotations
-                .get(frame, showAllInterpolationTracks, filters);
-            const history = await jobInstance.actions.get();
-
-            dispatch({
-                type: AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS,
-                payload: {
-                    label: updatedLabel,
-                    history,
-                    states,
-                },
-            });
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.CHANGE_LABEL_COLOR_FAILED,
                 payload: {
                     error,
                 },
