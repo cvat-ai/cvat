@@ -29,7 +29,7 @@ context('The points of the previous polygon mustn\'t appear while polygon\'s int
     })
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Create a poligon', () => {
+        it('Create a polygon', () => {
             cy.createPolygon('Track', [
                                         {x: 309, y: 431},
                                         {x: 360, y: 500},
@@ -51,18 +51,14 @@ context('The points of the previous polygon mustn\'t appear while polygon\'s int
                                         false, true)
         })
         it('Activate auto bordering mode', () => {
-            cy.get('.cvat-right-header')
-            .find('.cvat-header-menu-dropdown')
-            .trigger('mouseover', {which: 1})
-            cy.get('.anticon-setting')
-            .click()
+            cy.openSettings()
             cy.get('.ant-modal-content').within(() => {
                 cy.contains('Workspace').click()
                 cy.get('.cvat-workspace-settings-autoborders').within(() => {
                     cy.get('[type="checkbox"]').check()
                 })
-                cy.contains('button', 'Close').click()
             })
+            cy.closeSettings()
         })
         it('Old points invisible', () => {
             cy.get('.cvat_canvas_autoborder_point')

@@ -41,7 +41,7 @@ context('Point coordinates are not duplicated while polygon\'s interpolation.', 
     })
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Create a poligon', () => {
+        it('Create a polygon', () => {
             cy.createPolygon('Track', [
                                         {x: 300, y: 450},
                                         {x: 400, y: 450},

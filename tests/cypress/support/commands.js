@@ -151,3 +151,19 @@ Cypress.Commands.add('createPolygon', ( mode,
         .trigger('keyup', {key: 'n'})
     }
 })
+
+Cypress.Commands.add('openSettings', () => {
+    cy.get('.cvat-right-header')
+    .find('.cvat-header-menu-dropdown')
+    .trigger('mouseover', {which: 1})
+    cy.get('.anticon-setting')
+    .click()
+})
+
+Cypress.Commands.add('closeSettings', () => {
+    cy.get('.ant-modal-content')
+    .should('contain', 'Settings')
+    .within(() => {
+        cy.contains('button', 'Close').click()
+    })
+})
