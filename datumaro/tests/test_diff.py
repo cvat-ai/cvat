@@ -175,3 +175,58 @@ class ExactComparatorTest(TestCase):
         self.assertEqual(6, len(matched), matched)
         self.assertEqual(2, len(unmatched), unmatched)
         self.assertEqual(0, len(errors), errors)
+
+    def test_image_comparison(self):
+        a = Dataset.from_iterable([
+            DatasetItem(id=11, image=np.ones((5, 4, 3)), annotations=[
+                Bbox(5, 6, 7, 8),
+            ]),
+            DatasetItem(id=12, image=np.ones((5, 4, 3)), annotations=[
+                Bbox(1, 2, 3, 4),
+                Bbox(5, 6, 7, 8),
+            ]),
+            DatasetItem(id=13, image=np.ones((5, 4, 3)), annotations=[
+                Bbox(9, 10, 11, 12), # mismatch
+            ]),
+
+            DatasetItem(id=14, image=np.zeros((5, 4, 3)), annotations=[
+                Bbox(1, 2, 3, 4),
+                Bbox(5, 6, 7, 8),
+            ], attributes={ 'a': 1 }),
+
+            DatasetItem(id=15, image=np.zeros((5, 5, 3)), annotations=[
+                Bbox(1, 2, 3, 4),
+                Bbox(5, 6, 7, 8),
+            ]),
+        ], categories=['a', 'b', 'c', 'd'])
+
+        b = Dataset.from_iterable([
+            DatasetItem(id=21, image=np.ones((5, 4, 3)), annotations=[
+                Bbox(5, 6, 7, 8),
+            ]),
+            DatasetItem(id=22, image=np.ones((5, 4, 3)), annotations=[
+                Bbox(1, 2, 3, 4),
+                Bbox(5, 6, 7, 8),
+            ]),
+            DatasetItem(id=23, image=np.ones((5, 4, 3)), annotations=[
+                Bbox(10, 10, 11, 12), # mismatch
+            ]),
+
+            DatasetItem(id=24, image=np.zeros((5, 4, 3)), annotations=[
+                Bbox(6, 6, 7, 8), # 1 ann missing, mismatch
+            ], attributes={ 'a': 2 }),
+
+            DatasetItem(id=25, image=np.zeros((4, 4, 3)), annotations=[
+                Bbox(6, 6, 7, 8),
+            ]),
+        ], categories=['a', 'b', 'c', 'd'])
+
+        comp = ExactComparator(match_images=True)
+        matched_ann, unmatched_ann, a_unmatched, b_unmatched, errors = \
+            comp.compare_datasets(a, b)
+
+        self.assertEqual(3, len(matched_ann), matched_ann)
+        self.assertEqual(5, len(unmatched_ann), unmatched_ann)
+        self.assertEqual(1, len(a_unmatched), a_unmatched)
+        self.assertEqual(1, len(b_unmatched), b_unmatched)
+        self.assertEqual(1, len(errors), errors)

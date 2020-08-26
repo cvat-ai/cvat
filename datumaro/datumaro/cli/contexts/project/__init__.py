@@ -581,12 +581,14 @@ def build_ediff_parser(parser_ctor=argparse.ArgumentParser):
     parser.add_argument('other_project_dir',
         help="Directory of the second project to be compared")
     parser.add_argument('-iia', '--ignore-item-attr', action='append',
-        help="Ignore an item attribute (repeatable)")
+        help="Ignore item attribute (repeatable)")
     parser.add_argument('-ia', '--ignore-attr', action='append',
-        help="Ignore an annotation attribute (repeatable)")
+        help="Ignore annotation attribute (repeatable)")
     parser.add_argument('-if', '--ignore-field',
         action='append', default=['id', 'group'],
-        help="Ignore an annotation field (repeatable, default: %(default)s)")
+        help="Ignore annotation field (repeatable, default: %(default)s)")
+    parser.add_argument('--match-images', action='store_true',
+        help='Match dataset items by images instead of ids')
     parser.add_argument('--all', action='store_true',
         help="Include matches in the output")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
@@ -600,9 +602,10 @@ def ediff_command(args):
     second_project = load_project(args.other_project_dir)
 
     comparator = ExactComparator(
-        ignored_fields=args.ignore_field or [],
-        ignored_attrs=args.ignore_attr or [],
-        ignored_item_attrs=args.ignore_item_attr or [])
+        match_images=args.match_images,
+        ignored_fields=args.ignore_field,
+        ignored_attrs=args.ignore_attr,
+        ignored_item_attrs=args.ignore_item_attr)
     matches, mismatches, a_extra, b_extra, errors = \
         comparator.compare_datasets(
             first_project.make_dataset(), second_project.make_dataset())

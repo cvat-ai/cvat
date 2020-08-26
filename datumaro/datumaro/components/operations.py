@@ -5,6 +5,7 @@
 
 from collections import OrderedDict
 from copy import deepcopy
+import hashlib
 import logging as log
 
 import attr
@@ -17,7 +18,7 @@ from datumaro.components.cli_plugin import CliPlugin
 from datumaro.components.extractor import AnnotationType, Bbox, Label
 from datumaro.components.project import Dataset
 from datumaro.util import find, filter_dict
-from datumaro.util.attrs_util import ensure_cls
+from datumaro.util.attrs_util import ensure_cls, default_if_none
 from datumaro.util.annotation_util import (segment_iou, bbox_iou,
     mean_bbox, OKS, find_instances, max_bbox, smooth_line)
 
@@ -1107,33 +1108,77 @@ class DistanceComparator:
         return match_segments(a_lines, b_lines,
             dist_thresh=self.iou_threshold, distance=distance)
 
+def match_items_by_id(a, b):
+    a_items = set((item.id, item.subset) for item in a)
+    b_items = set((item.id, item.subset) for item in b)
+
+    matches = a_items & b_items
+    matches = [([m], [m]) for m in matches]
+    a_unmatched = a_items - b_items
+    b_unmatched = b_items - a_items
+    return matches, a_unmatched, b_unmatched
+
+def match_items_by_image_hash(a, b):
+    def _hash(item):
+        if not item.image.has_data:
+            log.warning("Image (%s, %s) has no image "
+                "data, counted as unmatched", item.id, item.subset)
+            return None
+        return hashlib.md5(item.image.data.tobytes()).hexdigest()
+
+    def _build_hashmap(source):
+        d = {}
+        for item in source:
+            h = _hash(item)
+            if h is None:
+                h = str(id(item)) # anything unique
+            d.setdefault(h, []).append((item.id, item.subset))
+        return d
+
+    a_hash = _build_hashmap(a)
+    b_hash = _build_hashmap(b)
+
+    a_items = set(a_hash)
+    b_items = set(b_hash)
+
+    matches = a_items & b_items
+    a_unmatched = a_items - b_items
+    b_unmatched = b_items - a_items
+
+    matches = [(a_hash[h], b_hash[h]) for h in matches]
+    a_unmatched = set(i for h in a_unmatched for i in a_hash[h])
+    b_unmatched = set(i for h in b_unmatched for i in b_hash[h])
+
+    return matches, a_unmatched, b_unmatched
+
 @attrs
 class ExactComparator:
-    ignored_fields = attrib(kw_only=True, factory=set, converter=set)
-    ignored_attrs = attrib(kw_only=True, factory=set, converter=set)
-    ignored_item_attrs = attrib(kw_only=True, factory=set, converter=set)
+    match_images = attrib(kw_only=True, type=bool, default=False)
+    ignored_fields = attrib(kw_only=True,
+        factory=set, validator=default_if_none(set))
+    ignored_attrs = attrib(kw_only=True,
+        factory=set, validator=default_if_none(set))
+    ignored_item_attrs = attrib(kw_only=True,
+        factory=set, validator=default_if_none(set))
 
     _test = attrib(init=False, type=TestCase)
+    errors = attrib(init=False, type=list)
 
     def __attrs_post_init__(self):
         self._test = TestCase()
         self._test.maxDiff = None
 
 
-    @staticmethod
-    def _match_datasets(a, b):
-        a_items = set((item.id, item.subset) for item in a)
-        b_items = set((item.id, item.subset) for item in b)
-
-        matches = a_items & b_items
-        a_unmatched = a_items - b_items
-        b_unmatched = b_items - a_items
-        return matches, a_unmatched, b_unmatched
+    def _match_items(self, a, b):
+        if self.match_images:
+            return match_items_by_image_hash(a, b)
+        else:
+            return match_items_by_id(a, b)
 
     def _compare_categories(self, a, b):
         test = self._test
+        errors = self.errors
 
-        errors = []
         try:
             test.assertEqual(
                 sorted(a, key=lambda t: t.value),
@@ -1166,14 +1211,13 @@ class ExactComparator:
                 )
             except AssertionError as e:
                 errors.append({'type': 'points', 'message': str(e)})
-        return errors
 
     def _compare_annotations(self, a, b):
         ignored_fields = self.ignored_fields
         ignored_attrs = self.ignored_attrs
 
-        a_fields = { k: None for k in vars(a) if k in ignored_fields}
-        b_fields = { k: None for k in vars(b) if k in ignored_fields}
+        a_fields = { k: None for k in vars(a) if k in ignored_fields }
+        b_fields = { k: None for k in vars(b) if k in ignored_fields }
         if 'attributes' not in ignored_fields:
             a_fields['attributes'] = filter_dict(a.attributes, ignored_attrs)
             b_fields['attributes'] = filter_dict(b.attributes, ignored_attrs)
@@ -1182,54 +1226,120 @@ class ExactComparator:
 
         return result
 
-    def compare_datasets(self, a, b):
+    def _compare_items(self, item_a, item_b):
         test = self._test
 
+        a_id = (item_a.id, item_a.subset)
+        b_id = (item_b.id, item_b.subset)
+
+        matched = []
+        unmatched = []
         errors = []
 
-        errors.extend(self._compare_categories(a.categories(), b.categories()))
+        try:
+            test.assertEqual(
+                filter_dict(item_a.attributes, self.ignored_item_attrs),
+                filter_dict(item_b.attributes, self.ignored_item_attrs)
+            )
+        except AssertionError as e:
+            errors.append({'type': 'item_attr',
+                'a_item': a_id, 'b_item': b_id, 'message': str(e)})
+
+        b_annotations = item_b.annotations[:]
+        for ann_a in item_a.annotations:
+            ann_b_candidates = [x for x in item_b.annotations
+                if x.type == ann_a.type]
+
+            ann_b = find(enumerate(self._compare_annotations(ann_a, x)
+                for x in ann_b_candidates), lambda x: x[1])
+            if ann_b is None:
+                unmatched.append({
+                    'item': a_id, 'source': 'a', 'ann': str(ann_a),
+                })
+                continue
+            else:
+                ann_b = ann_b_candidates[ann_b[0]]
+
+            b_annotations.remove(ann_b) # avoid repeats
+            matched.append({'a_item': a_id, 'b_item': b_id,
+                'a': str(ann_a), 'b': str(ann_b)})
+
+        for ann_b in b_annotations:
+            unmatched.append({'item': b_id, 'source': 'b', 'ann': str(ann_b)})
+
+        return matched, unmatched, errors
+
+    def compare_datasets(self, a, b):
+        self.errors = []
+        errors = self.errors
+
+        self._compare_categories(a.categories(), b.categories())
 
         matched = []
         unmatched = []
 
-        items, a_extra_items, b_extra_items = self._match_datasets(a, b)
+        matches, a_unmatched, b_unmatched = self._match_items(a, b)
 
         if a.categories().get(AnnotationType.label) != \
            b.categories().get(AnnotationType.label):
-            return matched, unmatched, a_extra_items, b_extra_items, errors
+            return matched, unmatched, a_unmatched, b_unmatched, errors
 
-        for item_id in items:
-            item_a = a.get(*item_id)
-            item_b = b.get(*item_id)
+        _dist = lambda s: len(s[1]) + len(s[2])
+        for a_ids, b_ids in matches:
+            # build distance matrix
+            match_status = {} # (a_id, b_id): [matched, unmatched, errors]
+            a_matches = { a_id: None for a_id in a_ids }
+            b_matches = { b_id: None for b_id in b_ids }
 
-            try:
-                test.assertEqual(
-                    filter_dict(item_a.attributes, self.ignored_item_attrs),
-                    filter_dict(item_b.attributes, self.ignored_item_attrs)
-                )
-            except AssertionError as e:
-                errors.append({'type': 'item_attr',
-                    'item': item_id, 'message': str(e)})
+            for a_id in a_ids:
+                item_a = a.get(*a_id)
+                candidates = {}
 
-            b_annotations = item_b.annotations[:]
-            for ann_a in item_a.annotations:
-                ann_b_candidates = [x for x in item_b.annotations
-                    if x.type == ann_a.type]
+                for b_id in b_ids:
+                    item_b = b.get(*b_id)
 
-                ann_b = find(enumerate(self._compare_annotations(ann_a, x)
-                    for x in ann_b_candidates), lambda x: x[1])
-                if ann_b is None:
-                    unmatched.append({
-                        'item': item_id, 'source': 'a', 'ann': str(ann_a),
-                    })
+                    i_m, i_um, i_err = self._compare_items(item_a, item_b)
+                    candidates[b_id] = [i_m, i_um, i_err]
+
+                    if len(i_um) == 0:
+                        a_matches[a_id] = b_id
+                        b_matches[b_id] = a_id
+                        matched.extend(i_m)
+                        errors.extend(i_err)
+                        break
+
+                match_status[a_id] = candidates
+
+            # assign
+            for a_id in a_ids:
+                if len(b_ids) == 0:
+                    break
+
+                # find the closest, ignore already assigned
+                matched_b = a_matches[a_id]
+                if matched_b is not None:
                     continue
-                else:
-                    ann_b = ann_b_candidates[ann_b[0]]
+                min_dist = -1
+                for b_id in b_ids:
+                    if b_matches[b_id] is not None:
+                        continue
+                    d = _dist(match_status[a_id][b_id])
+                    if d < min_dist and 0 <= min_dist:
+                        continue
+                    min_dist = d
+                    matched_b = b_id
 
-                b_annotations.remove(ann_b) # avoid repeats
-                matched.append({'item': item_id, 'a': str(ann_a), 'b': str(ann_b)})
+                if matched_b is None:
+                    continue
+                a_matches[a_id] = matched_b
+                b_matches[matched_b] = a_id
 
-            for ann_b in b_annotations:
-                unmatched.append({'item': item_id, 'source': 'b', 'ann': str(ann_b)})
+                m = match_status[a_id][matched_b]
+                matched.extend(m[0])
+                unmatched.extend(m[1])
+                errors.extend(m[2])
 
-        return matched, unmatched, a_extra_items, b_extra_items, errors
+            a_unmatched |= set(a_id for a_id, m in a_matches.items() if not m)
+            b_unmatched |= set(b_id for b_id, m in b_matches.items() if not m)
+
+        return matched, unmatched, a_unmatched, b_unmatched, errors
