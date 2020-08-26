@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Datumaro] Dataset statistics (<https://github.com/opencv/cvat/pull/1668>)
 - Ability to change label color in tasks and predefined labels (<https://github.com/opencv/cvat/pull/2014>)
 - [Datumaro] Multi-dataset merge (https://github.com/opencv/cvat/pull/1695)
+- Ability to configure email verification for new users (<https://github.com/opencv/cvat/pull/1929>)
 - Link to django admin page from UI (<https://github.com/opencv/cvat/pull/2068>)
 - Notification message when users use wrong browser (<https://github.com/opencv/cvat/pull/2070>)
 
