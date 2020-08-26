@@ -12,8 +12,12 @@ import Tooltip from 'antd/lib/tooltip';
 import Select from 'antd/lib/select';
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
+import Badge from 'antd/lib/badge';
+import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 
+import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
+import consts from 'consts';
 import {
     equalArrayHead,
     idGenerator,
@@ -58,6 +62,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                 onSubmit({
                     name: formValues.labelName,
                     id: label ? label.id : idGenerator(),
+                    color: formValues.labelColor,
                     attributes: formValues.keys.map((key: number, index: number): Attribute => {
                         let attrValues = formValues.values[key];
                         if (!Array.isArray(attrValues)) {
@@ -417,9 +422,13 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
     private renderNewAttributeButton(): JSX.Element {
         return (
-            <Col span={3}>
+            <Col span={6}>
                 <Form.Item>
-                    <Button type='ghost' onClick={this.addAttribute}>
+                    <Button
+                        type='ghost'
+                        onClick={this.addAttribute}
+                        className='cvat-new-attribute-button'
+                    >
                         Add an attribute
                         <Icon type='plus' />
                     </Button>
@@ -491,6 +500,37 @@ class LabelForm extends React.PureComponent<Props, {}> {
         );
     }
 
+    private renderChangeColorButton(): JSX.Element {
+        const { label, form } = this.props;
+
+        return (
+            <Col span={3}>
+                <Form.Item>
+                    {
+                        form.getFieldDecorator('labelColor', {
+                            initialValue: (label && label.color) ? label.color : undefined,
+                        })(
+                            <ColorPicker placement='bottom'>
+                                <Tooltip title='Change color of the label'>
+                                    <Button
+                                        type='default'
+                                        className='cvat-change-task-label-color-button'
+                                    >
+                                        <Badge
+                                            className='cvat-change-task-label-color-badge'
+                                            color={form.getFieldValue('labelColor') || consts.NEW_LABEL_COLOR}
+                                            text={(<Icon component={ColorizeIcon} />)}
+                                        />
+                                    </Button>
+                                </Tooltip>
+                            </ColorPicker>,
+                        )
+                    }
+                </Form.Item>
+            </Col>
+        );
+    }
+
     public render(): JSX.Element {
         const {
             label,
@@ -510,6 +550,8 @@ class LabelForm extends React.PureComponent<Props, {}> {
             <Form onSubmit={this.handleSubmit}>
                 <Row type='flex' justify='start' align='middle'>
                     { this.renderLabelNameInput() }
+                    <Col span={1} />
+                    { this.renderChangeColorButton() }
                     <Col span={1} />
                     { this.renderNewAttributeButton() }
                 </Row>

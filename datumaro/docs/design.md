@@ -49,6 +49,8 @@ Datumaro is:
 - Versioning (for images, annotations, subsets, sources etc., comparison)
 - Documentation generation
 - Provision of iterators for user code
+- Dataset downloading
+- Dataset generation
 - Dataset building (export in a specific format, indexation, statistics, documentation)
 - Dataset exporting to other formats
 - Dataset debugging (run inference, generate dataset slices, compute statistics)
@@ -111,17 +113,17 @@ can be downloaded by user to be operated on with Datumaro CLI.
     - [ ] with TensorBoard
 
 - Calculation of statistics for datasets
-  - [ ] Pixel mean, std
-  - [ ] Object counts (detection scenario)
-  - [ ] Image-Class distribution (classification scenario)
-  - [ ] Pixel-Class distribution (segmentation scenario)
-  - [ ] Image clusters
+  - [x] Pixel mean, std
+  - [x] Object counts (detection scenario)
+  - [x] Image-Class distribution (classification scenario)
+  - [x] Pixel-Class distribution (segmentation scenario)
+  - [ ] Image similarity clusters
   - [ ] Custom statistics
 
 - Dataset building
   - [x] Composite dataset building
-  - [ ] Annotation remapping
-  - [ ] Subset splitting
+  - [x] Class remapping
+  - [x] Subset splitting
   - [x] Dataset filtering (`extract`)
   - [x] Dataset merging (`merge`)
   - [ ] Dataset item editing (`edit`)
@@ -129,7 +131,7 @@ can be downloaded by user to be operated on with Datumaro CLI.
 - Dataset comparison (`diff`)
   - [x] Annotation-annotation comparison
   - [x] Annotation-inference comparison
-  - [ ] Annotation quality estimation (for CVAT)
+  - [x] Annotation quality estimation (for CVAT)
     - Provide a simple method to check
       annotation quality with a model and generate summary
 
@@ -142,9 +144,9 @@ can be downloaded by user to be operated on with Datumaro CLI.
   - [x] Task export
     - [x] Datumaro project export
     - [x] Dataset export
-    - [ ] Original raw data (images, a video file) can be downloaded (exported)
+    - [x] Original raw data (images, a video file) can be downloaded (exported)
       together with annotations or just have links
-      on CVAT server (in the future support S3, etc)
+      on CVAT server (in future, support S3, etc)
       - [x] Be able to use local files instead of remote links
         - [ ] Specify cache directory
   - [x] Use case "annotate for model training"
@@ -154,7 +156,7 @@ can be downloaded by user to be operated on with Datumaro CLI.
     - convert to a training format
     - train a DL model
   - [x] Use case "annotate - reannotate problematic images - merge"
-  - [ ] Use case "annotate and estimate quality"
+  - [x] Use case "annotate and estimate quality"
     - create a task
     - annotate
     - estimate quality of annotations

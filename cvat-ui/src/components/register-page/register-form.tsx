@@ -138,7 +138,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     }],
                 })(
                     <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)' }} />}
+                        prefix={<Icon type='user-add' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='First name'
                     />,
                 )}
@@ -159,7 +159,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     }],
                 })(
                     <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)' }} />}
+                        prefix={<Icon type='user-add' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Last name'
                     />,
                 )}
@@ -181,7 +181,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     }],
                 })(
                     <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)' }} />}
+                        prefix={<Icon type='user-add' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Username'
                     />,
                 )}
@@ -205,7 +205,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                 })(
                     <Input
                         autoComplete='email'
-                        prefix={<Icon type='mail' style={{ color: 'rgba(0,0,0,.25)' }} />}
+                        prefix={<Icon type='mail' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Email address'
                     />,
                 )}
@@ -227,7 +227,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     }],
                 })(<Input.Password
                     autoComplete='new-password'
-                    prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)' }} />}
+                    prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                     placeholder='Password'
                 />)}
             </Form.Item>
@@ -248,7 +248,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     }],
                 })(<Input.Password
                     autoComplete='new-password'
-                    prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)' }} />}
+                    prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                     placeholder='Confirm password'
                 />)}
             </Form.Item>
@@ -279,7 +279,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                                     target='_blank'
                                     href={userAgreement.url}
                                 >
-                                    {userAgreement.displayText}
+                                    {` ${userAgreement.displayText}`}
                                 </a>
                             </Checkbox>,
                         )}

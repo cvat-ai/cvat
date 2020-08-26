@@ -634,31 +634,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.CHANGE_LABEL_COLOR_SUCCESS: {
-            const {
-                label,
-                states,
-                history,
-            } = action.payload;
-
-            const { instance: job } = state.job;
-            const labels = [...job.task.labels];
-            const index = labels.indexOf(label);
-            labels[index] = label;
-
-            return {
-                ...state,
-                job: {
-                    ...state.job,
-                    labels,
-                },
-                annotations: {
-                    ...state.annotations,
-                    states,
-                    history,
-                },
-            };
-        }
         case AnnotationActionTypes.ACTIVATE_OBJECT: {
             const {
                 activatedStateID,

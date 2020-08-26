@@ -409,6 +409,13 @@ class Rename(Transform, CliPlugin):
             .format(item=item))
 
 class RemapLabels(Transform, CliPlugin):
+    """
+    Changes labels in the dataset.|n
+    Examples:|n
+    - Rename 'person' to 'car' and 'cat' to 'dog', keep 'bus', remove others:|n
+    |s|sremap_labels -l person:car -l bus:bus -l cat:dog --default delete
+    """
+
     DefaultAction = Enum('DefaultAction', ['keep', 'delete'])
 
     @staticmethod
@@ -428,7 +435,7 @@ class RemapLabels(Transform, CliPlugin):
         parser.add_argument('--default',
             choices=[a.name for a in cls.DefaultAction],
             default=cls.DefaultAction.keep.name,
-            help="Action for unspecified labels")
+            help="Action for unspecified labels (default: %(default)s)")
         return parser
 
     def __init__(self, extractor, mapping, default=None):

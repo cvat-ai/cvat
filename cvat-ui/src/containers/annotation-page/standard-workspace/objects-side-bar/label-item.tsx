@@ -5,10 +5,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import {
-    changeLabelColorAsync,
-    updateAnnotationsAsync,
-} from 'actions/annotation-actions';
+import { updateAnnotationsAsync } from 'actions/annotation-actions';
 
 import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
 import { CombinedState } from 'reducers/interfaces';
@@ -22,8 +19,6 @@ interface StateToProps {
     label: any;
     labelName: string;
     labelColor: string;
-    labelColors: string[];
-    changeColorShortcut: string;
     objectStates: any[];
     jobInstance: any;
     frameNumber: any;
@@ -31,7 +26,6 @@ interface StateToProps {
 
 interface DispatchToProps {
     updateAnnotations(states: any[]): void;
-    changeLabelColor(label: any, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -49,10 +43,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                     number: frameNumber,
                 },
             },
-            colors: labelColors,
-        },
-        shortcuts: {
-            normalizedKeyMap,
         },
     } = state;
 
@@ -63,11 +53,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         label,
         labelColor: label.color,
         labelName: label.name,
-        labelColors,
         objectStates,
         jobInstance,
         frameNumber,
-        changeColorShortcut: normalizedKeyMap.CHANGE_OBJECT_COLOR,
     };
 }
 
@@ -75,12 +63,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         updateAnnotations(states: any[]): void {
             dispatch(updateAnnotationsAsync(states));
-        },
-        changeLabelColor(
-            label: any,
-            color: string,
-        ): void {
-            dispatch(changeLabelColorAsync(label, color));
         },
     };
 }
@@ -151,15 +133,6 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         this.switchLock(false);
     };
 
-    private changeColor = (color: string): void => {
-        const {
-            changeLabelColor,
-            label,
-        } = this.props;
-
-        changeLabelColor(label, color);
-    };
-
     private switchHidden(value: boolean): void {
         const {
             updateAnnotations,
@@ -196,24 +169,19 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         const {
             labelName,
             labelColor,
-            labelColors,
-            changeColorShortcut,
         } = this.props;
 
         return (
             <LabelItemComponent
                 labelName={labelName}
                 labelColor={labelColor}
-                labelColors={labelColors}
                 visible={visible}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
-                changeColorShortcut={changeColorShortcut}
                 hideStates={this.hideStates}
                 showStates={this.showStates}
                 lockStates={this.lockStates}
                 unlockStates={this.unlockStates}
-                changeColor={this.changeColor}
             />
         );
     }

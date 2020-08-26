@@ -11,6 +11,7 @@ from django.contrib.auth.models import User, Group
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
+from cvat.apps.dataset_manager.formats.utils import get_label_color
 
 
 class AttributeSerializer(serializers.ModelSerializer):
@@ -37,10 +38,11 @@ class AttributeSerializer(serializers.ModelSerializer):
 class LabelSerializer(serializers.ModelSerializer):
     attributes = AttributeSerializer(many=True, source='attributespec_set',
         default=[])
+    color = serializers.CharField(allow_blank=True, required=False)
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'attributes')
+        fields = ('id', 'name', 'color', 'attributes')
 
 class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:
@@ -250,8 +252,12 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
         db_task = models.Task.objects.create(**validated_data)
+        label_names = list()
         for label in labels:
             attributes = label.pop('attributespec_set')
+            if not label.get('color', None):
+                label['color'] = get_label_color(label['name'], label_names)
+            label_names.append(label['name'])
             db_label = models.Label.objects.create(task=db_task, **label)
             for attr in attributes:
                 models.AttributeSpec.objects.create(label=db_label, **attr)
@@ -286,6 +292,14 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             else:
                 slogger.task[instance.id].info("{} label was updated"
                     .format(db_label.name))
+            if not label.get('color', None):
+                label_names = [l.name for l in
+                    models.Label.objects.filter(task_id=instance.id).exclude(id=db_label.id).order_by('id')
+                ]
+                db_label.color = get_label_color(db_label.name, label_names)
+            else:
+                db_label.color = label.get('color', db_label.color)
+            db_label.save()
             for attr in attributes:
                 (db_attr, created) = models.AttributeSpec.objects.get_or_create(
                     label=db_label, name=attr['name'], defaults=attr)
