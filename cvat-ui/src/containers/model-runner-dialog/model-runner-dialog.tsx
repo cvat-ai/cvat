@@ -4,7 +4,7 @@
 
 import { connect } from 'react-redux';
 
-import ModelRunnerModalComponent from 'components/model-runner-modal/model-runner-modal';
+import ModelRunnerModalComponent from 'components/model-runner-modal/detector-runner';
 import { Model, CombinedState } from 'reducers/interfaces';
 import { startInferenceAsync, modelsActions } from 'actions/models-actions';
 

@@ -10,6 +10,7 @@ import Select, { OptionProps } from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
+import Tabs from 'antd/lib/tabs';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 
@@ -23,8 +24,14 @@ import {
     ObjectType,
     ShapeType,
 } from 'reducers/interfaces';
-import { interactWithCanvas, fetchAnnotationsAsync, updateAnnotationsAsync } from 'actions/annotation-actions';
+import {
+    interactWithCanvas,
+    fetchAnnotationsAsync,
+    updateAnnotationsAsync,
+    createAnnotationsAsync,
+} from 'actions/annotation-actions';
 import { InteractionResult } from 'cvat-canvas/src/typescript/canvas';
+import DetectorRunner from 'components/model-runner-modal/detector-runner';
 
 interface StateToProps {
     canvasInstance: Canvas;
@@ -35,11 +42,14 @@ interface StateToProps {
     isInteraction: boolean;
     frame: number;
     interactors: Model[];
+    detectors: Model[];
+    reid: Model[];
 }
 
 interface DispatchToProps {
     onInteractionStart(activeInteractor: Model, activeLabelID: number): void;
     updateAnnotations(statesToUpdate: any[]): void;
+    createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
 }
 
@@ -51,10 +61,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { instance: jobInstance } = annotation.job;
     const { instance: canvasInstance, activeControl } = annotation.canvas;
     const { models } = state;
-    const { interactors } = models;
+    const { interactors, detectors, reid } = models;
 
     return {
         interactors,
+        detectors,
+        reid,
         isInteraction: activeControl === ActiveControl.INTERACTION,
         activeLabelID: annotation.drawing.activeLabelID,
         labels: annotation.job.labels,
@@ -65,19 +77,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: any): DispatchToProps {
-    return {
-        onInteractionStart(activeInteractor: Model, activeLabelID: number): void {
-            dispatch(interactWithCanvas(activeInteractor, activeLabelID));
-        },
-        updateAnnotations(statesToUpdate: any[]): void {
-            dispatch(updateAnnotationsAsync(statesToUpdate));
-        },
-        fetchAnnotations(): void {
-            dispatch(fetchAnnotationsAsync());
-        },
-    };
-}
+const mapDispatchToProps = {
+    onInteractionStart: interactWithCanvas,
+    updateAnnotations: updateAnnotationsAsync,
+    fetchAnnotations: fetchAnnotationsAsync,
+    createAnnotations: createAnnotationsAsync,
+};
 
 function convertShapesForInteractor(shapes: InteractionResult[]): number[][] {
     const reducer = (acc: number[][], _: number, index: number, array: number[]): number[][] => {
@@ -289,9 +294,10 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Select>
                     </Col>
                 </Row>
-                <Row type='flex' align='middle' justify='center'>
-                    <Col offset={4} span={16}>
+                <Row type='flex' align='middle' justify='end'>
+                    <Col>
                         <Button
+                            type='primary'
                             loading={fetching}
                             className='cvat-tools-interact-button'
                             disabled={!activeInteractor || fetching}
@@ -316,6 +322,62 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         );
     }
 
+    private renderDetectorBlock(): JSX.Element {
+        const {
+            jobInstance,
+            detectors,
+            reid,
+            frame,
+            fetchAnnotations,
+        } = this.props;
+
+        return (
+            <DetectorRunner
+                withCleanup={false}
+                models={[...detectors, ...reid]}
+                task={jobInstance.task}
+                runInference={async (task: any, model: Model) => {
+                    try {
+                        this.setState({ fetching: true });
+                        const result = await core.lambda.call(task, model, {
+                            frame,
+                        });
+
+                        const labels = task.labels.map((label: any): string => label.name);
+                        const states = result
+                            .filter((data: any): any => labels.includes(data.label))
+                            .map((data: any): any => (
+                                new core.classes.ObjectState({
+                                    shapeType: data.type,
+                                    label: task.labels
+                                        .filter(
+                                            (label: any): boolean => label.name === data.label,
+                                        )[0],
+                                    points: data.points,
+                                    objectType: ObjectType.SHAPE,
+                                    frame,
+                                    occluded: false,
+                                    source: 'auto',
+                                    attributes: {},
+                                    zOrder: 0, // TODO:  get current z order
+                                })
+                            ));
+
+                        await jobInstance.annotations.put(states);
+                        fetchAnnotations();
+                    } catch (error) {
+                        notification.error({
+                            description: error.toString(),
+                            message: 'Detection error occured',
+                        });
+                    } finally {
+                        this.setState({ fetching: false });
+                    }
+                }}
+            />
+        );
+    }
+
     private renderPopoverContent(): JSX.Element {
         return (
             <div className='cvat-tools-control-popover-content'>
@@ -324,8 +386,15 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                         <Text className='cvat-text-color' strong>AI Tools</Text>
                     </Col>
                 </Row>
-                { this.renderLabelBlock() }
-                { this.renderInteractorBlock() }
+                <Tabs>
+                    <Tabs.TabPane key='interactors' tab='Interactors'>
+                        { this.renderLabelBlock() }
+                        { this.renderInteractorBlock() }
+                    </Tabs.TabPane>
+                    <Tabs.TabPane key='detectors' tab='Detectors'>
+                        { this.renderDetectorBlock() }
+                    </Tabs.TabPane>
+                </Tabs>
             </div>
         );
     }
@@ -354,7 +423,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         return (
             <>
                 <Modal
-                    title='Interaction request'
+                    title='Making a server request'
                     zIndex={Number.MAX_SAFE_INTEGER}
                     visible={fetching}
                     closable={false}
