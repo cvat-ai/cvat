@@ -207,15 +207,17 @@ DJANGO_AUTH_TYPE = 'BASIC'
 DJANGO_AUTH_DEFAULT_GROUPS = []
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
-AUTH_LOGIN_NOTE = '<p>Have not registered yet? <a href="/auth/register">Register here</a>.</p>'
 
 AUTHENTICATION_BACKENDS = [
     'rules.permissions.ObjectPermissionBackend',
-    'django.contrib.auth.backends.ModelBackend'
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
+# set UI url to redirect after a successful e-mail confirmation
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/login'
 OLD_PASSWORD_FIELD_ENABLED = True
 
 # Django-RQ
