@@ -21,6 +21,8 @@ COPY cvat-canvas/package*.json /tmp/cvat-canvas/
 COPY cvat-ui/package*.json /tmp/cvat-ui/
 COPY cvat-data/package*.json /tmp/cvat-data/
 
+RUN npm config set loglevel info
+
 # Install cvat-data dependencies
 WORKDIR /tmp/cvat-data/
 RUN npm install

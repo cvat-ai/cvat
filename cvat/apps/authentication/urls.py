@@ -2,13 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.urls import path
+from django.urls import path, re_path
 from django.conf import settings
 from rest_auth.views import (
     LoginView, LogoutView, PasswordChangeView,
     PasswordResetView, PasswordResetConfirmView)
-from rest_auth.registration.views import RegisterView
-from .views import SigningView
+from allauth.account.views import ConfirmEmailView, EmailVerificationSentView
+from allauth.account import app_settings as allauth_settings
+
+from cvat.apps.authentication.views import SigningView, RegisterView
 
 urlpatterns = [
     path('login', LoginView.as_view(), name='rest_login'),
@@ -26,3 +28,11 @@ if settings.DJANGO_AUTH_TYPE == 'BASIC':
         path('password/change', PasswordChangeView.as_view(),
             name='rest_password_change'),
     ]
+    if allauth_settings.EMAIL_VERIFICATION != \
+       allauth_settings.EmailVerificationMethod.NONE:
+        urlpatterns += [
+            re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailView.as_view(),
+                name='account_confirm_email'),
+            path('register/account-email-verification-sent', EmailVerificationSentView.as_view(),
+                name='account_email_verification_sent'),
+        ]

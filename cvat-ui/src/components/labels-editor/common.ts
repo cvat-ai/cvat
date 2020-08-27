@@ -44,6 +44,11 @@ function validateParsedAttribute(attr: Attribute): void {
         + `Attribute values must be an array. Got type ${typeof (attr.values)}`);
     }
 
+    if (!attr.values.length) {
+        throw new Error(`Attribute: "${attr.name}". Attribute values array mustn't be empty`);
+    }
+
+
     for (const value of attr.values) {
         if (typeof (value) !== 'string') {
             throw new Error(`Attribute: "${attr.name}". `
@@ -60,6 +65,11 @@ export function validateParsedLabel(label: Label): void {
     if (!['number', 'undefined'].includes(typeof (label.id))) {
         throw new Error(`Label "${label.name}". `
         + `Type of label id must be only a number or undefined. Got value ${label.id}`);
+    }
+
+    if (typeof (label.color) !== 'string') {
+        throw new Error(`Label "${label.name}". `
+        + `Label color must be a string. Got ${typeof (label.color)}`);
     }
 
     if (!label.color.match(/^#[0-9a-f]{6}$|^$/)) {
