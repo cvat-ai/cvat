@@ -9,6 +9,7 @@
     - [Stop all containers](#stop-all-containers)
     - [Advanced settings](#advanced-settings)
     - [Share path](#share-path)
+    - [Email verification](#email-verification)
     - [Serving over HTTPS](#serving-over-https)
       - [Prerequisites](#prerequisites)
       - [Roadmap](#roadmap)
@@ -361,6 +362,26 @@ volumes:
 You can change the share device path to your actual share. For user convenience
 we have defined the environment variable $CVAT_SHARE_URL. This variable
 contains a text (url for example) which is shown in the client-share browser.
+
+### Email verification
+
+You can enable email verification for newly registered users.
+Specify these options in the [settings file](../../settings/base.py) to configure Django allauth
+to enable email verification (ACCOUNT_EMAIL_VERIFICATION = 'mandatory').
+Access is denied until the user's email address is verified.
+```python
+ACCOUNT_AUTHENTICATION_METHOD = 'username'
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+
+# Email backend settings for Django
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+```
+Also you need to configure the Django email backend to send emails.
+This depends on the email server you are using and is not covered in this tutorial, please see
+[Django SMTP backend configuration](https://docs.djangoproject.com/en/3.1/topics/email/#django.core.mail.backends.smtp.EmailBackend)
+for details.
 
 ### Serving over HTTPS
 

@@ -47,7 +47,7 @@ def _write_xml_bbox(bbox, parent_elem):
     return bbox_elem
 
 
-LabelmapType = Enum('LabelmapType', ['voc', 'source', 'guess'])
+LabelmapType = Enum('LabelmapType', ['voc', 'source'])
 
 class VocConverter(Converter):
     DEFAULT_IMAGE_EXT = VocPath.IMAGE_EXT
@@ -102,6 +102,8 @@ class VocConverter(Converter):
         self._apply_colormap = apply_colormap
         self._allow_attributes = allow_attributes
 
+        if label_map is None:
+            label_map = LabelmapType.source
         self._load_categories(label_map)
 
     def apply(self):
@@ -446,7 +448,7 @@ class VocConverter(Converter):
         path = osp.join(self._save_dir, VocPath.LABELMAP_FILE)
         write_label_map(path, self._label_map)
 
-    def _load_categories(self, label_map_source=None):
+    def _load_categories(self, label_map_source):
         if label_map_source == LabelmapType.voc.name:
             # use the default VOC colormap
             label_map = make_voc_label_map()
@@ -456,10 +458,8 @@ class VocConverter(Converter):
             # generate colormap for input labels
             labels = self._extractor.categories() \
                 .get(AnnotationType.label, LabelCategories())
-            label_map = OrderedDict()
-            label_map['background'] = [None, [], []]
-            for item in labels.items:
-                label_map[item.name] = [None, [], []]
+            label_map = OrderedDict((item.name, [None, [], []])
+                for item in labels.items)
 
         elif label_map_source == LabelmapType.source.name and \
                 AnnotationType.mask in self._extractor.categories():
@@ -467,60 +467,45 @@ class VocConverter(Converter):
             labels = self._extractor.categories()[AnnotationType.label]
             colors = self._extractor.categories()[AnnotationType.mask]
             label_map = OrderedDict()
-            has_black = False
             for idx, item in enumerate(labels.items):
                 color = colors.colormap.get(idx)
-                if idx is not None:
-                    if color == (0, 0, 0):
-                        has_black = True
+                if color is not None:
                     label_map[item.name] = [color, [], []]
-            if not has_black and 'background' not in label_map:
-                label_map['background'] = [(0, 0, 0), [], []]
-                label_map.move_to_end('background', last=False)
-
-        elif label_map_source in [LabelmapType.guess.name, None]:
-            # generate colormap for union of VOC and input dataset labels
-            label_map = make_voc_label_map()
-
-            rebuild_colormap = False
-            source_labels = self._extractor.categories() \
-                .get(AnnotationType.label, LabelCategories())
-            for label in source_labels.items:
-                if label.name not in label_map:
-                    rebuild_colormap = True
-                if label.attributes or label.name not in label_map:
-                    label_map[label.name] = [None, [], label.attributes]
-
-            if rebuild_colormap:
-                for item in label_map.values():
-                    item[0] = None
 
         elif isinstance(label_map_source, dict):
-            label_map = label_map_source
+            label_map = OrderedDict(
+                sorted(label_map_source.items(), key=lambda e: e[0]))
 
         elif isinstance(label_map_source, str) and osp.isfile(label_map_source):
             label_map = parse_label_map(label_map_source)
-
-            has_black = find(label_map.items(),
-                lambda e: e[0] == 'background' or e[1][0] == (0, 0, 0))
-            if not has_black and 'background' not in label_map:
-                label_map['background'] = [(0, 0, 0), [], []]
-                label_map.move_to_end('background', last=False)
 
         else:
             raise Exception("Wrong labelmap specified, "
                 "expected one of %s or a file path" % \
                 ', '.join(t.name for t in LabelmapType))
 
+        # There must always be a label with color (0, 0, 0) at index 0
+        bg_label = find(label_map.items(), lambda x: x[1][0] == (0, 0, 0))
+        if bg_label is not None:
+            bg_label = bg_label[0]
+        else:
+            bg_label = 'background'
+            if bg_label not in label_map:
+                has_colors = any(v[0] is not None for v in label_map.values())
+                color = (0, 0, 0) if has_colors else None
+                label_map[bg_label] = [color, [], []]
+        label_map.move_to_end(bg_label, last=False)
+
         self._categories = make_voc_categories(label_map)
 
-        self._label_map = label_map
+        # Update colors with assigned values
         colormap = self._categories[AnnotationType.mask].colormap
         for label_id, color in colormap.items():
             label_desc = label_map[
                 self._categories[AnnotationType.label].items[label_id].name]
             label_desc[0] = color
 
+        self._label_map = label_map
         self._label_id_mapping = self._make_label_id_map()
 
     def _is_label(self, s):

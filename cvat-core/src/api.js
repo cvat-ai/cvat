@@ -148,6 +148,7 @@ function build() {
                 * @param {string} password1 A password for the new account
                 * @param {string} password2 The confirmation password for the new account
                 * @param {Object} userConfirmations An user confirmations of terms of use if needed
+                * @returns {Object} response data
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */

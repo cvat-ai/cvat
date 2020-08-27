@@ -94,7 +94,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     delete filteredValues.frameStep;
 
                     if (values.overlapSize && +values.segmentSize <= +values.overlapSize) {
-                        reject(new Error('Overlap size must be more than segment size'));
+                        reject(new Error('Segment size must be more than overlap size'));
                     }
 
                     if (typeof (values.startFrame) !== 'undefined' && typeof (values.stopFrame) !== 'undefined'
