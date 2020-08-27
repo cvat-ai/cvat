@@ -130,12 +130,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (!authActionsInitialized && !authActionsFetching) {
-            loadAuthActions();
+        if (user == null || !user.isVerified) {
+            return;
         }
 
-        if (user == null) {
-            return;
+        if (!authActionsInitialized && !authActionsFetching) {
+            loadAuthActions();
         }
 
         if (!formatsInitialized && !formatsFetching) {
@@ -250,7 +250,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             keyMap,
         } = this.props;
 
-        const readyForRender = (userInitialized && user == null)
+        const readyForRender = (userInitialized && (user == null || !user.isVerified))
             || (userInitialized && formatsInitialized
                 && pluginsInitialized && usersInitialized && aboutInitialized);
 
@@ -303,7 +303,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
 
         if (readyForRender) {
-            if (user) {
+            if (user && user.isVerified) {
                 return (
                     <GlobalErrorBoundary>
                         <Layout>

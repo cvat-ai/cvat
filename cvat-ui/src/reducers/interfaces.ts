@@ -255,6 +255,7 @@ export interface NotificationsState {
         };
         auth: {
             changePasswordDone: string;
+            registerDone: string;
             requestPasswordResetDone: string;
             resetPasswordDone: string;
         };
