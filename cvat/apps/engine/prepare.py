@@ -54,25 +54,6 @@ class AnalyzeVideo(WorkWithVideo):
                 frame_pts, frame_dts = frame.pts, frame.dts
         self._close_video_container(container)
 
-# class Frame:
-#     def __init__(self, frame, frame_number=None):
-#         self.frame = frame
-#         if frame_number:
-#             self.frame_number = frame_number
-
-#     def md5_hash(self):
-#         return hashlib.md5(self.frame.to_image().tobytes()).hexdigest()
-
-#     def __eq__(self, image):
-#         return self.md5_hash(self) == image.md5_hash(image) and self.frame.pts == image.frame.pts
-
-#     def __ne__(self, image):
-#         return md5_hash(self) != md5_hash(image) or self.frame.pts != image.frame.pts
-
-#     def __len__(self):
-#         return (self.frame.width, self.frame.height)
-
-
 def md5_hash(frame):
     return hashlib.md5(frame.to_image().tobytes()).hexdigest()
 
@@ -109,7 +90,8 @@ class PrepareInfo(WorkWithVideo):
                 if not flag:
                     break
 
-        if len(self.key_frames) == 0: #or self.frames // len(self.key_frames) > 300:
+        #TODO: correct ratio of number of frames to keyframes
+        if len(self.key_frames) == 0:
             raise Exception('Too few keyframes')
 
     def save_key_frames(self):
@@ -139,7 +121,6 @@ class PrepareInfo(WorkWithVideo):
             for line in file:
                 frame_number, timestamp = line.strip().split(' ')
 
-                #TODO: исправить если вдруг ключевой кадр окажется не первым
                 if int(frame_number) <= start_chunk_frame_number:
                     start_decode_frame_number = frame_number
                     start_decode_timestamp = timestamp
