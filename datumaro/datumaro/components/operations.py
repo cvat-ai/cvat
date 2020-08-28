@@ -52,7 +52,8 @@ def merge_categories(sources):
         for cat_type, source_cat in source.items():
             if not categories[cat_type] == source_cat:
                 raise NotImplementedError(
-                    "Merging different categories is not implemented yet")
+                    "Merging of datasets with different categories is "
+                    "only allowed in 'merge' command.")
     return categories
 
 class MergingStrategy(CliPlugin):
