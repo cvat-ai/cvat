@@ -136,10 +136,13 @@ Cypress.Commands.add('createPolygon', ( mode,
                                         reDraw=false) => {
     if (!reDraw) {
         cy.get('.cvat-draw-polygon-control').click()
-        cy.get('.cvat-draw-shape-popover-content')
-        .find('button')
-        .contains(mode)
-        .click({force: true})
+        cy.contains('Draw new polygon')
+        .parents('.cvat-draw-shape-popover-content')
+        .within(() => {
+            cy.get('button')
+            .contains(mode)
+            .click({force: true})
+        })
     }
     pointsMap.forEach(element => {
         cy.get('.cvat-canvas-container')
