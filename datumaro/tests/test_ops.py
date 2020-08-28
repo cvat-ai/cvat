@@ -3,11 +3,13 @@ from unittest import TestCase
 import numpy as np
 
 from datumaro.components.extractor import (Bbox, Caption, DatasetItem,
-    Extractor, Label, Mask, Points, Polygon, PolyLine)
+    Extractor, Label, Mask, Points, Polygon, PolyLine,
+    LabelCategories, PointsCategories, MaskCategories, AnnotationType)
 from datumaro.components.operations import (FailedAttrVotingError,
     IntersectMerge, NoMatchingAnnError, NoMatchingItemError, WrongGroupError,
     compute_ann_statistics, mean_std)
 from datumaro.components.project import Dataset
+from datumaro.util.mask_tools import generate_colormap
 from datumaro.util.test_utils import compare_datasets
 
 
@@ -393,6 +395,56 @@ class TestMultimerge(TestCase):
                 Bbox(0, 0, 1, 1, label=2),
             ]),
         ], categories=['a', 'b', 'c'])
+
+        merger = IntersectMerge()
+        merged = merger([source0, source1])
+
+        compare_datasets(self, expected, merged, ignored_attrs={'score'})
+
+    def test_can_merge_categories(self):
+        source0 = Dataset.from_iterable([
+            DatasetItem(1, annotations=[ Label(0), ]),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(['a', 'b']),
+            AnnotationType.points: PointsCategories.from_iterable([
+                (0, ['l0', 'l1']),
+                (1, ['l2', 'l3']),
+            ]),
+            AnnotationType.mask: MaskCategories({
+                0: (0, 1, 2),
+                1: (1, 2, 3),
+            }),
+        })
+
+        source1 = Dataset.from_iterable([
+            DatasetItem(1, annotations=[ Label(0), ]),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(['c', 'b']),
+            AnnotationType.points: PointsCategories.from_iterable([
+                (0, []),
+                (1, ['l2', 'l3']),
+            ]),
+            AnnotationType.mask: MaskCategories({
+                0: (0, 2, 4),
+                1: (1, 2, 3),
+            }),
+        })
+
+        expected = Dataset.from_iterable([
+            DatasetItem(1, annotations=[ Label(0), Label(2), ]),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(['a', 'b', 'c']),
+            AnnotationType.points: PointsCategories.from_iterable([
+                (0, ['l0', 'l1']),
+                (1, ['l2', 'l3']),
+                (2, []),
+            ]),
+            AnnotationType.mask: MaskCategories({
+                0: (0, 1, 2),
+                1: (1, 2, 3),
+                2: (0, 2, 4),
+            }),
+        })
 
         merger = IntersectMerge()
         merged = merger([source0, source1])

@@ -383,7 +383,7 @@ class IntersectMerge(MergingStrategy):
         if len(dst_mask_cat.colormap) == 0:
             return None
 
-        return dst_point_cat
+        return dst_mask_cat
 
     def _merge_categories(self, sources):
         dst_categories = {}

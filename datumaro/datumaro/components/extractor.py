@@ -380,7 +380,10 @@ setattr(Bbox, '__init__', Bbox.__actual_init__)
 
 @attrs
 class PointsCategories(Categories):
-    Category = namedtuple('Category', ['labels', 'joints'])
+    @attrs(repr_ns="PointsCategories")
+    class Category:
+        labels = attrib(factory=list, validator=default_if_none(list))
+        joints = attrib(factory=set, validator=default_if_none(set))
 
     items = attrib(factory=dict, validator=default_if_none(dict))
 
@@ -390,28 +393,19 @@ class PointsCategories(Categories):
 
         Args:
             iterable ([type]): This iterable object can be:
-            1)simple int - will generate one Category with int as label
-            2)list of int - will interpreted as list of Category labels
-            3)list of positional argumetns - will generate Categories
-            with this arguments
+            1) list of positional argumetns - will generate Categories
+                with these arguments
 
         Returns:
             PointsCategories: PointsCategories object
         """
         temp_categories = cls()
 
-        if isinstance(iterable, int):
-            iterable = [[iterable]]
-
         for category in iterable:
-            if isinstance(category, int):
-                category = [category]
             temp_categories.add(*category)
         return temp_categories
 
     def add(self, label_id, labels=None, joints=None):
-        if labels is None:
-            labels = []
         if joints is None:
             joints = []
         joints = set(map(tuple, joints))
