@@ -104,6 +104,9 @@ interface State {
 }
 
 class ToolsControlComponent extends React.PureComponent<Props, State> {
+    private interactionIsAborted: boolean;
+    private interactionIsDone: boolean;
+
     public constructor(props: Props) {
         super(props);
         this.state = {
@@ -112,6 +115,9 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactiveStateID: null,
             fetching: false,
         };
+
+        this.interactionIsAborted = false;
+        this.interactionIsDone = false;
     }
 
     public componentDidMount(): void {
@@ -125,6 +131,8 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         if (prevProps.isInteraction && !isInteraction) {
             window.removeEventListener('contextmenu', this.contextmenuDisabler);
         } else if (!prevProps.isInteraction && isInteraction) {
+            this.interactionIsDone = false;
+            this.interactionIsAborted = false;
             window.addEventListener('contextmenu', this.contextmenuDisabler);
         }
     }
@@ -156,9 +164,15 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
             frame,
             fetchAnnotations,
         } = this.props;
-        const { interactiveStateID } = this.state;
+        const { interactiveStateID, fetching } = this.state;
 
         if (isInteraction) {
+            if (fetching && !this.interactionIsDone) {
+                // user pressed ESC
+                this.setState({ fetching: false });
+                this.interactionIsAborted = true;
+            }
+
             if (interactiveStateID !== null) {
                 const state = this.getInteractiveState();
                 this.setState({ interactiveStateID: null });
@@ -180,11 +194,16 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
             fetchAnnotations,
             updateAnnotations,
         } = this.props;
-        const { activeInteractor, interactiveStateID } = this.state;
+        const { activeInteractor, interactiveStateID, fetching } = this.state;
 
         try {
             if (!isInteraction) {
                 throw Error('Canvas raises event "canvas.interacted" when interaction is off');
+            }
+
+            if (fetching) {
+                this.interactionIsDone = (e as CustomEvent).detail.isDone;
+                return;
             }
 
             const interactor = activeInteractor as Model;
@@ -198,16 +217,19 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                         frame,
                         points: convertShapesForInteractor((e as CustomEvent).detail.shapes),
                     });
+
+                    if (this.interactionIsAborted) {
+                        // while the server request
+                        // user has cancelled interaction (for example pressed ESC)
+                        return;
+                    }
                 } finally {
                     this.setState({ fetching: false });
                 }
             }
 
-            // no shape yet, then create it and save to collection
-            if (interactiveStateID === null) {
-                // freeze history for interaction time
-                // (points updating shouldn't cause adding new actions to history)
-                await jobInstance.actions.freeze(true);
+            if (this.interactionIsDone) {
+                // while the server request, user has done interaction (for example pressed N)
                 const object = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
@@ -218,36 +240,56 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                     occluded: false,
                     zOrder: (e as CustomEvent).detail.zOrder,
                 });
-                // need a clientID of a created object to interact with it further
-                // so, we do not use createAnnotationAction
-                const [clientID] = await jobInstance.annotations.put([object]);
 
-                // update annotations on a canvas
-                fetchAnnotations();
-                this.setState({ interactiveStateID: clientID });
-                return;
-            }
-
-            const state = this.getInteractiveState();
-            if ((e as CustomEvent).detail.isDone) {
-                const finalObject = new core.classes.ObjectState({
-                    frame: state.frame,
-                    objectType: state.objectType,
-                    label: state.label,
-                    shapeType: state.shapeType,
-                    points: result.length ? result.flat() : state.points,
-                    occluded: state.occluded,
-                    zOrder: state.zOrder,
-                });
-                this.setState({ interactiveStateID: null });
-                await state.delete(frame);
-                await jobInstance.actions.freeze(false);
-                await jobInstance.annotations.put([finalObject]);
+                await jobInstance.annotations.put([object]);
                 fetchAnnotations();
             } else {
-                state.points = result.flat();
-                updateAnnotations([state]);
-                fetchAnnotations();
+                // no shape yet, then create it and save to collection
+                if (interactiveStateID === null) {
+                    // freeze history for interaction time
+                    // (points updating shouldn't cause adding new actions to history)
+                    await jobInstance.actions.freeze(true);
+                    const object = new core.classes.ObjectState({
+                        frame,
+                        objectType: ObjectType.SHAPE,
+                        label: labels
+                            .filter((label: any) => label.id === activeLabelID)[0],
+                        shapeType: ShapeType.POLYGON,
+                        points: result.flat(),
+                        occluded: false,
+                        zOrder: (e as CustomEvent).detail.zOrder,
+                    });
+                    // need a clientID of a created object to interact with it further
+                    // so, we do not use createAnnotationAction
+                    const [clientID] = await jobInstance.annotations.put([object]);
+
+                    // update annotations on a canvas
+                    fetchAnnotations();
+                    this.setState({ interactiveStateID: clientID });
+                    return;
+                }
+
+                const state = this.getInteractiveState();
+                if ((e as CustomEvent).detail.isDone) {
+                    const finalObject = new core.classes.ObjectState({
+                        frame: state.frame,
+                        objectType: state.objectType,
+                        label: state.label,
+                        shapeType: state.shapeType,
+                        points: result.length ? result.flat() : state.points,
+                        occluded: state.occluded,
+                        zOrder: state.zOrder,
+                    });
+                    this.setState({ interactiveStateID: null });
+                    await state.delete(frame);
+                    await jobInstance.actions.freeze(false);
+                    await jobInstance.annotations.put([finalObject]);
+                    fetchAnnotations();
+                } else {
+                    state.points = result.flat();
+                    updateAnnotations([state]);
+                    fetchAnnotations();
+                }
             }
         } catch (err) {
             notification.error({
