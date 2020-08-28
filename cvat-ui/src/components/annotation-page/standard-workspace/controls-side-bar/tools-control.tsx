@@ -117,17 +117,13 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
+        canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        const { isInteraction, jobInstance } = this.props;
-        const { interactiveStateID } = this.state;
+        const { isInteraction } = this.props;
         if (prevProps.isInteraction && !isInteraction) {
             window.removeEventListener('contextmenu', this.contextmenuDisabler);
-            if (interactiveStateID !== null) {
-                jobInstance.actions.freeze(false);
-                this.setState({ interactiveStateID: null });
-            }
         } else if (!prevProps.isInteraction && isInteraction) {
             window.addEventListener('contextmenu', this.contextmenuDisabler);
         }
@@ -136,6 +132,14 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
+        canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
+    }
+
+    private getInteractiveState(): any | null {
+        const { states } = this.props;
+        const { interactiveStateID } = this.state;
+        return states
+            .filter((_state: any): boolean => _state.clientID === interactiveStateID)[0] || null;
     }
 
     private contextmenuDisabler = (e: MouseEvent): void => {
@@ -145,10 +149,30 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     };
 
+    private cancelListener = async (): Promise<void> => {
+        const {
+            isInteraction,
+            jobInstance,
+            frame,
+            fetchAnnotations,
+        } = this.props;
+        const { interactiveStateID } = this.state;
+
+        if (isInteraction) {
+            if (interactiveStateID !== null) {
+                const state = this.getInteractiveState();
+                this.setState({ interactiveStateID: null });
+                await state.delete(frame);
+                fetchAnnotations();
+            }
+
+            await jobInstance.actions.freeze(false);
+        }
+    };
+
     private interactionListener = async (e: Event): Promise<void> => {
         const {
             frame,
-            states,
             labels,
             jobInstance,
             isInteraction,
@@ -159,21 +183,31 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { activeInteractor, interactiveStateID } = this.state;
 
         try {
-            this.setState({ fetching: true });
-
             if (!isInteraction) {
-                throw Error('Canvas raises "canvas.interacted" when interaction is off');
+                throw Error('Canvas raises event "canvas.interacted" when interaction is off');
             }
 
             const interactor = activeInteractor as Model;
-            const result = await core.lambda.call(jobInstance.task, interactor, {
-                task: jobInstance.task,
-                frame,
-                points: convertShapesForInteractor((e as CustomEvent).detail.shapes),
-            });
+
+            let result = [];
+            if ((e as CustomEvent).detail.shapesUpdated) {
+                this.setState({ fetching: true });
+                try {
+                    result = await core.lambda.call(jobInstance.task, interactor, {
+                        task: jobInstance.task,
+                        frame,
+                        points: convertShapesForInteractor((e as CustomEvent).detail.shapes),
+                    });
+                } finally {
+                    this.setState({ fetching: false });
+                }
+            }
 
             // no shape yet, then create it and save to collection
             if (interactiveStateID === null) {
+                // freeze history for interaction time
+                // (points updating shouldn't cause adding new actions to history)
+                await jobInstance.actions.freeze(true);
                 const object = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
@@ -184,29 +218,42 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                     occluded: false,
                     zOrder: (e as CustomEvent).detail.zOrder,
                 });
-                // need a clientID of a created object, so, we do not use createAnnotationAction
+                // need a clientID of a created object to interact with it further
+                // so, we do not use createAnnotationAction
                 const [clientID] = await jobInstance.annotations.put([object]);
 
                 // update annotations on a canvas
                 fetchAnnotations();
-
-                // freeze history for interaction time
-                // (points updating shouldn't cause adding new actions to history)
-                await jobInstance.actions.freeze(true);
                 this.setState({ interactiveStateID: clientID });
+                return;
+            }
+
+            const state = this.getInteractiveState();
+            if ((e as CustomEvent).detail.isDone) {
+                const finalObject = new core.classes.ObjectState({
+                    frame: state.frame,
+                    objectType: state.objectType,
+                    label: state.label,
+                    shapeType: state.shapeType,
+                    points: result.length ? result.flat() : state.points,
+                    occluded: state.occluded,
+                    zOrder: state.zOrder,
+                });
+                this.setState({ interactiveStateID: null });
+                await state.delete(frame);
+                await jobInstance.actions.freeze(false);
+                await jobInstance.annotations.put([finalObject]);
+                fetchAnnotations();
             } else {
-                const state = states
-                    .filter((_state: any): boolean => _state.clientID === interactiveStateID)[0];
                 state.points = result.flat();
-                await updateAnnotations([state]);
+                updateAnnotations([state]);
+                fetchAnnotations();
             }
         } catch (err) {
             notification.error({
                 description: err.toString(),
                 message: 'Interaction error occured',
             });
-        } finally {
-            this.setState({ fetching: false });
         }
     };
 
