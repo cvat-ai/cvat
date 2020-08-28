@@ -28,6 +28,10 @@ class RawViewer extends React.PureComponent<Props> {
             if (!Array.isArray(parsed)) {
                 callback('Field is expected to be a JSON array');
             }
+            const labelNames = parsed.map((label: Label) => label.name);
+            if (new Set(labelNames).size !== labelNames.length) {
+                callback('Label names must be unique for the task');
+            }
 
             for (const label of parsed) {
                 try {

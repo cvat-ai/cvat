@@ -97,6 +97,7 @@ const defaultState: NotificationsState = {
         },
         auth: {
             changePasswordDone: '',
+            registerDone: '',
         },
     },
 };
@@ -161,6 +162,25 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         },
                     },
                 },
+            };
+        }
+        case AuthActionTypes.REGISTER_SUCCESS: {
+            if (!action.payload.user.isVerified) {
+                return {
+                    ...state,
+                    messages: {
+                        ...state.messages,
+                        auth: {
+                            ...state.messages.auth,
+                            registerDone: `To use your account, you need to confirm the email address. \
+                                 We have sent an email with a confirmation link to ${action.payload.user.email}.`,
+                        },
+                    },
+                };
+            }
+
+            return {
+                ...state,
             };
         }
         case AuthActionTypes.CHANGE_PASSWORD_SUCCESS: {
@@ -549,21 +569,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         saving: {
                             message: 'Could not save annotations',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.CHANGE_LABEL_COLOR_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        changingLabelColor: {
-                            message: 'Could not change label color',
                             reason: action.payload.error.toString(),
                         },
                     },

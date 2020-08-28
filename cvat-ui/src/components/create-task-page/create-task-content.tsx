@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { RouteComponentProps } from 'react-router';
+import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Alert from 'antd/lib/alert';
 import Button from 'antd/lib/button';
@@ -26,6 +28,7 @@ export interface CreateTaskData {
 interface Props {
     onCreate: (data: CreateTaskData) => void;
     status: string;
+    taskId: number | null;
     installedGit: boolean;
 }
 
@@ -48,22 +51,31 @@ const defaultState = {
     },
 };
 
-export default class CreateTaskContent extends React.PureComponent<Props, State> {
+class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
     private basicConfigurationComponent: any;
     private advancedConfigurationComponent: any;
     private fileManagerContainer: any;
 
-    public constructor(props: Props) {
+    public constructor(props: Props & RouteComponentProps) {
         super(props);
         this.state = { ...defaultState };
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        const { status } = this.props;
+        const { status, history, taskId } = this.props;
 
         if (status === 'CREATED' && prevProps.status !== 'CREATED') {
+            const btn = (
+                <Button
+                    onClick={() => history.push(`/tasks/${taskId}`)}
+                >
+                    Open task
+                </Button>
+            );
+
             notification.info({
                 message: 'The task has been created',
+                btn,
             });
 
             this.basicConfigurationComponent.resetFields();
@@ -252,3 +264,5 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         );
     }
 }
+
+export default withRouter(CreateTaskContent);

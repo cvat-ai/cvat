@@ -129,7 +129,7 @@ Plugins reside in plugin directories:
 - `<project_dir>/.datumaro/plugins` for project-specific components
 
 A plugin is a python file or package with any name, which exports some symbols.
-To export a symbol put it to `exports` list of the module like this:
+To export a symbol, put it to `exports` list of the module like this:
 
 ``` python
 class MyComponent1: ...

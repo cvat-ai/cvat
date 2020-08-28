@@ -31,6 +31,7 @@ const defaultState: TasksState = {
         loads: {},
         deletes: {},
         creates: {
+            taskId: null,
             status: '',
             error: '',
         },
@@ -238,6 +239,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 activities: {
                     ...state.activities,
                     creates: {
+                        taskId: null,
                         status: '',
                         error: '',
                     },
@@ -259,12 +261,14 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             };
         }
         case TasksActionTypes.CREATE_TASK_SUCCESS: {
+            const { taskId } = action.payload;
             return {
                 ...state,
                 activities: {
                     ...state.activities,
                     creates: {
                         ...state.activities.creates,
+                        taskId,
                         status: 'CREATED',
                     },
                 },
