@@ -50,7 +50,11 @@ class Categories:
 
 @attrs
 class LabelCategories(Categories):
-    Category = namedtuple('Category', ['name', 'parent', 'attributes'])
+    @attrs(repr_ns='LabelCategories')
+    class Category:
+        name = attrib(converter=str, validator=not_empty)
+        parent = attrib(default='', validator=default_if_none(str))
+        attributes = attrib(factory=set, validator=default_if_none(set))
 
     items = attrib(factory=list, validator=default_if_none(list))
     _indices = attrib(factory=dict, init=False, eq=False)
@@ -94,15 +98,6 @@ class LabelCategories(Categories):
 
     def add(self, name, parent=None, attributes=None):
         assert name not in self._indices, name
-        if attributes is None:
-            attributes = set()
-        else:
-            if not isinstance(attributes, set):
-                attributes = set(attributes)
-            for attr in attributes:
-                assert isinstance(attr, str)
-        if parent is None:
-            parent = ''
 
         index = len(self.items)
         self.items.append(self.Category(name, parent, attributes))
@@ -178,6 +173,8 @@ class Mask(Annotation):
 
     def __eq__(self, other):
         if not super().__eq__(other):
+            return False
+        if not isinstance(other, __class__):
             return False
         return \
             (self.label == other.label) and \

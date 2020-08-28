@@ -198,7 +198,7 @@ class TestMultimerge(TestCase):
                 Bbox(1, 2, 3, 4, label=1),
 
                 # common
-                Mask(label=3, z_order=2, image=np.array([
+                Mask(label=2, z_order=2, image=np.array([
                     [0, 0, 0, 0],
                     [0, 0, 0, 0],
                     [1, 1, 1, 0],
@@ -218,7 +218,7 @@ class TestMultimerge(TestCase):
         source1 = Dataset.from_iterable([
             DatasetItem(1, annotations=[
                 # common
-                Mask(label=3, image=np.array([
+                Mask(label=2, image=np.array([
                     [0, 0, 0, 0],
                     [0, 1, 1, 1],
                     [0, 1, 1, 1],
@@ -238,7 +238,7 @@ class TestMultimerge(TestCase):
         source2 = Dataset.from_iterable([
             DatasetItem(1, annotations=[
                 # common
-                Mask(label=3, z_order=3, image=np.array([
+                Mask(label=2, z_order=3, image=np.array([
                     [0, 0, 1, 1],
                     [0, 1, 1, 1],
                     [1, 1, 1, 1],
@@ -261,7 +261,7 @@ class TestMultimerge(TestCase):
 
                 # common
                 # nearest to mean bbox
-                Mask(label=3, z_order=3, image=np.array([
+                Mask(label=2, z_order=3, image=np.array([
                     [0, 0, 0, 0],
                     [0, 1, 1, 1],
                     [0, 1, 1, 1],
@@ -365,3 +365,36 @@ class TestMultimerge(TestCase):
         self.assertEqual(3, len([e for e in merger.errors
             if isinstance(e, WrongGroupError)]), merger.errors
         )
+
+    def test_can_merge_classes(self):
+        source0 = Dataset.from_iterable([
+            DatasetItem(1, annotations=[
+                Label(0),
+                Label(1),
+                Bbox(0, 0, 1, 1, label=1),
+            ]),
+        ], categories=['a', 'b'])
+
+        source1 = Dataset.from_iterable([
+            DatasetItem(1, annotations=[
+                Label(0),
+                Label(1),
+                Bbox(0, 0, 1, 1, label=0),
+                Bbox(0, 0, 1, 1, label=1),
+            ]),
+        ], categories=['b', 'c'])
+
+        expected = Dataset.from_iterable([
+            DatasetItem(1, annotations=[
+                Label(0),
+                Label(1),
+                Label(2),
+                Bbox(0, 0, 1, 1, label=1),
+                Bbox(0, 0, 1, 1, label=2),
+            ]),
+        ], categories=['a', 'b', 'c'])
+
+        merger = IntersectMerge()
+        merged = merger([source0, source1])
+
+        compare_datasets(self, expected, merged, ignored_attrs={'score'})
