@@ -4,7 +4,6 @@ from torchvision import transforms
 import cv2
 import os
 
-from isegm.inference import clicker
 from isegm.inference.predictors import get_predictor
 from isegm.inference.utils import load_deeplab_is_model, load_hrnet_is_model
 from isegm.inference.clicker import Clicker, Click
@@ -56,7 +55,6 @@ class ModelHandler:
         ])
 
         image_nd = input_transform(image).to(self.device)
-        result_mask = np.zeros(image_nd.shape[:2], dtype=np.uint16)
 
         clicker = Clicker()
         for x, y in pos_points:
