@@ -9,6 +9,7 @@ from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter, ZipChunkWriter,
 from cvat.apps.engine.models import DataChoice
 from .prepare import PrepareInfo
 import os
+from io import BytesIO
 
 class CacheInteraction:
     def __init__(self):
@@ -37,18 +38,19 @@ class CacheInteraction:
 
         extractor = extractor_classes[quality](image_quality)
 
+        images = []
+        buff = BytesIO()
         if os.path.exists(db_data.get_meta_path()):
-            meta = PrepareInfo(source_path=os.path.join(db_data.get_upload_dirname(), db_data.video.path),
-                               meta_path=db_data.get_meta_path())
-            frames = []
+            source_path = os.path.join(db_data.get_upload_dirname(), db_data.video.path)
+            meta = PrepareInfo(source_path=source_path, meta_path=db_data.get_meta_path())
             for frame in meta.decode_needed_frames(chunk_number, db_data):
-                frames.append(frame)
-            buff = extractor.save_as_chunk_to_buff(frames)
+                images.append(frame)
+            extractor.save_as_chunk([(image, source_path, None) for image in images], buff)
         else:
-            img_paths = None
             with open(db_data.get_dummy_chunk_path(chunk_number), 'r') as dummy_file:
-                img_paths = [os.path.join(db_data.get_upload_dirname(), line.strip()) for line in dummy_file]
-            buff = extractor.save_as_chunk_to_buff(img_paths)
+                images = [os.path.join(db_data.get_upload_dirname(), line.strip()) for line in dummy_file]
+            extractor.save_as_chunk([(image, image, None) for image in images], buff)
+        buff.seek(0)
         return buff, mime_type
 
     def save_chunk(self, db_data_id, chunk_number, quality, buff, mime_type):

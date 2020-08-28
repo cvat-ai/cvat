@@ -287,19 +287,6 @@ class ZipChunkWriter(IChunkWriter):
         # and does not decode it to know img size.
         return []
 
-    def save_as_chunk_to_buff(self, images):
-        buff = io.BytesIO()
-
-        with zipfile.ZipFile(buff, 'w') as zip_file:
-            for idx, image in enumerate(images):
-                arcname = '{:06d}.{}'.format(idx, os.path.splitext(image)[1])
-                if isinstance(image, av.VideoFrame):
-                    zip_file.writestr(arcname, image.to_image().tobytes().getvalue())
-                else:
-                    zip_file.write(filename=image, arcname=arcname)
-        buff.seek(0)
-        return buff
-
 class ZipCompressedChunkWriter(IChunkWriter):
     def save_as_chunk(self, images, chunk_path):
         image_sizes = []
@@ -312,23 +299,13 @@ class ZipCompressedChunkWriter(IChunkWriter):
 
         return image_sizes
 
-    def save_as_chunk_to_buff(self, images):
-        buff = io.BytesIO()
-        with zipfile.ZipFile(buff, 'x') as zip_file:
-            for idx, image in enumerate(images):
-                (_, _, image_buf) = self._compress_image(image, self._image_quality)
-                arcname = '{:06d}.jpeg'.format(idx)
-                zip_file.writestr(arcname, image_buf.getvalue())
-        buff.seek(0)
-        return buff
-
 class Mpeg4ChunkWriter(IChunkWriter):
     def __init__(self, _):
         super().__init__(17)
         self._output_fps = 25
 
     @staticmethod
-    def _create_av_container(path, w, h, rate, options, f=None):
+    def _create_av_container(path, w, h, rate, options, f='mp4'):
             # x264 requires width and height must be divisible by 2 for yuv420p
             if h % 2:
                 h += 1
@@ -365,41 +342,6 @@ class Mpeg4ChunkWriter(IChunkWriter):
         self._encode_images(images, output_container, output_v_stream)
         output_container.close()
         return [(input_w, input_h)]
-
-    def save_as_chunk_to_buff(self, frames):
-        if not frames:
-            raise Exception('no images to save')
-
-        buff = io.BytesIO()
-        input_w = frames[0].width
-        input_h = frames[0].height
-
-        output_container, output_v_stream = self._create_av_container(
-            path=buff,
-            w=input_w,
-            h=input_h,
-            rate=self._output_fps,
-            options={
-                "crf": str(self._image_quality),
-                "preset": "ultrafast",
-            },
-            f='mp4',
-        )
-
-        for frame in frames:
-            # let libav set the correct pts and time_base
-            frame.pts = None
-            frame.time_base = None
-
-            for packet in output_v_stream.encode(frame):
-                output_container.mux(packet)
-
-        # Flush streams
-        for packet in output_v_stream.encode():
-            output_container.mux(packet)
-        output_container.close()
-        buff.seek(0)
-        return buff
 
     @staticmethod
     def _encode_images(images, container, stream):
@@ -453,52 +395,6 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
         self._encode_images(images, output_container, output_v_stream)
         output_container.close()
         return [(input_w, input_h)]
-
-    def save_as_chunk_to_buff(self, frames):
-        if not frames:
-            raise Exception('no images to save')
-
-        buff = io.BytesIO()
-        input_w = frames[0].width
-        input_h = frames[0].height
-
-        downscale_factor = 1
-        while input_h / downscale_factor >= 1080:
-            downscale_factor *= 2
-
-        output_h = input_h // downscale_factor
-        output_w = input_w // downscale_factor
-
-
-        output_container, output_v_stream = self._create_av_container(
-            path=buff,
-            w=output_w,
-            h=output_h,
-            rate=self._output_fps,
-            options={
-                'profile': 'baseline',
-                'coder': '0',
-                'crf': str(self._image_quality),
-                'wpredp': '0',
-                'flags': '-loop'
-            },
-            f='mp4',
-        )
-
-        for frame in frames:
-            # let libav set the correct pts and time_base
-            frame.pts = None
-            frame.time_base = None
-
-            for packet in output_v_stream.encode(frame):
-                output_container.mux(packet)
-
-        # Flush streams
-        for packet in output_v_stream.encode():
-            output_container.mux(packet)
-        output_container.close()
-        buff.seek(0)
-        return buff
 
 def _is_archive(path):
     mime = mimetypes.guess_type(path)
