@@ -27,7 +27,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('cvat.apps.engine.urls')),
     path('django-rq/', include('django_rq.urls')),
-    path('auth/', include('cvat.apps.authentication.urls')),
     path('documentation/', include('cvat.apps.documentation.urls')),
 ]
 

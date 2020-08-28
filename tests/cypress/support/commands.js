@@ -99,3 +99,71 @@ Cypress.Commands.add('createTrack', (firstX, firstY, lastX, lastY) => {
     cy.get('.cvat-canvas-container')
     .click(lastX, lastY)
 })
+
+Cypress.Commands.add('createPoint', (posX, posY) => {
+    cy.get('.cvat-draw-points-control').click()
+    cy.get('.cvat-draw-shape-popover-content')
+    .find('button')
+    .contains('Shape')
+    .click({force: true})
+    cy.get('.cvat-canvas-container')
+    .click(posX, posY)
+    .trigger('keydown', {key: 'n'})
+    .trigger('keyup', {key: 'n'})
+})
+
+Cypress.Commands.add('changeAppearance', (colorBy) => {
+    cy.get('.cvat-objects-appearance-content').within(() => {
+        cy.get('[type="radio"]')
+        .check(colorBy, {force: true})
+    })
+})
+
+Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
+    cy.get('.cvat-canvas-container')
+    .trigger('keydown', {key: 'g'})
+    .trigger('keyup', {key: 'g'})
+    .trigger('mousedown', firstX, firstY, {which: 1})
+    .trigger('mousemove', lastX, lastY)
+    .trigger('mouseup', lastX, lastY)
+    .trigger('keydown', {key: 'g'})
+    .trigger('keyup', {key: 'g'})
+})
+
+Cypress.Commands.add('createPolygon', ( mode,
+                                        pointsMap,
+                                        complete=true,
+                                        reDraw=false) => {
+    if (!reDraw) {
+        cy.get('.cvat-draw-polygon-control').click()
+        cy.get('.cvat-draw-shape-popover-content')
+        .find('button')
+        .contains(mode)
+        .click({force: true})
+    }
+    pointsMap.forEach(element => {
+        cy.get('.cvat-canvas-container')
+        .click(element.x, element.y)
+    })
+    if (complete) {
+        cy.get('.cvat-canvas-container')
+        .trigger('keydown', {key: 'n'})
+        .trigger('keyup', {key: 'n'})
+    }
+})
+
+Cypress.Commands.add('openSettings', () => {
+    cy.get('.cvat-right-header')
+    .find('.cvat-header-menu-dropdown')
+    .trigger('mouseover', {which: 1})
+    cy.get('.anticon-setting')
+    .click()
+})
+
+Cypress.Commands.add('closeSettings', () => {
+    cy.get('.ant-modal-content')
+    .should('contain', 'Settings')
+    .within(() => {
+        cy.contains('button', 'Close').click()
+    })
+})
