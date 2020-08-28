@@ -137,6 +137,9 @@ def parse_label_map(path):
             label_desc = line.strip().split(':')
             name = label_desc[0]
 
+            if name in label_map:
+                raise ValueError("Label '%s' is already defined" % name)
+
             if 1 < len(label_desc) and len(label_desc[1]) != 0:
                 color = label_desc[1].split(',')
                 assert len(color) == 3, \
@@ -173,7 +176,6 @@ def write_label_map(path, label_map):
 
             f.write('%s\n' % ':'.join([label_name, color_rgb, parts, actions]))
 
-# pylint: disable=pointless-statement
 def make_voc_categories(label_map=None):
     if label_map is None:
         label_map = make_voc_label_map()
@@ -190,16 +192,15 @@ def make_voc_categories(label_map=None):
         label_categories.add(part)
     categories[AnnotationType.label] = label_categories
 
-    has_colors = sum(v[0] is not None for v in label_map.values())
-    if not has_colors:
+    has_colors = any(v[0] is not None for v in label_map.values())
+    if not has_colors: # generate new colors
         colormap = generate_colormap(len(label_map))
-    else:
+    else: # only copy defined colors
         label_id = lambda label: label_categories.find(label)[0]
         colormap = { label_id(name): desc[0]
-            for name, desc in label_map.items() }
+            for name, desc in label_map.items() if desc[0] is not None }
     mask_categories = MaskCategories(colormap)
-    mask_categories.inverse_colormap # force init
+    mask_categories.inverse_colormap # pylint: disable=pointless-statement
     categories[AnnotationType.mask] = mask_categories
 
     return categories
-# pylint: enable=pointless-statement
