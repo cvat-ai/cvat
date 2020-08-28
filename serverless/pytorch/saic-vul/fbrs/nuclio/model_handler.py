@@ -33,7 +33,7 @@ def convert_mask_to_polygon(mask):
 class ModelHandler:
     def __init__(self):
         torch.backends.cudnn.deterministic = True
-        base_dir = os.environ.get("MODEL_PATH", "/opt/nuclio")
+        base_dir = os.environ.get("MODEL_PATH", "/opt/nuclio/fbrs")
         model_path = os.path.join(base_dir, "resnet101_dh256_sbd.pth")
         state_dict = torch.load(model_path, map_location='cpu')
 
@@ -56,7 +56,7 @@ class ModelHandler:
         ])
 
         image_nd = input_transform(image).to(self.device)
-        result_mask = np.zeros(image.shape[:2], dtype=np.uint16)
+        result_mask = np.zeros(image_nd.shape[:2], dtype=np.uint16)
 
         clicker = Clicker()
         for x, y in pos_points:

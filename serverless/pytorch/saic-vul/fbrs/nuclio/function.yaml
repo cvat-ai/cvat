@@ -32,7 +32,7 @@ spec:
       - kind: ENV
         value: fileid=1Z9dQtpWVTobEdmUBntpUU0pJl-pEXUwR
       - kind: ENV
-        value: filename=model.pth
+        value: filename=resnet101_dh256_sbd.pth
       - kind: RUN
         value: curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}"
       - kind: RUN
