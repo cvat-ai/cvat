@@ -31,6 +31,7 @@ interface StateToProps {
     statesHidden: boolean;
     statesLocked: boolean;
     statesCollapsed: boolean;
+    collapsedStates: Record<number, boolean>;
     objectStates: any[];
     annotationsFilters: string[];
     colors: string[];
@@ -114,6 +115,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         statesHidden,
         statesLocked,
         statesCollapsed,
+        collapsedStates: collapsed,
         objectStates,
         frameNumber,
         jobInstance,
@@ -197,6 +199,13 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             objectStates: props.objectStates,
             sortedStatesID: sortAndMap(props.objectStates, state.statesOrdering),
         };
+    }
+
+    public componentDidMount(): void {
+        const { collapsedStates } = this.props;
+        if (!Object.keys(collapsedStates).length) {
+            this.collapseAllStates(true);
+        }
     }
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
