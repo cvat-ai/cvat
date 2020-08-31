@@ -27,7 +27,7 @@ class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswor
     private validateConfirmation = (_: any, value: string, callback: Function): void => {
         const { form } = this.props;
         if (value && value !== form.getFieldValue('newPassword1')) {
-            callback('Two passwords that you enter is inconsistent!');
+            callback('Passwords do not match!');
         } else {
             callback();
         }
