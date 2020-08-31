@@ -179,13 +179,13 @@ function DetectorRunner(props: Props): JSX.Element {
             { isDetector && !!Object.keys(mapping).length && (
                 Object.keys(mapping).map((modelLabel: string) => (
                     <Row key={modelLabel} type='flex' justify='start' align='middle'>
-                        <Col span={10}>
+                        <Col offset={4}>
                             <Tag color={colors[modelLabel]}>{modelLabel}</Tag>
                         </Col>
-                        <Col span={10} offset={1}>
+                        <Col offset={1}>
                             <Tag color={colors[modelLabel]}>{mapping[modelLabel]}</Tag>
                         </Col>
-                        <Col span={1} offset={1}>
+                        <Col offset={1}>
                             <Tooltip title='Remove the mapped values' mouseLeaveDelay={0}>
                                 <Icon
                                     className='cvat-danger-circle-icon'
