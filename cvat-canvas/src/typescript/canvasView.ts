@@ -131,32 +131,38 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private onStopInteraction(): void {
-        const event: CustomEvent = new CustomEvent('canvas.canceled', {
-            bubbles: false,
-            cancelable: true,
-        });
-
-        this.canvas.dispatchEvent(event);
-        this.mode = Mode.IDLE;
-        this.controller.interact({
-            enabled: false,
-        });
-    }
-
-    private onInteraction(shapes: InteractionResult[] | null): void {
+    private onInteraction(
+        shapes: InteractionResult[] | null,
+        shapesUpdated: boolean = true,
+        isDone: boolean = false,
+    ): void {
         const { zLayer } = this.controller;
         if (Array.isArray(shapes)) {
             const event: CustomEvent = new CustomEvent('canvas.interacted', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
+                    shapesUpdated,
+                    isDone,
                     shapes,
                     zOrder: zLayer || 0,
                 },
             });
 
             this.canvas.dispatchEvent(event);
+        }
+
+        if (shapes === null || isDone) {
+            const event: CustomEvent = new CustomEvent('canvas.canceled', {
+                bubbles: false,
+                cancelable: true,
+            });
+
+            this.canvas.dispatchEvent(event);
+            this.mode = Mode.IDLE;
+            this.controller.interact({
+                enabled: false,
+            });
         }
     }
 
@@ -885,7 +891,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         );
         this.interactionHandler = new InteractionHandlerImpl(
             this.onInteraction.bind(this),
-            this.onStopInteraction.bind(this),
             this.adoptedContent,
             this.geometry,
         );

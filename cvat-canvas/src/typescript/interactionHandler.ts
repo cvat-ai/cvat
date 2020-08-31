@@ -15,8 +15,11 @@ export interface InteractionHandler {
 }
 
 export class InteractionHandlerImpl implements InteractionHandler {
-    private onInteraction: (shapes: InteractionResult[] | null) => void;
-    private onStopInteraction: () => void;
+    private onInteraction: (
+        shapes: InteractionResult[] | null,
+        shapesUpdated?: boolean,
+        isDone?: boolean,
+    ) => void;
     private geometry: Geometry;
     private canvas: SVG.Container;
     private interactionData: InteractionData;
@@ -95,7 +98,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 this.interactionShapes.push(this.currentInteractionShape);
                 this.shapesWereUpdated = true;
                 if (this.shouldRaiseEvent(e.ctrlKey)) {
-                    this.onInteraction(this.prepareResult());
+                    this.onInteraction(this.prepareResult(), true, false);
                 }
 
                 const self = this.currentInteractionShape;
@@ -113,7 +116,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         );
                         this.shapesWereUpdated = true;
                         if (this.shouldRaiseEvent(_e.ctrlKey)) {
-                            this.onInteraction(this.prepareResult());
+                            this.onInteraction(this.prepareResult(), true, false);
                         }
                     });
                 });
@@ -153,7 +156,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
             this.canvas.off('mousedown.interaction', eventListener);
             if (this.shouldRaiseEvent(false)) {
-                this.onInteraction(this.prepareResult());
+                this.onInteraction(this.prepareResult(), true, false);
             }
 
             this.interact({ enabled: false });
@@ -190,21 +193,25 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.currentInteractionShape.remove();
             this.currentInteractionShape = null;
         }
-
-        this.onStopInteraction();
     }
 
     public constructor(
-        onInteraction: (shapes: InteractionResult[] | null) => void,
-        onStopInteraction: () => void,
+        onInteraction: (
+            shapes: InteractionResult[] | null,
+            shapesUpdated?: boolean,
+            isDone?: boolean,
+        ) => void,
         canvas: SVG.Container,
         geometry: Geometry,
     ) {
-        this.onInteraction = (shapes: InteractionResult[] | null): void => {
+        this.onInteraction = (
+            shapes: InteractionResult[] | null,
+            shapesUpdated?: boolean,
+            isDone?: boolean,
+        ): void => {
             this.shapesWereUpdated = false;
-            onInteraction(shapes);
+            onInteraction(shapes, shapesUpdated, isDone);
         };
-        this.onStopInteraction = onStopInteraction;
         this.canvas = canvas;
         this.geometry = geometry;
         this.shapesWereUpdated = false;
@@ -230,7 +237,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
         document.body.addEventListener('keyup', (e: KeyboardEvent): void => {
             if (e.keyCode === 17 && this.shouldRaiseEvent(false)) { // 17 is ctrl
-                this.onInteraction(this.prepareResult());
+                this.onInteraction(this.prepareResult(), true, false);
             }
         });
     }
@@ -261,10 +268,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.initInteraction();
             this.startInteraction();
         } else {
-            if (this.shouldRaiseEvent(false)) {
-                this.onInteraction(this.prepareResult());
-            }
-
+            this.onInteraction(this.prepareResult(), this.shouldRaiseEvent(false), true);
             this.release();
             this.interactionData = interactionData;
         }
@@ -272,5 +276,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     public cancel(): void {
         this.release();
+        this.onInteraction(null);
     }
 }
