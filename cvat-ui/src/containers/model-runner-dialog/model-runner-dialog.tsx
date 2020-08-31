@@ -9,7 +9,8 @@ import { Model, CombinedState } from 'reducers/interfaces';
 import { startInferenceAsync, modelsActions } from 'actions/models-actions';
 
 interface StateToProps {
-    models: Model[];
+    reid: Model[];
+    detectors: Model[];
     activeProcesses: {
         [index: string]: string;
     };
@@ -30,7 +31,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
 
     return {
-        models: models.models,
+        reid: models.reid,
+        detectors: models.detectors,
         activeProcesses: {},
         taskInstance: models.activeRunTask,
         visible: models.visibleRunWindows,

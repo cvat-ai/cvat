@@ -46,6 +46,7 @@ Canvas itself handles:
         IDLE = 'idle',
         DRAG = 'drag',
         RESIZE = 'resize',
+        INTERACT = 'interact',
         DRAW = 'draw',
         EDIT = 'edit',
         MERGE = 'merge',
@@ -70,6 +71,11 @@ Canvas itself handles:
         crosshair?: boolean;
     }
 
+    interface InteractionData {
+        shapeType: string;
+        minVertices?: number;
+    }
+
     interface GroupData {
         enabled: boolean;
         resetGroup?: boolean;
@@ -82,6 +88,12 @@ Canvas itself handles:
     interface SplitData {
         enabled: boolean;
     }
+
+    interface InteractionResult {
+        points: number[];
+        shapeType: string;
+        button: number;
+    };
 
     interface DrawnData {
         shapeType: string;
@@ -104,6 +116,7 @@ Canvas itself handles:
         grid(stepX: number, stepY: number): void;
 
         draw(drawData: DrawData): void;
+        interact(interactionData: InteractionData): void;
         group(groupData: GroupData): void;
         split(splitData: SplitData): void;
         merge(mergeData: MergeData): void;
@@ -146,6 +159,7 @@ Standard JS events are used.
     - canvas.moved => {states: ObjectState[], x: number, y: number}
     - canvas.find => {states: ObjectState[], x: number, y: number}
     - canvas.drawn => {state: DrawnData}
+    - canvas.interacted => {shapes: InteractionResult[]}
     - canvas.editstart
     - canvas.edited => {state: ObjectState, points: number[]}
     - canvas.splitted => {state: ObjectState}
@@ -187,25 +201,26 @@ Standard JS events are used.
 
 ## API Reaction
 
-|              | IDLE | GROUP | SPLIT | DRAW | MERGE | EDIT | DRAG | RESIZE | ZOOM_CANVAS | DRAG_CANVAS |
-|--------------|------|-------|-------|------|-------|------|------|--------|-------------|-------------|
-| setup()      | +    | +     | +     | +/-  | +     | +/-  | +/-  | +/-    | +           | +           |
-| activate()   | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
-| rotate()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| focus()      | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| fit()        | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| grid()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| draw()       | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           |
-| split()      | +    | -     | +     | -    | -     | -    | -    | -      | -           | -           |
-| group()      | +    | +     | -     | -    | -     | -    | -    | -      | -           | -           |
-| merge()      | +    | -     | -     | -    | +     | -    | -    | -      | -           | -           |
-| fitCanvas()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| dragCanvas() | +    | -     | -     | -    | -     | -    | +    | -      | -           | +           |
-| zoomCanvas() | +    | -     | -     | -    | -     | -    | -    | +      | +           | -           |
-| cancel()     | -    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| configure()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| bitmap()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
-| setZLayer()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           |
+|              | IDLE | GROUP | SPLIT | DRAW | MERGE | EDIT | DRAG | RESIZE | ZOOM_CANVAS | DRAG_CANVAS | INTERACT |
+|--------------|------|-------|-------|------|-------|------|------|--------|-------------|-------------|----------|
+| setup()      | +    | +     | +     | +/-  | +     | +/-  | +/-  | +/-    | +           | +           | +        |
+| activate()   | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           | -        |
+| rotate()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
+| focus()      | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
+| fit()        | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
+| grid()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
+| draw()       | +    | -     | -     | +    | -     | -    | -    | -      | -           | -           | -        |
+| interact()   | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           | +        |
+| split()      | +    | -     | +     | -    | -     | -    | -    | -      | -           | -           | -        |
+| group()      | +    | +     | -     | -    | -     | -    | -    | -      | -           | -           | -        |
+| merge()      | +    | -     | -     | -    | +     | -    | -    | -      | -           | -           | -        |
+| fitCanvas()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
+| dragCanvas() | +    | -     | -     | -    | -     | -    | +    | -      | -           | +           | -        |
+| zoomCanvas() | +    | -     | -     | -    | -     | -    | -    | +      | +           | -           | -        |
+| cancel()     | -    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
+| configure()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
+| bitmap()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
+| setZLayer()  | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
 
 You can call setup() during editing, dragging, and resizing only to update objects, not to change a frame.
 You can change frame during draw only when you do not redraw an existing object
