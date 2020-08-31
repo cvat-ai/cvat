@@ -4,7 +4,6 @@
 
 import { PluginsActionTypes, PluginActions } from 'actions/plugins-actions';
 import { registerGitPlugin } from 'utils/git-utils';
-import { registerDEXTRPlugin } from 'utils/dextr-utils';
 import { PluginsState } from './interfaces';
 
 const defaultState: PluginsState = {
@@ -12,7 +11,6 @@ const defaultState: PluginsState = {
     initialized: false,
     list: {
         GIT_INTEGRATION: false,
-        DEXTR_SEGMENTATION: false,
         ANALYTICS: false,
     },
 };
@@ -34,10 +32,6 @@ export default function (
 
             if (!state.list.GIT_INTEGRATION && list.GIT_INTEGRATION) {
                 registerGitPlugin();
-            }
-
-            if (!state.list.DEXTR_SEGMENTATION && list.DEXTR_SEGMENTATION) {
-                registerDEXTRPlugin();
             }
 
             return {

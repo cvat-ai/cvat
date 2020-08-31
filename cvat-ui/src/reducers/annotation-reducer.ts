@@ -428,6 +428,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activeControl,
                 },
                 drawing: {
+                    activeInteractor: undefined,
                     activeLabelID: labelID,
                     activeNumOfPoints: points,
                     activeObjectType: objectType,
@@ -1039,8 +1040,30 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.INTERACT_WITH_CANVAS: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
+                drawing: {
+                    ...state.drawing,
+                    activeInteractor: action.payload.activeInteractor,
+                    activeLabelID: action.payload.activeLabelID,
+                },
+                canvas: {
+                    ...state.canvas,
+                    activeControl: ActiveControl.INTERACTION,
+                },
+            };
+        }
         case AnnotationActionTypes.CHANGE_WORKSPACE: {
             const { workspace } = action.payload;
+            if (state.canvas.activeControl !== ActiveControl.CURSOR) {
+                return state;
+            }
+
             return {
                 ...state,
                 workspace,
