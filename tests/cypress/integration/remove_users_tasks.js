@@ -18,8 +18,8 @@ describe('Delete users and tasks created during the test run.', () => {
                 password: Cypress.env('password')
             }
         })
-        .then((responce) => {
-            authKey = responce['body']['key']
+        .then(async (responce) => {
+            authKey = await responce['body']['key']
         })
     })
     it('Get a list of users and delete all except id:1', () => {
@@ -29,8 +29,8 @@ describe('Delete users and tasks created during the test run.', () => {
                 Authorization: `Token ${authKey}`
             }
         })
-        .then((responce) => {
-            const responceResult = responce['body']['results']
+        .then(async (responce) => {
+            const responceResult = await responce['body']['results']
             for (let user of responceResult) {
                 let userId = user['id']
                 if (userId !== 1) {
@@ -47,13 +47,13 @@ describe('Delete users and tasks created during the test run.', () => {
     })
     it('Get a list of tasks and delete them all', ()=> {
         cy.request({
-            url: '/api/v1/tasks',
+            url: '/api/v1/tasks?page_size=1000',
             headers: {
                 Authorization: `Token ${authKey}`
             }
         })
-        .then((responce) => {
-            const responceResult = responce['body']['results']
+        .then(async (responce) => {
+            const responceResult = await responce['body']['results']
             for (let tasks of responceResult) {
                 let taskId = tasks['id']
                 cy.request({
