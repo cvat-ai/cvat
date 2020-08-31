@@ -50,7 +50,7 @@ RUN apt-get update && \
         ssh \
         poppler-utils \
         curl && \
-    python3 -m pip install --no-cache-dir -U pip>=20.0.1 setuptools>=49.1.0 wheel>=0.35.1 && \
+    python3 -m pip install --no-cache-dir -U pip==20.0.1 setuptools==49.6.0 wheel==0.35.1 && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
