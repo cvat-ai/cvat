@@ -1,13 +1,13 @@
-# Dataset Framework (Datumaro)
+# Dataset Management Framework (Datumaro)
 
 A framework to build, transform, and analyze datasets.
 
 <!--lint disable fenced-code-flag-->
 ```
 CVAT annotations  --                              ---> Annotation tool
-...                  \                          /
+                     \                          /
 COCO-like dataset -----> Datumaro ---> dataset ------> Model training
-...                  /                          \
+                     /                          \
 VOC-like dataset  --                              ---> Publication etc.
 ```
 <!--lint enable fenced-code-flag-->
@@ -55,12 +55,12 @@ VOC-like dataset  --                              ---> Publication etc.
 - Dataset building operations:
   - Merging multiple datasets into one
   - Dataset filtering with custom conditions, for instance:
-    - remove all annotations except polygons of a certain class
+    - remove polygons of a certain class
     - remove images without a specific class
-    - remove occluded annotations from images
+    - remove `occluded` annotations from images
     - keep only vertically-oriented images
     - remove small area bounding boxes from annotations
-  - Annotation conversions, for instance
+  - Annotation conversions, for instance:
     - polygons to instance masks and vise-versa
     - apply a custom colormap for mask annotations
     - rename or remove dataset labels

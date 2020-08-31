@@ -4,18 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - Unreleased
+## [1.2.0] - Unreleased
 ### Added
-- Siammask tracker as DL serverless function (<https://github.com/opencv/cvat/pull/1988>)
-- [Datumaro] Added model info and source info commands (<https://github.com/opencv/cvat/pull/1973>)
-- [Datumaro] Dataset statistics (<https://github.com/opencv/cvat/pull/1668>)
-- Ability to change label color in tasks and predefined labels (<https://github.com/opencv/cvat/pull/2014>)
-- [Datumaro] Multi-dataset merge (https://github.com/opencv/cvat/pull/1695)
+-
 
 ### Changed
-- Shape coordinates are rounded to 2 digits in dumped annotations (<https://github.com/opencv/cvat/pull/1970>)
-- COCO format does not produce polygon points for bbox annotations (<https://github.com/opencv/cvat/pull/1953>)
-- UI models (like DEXTR) were redesigned to be more interactive (<https://github.com/opencv/cvat/pull/2054>)
+-
 
 ### Deprecated
 -
@@ -24,12 +18,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
-- Issue loading openvino models for semi-automatic and automatic annotation (<https://github.com/opencv/cvat/pull/1996>)
-- Basic functions of CVAT works without activated nuclio dashboard
-- Fixed error with creating task with labels with the same name (<https://github.com/opencv/cvat/pull/2031>)
+-
 
 ### Security
 -
+
+## [1.1.0] - 2020-08-31
+### Added
+- Siammask tracker as DL serverless function (<https://github.com/opencv/cvat/pull/1988>)
+- [Datumaro] Added model info and source info commands (<https://github.com/opencv/cvat/pull/1973>)
+- [Datumaro] Dataset statistics (<https://github.com/opencv/cvat/pull/1668>)
+- Ability to change label color in tasks and predefined labels (<https://github.com/opencv/cvat/pull/2014>)
+- [Datumaro] Multi-dataset merge (https://github.com/opencv/cvat/pull/1695)
+- Ability to configure email verification for new users (<https://github.com/opencv/cvat/pull/1929>)
+- Link to django admin page from UI (<https://github.com/opencv/cvat/pull/2068>)
+- Notification message when users use wrong browser (<https://github.com/opencv/cvat/pull/2070>)
+
+### Changed
+- Shape coordinates are rounded to 2 digits in dumped annotations (<https://github.com/opencv/cvat/pull/1970>)
+- COCO format does not produce polygon points for bbox annotations (<https://github.com/opencv/cvat/pull/1953>)
+- UI models (like DEXTR) were redesigned to be more interactive (<https://github.com/opencv/cvat/pull/2054>)
+
+### Fixed
+- Issue loading openvino models for semi-automatic and automatic annotation (<https://github.com/opencv/cvat/pull/1996>)
+- Basic functions of CVAT works without activated nuclio dashboard
+- Fixed a case in which exported masks could have wrong color order (<https://github.com/opencv/cvat/issues/2032>)
+- Fixed error with creating task with labels with the same name (<https://github.com/opencv/cvat/pull/2031>)
+- Django RQ dashboard view (<https://github.com/opencv/cvat/pull/2069>)
 
 ## [1.1.0-beta] - 2020-08-03
 ### Added

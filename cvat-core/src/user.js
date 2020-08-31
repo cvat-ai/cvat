@@ -23,6 +23,7 @@
                 is_staff: null,
                 is_superuser: null,
                 is_active: null,
+                email_verification_required: null,
             };
 
             for (const property in data) {
@@ -142,6 +143,16 @@
                         * @instance
                     */
                     get: () => data.is_active,
+                },
+                isVerified: {
+                    /**
+                        * @name isVerified
+                        * @type {boolean}
+                        * @memberof module:API.cvat.classes.User
+                        * @readonly
+                        * @instance
+                    */
+                   get: () => !data.email_verification_required,
                 },
             }));
         }
