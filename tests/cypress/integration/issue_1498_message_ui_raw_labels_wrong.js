@@ -10,7 +10,6 @@ context('Message in UI when raw labels are wrong.', () => {
 
     const issueId = '1498'
     const labelName = `Issue ${issueId}`
-    const taskName = `New annotation task for ${labelName}`
     const attrName = `Attr for ${labelName}`
     const textDefaultValue = 'Some default value for type Text'
     let taskRaw = [
@@ -35,7 +34,7 @@ context('Message in UI when raw labels are wrong.', () => {
     before(() => {
         cy.visit('auth/login')
         cy.login()
-        cy.contains('button', 'Create new task').click()
+        cy.get('#cvat-create-task-button').click()
         cy.url().should('include', '/tasks/create')
         cy.get('[role="tab"]').contains('Raw').click()
     })
