@@ -1037,6 +1037,7 @@ class DistanceComparator:
         return { t: self._match_ann_type(t, item_a, item_b) }
 
     def _match_ann_type(self, t, *args):
+        # pylint: disable=no-value-for-parameter
         if t == AnnotationType.label:
             return self.match_labels(*args)
         elif t == AnnotationType.bbox:
@@ -1049,6 +1050,7 @@ class DistanceComparator:
             return self.match_points(*args)
         elif t == AnnotationType.polyline:
             return self.match_lines(*args)
+        # pylint: enable=no-value-for-parameter
         else:
             raise NotImplementedError("Unexpected annotation type %s" % t)
 
