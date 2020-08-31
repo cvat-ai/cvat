@@ -9,7 +9,6 @@ from datumaro.components.operations import (FailedAttrVotingError,
     IntersectMerge, NoMatchingAnnError, NoMatchingItemError, WrongGroupError,
     compute_ann_statistics, mean_std)
 from datumaro.components.project import Dataset
-from datumaro.util.mask_tools import generate_colormap
 from datumaro.util.test_utils import compare_datasets
 
 
