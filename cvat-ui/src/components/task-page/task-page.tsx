@@ -12,7 +12,7 @@ import Result from 'antd/lib/result';
 
 import DetailsContainer from 'containers/task-page/details';
 import JobListContainer from 'containers/task-page/job-list';
-import ModelRunnerModal from 'components/model-runner-modal/model-runner-modal';
+import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import { Task } from 'reducers/interfaces';
 import TopBarComponent from './top-bar';
 

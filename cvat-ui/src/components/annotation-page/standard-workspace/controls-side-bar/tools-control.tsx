@@ -43,7 +43,6 @@ interface StateToProps {
     frame: number;
     interactors: Model[];
     detectors: Model[];
-    reid: Model[];
 }
 
 interface DispatchToProps {
@@ -61,12 +60,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { instance: jobInstance } = annotation.job;
     const { instance: canvasInstance, activeControl } = annotation.canvas;
     const { models } = state;
-    const { interactors, detectors, reid } = models;
+    const { interactors, detectors } = models;
 
     return {
         interactors,
         detectors,
-        reid,
         isInteraction: activeControl === ActiveControl.INTERACTION,
         activeLabelID: annotation.drawing.activeLabelID,
         labels: annotation.job.labels,
@@ -415,7 +413,6 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         const {
             jobInstance,
             detectors,
-            reid,
             frame,
             fetchAnnotations,
         } = this.props;
@@ -423,7 +420,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         return (
             <DetectorRunner
                 withCleanup={false}
-                models={[...detectors, ...reid]}
+                models={detectors}
                 task={jobInstance.task}
                 runInference={async (task: any, model: Model) => {
                     try {

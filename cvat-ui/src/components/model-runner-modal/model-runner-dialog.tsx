@@ -48,7 +48,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     };
 }
 
-function ModelRunnerModal(props: StateToProps & DispatchToProps): JSX.Element {
+function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     const {
         reid,
         detectors,
@@ -85,4 +85,4 @@ function ModelRunnerModal(props: StateToProps & DispatchToProps): JSX.Element {
 export default connect(
     mapStateToProps,
     mapDispatchToProps,
-)(ModelRunnerModal);
+)(ModelRunnerDialog);
