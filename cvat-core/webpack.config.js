@@ -30,10 +30,12 @@ const webConfig = {
     target: 'web',
     mode: 'production',
     devtool: 'source-map',
-    entry: './src/api.js',
+    entry: {
+        'cvat-core': './src/api.js',
+    },
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'cvat-core.min.js',
+        filename: '[name].[contenthash].min.js',
         library: 'cvat',
         libraryTarget: 'window',
     },
@@ -58,7 +60,7 @@ const webConfig = {
                 loader: 'worker-loader',
                 options: {
                     publicPath: '/static/engine/js/3rdparty/',
-                    name: '[name].js',
+                    name: '[name].[contenthash].js',
                 },
             },
         }, {
@@ -68,7 +70,7 @@ const webConfig = {
                 loader: 'worker-loader',
                 options: {
                     publicPath: '/static/engine/js/',
-                    name: '[name].js',
+                    name: '[name].[contenthash].js',
                 },
             },
         },

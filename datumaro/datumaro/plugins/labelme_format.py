@@ -15,7 +15,6 @@ from datumaro.components.extractor import (SourceExtractor, DEFAULT_SUBSET_NAME,
 )
 from datumaro.components.extractor import Importer
 from datumaro.components.converter import Converter
-from datumaro.components.cli_plugin import CliPlugin
 from datumaro.util.image import Image, save_image
 from datumaro.util.mask_tools import load_mask, find_mask_bbox
 
@@ -54,9 +53,7 @@ class LabelMeExtractor(SourceExtractor):
         for p in sorted(p for p in os.listdir(path) if p.endswith('.xml')):
             root = ElementTree.parse(osp.join(path, p))
 
-            image = None
             image_path = osp.join(path, root.find('filename').text)
-
             image_size = None
             imagesize_elem = root.find('imagesize')
             if imagesize_elem is not None:
@@ -67,8 +64,8 @@ class LabelMeExtractor(SourceExtractor):
 
             annotations = self._parse_annotations(root, path, categories)
 
-            items.append(DatasetItem(id=osp.splitext(p)[0], subset=self._subset,
-                image=image, annotations=annotations))
+            items.append(DatasetItem(id=osp.splitext(p)[0],
+                subset=self._subset, image=image, annotations=annotations))
         return items, categories
 
     @classmethod
@@ -86,7 +83,7 @@ class LabelMeExtractor(SourceExtractor):
                     else:
                         try:
                             value = float(value)
-                        except Exception:
+                        except ValueError:
                             pass
                     parsed.append((name, value))
                 else:
@@ -256,8 +253,7 @@ class LabelMeImporter(Importer):
             params.update(extra_params)
 
             source_name = osp.splitext(osp.basename(subset_path))[0]
-            project.add_source(source_name,
-            {
+            project.add_source(source_name, {
                 'url': subset_path,
                 'format': self._EXTRACTOR_NAME,
                 'options': params,
@@ -287,34 +283,18 @@ class LabelMeImporter(Importer):
         return subset_paths
 
 
-class LabelMeConverter(Converter, CliPlugin):
-    @classmethod
-    def build_cmdline_parser(cls, **kwargs):
-        parser = super().build_cmdline_parser(**kwargs)
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-        return parser
+class LabelMeConverter(Converter):
+    DEFAULT_IMAGE_EXT = LabelMePath.IMAGE_EXT
 
-    def __init__(self, save_images=False):
-        super().__init__()
-
-        self._save_images = save_images
-
-    def __call__(self, extractor, save_dir):
-        self._extractor = extractor
-
-        subsets = extractor.subsets()
-        if len(subsets) == 0:
-            subsets = [ None ]
-
-        for subset_name in subsets:
+    def apply(self):
+        for subset_name in self._extractor.subsets() or [None]:
             if subset_name:
-                subset = extractor.get_subset(subset_name)
+                subset = self._extractor.get_subset(subset_name)
             else:
                 subset_name = DEFAULT_SUBSET_NAME
-                subset = extractor
+                subset = self._extractor
 
-            subset_dir = osp.join(save_dir, subset_name)
+            subset_dir = osp.join(self._save_dir, subset_name)
             os.makedirs(subset_dir, exist_ok=True)
             os.makedirs(osp.join(subset_dir, LabelMePath.MASKS_DIR),
                 exist_ok=True)
@@ -333,20 +313,16 @@ class LabelMeConverter(Converter, CliPlugin):
 
         log.debug("Converting item '%s'", item.id)
 
-        image_filename = ''
-        if item.has_image:
-            image_filename = item.image.filename
+        if '/' in item.id:
+            raise Exception("Can't export item '%s': "
+                "LabelMe format only supports flat image layout" % item.id)
+
+        image_filename = self._make_image_filename(item)
         if self._save_images:
             if item.has_image and item.image.has_data:
-                if image_filename:
-                    image_filename = osp.splitext(image_filename)[0]
-                else:
-                    image_filename = item.id
-                image_filename += LabelMePath.IMAGE_EXT
-                save_image(osp.join(subset_dir, image_filename),
-                    item.image.data)
+                self._save_image(item, osp.join(subset_dir, image_filename))
             else:
-                log.debug("Item '%s' has no image" % item.id)
+                log.debug("Item '%s' has no image", item.id)
 
         root_elem = ET.Element('annotation')
         ET.SubElement(root_elem, 'filename').text = image_filename

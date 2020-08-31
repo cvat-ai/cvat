@@ -5,6 +5,7 @@
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { UserConfirmation } from 'components/register-page/register-form';
 import getCore from 'cvat-core-wrapper';
+import isReachable from 'utils/url-checker';
 
 const cvat = getCore();
 
@@ -20,9 +21,16 @@ export enum AuthActionTypes {
     LOGOUT = 'LOGOUT',
     LOGOUT_SUCCESS = 'LOGOUT_SUCCESS',
     LOGOUT_FAILED = 'LOGOUT_FAILED',
+    CHANGE_PASSWORD = 'CHANGE_PASSWORD',
+    CHANGE_PASSWORD_SUCCESS = 'CHANGE_PASSWORD_SUCCESS',
+    CHANGE_PASSWORD_FAILED = 'CHANGE_PASSWORD_FAILED',
+    SWITCH_CHANGE_PASSWORD_DIALOG = 'SWITCH_CHANGE_PASSWORD_DIALOG',
+    LOAD_AUTH_ACTIONS = 'LOAD_AUTH_ACTIONS',
+    LOAD_AUTH_ACTIONS_SUCCESS = 'LOAD_AUTH_ACTIONS_SUCCESS',
+    LOAD_AUTH_ACTIONS_FAILED = 'LOAD_AUTH_ACTIONS_FAILED',
 }
 
-const authActions = {
+export const authActions = {
     authorizeSuccess: (user: any) => createAction(AuthActionTypes.AUTHORIZED_SUCCESS, { user }),
     authorizeFailed: (error: any) => createAction(AuthActionTypes.AUTHORIZED_FAILED, { error }),
     login: () => createAction(AuthActionTypes.LOGIN),
@@ -34,6 +42,21 @@ const authActions = {
     logout: () => createAction(AuthActionTypes.LOGOUT),
     logoutSuccess: () => createAction(AuthActionTypes.LOGOUT_SUCCESS),
     logoutFailed: (error: any) => createAction(AuthActionTypes.LOGOUT_FAILED, { error }),
+    changePassword: () => createAction(AuthActionTypes.CHANGE_PASSWORD),
+    changePasswordSuccess: () => createAction(AuthActionTypes.CHANGE_PASSWORD_SUCCESS),
+    changePasswordFailed: (error: any) => (
+        createAction(AuthActionTypes.CHANGE_PASSWORD_FAILED, { error })
+    ),
+    switchChangePasswordDialog: (showChangePasswordDialog: boolean) => (
+        createAction(AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG, { showChangePasswordDialog })
+    ),
+    loadServerAuthActions: () => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS),
+    loadServerAuthActionsSuccess: (allowChangePassword: boolean) => (
+        createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_SUCCESS, { allowChangePassword })
+    ),
+    loadServerAuthActionsFailed: (error: any) => (
+        createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error })
+    ),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -52,10 +75,10 @@ export const registerAsync = (
     dispatch(authActions.register());
 
     try {
-        await cvat.server.register(username, firstName, lastName, email, password1, password2, confirmations);
-        const users = await cvat.users.get({ self: true });
+        const user = await cvat.server.register(username, firstName, lastName, email, password1, password2,
+            confirmations);
 
-        dispatch(authActions.registerSuccess(users[0]));
+        dispatch(authActions.registerSuccess(user));
     } catch (error) {
         dispatch(authActions.registerFailed(error));
     }
@@ -97,5 +120,32 @@ export const authorizedAsync = (): ThunkAction => async (dispatch) => {
         }
     } catch (error) {
         dispatch(authActions.authorizeFailed(error));
+    }
+};
+
+export const changePasswordAsync = (oldPassword: string,
+    newPassword1: string, newPassword2: string): ThunkAction => async (dispatch) => {
+    dispatch(authActions.changePassword());
+
+    try {
+        await cvat.server.changePassword(oldPassword, newPassword1, newPassword2);
+        dispatch(authActions.changePasswordSuccess());
+    } catch (error) {
+        dispatch(authActions.changePasswordFailed(error));
+    }
+};
+
+export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
+    dispatch(authActions.loadServerAuthActions());
+
+    try {
+        const promises: Promise<boolean>[] = [
+            isReachable(`${cvat.config.backendAPI}/auth/password/change`, 'OPTIONS'),
+        ];
+        const [allowChangePassword] = await Promise.all(promises);
+
+        dispatch(authActions.loadServerAuthActionsSuccess(allowChangePassword));
+    } catch (error) {
+        dispatch(authActions.loadServerAuthActionsFailed(error));
     }
 };

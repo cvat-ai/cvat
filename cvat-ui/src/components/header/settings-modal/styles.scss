@@ -1,0 +1,116 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../../base.scss';
+
+.cvat-settings-tabs {
+    height: 100%;
+    overflow-y: auto;
+    padding-bottom: 15px;
+
+    > div:nth-child(1) {
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+}
+
+.cvat-workspace-settings,
+.cvat-player-settings {
+    width: 100%;
+    height: max-content;
+    background: $background-color-1;
+    padding: 24px;
+}
+
+.cvat-player-settings-grid,
+.cvat-workspace-settings-auto-save,
+.cvat-workspace-settings-autoborders,
+.cvat-workspace-settings-show-text-always,
+.cvat-workspace-settings-show-interpolated {
+    margin-bottom: 25px;
+
+    > div:first-child {
+        margin-bottom: 10px;
+    }
+}
+
+.cvat-player-settings-grid-size,
+.cvat-player-settings-grid-color,
+.cvat-player-settings-grid-opacity,
+.cvat-player-settings-step,
+.cvat-player-settings-speed,
+.cvat-player-settings-reset-zoom,
+.cvat-player-settings-rotate-all,
+.cvat-player-settings-canvas-background,
+.cvat-workspace-settings-aam-zoom-margin,
+.cvat-workspace-settings-auto-save-interval {
+    margin-bottom: 25px;
+}
+
+.cvat-player-settings-grid-size,
+.cvat-player-settings-grid-color,
+.cvat-player-settings-grid-opacity {
+    display: grid;
+    justify-items: start;
+}
+
+.cvat-player-settings-grid-color {
+    > .ant-select {
+        width: 150px;
+    }
+}
+
+.cvat-player-settings-grid-opacity {
+    > .ant-slider {
+        width: 150px;
+    }
+}
+
+.cvat-player-settings-step,
+.cvat-player-settings-speed {
+    > div {
+        display: grid;
+        justify-items: start;
+    }
+}
+
+.cvat-player-settings-step > div > span > i {
+    margin: 0 5px;
+    font-size: 10px;
+}
+
+.cvat-player-settings-speed > div > .ant-select {
+    width: 90px;
+}
+
+.cvat-player-reset-color-settings,
+.cvat-player-settings-brightness,
+.cvat-player-settings-contrast,
+.cvat-player-settings-saturation {
+    width: 40%;
+}
+
+.cvat-player-reset-color-settings {
+    > .ant-col {
+        text-align: center;
+    }
+}
+
+.cvat-player-settings-image-preview {
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+}
+
+.canvas-background-color-picker-popover .ant-popover-inner-content {
+    padding: 6px 12px;
+
+    :first-child:first-child {
+        box-shadow: unset !important;
+    }
+}
+
+.cvat-settings-modal .ant-modal-body {
+    padding-top: 0;
+}

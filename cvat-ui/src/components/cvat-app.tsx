@@ -10,24 +10,26 @@ import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { GlobalHotKeys, ExtendedKeyMapOptions, configure } from 'react-hotkeys';
 import Spin from 'antd/lib/spin';
 import Layout from 'antd/lib/layout';
+import { Row, Col } from 'antd/lib/grid';
+import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
-import SettingsPageContainer from 'containers/settings-page/settings-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
 import TaskPageContainer from 'containers/task-page/task-page';
 import ModelsPageContainer from 'containers/models-page/models-page';
-import CreateModelPageContainer from 'containers/create-model-page/create-model-page';
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
-import HeaderContainer from 'containers/header/header';
+import Header from 'components/header/header';
 import { customWaViewHit } from 'utils/enviroment';
+import showPlatformNotification, { stopNotifications, platformInfo } from 'utils/platform-checker';
 
 import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from 'reducers/interfaces';
+import Modal from 'antd/lib/modal';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -36,25 +38,30 @@ interface CVATAppProps {
     verifyAuthorized: () => void;
     loadUserAgreements: () => void;
     initPlugins: () => void;
+    initModels: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
     switchShortcutsDialog: () => void;
+    switchSettingsDialog: () => void;
+    loadAuthActions: () => void;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     userInitialized: boolean;
     userFetching: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
+    modelsInitialized: boolean;
+    modelsFetching: boolean;
     formatsInitialized: boolean;
     formatsFetching: boolean;
     usersInitialized: boolean;
     usersFetching: boolean;
     aboutInitialized: boolean;
     aboutFetching: boolean;
-    installedAutoAnnotation: boolean;
-    installedTFAnnotation: boolean;
-    installedTFSegmentation: boolean;
-    userAgreementsFetching: boolean,
-    userAgreementsInitialized: boolean,
+    userAgreementsFetching: boolean;
+    userAgreementsInitialized: boolean;
+    authActionsFetching: boolean;
+    authActionsInitialized: boolean;
+    allowChangePassword: boolean;
     notifications: NotificationsState;
     user: any;
 }
@@ -62,7 +69,7 @@ interface CVATAppProps {
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
         const core = getCore();
-        const { verifyAuthorized, history } = this.props;
+        const { verifyAuthorized, history, location } = this.props;
         configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
@@ -73,8 +80,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
 
         customWaViewHit(location.pathname, location.search, location.hash);
-        history.listen((location) => {
-            customWaViewHit(location.pathname, location.search, location.hash);
+        history.listen((_location) => {
+            customWaViewHit(_location.pathname, _location.search, _location.hash);
         });
 
         verifyAuthorized();
@@ -88,6 +95,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout,
             loadUserAgreements,
             initPlugins,
+            initModels,
+            loadAuthActions,
             userInitialized,
             userFetching,
             formatsInitialized,
@@ -98,9 +107,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             aboutFetching,
             pluginsInitialized,
             pluginsFetching,
+            modelsInitialized,
+            modelsFetching,
             user,
             userAgreementsFetching,
             userAgreementsInitialized,
+            authActionsFetching,
+            authActionsInitialized,
         } = this.props;
 
         this.showErrors();
@@ -116,8 +129,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (user == null) {
+        if (user == null || !user.isVerified) {
             return;
+        }
+
+        if (!authActionsInitialized && !authActionsFetching) {
+            loadAuthActions();
         }
 
         if (!formatsInitialized && !formatsFetching) {
@@ -130,6 +147,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!aboutInitialized && !aboutFetching) {
             loadAbout();
+        }
+
+        if (!modelsInitialized && !modelsFetching) {
+            initModels();
         }
 
         if (!pluginsInitialized && !pluginsFetching) {
@@ -159,8 +180,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         let shown = false;
         for (const where of Object.keys(notifications.messages)) {
-            for (const what of Object.keys(notifications.messages[where])) {
-                const message = notifications.messages[where][what];
+            for (const what of Object.keys((notifications as any).messages[where])) {
+                const message = (notifications as any).messages[where][what];
                 shown = shown || !!message;
                 if (message) {
                     showMessage(message);
@@ -189,6 +210,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 description: error.length > 200 ? 'Open the Browser Console to get details' : error,
             });
 
+            // eslint-disable-next-line no-console
             console.error(error);
         }
 
@@ -199,8 +221,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         let shown = false;
         for (const where of Object.keys(notifications.errors)) {
-            for (const what of Object.keys(notifications.errors[where])) {
-                const error = notifications.errors[where][what];
+            for (const what of Object.keys((notifications as any).errors[where])) {
+                const error = (notifications as any).errors[where][what];
                 shown = shown || !!error;
                 if (error) {
                     showError(error.message, error.reason);
@@ -221,67 +243,79 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             aboutInitialized,
             pluginsInitialized,
             formatsInitialized,
-            installedAutoAnnotation,
-            installedTFSegmentation,
-            installedTFAnnotation,
             switchShortcutsDialog,
+            switchSettingsDialog,
             user,
-            history,
             keyMap,
         } = this.props;
 
-        const readyForRender = (userInitialized && user == null)
+        const readyForRender = (userInitialized && (user == null || !user.isVerified))
             || (userInitialized && formatsInitialized
                 && pluginsInitialized && usersInitialized && aboutInitialized);
 
-        const withModels = installedAutoAnnotation
-            || installedTFAnnotation || installedTFSegmentation;
-
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
-            OPEN_SETTINGS: keyMap.OPEN_SETTINGS,
+            SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
         };
 
         const handlers = {
             SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
-                if (event) {
-                    event.preventDefault();
-                }
+                if (event) event.preventDefault();
 
                 switchShortcutsDialog();
             },
-            OPEN_SETTINGS: (event: KeyboardEvent | undefined) => {
-                if (event) {
-                    event.preventDefault();
-                }
+            SWITCH_SETTINGS: (event: KeyboardEvent | undefined) => {
+                if (event) event.preventDefault();
 
-                if (history.location.pathname.endsWith('settings')) {
-                    history.goBack();
-                } else {
-                    history.push('/settings');
-                }
+                switchSettingsDialog();
             },
         };
 
+        if (showPlatformNotification()) {
+            stopNotifications(false);
+            const info = platformInfo();
+            Modal.warning({
+                title: 'Unsupported platform detected',
+                content: (
+                    <>
+                        <Row>
+                            <Col>
+                                <Text>
+                                    {`The browser you are using is ${info.name} ${info.version} based on ${info.engine} .`
+                                        + ' CVAT was tested in the latest versions of Chrome and Firefox.'
+                                        + ' We recommend to use Chrome (or another Chromium based browser)'}
+                                </Text>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col>
+                                <Text type='secondary'>
+                                    {`The operating system is ${info.os}`}
+                                </Text>
+                            </Col>
+                        </Row>
+                    </>
+                ),
+                onOk: () => stopNotifications(true),
+            });
+        }
+
+
         if (readyForRender) {
-            if (user) {
+            if (user && user.isVerified) {
                 return (
                     <GlobalErrorBoundary>
                         <Layout>
-                            <HeaderContainer> </HeaderContainer>
-                            <Layout.Content>
+                            <Header />
+                            <Layout.Content style={{ height: '100%' }}>
                                 <ShorcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>
-                                        <Route exact path='/settings' component={SettingsPageContainer} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                        {withModels
-                                            && <Route exact path='/models' component={ModelsPageContainer} />}
-                                        {installedAutoAnnotation
-                                            && <Route exact path='/models/create' component={CreateModelPageContainer} />}
+                                        <Route exact path='/models' component={ModelsPageContainer} />
                                         <Redirect push to='/tasks' />
                                     </Switch>
                                 </GlobalHotKeys>

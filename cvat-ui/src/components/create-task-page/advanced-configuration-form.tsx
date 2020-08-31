@@ -93,7 +93,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     delete filteredValues.frameStep;
 
                     if (values.overlapSize && +values.segmentSize <= +values.overlapSize) {
-                        reject(new Error('Overlap size must be more than segment size'));
+                        reject(new Error('Segment size must be more than overlap size'));
                     }
 
                     if (typeof (values.startFrame) !== 'undefined' && typeof (values.stopFrame) !== 'undefined'
@@ -142,7 +142,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form.Item label={<span>Image quality</span>}>
-                <Tooltip title='Defines image compression level'>
+                <Tooltip title='Defines image quality level' mouseLeaveDelay={0}>
                     {form.getFieldDecorator('imageQuality', {
                         initialValue: 70,
                         rules: [{
@@ -168,7 +168,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form.Item label={<span>Overlap size</span>}>
-                <Tooltip title='Defines a number of intersected frames between different segments'>
+                <Tooltip title='Defines a number of intersected frames between different segments' mouseLeaveDelay={0}>
                     {form.getFieldDecorator('overlapSize', {
                         rules: [{
                             validator: isNonNegativeInteger,
@@ -186,7 +186,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form.Item label={<span>Segment size</span>}>
-                <Tooltip title='Defines a number of frames in a segment'>
+                <Tooltip title='Defines a number of frames in a segment' mouseLeaveDelay={0}>
                     {form.getFieldDecorator('segmentSize', {
                         rules: [{
                             validator: isPositiveInteger,
@@ -403,6 +403,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             More: 1 - 4
                         </>
                     )}
+                    mouseLeaveDelay={0}
                 >
                     {form.getFieldDecorator('dataChunkSize', {
                         rules: [{

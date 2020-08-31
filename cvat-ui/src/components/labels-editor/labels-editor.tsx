@@ -64,6 +64,7 @@ export default class LabelsEditor
             return {
                 name: label.name,
                 id: label.id || idGenerator(),
+                color: label.color,
                 attributes: label.attributes.map((attr: any): Attribute => (
                     {
                         id: attr.id || idGenerator(),
@@ -198,6 +199,7 @@ export default class LabelsEditor
             return {
                 name: label.name,
                 id: label.id < 0 ? undefined : label.id,
+                color: label.color,
                 attributes: label.attributes.map((attr: Attribute): any => (
                     {
                         name: attr.name,
@@ -221,6 +223,7 @@ export default class LabelsEditor
     }
 
     public render(): JSX.Element {
+        const { labels } = this.props;
         const {
             savedLabels,
             unsavedLabels,
@@ -235,7 +238,7 @@ export default class LabelsEditor
                 tabBarStyle={{ marginBottom: '0px' }}
                 tabBarExtraContent={(
                     <>
-                        <Tooltip title='Copied to clipboard!' trigger='click'>
+                        <Tooltip title='Copied to clipboard!' trigger='click' mouseLeaveDelay={0}>
                             <Button
                                 type='link'
                                 icon='copy'
@@ -319,6 +322,7 @@ export default class LabelsEditor
                         constructorMode === ConstructorMode.CREATE
                             && (
                                 <ConstructorCreator
+                                    labelNames={labels.map((l) => l.name)}
                                     onCreate={this.handleCreate}
                                 />
                             )

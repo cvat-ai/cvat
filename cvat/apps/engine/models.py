@@ -240,6 +240,7 @@ class Job(models.Model):
 class Label(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     name = SafeCharField(max_length=64)
+    color = models.CharField(default='', max_length=8)
 
     def __str__(self):
         return self.name
@@ -302,12 +303,25 @@ class ShapeType(str, Enum):
     def __str__(self):
         return self.value
 
+class SourceType(str, Enum):
+    AUTO = 'auto'
+    MANUAL = 'manual'
+
+    @classmethod
+    def choices(self):
+        return tuple((x.value, x.name) for x in self)
+
+    def __str__(self):
+        return self.value
+
 class Annotation(models.Model):
     id = models.BigAutoField(primary_key=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     group = models.PositiveIntegerField(null=True)
+    source = models.CharField(max_length=16, choices=SourceType.choices(),
+        default=str(SourceType.MANUAL), null=True)
 
     class Meta:
         abstract = True
@@ -380,20 +394,3 @@ class TrackedShape(Shape):
 
 class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE)
-
-class Plugin(models.Model):
-    name = models.SlugField(max_length=32, primary_key=True)
-    description = SafeCharField(max_length=8192)
-    maintainer = models.ForeignKey(User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="maintainers")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
-
-    # Extend default permission model
-    class Meta:
-        default_permissions = ()
-
-class PluginOption(models.Model):
-    plugin = models.ForeignKey(Plugin, on_delete=models.CASCADE)
-    name = SafeCharField(max_length=32)
-    value = SafeCharField(max_length=1024)

@@ -6,7 +6,7 @@ import React from 'react';
 import Popover from 'antd/lib/popover';
 import Icon from 'antd/lib/icon';
 
-import { Canvas } from 'cvat-canvas';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { ShapeType } from 'reducers/interfaces';
 
 import { CubeIcon } from 'icons';
@@ -47,6 +47,7 @@ function DrawPolygonControl(props: Props): JSX.Element {
             )}
         >
             <Icon
+                className='cvat-draw-cuboid-control'
                 {...dynamicIconProps}
                 component={CubeIcon}
             />

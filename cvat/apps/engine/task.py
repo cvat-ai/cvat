@@ -1,5 +1,5 @@
 
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -15,6 +15,7 @@ from urllib import request as urlrequest
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
 from cvat.apps.engine.models import DataChoice
+from cvat.apps.engine.utils import av_scan_paths
 
 import django_rq
 from django.conf import settings
@@ -222,6 +223,8 @@ def _create_thread(tid, data):
 
     if data['server_files']:
         _copy_data_from_share(data['server_files'], upload_dir)
+
+    av_scan_paths(upload_dir)
 
     job = rq.get_current_job()
     job.meta['status'] = 'Media files are being extracted...'

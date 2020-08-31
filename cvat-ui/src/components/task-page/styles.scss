@@ -6,7 +6,9 @@
 
 .cvat-task-details-wrapper {
     overflow-y: auto;
-    height: 100%;
+    height: 90%;
+    width: 100%;
+    position: fixed;
 
     .cvat-task-details {
         width: 100%;
@@ -96,7 +98,7 @@
 }
 
 .ant-typography.cvat-jobs-header {
-    margin-bottom: 0px;
+    margin-bottom: 0;
     font-size: 20px;
     font-weight: bold;
 }

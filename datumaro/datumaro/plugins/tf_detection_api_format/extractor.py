@@ -85,6 +85,10 @@ class TfDetectionApiExtractor(SourceExtractor):
             'image/width': tf.io.FixedLenFeature([], tf.int64),
             'image/encoded': tf.io.FixedLenFeature([], tf.string),
             'image/format': tf.io.FixedLenFeature([], tf.string),
+
+            # use varlen to avoid errors when this field is missing
+            'image/key/sha256': tf.io.VarLenFeature(tf.string),
+
             # Object boxes and classes.
             'image/object/bbox/xmin': tf.io.VarLenFeature(tf.float32),
             'image/object/bbox/xmax': tf.io.VarLenFeature(tf.float32),
@@ -117,7 +121,6 @@ class TfDetectionApiExtractor(SourceExtractor):
             frame_width = tf.cast(
                 parsed_record['image/width'], tf.int64).numpy().item()
             frame_image = parsed_record['image/encoded'].numpy()
-            frame_format = parsed_record['image/format'].numpy().decode('utf-8')
             xmins = tf.sparse.to_dense(
                 parsed_record['image/object/bbox/xmin']).numpy()
             ymins = tf.sparse.to_dense(
@@ -145,9 +148,7 @@ class TfDetectionApiExtractor(SourceExtractor):
                     continue
                 dataset_labels[label] = label_id - 1
 
-            item_id = frame_id
-            if not item_id:
-                item_id = osp.splitext(frame_filename)[0]
+            item_id = osp.splitext(frame_filename)[0]
 
             annotations = []
             for shape_id, shape in enumerate(
@@ -178,7 +179,7 @@ class TfDetectionApiExtractor(SourceExtractor):
                 image_size = (frame_height, frame_width)
 
             image_params = {}
-            if frame_image and frame_format:
+            if frame_image:
                 image_params['data'] = lazy_image(frame_image, decode_image)
             if frame_filename:
                 image_params['path'] = osp.join(images_dir, frame_filename)
@@ -188,6 +189,7 @@ class TfDetectionApiExtractor(SourceExtractor):
                 image = Image(**image_params, size=image_size)
 
             dataset_items.append(DatasetItem(id=item_id, subset=subset,
-                image=image, annotations=annotations))
+                image=image, annotations=annotations,
+                attributes={'source_id': frame_id}))
 
         return dataset_items, dataset_labels

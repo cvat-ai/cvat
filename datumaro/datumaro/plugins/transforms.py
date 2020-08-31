@@ -7,6 +7,7 @@ from enum import Enum
 import logging as log
 import os.path as osp
 import random
+import re
 
 import pycocotools.mask as mask_utils
 
@@ -16,7 +17,7 @@ from datumaro.components.extractor import (Transform, AnnotationType,
 )
 from datumaro.components.cli_plugin import CliPlugin
 import datumaro.util.mask_tools as mask_tools
-from datumaro.util.annotation_tools import find_group_leader, find_instances
+from datumaro.util.annotation_util import find_group_leader, find_instances
 
 
 class CropCoveredSegments(Transform, CliPlugin):
@@ -321,6 +322,7 @@ class RandomSplit(Transform, CliPlugin):
         parser = super().build_cmdline_parser(**kwargs)
         parser.add_argument('-s', '--subset', action='append',
             type=cls._split_arg, dest='splits',
+            default=[('train', 0.67), ('test', 0.33)],
             help="Subsets in the form of: '<subset>:<ratio>' (repeatable)")
         parser.add_argument('--seed', type=int, help="Random seed")
         return parser
@@ -364,12 +366,56 @@ class RandomSplit(Transform, CliPlugin):
 
 class IdFromImageName(Transform, CliPlugin):
     def transform_item(self, item):
-        name = item.id
-        if item.has_image and item.image.filename:
-            name = osp.splitext(item.image.filename)[0]
-        return self.wrap_item(item, id=name)
+        if item.has_image and item.image.path:
+            name = osp.splitext(osp.basename(item.image.path))[0]
+            return self.wrap_item(item, id=name)
+        else:
+            log.debug("Can't change item id for item '%s': "
+                "item has no image info" % item.id)
+            return item
+
+class Rename(Transform, CliPlugin):
+    """
+    Renames items in the dataset. Supports regular expressions.
+    The first character in the expression is a delimiter for
+    the pattern and replacement parts. Replacement part can also
+    contain string.format tokens with 'item' object available.|n
+    |n
+    Examples:|n
+    - Replace 'pattern' with 'replacement':|n
+    |s|srename -e '|pattern|replacement|'|n
+    - Remove 'frame_' from item ids:|n
+    |s|srename -e '|frame_(\d+)|\\1|'
+    """
+
+    @classmethod
+    def build_cmdline_parser(cls, **kwargs):
+        parser = super().build_cmdline_parser(**kwargs)
+        parser.add_argument('-e', '--regex',
+            help="Regex for renaming.")
+        return parser
+
+    def __init__(self, extractor, regex):
+        super().__init__(extractor)
+
+        assert regex and isinstance(regex, str)
+        parts = regex.split(regex[0], maxsplit=3)
+        regex, sub = parts[1:3]
+        self._re = re.compile(regex)
+        self._sub = sub
+
+    def transform_item(self, item):
+        return self.wrap_item(item, id=self._re.sub(self._sub, item.id) \
+            .format(item=item))
 
 class RemapLabels(Transform, CliPlugin):
+    """
+    Changes labels in the dataset.|n
+    Examples:|n
+    - Rename 'person' to 'car' and 'cat' to 'dog', keep 'bus', remove others:|n
+    |s|sremap_labels -l person:car -l bus:bus -l cat:dog --default delete
+    """
+
     DefaultAction = Enum('DefaultAction', ['keep', 'delete'])
 
     @staticmethod
@@ -389,7 +435,7 @@ class RemapLabels(Transform, CliPlugin):
         parser.add_argument('--default',
             choices=[a.name for a in cls.DefaultAction],
             default=cls.DefaultAction.keep.name,
-            help="Action for unspecified labels")
+            help="Action for unspecified labels (default: %(default)s)")
         return parser
 
     def __init__(self, extractor, mapping, default=None):
@@ -465,7 +511,6 @@ class RemapLabels(Transform, CliPlugin):
         return self._categories
 
     def transform_item(self, item):
-        # TODO: provide non-inplace version
         annotations = []
         for ann in item.annotations:
             if ann.type in { AnnotationType.label, AnnotationType.mask,
@@ -474,9 +519,7 @@ class RemapLabels(Transform, CliPlugin):
             } and ann.label is not None:
                 conv_label = self._map_id(ann.label)
                 if conv_label is not None:
-                    ann._label = conv_label
-                    annotations.append(ann)
+                    annotations.append(ann.wrap(label=conv_label))
             else:
-                annotations.append(ann)
-        item._annotations = annotations
-        return item
+                annotations.append(ann.wrap())
+        return item.wrap(annotations=annotations)

@@ -12,6 +12,7 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.project import Dataset
 
 from .registry import dm_env, exporter, importer
+from .utils import make_colormap
 
 
 @exporter(name='Segmentation mask', ext='ZIP', version='1.1')
@@ -21,12 +22,11 @@ def _export(dst_file, task_data, save_images=False):
     extractor = extractor.transform(envt.get('polygons_to_masks'))
     extractor = extractor.transform(envt.get('boxes_to_masks'))
     extractor = extractor.transform(envt.get('merge_instance_segments'))
-    extractor = extractor.transform(envt.get('id_from_image_name'))
     extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
-        converter = dm_env.make_converter('voc_segmentation',
-            apply_colormap=True, label_map='source', save_images=save_images)
-        converter(extractor, save_dir=temp_dir)
+        dm_env.converters.get('voc_segmentation').convert(extractor,
+            save_dir=temp_dir, save_images=save_images,
+            apply_colormap=True, label_map=make_colormap(task_data))
 
         make_zip_archive(temp_dir, dst_file)
 

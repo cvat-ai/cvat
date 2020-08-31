@@ -48,18 +48,11 @@ function RightGroup(props: Props): JSX.Element {
                     onChange={changeWorkspace}
                     value={workspace}
                 >
-                    <Select.Option
-                        key={Workspace.STANDARD}
-                        value={Workspace.STANDARD}
-                    >
-                        {Workspace.STANDARD}
-                    </Select.Option>
-                    <Select.Option
-                        key={Workspace.ATTRIBUTE_ANNOTATION}
-                        value={Workspace.ATTRIBUTE_ANNOTATION}
-                    >
-                        {Workspace.ATTRIBUTE_ANNOTATION}
-                    </Select.Option>
+                    {Object.values(Workspace).map((ws) => (
+                        <Select.Option key={ws} value={ws}>
+                            {ws}
+                        </Select.Option>
+                    ))}
                 </Select>
             </div>
         </Col>

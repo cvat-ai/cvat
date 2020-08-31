@@ -15,7 +15,7 @@ function isDefaultFormat(dumperName: string, taskMode: string): boolean {
 interface Props {
     taskMode: string;
     menuKey: string;
-    dumpers: string[];
+    dumpers: any[];
     dumpActivities: string[] | null;
 }
 
@@ -30,21 +30,24 @@ export default function DumpSubmenu(props: Props): JSX.Element {
     return (
         <Menu.SubMenu key={menuKey} title='Dump annotations'>
             {
-                dumpers.map((dumper: string): JSX.Element => {
-                    const pending = (dumpActivities || []).includes(dumper);
-                    const isDefault = isDefaultFormat(dumper, taskMode);
-                    return (
-                        <Menu.Item
-                            key={dumper}
-                            disabled={pending}
-                            className='cvat-menu-dump-submenu-item'
-                        >
-                            <Icon type='download' />
-                            <Text strong={isDefault}>{dumper}</Text>
-                            {pending && <Icon style={{ marginLeft: 10 }} type='loading' />}
-                        </Menu.Item>
-                    );
-                })
+                dumpers
+                    .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                    .map((dumper: any): JSX.Element => {
+                        const pending = (dumpActivities || []).includes(dumper.name);
+                        const disabled = !dumper.enabled || pending;
+                        const isDefault = isDefaultFormat(dumper.name, taskMode);
+                        return (
+                            <Menu.Item
+                                key={dumper.name}
+                                disabled={disabled}
+                                className='cvat-menu-dump-submenu-item'
+                            >
+                                <Icon type='download' />
+                                <Text strong={isDefault} disabled={disabled}>{dumper.name}</Text>
+                                {pending && <Icon style={{ marginLeft: 10 }} type='loading' />}
+                            </Menu.Item>
+                        );
+                    })
             }
         </Menu.SubMenu>
     );

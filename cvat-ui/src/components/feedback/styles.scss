@@ -3,13 +3,12 @@
 // SPDX-License-Identifier: MIT
 
 .cvat-feedback-button {
-    position: absolute;
+    position: fixed;
     bottom: 20px;
     right: 20px;
-    padding: 0px;
-}
+    padding: 0;
+    height: auto;
 
-.cvat-feedback-button {
     > i {
         font-size: 40px;
     }

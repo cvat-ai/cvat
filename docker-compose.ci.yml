@@ -9,6 +9,8 @@ services:
       dockerfile: Dockerfile.ci
     depends_on:
       - cvat
+      - cvat_ui
+      - cvat_proxy
     environment:
       COVERALLS_REPO_TOKEN:
       TRAVIS:

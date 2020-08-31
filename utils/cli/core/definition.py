@@ -79,6 +79,12 @@ parser.add_argument(
     help='port (default: %(default)s)'
 )
 parser.add_argument(
+    '--https',
+    default=False,
+    action='store_true',
+    help='using https connection (default: %(default)s)'
+)
+parser.add_argument(
     '--debug',
     action='store_const',
     dest='loglevel',
@@ -107,6 +113,18 @@ task_create_parser.add_argument(
     help='string or file containing JSON labels specification'
 )
 task_create_parser.add_argument(
+    '--overlap',
+    default=0,
+    type=int,
+    help='the number of intersected frames between different segments'
+)
+task_create_parser.add_argument(
+    '--segment_size',
+    default=0,
+    type=int,
+    help='the number of frames in a segment'
+)
+task_create_parser.add_argument(
     '--bug',
     default='',
     type=str,
@@ -124,6 +142,25 @@ task_create_parser.add_argument(
     type=str,
     help='list of paths or URLs',
     nargs='+'
+)
+task_create_parser.add_argument(
+    '--annotation_path',
+    default='',
+    type=str,
+    help='path to annotation file'
+)
+task_create_parser.add_argument(
+    '--annotation_format',
+    default='CVAT 1.1',
+    type=str,
+    help='format of the annotation file being uploaded, e.g. CVAT 1.1'
+)
+task_create_parser.add_argument(
+    '--completion_verification_period',
+    default=20,
+    type=int,
+    help='''number of seconds to wait until checking
+            if data compression finished (necessary before uploading annotations)'''
 )
 
 #######################################################################

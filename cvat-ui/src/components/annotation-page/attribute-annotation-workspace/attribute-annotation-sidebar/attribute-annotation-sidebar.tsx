@@ -5,22 +5,25 @@
 import React, { useState, useEffect } from 'react';
 import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
-import { Action } from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
 import Layout, { SiderProps } from 'antd/lib/layout';
 import { SelectValue } from 'antd/lib/select';
-import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Icon from 'antd/lib/icon';
 
+import { ThunkDispatch } from 'utils/redux';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { LogType } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
     updateAnnotationsAsync,
+    changeFrameAsync,
 } from 'actions/annotation-actions';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, ObjectType } from 'reducers/interfaces';
 import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
+import AppearanceBlock from 'components/annotation-page/appearance-block';
+import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
+
 import ObjectSwitcher from './object-switcher';
 import AttributeSwitcher from './attribute-switcher';
 import ObjectBasicsEditor from './object-basics-edtior';
@@ -35,11 +38,15 @@ interface StateToProps {
     jobInstance: any;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
+    canvasInstance: Canvas;
+    canvasIsReady: boolean;
+    curZLayer: number;
 }
 
 interface DispatchToProps {
     activateObject(clientID: number | null, attrID: number | null): void;
     updateAnnotations(statesToUpdate: any[]): void;
+    changeFrame(frame: number): void;
 }
 
 interface LabelAttrMap {
@@ -53,10 +60,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedAttributeID,
                 states,
+                zLayer: {
+                    cur,
+                },
             },
             job: {
                 instance: jobInstance,
                 labels,
+            },
+            canvas: {
+                instance: canvasInstance,
+                ready: canvasIsReady,
             },
         },
         shortcuts: {
@@ -73,16 +87,22 @@ function mapStateToProps(state: CombinedState): StateToProps {
         states,
         keyMap,
         normalizedKeyMap,
+        canvasInstance,
+        canvasIsReady,
+        curZLayer: cur,
     };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
+function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
         activateObject(clientID: number, attrID: number): void {
             dispatch(activateObjectAction(clientID, attrID));
         },
         updateAnnotations(states): void {
             dispatch(updateAnnotationsAsync(states));
+        },
+        changeFrame(frame: number): void {
+            dispatch(changeFrameAsync(frame));
         },
     };
 }
@@ -95,11 +115,18 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         activatedAttributeID,
         jobInstance,
         updateAnnotations,
+        changeFrame,
         activateObject,
         keyMap,
         normalizedKeyMap,
+        canvasInstance,
+        canvasIsReady,
+        curZLayer,
     } = props;
 
+    const filteredStates = states.filter((state) => !state.outside
+        && !state.hidden
+        && state.zOrder <= curZLayer);
     const [labelAttrMap, setLabelAttrMap] = useState(
         labels.reduce((acc, label): LabelAttrMap => {
             acc[label.id] = label.attributes.length ? label.attributes[0] : null;
@@ -109,36 +136,52 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-    const [activeObjectState] = activatedStateID === null
-        ? [null] : states.filter((objectState: any): boolean => (
-            objectState.clientID === activatedStateID
-        ));
+    const collapse = (): void => {
+        const [collapser] = window.document
+            .getElementsByClassName('attribute-annotation-sidebar');
+
+        if (collapser) {
+            collapser.addEventListener('transitionend', () => {
+                canvasInstance.fitCanvas();
+            }, { once: true });
+        }
+
+        setSidebarCollapsed(!sidebarCollapsed);
+    };
+
+    const indexes = filteredStates.map((state) => state.clientID);
+    const activatedIndex = indexes.indexOf(activatedStateID);
+    const activeObjectState = activatedStateID === null || activatedIndex === -1
+        ? null : filteredStates[activatedIndex];
+
     const activeAttribute = activeObjectState
         ? labelAttrMap[activeObjectState.label.id]
         : null;
 
-    if (activeObjectState) {
-        const attribute = labelAttrMap[activeObjectState.label.id];
-        if (attribute && attribute.id !== activatedAttributeID) {
-            activateObject(activatedStateID, attribute ? attribute.id : null);
+    if (canvasIsReady) {
+        if (activeObjectState) {
+            const attribute = labelAttrMap[activeObjectState.label.id];
+            if (attribute && attribute.id !== activatedAttributeID) {
+                activateObject(activatedStateID, attribute ? attribute.id : null);
+            }
+        } else if (filteredStates.length) {
+            const attribute = labelAttrMap[filteredStates[0].label.id];
+            activateObject(filteredStates[0].clientID, attribute ? attribute.id : null);
         }
-    } else if (states.length) {
-        const attribute = labelAttrMap[states[0].label.id];
-        activateObject(states[0].clientID, attribute ? attribute.id : null);
     }
 
     const nextObject = (step: number): void => {
-        if (states.length) {
-            const index = states.indexOf(activeObjectState);
+        if (filteredStates.length) {
+            const index = filteredStates.indexOf(activeObjectState);
             let nextIndex = index + step;
-            if (nextIndex > states.length - 1) {
+            if (nextIndex > filteredStates.length - 1) {
                 nextIndex = 0;
             } else if (nextIndex < 0) {
-                nextIndex = states.length - 1;
+                nextIndex = filteredStates.length - 1;
             }
             if (nextIndex !== index) {
-                const attribute = labelAttrMap[states[nextIndex].label.id];
-                activateObject(states[nextIndex].clientID, attribute ? attribute.id : null);
+                const attribute = labelAttrMap[filteredStates[nextIndex].label.id];
+                activateObject(filteredStates[nextIndex].clientID, attribute ? attribute.id : null);
             }
         }
     };
@@ -181,41 +224,73 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         collapsed: sidebarCollapsed,
     };
 
+    const preventDefault = (event: KeyboardEvent | undefined): void => {
+        if (event) {
+            event.preventDefault();
+        }
+    };
+
     const subKeyMap = {
         NEXT_ATTRIBUTE: keyMap.NEXT_ATTRIBUTE,
         PREVIOUS_ATTRIBUTE: keyMap.PREVIOUS_ATTRIBUTE,
         NEXT_OBJECT: keyMap.NEXT_OBJECT,
         PREVIOUS_OBJECT: keyMap.PREVIOUS_OBJECT,
+        SWITCH_LOCK: keyMap.SWITCH_LOCK,
+        SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
+        NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
+        PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
     };
 
     const handlers = {
         NEXT_ATTRIBUTE: (event: KeyboardEvent | undefined) => {
-            if (event) {
-                event.preventDefault();
-            }
-
+            preventDefault(event);
             nextAttribute(1);
         },
         PREVIOUS_ATTRIBUTE: (event: KeyboardEvent | undefined) => {
-            if (event) {
-                event.preventDefault();
-            }
-
+            preventDefault(event);
             nextAttribute(-1);
         },
         NEXT_OBJECT: (event: KeyboardEvent | undefined) => {
-            if (event) {
-                event.preventDefault();
-            }
-
+            preventDefault(event);
             nextObject(1);
         },
         PREVIOUS_OBJECT: (event: KeyboardEvent | undefined) => {
-            if (event) {
-                event.preventDefault();
-            }
-
+            preventDefault(event);
             nextObject(-1);
+        },
+        SWITCH_LOCK: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState) {
+                activeObjectState.lock = !activeObjectState.lock;
+                updateAnnotations([activeObjectState]);
+            }
+        },
+        SWITCH_OCCLUDED: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState && activeObjectState.objectType !== ObjectType.TAG) {
+                activeObjectState.occluded = !activeObjectState.occluded;
+                updateAnnotations([activeObjectState]);
+            }
+        },
+        NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState && activeObjectState.objectType === ObjectType.TRACK) {
+                const frame = typeof (activeObjectState.keyframes.next) === 'number'
+                    ? activeObjectState.keyframes.next : null;
+                if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
+                    changeFrame(frame);
+                }
+            }
+        },
+        PREV_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState && activeObjectState.objectType === ObjectType.TRACK) {
+                const frame = typeof (activeObjectState.keyframes.prev) === 'number'
+                    ? activeObjectState.keyframes.prev : null;
+                if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
+                    changeFrame(frame);
+                }
+            }
         },
     };
 
@@ -227,7 +302,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     className={`cvat-objects-sidebar-sider
                         ant-layout-sider-zero-width-trigger
                         ant-layout-sider-zero-width-trigger-left`}
-                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    onClick={collapse}
                 >
                     {sidebarCollapsed ? <Icon type='menu-fold' title='Show' />
                         : <Icon type='menu-unfold' title='Hide' />}
@@ -242,15 +317,14 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     currentLabel={activeObjectState.label.name}
                     clientID={activeObjectState.clientID}
                     occluded={activeObjectState.occluded}
-                    objectsCount={states.length}
-                    currentIndex={states.indexOf(activeObjectState)}
+                    objectsCount={filteredStates.length}
+                    currentIndex={filteredStates.indexOf(activeObjectState)}
                     normalizedKeyMap={normalizedKeyMap}
                     nextObject={nextObject}
                 />
                 <ObjectBasicsEditor
                     currentLabel={activeObjectState.label.name}
                     labels={labels}
-                    occluded={activeObjectState.occluded}
                     changeLabel={(value: SelectValue): void => {
                         const labelName = value as string;
                         const [newLabel] = labels
@@ -258,10 +332,12 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                         activeObjectState.label = newLabel;
                         updateAnnotations([activeObjectState]);
                     }}
-                    setOccluded={(event: CheckboxChangeEvent): void => {
-                        activeObjectState.occluded = event.target.checked;
-                        updateAnnotations([activeObjectState]);
-                    }}
+                />
+                <ObjectButtonsContainer
+                    clientID={activeObjectState.clientID}
+                    outsideDisabled
+                    hiddenDisabled
+                    keyframeDisabled
                 />
                 {
                     activeAttribute
@@ -276,6 +352,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                                     nextAttribute={nextAttribute}
                                 />
                                 <AttributeEditor
+                                    clientID={activeObjectState.clientID}
                                     attribute={activeAttribute}
                                     currentValue={activeObjectState.attributes[activeAttribute.id]}
                                     onChange={(value: string) => {
@@ -300,12 +377,29 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                             </div>
                         )
                 }
+
+                { !sidebarCollapsed && <AppearanceBlock /> }
             </Layout.Sider>
         );
     }
 
     return (
         <Layout.Sider {...siderProps}>
+            {/* eslint-disable-next-line */}
+            <span
+                className={`cvat-objects-sidebar-sider
+                    ant-layout-sider-zero-width-trigger
+                    ant-layout-sider-zero-width-trigger-left`}
+                onClick={collapse}
+            >
+                {sidebarCollapsed ? <Icon type='menu-fold' title='Show' />
+                    : <Icon type='menu-unfold' title='Hide' />}
+            </span>
+            <Row className='cvat-objects-sidebar-filter-input'>
+                <Col>
+                    <AnnotationsFiltersInput />
+                </Col>
+            </Row>
             <div className='attribute-annotations-sidebar-not-found-wrapper'>
                 <Text strong>No objects found</Text>
             </div>

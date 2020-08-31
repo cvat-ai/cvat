@@ -5,6 +5,7 @@
 
 import codecs
 from collections import OrderedDict
+import hashlib
 import logging as log
 import os
 import os.path as osp
@@ -14,11 +15,10 @@ from datumaro.components.extractor import (AnnotationType, DEFAULT_SUBSET_NAME,
     LabelCategories
 )
 from datumaro.components.converter import Converter
-from datumaro.components.cli_plugin import CliPlugin
 from datumaro.util.image import encode_image
-from datumaro.util.mask_tools import merge_masks
-from datumaro.util.annotation_tools import (compute_bbox,
+from datumaro.util.annotation_util import (max_bbox,
     find_group_leader, find_instances)
+from datumaro.util.mask_tools import merge_masks
 from datumaro.util.tf_util import import_tf as _import_tf
 
 from .format import DetectionApiPath
@@ -45,26 +45,25 @@ def bytes_list_feature(value):
 def float_list_feature(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
-class TfDetectionApiConverter(Converter, CliPlugin):
+class TfDetectionApiConverter(Converter):
+    DEFAULT_IMAGE_EXT = DetectionApiPath.DEFAULT_IMAGE_EXT
+
     @classmethod
     def build_cmdline_parser(cls, **kwargs):
         parser = super().build_cmdline_parser(**kwargs)
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
         parser.add_argument('--save-masks', action='store_true',
             help="Include instance masks (default: %(default)s)")
         return parser
 
-    def __init__(self, save_images=False, save_masks=False):
-        super().__init__()
+    def __init__(self, extractor, save_dir, save_masks=False, **kwargs):
+        super().__init__(extractor, save_dir, **kwargs)
 
-        self._save_images = save_images
         self._save_masks = save_masks
 
-    def __call__(self, extractor, save_dir):
-        os.makedirs(save_dir, exist_ok=True)
+    def apply(self):
+        os.makedirs(self._save_dir, exist_ok=True)
 
-        label_categories = extractor.categories().get(AnnotationType.label,
+        label_categories = self._extractor.categories().get(AnnotationType.label,
             LabelCategories())
         get_label = lambda label_id: label_categories.items[label_id].name \
             if label_id is not None else ''
@@ -74,18 +73,18 @@ class TfDetectionApiConverter(Converter, CliPlugin):
         self._get_label = get_label
         self._get_label_id = map_label_id
 
-        subsets = extractor.subsets()
+        subsets = self._extractor.subsets()
         if len(subsets) == 0:
             subsets = [ None ]
 
         for subset_name in subsets:
             if subset_name:
-                subset = extractor.get_subset(subset_name)
+                subset = self._extractor.get_subset(subset_name)
             else:
                 subset_name = DEFAULT_SUBSET_NAME
-                subset = extractor
+                subset = self._extractor
 
-            labelmap_path = osp.join(save_dir, DetectionApiPath.LABELMAP_FILE)
+            labelmap_path = osp.join(self._save_dir, DetectionApiPath.LABELMAP_FILE)
             with codecs.open(labelmap_path, 'w', encoding='utf8') as f:
                 for label, idx in label_ids.items():
                     f.write(
@@ -95,7 +94,7 @@ class TfDetectionApiConverter(Converter, CliPlugin):
                         '}\n\n'
                     )
 
-            anno_path = osp.join(save_dir, '%s.tfrecord' % (subset_name))
+            anno_path = osp.join(self._save_dir, '%s.tfrecord' % (subset_name))
             with tf.io.TFRecordWriter(anno_path) as writer:
                 for item in subset:
                     tf_example = self._make_tf_example(item)
@@ -112,7 +111,7 @@ class TfDetectionApiConverter(Converter, CliPlugin):
 
         anns = boxes + masks
         leader = find_group_leader(anns)
-        bbox = compute_bbox(anns)
+        bbox = max_bbox(anns)
 
         mask = None
         if self._save_masks:
@@ -162,14 +161,12 @@ class TfDetectionApiConverter(Converter, CliPlugin):
 
     def _make_tf_example(self, item):
         features = {
-            'image/source_id': bytes_feature(str(item.id).encode('utf-8')),
+            'image/source_id': bytes_feature(
+                str(item.attributes.get('source_id') or '').encode('utf-8')
+            ),
         }
 
-        filename = ''
-        if item.has_image:
-            filename = item.image.filename
-        if not filename:
-            filename = item.id + DetectionApiPath.IMAGE_EXT
+        filename = self._make_image_filename(item)
         features['image/filename'] = bytes_feature(filename.encode('utf-8'))
 
         if not item.has_image:
@@ -184,16 +181,18 @@ class TfDetectionApiConverter(Converter, CliPlugin):
 
         features.update({
             'image/encoded': bytes_feature(b''),
-            'image/format': bytes_feature(b'')
+            'image/format': bytes_feature(b''),
+            'image/key/sha256': bytes_feature(b''),
         })
         if self._save_images:
             if item.has_image and item.image.has_data:
-                fmt = DetectionApiPath.IMAGE_FORMAT
-                buffer = encode_image(item.image.data, DetectionApiPath.IMAGE_EXT)
+                buffer, fmt = self._save_image(item, filename)
+                key = hashlib.sha256(buffer).hexdigest()
 
                 features.update({
                     'image/encoded': bytes_feature(buffer),
                     'image/format': bytes_feature(fmt.encode('utf-8')),
+                    'image/key/sha256': bytes_feature(key.encode('utf8')),
                 })
             else:
                 log.warning("Item '%s' has no image" % item.id)
@@ -206,3 +205,13 @@ class TfDetectionApiConverter(Converter, CliPlugin):
             features=tf.train.Features(feature=features))
 
         return tf_example
+
+    def _save_image(self, item, path=None):
+        dst_ext = osp.splitext(osp.basename(path))[1]
+        fmt = DetectionApiPath.IMAGE_EXT_FORMAT.get(dst_ext)
+        if not fmt:
+            log.warning("Item '%s': can't find format string for the '%s' "
+                "image extension, the corresponding field will be empty." % \
+                (item.id, dst_ext))
+        buffer = encode_image(item.image.data, dst_ext)
+        return buffer, fmt

@@ -18,7 +18,7 @@ import {
 
 const defaultState: SettingsState = {
     shapes: {
-        colorBy: ColorBy.INSTANCE,
+        colorBy: ColorBy.LABEL,
         opacity: 3,
         selectedOpacity: 30,
         blackBorders: false,
@@ -34,6 +34,7 @@ const defaultState: SettingsState = {
         showAllInterpolationTracks: false,
     },
     player: {
+        canvasBackgroundColor: '#ffffff',
         frameStep: 10,
         frameSpeed: FrameSpeed.Usual,
         resetZoom: false,
@@ -46,6 +47,7 @@ const defaultState: SettingsState = {
         contrastLevel: 100,
         saturationLevel: 100,
     },
+    showDialog: false,
 };
 
 export default (state = defaultState, action: AnyAction): SettingsState => {
@@ -255,6 +257,21 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                     ...state.workspace,
                     automaticBordering: action.payload.automaticBordering,
                 },
+            };
+        }
+        case SettingsActionTypes.CHANGE_CANVAS_BACKGROUND_COLOR: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    canvasBackgroundColor: action.payload.color,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_SETTINGS_DIALOG: {
+            return {
+                ...state,
+                showDialog: typeof action.payload.show === 'undefined' ? !state.showDialog : action.payload.show,
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

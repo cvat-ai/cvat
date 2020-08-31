@@ -24,7 +24,8 @@ class _CocoExtractor(SourceExtractor):
     def __init__(self, path, task, merge_instance_polygons=False):
         assert osp.isfile(path), path
 
-        subset = osp.splitext(osp.basename(path))[0].rsplit('_', maxsplit=1)[1]
+        subset = osp.splitext(osp.basename(path))[0].rsplit('_', maxsplit=1)
+        subset = subset[1] if len(subset) == 2 else None
         super().__init__(subset=subset)
 
         rootpath = ''
@@ -125,8 +126,10 @@ class _CocoExtractor(SourceExtractor):
             anns = loader.loadAnns(anns)
             anns = sum((self._load_annotations(a, image_info) for a in anns), [])
 
-            items[img_id] = DatasetItem(id=img_id, subset=self._subset,
-                image=image, annotations=anns)
+            items[img_id] = DatasetItem(
+                id=osp.splitext(image_info['file_name'])[0],
+                subset=self._subset, image=image, annotations=anns,
+                attributes={'id': img_id})
 
         return items
 
@@ -142,6 +145,12 @@ class _CocoExtractor(SourceExtractor):
         ann_id = ann.get('id')
 
         attributes = {}
+        if 'attributes' in ann:
+            try:
+                attributes.update(ann['attributes'])
+            except Exception as e:
+                log.debug("item #%s: failed to read annotation attributes: %s",
+                    image_info['id'], e)
         if 'score' in ann:
             attributes['score'] = ann['score']
 

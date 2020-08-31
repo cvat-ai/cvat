@@ -5,8 +5,6 @@
 import './styles.scss';
 import React from 'react';
 import { connect } from 'react-redux';
-import { Action } from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
 import Result from 'antd/lib/result';
 import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
@@ -16,6 +14,7 @@ import Tooltip from 'antd/lib/tooltip';
 import copy from 'copy-to-clipboard';
 import ErrorStackParser from 'error-stack-parser';
 
+import { ThunkDispatch } from 'utils/redux';
 import { resetAfterErrorAsync } from 'actions/boundaries-actions';
 import { CombinedState } from 'reducers/interfaces';
 import logger, { LogType } from 'cvat-logger';
@@ -60,7 +59,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
+function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
         restore(): void {
             dispatch(resetAfterErrorAsync());
@@ -154,7 +153,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                             </Paragraph>
                             <ul>
                                 <li>
-                                    <Tooltip title='Copied!' trigger='click'>
+                                    <Tooltip title='Copied!' trigger='click' mouseLeaveDelay={0}>
                                         {/* eslint-disable-next-line */}
                                         <a onClick={() => {copy(message)}}> Copy </a>
                                     </Tooltip>

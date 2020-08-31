@@ -95,21 +95,21 @@ function ObjectListHeader(props: Props): JSX.Element {
             </Row>
             <Row type='flex' justify='space-between' align='middle'>
                 <Col span={2}>
-                    <Tooltip title={`Switch lock property for all ${switchLockAllShortcut}`}>
+                    <Tooltip title={`Switch lock property for all ${switchLockAllShortcut}`} mouseLeaveDelay={0}>
                         { statesLocked
                             ? <Icon type='lock' onClick={unlockAllStates} theme='filled' />
                             : <Icon type='unlock' onClick={lockAllStates} />}
                     </Tooltip>
                 </Col>
                 <Col span={2}>
-                    <Tooltip title={`Switch hidden property for all ${switchHiddenAllShortcut}`}>
+                    <Tooltip title={`Switch hidden property for all ${switchHiddenAllShortcut}`} mouseLeaveDelay={0}>
                         { statesHidden
                             ? <Icon type='eye-invisible' onClick={showAllStates} />
                             : <Icon type='eye' onClick={hideAllStates} />}
                     </Tooltip>
                 </Col>
                 <Col span={2}>
-                    <Tooltip title='Expand/collapse all'>
+                    <Tooltip title='Expand/collapse all' mouseLeaveDelay={0}>
                         { statesCollapsed
                             ? <Icon type='caret-down' onClick={expandAllStates} />
                             : <Icon type='caret-up' onClick={collapseAllStates} />}

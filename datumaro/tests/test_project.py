@@ -6,10 +6,10 @@ from unittest import TestCase
 
 from datumaro.components.project import Project, Environment, Dataset
 from datumaro.components.config_model import Source, Model
-from datumaro.components.launcher import Launcher, InferenceWrapper
-from datumaro.components.converter import Converter
+from datumaro.components.launcher import Launcher, ModelTransform
 from datumaro.components.extractor import (Extractor, DatasetItem,
     Label, Mask, Points, Polygon, PolyLine, Bbox, Caption,
+    LabelCategories, AnnotationType
 )
 from datumaro.util.image import Image
 from datumaro.components.config import Config, DefaultConfig, SchemaBuilder
@@ -133,15 +133,15 @@ class ProjectTest(TestCase):
             self.assertTrue('project1' in dataset.sources)
 
     def test_can_batch_launch_custom_model(self):
-        class TestExtractor(Extractor):
-            def __iter__(self):
-                for i in range(5):
-                    yield DatasetItem(id=i, subset='train', image=np.array([i]))
+        dataset = Dataset.from_iterable([
+            DatasetItem(id=i, subset='train', image=np.array([i]))
+            for i in range(5)
+        ], categories=['label'])
 
         class TestLauncher(Launcher):
             def launch(self, inputs):
                 for i, inp in enumerate(inputs):
-                    yield [ Label(attributes={'idx': i, 'data': inp.item()}) ]
+                    yield [ Label(0, attributes={'idx': i, 'data': inp.item()}) ]
 
         model_name = 'model'
         launcher_name = 'custom_launcher'
@@ -150,10 +150,9 @@ class ProjectTest(TestCase):
         project.env.launchers.register(launcher_name, TestLauncher)
         project.add_model(model_name, { 'launcher': launcher_name })
         model = project.make_executable_model(model_name)
-        extractor = TestExtractor()
 
         batch_size = 3
-        executor = InferenceWrapper(extractor, model, batch_size=batch_size)
+        executor = ModelTransform(dataset, model, batch_size=batch_size)
 
         for item in executor:
             self.assertEqual(1, len(item.annotations))
@@ -169,16 +168,16 @@ class ProjectTest(TestCase):
                     yield DatasetItem(id=i, image=np.ones([2, 2, 3]) * i,
                         annotations=[Label(i)])
 
+            def categories(self):
+                label_cat = LabelCategories()
+                label_cat.add('0')
+                label_cat.add('1')
+                return { AnnotationType.label: label_cat }
+
         class TestLauncher(Launcher):
             def launch(self, inputs):
                 for inp in inputs:
                     yield [ Label(inp[0, 0, 0]) ]
-
-        class TestConverter(Converter):
-            def __call__(self, extractor, save_dir):
-                for item in extractor:
-                    with open(osp.join(save_dir, '%s.txt' % item.id), 'w') as f:
-                        f.write(str(item.annotations[0].label) + '\n')
 
         class TestExtractorDst(Extractor):
             def __init__(self, url):
@@ -199,7 +198,6 @@ class ProjectTest(TestCase):
         project = Project()
         project.env.launchers.register(launcher_name, TestLauncher)
         project.env.extractors.register(extractor_name, TestExtractorSrc)
-        project.env.converters.register(extractor_name, TestConverter)
         project.add_model(model_name, { 'launcher': launcher_name })
         project.add_source('source', { 'format': extractor_name })
 

@@ -31,6 +31,8 @@ optional arguments:
                         host (default: localhost)
   --server-port SERVER_PORT
                         port (default: 8080)
+  --https
+                        using https connection (default: False)
   --debug               show debug output
 ```
 **Examples**

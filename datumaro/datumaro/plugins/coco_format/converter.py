@@ -3,27 +3,23 @@
 #
 # SPDX-License-Identifier: MIT
 
-from enum import Enum
-from itertools import groupby
 import json
 import logging as log
 import os
 import os.path as osp
+from enum import Enum
+from itertools import groupby
 
 import pycocotools.mask as mask_utils
 
-from datumaro.components.converter import Converter
-from datumaro.components.extractor import (DEFAULT_SUBSET_NAME,
-    AnnotationType, Points
-)
-from datumaro.components.cli_plugin import CliPlugin
-from datumaro.util import find, cast
-from datumaro.util.image import save_image
+import datumaro.util.annotation_util as anno_tools
 import datumaro.util.mask_tools as mask_tools
-import datumaro.util.annotation_tools as anno_tools
+from datumaro.components.converter import Converter
+from datumaro.components.extractor import (_COORDINATE_ROUNDING_DIGITS,
+    DEFAULT_SUBSET_NAME, AnnotationType, Points)
+from datumaro.util import cast, find, str_to_bool
 
-from .format import CocoTask, CocoPath
-
+from .format import CocoPath, CocoTask
 
 SegmentationMode = Enum('SegmentationMode', ['guess', 'polygons', 'mask'])
 
@@ -110,6 +106,12 @@ class _TaskConverter:
             self._min_ann_id = max(ann_id, self._min_ann_id)
         return ann_id
 
+    @staticmethod
+    def _convert_attributes(ann):
+        return { k: v for k, v in ann.attributes.items()
+            if k not in {'is_crowd', 'score'}
+        }
+
 class _ImageInfoConverter(_TaskConverter):
     def is_empty(self):
         return len(self._data['images']) == 0
@@ -141,6 +143,8 @@ class _CaptionsConverter(_TaskConverter):
                 except Exception as e:
                     log.warning("Item '%s', ann #%s: failed to convert "
                         "attribute 'score': %e" % (item.id, ann_idx, e))
+            if self._context._allow_attributes:
+                elem['attributes'] = self._convert_attributes(ann)
 
             self.annotations.append(elem)
 
@@ -198,7 +202,7 @@ class _InstancesConverter(_TaskConverter):
 
         anns = boxes + polygons + masks
         leader = anno_tools.find_group_leader(anns)
-        bbox = anno_tools.compute_bbox(anns)
+        bbox = anno_tools.max_bbox(anns)
         mask = None
         polygons = [p.points for p in polygons]
 
@@ -293,8 +297,8 @@ class _InstancesConverter(_TaskConverter):
                 rles = mask_utils.merge(rles)
             area = mask_utils.area(rles)
         else:
-            x, y, w, h = bbox
-            segmentation = [[x, y, x + w, y, x + w, y + h, x, y + h]]
+            _, _, w, h = bbox
+            segmentation = []
             area = w * h
 
         elem = {
@@ -303,7 +307,7 @@ class _InstancesConverter(_TaskConverter):
             'category_id': cast(ann.label, int, -1) + 1,
             'segmentation': segmentation,
             'area': float(area),
-            'bbox': list(map(float, bbox)),
+            'bbox': [round(float(n), _COORDINATE_ROUNDING_DIGITS) for n in bbox],
             'iscrowd': int(is_crowd),
         }
         if 'score' in ann.attributes:
@@ -312,6 +316,8 @@ class _InstancesConverter(_TaskConverter):
             except Exception as e:
                 log.warning("Item '%s': failed to convert attribute "
                     "'score': %e" % (item.id, e))
+        if self._context._allow_attributes:
+                elem['attributes'] = self._convert_attributes(ann)
 
         return elem
 
@@ -329,7 +335,6 @@ class _KeypointsConverter(_InstancesConverter):
                 'supercategory': cast(label_cat.parent, str, ''),
                 'keypoints': [],
                 'skeleton': [],
-
             }
 
             if point_categories is not None:
@@ -428,129 +433,12 @@ class _LabelsConverter(_TaskConverter):
                 except Exception as e:
                     log.warning("Item '%s': failed to convert attribute "
                         "'score': %e" % (item.id, e))
+            if self._context._allow_attributes:
+                elem['attributes'] = self._convert_attributes(ann)
 
             self.annotations.append(elem)
 
-class _Converter:
-    _TASK_CONVERTER = {
-        CocoTask.image_info: _ImageInfoConverter,
-        CocoTask.instances: _InstancesConverter,
-        CocoTask.person_keypoints: _KeypointsConverter,
-        CocoTask.captions: _CaptionsConverter,
-        CocoTask.labels: _LabelsConverter,
-    }
-
-    def __init__(self, extractor, save_dir,
-            tasks=None, save_images=False, segmentation_mode=None,
-            crop_covered=False):
-        assert tasks is None or isinstance(tasks, (CocoTask, list, str))
-        if tasks is None:
-            tasks = list(self._TASK_CONVERTER)
-        elif isinstance(tasks, CocoTask):
-            tasks = [tasks]
-        elif isinstance(tasks, str):
-            tasks = [CocoTask[tasks]]
-        else:
-            for i, t in enumerate(tasks):
-                if isinstance(t, str):
-                    tasks[i] = CocoTask[t]
-                else:
-                    assert t in CocoTask, t
-        self._tasks = tasks
-
-        self._extractor = extractor
-        self._save_dir = save_dir
-
-        self._save_images = save_images
-
-        assert segmentation_mode is None or \
-            isinstance(segmentation_mode, str) or \
-            segmentation_mode in SegmentationMode
-        if segmentation_mode is None:
-            segmentation_mode = SegmentationMode.guess
-        if isinstance(segmentation_mode, str):
-            segmentation_mode = SegmentationMode[segmentation_mode]
-        self._segmentation_mode = segmentation_mode
-
-        self._crop_covered = crop_covered
-
-        self._image_ids = {}
-
-    def _make_dirs(self):
-        self._images_dir = osp.join(self._save_dir, CocoPath.IMAGES_DIR)
-        os.makedirs(self._images_dir, exist_ok=True)
-
-        self._ann_dir = osp.join(self._save_dir, CocoPath.ANNOTATIONS_DIR)
-        os.makedirs(self._ann_dir, exist_ok=True)
-
-    def _make_task_converter(self, task):
-        if task not in self._TASK_CONVERTER:
-            raise NotImplementedError()
-        return self._TASK_CONVERTER[task](self)
-
-    def _make_task_converters(self):
-        return {
-            task: self._make_task_converter(task) for task in self._tasks
-        }
-
-    def _get_image_id(self, item):
-        image_id = self._image_ids.get(item.id)
-        if image_id is None:
-            image_id = cast(item.id, int, len(self._image_ids) + 1)
-            self._image_ids[item.id] = image_id
-        return image_id
-
-    def _save_image(self, item):
-        image = item.image.data
-        if image is None:
-            log.warning("Item '%s' has no image" % item.id)
-            return ''
-
-        filename = item.image.filename
-        if filename:
-            filename = osp.splitext(filename)[0]
-        else:
-            filename = item.id
-        filename += CocoPath.IMAGE_EXT
-        path = osp.join(self._images_dir, filename)
-        save_image(path, image)
-        return path
-
-    def convert(self):
-        self._make_dirs()
-
-        subsets = self._extractor.subsets()
-        if len(subsets) == 0:
-            subsets = [ None ]
-
-        for subset_name in subsets:
-            if subset_name:
-                subset = self._extractor.get_subset(subset_name)
-            else:
-                subset_name = DEFAULT_SUBSET_NAME
-                subset = self._extractor
-
-            task_converters = self._make_task_converters()
-            for task_conv in task_converters.values():
-                task_conv.save_categories(subset)
-            for item in subset:
-                filename = ''
-                if item.has_image:
-                    filename = item.image.path
-                if self._save_images:
-                    if item.has_image:
-                        filename = self._save_image(item)
-                    else:
-                        log.debug("Item '%s' has no image info" % item.id)
-                for task_conv in task_converters.values():
-                    task_conv.save_image_info(item, filename)
-                    task_conv.save_annotations(item)
-
-            for task, task_conv in task_converters.items():
-                task_conv.write(osp.join(self._ann_dir,
-                    '%s_%s.json' % (task.name, subset_name)))
-
-class CocoConverter(Converter, CliPlugin):
+class CocoConverter(Converter):
     @staticmethod
     def _split_tasks_string(s):
         return [CocoTask[i.strip()] for i in s.split(',')]
@@ -558,8 +446,6 @@ class CocoConverter(Converter, CliPlugin):
     @classmethod
     def build_cmdline_parser(cls, **kwargs):
         parser = super().build_cmdline_parser(**kwargs)
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
         parser.add_argument('--segmentation-mode',
             choices=[m.name for m in SegmentationMode],
             default=SegmentationMode.guess.name,
@@ -576,49 +462,135 @@ class CocoConverter(Converter, CliPlugin):
         parser.add_argument('--crop-covered', action='store_true',
             help="Crop covered segments so that background objects' "
                 "segmentation was more accurate (default: %(default)s)")
+        parser.add_argument('--allow-attributes',
+            type=str_to_bool, default=True,
+            help="Allow export of attributes (default: %(default)s)")
         parser.add_argument('--tasks', type=cls._split_tasks_string,
-            default=None,
             help="COCO task filter, comma-separated list of {%s} "
-                "(default: all)" % ', '.join([t.name for t in CocoTask]))
+                "(default: all)" % ', '.join(t.name for t in CocoTask))
         return parser
 
-    def __init__(self,
-            tasks=None, save_images=False, segmentation_mode=None,
-            crop_covered=False):
-        super().__init__()
+    DEFAULT_IMAGE_EXT = CocoPath.IMAGE_EXT
 
-        self._options = {
-            'tasks': tasks,
-            'save_images': save_images,
-            'segmentation_mode': segmentation_mode,
-            'crop_covered': crop_covered,
-        }
+    _TASK_CONVERTER = {
+        CocoTask.image_info: _ImageInfoConverter,
+        CocoTask.instances: _InstancesConverter,
+        CocoTask.person_keypoints: _KeypointsConverter,
+        CocoTask.captions: _CaptionsConverter,
+        CocoTask.labels: _LabelsConverter,
+    }
 
-    def __call__(self, extractor, save_dir):
-        converter = _Converter(extractor, save_dir, **self._options)
-        converter.convert()
+    def __init__(self, extractor, save_dir,
+            tasks=None, segmentation_mode=None, crop_covered=False,
+            allow_attributes=True, **kwargs):
+        super().__init__(extractor, save_dir, **kwargs)
+
+        assert tasks is None or isinstance(tasks, (CocoTask, list, str))
+        if isinstance(tasks, CocoTask):
+            tasks = [tasks]
+        elif isinstance(tasks, str):
+            tasks = [CocoTask[tasks]]
+        elif tasks:
+            for i, t in enumerate(tasks):
+                if isinstance(t, str):
+                    tasks[i] = CocoTask[t]
+                else:
+                    assert t in CocoTask, t
+        self._tasks = tasks
+
+        assert segmentation_mode is None or \
+            isinstance(segmentation_mode, str) or \
+            segmentation_mode in SegmentationMode
+        if segmentation_mode is None:
+            segmentation_mode = SegmentationMode.guess
+        if isinstance(segmentation_mode, str):
+            segmentation_mode = SegmentationMode[segmentation_mode]
+        self._segmentation_mode = segmentation_mode
+
+        self._crop_covered = crop_covered
+        self._allow_attributes = allow_attributes
+
+        self._image_ids = {}
+
+    def _make_dirs(self):
+        self._images_dir = osp.join(self._save_dir, CocoPath.IMAGES_DIR)
+        os.makedirs(self._images_dir, exist_ok=True)
+
+        self._ann_dir = osp.join(self._save_dir, CocoPath.ANNOTATIONS_DIR)
+        os.makedirs(self._ann_dir, exist_ok=True)
+
+    def _make_task_converter(self, task):
+        if task not in self._TASK_CONVERTER:
+            raise NotImplementedError()
+        return self._TASK_CONVERTER[task](self)
+
+    def _make_task_converters(self):
+        return { task: self._make_task_converter(task)
+            for task in (self._tasks or self._TASK_CONVERTER) }
+
+    def _get_image_id(self, item):
+        image_id = self._image_ids.get(item.id)
+        if image_id is None:
+            image_id = cast(item.attributes.get('id'), int,
+                len(self._image_ids) + 1)
+            self._image_ids[item.id] = image_id
+        return image_id
+
+    def _save_image(self, item, path=None):
+        super()._save_image(item,
+            osp.join(self._images_dir, self._make_image_filename(item)))
+
+    def apply(self):
+        self._make_dirs()
+
+        for subset_name in self._extractor.subsets() or [None]:
+            if subset_name:
+                subset = self._extractor.get_subset(subset_name)
+            else:
+                subset_name = DEFAULT_SUBSET_NAME
+                subset = self._extractor
+
+            task_converters = self._make_task_converters()
+            for task_conv in task_converters.values():
+                task_conv.save_categories(subset)
+            for item in subset:
+                if self._save_images:
+                    if item.has_image:
+                        self._save_image(item)
+                    else:
+                        log.debug("Item '%s' has no image info", item.id)
+                for task_conv in task_converters.values():
+                    task_conv.save_image_info(item,
+                        self._make_image_filename(item))
+                    task_conv.save_annotations(item)
+
+            for task, task_conv in task_converters.items():
+                if task_conv.is_empty() and not self._tasks:
+                    continue
+                task_conv.write(osp.join(self._ann_dir,
+                    '%s_%s.json' % (task.name, subset_name)))
 
 class CocoInstancesConverter(CocoConverter):
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs['tasks'] = CocoTask.instances
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
 class CocoImageInfoConverter(CocoConverter):
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs['tasks'] = CocoTask.image_info
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
 class CocoPersonKeypointsConverter(CocoConverter):
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs['tasks'] = CocoTask.person_keypoints
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
 class CocoCaptionsConverter(CocoConverter):
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs['tasks'] = CocoTask.captions
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
 class CocoLabelsConverter(CocoConverter):
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs['tasks'] = CocoTask.labels
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)

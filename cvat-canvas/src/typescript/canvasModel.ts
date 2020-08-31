@@ -66,6 +66,7 @@ export interface DrawData {
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
+    redraw?: number;
 }
 
 export interface EditData {
@@ -97,7 +98,6 @@ export enum UpdateReasons {
     IMAGE_FITTED = 'image_fitted',
     IMAGE_MOVED = 'image_moved',
     GRID_UPDATED = 'grid_updated',
-    SET_Z_LAYER = 'set_z_layer',
 
     OBJECTS_UPDATED = 'objects_updated',
     SHAPE_ACTIVATED = 'shape_activated',
@@ -147,11 +147,10 @@ export interface CanvasModel {
     geometry: Geometry;
     mode: Mode;
 
-    setZLayer(zLayer: number | null): void;
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
 
-    setup(frameData: any, objectStates: any[]): void;
+    setup(frameData: any, objectStates: any[], zLayer: number): void;
     activate(clientID: number | null, attributeID: number | null): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
@@ -169,6 +168,7 @@ export interface CanvasModel {
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
+    isAbleToChangeFrame(): boolean;
     configure(configuration: Configuration): void;
     cancel(): void;
 }
@@ -256,11 +256,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         };
     }
 
-    public setZLayer(zLayer: number | null): void {
-        this.data.zLayer = zLayer;
-        this.notify(UpdateReasons.SET_Z_LAYER);
-    }
-
     public zoom(x: number, y: number, direction: number): void {
         const oldScale: number = this.data.scale;
         const newScale: number = direction > 0 ? oldScale * 6 / 5 : oldScale * 5 / 6;
@@ -335,7 +330,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.ZOOM_CANVAS);
     }
 
-    public setup(frameData: any, objectStates: any[]): void {
+    public setup(frameData: any, objectStates: any[], zLayer: number): void {
         if (this.data.imageID !== frameData.number) {
             if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -343,6 +338,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (frameData.number === this.data.imageID) {
+            this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
             return;
@@ -367,6 +363,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
             this.data.image = data;
             this.notify(UpdateReasons.IMAGE_CHANGED);
+            this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
         }).catch((exception: any): void => {
@@ -382,8 +379,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (this.data.mode !== Mode.IDLE && clientID !== null) {
-            // Exception or just return?
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (typeof (clientID) === 'number') {
+            const [state] = this.objects
+                .filter((_state: any): boolean => _state.clientID === clientID);
+            if (!state || state.objectType === 'tag') {
+                return;
+            }
         }
 
         this.data.activeElement = {
@@ -465,10 +469,24 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             }
         }
 
-        this.data.drawData = { ...drawData };
-        if (this.data.drawData.initialState) {
-            this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
+        if (typeof (drawData.redraw) === 'number') {
+            const clientID = drawData.redraw;
+            const [state] = this.data.objects
+                .filter((_state: any): boolean => _state.clientID === clientID);
+
+            if (state) {
+                this.data.drawData = { ...drawData };
+                this.data.drawData.shapeType = state.shapeType;
+            } else {
+                return;
+            }
+        } else {
+            this.data.drawData = { ...drawData };
+            if (this.data.drawData.initialState) {
+                this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
+            }
         }
+
         this.notify(UpdateReasons.DRAW);
     }
 
@@ -546,6 +564,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);
+    }
+
+    public isAbleToChangeFrame(): boolean {
+        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE].includes(this.data.mode)
+            || (this.data.mode === Mode.DRAW && typeof (this.data.drawData.redraw) === 'number');
+
+        return !isUnable;
     }
 
     public cancel(): void {

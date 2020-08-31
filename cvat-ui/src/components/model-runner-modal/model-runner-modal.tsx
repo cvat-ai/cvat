@@ -11,8 +11,9 @@ import Checkbox from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
 import Modal from 'antd/lib/modal';
 import Tag from 'antd/lib/tag';
-import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
+import Text from 'antd/lib/typography/Text';
+import InputNumber from 'antd/lib/input-number';
 
 import {
     Model,
@@ -20,31 +21,30 @@ import {
 } from 'reducers/interfaces';
 
 interface Props {
-    modelsFetching: boolean;
-    modelsInitialized: boolean;
     models: Model[];
     activeProcesses: StringObject;
     visible: boolean;
     taskInstance: any;
-    getModels(): void;
     closeDialog(): void;
     runInference(
         taskInstance: any,
         model: Model,
-        mapping: StringObject,
-        cleanOut: boolean,
+        body: object,
     ): void;
 }
 
 interface State {
     selectedModel: string | null;
-    cleanOut: boolean;
+    cleanup: boolean;
     mapping: StringObject;
     colors: StringObject;
     matching: {
         model: string;
         task: string;
     };
+
+    threshold: number;
+    maxDistance: number;
 }
 
 function colorGenerator(): () => string {
@@ -75,31 +75,27 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
             selectedModel: null,
             mapping: {},
             colors: {},
-            cleanOut: false,
+            cleanup: false,
             matching: {
                 model: '',
                 task: '',
             },
+
+            threshold: 0.5,
+            maxDistance: 50,
         };
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
             taskInstance,
-            modelsInitialized,
-            modelsFetching,
             models,
             visible,
-            getModels,
         } = this.props;
 
         const {
             selectedModel,
         } = this.state;
-
-        if (!modelsInitialized && !modelsFetching) {
-            getModels();
-        }
 
         if (!prevProps.visible && visible) {
             this.setState({
@@ -109,7 +105,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     model: '',
                     task: '',
                 },
-                cleanOut: false,
+                cleanup: false,
             });
         }
 
@@ -117,31 +113,29 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
             const selectedModelInstance = models
                 .filter((model) => model.name === selectedModel)[0];
 
-            if (!selectedModelInstance.primary) {
-                if (!selectedModelInstance.labels.length) {
-                    notification.warning({
-                        message: 'The selected model does not include any lables',
-                    });
-                }
-
-                let taskLabels: string[] = taskInstance.labels
-                    .map((label: any): string => label.name);
-                const [defaultMapping, defaultColors]: StringObject[] = selectedModelInstance.labels
-                    .reduce((acc: StringObject[], label): StringObject[] => {
-                        if (taskLabels.includes(label)) {
-                            acc[0][label] = label;
-                            acc[1][label] = nextColor();
-                            taskLabels = taskLabels.filter((_label): boolean => _label !== label);
-                        }
-
-                        return acc;
-                    }, [{}, {}]);
-
-                this.setState({
-                    mapping: defaultMapping,
-                    colors: defaultColors,
+            if (selectedModelInstance.type !== 'reid' && !selectedModelInstance.labels.length) {
+                notification.warning({
+                    message: 'The selected model does not include any lables',
                 });
             }
+
+            let taskLabels: string[] = taskInstance.labels
+                .map((label: any): string => label.name);
+            const [defaultMapping, defaultColors]: StringObject[] = selectedModelInstance.labels
+                .reduce((acc: StringObject[], label): StringObject[] => {
+                    if (taskLabels.includes(label)) {
+                        acc[0][label] = label;
+                        acc[1][label] = nextColor();
+                        taskLabels = taskLabels.filter((_label): boolean => _label !== label);
+                    }
+
+                    return acc;
+                }, [{}, {}]);
+
+            this.setState({
+                mapping: defaultMapping,
+                colors: defaultColors,
+            });
         }
     }
 
@@ -186,7 +180,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     <Tag color={colors[modelLabel]}>{taskLabel}</Tag>
                 </Col>
                 <Col span={1} offset={1}>
-                    <Tooltip title='Remove the mapped values'>
+                    <Tooltip title='Remove the mapped values' mouseLeaveDelay={0}>
                         <Icon
                             className='cvat-run-model-dialog-remove-mapping-icon'
                             type='close-circle'
@@ -288,7 +282,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     )}
                 </Col>
                 <Col span={1} offset={1}>
-                    <Tooltip title='Specify a label mapping between model labels and task labels'>
+                    <Tooltip title='Specify a label mapping between model labels and task labels' mouseLeaveDelay={0}>
                         <Icon className='cvat-info-circle-icon' type='question-circle' />
                     </Tooltip>
                 </Col>
@@ -296,10 +290,65 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
         );
     }
 
+    private renderReidContent(): JSX.Element {
+        const {
+            threshold,
+            maxDistance,
+        } = this.state;
+
+        return (
+            <div>
+                <Row type='flex' align='middle' justify='start'>
+                    <Col>
+                        <Text>Threshold</Text>
+                    </Col>
+                    <Col offset={1}>
+                        <Tooltip title='Minimum similarity value for shapes that can be merged'>
+                            <InputNumber
+                                min={0.01}
+                                step={0.01}
+                                max={1}
+                                value={threshold}
+                                onChange={(value: number | undefined) => {
+                                    if (typeof (value) === 'number') {
+                                        this.setState({
+                                            threshold: value,
+                                        });
+                                    }
+                                }}
+                            />
+                        </Tooltip>
+                    </Col>
+                </Row>
+                <Row type='flex' align='middle' justify='start'>
+                    <Col>
+                        <Text>Maximum distance</Text>
+                    </Col>
+                    <Col offset={1}>
+                        <Tooltip title='Maximum distance between shapes that can be merged'>
+                            <InputNumber
+                                placeholder='Threshold'
+                                min={1}
+                                value={maxDistance}
+                                onChange={(value: number | undefined) => {
+                                    if (typeof (value) === 'number') {
+                                        this.setState({
+                                            maxDistance: value,
+                                        });
+                                    }
+                                }}
+                            />
+                        </Tooltip>
+                    </Col>
+                </Row>
+            </div>
+        );
+    }
+
     private renderContent(): JSX.Element {
         const {
             selectedModel,
-            cleanOut,
+            cleanup,
             mapping,
         } = this.state;
         const {
@@ -311,8 +360,9 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
             .filter((_model): boolean => _model.name === selectedModel)[0];
 
         const excludedModelLabels: string[] = Object.keys(mapping);
-        const withMapping = model && !model.primary;
-        const tags = withMapping ? excludedModelLabels
+        const isDetector = model && model.type === 'detector';
+        const isReId = model && model.type === 'reid';
+        const tags = isDetector ? excludedModelLabels
             .map((modelLabel: string) => this.renderMappingTag(
                 modelLabel,
                 mapping[modelLabel],
@@ -332,23 +382,24 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
         return (
             <div className='cvat-run-model-dialog'>
                 { this.renderModelSelector() }
-                { withMapping && tags}
-                { withMapping
+                { isDetector && tags}
+                { isDetector
                     && mappingISAvailable
                     && this.renderMappingInput(availableModelLabels, taskLabels)}
-                { withMapping
+                { isDetector
                     && (
                         <div>
                             <Checkbox
-                                checked={cleanOut}
+                                checked={cleanup}
                                 onChange={(e: any): void => this.setState({
-                                    cleanOut: e.target.checked,
+                                    cleanup: e.target.checked,
                                 })}
                             >
                                 Clean old annotations
                             </Checkbox>
                         </div>
                     )}
+                { isReId && this.renderReidContent() }
             </div>
         );
     }
@@ -357,14 +408,15 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
         const {
             selectedModel,
             mapping,
-            cleanOut,
+            cleanup,
+            threshold,
+            maxDistance,
         } = this.state;
 
         const {
             models,
             visible,
             taskInstance,
-            modelsInitialized,
             runInference,
             closeDialog,
         } = this.props;
@@ -373,8 +425,8 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
             (model): boolean => model.name === selectedModel,
         )[0];
 
-        const enabledSubmit = (!!activeModel
-            && activeModel.primary) || !!Object.keys(mapping).length;
+        const enabledSubmit = !!activeModel && (activeModel.type === 'reid'
+            || !!Object.keys(mapping).length);
 
         return (
             visible && (
@@ -387,8 +439,13 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                             taskInstance,
                             models
                                 .filter((model): boolean => model.name === selectedModel)[0],
-                            mapping,
-                            cleanOut,
+                            activeModel.type === 'detector' ? {
+                                mapping,
+                                cleanup,
+                            } : {
+                                threshold,
+                                max_distance: maxDistance,
+                            },
                         );
                         closeDialog();
                     }}
@@ -397,9 +454,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     title='Automatic annotation'
                     visible
                 >
-                    {!modelsInitialized
-                        && <Spin size='large' className='cvat-spinner' />}
-                    {modelsInitialized && this.renderContent()}
+                    { this.renderContent() }
                 </Modal>
             )
         );

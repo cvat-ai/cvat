@@ -89,7 +89,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
     });
 
     const makeShapesTracksTitle = (title: string): JSX.Element => (
-        <Tooltip title='Shapes / Tracks'>
+        <Tooltip title='Shapes / Tracks' mouseLeaveDelay={0}>
             <Text strong style={{ marginRight: 5 }}>{title}</Text>
             <Icon className='cvat-info-circle-icon' type='question-circle' />
         </Tooltip>

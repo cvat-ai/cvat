@@ -32,8 +32,15 @@ class _VocExtractor(SourceExtractor):
         super().__init__(subset=osp.splitext(osp.basename(path))[0])
 
         self._categories = self._load_categories(self._dataset_dir)
-        log.debug("Loaded labels: %s", ', '.join("'%s'" % l.name
-            for l in self._categories[AnnotationType.label].items))
+
+        label_color = lambda label_idx: \
+            self._categories[AnnotationType.mask].colormap.get(label_idx, None)
+        log.debug("Loaded labels: %s" % ', '.join(
+            "'%s' %s" % (l.name, ('(%s, %s, %s)' % c) if c else '')
+            for i, l, c in ((i, l, label_color(i)) for i, l in enumerate(
+                self._categories[AnnotationType.label].items
+            ))
+        ))
         self._items = self._load_subset_list(path)
 
     def categories(self):
@@ -64,6 +71,7 @@ class VocClassificationExtractor(_VocExtractor):
     def __iter__(self):
         raw_anns = self._load_annotations()
         for item_id in self._items:
+            log.debug("Reading item '%s'" % item_id)
             image = osp.join(self._dataset_dir, VocPath.IMAGES_DIR,
                 item_id + VocPath.IMAGE_EXT)
             anns = self._parse_annotations(raw_anns, item_id)
@@ -99,8 +107,9 @@ class _VocXmlExtractor(_VocExtractor):
         anno_dir = osp.join(self._dataset_dir, VocPath.ANNOTATIONS_DIR)
 
         for item_id in self._items:
-            image = osp.join(self._dataset_dir, VocPath.IMAGES_DIR,
-                item_id + VocPath.IMAGE_EXT)
+            log.debug("Reading item '%s'" % item_id)
+            image = item_id + VocPath.IMAGE_EXT
+            height, width = 0, 0
 
             anns = []
             ann_file = osp.join(anno_dir, item_id + '.xml')
@@ -112,10 +121,14 @@ class _VocXmlExtractor(_VocExtractor):
                 width = root_elem.find('size/width')
                 if width is not None:
                     width = int(width.text)
-                if height and width:
-                    image = Image(path=image, size=(height, width))
-
+                filename_elem = root_elem.find('filename')
+                if filename_elem is not None:
+                    image = filename_elem.text
                 anns = self._parse_annotations(root_elem)
+
+            image = osp.join(self._dataset_dir, VocPath.IMAGES_DIR, image)
+            if height and width:
+                image = Image(path=image, size=(height, width))
 
             yield DatasetItem(id=item_id, subset=self._subset,
                 image=image, annotations=anns)
@@ -185,6 +198,12 @@ class _VocXmlExtractor(_VocExtractor):
                 item_annotations.append(Bbox(*part_bbox, label=part_label_id,
                     group=group))
 
+            attributes_elem = object_elem.find('attributes')
+            if attributes_elem is not None:
+                for attr_elem in attributes_elem.iter('attribute'):
+                    attributes[attr_elem.find('name').text] = \
+                        attr_elem.find('value').text
+
             if self._task is VocTask.person_layout and not has_parts:
                 continue
             if self._task is VocTask.action_classification and not actions:
@@ -219,6 +238,7 @@ class VocActionExtractor(_VocXmlExtractor):
 class VocSegmentationExtractor(_VocExtractor):
     def __iter__(self):
         for item_id in self._items:
+            log.debug("Reading item '%s'" % item_id)
             image = osp.join(self._dataset_dir, VocPath.IMAGES_DIR,
                 item_id + VocPath.IMAGE_EXT)
             anns = self._load_annotations(item_id)

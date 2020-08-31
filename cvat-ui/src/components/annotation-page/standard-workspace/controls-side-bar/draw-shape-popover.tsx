@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Select from 'antd/lib/select';
+import Select, { OptionProps } from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import InputNumber from 'antd/lib/input-number';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
@@ -51,10 +51,6 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         onChangeCuboidDrawingMethod,
     } = props;
 
-    const trackDisabled = shapeType === ShapeType.POLYGON
-        || shapeType === ShapeType.POLYLINE
-        || (shapeType === ShapeType.POINTS && numberOfPoints !== 1);
-
     return (
         <div className='cvat-draw-shape-popover-content'>
             <Row type='flex' justify='start'>
@@ -70,6 +66,15 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             <Row type='flex' justify='center'>
                 <Col span={24}>
                     <Select
+                        showSearch
+                        filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
+                            const { children } = option.props;
+                            if (typeof (children) === 'string') {
+                                return children.toLowerCase().includes(input.toLowerCase());
+                            }
+
+                            return false;
+                        }}
                         value={`${selectedLabeID}`}
                         onChange={onChangeLabel}
                     >
@@ -181,15 +186,15 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             }
             <Row type='flex' justify='space-around'>
                 <Col span={12}>
-                    <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
+                    <Tooltip title={`Press ${repeatShapeShortcut} to draw again`} mouseLeaveDelay={0}>
                         <Button onClick={onDrawShape}>
                             Shape
                         </Button>
                     </Tooltip>
                 </Col>
                 <Col span={12}>
-                    <Tooltip title={`Press ${repeatShapeShortcut} to draw again`}>
-                        <Button onClick={onDrawTrack} disabled={trackDisabled}>
+                    <Tooltip title={`Press ${repeatShapeShortcut} to draw again`} mouseLeaveDelay={0}>
+                        <Button onClick={onDrawTrack}>
                             Track
                         </Button>
                     </Tooltip>

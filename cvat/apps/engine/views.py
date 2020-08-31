@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -13,11 +13,9 @@ import django_rq
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseNotFound
-from django.shortcuts import render
+from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.generic import RedirectView
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
@@ -34,57 +32,19 @@ from sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views # pylint: disable=unused-import
 from cvat.apps.authentication import auth
-from cvat.apps.authentication.decorators import login_required
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, Plugin, StatusChoice, Task
+from cvat.apps.engine.models import Job, StatusChoice, Task
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
-    LogEventSerializer, PluginSerializer, ProjectSerializer,
-    RqStatusSerializer, TaskSerializer, UserSerializer)
-from cvat.settings.base import CSS_3RDPARTY, JS_3RDPARTY
+    LogEventSerializer, ProjectSerializer, RqStatusSerializer,
+    TaskSerializer, UserSerializer)
+from cvat.apps.engine.utils import av_scan_paths
 
 from . import models, task
 from .log import clogger, slogger
-
-
-# drf-yasg component doesn't handle correctly URL_FORMAT_OVERRIDE and
-# send requests with ?format=openapi suffix instead of ?scheme=openapi.
-# We map the required paramater explicitly and add it into query arguments
-# on the server side.
-def wrap_swagger(view):
-    @login_required
-    def _map_format_to_schema(request, scheme=None):
-        if 'format' in request.GET:
-            request.GET = request.GET.copy()
-            format_alias = settings.REST_FRAMEWORK['URL_FORMAT_OVERRIDE']
-            request.GET[format_alias] = request.GET['format']
-
-        return view(request, format=scheme)
-
-    return _map_format_to_schema
-
-# Server REST API
-@login_required
-def dispatch_request(request):
-    """An entry point to dispatch legacy requests"""
-    if 'dashboard' in request.path or (request.path == '/' and 'id' not in request.GET):
-        return RedirectView.as_view(
-            url=settings.UI_URL,
-            permanent=True,
-            query_string=True
-        )(request)
-    elif request.method == 'GET' and 'id' in request.GET and request.path == '/':
-        return render(request, 'engine/annotation.html', {
-            'css_3rdparty': CSS_3RDPARTY.get('engine', []),
-            'js_3rdparty': JS_3RDPARTY.get('engine', []),
-            'status_list': [str(i) for i in StatusChoice],
-            'ui_url': settings.UI_URL
-        })
-    else:
-        return HttpResponseNotFound()
 
 
 class ServerViewSet(viewsets.ViewSet):
@@ -388,7 +348,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-    @swagger_auto_schema(method='post', operation_summary='Method permanently attaches images or video to a task')
+    @swagger_auto_schema(method='post', operation_summary='Method permanently attaches images or video to a task',
+        request_body=DataSerializer,
+    )
     @swagger_auto_schema(method='get', operation_summary='Method returns data for a specific task',
         manual_parameters=[
             openapi.Parameter('type', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
@@ -482,7 +444,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         responses={
             '202': openapi.Response(description='Dump of annotations has been started'),
             '201': openapi.Response(description='Annotations file is ready to download'),
-            '200': openapi.Response(description='Download of file started')
+            '200': openapi.Response(description='Download of file started'),
+            '405': openapi.Response(description='Format is not available'),
         }
     )
     @swagger_auto_schema(method='put', operation_summary='Method allows to upload task annotations',
@@ -494,6 +457,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         responses={
             '202': openapi.Response(description='Uploading has been started'),
             '201': openapi.Response(description='Uploading has finished'),
+            '405': openapi.Response(description='Format is not available'),
         }
     )
     @swagger_auto_schema(method='patch', operation_summary='Method performs a partial update of annotations in a specific task',
@@ -619,7 +583,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         ],
         responses={'202': openapi.Response(description='Exporting has been started'),
             '201': openapi.Response(description='Output file is ready for downloading'),
-            '200': openapi.Response(description='Download of file started')
+            '200': openapi.Response(description='Download of file started'),
+            '405': openapi.Response(description='Format is not available'),
         }
     )
     @action(detail=True, methods=['GET'], serializer_class=None,
@@ -753,33 +718,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
 
-class PluginViewSet(viewsets.ModelViewSet):
-    queryset = Plugin.objects.all()
-    serializer_class = PluginSerializer
-
-    # @action(detail=True, methods=['GET', 'PATCH', 'PUT'], serializer_class=None)
-    # def config(self, request, name):
-    #     pass
-
-    # @action(detail=True, methods=['GET', 'POST'], serializer_class=None)
-    # def data(self, request, name):
-    #     pass
-
-    # @action(detail=True, methods=['GET', 'DELETE', 'PATCH', 'PUT'],
-    #     serializer_class=None, url_path='data/(?P<id>\d+)')
-    # def data_detail(self, request, name, id):
-    #     pass
-
-
-    @action(detail=True, methods=['GET', 'POST'], serializer_class=RqStatusSerializer)
-    def requests(self, request, name):
-        pass
-
-    @action(detail=True, methods=['GET', 'DELETE'],
-        serializer_class=RqStatusSerializer, url_path='requests/(?P<id>\d+)')
-    def request_detail(self, request, name, rq_id):
-        pass
-
 def rq_handler(job, exc_type, exc_value, tb):
     job.exc_info = "".join(
         traceback.format_exception_only(exc_type, exc_value))
@@ -799,22 +737,27 @@ def rq_handler(job, exc_type, exc_value, tb):
 #     tags=['tasks'])
 # @api_view(['PUT'])
 def _import_annotations(request, rq_id, rq_func, pk, format_name):
+    format_desc = {f.DISPLAY_NAME: f
+        for f in dm.views.get_import_formats()}.get(format_name)
+    if format_desc is None:
+        raise serializers.ValidationError(
+            "Unknown input format '{}'".format(format_name))
+    elif not format_desc.ENABLED:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
         serializer = AnnotationFileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            if format_name not in \
-                    [f.DISPLAY_NAME for f in dm.views.get_import_formats()]:
-                raise serializers.ValidationError(
-                    "Unknown input format '{}'".format(format_name))
-
             anno_file = serializer.validated_data['annotation_file']
             fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
             with open(filename, 'wb+') as f:
                 for chunk in anno_file.chunks():
                     f.write(chunk)
+
+            av_scan_paths(filename)
             rq_job = queue.enqueue_call(
                 func=rq_func,
                 args=(pk, filename, format_name),
@@ -843,9 +786,13 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
 
-    if format_name not in [f.DISPLAY_NAME for f in dm.views.get_export_formats()]:
+    format_desc = {f.DISPLAY_NAME: f
+        for f in dm.views.get_export_formats()}.get(format_name)
+    if format_desc is None:
         raise serializers.ValidationError(
             "Unknown format specified for the request")
+    elif not format_desc.ENABLED:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     queue = django_rq.get_queue("default")
 

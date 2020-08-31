@@ -58,13 +58,13 @@ interface Props {
     contrastLevel: number;
     saturationLevel: number;
     resetZoom: boolean;
-    contextVisible: boolean;
-    contextType: ContextMenuType;
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
+    showAllInterpolationTracks: boolean;
     workspace: Workspace;
     automaticBordering: boolean;
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    canvasBackgroundColor: string;
     switchableAutomaticBordering: boolean;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
@@ -93,6 +93,7 @@ interface Props {
     onChangeGridColor(color: GridColor): void;
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onFetchAnnotation(): void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -101,7 +102,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             automaticBordering,
             showObjectsTextAlways,
             canvasInstance,
-            curZLayer,
         } = this.props;
 
         // It's awful approach from the point of view React
@@ -115,7 +115,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
         });
-        canvasInstance.setZLayer(curZLayer);
 
         this.initialSetup();
         this.updateCanvas();
@@ -137,6 +136,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             curZLayer,
             resetZoom,
             grid,
+            gridSize,
             gridOpacity,
             gridColor,
             brightnessLevel,
@@ -145,8 +145,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             workspace,
             frameFetching,
             showObjectsTextAlways,
+            showAllInterpolationTracks,
             automaticBordering,
             showProjections,
+            canvasBackgroundColor,
+            onFetchAnnotation,
         } = this.props;
 
         if (prevProps.showObjectsTextAlways !== showObjectsTextAlways
@@ -159,6 +162,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 autoborders: automaticBordering,
                 showProjections,
             });
+        }
+
+        if (prevProps.showAllInterpolationTracks !== showAllInterpolationTracks) {
+            onFetchAnnotation();
         }
 
         if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
@@ -177,6 +184,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             if (el) {
                 (el as any).instance.fill({ opacity: opacity / 100 });
             }
+        }
+
+        if (gridSize !== prevProps.gridSize) {
+            canvasInstance.grid(gridSize, gridSize);
         }
 
         if (gridOpacity !== prevProps.gridOpacity
@@ -204,17 +215,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        if (prevProps.curZLayer !== curZLayer) {
-            canvasInstance.setZLayer(curZLayer);
-        }
-
-        if (prevProps.annotations !== annotations || prevProps.frameData !== frameData) {
+        if (prevProps.annotations !== annotations
+            || prevProps.frameData !== frameData
+            || prevProps.curZLayer !== curZLayer) {
             this.updateCanvas();
         }
 
         if (prevProps.frame !== frameData.number
-            && resetZoom
-            && workspace !== Workspace.ATTRIBUTE_ANNOTATION
+            && ((resetZoom && workspace !== Workspace.ATTRIBUTE_ANNOTATION)
+            || workspace === Workspace.TAG_ANNOTATION)
         ) {
             canvasInstance.html().addEventListener('canvas.setup', () => {
                 canvasInstance.fit();
@@ -222,7 +231,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
-            || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy) {
+            || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy
+        ) {
             this.updateShapesView();
         }
 
@@ -240,6 +250,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 loadingAnimation.classList.remove('cvat_canvas_hidden');
             } else {
                 loadingAnimation.classList.add('cvat_canvas_hidden');
+            }
+        }
+
+        if (prevProps.canvasBackgroundColor !== canvasBackgroundColor) {
+            const canvasWrapperElement = window.document.getElementsByClassName('cvat-canvas-container').item(0) as HTMLElement | null;
+            if (canvasWrapperElement) {
+                canvasWrapperElement.style.backgroundColor = canvasBackgroundColor;
             }
         }
 
@@ -382,10 +399,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             activatedStateID,
             onUpdateContextMenu,
-            contextType,
         } = this.props;
 
-        if (contextType !== ContextMenuType.CANVAS_SHAPE_POINT) {
+        if (e.target && !(e.target as HTMLElement).classList.contains('svg_select_points')) {
             onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY,
                 ContextMenuType.CANVAS_SHAPE);
         }
@@ -442,7 +458,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             onActivateObject,
         } = this.props;
 
-        if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+        if (workspace !== Workspace.STANDARD) {
             return;
         }
 
@@ -571,7 +587,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                     canvasInstance.fit();
                 }
             }
-            if (activatedState.objectType !== ObjectType.TAG) {
+            if (activatedState && activatedState.objectType !== ObjectType.TAG) {
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
             }
             const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
@@ -616,16 +632,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private updateCanvas(): void {
         const {
+            curZLayer,
             annotations,
             frameData,
-            frameAngle,
             canvasInstance,
         } = this.props;
 
         if (frameData !== null) {
             canvasInstance.setup(frameData, annotations
-                .filter((e) => e.objectType !== ObjectType.TAG));
-            canvasInstance.rotate(frameAngle);
+                .filter((e) => e.objectType !== ObjectType.TAG), curZLayer);
         }
     }
 
@@ -639,6 +654,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             brightnessLevel,
             contrastLevel,
             saturationLevel,
+            canvasBackgroundColor,
         } = this.props;
 
         // Size
@@ -663,6 +679,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             backgroundElement.style.filter = `brightness(${brightnessLevel / 100})`
                 + `contrast(${contrastLevel / 100})`
                 + `saturate(${saturationLevel / 100})`;
+        }
+
+        const canvasWrapperElement = window.document.getElementsByClassName('cvat-canvas-container').item(0) as HTMLElement | null;
+        if (canvasWrapperElement) {
+            canvasWrapperElement.style.backgroundColor = canvasBackgroundColor;
         }
 
         // Events
@@ -855,7 +876,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                         defaultValue={0}
                         onChange={(value: SliderValue): void => onSwitchZLayer(value as number)}
                     />
-                    <Tooltip title={`Add new layer ${maxZLayer + 1} and switch to it`}>
+                    <Tooltip title={`Add new layer ${maxZLayer + 1} and switch to it`} mouseLeaveDelay={0}>
                         <Icon type='plus-circle' onClick={onAddZLayer} />
                     </Tooltip>
                 </div>

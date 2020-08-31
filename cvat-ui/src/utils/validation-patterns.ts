@@ -26,7 +26,7 @@ const validationPatterns = {
 
     validateUsernameLength: {
         pattern: /(?=.{5,})/,
-        message: 'Username must have at least 8 characters',
+        message: 'Username must have at least 5 characters',
     },
 
     validateUsernameCharacters: {
@@ -34,9 +34,19 @@ const validationPatterns = {
         message: 'Only characters (a-z), (A-Z), (0-9), -, _ are available',
     },
 
+    /*
+        \p{Pd} - dash connectors
+        \p{Pc} - connector punctuations
+        \p{Cf} - invisible formatting indicator
+        \p{L} - any alphabetic character
+        Useful links:
+        https://stackoverflow.com/questions/4323386/multi-language-input-validation-with-utf-8-encoding
+        https://stackoverflow.com/questions/280712/javascript-unicode-regexes
+        https://stackoverflow.com/questions/6377407/how-to-validate-both-chinese-unicode-and-english-name
+    */
     validateName: {
         // eslint-disable-next-line
-        pattern: /^[a-zA-Z]{2,}(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/,
+        pattern: /^(\p{L}|\p{Pd}|\p{Cf}|\p{Pc}|['\s]){2,}$/gu,
         message: 'Invalid name',
     },
 

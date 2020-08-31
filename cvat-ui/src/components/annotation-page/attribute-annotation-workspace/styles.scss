@@ -13,7 +13,8 @@
     padding: 5px;
 }
 
-.attribute-annotation-sidebar-switcher {
+.attribute-annotation-sidebar-object-switcher,
+.attribute-annotation-sidebar-attribute-switcher {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -36,7 +37,7 @@
     align-items: center;
     justify-content: space-between;
     font-size: 18px;
-    margin: 10px 0px;
+    margin: 10px 0;
 }
 
 .attribute-annotations-sidebar-not-found-wrapper {
@@ -45,7 +46,7 @@
 }
 
 .attribute-annotation-sidebar-attr-list-wrapper {
-    margin: 10px 0px 10px 10px;
+    margin: 10px 0 10px 10px;
 }
 
 .attribute-annotation-sidebar-attr-elem-wrapper {

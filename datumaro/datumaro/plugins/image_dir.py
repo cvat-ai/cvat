@@ -3,13 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict
+import logging as log
 import os
 import os.path as osp
 
 from datumaro.components.extractor import DatasetItem, SourceExtractor, Importer
 from datumaro.components.converter import Converter
-from datumaro.util.image import save_image
+from datumaro.util.image import Image
 
 
 class ImageDirImporter(Importer):
@@ -33,54 +33,44 @@ class ImageDirImporter(Importer):
 
 
 class ImageDirExtractor(SourceExtractor):
-    _SUPPORTED_FORMATS = ['.png', '.jpg']
-
     def __init__(self, url):
         super().__init__()
 
         assert osp.isdir(url), url
 
         items = []
-        for name in os.listdir(url):
-            path = osp.join(url, name)
-            if self._is_image(path):
-                item_id = osp.splitext(name)[0]
-                item = DatasetItem(id=item_id, image=path)
-                items.append((item.id, item))
+        for dirpath, _, filenames in os.walk(url):
+            for name in filenames:
+                path = osp.join(dirpath, name)
+                try:
+                    image = Image(path)
+                    # force loading
+                    image.data # pylint: disable=pointless-statement
+                except Exception:
+                    continue
 
-        items = sorted(items, key=lambda e: e[0])
-        items = OrderedDict(items)
+                item_id = osp.relpath(osp.splitext(path)[0], url)
+                items.append(DatasetItem(id=item_id, image=image))
+
         self._items = items
 
     def __iter__(self):
-        for item in self._items.values():
+        for item in self._items:
             yield item
 
     def __len__(self):
         return len(self._items)
 
-    def get(self, item_id, subset=None, path=None):
-        if path or subset:
-            raise KeyError()
-        return self._items[item_id]
-
-    def _is_image(self, path):
-        for ext in self._SUPPORTED_FORMATS:
-            if osp.isfile(path) and path.endswith(ext):
-                return True
-        return False
-
 
 class ImageDirConverter(Converter):
-    def __call__(self, extractor, save_dir):
-        os.makedirs(save_dir, exist_ok=True)
+    DEFAULT_IMAGE_EXT = '.jpg'
 
-        for item in extractor:
-            if item.has_image and item.image.has_data:
-                filename = item.image.filename
-                if filename:
-                    filename = osp.splitext(filename)[0]
-                else:
-                    filename = item.id
-                filename += '.jpg'
-                save_image(osp.join(save_dir, filename), item.image.data)
+    def apply(self):
+        os.makedirs(self._save_dir, exist_ok=True)
+
+        for item in self._extractor:
+            if item.has_image:
+                self._save_image(item,
+                    osp.join(self._save_dir, self._make_image_filename(item)))
+            else:
+                log.debug("Item '%s' has no image info", item.id)

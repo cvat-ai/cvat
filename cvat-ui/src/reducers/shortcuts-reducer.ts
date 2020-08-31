@@ -27,9 +27,9 @@ const defaultKeyMap = {
         sequences: ['f1'],
         action: 'keydown',
     },
-    OPEN_SETTINGS: {
-        name: 'Open settings',
-        description: 'Go to the settings page or go back',
+    SWITCH_SETTINGS: {
+        name: 'Show settings',
+        description: 'Open/hide settings dialog',
         sequences: ['f2'],
         action: 'keydown',
     },
@@ -207,14 +207,20 @@ const defaultKeyMap = {
     },
     SWITCH_DRAW_MODE: {
         name: 'Draw mode',
-        description: 'Repeat the latest procedure of drawing with the same parameters',
-        sequences: ['n'],
+        description: 'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
+        sequences: ['shift+n', 'n'],
         action: 'keydown',
     },
     SWITCH_MERGE_MODE: {
         name: 'Merge mode',
         description: 'Activate or deactivate mode to merging shapes',
         sequences: ['m'],
+        action: 'keydown',
+    },
+    SWITCH_SPLIT_MODE: {
+        name: 'Split mode',
+        description: 'Activate or deactivate mode to splitting shapes',
+        sequences: ['alt+m'],
         action: 'keydown',
     },
     SWITCH_GROUP_MODE: {
@@ -318,6 +324,12 @@ const defaultKeyMap = {
         name: 'Switch automatic bordering',
         description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
         sequences: ['Control'],
+        action: 'keydown',
+    },
+    CHANGE_OBJECT_COLOR: {
+        name: 'Change color',
+        description: 'Set the next color for an activated shape',
+        sequences: ['Enter'],
         action: 'keydown',
     },
 } as any as Record<string, ExtendedKeyMapOptions>;

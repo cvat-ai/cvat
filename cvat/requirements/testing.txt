@@ -1,6 +1,6 @@
 -r development.txt
-fakeredis==1.1.0
+fakeredis==1.4.3
 # Fix dependencies for fakeredis 1.1.0
 # Pip will not reinstall six package if it is installed already
-six==1.12.0
+six==1.15.0
 coveralls

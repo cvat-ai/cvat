@@ -82,10 +82,6 @@ try:
 except Exception:
     pass
 
-# Application definition
-JS_3RDPARTY = {}
-CSS_3RDPARTY = {}
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -99,6 +95,7 @@ INSTALLED_APPS = [
     'cvat.apps.engine',
     'cvat.apps.git',
     'cvat.apps.restrictions',
+    'cvat.apps.lambda_manager',
     'django_rq',
     'compressor',
     'cacheops',
@@ -148,30 +145,20 @@ REST_FRAMEWORK = {
 
     # Disable default handling of the 'format' query parameter by REST framework
     'URL_FORMAT_OVERRIDE': 'scheme',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/minute',
+    },
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'cvat.apps.restrictions.serializers.RestrictedRegisterSerializer'
 }
 
-if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
-    INSTALLED_APPS += ['cvat.apps.tf_annotation']
-
-if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
-    INSTALLED_APPS += ['cvat.apps.auto_annotation']
-
-if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no') and os.environ.get('REID_MODEL_DIR', ''):
-    INSTALLED_APPS += ['cvat.apps.reid']
-
-if 'yes' == os.environ.get('WITH_DEXTR', 'no'):
-    INSTALLED_APPS += ['cvat.apps.dextr_segmentation']
-
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
-
-# new feature by Mohammad
-if 'yes' == os.environ.get('AUTO_SEGMENTATION', 'no'):
-    INSTALLED_APPS += ['cvat.apps.auto_segmentation']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -218,17 +205,20 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 # Django Auth
 DJANGO_AUTH_TYPE = 'BASIC'
 DJANGO_AUTH_DEFAULT_GROUPS = []
-LOGIN_URL = 'login'
+LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
-AUTH_LOGIN_NOTE = '<p>Have not registered yet? <a href="/auth/register">Register here</a>.</p>'
 
 AUTHENTICATION_BACKENDS = [
     'rules.permissions.ObjectPermissionBackend',
-    'django.contrib.auth.backends.ModelBackend'
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
+# set UI url to redirect after a successful e-mail confirmation
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/login'
+OLD_PASSWORD_FIELD_ENABLED = True
 
 # Django-RQ
 # https://github.com/rq/django-rq
@@ -246,6 +236,13 @@ RQ_QUEUES = {
         'DB': 0,
         'DEFAULT_TIMEOUT': '24h'
     }
+}
+
+NUCLIO = {
+    'SCHEME': 'http',
+    'HOST': 'localhost',
+    'PORT': 8070,
+    'DEFAULT_TIMEOUT': 120
 }
 
 RQ_SHOW_ADMIN_LINK = True

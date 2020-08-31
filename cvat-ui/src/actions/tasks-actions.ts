@@ -102,13 +102,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         const promises = array
             .map((task): string => (task as any).frames.preview());
 
-        dispatch(
-            getInferenceStatusAsync(
-                array.map(
-                    (task: any): number => task.id,
-                ),
-            ),
-        );
+        dispatch(getInferenceStatusAsync());
 
         for (const promise of promises) {
             try {
@@ -350,10 +344,12 @@ function createTask(): AnyAction {
     return action;
 }
 
-function createTaskSuccess(): AnyAction {
+function createTaskSuccess(taskId: number): AnyAction {
     const action = {
         type: TasksActionTypes.CREATE_TASK_SUCCESS,
-        payload: {},
+        payload: {
+            taskId,
+        },
     };
 
     return action;
@@ -439,10 +435,10 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
         dispatch(createTask());
         try {
-            await taskInstance.save((status: string): void => {
+            const savedTask = await taskInstance.save((status: string): void => {
                 dispatch(createTaskUpdateStatus(status));
             });
-            dispatch(createTaskSuccess());
+            dispatch(createTaskSuccess(savedTask.id));
         } catch (error) {
             dispatch(createTaskFailed(error));
         }

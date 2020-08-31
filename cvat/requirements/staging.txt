@@ -1,2 +1,2 @@
 -r production.txt
-django-silk==3.0.1
+django-silk==4.1.0

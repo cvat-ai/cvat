@@ -7,12 +7,12 @@
 /.env
 /keys
 /logs
-/components/openvino/*.tgz
 /profiles
 /ssh/*
 !/ssh/README.md
 node_modules
 /Mask_RCNN/
+/letsencrypt-webroot/
 
 # Ignore temporary files
 docker-compose.override.yml

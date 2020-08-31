@@ -1,23 +1,38 @@
-
 # Copyright (C) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from django.urls import path
-from django.contrib.auth import views as auth_views
+from django.urls import path, re_path
 from django.conf import settings
+from rest_auth.views import (
+    LoginView, LogoutView, PasswordChangeView,
+    PasswordResetView, PasswordResetConfirmView)
+from allauth.account.views import ConfirmEmailView, EmailVerificationSentView
+from allauth.account import app_settings as allauth_settings
 
-from . import forms
-from . import views
+from cvat.apps.authentication.views import SigningView, RegisterView
 
 urlpatterns = [
-    path('login', auth_views.LoginView.as_view(form_class=forms.AuthForm,
-        template_name='login.html', extra_context={'note': settings.AUTH_LOGIN_NOTE}),
-        name='login'),
-    path('logout', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('login', LoginView.as_view(), name='rest_login'),
+    path('logout', LogoutView.as_view(), name='rest_logout'),
+    path('signing', SigningView.as_view(), name='signing')
 ]
 
 if settings.DJANGO_AUTH_TYPE == 'BASIC':
     urlpatterns += [
-        path('register', views.register_user, name='register'),
+        path('register', RegisterView.as_view(), name='rest_register'),
+        path('password/reset', PasswordResetView.as_view(),
+            name='rest_password_reset'),
+        path('password/reset/confirm', PasswordResetConfirmView.as_view(),
+            name='rest_password_reset_confirm'),
+        path('password/change', PasswordChangeView.as_view(),
+            name='rest_password_change'),
     ]
+    if allauth_settings.EMAIL_VERIFICATION != \
+       allauth_settings.EmailVerificationMethod.NONE:
+        urlpatterns += [
+            re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailView.as_view(),
+                name='account_confirm_email'),
+            path('register/account-email-verification-sent', EmailVerificationSentView.as_view(),
+                name='account_email_verification_sent'),
+        ]

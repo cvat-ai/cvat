@@ -14,7 +14,7 @@ Next steps should work on clear Ubuntu 18.04.
 
 -   Install necessary dependencies:
     ```sh
-    $ sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential curl redis-server python3-dev python3-pip python3-venv libldap2-dev libsasl2-dev
+    sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev
     ```
     Also please make sure that you have installed ffmpeg with all necessary libav* libraries and pkg-config package.
     ```sh
@@ -60,6 +60,7 @@ for development
 
 -   Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
     ```sh
+    npm install && \
     cd cvat-core && npm install && \
     cd ../cvat-ui && npm install && npm start
     ```
@@ -69,10 +70,11 @@ for development
     cd .. && source .env/bin/activate && code
     ```
 
--   Install followig vscode extensions:
+-   Install following VS Code extensions:
     - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
     - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
     - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+    - [Stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint)
     - [vscode-remark-lint](https://marketplace.visualstudio.com/items?itemName=drewbourne.vscode-remark-lint)
     - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
     - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
@@ -83,87 +85,177 @@ for development
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 
-## How to setup additional components in development environment
+### Note for Windows users
 
-### Automatic annotation
-- Install OpenVINO on your host machine according to instructions from
-[OpenVINO website](https://docs.openvinotoolkit.org/latest/index.html)
-- Add some environment variables (copy code below to the end of ``.env/bin/activate`` file):
-```sh
-    source /opt/intel/openvino/bin/setupvars.sh
+You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 
-    export OPENVINO_TOOLKIT="yes"
-    export IE_PLUGINS_PATH="/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64"
-    export OpenCV_DIR="/usr/local/lib/cmake/opencv4"
-    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/intel/openvino/inference_engine/lib/intel64"
-```
+-   Install WSL using [this guide](https://docs.microsoft.com/ru-ru/windows/wsl/install-win10).
 
-Notice 1: be sure that these paths actually exist. Some of them can differ in different OpenVINO versions.
+-   Following this guide install Ubuntu 18.04 Linux distribution for WSL.
 
-Notice 2: you need to deactivate, activate again and restart vs code
-to changes in ``.env/bin/activate`` file are active.
+-   Run Ubuntu using start menu link or execute next command
+    ```powershell
+    wsl -d Ubuntu-18.04
+    ```
 
-### ReID algorithm
-- Perform all steps in the automatic annotation section
-- Download ReID model and save it somewhere:
-```sh
-    curl https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -o reid.xml
-    curl https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -o reid.bin
-```
-- Add next line to ``.env/bin/activate``:
-```sh
-    export REID_MODEL_DIR="/path/to/dir" # dir must contain .xml and .bin files
-```
+-   Run all commands from this isntallation guide in WSL Ubuntu shell.
+## Setup additional components in development environment
 
-### Deep Extreme Cut
-- Perform all steps in the automatic annotation section
-- Download Deep Extreme Cut model, unpack it, and save somewhere:
-```sh
-curl https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip -o dextr.zip
-unzip dextr.zip
-```
-- Add next lines to ``.env/bin/activate``:
-```sh
-    export WITH_DEXTR="yes"
-    export DEXTR_MODEL_DIR="/path/to/dir" # dir must contain .xml and .bin files
+### DL models as serverless functions
+
+Install [nuclio platform](https://github.com/nuclio/nuclio):
+- You have to install `nuctl` command line tool to build and deploy serverless
+functions. Download [the latest release](
+https://github.com/nuclio/nuclio/blob/development/docs/reference/nuctl/nuctl.md#download).
+- The simplest way to explore Nuclio is to run its graphical user interface (GUI)
+of the Nuclio dashboard. All you need in order to run the dashboard is Docker. See
+[nuclio documentation](https://github.com/nuclio/nuclio#quick-start-steps)
+for more details.
+- Create `cvat` project inside nuclio dashboard where you will deploy new
+serverless functions and deploy a couple of DL models.
+
+```bash
+nuctl create project cvat
 ```
 
-### Tensorflow RCNN
-- Download RCNN model, unpack it, and save it somewhere:
-```sh
-curl http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_resnet_v2_atrous_coco_2018_01_28.tar.gz -o model.tar.gz && \
-tar -xzf model.tar.gz
-```
-- Add next lines to ``.env/bin/activate``:
-```sh
-    export TF_ANNOTATION="yes"
-    export TF_ANNOTATION_MODEL_PATH="/path/to/the/model/graph" # truncate .pb extension
+```bash
+nuctl deploy --project-name cvat \
+    --path serverless/openvino/dextr/nuclio \
+    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
+    --platform local
 ```
 
-### Tensorflow Mask RCNN
-- Download Mask RCNN model, and save it somewhere:
-```sh
-curl https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o mask_rcnn_coco.h5
+<details>
+
+```bash
+20.07.17 12:02:23.247                     nuctl (I) Deploying function {"name": ""}
+20.07.17 12:02:23.248                     nuctl (I) Building {"versionInfo": "Label: 1.4.8, Git commit: 238d4539ac7783896d6c414535d0462b5f4cbcf1, OS: darwin, Arch: amd64, Go version: go1.14.3", "name": ""}
+20.07.17 12:02:23.447                     nuctl (I) Cleaning up before deployment
+20.07.17 12:02:23.535                     nuctl (I) Function already exists, deleting
+20.07.17 12:02:25.877                     nuctl (I) Staging files and preparing base images
+20.07.17 12:02:25.891                     nuctl (I) Building processor image {"imageName": "cvat/openvino.dextr:latest"}
+20.07.17 12:02:25.891     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.4.8-amd64"}
+20.07.17 12:02:29.270     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
+20.07.17 12:02:33.208            nuctl.platform (I) Building docker image {"image": "cvat/openvino.dextr:latest"}
+20.07.17 12:02:34.464            nuctl.platform (I) Pushing docker image into registry {"image": "cvat/openvino.dextr:latest", "registry": ""}
+20.07.17 12:02:34.464            nuctl.platform (I) Docker image was successfully built and pushed into docker registry {"image": "cvat/openvino.dextr:latest"}
+20.07.17 12:02:34.464                     nuctl (I) Build complete {"result": {"Image":"cvat/openvino.dextr:latest","UpdatedFunctionConfig":{"metadata":{"name":"openvino.dextr","namespace":"nuclio","labels":{"nuclio.io/project-name":"cvat"},"annotations":{"framework":"openvino","spec":"","type":"interactor"}},"spec":{"description":"Deep Extreme Cut","handler":"main:handler","runtime":"python:3.6","env":[{"name":"NUCLIO_PYTHON_EXE_PATH","value":"/opt/nuclio/python3"}],"resources":{},"image":"cvat/openvino.dextr:latest","targetCPU":75,"triggers":{"myHttpTrigger":{"class":"","kind":"http","name":"","maxWorkers":2,"workerAvailabilityTimeoutMilliseconds":10000,"attributes":{"maxRequestBodySize":33554432}}},"volumes":[{"volume":{"name":"volume-1","hostPath":{"path":"/Users/nmanovic/Workspace/cvat/serverless/openvino/common"}},"volumeMount":{"name":"volume-1","mountPath":"/opt/nuclio/common"}}],"build":{"image":"cvat/openvino.dextr","baseImage":"openvino/ubuntu18_runtime:2020.2","directives":{"postCopy":[{"kind":"RUN","value":"curl -O https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip"},{"kind":"RUN","value":"unzip dextr_model_v1.zip"},{"kind":"RUN","value":"pip3 install Pillow"},{"kind":"USER","value":"openvino"}],"preCopy":[{"kind":"USER","value":"root"},{"kind":"WORKDIR","value":"/opt/nuclio"},{"kind":"RUN","value":"ln -s /usr/bin/pip3 /usr/bin/pip"}]},"codeEntryType":"image"},"platform":{},"readinessTimeoutSeconds":60,"eventTimeout":"30s"}}}}
+20.07.17 12:02:35.012            nuctl.platform (I) Waiting for function to be ready {"timeout": 60}
+20.07.17 12:02:37.448                     nuctl (I) Function deploy complete {"httpPort": 55274}
 ```
-- Add next lines to ``.env/bin/activate``:
-```sh
-    export AUTO_SEGMENTATION="yes"
-    export AUTO_SEGMENTATION_PATH="/path/to/dir" # dir must contain mask_rcnn_coco.h5 file
+
+</details>
+
+```bash
+nuctl deploy --project-name cvat \
+    --path serverless/openvino/omz/public/yolo-v3-tf/nuclio \
+    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
+    --platform local
 ```
+
+<details>
+
+```bash
+20.07.17 12:05:23.377                     nuctl (I) Deploying function {"name": ""}
+20.07.17 12:05:23.378                     nuctl (I) Building {"versionInfo": "Label: 1.4.8, Git commit: 238d4539ac7783896d6c414535d0462b5f4cbcf1, OS: darwin, Arch: amd64, Go version: go1.14.3", "name": ""}
+20.07.17 12:05:23.590                     nuctl (I) Cleaning up before deployment
+20.07.17 12:05:23.694                     nuctl (I) Function already exists, deleting
+20.07.17 12:05:24.271                     nuctl (I) Staging files and preparing base images
+20.07.17 12:05:24.274                     nuctl (I) Building processor image {"imageName": "cvat/openvino.omz.public.yolo-v3-tf:latest"}
+20.07.17 12:05:24.274     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.4.8-amd64"}
+20.07.17 12:05:27.432     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
+20.07.17 12:05:31.462            nuctl.platform (I) Building docker image {"image": "cvat/openvino.omz.public.yolo-v3-tf:latest"}
+20.07.17 12:05:32.798            nuctl.platform (I) Pushing docker image into registry {"image": "cvat/openvino.omz.public.yolo-v3-tf:latest", "registry": ""}
+20.07.17 12:05:32.798            nuctl.platform (I) Docker image was successfully built and pushed into docker registry {"image": "cvat/openvino.omz.public.yolo-v3-tf:latest"}
+20.07.17 12:05:32.798                     nuctl (I) Build complete {"result": {"Image":"cvat/openvino.omz.public.yolo-v3-tf:latest","UpdatedFunctionConfig":{"metadata":{"name":"openvino.omz.public.yolo-v3-tf","namespace":"nuclio","labels":{"nuclio.io/project-name":"cvat"},"annotations":{"framework":"openvino","name":"YOLO v3","spec":"[\n  { \"id\": 0, \"name\": \"person\" },\n  { \"id\": 1, \"name\": \"bicycle\" },\n  { \"id\": 2, \"name\": \"car\" },\n  { \"id\": 3, \"name\": \"motorbike\" },\n  { \"id\": 4, \"name\": \"aeroplane\" },\n  { \"id\": 5, \"name\": \"bus\" },\n  { \"id\": 6, \"name\": \"train\" },\n  { \"id\": 7, \"name\": \"truck\" },\n  { \"id\": 8, \"name\": \"boat\" },\n  { \"id\": 9, \"name\": \"traffic light\" },\n  { \"id\": 10, \"name\": \"fire hydrant\" },\n  { \"id\": 11, \"name\": \"stop sign\" },\n  { \"id\": 12, \"name\": \"parking meter\" },\n  { \"id\": 13, \"name\": \"bench\" },\n  { \"id\": 14, \"name\": \"bird\" },\n  { \"id\": 15, \"name\": \"cat\" },\n  { \"id\": 16, \"name\": \"dog\" },\n  { \"id\": 17, \"name\": \"horse\" },\n  { \"id\": 18, \"name\": \"sheep\" },\n  { \"id\": 19, \"name\": \"cow\" },\n  { \"id\": 20, \"name\": \"elephant\" },\n  { \"id\": 21, \"name\": \"bear\" },\n  { \"id\": 22, \"name\": \"zebra\" },\n  { \"id\": 23, \"name\": \"giraffe\" },\n  { \"id\": 24, \"name\": \"backpack\" },\n  { \"id\": 25, \"name\": \"umbrella\" },\n  { \"id\": 26, \"name\": \"handbag\" },\n  { \"id\": 27, \"name\": \"tie\" },\n  { \"id\": 28, \"name\": \"suitcase\" },\n  { \"id\": 29, \"name\": \"frisbee\" },\n  { \"id\": 30, \"name\": \"skis\" },\n  { \"id\": 31, \"name\": \"snowboard\" },\n  { \"id\": 32, \"name\": \"sports ball\" },\n  { \"id\": 33, \"name\": \"kite\" },\n  { \"id\": 34, \"name\": \"baseball bat\" },\n  { \"id\": 35, \"name\": \"baseball glove\" },\n  { \"id\": 36, \"name\": \"skateboard\" },\n  { \"id\": 37, \"name\": \"surfboard\" },\n  { \"id\": 38, \"name\": \"tennis racket\" },\n  { \"id\": 39, \"name\": \"bottle\" },\n  { \"id\": 40, \"name\": \"wine glass\" },\n  { \"id\": 41, \"name\": \"cup\" },\n  { \"id\": 42, \"name\": \"fork\" },\n  { \"id\": 43, \"name\": \"knife\" },\n  { \"id\": 44, \"name\": \"spoon\" },\n  { \"id\": 45, \"name\": \"bowl\" },\n  { \"id\": 46, \"name\": \"banana\" },\n  { \"id\": 47, \"name\": \"apple\" },\n  { \"id\": 48, \"name\": \"sandwich\" },\n  { \"id\": 49, \"name\": \"orange\" },\n  { \"id\": 50, \"name\": \"broccoli\" },\n  { \"id\": 51, \"name\": \"carrot\" },\n  { \"id\": 52, \"name\": \"hot dog\" },\n  { \"id\": 53, \"name\": \"pizza\" },\n  { \"id\": 54, \"name\": \"donut\" },\n  { \"id\": 55, \"name\": \"cake\" },\n  { \"id\": 56, \"name\": \"chair\" },\n  { \"id\": 57, \"name\": \"sofa\" },\n  { \"id\": 58, \"name\": \"pottedplant\" },\n  { \"id\": 59, \"name\": \"bed\" },\n  { \"id\": 60, \"name\": \"diningtable\" },\n  { \"id\": 61, \"name\": \"toilet\" },\n  { \"id\": 62, \"name\": \"tvmonitor\" },\n  { \"id\": 63, \"name\": \"laptop\" },\n  { \"id\": 64, \"name\": \"mouse\" },\n  { \"id\": 65, \"name\": \"remote\" },\n  { \"id\": 66, \"name\": \"keyboard\" },\n  { \"id\": 67, \"name\": \"cell phone\" },\n  { \"id\": 68, \"name\": \"microwave\" },\n  { \"id\": 69, \"name\": \"oven\" },\n  { \"id\": 70, \"name\": \"toaster\" },\n  { \"id\": 71, \"name\": \"sink\" },\n  { \"id\": 72, \"name\": \"refrigerator\" },\n  { \"id\": 73, \"name\": \"book\" },\n  { \"id\": 74, \"name\": \"clock\" },\n  { \"id\": 75, \"name\": \"vase\" },\n  { \"id\": 76, \"name\": \"scissors\" },\n  { \"id\": 77, \"name\": \"teddy bear\" },\n  { \"id\": 78, \"name\": \"hair drier\" },\n  { \"id\": 79, \"name\": \"toothbrush\" }\n]\n","type":"detector"}},"spec":{"description":"YOLO v3 via Intel OpenVINO","handler":"main:handler","runtime":"python:3.6","env":[{"name":"NUCLIO_PYTHON_EXE_PATH","value":"/opt/nuclio/common/python3"}],"resources":{},"image":"cvat/openvino.omz.public.yolo-v3-tf:latest","targetCPU":75,"triggers":{"myHttpTrigger":{"class":"","kind":"http","name":"","maxWorkers":2,"workerAvailabilityTimeoutMilliseconds":10000,"attributes":{"maxRequestBodySize":33554432}}},"volumes":[{"volume":{"name":"volume-1","hostPath":{"path":"/Users/nmanovic/Workspace/cvat/serverless/openvino/common"}},"volumeMount":{"name":"volume-1","mountPath":"/opt/nuclio/common"}}],"build":{"image":"cvat/openvino.omz.public.yolo-v3-tf","baseImage":"openvino/ubuntu18_dev:2020.2","directives":{"postCopy":[{"kind":"USER","value":"openvino"}],"preCopy":[{"kind":"USER","value":"root"},{"kind":"WORKDIR","value":"/opt/nuclio"},{"kind":"RUN","value":"ln -s /usr/bin/pip3 /usr/bin/pip"},{"kind":"RUN","value":"/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name yolo-v3-tf -o /opt/nuclio/open_model_zoo"},{"kind":"RUN","value":"/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/converter.py --name yolo-v3-tf --precisions FP32 -d /opt/nuclio/open_model_zoo -o /opt/nuclio/open_model_zoo"}]},"codeEntryType":"image"},"platform":{},"readinessTimeoutSeconds":60,"eventTimeout":"30s"}}}}
+20.07.17 12:05:33.285            nuctl.platform (I) Waiting for function to be ready {"timeout": 60}
+20.07.17 12:05:35.452                     nuctl (I) Function deploy complete {"httpPort": 57308}
+```
+
+</details>
+
+- Display a list of running serverless functions using `nuctl` command or see them
+in nuclio dashboard:
+
+```bash
+nuctl get function
+```
+
+<details>
+
+```bash
+  NAMESPACE |                             NAME                              | PROJECT | STATE | NODE PORT | REPLICAS
+  nuclio    | openvino.dextr                                                | cvat    | ready |     55274 | 1/1
+  nuclio    | openvino.omz.public.yolo-v3-tf                                | cvat    | ready |     57308 | 1/1
+```
+
+</details>
+
+- Test your deployed DL model as a serverless function. The command below
+should work on Linux and Mac OS.
+
+```bash
+image=$(curl https://upload.wikimedia.org/wikipedia/en/7/7d/Lenna_%28test_image%29.png --output - | base64 | tr -d '\n')
+cat << EOF > /tmp/input.json
+{"image": "$image"}
+EOF
+cat /tmp/input.json | nuctl invoke openvino.omz.public.yolo-v3-tf -c 'application/json'
+```
+
+<details>
+
+```bash
+20.07.17 12:07:44.519    nuctl.platform.invoker (I) Executing function {"method": "POST", "url": "http://:57308", "headers": {"Content-Type":["application/json"],"X-Nuclio-Log-Level":["info"],"X-Nuclio-Target":["openvino.omz.public.yolo-v3-tf"]}}
+20.07.17 12:07:45.275    nuctl.platform.invoker (I) Got response {"status": "200 OK"}
+20.07.17 12:07:45.275                     nuctl (I) >>> Start of function logs
+20.07.17 12:07:45.275 ino.omz.public.yolo-v3-tf (I) Run yolo-v3-tf model {"worker_id": "0", "time": 1594976864570.9353}
+20.07.17 12:07:45.275                     nuctl (I) <<< End of function logs
+
+> Response headers:
+Date = Fri, 17 Jul 2020 09:07:45 GMT
+Content-Type = application/json
+Content-Length = 100
+Server = nuclio
+
+> Response body:
+[
+    {
+        "confidence": "0.9992254",
+        "label": "person",
+        "points": [
+            39,
+            124,
+            408,
+            512
+        ],
+        "type": "rectangle"
+    }
+]
+```
+
+### Run Cypress tests
+- Install Сypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
+- Run cypress tests:
+```sh
+    cd <cvat_local_repository>/tests
+    <cypress_installation_directory>/node_modules/.bin/cypress run --headless --browser chrome
+```
+For more information, see the [documentation](https://docs.cypress.io/).
 
 ## JavaScript/Typescript coding style
 
 We use the [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript) for JavaScript code with a
-litle exception - we prefere 4 spaces for indentation of nested blocks and statements.
+little exception - we prefer 4 spaces for indentation of nested blocks and statements.
 
 ## Branching model
 
 The project uses [a successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model).
 Thus it has a couple of branches. Some of them are described below:
 
-- `origin/master` to be the main branch where the source code of
-HEAD always reflects a production-ready state.
-- `origin/develop` to be the main branch where the source code of
+-   `origin/master` to be the main branch where the source code of
+HEAD always reflects a production-ready state
+
+-   `origin/develop` to be the main branch where the source code of
 HEAD always reflects a state with the latest delivered development
 changes for the next release. Some would call this the “integration branch”.
 
@@ -173,13 +265,13 @@ The issue tracker is the preferred channel for [bug reports](#bugs),
 [features requests](#features) and [submitting pull
 requests](#pull-requests), but please respect the following restrictions:
 
-* Please **do not** use the issue tracker for personal support requests (use
+-   Please **do not** use the issue tracker for personal support requests (use
   [Stack Overflow](http://stackoverflow.com)).
 
-* Please **do not** derail or troll issues. Keep the discussion on topic and
+-   Please **do not** derail or troll issues. Keep the discussion on topic and
   respect the opinions of others.
 
-  <a name="bugs"></a>
+<a name="bugs"></a>
 ## Bug reports
 
 A bug is a _demonstrable problem_ that is caused by the code in the repository.
@@ -187,13 +279,13 @@ Good bug reports are extremely helpful - thank you!
 
 Guidelines for bug reports:
 
-1. **Use the GitHub issue search** &mdash; check if the issue has already been
+1.  **Use the GitHub issue search** &mdash; check if the issue has already been
    reported.
 
-2. **Check if the issue has been fixed** &mdash; try to reproduce it using the
+1.  **Check if the issue has been fixed** &mdash; try to reproduce it using the
    latest `develop` branch in the repository.
 
-3. **Isolate the problem** &mdash; ideally create a reduced test case.
+1.  **Isolate the problem** &mdash; ideally create a reduced test case.
 
 A good bug report shouldn't leave others needing to chase you up for more
 information. Please try to be as detailed as possible in your report. What is
@@ -209,9 +301,8 @@ Example:
 > suitable, include the steps required to reproduce the bug.
 >
 > 1. This is the first step
-> 2. This is the second step
-> 3. Further steps, etc.
->
+> 1. This is the second step
+> 1. Further steps, etc.
 >
 > Any other information you want to share that is relevant to the issue being
 > reported. This might include the lines of code that you have identified as
@@ -222,7 +313,7 @@ Example:
 ## Feature requests
 
 Feature requests are welcome. But take a moment to find out whether your idea
-fits with the scope and aims of the project. It's up to *you* to make a strong
+fits with the scope and aims of the project. It's up to _you_ to make a strong
 case to convince the project's developers of the merits of this feature. Please
 provide as much detail and context as possible.
 
@@ -244,51 +335,51 @@ accurate comments, etc.) and any other requirements (such as test coverage).
 Follow this process if you'd like your work considered for inclusion in the
 project:
 
-1. [Fork](http://help.github.com/fork-a-repo/) the project, clone your fork,
-   and configure the remotes:
+1.  [Fork](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) the project, clone your fork,
+    and configure the remotes:
 
-   ```bash
-   # Clone your fork of the repo into the current directory
-   git clone https://github.com/<your-username>/<repo-name>
-   # Navigate to the newly cloned directory
-   cd <repo-name>
-   # Assign the original repo to a remote called "upstream"
-   git remote add upstream https://github.com/<upstream-owner>/<repo-name>
-   ```
+    ```bash
+    # Clone your fork of the repo into the current directory
+    git clone https://github.com/<your-username>/<repo-name>
+    # Navigate to the newly cloned directory
+    cd <repo-name>
+    # Assign the original repo to a remote called "upstream"
+    git remote add upstream https://github.com/<upstream-owner>/<repo-name>
+    ```
 
-2. If you cloned a while ago, get the latest changes from upstream:
+1.  If you cloned a while ago, get the latest changes from upstream:
 
-   ```bash
-   git checkout <dev-branch>
-   git pull upstream <dev-branch>
-   ```
+    ```bash
+    git checkout <dev-branch>
+    git pull upstream <dev-branch>
+    ```
 
-3. Create a new topic branch (off the main project development branch) to
-   contain your feature, change, or fix:
+1.  Create a new topic branch (off the main project development branch) to
+    contain your feature, change, or fix:
 
-   ```bash
-   git checkout -b <topic-branch-name>
-   ```
+    ```bash
+    git checkout -b <topic-branch-name>
+    ```
 
-4. Commit your changes in logical chunks. Please adhere to these [git commit
+1.  Commit your changes in logical chunks. Please adhere to these [git commit
    message guidelines](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)
    or your code is unlikely be merged into the main project. Use Git's
-   [interactive rebase](https://help.github.com/articles/interactive-rebase)
+   [interactive rebase](https://docs.github.com/en/github/using-git/about-git-rebase)
    feature to tidy up your commits before making them public.
 
-5. Locally merge (or rebase) the upstream development branch into your topic branch:
+1.  Locally merge (or rebase) the upstream development branch into your topic branch:
 
-   ```bash
-   git pull [--rebase] upstream <dev-branch>
-   ```
+    ```bash
+    git pull [--rebase] upstream <dev-branch>
+    ```
 
-6. Push your topic branch up to your fork:
+1.  Push your topic branch up to your fork:
 
-   ```bash
-   git push origin <topic-branch-name>
-   ```
+    ```bash
+    git push origin <topic-branch-name>
+    ```
 
-7. [Open a Pull Request](https://help.github.com/articles/using-pull-requests/)
+1.  [Open a Pull Request](hhttps://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests)
     with a clear title and description.
 
 **IMPORTANT**: By submitting a patch, you agree to allow the project owner to

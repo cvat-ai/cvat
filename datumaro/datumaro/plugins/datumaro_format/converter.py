@@ -17,9 +17,7 @@ from datumaro.components.extractor import (
     LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.util import cast
-from datumaro.util.image import save_image
 import pycocotools.mask as mask_utils
-from datumaro.components.cli_plugin import CliPlugin
 
 from .format import DatumaroPath
 
@@ -49,12 +47,15 @@ class _SubsetWriter:
             'id': item.id,
             'annotations': annotations,
         }
+        if item.attributes:
+            item_desc['attr'] = item.attributes
         if item.path:
             item_desc['path'] = item.path
         if item.has_image:
             path = item.image.path
             if self._context._save_images:
-                path = self._context._save_image(item)
+                path = self._context._make_image_filename(item)
+                self._context._save_image(item, path)
 
             item_desc['image'] = {
                 'size': item.image.size,
@@ -211,13 +212,10 @@ class _SubsetWriter:
             })
         return converted
 
-class _Converter:
-    def __init__(self, extractor, save_dir, save_images=False):
-        self._extractor = extractor
-        self._save_dir = save_dir
-        self._save_images = save_images
+class DatumaroConverter(Converter):
+    DEFAULT_IMAGE_EXT = DatumaroPath.IMAGE_EXT
 
-    def convert(self):
+    def apply(self):
         os.makedirs(self._save_dir, exist_ok=True)
 
         images_dir = osp.join(self._save_dir, DatumaroPath.IMAGES_DIR)
@@ -228,19 +226,15 @@ class _Converter:
         os.makedirs(annotations_dir, exist_ok=True)
         self._annotations_dir = annotations_dir
 
-        subsets = self._extractor.subsets()
-        if len(subsets) == 0:
-            subsets = [ None ]
-        subsets = [n if n else DEFAULT_SUBSET_NAME for n in subsets]
+        subsets = self._extractor.subsets() or [None]
+        subsets = [n or DEFAULT_SUBSET_NAME for n in subsets]
         subsets = { name: _SubsetWriter(name, self) for name in subsets }
 
         for subset, writer in subsets.items():
             writer.write_categories(self._extractor.categories())
 
         for item in self._extractor:
-            subset = item.subset
-            if not subset:
-                subset = DEFAULT_SUBSET_NAME
+            subset = item.subset or DEFAULT_SUBSET_NAME
             writer = subsets[subset]
 
             writer.write_item(item)
@@ -248,60 +242,20 @@ class _Converter:
         for subset, writer in subsets.items():
             writer.write(annotations_dir)
 
-    def _save_image(self, item):
-        image = item.image.data
-        if image is None:
-            return ''
-
-        filename = item.image.filename
-        if filename:
-            filename = osp.splitext(filename)[0]
-        else:
-            filename = item.id
-        filename += DatumaroPath.IMAGE_EXT
-        image_path = osp.join(self._images_dir, filename)
-        save_image(image_path, image)
-        return filename
-
-class DatumaroConverter(Converter, CliPlugin):
-    @classmethod
-    def build_cmdline_parser(cls, **kwargs):
-        parser = super().build_cmdline_parser(**kwargs)
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-        return parser
-
-    def __init__(self, save_images=False):
-        super().__init__()
-
-        self._options = {
-            'save_images': save_images,
-        }
-
-    def __call__(self, extractor, save_dir):
-        converter = _Converter(extractor, save_dir, **self._options)
-        converter.convert()
-
+    def _save_image(self, item, path=None):
+        super()._save_image(item,
+            osp.join(self._images_dir, self._make_image_filename(item)))
 
 class DatumaroProjectConverter(Converter):
     @classmethod
-    def build_cmdline_parser(cls, **kwargs):
-        parser = super().build_cmdline_parser(**kwargs)
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-        return parser
-
-    def __init__(self, config=None, save_images=False):
-        self._config = config
-        self._save_images = save_images
-
-    def __call__(self, extractor, save_dir):
+    def convert(cls, extractor, save_dir, **kwargs):
         os.makedirs(save_dir, exist_ok=True)
 
         from datumaro.components.project import Project
-        project = Project.generate(save_dir, config=self._config)
+        project = Project.generate(save_dir,
+            config=kwargs.pop('project_config', None))
 
-        converter = project.env.make_converter('datumaro',
-            save_images=self._save_images)
-        converter(extractor, save_dir=osp.join(
-            project.config.project_dir, project.config.dataset_dir))
+        DatumaroConverter.convert(extractor,
+            save_dir=osp.join(
+                project.config.project_dir, project.config.dataset_dir),
+            **kwargs)

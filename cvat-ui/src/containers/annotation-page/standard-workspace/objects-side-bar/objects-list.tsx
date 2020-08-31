@@ -14,9 +14,15 @@ import {
     collapseObjectItems,
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
+    changeGroupColorAsync,
 } from 'actions/annotation-actions';
-import { Canvas, isAbleToChangeFrame } from 'cvat-canvas-wrapper';
-import { CombinedState, StatesOrdering, ObjectType } from 'reducers/interfaces';
+import { Canvas } from 'cvat-canvas-wrapper';
+import {
+    CombinedState,
+    StatesOrdering,
+    ObjectType,
+    ColorBy,
+} from 'reducers/interfaces';
 
 interface StateToProps {
     jobInstance: any;
@@ -27,6 +33,8 @@ interface StateToProps {
     statesCollapsed: boolean;
     objectStates: any[];
     annotationsFilters: string[];
+    colors: string[];
+    colorBy: ColorBy;
     activatedStateID: number | null;
     minZLayer: number;
     maxZLayer: number;
@@ -43,6 +51,7 @@ interface DispatchToProps {
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeFrame(frame: number): void;
+    changeGroupColor(group: number, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -71,6 +80,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 instance: canvasInstance,
             },
             tabContentHeight: listHeight,
+            colors,
+        },
+        settings: {
+            shapes: {
+                colorBy,
+            },
         },
         shortcuts: {
             keyMap,
@@ -103,6 +118,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameNumber,
         jobInstance,
         annotationsFilters,
+        colors,
+        colorBy,
         activatedStateID,
         minZLayer,
         maxZLayer,
@@ -132,6 +149,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         changeFrame(frame: number): void {
             dispatch(changeFrameAsync(frame));
+        },
+        changeGroupColor(group: number, color: string): void {
+            dispatch(changeGroupColorAsync(group, color));
         },
     };
 }
@@ -252,6 +272,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             objectStates,
             jobInstance,
             updateAnnotations,
+            changeGroupColor,
             removeObject,
             copyShape,
             propagateObject,
@@ -261,6 +282,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             keyMap,
             normalizedKeyMap,
             canvasInstance,
+            colors,
+            colorBy,
         } = this.props;
         const {
             sortedStatesID,
@@ -282,6 +305,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             PROPAGATE_OBJECT: keyMap.PROPAGATE_OBJECT,
             NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
             PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
+            CHANGE_OBJECT_COLOR: keyMap.CHANGE_OBJECT_COLOR,
         };
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -359,6 +383,23 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     removeObject(jobInstance, state, event ? event.shiftKey : false);
                 }
             },
+            CHANGE_OBJECT_COLOR: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedStated();
+                if (state) {
+                    if (colorBy === ColorBy.GROUP) {
+                        const colorID = (colors.indexOf(state.group.color) + 1) % colors.length;
+                        changeGroupColor(state.group.id, colors[colorID]);
+                        return;
+                    }
+
+                    if (colorBy === ColorBy.INSTANCE) {
+                        const colorID = (colors.indexOf(state.color) + 1) % colors.length;
+                        state.color = colors[colorID];
+                        updateAnnotations([state]);
+                    }
+                }
+            },
             TO_BACKGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedStated();
@@ -395,7 +436,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 if (state && state.objectType === ObjectType.TRACK) {
                     const frame = typeof (state.keyframes.next) === 'number'
                         ? state.keyframes.next : null;
-                    if (frame !== null && isAbleToChangeFrame(canvasInstance)) {
+                    if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
                         changeFrame(frame);
                     }
                 }
@@ -406,7 +447,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 if (state && state.objectType === ObjectType.TRACK) {
                     const frame = typeof (state.keyframes.prev) === 'number'
                         ? state.keyframes.prev : null;
-                    if (frame !== null && isAbleToChangeFrame(canvasInstance)) {
+                    if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
                         changeFrame(frame);
                     }
                 }

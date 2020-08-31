@@ -1,0 +1,45 @@
+<annotations>
+  <version>1.1</version>
+  <meta>
+    <task>
+      <z_order>True</z_order>
+      <mode>annotation</mode>
+      <labels>
+        <label>
+          <name>label1</name>
+          <attributes>
+            <attribute>
+              <name>a1</name>
+              <input_type>checkbox</input_type>
+              <default_value>false</default_value>
+              <values>false
+true</values>
+            </attribute>
+            <attribute>
+              <name>a2</name>
+              <input_type>radio</input_type>
+              <default_value>v1</default_value>
+              <values>v1
+v2
+v3</values>
+            </attribute>
+          </attributes>
+        </label>
+        <label>
+          <name>label2</name>
+        </label>
+      </labels>
+    </task>
+  </meta>
+  <image height="8" id="0" name="img0.jpg" width="8">
+    <box label="label1" occluded="1" xbr="4" xtl="0" ybr="4" ytl="2" z_order="1">
+      <attribute name="a1">true</attribute>
+      <attribute name="a2">v3</attribute>
+    </box>
+    <polyline label="" points="1.0,2;3,4;5,6;7,8"/>
+  </image>
+  <image height="10" id="1" name="img1.jpg" width="10">
+    <polygon label="" points="1,2;3,4;6,5" z_order="1"/>
+    <points label="label2" points="1,2;3,4;5,6" z_order="2"/>
+  </image>
+</annotations>

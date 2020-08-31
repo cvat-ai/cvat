@@ -1,8 +1,16 @@
+# Copyright (C) 2020 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import ast
 from collections import namedtuple
 import importlib
 import sys
 import traceback
+import subprocess
+import os
+
+from django.core.exceptions import ValidationError
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
@@ -58,3 +66,11 @@ def execute_python_code(source_code, global_vars=None, local_vars=None):
         _, _, tb = sys.exc_info()
         line_number = traceback.extract_tb(tb)[-1][1]
         raise InterpreterError("{} at line {}: {}".format(error_class, line_number, details))
+
+def av_scan_paths(*paths):
+    if 'yes' == os.environ.get('CLAM_AV'):
+        command = ['clamscan', '--no-summary', '-i', '-o']
+        command.extend(paths)
+        res = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if res.returncode:
+            raise ValidationError(res.stdout)

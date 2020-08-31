@@ -18,8 +18,9 @@ import sys
 from datumaro.components.config import Config, DEFAULT_FORMAT
 from datumaro.components.config_model import (Model, Source,
     PROJECT_DEFAULT_CONFIG, PROJECT_SCHEMA)
-from datumaro.components.extractor import Extractor
-from datumaro.components.launcher import InferenceWrapper
+from datumaro.components.extractor import Extractor, LabelCategories,\
+    AnnotationType
+from datumaro.components.launcher import ModelTransform
 from datumaro.components.dataset_filter import \
     XPathDatasetFilter, XPathAnnotationsFilter
 
@@ -104,7 +105,7 @@ class GitWrapper:
     def __init__(self, config=None):
         self.repo = None
 
-        if config is not None and osp.isdir(config.project_dir):
+        if config is not None and config.project_dir:
             self.init(config.project_dir)
 
     @staticmethod
@@ -116,8 +117,12 @@ class GitWrapper:
         spawn = not osp.isdir(cls._git_dir(path))
         repo = git.Repo.init(path=path)
         if spawn:
-            author = git.Actor("Nobody", "nobody@example.com")
-            repo.index.commit('Initial commit', author=author)
+            repo.config_writer().set_value("user", "name", "User") \
+                .set_value("user", "email", "user@nowhere.com") \
+                .release()
+            # gitpython does not support init, use git directly
+            repo.git.init()
+            repo.git.commit('-m', 'Initial commit', '--allow-empty')
         return repo
 
     def init(self, path):
@@ -235,7 +240,17 @@ class Environment:
                 exports = cls._import_module(module_dir, module_name, types,
                     package)
             except Exception as e:
-                log.debug("Failed to import module '%s': %s" % (module_name, e))
+                module_search_error = ImportError
+                try:
+                    module_search_error = ModuleNotFoundError # python 3.6+
+                except NameError:
+                    pass
+
+                message = ["Failed to import module '%s': %s", module_name, e]
+                if isinstance(e, module_search_error):
+                    log.debug(*message)
+                else:
+                    log.warning(*message)
                 continue
 
             log.debug("Imported the following symbols from %s: %s" % \
@@ -306,17 +321,37 @@ class Subset(Extractor):
 
 class Dataset(Extractor):
     @classmethod
+    def from_iterable(cls, iterable, categories=None):
+        """Generation of Dataset from iterable object
+
+        Args:
+            iterable: Iterable object contains DatasetItems
+            categories (dict, optional): You can pass dict of categories or
+            you can pass list of names. It'll interpreted as list of names of
+            LabelCategories. Defaults to {}.
+
+        Returns:
+            Dataset: Dataset object
+        """
+
+        if isinstance(categories, list):
+            categories = {AnnotationType.label : LabelCategories.from_iterable(categories)}
+
+        if not categories:
+            categories = {}
+
+        class tmpExtractor(Extractor):
+            def __iter__(self):
+                return iter(iterable)
+
+            def categories(self):
+                return categories
+
+        return cls.from_extractors(tmpExtractor())
+
+    @classmethod
     def from_extractors(cls, *sources):
-        # merge categories
-        # TODO: implement properly with merging and annotations remapping
-        categories = {}
-        for source in sources:
-            categories.update(source.categories())
-        for source in sources:
-            for cat_type, source_cat in source.categories().items():
-                if not categories[cat_type] == source_cat:
-                    raise NotImplementedError(
-                        "Merging different categories is not implemented yet")
+        categories = cls._merge_categories(s.categories() for s in sources)
         dataset = Dataset(categories=categories)
 
         # merge items
@@ -367,9 +402,10 @@ class Dataset(Extractor):
     def get(self, item_id, subset=None, path=None):
         if path:
             raise KeyError("Requested dataset item path is not found")
-        if subset is None:
-            subset = ''
-        return self._subsets[subset].items[item_id]
+        item_id = str(item_id)
+        subset = subset or ''
+        subset = self._subsets[subset]
+        return subset.items[item_id]
 
     def put(self, item, item_id=None, subset=None, path=None):
         if path:
@@ -412,7 +448,7 @@ class Dataset(Extractor):
     @classmethod
     def _merge_items(cls, existing_item, current_item, path=None):
         return existing_item.wrap(path=path,
-        image=cls._merge_images(existing_item, current_item),
+            image=cls._merge_images(existing_item, current_item),
             annotations=cls._merge_anno(
                 existing_item.annotations, current_item.annotations))
 
@@ -444,18 +480,15 @@ class Dataset(Extractor):
 
     @staticmethod
     def _merge_anno(a, b):
-        from itertools import chain
-        merged = []
-        for item in chain(a, b):
-            found = False
-            for elem in merged:
-                if elem == item:
-                    found = True
-                    break
-            if not found:
-                merged.append(item)
+        # TODO: implement properly with merging and annotations remapping
+        from .operations import merge_annotations_equal
+        return merge_annotations_equal(a, b)
 
-        return merged
+    @staticmethod
+    def _merge_categories(sources):
+        # TODO: implement properly with merging and annotations remapping
+        from .operations import merge_categories
+        return merge_categories(sources)
 
 class ProjectDataset(Dataset):
     def __init__(self, project):
@@ -490,14 +523,9 @@ class ProjectDataset(Dataset):
 
         # merge categories
         # TODO: implement properly with merging and annotations remapping
-        categories = {}
-        for source in self._sources.values():
-            categories.update(source.categories())
-        for source in self._sources.values():
-            for cat_type, source_cat in source.categories().items():
-                if not categories[cat_type] == source_cat:
-                    raise NotImplementedError(
-                        "Merging different categories is not implemented yet")
+        categories = self._merge_categories(s.categories()
+            for s in self._sources.values())
+        # ovewrite with own categories
         if own_source is not None and (not categories or len(own_source) != 0):
             categories.update(own_source.categories())
         self._categories = categories
@@ -557,7 +585,7 @@ class ProjectDataset(Dataset):
             rest_path = path[1:]
             return self._sources[source].get(
                 item_id=item_id, subset=subset, path=rest_path)
-        return self._subsets[subset].items[item_id]
+        return super().get(item_id, subset)
 
     def put(self, item, item_id=None, subset=None, path=None):
         if path is None:
@@ -596,33 +624,37 @@ class ProjectDataset(Dataset):
             project.config.remove('sources')
 
         save_dir = osp.abspath(save_dir)
-        os.makedirs(save_dir, exist_ok=True)
-
         dataset_save_dir = osp.join(save_dir, project.config.dataset_dir)
-        os.makedirs(dataset_save_dir, exist_ok=True)
 
         converter_kwargs = {
             'save_images': save_images,
         }
 
-        if merge:
-            # merge and save the resulting dataset
-            converter = self.env.make_converter(
-                DEFAULT_FORMAT, **converter_kwargs)
-            converter(self, dataset_save_dir)
-        else:
-            if recursive:
-                # children items should already be updated
-                # so we just save them recursively
-                for source in self._sources.values():
-                    if isinstance(source, ProjectDataset):
-                        source.save(**converter_kwargs)
+        save_dir_existed = osp.exists(save_dir)
+        try:
+            os.makedirs(save_dir, exist_ok=True)
+            os.makedirs(dataset_save_dir, exist_ok=True)
 
-            converter = self.env.make_converter(
-                DEFAULT_FORMAT, **converter_kwargs)
-            converter(self.iterate_own(), dataset_save_dir)
+            if merge:
+                # merge and save the resulting dataset
+                self.env.converters.get(DEFAULT_FORMAT).convert(
+                    self, dataset_save_dir, **converter_kwargs)
+            else:
+                if recursive:
+                    # children items should already be updated
+                    # so we just save them recursively
+                    for source in self._sources.values():
+                        if isinstance(source, ProjectDataset):
+                            source.save(**converter_kwargs)
 
-        project.save(save_dir)
+                self.env.converters.get(DEFAULT_FORMAT).convert(
+                    self.iterate_own(), dataset_save_dir, **converter_kwargs)
+
+            project.save(save_dir)
+        except BaseException:
+            if not save_dir_existed and osp.isdir(save_dir):
+                shutil.rmtree(save_dir, ignore_errors=True)
+            raise
 
     @property
     def env(self):
@@ -673,7 +705,7 @@ class ProjectDataset(Dataset):
         if isinstance(model, str):
             launcher = self._project.make_executable_model(model)
 
-        self.transform_project(InferenceWrapper, launcher=launcher,
+        self.transform_project(ModelTransform, launcher=launcher,
             save_dir=save_dir, batch_size=batch_size)
 
     def export_project(self, save_dir, converter,
@@ -690,7 +722,7 @@ class ProjectDataset(Dataset):
         try:
             os.makedirs(save_dir, exist_ok=True)
             converter(dataset, save_dir)
-        except Exception:
+        except BaseException:
             if not save_dir_existed:
                 shutil.rmtree(save_dir)
             raise
@@ -735,7 +767,7 @@ class Project:
 
             config_path = osp.join(save_dir, config.project_filename)
             config.dump(config_path)
-        except Exception:
+        except BaseException:
             if not env_dir_existed:
                 shutil.rmtree(save_dir, ignore_errors=True)
             if not project_dir_existed:
@@ -744,9 +776,10 @@ class Project:
 
     @staticmethod
     def generate(save_dir, config=None):
+        config = Config(config)
+        config.project_dir = save_dir
         project = Project(config)
         project.save(save_dir)
-        project.config.project_dir = save_dir
         return project
 
     @staticmethod
@@ -807,9 +840,8 @@ class Project:
 
     def make_executable_model(self, name):
         model = self.get_model(name)
-        model.model_dir = self.local_model_dir(name)
         return self.env.make_launcher(model.launcher,
-            **model.options, model_dir=model.model_dir)
+            **model.options, model_dir=self.local_model_dir(name))
 
     def make_source_project(self, name):
         source = self.get_source(name)
