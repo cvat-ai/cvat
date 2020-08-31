@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a case in which exported masks could have wrong color order (<https://github.com/opencv/cvat/issues/2032>)
 - Fixed error with creating task with labels with the same name (<https://github.com/opencv/cvat/pull/2031>)
 - Django RQ dashboard view (<https://github.com/opencv/cvat/pull/2069>)
+- Fixed multiple errors which arises when polygon is of length 5 or less (<https://github.com/opencv/cvat/pull/2100>)
 
 ### Security
 -
