@@ -1,6 +1,7 @@
 import numpy as np
 
-from datumaro.components.extractor import DatasetItem, Label, Bbox, Caption, Mask, Points
+from datumaro.components.extractor import (DatasetItem, Label, Bbox,
+    Caption, Mask, Points)
 from datumaro.components.project import Dataset
 from datumaro.components.operations import DistanceComparator, ExactComparator
 
@@ -81,9 +82,7 @@ class DistanceComparatorTest(TestCase):
 
     def test_no_label_diff_with_same_item(self):
         detections = 3
-        anns = [
-            Label(i) for i in range(detections)
-        ]
+        anns = [ Label(i) for i in range(detections) ]
         item = DatasetItem(id=1, annotations=anns)
 
         result = DistanceComparator().match_labels(item, item)
@@ -111,6 +110,26 @@ class DistanceComparatorTest(TestCase):
         self.assertEqual(2, len(a_greater))
         self.assertEqual(2, len(b_greater))
         self.assertEqual(1, len(matches))
+
+    def test_can_match_points(self):
+        item1 = DatasetItem(id=1, annotations=[
+            Points([1, 2, 2, 0, 1, 1], label=0),
+
+            Points([3, 5, 5, 7, 5, 3], label=0),
+        ])
+        item2 = DatasetItem(id=2, annotations=[
+            Points([1.5, 2, 2, 0.5, 1, 1.5], label=0),
+
+            Points([5, 7, 7, 7, 7, 5], label=0),
+        ])
+
+        result = DistanceComparator().match_points(item1, item2)
+
+        matches, mismatches, a_greater, b_greater = result
+        self.assertEqual(1, len(a_greater))
+        self.assertEqual(1, len(b_greater))
+        self.assertEqual(1, len(matches))
+        self.assertEqual(0, len(mismatches))
 
 class ExactComparatorTest(TestCase):
     def test_class_comparison(self):

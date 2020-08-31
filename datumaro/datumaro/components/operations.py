@@ -587,7 +587,7 @@ class MaskMatcher(_ShapeMatcher):
 
 @attrs(kw_only=True)
 class PointsMatcher(_ShapeMatcher):
-    sigma = attrib(converter=list, default=None)
+    sigma = attrib(type=list, default=None)
     instance_map = attrib(converter=dict)
 
     def distance(self, a, b):
@@ -1086,27 +1086,25 @@ class DistanceComparator:
         b_points = self._get_ann_type(AnnotationType.points, item_b)
 
         instance_map = {}
-        for s in sources:
+        for s in [item_a.annotations, item_b.annotations]:
             s_instances = find_instances(s)
             for inst in s_instances:
                 inst_bbox = max_bbox(inst)
                 for ann in inst:
                     instance_map[id(ann)] = [inst, inst_bbox]
         matcher = PointsMatcher(instance_map=instance_map)
-        distance = lambda a, b: matcher.distance(a, b)
 
         return match_segments(a_points, b_points,
-            dist_thresh=self.iou_threshold, distance=distance)
+            dist_thresh=self.iou_threshold, distance=matcher.distance)
 
     def match_lines(self, item_a, item_b):
         a_lines = self._get_ann_type(AnnotationType.polyline, item_a)
         b_lines = self._get_ann_type(AnnotationType.polyline, item_b)
 
         matcher = LineMatcher()
-        distance = lambda a, b: matcher.distance(a, b)
 
         return match_segments(a_lines, b_lines,
-            dist_thresh=self.iou_threshold, distance=distance)
+            dist_thresh=self.iou_threshold, distance=matcher.distance)
 
 def match_items_by_id(a, b):
     a_items = set((item.id, item.subset) for item in a)
