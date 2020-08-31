@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - Unreleased
+## [1.1.0] - 2020-08-31
 ### Added
 - Siammask tracker as DL serverless function (<https://github.com/opencv/cvat/pull/1988>)
 - [Datumaro] Added model info and source info commands (<https://github.com/opencv/cvat/pull/1973>)
@@ -19,21 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shape coordinates are rounded to 2 digits in dumped annotations (<https://github.com/opencv/cvat/pull/1970>)
 - COCO format does not produce polygon points for bbox annotations (<https://github.com/opencv/cvat/pull/1953>)
 
-### Deprecated
--
-
-### Removed
--
-
 ### Fixed
 - Issue loading openvino models for semi-automatic and automatic annotation (<https://github.com/opencv/cvat/pull/1996>)
 - Basic functions of CVAT works without activated nuclio dashboard
 - Fixed a case in which exported masks could have wrong color order (<https://github.com/opencv/cvat/issues/2032>)
 - Fixed error with creating task with labels with the same name (<https://github.com/opencv/cvat/pull/2031>)
 - Django RQ dashboard view (<https://github.com/opencv/cvat/pull/2069>)
-
-### Security
--
 
 ## [1.1.0-beta] - 2020-08-03
 ### Added
