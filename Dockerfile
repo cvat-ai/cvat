@@ -46,7 +46,7 @@ RUN apt-get update && \
         tzdata \
         p7zip-full \
         git \
-	git-lfs \
+        git-lfs \
         ssh \
         poppler-utils \
         curl && \
