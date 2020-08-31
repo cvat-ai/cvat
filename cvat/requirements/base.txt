@@ -44,7 +44,7 @@ keras==2.4.2
 opencv-python==4.4.0.42
 h5py==2.10.0
 imgaug==0.4.0
-django-cors-headers==3.4.0
+django-cors-headers==3.5.0
 furl==2.1.0
 av==6.2.0
 # The package is used by pyunpack as a command line tool to support multiple
