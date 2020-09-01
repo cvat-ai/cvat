@@ -433,7 +433,7 @@ CACHES = {
        'TIMEOUT' : None,
        'OPTIONS' : {
             #'statistics' :True,
-            'size_limit' : 2 ** 40, # 1 тб
+            'size_limit' : 2 ** 40, # 1 Tb
        }
    }
 }
