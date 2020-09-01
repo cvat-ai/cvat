@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to configure email verification for new users (<https://github.com/opencv/cvat/pull/1929>)
 - Link to django admin page from UI (<https://github.com/opencv/cvat/pull/2068>)
 - Notification message when users use wrong browser (<https://github.com/opencv/cvat/pull/2070>)
+- Ability to work with data on the fly (https://github.com/opencv/cvat/pull/2007)
 
 ### Changed
 - Shape coordinates are rounded to 2 digits in dumped annotations (<https://github.com/opencv/cvat/pull/1970>)
