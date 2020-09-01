@@ -94,8 +94,8 @@ export const registerAsync = (
     dispatch(authActions.register());
 
     try {
-        const user = await cvat.server.register(username, firstName, lastName, email, password1, password2,
-            confirmations);
+        const user = await cvat.server.register(username, firstName, lastName, email, password1,
+            password2, confirmations);
 
         dispatch(authActions.registerSuccess(user));
     } catch (error) {

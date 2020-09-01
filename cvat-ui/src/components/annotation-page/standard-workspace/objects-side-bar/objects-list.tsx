@@ -12,7 +12,7 @@ interface Props {
     listHeight: number;
     statesHidden: boolean;
     statesLocked: boolean;
-    statesCollapsed: boolean;
+    statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
     sortedStatesID: number[];
     switchLockAllShortcut: string;
@@ -31,7 +31,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         listHeight,
         statesHidden,
         statesLocked,
-        statesCollapsed,
+        statesCollapsedAll,
         statesOrdering,
         sortedStatesID,
         switchLockAllShortcut,
@@ -50,7 +50,7 @@ function ObjectListComponent(props: Props): JSX.Element {
             <ObjectListHeader
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
-                statesCollapsed={statesCollapsed}
+                statesCollapsed={statesCollapsedAll}
                 statesOrdering={statesOrdering}
                 switchLockAllShortcut={switchLockAllShortcut}
                 switchHiddenAllShortcut={switchHiddenAllShortcut}
@@ -64,7 +64,11 @@ function ObjectListComponent(props: Props): JSX.Element {
             />
             <div className='cvat-objects-sidebar-states-list'>
                 { sortedStatesID.map((id: number): JSX.Element => (
-                    <ObjectItemContainer key={id} clientID={id} />
+                    <ObjectItemContainer
+                        key={id}
+                        clientID={id}
+                        initialCollapsed={statesCollapsedAll}
+                    />
                 ))}
             </div>
         </div>
