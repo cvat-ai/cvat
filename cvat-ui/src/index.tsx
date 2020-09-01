@@ -57,6 +57,7 @@ interface StateToProps {
     authActionsFetching: boolean;
     authActionsInitialized: boolean;
     allowChangePassword: boolean;
+    allowResetPassword: boolean;
     notifications: NotificationsState;
     user: any;
     keyMap: Record<string, ExtendedKeyMapOptions>;
@@ -105,6 +106,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         authActionsFetching: auth.authActionsFetching,
         authActionsInitialized: auth.authActionsInitialized,
         allowChangePassword: auth.allowChangePassword,
+        allowResetPassword: auth.allowResetPassword,
         notifications: state.notifications,
         user: auth.user,
         keyMap: shortcuts.keyMap,
