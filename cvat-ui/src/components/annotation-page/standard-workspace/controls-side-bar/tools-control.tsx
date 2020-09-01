@@ -466,7 +466,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderPopoverContent(): JSX.Element {
         return (
-            <div onMouseLeave={() => false} className='cvat-tools-control-popover-content'>
+            <div className='cvat-tools-control-popover-content'>
                 <Row type='flex' justify='start'>
                     <Col>
                         <Text className='cvat-text-color' strong>AI Tools</Text>

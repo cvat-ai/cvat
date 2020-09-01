@@ -11,6 +11,7 @@ cache:
     - ~/.cache
 
 addons:
+  firefox: "latest"
   apt:
     packages:
     - libgconf-2-4
@@ -43,7 +44,8 @@ script:
   - docker exec -it cvat bash -ic "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
   # Install Cypress and run tests
   - cd ./tests && npm install
-  - $(npm bin)/cypress run --headless --browser chrome && cd ..
+  - $(npm bin)/cypress run --headless --browser chrome
+  - $(npm bin)/cypress run --headless --browser firefox && cd ..
 
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
