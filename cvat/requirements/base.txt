@@ -37,7 +37,7 @@ django-rest-auth[with_social]==0.9.5
 cython==0.29.21
 opencv-python==4.4.0.42
 h5py==2.10.0
-django-cors-headers==3.4.0
+django-cors-headers==3.5.0
 furl==2.1.0
 av==8.0.2 --no-binary=av
 tensorflow==2.2.0 # Optional requirement of Datumaro

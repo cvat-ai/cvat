@@ -51,9 +51,7 @@ const defaultState: NotificationsState = {
             fetching: null,
         },
         models: {
-            creating: null,
             starting: null,
-            deleting: null,
             fetching: null,
             canceling: null,
             metaFetching: null,
@@ -408,21 +406,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.share,
                         fetching: {
                             message: 'Could not load share data from the server',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    models: {
-                        ...state.errors.models,
-                        creating: {
-                            message: 'Could not create the model',
                             reason: action.payload.error.toString(),
                         },
                     },
