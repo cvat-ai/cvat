@@ -203,14 +203,6 @@ function DetectorRunner(props: Props): JSX.Element {
             )}
             { isDetector && !!taskLabels.length && !!modelLabels.length && (
                 <>
-                    {/* <Row type='flex' justify='start' align='middle'>
-                        <Col span={10}>
-                            <Text>Model</Text>
-                        </Col>
-                        <Col span={10} offset={1}>
-                            <Text>Task</Text>
-                        </Col>
-                    </Row> */}
                     <Row type='flex' justify='start' align='middle'>
                         <Col span={10}>
                             {renderSelector(
