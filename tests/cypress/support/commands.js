@@ -32,12 +32,12 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               image='image.png',
                                               multiJobs=false,
                                               segmentSize=1) => {
-    cy.contains('button', 'Create new task').click()
+    cy.get('#cvat-create-task-button').click()
     cy.url().should('include', '/tasks/create')
     cy.get('[id="name"]').type(taksName)
-    cy.contains('button', 'Add label').click()
+    cy.get('.cvat-constructor-viewer-new-item').click()
     cy.get('[placeholder="Label name"]').type(labelName)
-    cy.contains('button', 'Add an attribute').click()
+    cy.get('.cvat-new-attribute-button').click()
     cy.get('[placeholder="Name"]').type(attrName)
     cy.get('div[title="Select"]').click()
     cy.get('li').contains('Text').click()
