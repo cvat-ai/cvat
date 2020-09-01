@@ -170,3 +170,13 @@ Cypress.Commands.add('closeSettings', () => {
         cy.contains('button', 'Close').click()
     })
 })
+
+Cypress.Commands.add('changeAnnotationMode', (mode) => {
+    cy.get('.cvat-workspace-selector')
+    .click()
+    cy.get('.ant-select-dropdown-menu-item')
+    .contains(mode)
+    .click()
+    cy.get('.cvat-workspace-selector')
+    .should('contain.text', mode)
+})
