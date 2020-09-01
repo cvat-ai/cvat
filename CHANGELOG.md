@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added password reset functionality (<https://github.com/opencv/cvat/pull/2058>)
 - Ability to work with data on the fly (https://github.com/opencv/cvat/pull/2007)
 - Annotation in process outline color wheel (<https://github.com/opencv/cvat/pull/2084>)
+- On the fly annotation using DL detectors (<https://github.com/opencv/cvat/pull/2102>)
 
 ### Changed
 - UI models (like DEXTR) were redesigned to be more interactive (<https://github.com/opencv/cvat/pull/2054>)
@@ -35,12 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to configure email verification for new users (<https://github.com/opencv/cvat/pull/1929>)
 - Link to django admin page from UI (<https://github.com/opencv/cvat/pull/2068>)
 - Notification message when users use wrong browser (<https://github.com/opencv/cvat/pull/2070>)
-- On the fly annotation using DL detectors (<https://github.com/opencv/cvat/pull/2102>)
 
 ### Changed
 - Shape coordinates are rounded to 2 digits in dumped annotations (<https://github.com/opencv/cvat/pull/1970>)
 - COCO format does not produce polygon points for bbox annotations (<https://github.com/opencv/cvat/pull/1953>)
-- UI models (like DEXTR) were redesigned to be more interactive (<https://github.com/opencv/cvat/pull/2054>)
 
 ### Fixed
 - Issue loading openvino models for semi-automatic and automatic annotation (<https://github.com/opencv/cvat/pull/1996>)
