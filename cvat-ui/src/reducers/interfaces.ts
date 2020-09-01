@@ -60,6 +60,7 @@ export interface TasksState {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
         creates: {
+            taskId: number | null;
             status: string;
             error: string;
         };
@@ -75,7 +76,6 @@ export interface FormatsState {
 // eslint-disable-next-line import/prefer-default-export
 export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
-    DEXTR_SEGMENTATION = 'DEXTR_SEGMENTATION',
     ANALYTICS = 'ANALYTICS',
 }
 
@@ -160,7 +160,10 @@ export interface ModelsState {
     initialized: boolean;
     fetching: boolean;
     creatingStatus: string;
-    models: Model[];
+    interactors: Model[];
+    detectors: Model[];
+    trackers: Model[];
+    reid: Model[];
     inferences: {
         [index: number]: ActiveInference;
     };
@@ -205,9 +208,7 @@ export interface NotificationsState {
             fetching: null | ErrorState;
         };
         models: {
-            creating: null | ErrorState;
             starting: null | ErrorState;
-            deleting: null | ErrorState;
             fetching: null | ErrorState;
             canceling: null | ErrorState;
             metaFetching: null | ErrorState;
@@ -251,6 +252,7 @@ export interface NotificationsState {
         };
         auth: {
             changePasswordDone: string;
+            registerDone: string;
         };
     };
 }
@@ -268,6 +270,7 @@ export enum ActiveControl {
     GROUP = 'group',
     SPLIT = 'split',
     EDIT = 'edit',
+    INTERACTION = 'interaction',
 }
 
 export enum ShapeType {
@@ -340,6 +343,7 @@ export interface AnnotationState {
         frameAngles: number[];
     };
     drawing: {
+        activeInteractor?: Model;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeNumOfPoints?: number;

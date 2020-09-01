@@ -24,3 +24,11 @@ def default_if_none(conv):
             value = conv(value)
         setattr(inst, attribute.name, value)
     return validator
+
+def ensure_cls(c):
+    def converter(arg):
+        if isinstance(arg, c):
+            return arg
+        else:
+            return c(**arg)
+    return converter

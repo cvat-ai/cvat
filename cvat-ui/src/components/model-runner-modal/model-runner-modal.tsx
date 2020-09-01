@@ -21,7 +21,8 @@ import {
 } from 'reducers/interfaces';
 
 interface Props {
-    models: Model[];
+    reid: Model[];
+    detectors: Model[];
     activeProcesses: StringObject;
     visible: boolean;
     taskInstance: any;
@@ -88,14 +89,14 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
+            reid,
+            detectors,
             taskInstance,
-            models,
             visible,
         } = this.props;
 
-        const {
-            selectedModel,
-        } = this.state;
+        const { selectedModel } = this.state;
+        const models = [...reid, ...detectors];
 
         if (!prevProps.visible && visible) {
             this.setState({
@@ -140,7 +141,8 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
     }
 
     private renderModelSelector(): JSX.Element {
-        const { models } = this.props;
+        const { reid, detectors } = this.props;
+        const models = [...reid, ...detectors];
 
         return (
             <Row type='flex' align='middle'>
@@ -166,10 +168,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
     }
 
     private renderMappingTag(modelLabel: string, taskLabel: string): JSX.Element {
-        const {
-            colors,
-            mapping,
-        } = this.state;
+        const { colors, mapping } = this.state;
 
         return (
             <Row key={`${modelLabel}-${taskLabel}`} type='flex' justify='start' align='middle'>
@@ -203,11 +202,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
         current: string,
         options: string[],
     ): JSX.Element {
-        const {
-            matching,
-            mapping,
-            colors,
-        } = this.state;
+        const { matching, mapping, colors } = this.state;
 
         return (
             <Select
@@ -291,10 +286,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
     }
 
     private renderReidContent(): JSX.Element {
-        const {
-            threshold,
-            maxDistance,
-        } = this.state;
+        const { threshold, maxDistance } = this.state;
 
         return (
             <div>
@@ -346,16 +338,10 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
     }
 
     private renderContent(): JSX.Element {
-        const {
-            selectedModel,
-            cleanup,
-            mapping,
-        } = this.state;
-        const {
-            models,
-            taskInstance,
-        } = this.props;
+        const { selectedModel, cleanup, mapping } = this.state;
+        const { reid, detectors, taskInstance } = this.props;
 
+        const models = [...reid, ...detectors];
         const model = selectedModel && models
             .filter((_model): boolean => _model.name === selectedModel)[0];
 
@@ -414,13 +400,15 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
         } = this.state;
 
         const {
-            models,
+            reid,
+            detectors,
             visible,
             taskInstance,
             runInference,
             closeDialog,
         } = this.props;
 
+        const models = [...reid, ...detectors];
         const activeModel = models.filter(
             (model): boolean => model.name === selectedModel,
         )[0];

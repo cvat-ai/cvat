@@ -10,7 +10,6 @@
 (() => {
     const {
         AttributeType,
-        colors,
     } = require('./enums');
     const { ArgumentError } = require('./exceptions');
 
@@ -150,9 +149,6 @@
                 }
             }
 
-            if (typeof (data.id) !== 'undefined') {
-                data.color = colors[data.id % colors.length];
-            }
             data.attributes = [];
 
             if (Object.prototype.hasOwnProperty.call(initialData, 'attributes')
@@ -193,10 +189,10 @@
                 color: {
                     get: () => data.color,
                     set: (color) => {
-                        if (colors.includes(color)) {
+                        if (typeof color === 'string' && color.match(/^#[0-9a-f]{6}$|^$/)) {
                             data.color = color;
                         } else {
-                            throw new ArgumentError('Trying to set unknown color');
+                            throw new ArgumentError('Trying to set wrong color format');
                         }
                     },
                 },
@@ -217,6 +213,7 @@
             const object = {
                 name: this.name,
                 attributes: [...this.attributes.map((el) => el.toJSON())],
+                color: this.color,
             };
 
             if (typeof (this.id) !== 'undefined') {

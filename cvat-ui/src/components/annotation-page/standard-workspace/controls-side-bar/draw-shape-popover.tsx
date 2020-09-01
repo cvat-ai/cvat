@@ -14,7 +14,6 @@ import Text from 'antd/lib/typography/Text';
 import { RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
-import DEXTRPlugin from './dextr-plugin';
 
 interface Props {
     shapeType: ShapeType;
@@ -91,7 +90,6 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            { shapeType === ShapeType.POLYGON && <DEXTRPlugin /> }
             {
                 shapeType === ShapeType.RECTANGLE && (
                     <>
