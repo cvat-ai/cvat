@@ -17,7 +17,7 @@ export enum SettingsActionTypes {
     CHANGE_SHAPES_OPACITY = 'CHANGE_SHAPES_OPACITY',
     CHANGE_SELECTED_SHAPES_OPACITY = 'CHANGE_SELECTED_SHAPES_OPACITY',
     CHANGE_SHAPES_COLOR_BY = 'CHANGE_SHAPES_COLOR_BY',
-    CHANGE_SHAPES_BLACK_BORDERS = 'CHANGE_SHAPES_BLACK_BORDERS',
+    CHANGE_SHAPES_OUTLINED_BORDERS = 'CHANGE_SHAPES_OUTLINED_BORDERS',
     CHANGE_SHAPES_SHOW_PROJECTIONS = 'CHANGE_SHAPES_SHOW_PROJECTIONS',
     CHANGE_SHOW_UNLABELED_REGIONS = 'CHANGE_SHOW_UNLABELED_REGIONS',
     CHANGE_FRAME_STEP = 'CHANGE_FRAME_STEP',
@@ -63,11 +63,12 @@ export function changeShapesColorBy(colorBy: ColorBy): AnyAction {
     };
 }
 
-export function changeShapesBlackBorders(blackBorders: boolean): AnyAction {
+export function changeShapesOutlinedBorders(outlined: boolean, color: string): AnyAction {
     return {
-        type: SettingsActionTypes.CHANGE_SHAPES_BLACK_BORDERS,
+        type: SettingsActionTypes.CHANGE_SHAPES_OUTLINED_BORDERS,
         payload: {
-            blackBorders,
+            outlined,
+            color,
         },
     };
 }

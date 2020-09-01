@@ -20,6 +20,7 @@ import {
     Rotation,
     ContextMenuType,
     Workspace,
+    Model,
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core-wrapper';
@@ -187,6 +188,7 @@ export enum AnnotationActionTypes {
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
+    INTERACT_WITH_CANVAS = 'INTERACT_WITH_CANVAS',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -1385,6 +1387,16 @@ export function pasteShapeAsync(): ThunkAction {
     };
 }
 
+export function interactWithCanvas(activeInteractor: Model, activeLabelID: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.INTERACT_WITH_CANVAS,
+        payload: {
+            activeInteractor,
+            activeLabelID,
+        },
+    };
+}
+
 export function repeatDrawShapeAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const {
@@ -1401,6 +1413,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 },
             },
             drawing: {
+                activeInteractor,
                 activeObjectType,
                 activeLabelID,
                 activeShapeType,
@@ -1410,6 +1423,16 @@ export function repeatDrawShapeAsync(): ThunkAction {
         } = getStore().getState().annotation;
 
         let activeControl = ActiveControl.CURSOR;
+        if (activeInteractor) {
+            canvasInstance.interact({
+                enabled: true,
+                shapeType: 'points',
+                minPosVertices: 4, // TODO: Add parameter to interactor
+            });
+            dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+            return;
+        }
+
         if (activeShapeType === ShapeType.RECTANGLE) {
             activeControl = ActiveControl.DRAW_RECTANGLE;
         } else if (activeShapeType === ShapeType.POINTS) {
@@ -1443,7 +1466,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 rectDrawingMethod: activeRectDrawingMethod,
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
-                crosshair: activeShapeType === ShapeType.RECTANGLE,
+                crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(activeShapeType),
             });
         }
     };
@@ -1490,7 +1513,7 @@ export function redrawShapeAsync(): ThunkAction {
                     enabled: true,
                     redraw: activatedStateID,
                     shapeType: state.shapeType,
-                    crosshair: state.shapeType === ShapeType.RECTANGLE,
+                    crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(state.shapeType),
                 });
             }
         }

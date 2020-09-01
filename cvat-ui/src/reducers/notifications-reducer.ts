@@ -27,6 +27,8 @@ const defaultState: NotificationsState = {
             logout: null,
             register: null,
             changePassword: null,
+            requestPasswordReset: null,
+            resetPassword: null,
             loadAuthActions: null,
         },
         tasks: {
@@ -51,9 +53,7 @@ const defaultState: NotificationsState = {
             fetching: null,
         },
         models: {
-            creating: null,
             starting: null,
-            deleting: null,
             fetching: null,
             canceling: null,
             metaFetching: null,
@@ -98,6 +98,8 @@ const defaultState: NotificationsState = {
         auth: {
             changePasswordDone: '',
             registerDone: '',
+            requestPasswordResetDone: '',
+            resetPasswordDone: '',
         },
     },
 };
@@ -204,6 +206,61 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.auth,
                         changePassword: {
                             message: 'Could not change password',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.REQUEST_PASSWORD_RESET_SUCCESS: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    auth: {
+                        ...state.messages.auth,
+                        requestPasswordResetDone: `Check your email for a link to reset your password.
+                            If it doesn’t appear within a few minutes, check your spam folder.`,
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.REQUEST_PASSWORD_RESET_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        requestPasswordReset: {
+                            message: 'Could not reset password on the server.',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.RESET_PASSWORD_SUCCESS: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    auth: {
+                        ...state.messages.auth,
+                        resetPasswordDone: 'Password has been reset with the new password.',
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.RESET_PASSWORD_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        resetPassword: {
+                            message: 'Could not set new password on the server.',
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -408,21 +465,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.share,
                         fetching: {
                             message: 'Could not load share data from the server',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    models: {
-                        ...state.errors.models,
-                        creating: {
-                            message: 'Could not create the model',
                             reason: action.payload.error.toString(),
                         },
                     },

@@ -12,11 +12,21 @@ import FeedbackComponent from '../feedback/feedback';
 import { Model } from '../../reducers/interfaces';
 
 interface Props {
-    deployedModels: Model[];
+    interactors: Model[];
+    detectors: Model[];
+    trackers: Model[];
+    reid: Model[];
 }
 
 export default function ModelsPageComponent(props: Props): JSX.Element {
-    const { deployedModels } = props;
+    const {
+        interactors,
+        detectors,
+        trackers,
+        reid,
+    } = props;
+
+    const deployedModels = [...detectors, ...interactors, ...trackers, ...reid];
 
     return (
         <div className='cvat-models-page'>

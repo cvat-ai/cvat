@@ -9,7 +9,6 @@ import Text from 'antd/lib/typography/Text';
 import { Model } from 'reducers/interfaces';
 import DeployedModelItem from './deployed-model-item';
 
-
 interface Props {
     models: Model[];
 }

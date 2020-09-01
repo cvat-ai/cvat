@@ -22,6 +22,8 @@ os.makedirs(TASKS_ROOT, exist_ok=True)
 MODELS_ROOT = os.path.join(DATA_ROOT, 'models')
 os.makedirs(MODELS_ROOT, exist_ok=True)
 
+CACHE_ROOT = os.path.join(DATA_ROOT, 'cache')
+os.makedirs(CACHE_ROOT, exist_ok=True)
 
 # To avoid ERROR django.security.SuspiciousFileOperation:
 # The joined path (...) is located outside of the base path component

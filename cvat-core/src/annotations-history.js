@@ -7,7 +7,12 @@ const MAX_HISTORY_LENGTH = 128;
 
 class AnnotationHistory {
     constructor() {
+        this.frozen = false;
         this.clear();
+    }
+
+    freeze(frozen) {
+        this.frozen = frozen;
     }
 
     get() {
@@ -18,6 +23,7 @@ class AnnotationHistory {
     }
 
     do(action, undo, redo, clientIDs, frame) {
+        if (this.frozen) return;
         const actionItem = {
             clientIDs,
             action,

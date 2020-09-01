@@ -170,6 +170,11 @@
                             .apiWrapper.call(this, prototype.actions.redo, count);
                         return result;
                     },
+                    async freeze(frozen) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.actions.freeze, frozen);
+                        return result;
+                    },
                     async clear() {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.actions.clear);
@@ -546,6 +551,14 @@
                 * @async
             */
             /**
+                * Freeze history (do not save new actions)
+                * @method freeze
+                * @memberof Session.actions
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+            /**
                 * Remove all actions from history
                 * @method clear
                 * @memberof Session.actions
@@ -745,6 +758,7 @@
             this.actions = {
                 undo: Object.getPrototypeOf(this).actions.undo.bind(this),
                 redo: Object.getPrototypeOf(this).actions.redo.bind(this),
+                freeze: Object.getPrototypeOf(this).actions.freeze.bind(this),
                 clear: Object.getPrototypeOf(this).actions.clear.bind(this),
                 get: Object.getPrototypeOf(this).actions.get.bind(this),
             };
@@ -819,6 +833,7 @@
                 data_compressed_chunk_type: undefined,
                 data_original_chunk_type: undefined,
                 use_zip_chunks: undefined,
+                use_cache: undefined,
             };
 
             for (const property in data) {
@@ -1075,6 +1090,24 @@
                     },
                 },
                 /**
+                    * @name useCache
+                    * @type {boolean}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                useCache: {
+                    get: () => data.use_cache,
+                    set: (useCache) => {
+                        if (typeof (useCache) !== 'boolean') {
+                            throw new ArgumentError(
+                                'Value must be a boolean',
+                            );
+                        }
+                        data.use_cache = useCache;
+                    },
+                },
+                /**
                     * After task has been created value can be appended only.
                     * @name labels
                     * @type {module:API.cvat.classes.Label[]}
@@ -1299,6 +1332,7 @@
             this.actions = {
                 undo: Object.getPrototypeOf(this).actions.undo.bind(this),
                 redo: Object.getPrototypeOf(this).actions.redo.bind(this),
+                freeze: Object.getPrototypeOf(this).actions.freeze.bind(this),
                 clear: Object.getPrototypeOf(this).actions.clear.bind(this),
                 get: Object.getPrototypeOf(this).actions.get.bind(this),
             };
@@ -1390,6 +1424,7 @@
         exportDataset,
         undoActions,
         redoActions,
+        freezeHistory,
         clearActions,
         getActions,
         closeSession,
@@ -1582,6 +1617,11 @@
         return result;
     };
 
+    Job.prototype.actions.freeze.implementation = function (frozen) {
+        const result = freezeHistory(this, frozen);
+        return result;
+    };
+
     Job.prototype.actions.clear.implementation = function () {
         const result = clearActions(this);
         return result;
@@ -1645,6 +1685,7 @@
             remote_files: this.remoteFiles,
             image_quality: this.imageQuality,
             use_zip_chunks: this.useZipChunks,
+            use_cache: this.useCache,
         };
 
         if (typeof (this.startFrame) !== 'undefined') {
@@ -1843,6 +1884,11 @@
 
     Task.prototype.actions.redo.implementation = function (count) {
         const result = redoActions(this, count);
+        return result;
+    };
+
+    Task.prototype.actions.freeze.implementation = function (frozen) {
+        const result = freezeHistory(this, frozen);
         return result;
     };
 
