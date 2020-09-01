@@ -72,14 +72,6 @@ function ResetPasswordPagePageComponent(
                         );
                     }}
                 />
-                <Row type='flex' justify='start' align='top'>
-                    <Col>
-                        <Text strong>
-                            Already have an account?
-                            <Link to='/auth/login'> Login </Link>
-                        </Text>
-                    </Col>
-                </Row>
             </Col>
         </Row>
     );
