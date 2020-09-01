@@ -10,6 +10,7 @@
     },
     "testFiles": [
         "auth_page.js",
-        "issue_*.js"
+        "issue_*.js",
+        "remove_users_tasks.js"
     ]
 }

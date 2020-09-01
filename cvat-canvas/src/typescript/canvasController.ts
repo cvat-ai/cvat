@@ -13,6 +13,7 @@ import {
     SplitData,
     GroupData,
     Mode,
+    InteractionData,
 } from './canvasModel';
 
 export interface CanvasController {
@@ -21,6 +22,7 @@ export interface CanvasController {
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
     readonly drawData: DrawData;
+    readonly interactionData: InteractionData;
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
     readonly groupData: GroupData;
@@ -30,6 +32,7 @@ export interface CanvasController {
 
     zoom(x: number, y: number, direction: number): void;
     draw(drawData: DrawData): void;
+    interact(interactionData: InteractionData): void;
     merge(mergeData: MergeData): void;
     split(splitData: SplitData): void;
     group(groupData: GroupData): void;
@@ -84,6 +87,10 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.draw(drawData);
     }
 
+    public interact(interactionData: InteractionData): void {
+        this.model.interact(interactionData);
+    }
+
     public merge(mergeData: MergeData): void {
         this.model.merge(mergeData);
     }
@@ -122,6 +129,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get drawData(): DrawData {
         return this.model.drawData;
+    }
+
+    public get interactionData(): InteractionData {
+        return this.model.interactionData;
     }
 
     public get mergeData(): MergeData {

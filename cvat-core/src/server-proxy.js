@@ -264,6 +264,41 @@
                 }
             }
 
+            async function requestPasswordReset(email) {
+                try {
+                    const data = JSON.stringify({
+                        email,
+                    });
+                    await Axios.post(`${config.backendAPI}/auth/password/reset`, data, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function resetPassword(newPassword1, newPassword2, uid, token) {
+                try {
+                    const data = JSON.stringify({
+                        new_password1: newPassword1,
+                        new_password2: newPassword2,
+                        uid,
+                        token,
+                    });
+                    await Axios.post(`${config.backendAPI}/auth/password/reset/confirm`, data, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             async function authorized() {
                 try {
                     await module.exports.users.getSelf();
@@ -787,6 +822,8 @@
                         login,
                         logout,
                         changePassword,
+                        requestPasswordReset,
+                        resetPassword,
                         authorized,
                         register,
                         request: serverRequest,
