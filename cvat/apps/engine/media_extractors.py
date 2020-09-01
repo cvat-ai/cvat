@@ -125,22 +125,17 @@ class DirectoryReader(ImageListReader):
 
 class ArchiveReader(DirectoryReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
-        self._tmp_dir = create_tmp_dir()
         self._archive_source = source_path[0]
-        Archive(self._archive_source).extractall(self._tmp_dir)
+        Archive(self._archive_source).extractall(os.path.dirname(source_path[0]))
         super().__init__(
-            source_path=[self._tmp_dir],
+            source_path=[os.path.dirname(source_path[0])],
             step=step,
             start=start,
             stop=stop,
         )
 
     def __del__(self):
-        delete_tmp_dir(self._tmp_dir)
-
-    def get_path(self, i):
-        base_dir = os.path.dirname(self._archive_source)
-        return os.path.join(base_dir, os.path.relpath(self._source_path[i], self._tmp_dir))
+        os.remove(self._archive_source)
 
 class PdfReader(DirectoryReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
@@ -191,7 +186,14 @@ class ZipReader(ImageListReader):
         return io.BytesIO(self._zip_source.read(self._source_path[i]))
 
     def get_path(self, i):
-        return os.path.join(os.path.dirname(self._zip_source.filename), self._source_path[i])
+        if  self._zip_source.filename:
+            return os.path.join(os.path.dirname(self._zip_source.filename), self._source_path[i])
+        else: # necessary for mime_type definition
+            return self._source_path[i]
+
+    def extract(self):
+        self._zip_source.extractall(os.path.dirname(self._zip_source.filename))
+        os.remove(self._zip_source.filename)
 
 class VideoReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
@@ -303,14 +305,14 @@ class Mpeg4ChunkWriter(IChunkWriter):
         self._output_fps = 25
 
     @staticmethod
-    def _create_av_container(path, w, h, rate, options):
+    def _create_av_container(path, w, h, rate, options, f='mp4'):
             # x264 requires width and height must be divisible by 2 for yuv420p
             if h % 2:
                 h += 1
             if w % 2:
                 w += 1
 
-            container = av.open(path, 'w')
+            container = av.open(path, 'w',format=f)
             video_stream = container.add_stream('libx264', rate=rate)
             video_stream.pix_fmt = "yuv420p"
             video_stream.width = w

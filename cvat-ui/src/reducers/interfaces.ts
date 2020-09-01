@@ -17,6 +17,7 @@ export interface AuthState {
     authActionsInitialized: boolean;
     showChangePasswordDialog: boolean;
     allowChangePassword: boolean;
+    allowResetPassword: boolean;
 }
 
 export interface TasksQuery {
@@ -184,6 +185,8 @@ export interface NotificationsState {
             logout: null | ErrorState;
             register: null | ErrorState;
             changePassword: null | ErrorState;
+            requestPasswordReset: null | ErrorState;
+            resetPassword: null | ErrorState;
             loadAuthActions: null | ErrorState;
         };
         tasks: {
@@ -253,6 +256,8 @@ export interface NotificationsState {
         auth: {
             changePasswordDone: string;
             registerDone: string;
+            requestPasswordResetDone: string;
+            resetPasswordDone: string;
         };
     };
 }
@@ -356,6 +361,7 @@ export interface AnnotationState {
         activatedStateID: number | null;
         activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
+        collapsedAll: boolean;
         states: any[];
         filters: string[];
         filtersHistory: string[];
@@ -447,7 +453,8 @@ export interface ShapesSettingsState {
     colorBy: ColorBy;
     opacity: number;
     selectedOpacity: number;
-    blackBorders: boolean;
+    outlined: boolean;
+    outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
 }

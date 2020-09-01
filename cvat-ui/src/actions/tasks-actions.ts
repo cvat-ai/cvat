@@ -386,6 +386,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             z_order: data.advanced.zOrder,
             image_quality: 70,
             use_zip_chunks: data.advanced.useZipChunks,
+            use_cache: data.advanced.useCache,
         };
 
         if (data.advanced.bugTracker) {
