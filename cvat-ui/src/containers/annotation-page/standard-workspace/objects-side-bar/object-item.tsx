@@ -30,6 +30,7 @@ import { shift } from 'utils/math';
 
 interface OwnProps {
     clientID: number;
+    initialCollapsed: boolean;
 }
 
 interface StateToProps {
@@ -101,7 +102,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         .indexOf(own.clientID);
 
     const collapsedState = typeof (statesCollapsed[own.clientID]) === 'undefined'
-        ? true : statesCollapsed[own.clientID];
+        ? own.initialCollapsed : statesCollapsed[own.clientID];
 
     return {
         objectState: states[index],

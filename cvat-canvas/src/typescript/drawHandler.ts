@@ -16,6 +16,7 @@ import {
     BBox,
     Box,
 } from './shared';
+import Crosshair from './crosshair';
 import consts from './consts';
 import {
     DrawData,
@@ -44,10 +45,7 @@ export class DrawHandlerImpl implements DrawHandler {
         x: number;
         y: number;
     };
-    private crosshair: {
-        x: SVG.Line;
-        y: SVG.Line;
-    };
+    private crosshair: Crosshair;
     private drawData: DrawData;
     private geometry: Geometry;
     private autoborderHandler: AutoborderHandler;
@@ -188,22 +186,11 @@ export class DrawHandlerImpl implements DrawHandler {
 
     private addCrosshair(): void {
         const { x, y } = this.cursorPosition;
-        this.crosshair = {
-            x: this.canvas.line(0, y, this.canvas.node.clientWidth, y).attr({
-                'stroke-width': consts.BASE_STROKE_WIDTH / (2 * this.geometry.scale),
-                zOrder: Number.MAX_SAFE_INTEGER,
-            }).addClass('cvat_canvas_crosshair'),
-            y: this.canvas.line(x, 0, x, this.canvas.node.clientHeight).attr({
-                'stroke-width': consts.BASE_STROKE_WIDTH / (2 * this.geometry.scale),
-                zOrder: Number.MAX_SAFE_INTEGER,
-            }).addClass('cvat_canvas_crosshair'),
-        };
+        this.crosshair.show(this.canvas, x, y, this.geometry.scale);
     }
 
     private removeCrosshair(): void {
-        this.crosshair.x.remove();
-        this.crosshair.y.remove();
-        this.crosshair = null;
+        this.crosshair.hide();
     }
 
     private release(): void {
@@ -741,7 +728,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.canceled = false;
         this.drawData = null;
         this.geometry = null;
-        this.crosshair = null;
+        this.crosshair = new Crosshair();
         this.drawInstance = null;
         this.pointsGroup = null;
         this.cursorPosition = {
@@ -756,8 +743,7 @@ export class DrawHandlerImpl implements DrawHandler {
             );
             this.cursorPosition = { x, y };
             if (this.crosshair) {
-                this.crosshair.x.attr({ y1: y, y2: y });
-                this.crosshair.y.attr({ x1: x, x2: x });
+                this.crosshair.move(x, y);
             }
         });
     }
@@ -787,12 +773,7 @@ export class DrawHandlerImpl implements DrawHandler {
         }
 
         if (this.crosshair) {
-            this.crosshair.x.attr({
-                'stroke-width': consts.BASE_STROKE_WIDTH / (2 * geometry.scale),
-            });
-            this.crosshair.y.attr({
-                'stroke-width': consts.BASE_STROKE_WIDTH / (2 * geometry.scale),
-            });
+            this.crosshair.scale(this.geometry.scale);
         }
 
         if (this.pointsGroup) {

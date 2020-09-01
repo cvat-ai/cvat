@@ -11,8 +11,8 @@ from PIL import Image
 
 from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.mime_types import mimetypes
-from cvat.apps.engine.models import DataChoice
-
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice
+from .cache import CacheInteraction
 
 class RandomAccessIterator:
     def __init__(self, iterable):
@@ -65,6 +65,19 @@ class FrameProvider:
                     self.reader_class([self.get_chunk_path(chunk_id)]))
             return self.chunk_reader
 
+    class BuffChunkLoader(ChunkLoader):
+        def __init__(self, reader_class, path_getter, quality, db_data):
+            super().__init__(reader_class, path_getter)
+            self.quality = quality
+            self.db_data = db_data
+
+        def load(self, chunk_id):
+            if self.chunk_id != chunk_id:
+                self.chunk_id = chunk_id
+                self.chunk_reader = RandomAccessIterator(
+                    self.reader_class([self.get_chunk_path(chunk_id, self.quality, self.db_data)[0]]))
+            return self.chunk_reader
+
     def __init__(self, db_data):
         self._db_data = db_data
         self._loaders = {}
@@ -73,12 +86,27 @@ class FrameProvider:
             DataChoice.IMAGESET: ZipReader,
             DataChoice.VIDEO: VideoReader,
         }
-        self._loaders[self.Quality.COMPRESSED] = self.ChunkLoader(
-            reader_class[db_data.compressed_chunk_type],
-            db_data.get_compressed_chunk_path)
-        self._loaders[self.Quality.ORIGINAL] = self.ChunkLoader(
-            reader_class[db_data.original_chunk_type],
-            db_data.get_original_chunk_path)
+
+        if db_data.storage_method == StorageMethodChoice.CACHE:
+            cache = CacheInteraction()
+
+            self._loaders[self.Quality.COMPRESSED] = self.BuffChunkLoader(
+                reader_class[db_data.compressed_chunk_type],
+                cache.get_buff_mime,
+                self.Quality.COMPRESSED,
+                self._db_data)
+            self._loaders[self.Quality.ORIGINAL] = self.BuffChunkLoader(
+                reader_class[db_data.original_chunk_type],
+                cache.get_buff_mime,
+                self.Quality.ORIGINAL,
+                self._db_data)
+        else:
+            self._loaders[self.Quality.COMPRESSED] = self.ChunkLoader(
+                reader_class[db_data.compressed_chunk_type],
+                db_data.get_compressed_chunk_path)
+            self._loaders[self.Quality.ORIGINAL] = self.ChunkLoader(
+                reader_class[db_data.original_chunk_type],
+                db_data.get_original_chunk_path)
 
     def __len__(self):
         return self._db_data.size
@@ -129,6 +157,8 @@ class FrameProvider:
 
     def get_chunk(self, chunk_number, quality=Quality.ORIGINAL):
         chunk_number = self._validate_chunk_number(chunk_number)
+        if self._db_data.storage_method == StorageMethodChoice.CACHE:
+            return self._loaders[quality].get_chunk_path(chunk_number, quality, self._db_data)
         return self._loaders[quality].get_chunk_path(chunk_number)
 
     def get_frame(self, frame_number, quality=Quality.ORIGINAL,

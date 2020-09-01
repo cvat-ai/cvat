@@ -11,14 +11,26 @@ import {
 } from 'reducers/interfaces';
 
 interface StateToProps {
-    deployedModels: Model[];
+    interactors: Model[];
+    detectors: Model[];
+    trackers: Model[];
+    reid: Model[];
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
+    const {
+        interactors,
+        detectors,
+        trackers,
+        reid,
+    } = models;
 
     return {
-        deployedModels: models.models,
+        interactors,
+        detectors,
+        trackers,
+        reid,
     };
 }
 

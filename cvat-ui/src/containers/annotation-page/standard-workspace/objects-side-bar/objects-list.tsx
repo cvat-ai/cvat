@@ -30,7 +30,8 @@ interface StateToProps {
     listHeight: number;
     statesHidden: boolean;
     statesLocked: boolean;
-    statesCollapsed: boolean;
+    statesCollapsedAll: boolean;
+    collapsedStates: Record<number, boolean>;
     objectStates: any[];
     annotationsFilters: string[];
     colors: string[];
@@ -62,6 +63,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 filters: annotationsFilters,
                 filtersHistory: annotationsFiltersHistory,
                 collapsed,
+                collapsedAll,
                 activatedStateID,
                 zLayer: {
                     min: minZLayer,
@@ -95,25 +97,23 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     let statesHidden = true;
     let statesLocked = true;
-    let statesCollapsed = true;
 
     objectStates.forEach((objectState: any) => {
-        const { clientID, lock } = objectState;
+        const { lock } = objectState;
         if (!lock) {
             if (objectState.objectType !== ObjectType.TAG) {
                 statesHidden = statesHidden && objectState.hidden;
             }
             statesLocked = statesLocked && objectState.lock;
         }
-        const stateCollapsed = clientID in collapsed ? collapsed[clientID] : true;
-        statesCollapsed = statesCollapsed && stateCollapsed;
     });
 
     return {
         listHeight,
         statesHidden,
         statesLocked,
-        statesCollapsed,
+        statesCollapsedAll: collapsedAll,
+        collapsedStates: collapsed,
         objectStates,
         frameNumber,
         jobInstance,
