@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Fixed multiple errors which arises when polygon is of length 5 or less (<https://github.com/opencv/cvat/pull/2100>)
 
 ### Security
 -
@@ -48,7 +48,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed error with creating task with labels with the same name (<https://github.com/opencv/cvat/pull/2031>)
 - Django RQ dashboard view (<https://github.com/opencv/cvat/pull/2069>)
 - Object's details menu settings (<https://github.com/opencv/cvat/pull/2084>)
--
 
 ## [1.1.0-beta] - 2020-08-03
 ### Added

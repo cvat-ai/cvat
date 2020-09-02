@@ -63,7 +63,7 @@ class ModelLoader:
                 contour = np.flip(contour, axis=1)
                 # Approximate the contour and reduce the number of points
                 contour = approximate_polygon(contour, tolerance=2.5)
-                if len(contour) < 3:
+                if len(contour) < 6:
                     continue
                 label = self.labels[class_id]
 
