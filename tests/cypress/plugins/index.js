@@ -12,4 +12,10 @@ const {createZipArchive} = require('../plugins/createZipArchive/addPlugin')
 module.exports = (on) => {
     on('task', {imageGenerator})
     on('task', {createZipArchive})
+    on('task', {
+        log(message) {
+            console.log(message)
+            return null
+        }
+    })
 }

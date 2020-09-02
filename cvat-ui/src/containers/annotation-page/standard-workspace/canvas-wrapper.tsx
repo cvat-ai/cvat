@@ -64,7 +64,8 @@ interface StateToProps {
     opacity: number;
     colorBy: ColorBy;
     selectedOpacity: number;
-    blackBorders: boolean;
+    outlined: boolean;
+    outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
     grid: boolean;
@@ -179,7 +180,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 opacity,
                 colorBy,
                 selectedOpacity,
-                blackBorders,
+                outlined,
+                outlineColor,
                 showBitmap,
                 showProjections,
             },
@@ -204,7 +206,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         opacity,
         colorBy,
         selectedOpacity,
-        blackBorders,
+        outlined,
+        outlineColor,
         showBitmap,
         showProjections,
         grid,

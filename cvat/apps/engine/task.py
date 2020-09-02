@@ -14,7 +14,7 @@ from urllib import parse as urlparse
 from urllib import request as urlrequest
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
-from cvat.apps.engine.models import DataChoice
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice
 from cvat.apps.engine.utils import av_scan_paths
 
 import django_rq
@@ -24,6 +24,7 @@ from distutils.dir_util import copy_tree
 
 from . import models
 from .log import slogger
+from .prepare import PrepareInfo, AnalyzeVideo
 
 ############################# Low Level server API
 
@@ -243,6 +244,8 @@ def _create_thread(tid, data):
                 start=db_data.start_frame,
                 stop=data['stop_frame'],
             )
+    if extractor.__class__ == MEDIA_TYPES['zip']['extractor']:
+        extractor.extract()
     db_task.mode = task_mode
     db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
@@ -276,37 +279,94 @@ def _create_thread(tid, data):
         else:
             db_data.chunk_size = 36
 
+
     video_path = ""
     video_size = (0, 0)
 
-    counter = itertools.count()
-    generator = itertools.groupby(extractor, lambda x: next(counter) // db_data.chunk_size)
-    for chunk_idx, chunk_data in generator:
-        chunk_data = list(chunk_data)
-        original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
-        original_chunk_writer.save_as_chunk(chunk_data, original_chunk_path)
+    if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
+       for media_type, media_files in media.items():
+            if media_files:
+                if task_mode == MEDIA_TYPES['video']['mode']:
+                    try:
+                        analyzer = AnalyzeVideo(source_path=os.path.join(upload_dir, media_files[0]))
+                        analyzer.check_type_first_frame()
+                        analyzer.check_video_timestamps_sequences()
 
-        compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
-        img_sizes = compressed_chunk_writer.save_as_chunk(chunk_data, compressed_chunk_path)
+                        meta_info = PrepareInfo(source_path=os.path.join(upload_dir, media_files[0]),
+                                                meta_path=os.path.join(upload_dir, 'meta_info.txt'))
+                        meta_info.save_key_frames()
+                        meta_info.check_seek_key_frames()
+                        meta_info.save_meta_info()
 
-        if db_task.mode == 'annotation':
-            db_images.extend([
-                models.Image(
-                    data=db_data,
-                    path=os.path.relpath(data[1], upload_dir),
-                    frame=data[2],
-                    width=size[0],
-                    height=size[1])
+                        all_frames = meta_info.get_task_size()
+                        db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 if data['stop_frame'] else all_frames, all_frames), db_data.get_frame_step()))
+                        video_path = os.path.join(upload_dir, media_files[0])
+                        frame = meta_info.key_frames.get(next(iter(meta_info.key_frames)))
+                        video_size = (frame.width, frame.height)
 
-                for data, size in zip(chunk_data, img_sizes)
-            ])
-        else:
-            video_size = img_sizes[0]
-            video_path = chunk_data[0][1]
+                    except Exception:
+                        db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
 
-        db_data.size += len(chunk_data)
-        progress = extractor.get_progress(chunk_data[-1][2])
-        update_progress(progress)
+                else:#images,archive
+                    counter_ = itertools.count()
+                    if isinstance(extractor, MEDIA_TYPES['archive']['extractor']):
+                        media_files = [os.path.relpath(path, upload_dir) for path in extractor._source_path]
+                    elif isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
+                        media_files = extractor._source_path
+
+                    numbers_sequence = range(db_data.start_frame, min(data['stop_frame'] if data['stop_frame'] else len(media_files), len(media_files)), db_data.get_frame_step())
+                    m_paths = []
+                    m_paths = [(path, numb) for numb, path in enumerate(sorted(media_files)) if numb in numbers_sequence]
+
+                    for chunk_number, media_paths in itertools.groupby(m_paths, lambda x: next(counter_) // db_data.chunk_size):
+                        media_paths = list(media_paths)
+                        img_sizes = []
+                        from PIL import Image
+                        with open(db_data.get_dummy_chunk_path(chunk_number), 'w') as dummy_chunk:
+                            for path, _ in media_paths:
+                                dummy_chunk.write(path+'\n')
+                                img_sizes += [Image.open(os.path.join(upload_dir, path)).size]
+
+                        db_data.size += len(media_paths)
+                        db_images.extend([
+                            models.Image(
+                                data=db_data,
+                                path=data[0],
+                                frame=data[1],
+                                width=size[0],
+                                height=size[1])
+                            for data, size in zip(media_paths, img_sizes)
+                        ])
+
+    if db_data.storage_method == StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
+        counter = itertools.count()
+        generator = itertools.groupby(extractor, lambda x: next(counter) // db_data.chunk_size)
+        for chunk_idx, chunk_data in generator:
+            chunk_data = list(chunk_data)
+            original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
+            original_chunk_writer.save_as_chunk(chunk_data, original_chunk_path)
+
+            compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
+            img_sizes = compressed_chunk_writer.save_as_chunk(chunk_data, compressed_chunk_path)
+
+            if db_task.mode == 'annotation':
+                db_images.extend([
+                    models.Image(
+                        data=db_data,
+                        path=os.path.relpath(data[1], upload_dir),
+                        frame=data[2],
+                        width=size[0],
+                        height=size[1])
+
+                    for data, size in zip(chunk_data, img_sizes)
+                ])
+            else:
+                video_size = img_sizes[0]
+                video_path = chunk_data[0][1]
+
+            db_data.size += len(chunk_data)
+            progress = extractor.get_progress(chunk_data[-1][2])
+            update_progress(progress)
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(db_images)

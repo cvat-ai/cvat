@@ -43,6 +43,17 @@ class DataChoice(str, Enum):
     def __str__(self):
         return self.value
 
+class StorageMethodChoice(str, Enum):
+    CACHE = 'cache'
+    FILE_SYSTEM = 'file_system'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
 class Data(models.Model):
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
@@ -54,6 +65,7 @@ class Data(models.Model):
         default=DataChoice.IMAGESET)
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         default=DataChoice.IMAGESET)
+    storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
 
     class Meta:
         default_permissions = ()
@@ -101,6 +113,12 @@ class Data(models.Model):
 
     def get_preview_path(self):
         return os.path.join(self.get_data_dirname(), 'preview.jpeg')
+
+    def get_meta_path(self):
+        return os.path.join(self.get_upload_dirname(), 'meta_info.txt')
+
+    def get_dummy_chunk_path(self, chunk_number):
+        return os.path.join(self.get_upload_dirname(), 'dummy_{}.txt'.format(chunk_number))
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
