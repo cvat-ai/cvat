@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added password reset functionality (<https://github.com/opencv/cvat/pull/2058>)
 - Ability to work with data on the fly (https://github.com/opencv/cvat/pull/2007)
 - Annotation in process outline color wheel (<https://github.com/opencv/cvat/pull/2084>)
+- [Datumaro] CLI command for dataset equality comparison (<https://github.com/opencv/cvat/pull/1989>)
 
 ### Changed
 - UI models (like DEXTR) were redesigned to be more interactive (<https://github.com/opencv/cvat/pull/2054>)
