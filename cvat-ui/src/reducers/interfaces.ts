@@ -275,7 +275,7 @@ export enum ActiveControl {
     GROUP = 'group',
     SPLIT = 'split',
     EDIT = 'edit',
-    INTERACTION = 'interaction',
+    AI_TOOLS = 'ai_tools',
 }
 
 export enum ShapeType {

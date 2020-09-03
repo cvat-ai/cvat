@@ -1058,7 +1058,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    activeControl: ActiveControl.INTERACTION,
+                    activeControl: ActiveControl.AI_TOOLS,
                 },
             };
         }

@@ -92,6 +92,7 @@
     }
 }
 
+.cvat-tools-track-button,
 .cvat-tools-interact-button {
     width: 100%;
     margin-top: 10px;
@@ -102,7 +103,7 @@
 }
 
 .cvat-tools-control-popover-content {
-    width: 350px;
+    width: fit-content;
     padding: 10px;
     border-radius: 5px;
     background: $background-color-2;

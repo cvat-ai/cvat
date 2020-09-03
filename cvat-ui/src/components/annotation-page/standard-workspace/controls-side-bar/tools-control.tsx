@@ -32,6 +32,7 @@ import {
 } from 'actions/annotation-actions';
 import { InteractionResult } from 'cvat-canvas/src/typescript/canvas';
 import DetectorRunner from 'components/model-runner-modal/detector-runner';
+import InputNumber from 'antd/lib/input-number';
 
 interface StateToProps {
     canvasInstance: Canvas;
@@ -39,10 +40,12 @@ interface StateToProps {
     states: any[];
     activeLabelID: number;
     jobInstance: any;
-    isInteraction: boolean;
+    isActivated: boolean;
     frame: number;
     interactors: Model[];
     detectors: Model[];
+    trackers: Model[];
+    curZOrder: number;
 }
 
 interface DispatchToProps {
@@ -60,18 +63,20 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { instance: jobInstance } = annotation.job;
     const { instance: canvasInstance, activeControl } = annotation.canvas;
     const { models } = state;
-    const { interactors, detectors } = models;
+    const { interactors, detectors, trackers } = models;
 
     return {
         interactors,
         detectors,
-        isInteraction: activeControl === ActiveControl.INTERACTION,
+        trackers,
+        isActivated: activeControl === ActiveControl.AI_TOOLS,
         activeLabelID: annotation.drawing.activeLabelID,
         labels: annotation.job.labels,
         states: annotation.annotations.states,
         canvasInstance,
         jobInstance,
         frame,
+        curZOrder: annotation.annotations.zLayer.cur,
     };
 }
 
@@ -103,7 +108,10 @@ interface State {
     activeInteractor: Model | null;
     activeLabelID: number;
     interactiveStateID: number | null;
+    activeTracker: Model | null;
+    trackingFrames: number;
     fetching: boolean;
+    mode: 'detection' | 'interaction' | 'tracking';
 }
 
 class ToolsControlComponent extends React.PureComponent<Props, State> {
@@ -114,9 +122,12 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         super(props);
         this.state = {
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
+            activeTracker: props.trackers.length ? props.trackers[0] : null,
             activeLabelID: props.labels[0].id,
             interactiveStateID: null,
+            trackingFrames: 10,
             fetching: false,
+            mode: 'interaction',
         };
 
         this.interactionIsAborted = false;
@@ -130,10 +141,11 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        const { isInteraction } = this.props;
-        if (prevProps.isInteraction && !isInteraction) {
+        const { isActivated } = this.props;
+        if (prevProps.isActivated && !isActivated) {
             window.removeEventListener('contextmenu', this.contextmenuDisabler);
-        } else if (!prevProps.isInteraction && isInteraction) {
+        } else if (!prevProps.isActivated && isActivated) {
+            // reset flags when start interaction/tracking
             this.interactionIsDone = false;
             this.interactionIsAborted = false;
             window.addEventListener('contextmenu', this.contextmenuDisabler);
@@ -162,14 +174,14 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private cancelListener = async (): Promise<void> => {
         const {
-            isInteraction,
+            isActivated,
             jobInstance,
             frame,
             fetchAnnotations,
         } = this.props;
         const { interactiveStateID, fetching } = this.state;
 
-        if (isInteraction) {
+        if (isActivated) {
             if (fetching && !this.interactionIsDone) {
                 // user pressed ESC
                 this.setState({ fetching: false });
@@ -187,12 +199,13 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     };
 
-    private interactionListener = async (e: Event): Promise<void> => {
+    private onInteraction = async (e: Event): Promise<void> => {
         const {
             frame,
             labels,
+            curZOrder,
             jobInstance,
-            isInteraction,
+            isActivated,
             activeLabelID,
             fetchAnnotations,
             updateAnnotations,
@@ -200,8 +213,8 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { activeInteractor, interactiveStateID, fetching } = this.state;
 
         try {
-            if (!isInteraction) {
-                throw Error('Canvas raises event "canvas.interacted" when interaction is off');
+            if (!isActivated) {
+                throw Error('Canvas raises event "canvas.interacted" when interaction with it is off');
             }
 
             if (fetching) {
@@ -216,7 +229,6 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                 this.setState({ fetching: true });
                 try {
                     result = await core.lambda.call(jobInstance.task, interactor, {
-                        task: jobInstance.task,
                         frame,
                         points: convertShapesForInteractor((e as CustomEvent).detail.shapes),
                     });
@@ -241,7 +253,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                     shapeType: ShapeType.POLYGON,
                     points: result.flat(),
                     occluded: false,
-                    zOrder: (e as CustomEvent).detail.zOrder,
+                    zOrder: curZOrder,
                 });
 
                 await jobInstance.annotations.put([object]);
@@ -260,7 +272,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                         shapeType: ShapeType.POLYGON,
                         points: result.flat(),
                         occluded: false,
-                        zOrder: (e as CustomEvent).detail.zOrder,
+                        zOrder: curZOrder,
                     });
                     // need a clientID of a created object to interact with it further
                     // so, we do not use createAnnotationAction
@@ -302,11 +314,135 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     };
 
+    private onTracking = async (e: Event): Promise<void> => {
+        const {
+            isActivated,
+            jobInstance,
+            frame,
+            curZOrder,
+            fetchAnnotations,
+        } = this.props;
+        const { activeTracker, activeLabelID, trackingFrames } = this.state;
+
+        if (!(e as CustomEvent).detail.isDone) {
+            return;
+        }
+
+        this.interactionIsDone = true;
+        try {
+            if (!isActivated) {
+                throw Error('Canvas raises event "canvas.interacted" when interaction with it is off');
+            }
+
+            this.setState({
+                fetching: true,
+            });
+
+            const tracker = activeTracker as Model;
+            const { points } = (e as CustomEvent).detail.shapes[0];
+
+            const state = new core.classes.ObjectState({
+                shapeType: ShapeType.POLYGON,
+                objectType: ObjectType.TRACK,
+                zOrder: curZOrder,
+                label: jobInstance.task.labels
+                    .filter(
+                        (label: any): boolean => label.id === activeLabelID,
+                    )[0],
+                points: [points[0], points[1], points[2], points[1], points[2], points[3], points[0], points[3]],
+                frame,
+                occluded: false,
+                source: 'auto',
+                attributes: {},
+            });
+
+            const [clientID] = await jobInstance.annotations.put([state]);
+
+            // update annotations on a canvas
+            fetchAnnotations();
+
+            let response = await core.lambda.call(jobInstance.task, tracker, {
+                task: jobInstance.task,
+                frame,
+                shape: (e as CustomEvent).detail.shapes[0].points,
+            });
+
+            for (let i = 1; i <= trackingFrames; i++) {
+                /* eslint-disable no-await-in-loop */
+                const [objectState] = await jobInstance.annotations.get(frame + i, true, [`clientID == ${clientID}`]);
+
+                response = await core.lambda.call(jobInstance.task, tracker, {
+                    task: jobInstance.task,
+                    frame: frame + i,
+                    shape: response.points,
+                    state: response.state,
+                });
+
+                // let xtl = Number.MAX_SAFE_INTEGER;
+                // let ytl = Number.MAX_SAFE_INTEGER;
+                // let xbr = Number.MIN_SAFE_INTEGER;
+                // let ybr = Number.MIN_SAFE_INTEGER;
+
+                // for (let j = 0; j < response.shape.length; j++) {
+                //     if (j % 2) { // y
+                //         ytl = Math.min(ytl, response.shape[j]);
+                //         ybr = Math.max(ybr, response.shape[j]);
+                //     } else { // x
+                //         xtl = Math.min(xtl, response.shape[j]);
+                //         xbr = Math.max(xbr, response.shape[j]);
+                //     }
+                // }
+
+                objectState.points = response.shape;
+                await objectState.save();
+            }
+
+            this.setState({
+                fetching: false,
+            });
+
+            // add a track, get it back
+            // get it from the next frame
+            //
+
+
+            // start server request
+            // get result
+            // push track to collection
+        } catch (err) {
+            notification.error({
+                description: err.toString(),
+                message: 'Tracking error occured',
+            });
+        }
+    };
+
+    private interactionListener = async (e: Event): Promise<void> => {
+        const { mode } = this.state;
+
+        if (mode === 'interaction') {
+            await this.onInteraction(e);
+        }
+
+        if (mode === 'tracking') {
+            await this.onTracking(e);
+        }
+    };
+
     private setActiveInteractor = (key: string): void => {
         const { interactors } = this.props;
         this.setState({
             activeInteractor: interactors.filter(
                 (interactor: Model) => interactor.id === key,
+            )[0],
+        });
+    };
+
+    private setActiveTracker = (key: string): void => {
+        const { trackers } = this.props;
+        this.setState({
+            activeTracker: trackers.filter(
+                (tracker: Model) => tracker.id === key,
             )[0],
         });
     };
@@ -355,9 +491,118 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         );
     }
 
+    private renderTrackerBlock(): JSX.Element {
+        const {
+            trackers,
+            canvasInstance,
+            jobInstance,
+            frame,
+            onInteractionStart,
+        } = this.props;
+        const {
+            activeTracker,
+            activeLabelID,
+            fetching,
+            trackingFrames,
+        } = this.state;
+
+        if (!trackers.length) {
+            return (
+                <Row type='flex' justify='start'>
+                    <Col>
+                        <Text className='cvat-text-color'>No available trackers found</Text>
+                    </Col>
+                </Row>
+            );
+        }
+
+        return (
+            <>
+                <Row type='flex' justify='start'>
+                    <Col>
+                        <Text className='cvat-text-color'>Tracker</Text>
+                    </Col>
+                </Row>
+                <Row type='flex' align='middle' justify='center'>
+                    <Col span={24}>
+                        <Select
+                            style={{ width: '100%' }}
+                            defaultValue={trackers[0].name}
+                            onChange={this.setActiveTracker}
+                        >
+                            {trackers.map((interactor: Model): JSX.Element => (
+                                <Select.Option title={interactor.description} key={interactor.id}>
+                                    {interactor.name}
+                                </Select.Option>
+                            ))}
+                        </Select>
+                    </Col>
+                </Row>
+                <Row type='flex' align='middle' justify='start' style={{ marginTop: '5px' }}>
+                    <Col>
+                        <Text>Tracking frames</Text>
+                    </Col>
+                    <Col offset={2}>
+                        <InputNumber
+                            value={trackingFrames}
+                            step={1}
+                            min={1}
+                            precision={0}
+                            max={jobInstance.stopFrame - frame}
+                            onChange={(value: number | undefined): void => {
+                                if (typeof (value) !== 'undefined') {
+                                    this.setState({
+                                        trackingFrames: value,
+                                    });
+                                }
+                            }}
+                        />
+                    </Col>
+                </Row>
+                <Row type='flex' align='middle' justify='end'>
+                    <Col>
+                        <Button
+                            type='primary'
+                            loading={fetching}
+                            className='cvat-tools-track-button'
+                            disabled={!activeTracker || fetching || frame === jobInstance.stopFrame}
+                            onClick={() => {
+                                this.setState({
+                                    mode: 'tracking',
+                                });
+
+                                if (activeTracker) {
+                                    canvasInstance.cancel();
+                                    canvasInstance.interact({
+                                        shapeType: 'rectangle',
+                                        enabled: true,
+                                    });
+
+                                    onInteractionStart(activeTracker, activeLabelID);
+                                }
+                            }}
+                        >
+                            Track
+                        </Button>
+                    </Col>
+                </Row>
+            </>
+        );
+    }
+
     private renderInteractorBlock(): JSX.Element {
         const { interactors, canvasInstance, onInteractionStart } = this.props;
         const { activeInteractor, activeLabelID, fetching } = this.state;
+
+        if (!interactors.length) {
+            return (
+                <Row type='flex' justify='start'>
+                    <Col>
+                        <Text className='cvat-text-color'>No available interactors found</Text>
+                    </Col>
+                </Row>
+            );
+        }
 
         return (
             <>
@@ -389,6 +634,10 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                             className='cvat-tools-interact-button'
                             disabled={!activeInteractor || fetching}
                             onClick={() => {
+                                this.setState({
+                                    mode: 'interaction',
+                                });
+
                                 if (activeInteractor) {
                                     canvasInstance.cancel();
                                     canvasInstance.interact({
@@ -413,9 +662,20 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
         const {
             jobInstance,
             detectors,
+            curZOrder,
             frame,
             fetchAnnotations,
         } = this.props;
+
+        if (!detectors.length) {
+            return (
+                <Row type='flex' justify='start'>
+                    <Col>
+                        <Text className='cvat-text-color'>No available interactors found</Text>
+                    </Col>
+                </Row>
+            );
+        }
 
         return (
             <DetectorRunner
@@ -424,6 +684,10 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                 task={jobInstance.task}
                 runInference={async (task: any, model: Model, body: object) => {
                     try {
+                        this.setState({
+                            mode: 'detection',
+                        });
+
                         this.setState({ fetching: true });
                         const result = await core.lambda.call(task, model, {
                             ...body,
@@ -444,7 +708,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     occluded: false,
                                     source: 'auto',
                                     attributes: {},
-                                    zOrder: 0, // TODO:  get current z order
+                                    zOrder: curZOrder,
                                 })
                             ));
 
@@ -471,7 +735,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                         <Text className='cvat-text-color' strong>AI Tools</Text>
                     </Col>
                 </Row>
-                <Tabs>
+                <Tabs type='card' tabBarGutter={8}>
                     <Tabs.TabPane key='interactors' tab='Interactors'>
                         { this.renderLabelBlock() }
                         { this.renderInteractorBlock() }
@@ -479,24 +743,34 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                     <Tabs.TabPane key='detectors' tab='Detectors'>
                         { this.renderDetectorBlock() }
                     </Tabs.TabPane>
+                    <Tabs.TabPane key='trackers' tab='Trackers'>
+                        { this.renderLabelBlock() }
+                        { this.renderTrackerBlock() }
+                    </Tabs.TabPane>
                 </Tabs>
             </div>
         );
     }
 
     public render(): JSX.Element | null {
-        const { interactors, isInteraction, canvasInstance } = this.props;
+        const {
+            interactors,
+            detectors,
+            trackers,
+            isActivated,
+            canvasInstance,
+        } = this.props;
         const { fetching } = this.state;
 
-        if (!interactors.length) return null;
+        if (![...interactors, ...detectors, ...trackers].length) return null;
 
-        const dynamcPopoverPros = isInteraction ? {
+        const dynamcPopoverPros = isActivated ? {
             overlayStyle: {
                 display: 'none',
             },
         } : {};
 
-        const dynamicIconProps = isInteraction ? {
+        const dynamicIconProps = isActivated ? {
             className: 'cvat-active-canvas-control cvat-tools-control',
             onClick: (): void => {
                 canvasInstance.interact({ enabled: false });
@@ -522,7 +796,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                     {...dynamcPopoverPros}
                     placement='right'
                     overlayClassName='cvat-tools-control-popover'
-                    content={interactors.length && this.renderPopoverContent()}
+                    content={this.renderPopoverContent()}
                 >
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </Popover>

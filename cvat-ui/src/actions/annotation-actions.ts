@@ -1424,12 +1424,21 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
         let activeControl = ActiveControl.CURSOR;
         if (activeInteractor) {
-            canvasInstance.interact({
-                enabled: true,
-                shapeType: 'points',
-                minPosVertices: 4, // TODO: Add parameter to interactor
-            });
-            dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+            if (activeInteractor.type === 'tracker') {
+                canvasInstance.interact({
+                    enabled: true,
+                    shapeType: 'rectangle',
+                });
+                dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+            } else {
+                canvasInstance.interact({
+                    enabled: true,
+                    shapeType: 'points',
+                    minPosVertices: 4, // TODO: Add parameter to interactor
+                });
+                dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+            }
+
             return;
         }
 
