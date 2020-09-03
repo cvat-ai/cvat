@@ -422,16 +422,15 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                 withCleanup={false}
                 models={detectors}
                 task={jobInstance.task}
-                runInference={async (task: any, model: Model) => {
+                runInference={async (task: any, model: Model, body: object) => {
                     try {
                         this.setState({ fetching: true });
                         const result = await core.lambda.call(task, model, {
+                            ...body,
                             frame,
                         });
 
-                        const labels = task.labels.map((label: any): string => label.name);
                         const states = result
-                            .filter((data: any): any => labels.includes(data.label))
                             .map((data: any): any => (
                                 new core.classes.ObjectState({
                                     shapeType: data.type,

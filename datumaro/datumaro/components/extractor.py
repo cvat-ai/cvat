@@ -46,7 +46,7 @@ class Annotation:
 @attrs
 class Categories:
     attributes = attrib(factory=set, validator=default_if_none(set),
-        kw_only=True)
+        kw_only=True, eq=False)
 
 @attrs
 class LabelCategories(Categories):
@@ -137,6 +137,8 @@ class MaskCategories(Categories):
     def __eq__(self, other):
         if not super().__eq__(other):
             return False
+        if not isinstance(other, __class__):
+            return False
         for label_id, my_color in self.colormap.items():
             other_color = other.colormap.get(label_id)
             if not np.array_equal(my_color, other_color):
@@ -178,6 +180,8 @@ class Mask(Annotation):
 
     def __eq__(self, other):
         if not super().__eq__(other):
+            return False
+        if not isinstance(other, __class__):
             return False
         return \
             (self.label == other.label) and \

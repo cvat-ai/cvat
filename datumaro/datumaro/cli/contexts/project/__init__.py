@@ -4,25 +4,26 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
-from enum import Enum
 import json
 import logging as log
 import os
 import os.path as osp
 import shutil
+from enum import Enum
 
-from datumaro.components.project import Project, Environment, \
-    PROJECT_DEFAULT_CONFIG as DEFAULT_CONFIG
-from datumaro.components.comparator import Comparator
+from datumaro.components.cli_plugin import CliPlugin
 from datumaro.components.dataset_filter import DatasetItemEncoder
 from datumaro.components.extractor import AnnotationType
-from datumaro.components.cli_plugin import CliPlugin
-from datumaro.components.operations import \
-    compute_image_statistics, compute_ann_statistics
+from datumaro.components.operations import (DistanceComparator,
+    ExactComparator, compute_ann_statistics, compute_image_statistics, mean_std)
+from datumaro.components.project import \
+    PROJECT_DEFAULT_CONFIG as DEFAULT_CONFIG
+from datumaro.components.project import Environment, Project
+
+from ...util import (CliException, MultilineFormatter, add_subparser,
+    make_file_name)
+from ...util.project import generate_next_file_name, load_project
 from .diff import DiffVisualizer
-from ...util import add_subparser, CliException, MultilineFormatter, \
-    make_file_name
-from ...util.project import load_project, generate_next_file_name
 
 
 def build_create_parser(parser_ctor=argparse.ArgumentParser):
@@ -503,12 +504,12 @@ def merge_command(args):
 def build_diff_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Compare projects",
         description="""
-        Compares two projects.|n
+        Compares two projects, match annotations by distance.|n
         |n
         Examples:|n
-        - Compare two projects, consider bboxes matching if their IoU > 0.7,|n
+        - Compare two projects, match boxes if IoU > 0.7,|n
         |s|s|s|sprint results to Tensorboard:
-        |s|sdiff path/to/other/project -o diff/ -f tensorboard --iou-thresh 0.7
+        |s|sdiff path/to/other/project -o diff/ -v tensorboard --iou-thresh 0.7
         """,
         formatter_class=MultilineFormatter)
 
@@ -516,7 +517,7 @@ def build_diff_parser(parser_ctor=argparse.ArgumentParser):
         help="Directory of the second project to be compared")
     parser.add_argument('-o', '--output-dir', dest='dst_dir', default=None,
         help="Directory to save comparison results (default: do not save)")
-    parser.add_argument('-f', '--format',
+    parser.add_argument('-v', '--visualizer',
         default=DiffVisualizer.DEFAULT_FORMAT,
         choices=[f.name for f in DiffVisualizer.Format],
         help="Output format (default: %(default)s)")
@@ -536,9 +537,7 @@ def diff_command(args):
     first_project = load_project(args.project_dir)
     second_project = load_project(args.other_project_dir)
 
-    comparator = Comparator(
-        iou_threshold=args.iou_thresh,
-        conf_threshold=args.conf_thresh)
+    comparator = DistanceComparator(iou_threshold=args.iou_thresh)
 
     dst_dir = args.dst_dir
     if dst_dir:
@@ -556,7 +555,7 @@ def diff_command(args):
     dst_dir_existed = osp.exists(dst_dir)
     try:
         visualizer = DiffVisualizer(save_dir=dst_dir, comparator=comparator,
-            output_format=args.format)
+            output_format=args.visualizer)
         visualizer.save_dataset_diff(
             first_project.make_dataset(),
             second_project.make_dataset())
@@ -564,6 +563,73 @@ def diff_command(args):
         if not dst_dir_existed and osp.isdir(dst_dir):
             shutil.rmtree(dst_dir, ignore_errors=True)
         raise
+
+    return 0
+
+def build_ediff_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor(help="Compare projects for equality",
+        description="""
+        Compares two projects for equality.|n
+        |n
+        Examples:|n
+        - Compare two projects, exclude annotation group |n
+        |s|s|sand the 'is_crowd' attribute from comparison:|n
+        |s|sediff other/project/ -if group -ia is_crowd
+        """,
+        formatter_class=MultilineFormatter)
+
+    parser.add_argument('other_project_dir',
+        help="Directory of the second project to be compared")
+    parser.add_argument('-iia', '--ignore-item-attr', action='append',
+        help="Ignore item attribute (repeatable)")
+    parser.add_argument('-ia', '--ignore-attr', action='append',
+        help="Ignore annotation attribute (repeatable)")
+    parser.add_argument('-if', '--ignore-field',
+        action='append', default=['id', 'group'],
+        help="Ignore annotation field (repeatable, default: %(default)s)")
+    parser.add_argument('--match-images', action='store_true',
+        help='Match dataset items by images instead of ids')
+    parser.add_argument('--all', action='store_true',
+        help="Include matches in the output")
+    parser.add_argument('-p', '--project', dest='project_dir', default='.',
+        help="Directory of the first project to be compared (default: current dir)")
+    parser.set_defaults(command=ediff_command)
+
+    return parser
+
+def ediff_command(args):
+    first_project = load_project(args.project_dir)
+    second_project = load_project(args.other_project_dir)
+
+    comparator = ExactComparator(
+        match_images=args.match_images,
+        ignored_fields=args.ignore_field,
+        ignored_attrs=args.ignore_attr,
+        ignored_item_attrs=args.ignore_item_attr)
+    matches, mismatches, a_extra, b_extra, errors = \
+        comparator.compare_datasets(
+            first_project.make_dataset(), second_project.make_dataset())
+    output = {
+        "mismatches": mismatches,
+        "a_extra_items": sorted(a_extra),
+        "b_extra_items": sorted(b_extra),
+        "errors": errors,
+    }
+    if args.all:
+        output["matches"] = matches
+
+    output_file = generate_next_file_name('diff', ext='.json')
+    with open(output_file, 'w') as f:
+        json.dump(output, f, indent=4, sort_keys=True)
+
+    print("Found:")
+    print("The first project has %s unmatched items" % len(a_extra))
+    print("The second project has %s unmatched items" % len(b_extra))
+    print("%s item conflicts" % len(errors))
+    print("%s matching annotations" % len(matches))
+    print("%s mismatching annotations" % len(mismatches))
+
+    log.info("Output has been saved to '%s'" % output_file)
 
     return 0
 
@@ -753,6 +819,7 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
     add_subparser(subparsers, 'extract', build_extract_parser)
     add_subparser(subparsers, 'merge', build_merge_parser)
     add_subparser(subparsers, 'diff', build_diff_parser)
+    add_subparser(subparsers, 'ediff', build_ediff_parser)
     add_subparser(subparsers, 'transform', build_transform_parser)
     add_subparser(subparsers, 'info', build_info_parser)
     add_subparser(subparsers, 'stats', build_stats_parser)

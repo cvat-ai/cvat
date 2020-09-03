@@ -14,24 +14,13 @@ Next steps should work on clear Ubuntu 18.04.
 
 -   Install necessary dependencies:
     ```sh
-    sudo apt-get update && sudo apt-get --no-install-recommends install -y ffmpeg build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev
+    sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
     ```
-    Also please make sure that you have installed ffmpeg with all necessary libav* libraries and pkg-config package.
+    Please make sure you have installed FFmpeg libraries (libav*) version 4.0 or higher.
     ```sh
     # Node and npm (you can use default versions of these packages from apt (8.*, 3.*), but we would recommend to use newer versions)
     curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
     sudo apt-get install -y nodejs
-
-    # General dependencies
-    sudo apt-get install -y pkg-config
-
-    # Library components
-    sudo apt-get install -y \
-        libavformat-dev libavcodec-dev libavdevice-dev \
-        libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
-    ```
-    See [PyAV Dependencies installation guide](http://docs.mikeboers.com/pyav/develop/overview/installation.html#dependencies)
-    for details.
 
 -   Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
 for development

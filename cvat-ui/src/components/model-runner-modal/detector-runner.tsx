@@ -79,7 +79,7 @@ function DetectorRunner(props: Props): JSX.Element {
         .filter((_label: string): boolean => !(_label in mapping));
     const taskLabels = (isDetector && !!task
         ? task.labels.map((label: any): string => label.name) : []
-    ).filter((_label: string): boolean => !Object.values(mapping).includes(_label));
+    );
 
     if (model && model.type !== 'reid' && !model.labels.length) {
         notification.warning({
@@ -118,28 +118,31 @@ function DetectorRunner(props: Props): JSX.Element {
 
     function renderSelector(
         value: string,
+        tooltip: string,
         labels: string[],
         onChange: (label: string) => void,
     ): JSX.Element {
         return (
-            <Select
-                value={value}
-                onChange={onChange}
-                style={{ width: '100%' }}
-                showSearch
-                filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
-                    const { children } = option.props;
-                    if (typeof (children) === 'string') {
-                        return children.toLowerCase().includes(input.toLowerCase());
-                    }
+            <Tooltip title={tooltip}>
+                <Select
+                    value={value}
+                    onChange={onChange}
+                    style={{ width: '100%' }}
+                    showSearch
+                    filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
+                        const { children } = option.props;
+                        if (typeof (children) === 'string') {
+                            return children.toLowerCase().includes(input.toLowerCase());
+                        }
 
-                    return false;
-                }}
-            >
-                { labels.map((label: string): JSX.Element => (
-                    <Select.Option key={label}>{label}</Select.Option>
-                )) }
-            </Select>
+                        return false;
+                    }}
+                >
+                    { labels.map((label: string): JSX.Element => (
+                        <Select.Option key={label}>{label}</Select.Option>
+                    )) }
+                </Select>
+            </Tooltip>
         );
     }
 
@@ -179,10 +182,10 @@ function DetectorRunner(props: Props): JSX.Element {
             { isDetector && !!Object.keys(mapping).length && (
                 Object.keys(mapping).map((modelLabel: string) => (
                     <Row key={modelLabel} type='flex' justify='start' align='middle'>
-                        <Col offset={4}>
+                        <Col span={10}>
                             <Tag color={colors[modelLabel]}>{modelLabel}</Tag>
                         </Col>
-                        <Col offset={1}>
+                        <Col span={10} offset={1}>
                             <Tag color={colors[modelLabel]}>{mapping[modelLabel]}</Tag>
                         </Col>
                         <Col offset={1}>
@@ -207,6 +210,7 @@ function DetectorRunner(props: Props): JSX.Element {
                         <Col span={10}>
                             {renderSelector(
                                 match.model || '',
+                                'Model labels',
                                 modelLabels,
                                 (modelLabel: string) => updateMatch(modelLabel, null),
                             )}
@@ -214,6 +218,7 @@ function DetectorRunner(props: Props): JSX.Element {
                         <Col span={10} offset={1}>
                             {renderSelector(
                                 match.task || '',
+                                'Task labels',
                                 taskLabels,
                                 (taskLabel: string) => updateMatch(null, taskLabel),
                             )}
@@ -288,7 +293,7 @@ function DetectorRunner(props: Props): JSX.Element {
                             runInference(
                                 task,
                                 model,
-                                model.type === 'detector' ? { mapping, cleanup, threshold } : {
+                                model.type === 'detector' ? { mapping, cleanup } : {
                                     threshold,
                                     max_distance: distance,
                                 },
