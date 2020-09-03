@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added password reset functionality (<https://github.com/opencv/cvat/pull/2058>)
 - Ability to work with data on the fly (https://github.com/opencv/cvat/pull/2007)
 - Annotation in process outline color wheel (<https://github.com/opencv/cvat/pull/2084>)
-- [Datumaro] Merging of incompatible datasets (<https://github.com/opencv/cvat/pull/2098>)
+- [Datumaro] CLI command for dataset equality comparison (<https://github.com/opencv/cvat/pull/1989>)
+- [Datumaro] Merging of datasets with different labels (<https://github.com/opencv/cvat/pull/2098>)
 
 ### Changed
 - UI models (like DEXTR) were redesigned to be more interactive (<https://github.com/opencv/cvat/pull/2054>)
+- Used Ubuntu:20.04 as a base image for CVAT Dockerfile (<https://github.com/opencv/cvat/pull/2101>)
 
 ### Deprecated
 -
@@ -21,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Fixed multiple errors which arises when polygon is of length 5 or less (<https://github.com/opencv/cvat/pull/2100>)
 
 ### Security
 -
@@ -48,7 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed error with creating task with labels with the same name (<https://github.com/opencv/cvat/pull/2031>)
 - Django RQ dashboard view (<https://github.com/opencv/cvat/pull/2069>)
 - Object's details menu settings (<https://github.com/opencv/cvat/pull/2084>)
--
 
 ## [1.1.0-beta] - 2020-08-03
 ### Added
