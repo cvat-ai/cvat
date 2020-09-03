@@ -180,3 +180,18 @@ Cypress.Commands.add('changeAnnotationMode', (mode) => {
     cy.get('.cvat-workspace-selector')
     .should('contain.text', mode)
 })
+
+Cypress.Commands.add('createCuboid', (mode, firstX, firstY, lastX, lastY) => {
+    cy.get('.cvat-draw-cuboid-control').click()
+    cy.contains('Draw new cuboid')
+    .parents('.cvat-draw-shape-popover-content')
+    .within(() => {
+        cy.get('button')
+        .contains(mode)
+        .click({force: true})
+    })
+    cy.get('.cvat-canvas-container')
+    .click(firstX, firstY)
+    cy.get('.cvat-canvas-container')
+    .click(lastX, lastY)
+})
