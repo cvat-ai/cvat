@@ -217,7 +217,7 @@ class DiffVisualizer:
         _, mispred, a_unmatched, b_unmatched = diff
 
         if 0 < len(a_unmatched) + len(b_unmatched) + len(mispred):
-            img_a = item_a.image.copy()
+            img_a = item_a.image.data.copy()
             img_b = img_a.copy()
             for a_bbox, b_bbox in mispred:
                 self.draw_bbox(img_a, a_bbox, (0, 255, 0))

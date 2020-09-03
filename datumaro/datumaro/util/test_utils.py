@@ -100,8 +100,7 @@ def compare_datasets(test, expected, actual, ignored_attrs=None):
             ann_b = find(ann_b_matches, lambda x:
                 _compare_annotations(x, ann_a, ignored_attrs=ignored_attrs))
             if ann_b is None:
-                test.assertEqual(ann_a, ann_b,
-                    'ann %s, candidates %s' % (ann_a, ann_b_matches))
+                test.fail('ann %s, candidates %s' % (ann_a, ann_b_matches))
             item_b.annotations.remove(ann_b) # avoid repeats
 
 def compare_datasets_strict(test, expected, actual):
