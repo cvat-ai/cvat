@@ -250,7 +250,7 @@ class ProjectTest(TestCase):
         project.env.extractors.register(e_type, TestExtractor)
         project.add_source('source', { 'format': e_type })
 
-        dataset = project.make_dataset().extract('/item[id < 5]')
+        dataset = project.make_dataset().filter('/item[id < 5]')
 
         self.assertEqual(5, len(dataset))
 
