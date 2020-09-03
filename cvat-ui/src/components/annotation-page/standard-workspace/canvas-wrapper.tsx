@@ -42,7 +42,8 @@ interface Props {
     opacity: number;
     colorBy: ColorBy;
     selectedOpacity: number;
-    blackBorders: boolean;
+    outlined: boolean;
+    outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
     grid: boolean;
@@ -125,7 +126,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             opacity,
             colorBy,
             selectedOpacity,
-            blackBorders,
+            outlined,
+            outlineColor,
             showBitmap,
             frameData,
             frameAngle,
@@ -230,7 +232,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }, { once: true });
         }
 
-        if (prevProps.opacity !== opacity || prevProps.blackBorders !== blackBorders
+        if (prevProps.opacity !== opacity || prevProps.outlined !== outlined
+            || prevProps.outlineColor !== outlineColor
             || prevProps.selectedOpacity !== selectedOpacity || prevProps.colorBy !== colorBy
         ) {
             this.updateShapesView();
@@ -602,7 +605,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             annotations,
             opacity,
             colorBy,
-            blackBorders,
+            outlined,
+            outlineColor,
         } = this.props;
 
         for (const state of annotations) {
@@ -625,7 +629,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 }
 
                 (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
-                (shapeView as any).instance.stroke({ color: blackBorders ? 'black' : shapeColor });
+                (shapeView as any).instance.stroke({ color: outlined ? outlineColor : shapeColor });
             }
         }
     }

@@ -199,12 +199,47 @@ function build() {
                 * @method changePassword
                 * @async
                 * @memberof module:API.cvat.server
+                * @param {string} oldPassword Current password for the account
+                * @param {string} newPassword1 New password for the account
+                * @param {string} newPassword2 Confirmation password for the account
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
             async changePassword(oldPassword, newPassword1, newPassword2) {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.server.changePassword, oldPassword, newPassword1, newPassword2);
+                return result;
+            },
+            /**
+                * Method allows to reset user password
+                * @method requestPasswordReset
+                * @async
+                * @memberof module:API.cvat.server
+                * @param {string} email A email address for the account
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async requestPasswordReset(email) {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.server.requestPasswordReset, email);
+                return result;
+            },
+            /**
+                * Method allows to confirm reset user password
+                * @method resetPassword
+                * @async
+                * @memberof module:API.cvat.server
+                * @param {string} newPassword1 New password for the account
+                * @param {string} newPassword2 Confirmation password for the account
+                * @param {string} uid User id
+                * @param {string} token Request authentication token
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async resetPassword(newPassword1, newPassword2, uid, token) {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.server.resetPassword, newPassword1, newPassword2,
+                        uid, token);
                 return result;
             },
             /**

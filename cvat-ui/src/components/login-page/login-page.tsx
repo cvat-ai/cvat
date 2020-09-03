@@ -14,6 +14,7 @@ import CookieDrawer from './cookie-policy-drawer';
 
 interface LoginPageComponentProps {
     fetching: boolean;
+    renderResetPassword: boolean;
     onLogin: (username: string, password: string) => void;
 }
 
@@ -29,6 +30,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     const {
         fetching,
         onLogin,
+        renderResetPassword,
     } = props;
 
     return (
@@ -50,6 +52,16 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                             </Text>
                         </Col>
                     </Row>
+                    { renderResetPassword
+                        && (
+                            <Row type='flex' justify='start' align='top'>
+                                <Col>
+                                    <Text strong>
+                                        <Link to='/auth/password/reset'>Forgot your password?</Link>
+                                    </Text>
+                                </Col>
+                            </Row>
+                        )}
                 </Col>
             </Row>
             <CookieDrawer />
