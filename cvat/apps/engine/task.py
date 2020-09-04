@@ -1,30 +1,37 @@
-
 # Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import itertools
 import os
-import sys
-import rq
 import shutil
+import sys
+from distutils.dir_util import copy_tree
 from traceback import print_exception
 from urllib import error as urlerror
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
-from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
-from cvat.apps.engine.models import DataChoice, StorageMethodChoice
-from cvat.apps.engine.utils import av_scan_paths
-
 import django_rq
+import rq
 from django.conf import settings
 from django.db import transaction
-from distutils.dir_util import copy_tree
 
+from cvat.apps.engine.media_extractors import (
+    get_mime,
+    MEDIA_TYPES,
+    Mpeg4ChunkWriter,
+    ZipChunkWriter,
+    Mpeg4CompressedChunkWriter,
+    ZipCompressedChunkWriter,
+    get_file_extentsion_from_content_type
+)
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice
+from cvat.apps.engine.utils import av_scan_paths
 from . import models
 from .log import slogger
 from .prepare import PrepareInfo, AnalyzeVideo
+
 
 ############################# Low Level server API
 
@@ -32,7 +39,8 @@ def create(tid, data):
     """Schedule the task"""
     q = django_rq.get_queue('default')
     q.enqueue_call(func=_create_thread, args=(tid, data),
-        job_id="/api/v1/tasks/{}".format(tid))
+                   job_id="/api/v1/tasks/{}".format(tid))
+
 
 @transaction.atomic
 def rq_handler(job, exc_type, exc_value, traceback):
@@ -43,9 +51,10 @@ def rq_handler(job, exc_type, exc_value, traceback):
         with open(db_task.get_log_path(), "wt") as log_file:
             print_exception(exc_type, exc_value, traceback, file=log_file)
     except models.Task.DoesNotExist:
-        pass # skip exceptions in the code
+        pass  # skip exceptions in the code
 
     return False
+
 
 ############################# Internal implementation for server API
 
@@ -65,6 +74,7 @@ def _copy_data_from_share(server_files, upload_dir):
                 os.makedirs(target_dir)
             shutil.copyfile(source_path, target_path)
 
+
 def _save_task_to_db(db_task):
     job = rq.get_current_job()
     job.meta['status'] = 'Task is being saved in database'
@@ -82,7 +92,7 @@ def _save_task_to_db(db_task):
     default_overlap = 5 if db_task.mode == 'interpolation' else 0
     if db_task.overlap is None:
         db_task.overlap = default_overlap
-    db_task.overlap = min(db_task.overlap, segment_size  // 2)
+    db_task.overlap = min(db_task.overlap, segment_size // 2)
 
     segment_step -= db_task.overlap
 
@@ -105,6 +115,7 @@ def _save_task_to_db(db_task):
     db_task.data.save()
     db_task.save()
 
+
 def _count_files(data):
     share_root = settings.SHARE_ROOT
     server_files = []
@@ -125,7 +136,7 @@ def _count_files(data):
     # the example above only 2.txt and 1.txt files will be in the final list.
     # Also need to correctly handle 'a/b/c0', 'a/b/c' case.
     data['server_files'] = [v[1] for v in zip([""] + server_files, server_files)
-        if not os.path.dirname(v[0]).startswith(v[1])]
+                            if not os.path.dirname(v[0]).startswith(v[1])]
 
     def count_files(file_mapping, counter):
         for rel_path, full_path in file_mapping.items():
@@ -134,22 +145,22 @@ def _count_files(data):
                 counter[mime].append(rel_path)
             else:
                 slogger.glob.warn("Skip '{}' file (its mime type doesn't "
-                    "correspond to a video or an image file)".format(full_path))
+                                  "correspond to a video or an image file)".format(full_path))
 
-
-    counter = { media_type: [] for media_type in MEDIA_TYPES.keys() }
+    counter = {media_type: [] for media_type in MEDIA_TYPES.keys()}
 
     count_files(
-        file_mapping={ f:f for f in data['remote_files'] or data['client_files']},
+        file_mapping={f: f for f in data['remote_files'] or data['client_files']},
         counter=counter,
     )
 
     count_files(
-        file_mapping={ f:os.path.abspath(os.path.join(share_root, f)) for f in data['server_files']},
+        file_mapping={f: os.path.abspath(os.path.join(share_root, f)) for f in data['server_files']},
         counter=counter,
     )
 
     return counter
+
 
 def _validate_data(counter):
     unique_entries = 0
@@ -178,25 +189,40 @@ def _validate_data(counter):
 
     return counter, task_modes[0]
 
+
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
     local_files = {}
     for url in urls:
         name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
-        if name in local_files:
-            raise Exception("filename collision: {}".format(name))
+        req = urlrequest.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         slogger.glob.info("Downloading: {}".format(url))
+
         job.meta['status'] = '{} is being downloaded..'.format(url)
         job.save_meta()
 
-        req = urlrequest.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         try:
-            with urlrequest.urlopen(req) as fp, open(os.path.join(upload_dir, name), 'wb') as tfp:
-                while True:
-                    block = fp.read(8192)
-                    if not block:
-                        break
-                    tfp.write(block)
+            with urlrequest.urlopen(req) as fp:
+                # check if file extension is present
+                if not os.path.splitext(name)[-1]:
+                    # attempt to get file extension from header
+                    content_type = fp.headers.get("Content-Type")
+                    # TODO: should we raise an exception if this fails? because it will downstream
+                    if content_type is not None:
+                        extension = get_file_extentsion_from_content_type(content_type)
+                        slogger.glob.info("Adding extension {} based on Content-Teader".format(extension))
+                        name += extension
+
+                if name in local_files:
+                    raise FileExistsError("filename collision: {}".format(name))
+
+                with open(os.path.join(upload_dir, name), 'wb') as tfp:
+                    while True:
+                        block = fp.read(8192)
+                        if not block:
+                            break
+                        tfp.write(block)
+
         except urlerror.HTTPError as err:
             raise Exception("Failed to download " + url + ". " + str(err.code) + ' - ' + err.reason)
         except urlerror.URLError as err:
@@ -204,6 +230,7 @@ def _download_data(urls, upload_dir):
 
         local_files[name] = True
     return list(local_files.keys())
+
 
 @transaction.atomic
 def _create_thread(tid, data):
@@ -247,7 +274,8 @@ def _create_thread(tid, data):
     if extractor.__class__ == MEDIA_TYPES['zip']['extractor']:
         extractor.extract()
     db_task.mode = task_mode
-    db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
+    db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data[
+        'use_zip_chunks'] else models.DataChoice.IMAGESET
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
 
     def update_progress(progress):
@@ -279,12 +307,11 @@ def _create_thread(tid, data):
         else:
             db_data.chunk_size = 36
 
-
     video_path = ""
     video_size = (0, 0)
 
     if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
-       for media_type, media_files in media.items():
+        for media_type, media_files in media.items():
             if media_files:
                 if task_mode == MEDIA_TYPES['video']['mode']:
                     try:
@@ -299,7 +326,9 @@ def _create_thread(tid, data):
                         meta_info.save_meta_info()
 
                         all_frames = meta_info.get_task_size()
-                        db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 if data['stop_frame'] else all_frames, all_frames), db_data.get_frame_step()))
+                        db_data.size = len(range(db_data.start_frame,
+                                                 min(data['stop_frame'] + 1 if data['stop_frame'] else all_frames,
+                                                     all_frames), db_data.get_frame_step()))
                         video_path = os.path.join(upload_dir, media_files[0])
                         frame = meta_info.key_frames.get(next(iter(meta_info.key_frames)))
                         video_size = (frame.width, frame.height)
@@ -307,24 +336,28 @@ def _create_thread(tid, data):
                     except Exception:
                         db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
 
-                else:#images,archive
+                else:  # images,archive
                     counter_ = itertools.count()
                     if isinstance(extractor, MEDIA_TYPES['archive']['extractor']):
                         media_files = [os.path.relpath(path, upload_dir) for path in extractor._source_path]
                     elif isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
                         media_files = extractor._source_path
 
-                    numbers_sequence = range(db_data.start_frame, min(data['stop_frame'] if data['stop_frame'] else len(media_files), len(media_files)), db_data.get_frame_step())
+                    numbers_sequence = range(db_data.start_frame,
+                                             min(data['stop_frame'] if data['stop_frame'] else len(media_files),
+                                                 len(media_files)), db_data.get_frame_step())
                     m_paths = []
-                    m_paths = [(path, numb) for numb, path in enumerate(sorted(media_files)) if numb in numbers_sequence]
+                    m_paths = [(path, numb) for numb, path in enumerate(sorted(media_files)) if
+                               numb in numbers_sequence]
 
-                    for chunk_number, media_paths in itertools.groupby(m_paths, lambda x: next(counter_) // db_data.chunk_size):
+                    for chunk_number, media_paths in itertools.groupby(m_paths,
+                                                                       lambda x: next(counter_) // db_data.chunk_size):
                         media_paths = list(media_paths)
                         img_sizes = []
                         from PIL import Image
                         with open(db_data.get_dummy_chunk_path(chunk_number), 'w') as dummy_chunk:
                             for path, _ in media_paths:
-                                dummy_chunk.write(path+'\n')
+                                dummy_chunk.write(path + '\n')
                                 img_sizes += [Image.open(os.path.join(upload_dir, path)).size]
 
                         db_data.size += len(media_paths)

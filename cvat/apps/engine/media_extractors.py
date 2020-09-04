@@ -20,6 +20,9 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
 
+def get_file_extentsion_from_content_type(content_type: str):
+    return mimetypes.guess_extension(content_type)
+
 def get_mime(name):
     for type_name, type_def in MEDIA_TYPES.items():
         if type_def['has_mime_type'](name):
