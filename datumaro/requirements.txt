@@ -7,6 +7,6 @@ matplotlib>=3.3.1
 opencv-python-headless>=4.1.0.25
 Pillow>=6.1.0
 pycocotools>=2.0.0
-PyYAML>=5.1.1
+PyYAML>=5.3.1
 scikit-image>=0.15.0
 tensorboardX>=1.8

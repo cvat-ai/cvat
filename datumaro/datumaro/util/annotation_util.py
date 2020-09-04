@@ -118,7 +118,7 @@ def segment_iou(a, b):
             if ann.type == AnnotationType.polygon:
                 return mask_utils.frPyObjects([ann.points], h, w)
             elif isinstance(ann, RleMask):
-                return [ann._rle]
+                return [ann.rle]
             elif ann.type == AnnotationType.mask:
                 return mask_utils.frPyObjects([mask_to_rle(ann.image)], h, w)
             else:

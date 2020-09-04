@@ -49,7 +49,11 @@ class Categories:
 
 @attrs
 class LabelCategories(Categories):
-    Category = namedtuple('Category', ['name', 'parent', 'attributes'])
+    @attrs(repr_ns='LabelCategories')
+    class Category:
+        name = attrib(converter=str, validator=not_empty)
+        parent = attrib(default='', validator=default_if_none(str))
+        attributes = attrib(factory=set, validator=default_if_none(set))
 
     items = attrib(factory=list, validator=default_if_none(list))
     _indices = attrib(factory=dict, init=False, eq=False)
@@ -93,15 +97,6 @@ class LabelCategories(Categories):
 
     def add(self, name: str, parent: str = None, attributes: dict = None):
         assert name not in self._indices, name
-        if attributes is None:
-            attributes = set()
-        else:
-            if not isinstance(attributes, set):
-                attributes = set(attributes)
-            for attr in attributes:
-                assert isinstance(attr, str)
-        if parent is None:
-            parent = ''
 
         index = len(self.items)
         self.items.append(self.Category(name, parent, attributes))
@@ -386,7 +381,10 @@ setattr(Bbox, '__init__', Bbox.__actual_init__)
 
 @attrs
 class PointsCategories(Categories):
-    Category = namedtuple('Category', ['labels', 'joints'])
+    @attrs(repr_ns="PointsCategories")
+    class Category:
+        labels = attrib(factory=list, validator=default_if_none(list))
+        joints = attrib(factory=set, validator=default_if_none(set))
 
     items = attrib(factory=dict, validator=default_if_none(dict))
 
@@ -396,28 +394,19 @@ class PointsCategories(Categories):
 
         Args:
             iterable ([type]): This iterable object can be:
-            1)simple int - will generate one Category with int as label
-            2)list of int - will interpreted as list of Category labels
-            3)list of positional argumetns - will generate Categories
-            with this arguments
+            1) list of positional argumetns - will generate Categories
+                with these arguments
 
         Returns:
             PointsCategories: PointsCategories object
         """
         temp_categories = cls()
 
-        if isinstance(iterable, int):
-            iterable = [[iterable]]
-
         for category in iterable:
-            if isinstance(category, int):
-                category = [category]
             temp_categories.add(*category)
         return temp_categories
 
     def add(self, label_id, labels=None, joints=None):
-        if labels is None:
-            labels = []
         if joints is None:
             joints = []
         joints = set(map(tuple, joints))
