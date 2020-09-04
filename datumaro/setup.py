@@ -1,5 +1,5 @@
 
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -36,7 +36,7 @@ setuptools.setup(
     version=find_version(),
     author="Intel",
     author_email="maxim.zhiltsov@intel.com",
-    description="Dataset Framework",
+    description="Dataset Management Framework (Datumaro)",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/opencv/cvat/datumaro",

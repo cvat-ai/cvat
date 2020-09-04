@@ -1,5 +1,5 @@
 
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -27,26 +27,25 @@ AnnotationType = Enum('AnnotationType',
 
 _COORDINATE_ROUNDING_DIGITS = 2
 
-@attrs
+@attrs(kw_only=True)
 class Annotation:
-    id = attrib(default=0, validator=default_if_none(int), kw_only=True)
-    attributes = attrib(factory=dict, validator=default_if_none(dict), kw_only=True)
-    group = attrib(default=0, validator=default_if_none(int), kw_only=True)
+    id = attrib(default=0, validator=default_if_none(int))
+    attributes = attrib(factory=dict, validator=default_if_none(dict))
+    group = attrib(default=0, validator=default_if_none(int))
 
     def __attrs_post_init__(self):
         assert isinstance(self.type, AnnotationType)
 
     @property
-    def type(self):
+    def type(self) -> AnnotationType:
         return self._type # must be set in subclasses
 
-    def wrap(item, **kwargs):
-        return attr.evolve(item, **kwargs)
+    def wrap(self, **kwargs):
+        return attr.evolve(self, **kwargs)
 
-@attrs
+@attrs(kw_only=True)
 class Categories:
-    attributes = attrib(factory=set, validator=default_if_none(set),
-        kw_only=True, eq=False)
+    attributes = attrib(factory=set, validator=default_if_none(set), eq=False)
 
 @attrs
 class LabelCategories(Categories):
@@ -92,7 +91,7 @@ class LabelCategories(Categories):
             indices[item.name] = index
         self._indices = indices
 
-    def add(self, name, parent=None, attributes=None):
+    def add(self, name: str, parent: str = None, attributes: dict = None):
         assert name not in self._indices, name
         if attributes is None:
             attributes = set()
@@ -109,7 +108,7 @@ class LabelCategories(Categories):
         self._indices[name] = index
         return index
 
-    def find(self, name):
+    def find(self, name: str):
         index = self._indices.get(name)
         if index is not None:
             return index, self.items[index]
@@ -601,7 +600,7 @@ class SourceExtractor(Extractor):
 
     def get_subset(self, name):
         if name != self._subset:
-            return None
+            raise Exception("Unknown subset '%s' requested" % name)
         return self
 
 class Importer:
@@ -629,5 +628,5 @@ class Transform(Extractor):
     def categories(self):
         return self._extractor.categories()
 
-    def transform_item(self, item):
+    def transform_item(self, item: DatasetItem) -> DatasetItem:
         raise NotImplementedError()

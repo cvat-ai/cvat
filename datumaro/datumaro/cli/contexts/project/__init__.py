@@ -1,5 +1,5 @@
 
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -278,7 +278,7 @@ def build_export_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Export project",
         description="""
             Exports the project dataset in some format. Optionally, a filter
-            can be passed, check 'extract' command description for more info.
+            can be passed, check 'filter' command description for more info.
             Each dataset format has its own options, which
             are passed after '--' separator (see examples), pass '-- -h'
             for more info. If not stated otherwise, by default
@@ -362,7 +362,7 @@ def export_command(args):
 
     return 0
 
-def build_extract_parser(parser_ctor=argparse.ArgumentParser):
+def build_filter_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor(help="Extract subproject",
         description="""
             Extracts a subproject that contains only items matching filter.
@@ -414,11 +414,11 @@ def build_extract_parser(parser_ctor=argparse.ArgumentParser):
         help="Overwrite existing files in the save directory")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
-    parser.set_defaults(command=extract_command)
+    parser.set_defaults(command=filter_command)
 
     return parser
 
-def extract_command(args):
+def filter_command(args):
     project = load_project(args.project_dir)
 
     if not args.dry_run:
@@ -437,7 +437,7 @@ def extract_command(args):
     filter_args = FilterModes.make_filter_args(args.mode)
 
     if args.dry_run:
-        dataset = dataset.extract(filter_expr=args.filter, **filter_args)
+        dataset = dataset.filter(expr=args.filter, **filter_args)
         for item in dataset:
             encoded_item = DatasetItemEncoder.encode(item, dataset.categories())
             xml_item = DatasetItemEncoder.to_string(encoded_item)
@@ -447,8 +447,7 @@ def extract_command(args):
     if not args.filter:
         raise CliException("Expected a filter expression ('-e' argument)")
 
-    dataset.extract_project(save_dir=dst_dir, filter_expr=args.filter,
-        **filter_args)
+    dataset.filter_project(save_dir=dst_dir, expr=args.filter, **filter_args)
 
     log.info("Subproject has been extracted to '%s'" % dst_dir)
 
@@ -816,7 +815,7 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
     add_subparser(subparsers, 'create', build_create_parser)
     add_subparser(subparsers, 'import', build_import_parser)
     add_subparser(subparsers, 'export', build_export_parser)
-    add_subparser(subparsers, 'extract', build_extract_parser)
+    add_subparser(subparsers, 'filter', build_filter_parser)
     add_subparser(subparsers, 'merge', build_merge_parser)
     add_subparser(subparsers, 'diff', build_diff_parser)
     add_subparser(subparsers, 'ediff', build_ediff_parser)

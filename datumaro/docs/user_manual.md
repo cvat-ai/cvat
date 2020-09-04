@@ -6,22 +6,23 @@
 - [Interfaces](#interfaces)
 - [Supported dataset formats and annotations](#supported-formats)
 - [Command line workflow](#command-line-workflow)
+  - [Project structure](#project-structure)
 - [Command reference](#command-reference)
   - [Convert datasets](#convert-datasets)
-  - [Create a project](#create-project)
+  - [Create project](#create-project)
   - [Add and remove data](#add-and-remove-data)
-  - [Import a project](#import-project)
-  - [Extract a subproject](#extract-subproject)
+  - [Import project](#import-project)
+  - [Filter project](#filter-project)
   - [Update project (merge)](#update-project)
   - [Merge projects](#merge-projects)
-  - [Export a project](#export-project)
+  - [Export project](#export-project)
   - [Compare projects](#compare-projects)
   - [Obtaining project info](#get-project-info)
   - [Obtaining project statistics](#get-project-statistics)
-  - [Register a model](#register-model)
+  - [Register model](#register-model)
   - [Run inference](#run-inference)
   - [Run inference explanation](#explain-inference)
-  - [Transform a project](#transform-project)
+  - [Transform project](#transform-project)
 - [Extending](#extending)
 - [Links](#links)
 
@@ -111,14 +112,38 @@ List of supported annotation types:
 
 ## Command line workflow
 
-The key object is a project, so most CLI commands operate on projects. However, there
-are few commands operating on datasets directly. A project is a combination of
-a project's own dataset, a number of external data sources and an environment.
+The key object is a project, so most CLI commands operate on projects.
+However, there are few commands operating on datasets directly.
+A project is a combination of a project's own dataset, a number of
+external data sources and an environment.
 An empty Project can be created by `project create` command,
 an existing dataset can be imported with `project import` command.
 A typical way to obtain projects is to export tasks in CVAT UI.
 
 If you want to interact with models, you need to add them to project first.
+
+### Project structure
+
+<!--lint disable fenced-code-flag-->
+```
+└── project/
+    ├── .datumaro/
+    |   ├── config.yml
+    │   ├── .git/
+    │   ├── models/
+    │   └── plugins/
+    │       ├── plugin1/
+    │       |   ├── file1.py
+    │       |   └── file2.py
+    │       ├── plugin2.py
+    │       ├── custom_extractor1.py
+    │       └── ...
+    ├── dataset/
+    └── sources/
+        ├── source1
+        └── ...
+```
+<!--lint enable fenced-code-flag-->
 
 ## Command reference
 
@@ -270,11 +295,11 @@ datum source add path <path/to/images/dir> -f image_dir
 datum project export -f tf_detection_api
 ```
 
-### Extract subproject
+### Filter project
 
 This command allows to create a sub-Project from a Project. The new project
 includes only items satisfying some condition. [XPath](https://devhints.io/xpath)
-is used as query format.
+is used as a query format.
 
 There are several filtering modes available (`-m/--mode` parameter).
 Supported modes:
@@ -290,38 +315,34 @@ returns `annotation` elements (see examples).
 Usage:
 
 ``` bash
-datum project extract --help
+datum project filter --help
 
-datum project extract \
+datum project filter \
      -p <project dir> \
-     -o <output dir> \
      -e '<xpath filter expression>'
 ```
 
 Example: extract a dataset with only images which `width` < `height`
 
 ``` bash
-datum project extract \
+datum project filter \
      -p test_project \
-     -o test_project-extract \
      -e '/item[image/width < image/height]'
 ```
 
 Example: extract a dataset with only large annotations of class `cat` and any non-`persons`
 
 ``` bash
-datum project extract \
+datum project filter \
      -p test_project \
-     -o test_project-extract \
      --mode annotations -e '/item/annotation[(label="cat" and area > 99.5) or label!="person"]'
 ```
 
 Example: extract a dataset with only occluded annotations, remove empty images
 
 ``` bash
-datum project extract \
+datum project filter \
      -p test_project \
-     -o test_project-extract \
      -m i+a -e '/item/annotation[occluded="True"]'
 ```
 
@@ -362,7 +383,8 @@ Item representations are available with `--dry-run` parameter:
 
 ### Update project
 
-This command updates items in a project from another one (check [Merge Projects](#merge-projects) for complex merging).
+This command updates items in a project from another one
+(check [Merge Projects](#merge-projects) for complex merging).
 
 Usage:
 
