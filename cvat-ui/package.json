@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {

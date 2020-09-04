@@ -4,10 +4,10 @@
 
 @import '../../base.scss';
 
-.cvat-run-model-dialog > div:not(first-child) {
+.cvat-run-model-content > div:not(first-child) {
     margin-top: 10px;
 }
 
-.cvat-run-model-dialog-remove-mapping-icon {
+.cvat-run-model-content-remove-mapping-icon {
     color: $danger-icon-color;
 }
