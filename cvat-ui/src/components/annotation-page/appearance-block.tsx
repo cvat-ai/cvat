@@ -11,6 +11,8 @@ import Slider, { SliderValue } from 'antd/lib/slider';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Collapse from 'antd/lib/collapse';
 
+import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
+import { ColorizeIcon } from 'icons';
 import { ColorBy, CombinedState } from 'reducers/interfaces';
 import {
     collapseAppearance as collapseAppearanceAction,
@@ -20,17 +22,19 @@ import {
     changeShapesColorBy as changeShapesColorByAction,
     changeShapesOpacity as changeShapesOpacityAction,
     changeSelectedShapesOpacity as changeSelectedShapesOpacityAction,
-    changeShapesBlackBorders as changeShapesBlackBordersAction,
+    changeShapesOutlinedBorders as changeShapesOutlinedBordersAction,
     changeShowBitmap as changeShowBitmapAction,
     changeShowProjections as changeShowProjectionsAction,
 } from 'actions/settings-actions';
+import Button from 'antd/lib/button';
 
 interface StateToProps {
     appearanceCollapsed: boolean;
     colorBy: ColorBy;
     opacity: number;
     selectedOpacity: number;
-    blackBorders: boolean;
+    outlined: boolean;
+    outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
 }
@@ -40,7 +44,7 @@ interface DispatchToProps {
     changeShapesColorBy(event: RadioChangeEvent): void;
     changeShapesOpacity(event: SliderValue): void;
     changeSelectedShapesOpacity(event: SliderValue): void;
-    changeShapesBlackBorders(event: CheckboxChangeEvent): void;
+    changeShapesOutlinedBorders(outlined: boolean, color: string): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
     changeShowProjections(event: CheckboxChangeEvent): void;
 }
@@ -72,7 +76,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 colorBy,
                 opacity,
                 selectedOpacity,
-                blackBorders,
+                outlined,
+                outlineColor,
                 showBitmap,
                 showProjections,
             },
@@ -84,7 +89,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         colorBy,
         opacity,
         selectedOpacity,
-        blackBorders,
+        outlined,
+        outlineColor,
         showBitmap,
         showProjections,
     };
@@ -119,8 +125,8 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeSelectedShapesOpacity(value: SliderValue): void {
             dispatch(changeSelectedShapesOpacityAction(value as number));
         },
-        changeShapesBlackBorders(event: CheckboxChangeEvent): void {
-            dispatch(changeShapesBlackBordersAction(event.target.checked));
+        changeShapesOutlinedBorders(outlined: boolean, color: string): void {
+            dispatch(changeShapesOutlinedBordersAction(outlined, color));
         },
         changeShowBitmap(event: CheckboxChangeEvent): void {
             dispatch(changeShowBitmapAction(event.target.checked));
@@ -139,14 +145,15 @@ function AppearanceBlock(props: Props): JSX.Element {
         colorBy,
         opacity,
         selectedOpacity,
-        blackBorders,
+        outlined,
+        outlineColor,
         showBitmap,
         showProjections,
         collapseAppearance,
         changeShapesColorBy,
         changeShapesOpacity,
         changeSelectedShapesOpacity,
-        changeShapesBlackBorders,
+        changeShapesOutlinedBorders,
         changeShowBitmap,
         changeShowProjections,
     } = props;
@@ -185,10 +192,22 @@ function AppearanceBlock(props: Props): JSX.Element {
                         max={100}
                     />
                     <Checkbox
-                        onChange={changeShapesBlackBorders}
-                        checked={blackBorders}
+                        onChange={(event: CheckboxChangeEvent) => {
+                            changeShapesOutlinedBorders(event.target.checked, outlineColor);
+                        }}
+                        checked={outlined}
                     >
-                        Black borders
+                        Outlined borders
+                        <ColorPicker
+                            onChange={(color) => changeShapesOutlinedBorders(outlined, color)}
+                            value={outlineColor}
+                            placement='top'
+                            resetVisible={false}
+                        >
+                            <Button type='link' shape='circle'>
+                                <ColorizeIcon />
+                            </Button>
+                        </ColorPicker>
                     </Checkbox>
                     <Checkbox
                         onChange={changeShowBitmap}

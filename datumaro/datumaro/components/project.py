@@ -1,12 +1,12 @@
-
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict, defaultdict
 from functools import reduce
-import git
 from glob import glob
+from typing import Iterable, Union, Dict, List
+import git
 import importlib
 import inspect
 import logging as log
@@ -19,7 +19,7 @@ from datumaro.components.config import Config, DEFAULT_FORMAT
 from datumaro.components.config_model import (Model, Source,
     PROJECT_DEFAULT_CONFIG, PROJECT_SCHEMA)
 from datumaro.components.extractor import Extractor, LabelCategories,\
-    AnnotationType
+    AnnotationType, DatasetItem
 from datumaro.components.launcher import ModelTransform
 from datumaro.components.dataset_filter import \
     XPathDatasetFilter, XPathAnnotationsFilter
@@ -304,50 +304,40 @@ class Environment:
         self.models.unregister(name)
 
 
-class Subset(Extractor):
-    def __init__(self, parent):
-        self._parent = parent
-        self.items = OrderedDict()
-
-    def __iter__(self):
-        for item in self.items.values():
-            yield item
-
-    def __len__(self):
-        return len(self.items)
-
-    def categories(self):
-        return self._parent.categories()
-
 class Dataset(Extractor):
+    class Subset(Extractor):
+        def __init__(self, parent):
+            self.parent = parent
+            self.items = OrderedDict()
+
+        def __iter__(self):
+            yield from self.items.values()
+
+        def __len__(self):
+            return len(self.items)
+
+        def categories(self):
+            return self.parent.categories()
+
     @classmethod
-    def from_iterable(cls, iterable, categories=None):
-        """Generation of Dataset from iterable object
-
-        Args:
-            iterable: Iterable object contains DatasetItems
-            categories (dict, optional): You can pass dict of categories or
-            you can pass list of names. It'll interpreted as list of names of
-            LabelCategories. Defaults to {}.
-
-        Returns:
-            Dataset: Dataset object
-        """
-
+    def from_iterable(cls, iterable: Iterable[DatasetItem],
+            categories: Union[Dict, List[str]] = None):
         if isinstance(categories, list):
-            categories = {AnnotationType.label : LabelCategories.from_iterable(categories)}
+            categories = { AnnotationType.label:
+                LabelCategories.from_iterable(categories)
+            }
 
         if not categories:
             categories = {}
 
-        class tmpExtractor(Extractor):
+        class _extractor(Extractor):
             def __iter__(self):
                 return iter(iterable)
 
             def categories(self):
                 return categories
 
-        return cls.from_extractors(tmpExtractor())
+        return cls.from_extractors(_extractor())
 
     @classmethod
     def from_extractors(cls, *sources):
@@ -355,7 +345,7 @@ class Dataset(Extractor):
         dataset = Dataset(categories=categories)
 
         # merge items
-        subsets = defaultdict(lambda: Subset(dataset))
+        subsets = defaultdict(lambda: cls.Subset(dataset))
         for source in sources:
             for item in source:
                 existing_item = subsets[item.subset].items.get(item.id)
@@ -416,20 +406,19 @@ class Dataset(Extractor):
         if subset is None:
             subset = item.subset
 
-        item = item.wrap(path=None, annotations=item.annotations)
-        if item.subset not in self._subsets:
-            self._subsets[item.subset] = Subset(self)
+        item = item.wrap(id=item_id, subset=subset, path=None)
+        if subset not in self._subsets:
+            self._subsets[subset] = self.Subset(self)
         self._subsets[subset].items[item_id] = item
         self._length = None
 
         return item
 
-    def extract(self, filter_expr, filter_annotations=False, remove_empty=False):
+    def filter(self, expr, filter_annotations=False, remove_empty=False):
         if filter_annotations:
-            return self.transform(XPathAnnotationsFilter, filter_expr,
-                remove_empty)
+            return self.transform(XPathAnnotationsFilter, expr, remove_empty)
         else:
-            return self.transform(XPathDatasetFilter, filter_expr)
+            return self.transform(XPathDatasetFilter, expr)
 
     def update(self, items):
         for item in items:
@@ -500,17 +489,14 @@ class ProjectDataset(Dataset):
 
         sources = {}
         for s_name, source in config.sources.items():
-            s_format = source.format
-            if not s_format:
-                s_format = env.PROJECT_EXTRACTOR_NAME
+            s_format = source.format or env.PROJECT_EXTRACTOR_NAME
             options = {}
             options.update(source.options)
 
             url = source.url
             if not source.url:
                 url = osp.join(config.project_dir, config.sources_dir, s_name)
-            sources[s_name] = env.make_extractor(s_format,
-                url, **options)
+            sources[s_name] = env.make_extractor(s_format, url, **options)
         self._sources = sources
 
         own_source = None
@@ -531,7 +517,7 @@ class ProjectDataset(Dataset):
         self._categories = categories
 
         # merge items
-        subsets = defaultdict(lambda: Subset(self))
+        subsets = defaultdict(lambda: self.Subset(self))
         for source_name, source in self._sources.items():
             log.debug("Loading '%s' source contents..." % source_name)
             for item in source:
@@ -548,11 +534,8 @@ class ProjectDataset(Dataset):
                         # NOTE: consider imported sources as our own dataset
                         path = None
                     else:
-                        path = item.path
-                        if path is None:
-                            path = []
-                        path = [source_name] + path
-                    item = item.wrap(path=path, annotations=item.annotations)
+                        path = [source_name] + (item.path or [])
+                    item = item.wrap(path=path)
 
                 subsets[item.subset].items[item.id] = item
 
@@ -563,8 +546,7 @@ class ProjectDataset(Dataset):
                 existing_item = subsets[item.subset].items.get(item.id)
                 if existing_item is not None:
                     item = item.wrap(path=None,
-                        image=self._merge_images(existing_item, item),
-                        annotations=item.annotations)
+                        image=self._merge_images(existing_item, item))
 
                 subsets[item.subset].items[item.id] = item
 
@@ -590,6 +572,7 @@ class ProjectDataset(Dataset):
     def put(self, item, item_id=None, subset=None, path=None):
         if path is None:
             path = item.path
+
         if path:
             source = path[0]
             rest_path = path[1:]
@@ -602,9 +585,9 @@ class ProjectDataset(Dataset):
         if subset is None:
             subset = item.subset
 
-        item = item.wrap(path=path, annotations=item.annotations)
-        if item.subset not in self._subsets:
-            self._subsets[item.subset] = Subset(self)
+        item = item.wrap(path=path)
+        if subset not in self._subsets:
+            self._subsets[subset] = self.Subset(self)
         self._subsets[subset].items[item_id] = item
         self._length = None
 
@@ -713,7 +696,7 @@ class ProjectDataset(Dataset):
         # NOTE: probably this function should be in the ViewModel layer
         dataset = self
         if filter_expr:
-            dataset = dataset.extract(filter_expr,
+            dataset = dataset.filter(filter_expr,
                 filter_annotations=filter_annotations,
                 remove_empty=remove_empty)
 
@@ -727,15 +710,15 @@ class ProjectDataset(Dataset):
                 shutil.rmtree(save_dir)
             raise
 
-    def extract_project(self, filter_expr, filter_annotations=False,
+    def filter_project(self, filter_expr, filter_annotations=False,
             save_dir=None, remove_empty=False):
         # NOTE: probably this function should be in the ViewModel layer
-        filtered = self
+        dataset = self
         if filter_expr:
-            filtered = self.extract(filter_expr,
+            dataset = dataset.filter(filter_expr,
                 filter_annotations=filter_annotations,
                 remove_empty=remove_empty)
-        self._save_branch_project(filtered, save_dir=save_dir)
+        self._save_branch_project(dataset, save_dir=save_dir)
 
 class Project:
     @classmethod

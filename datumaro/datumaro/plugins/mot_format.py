@@ -1,4 +1,3 @@
-
 # Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -20,7 +19,7 @@ from datumaro.components.extractor import (SourceExtractor,
 from datumaro.components.extractor import Importer
 from datumaro.components.converter import Converter
 from datumaro.util import cast
-from datumaro.util.image import Image, save_image
+from datumaro.util.image import Image
 
 
 MotLabel = Enum('MotLabel', [

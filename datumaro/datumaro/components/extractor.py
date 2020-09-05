@@ -1,5 +1,5 @@
 
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -27,30 +27,33 @@ AnnotationType = Enum('AnnotationType',
 
 _COORDINATE_ROUNDING_DIGITS = 2
 
-@attrs
+@attrs(kw_only=True)
 class Annotation:
-    id = attrib(default=0, validator=default_if_none(int), kw_only=True)
-    attributes = attrib(factory=dict, validator=default_if_none(dict), kw_only=True)
-    group = attrib(default=0, validator=default_if_none(int), kw_only=True)
+    id = attrib(default=0, validator=default_if_none(int))
+    attributes = attrib(factory=dict, validator=default_if_none(dict))
+    group = attrib(default=0, validator=default_if_none(int))
 
     def __attrs_post_init__(self):
         assert isinstance(self.type, AnnotationType)
 
     @property
-    def type(self):
+    def type(self) -> AnnotationType:
         return self._type # must be set in subclasses
 
-    def wrap(item, **kwargs):
-        return attr.evolve(item, **kwargs)
+    def wrap(self, **kwargs):
+        return attr.evolve(self, **kwargs)
 
-@attrs
+@attrs(kw_only=True)
 class Categories:
-    attributes = attrib(factory=set, validator=default_if_none(set),
-        kw_only=True)
+    attributes = attrib(factory=set, validator=default_if_none(set), eq=False)
 
 @attrs
 class LabelCategories(Categories):
-    Category = namedtuple('Category', ['name', 'parent', 'attributes'])
+    @attrs(repr_ns='LabelCategories')
+    class Category:
+        name = attrib(converter=str, validator=not_empty)
+        parent = attrib(default='', validator=default_if_none(str))
+        attributes = attrib(factory=set, validator=default_if_none(set))
 
     items = attrib(factory=list, validator=default_if_none(list))
     _indices = attrib(factory=dict, init=False, eq=False)
@@ -92,24 +95,15 @@ class LabelCategories(Categories):
             indices[item.name] = index
         self._indices = indices
 
-    def add(self, name, parent=None, attributes=None):
+    def add(self, name: str, parent: str = None, attributes: dict = None):
         assert name not in self._indices, name
-        if attributes is None:
-            attributes = set()
-        else:
-            if not isinstance(attributes, set):
-                attributes = set(attributes)
-            for attr in attributes:
-                assert isinstance(attr, str)
-        if parent is None:
-            parent = ''
 
         index = len(self.items)
         self.items.append(self.Category(name, parent, attributes))
         self._indices[name] = index
         return index
 
-    def find(self, name):
+    def find(self, name: str):
         index = self._indices.get(name)
         if index is not None:
             return index, self.items[index]
@@ -136,6 +130,8 @@ class MaskCategories(Categories):
 
     def __eq__(self, other):
         if not super().__eq__(other):
+            return False
+        if not isinstance(other, __class__):
             return False
         for label_id, my_color in self.colormap.items():
             other_color = other.colormap.get(label_id)
@@ -178,6 +174,8 @@ class Mask(Annotation):
 
     def __eq__(self, other):
         if not super().__eq__(other):
+            return False
+        if not isinstance(other, __class__):
             return False
         return \
             (self.label == other.label) and \
@@ -383,7 +381,10 @@ setattr(Bbox, '__init__', Bbox.__actual_init__)
 
 @attrs
 class PointsCategories(Categories):
-    Category = namedtuple('Category', ['labels', 'joints'])
+    @attrs(repr_ns="PointsCategories")
+    class Category:
+        labels = attrib(factory=list, validator=default_if_none(list))
+        joints = attrib(factory=set, validator=default_if_none(set))
 
     items = attrib(factory=dict, validator=default_if_none(dict))
 
@@ -393,28 +394,19 @@ class PointsCategories(Categories):
 
         Args:
             iterable ([type]): This iterable object can be:
-            1)simple int - will generate one Category with int as label
-            2)list of int - will interpreted as list of Category labels
-            3)list of positional argumetns - will generate Categories
-            with this arguments
+            1) list of positional argumetns - will generate Categories
+                with these arguments
 
         Returns:
             PointsCategories: PointsCategories object
         """
         temp_categories = cls()
 
-        if isinstance(iterable, int):
-            iterable = [[iterable]]
-
         for category in iterable:
-            if isinstance(category, int):
-                category = [category]
             temp_categories.add(*category)
         return temp_categories
 
     def add(self, label_id, labels=None, joints=None):
-        if labels is None:
-            labels = []
         if joints is None:
             joints = []
         joints = set(map(tuple, joints))
@@ -597,7 +589,7 @@ class SourceExtractor(Extractor):
 
     def get_subset(self, name):
         if name != self._subset:
-            return None
+            raise Exception("Unknown subset '%s' requested" % name)
         return self
 
 class Importer:
@@ -625,5 +617,5 @@ class Transform(Extractor):
     def categories(self):
         return self._extractor.categories()
 
-    def transform_item(self, item):
+    def transform_item(self, item: DatasetItem) -> DatasetItem:
         raise NotImplementedError()

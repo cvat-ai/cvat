@@ -3,7 +3,8 @@ from unittest import TestCase
 import numpy as np
 
 from datumaro.components.extractor import (Bbox, Caption, DatasetItem,
-    Extractor, Label, Mask, Points, Polygon, PolyLine)
+    Extractor, Label, Mask, Points, Polygon, PolyLine,
+    LabelCategories, PointsCategories, MaskCategories, AnnotationType)
 from datumaro.components.operations import (FailedAttrVotingError,
     IntersectMerge, NoMatchingAnnError, NoMatchingItemError, WrongGroupError,
     compute_ann_statistics, mean_std)
@@ -198,7 +199,7 @@ class TestMultimerge(TestCase):
                 Bbox(1, 2, 3, 4, label=1),
 
                 # common
-                Mask(label=3, z_order=2, image=np.array([
+                Mask(label=2, z_order=2, image=np.array([
                     [0, 0, 0, 0],
                     [0, 0, 0, 0],
                     [1, 1, 1, 0],
@@ -218,7 +219,7 @@ class TestMultimerge(TestCase):
         source1 = Dataset.from_iterable([
             DatasetItem(1, annotations=[
                 # common
-                Mask(label=3, image=np.array([
+                Mask(label=2, image=np.array([
                     [0, 0, 0, 0],
                     [0, 1, 1, 1],
                     [0, 1, 1, 1],
@@ -238,7 +239,7 @@ class TestMultimerge(TestCase):
         source2 = Dataset.from_iterable([
             DatasetItem(1, annotations=[
                 # common
-                Mask(label=3, z_order=3, image=np.array([
+                Mask(label=2, z_order=3, image=np.array([
                     [0, 0, 1, 1],
                     [0, 1, 1, 1],
                     [1, 1, 1, 1],
@@ -261,7 +262,7 @@ class TestMultimerge(TestCase):
 
                 # common
                 # nearest to mean bbox
-                Mask(label=3, z_order=3, image=np.array([
+                Mask(label=2, z_order=3, image=np.array([
                     [0, 0, 0, 0],
                     [0, 1, 1, 1],
                     [0, 1, 1, 1],
@@ -365,3 +366,86 @@ class TestMultimerge(TestCase):
         self.assertEqual(3, len([e for e in merger.errors
             if isinstance(e, WrongGroupError)]), merger.errors
         )
+
+    def test_can_merge_classes(self):
+        source0 = Dataset.from_iterable([
+            DatasetItem(1, annotations=[
+                Label(0),
+                Label(1),
+                Bbox(0, 0, 1, 1, label=1),
+            ]),
+        ], categories=['a', 'b'])
+
+        source1 = Dataset.from_iterable([
+            DatasetItem(1, annotations=[
+                Label(0),
+                Label(1),
+                Bbox(0, 0, 1, 1, label=0),
+                Bbox(0, 0, 1, 1, label=1),
+            ]),
+        ], categories=['b', 'c'])
+
+        expected = Dataset.from_iterable([
+            DatasetItem(1, annotations=[
+                Label(0),
+                Label(1),
+                Label(2),
+                Bbox(0, 0, 1, 1, label=1),
+                Bbox(0, 0, 1, 1, label=2),
+            ]),
+        ], categories=['a', 'b', 'c'])
+
+        merger = IntersectMerge()
+        merged = merger([source0, source1])
+
+        compare_datasets(self, expected, merged, ignored_attrs={'score'})
+
+    def test_can_merge_categories(self):
+        source0 = Dataset.from_iterable([
+            DatasetItem(1, annotations=[ Label(0), ]),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(['a', 'b']),
+            AnnotationType.points: PointsCategories.from_iterable([
+                (0, ['l0', 'l1']),
+                (1, ['l2', 'l3']),
+            ]),
+            AnnotationType.mask: MaskCategories({
+                0: (0, 1, 2),
+                1: (1, 2, 3),
+            }),
+        })
+
+        source1 = Dataset.from_iterable([
+            DatasetItem(1, annotations=[ Label(0), ]),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(['c', 'b']),
+            AnnotationType.points: PointsCategories.from_iterable([
+                (0, []),
+                (1, ['l2', 'l3']),
+            ]),
+            AnnotationType.mask: MaskCategories({
+                0: (0, 2, 4),
+                1: (1, 2, 3),
+            }),
+        })
+
+        expected = Dataset.from_iterable([
+            DatasetItem(1, annotations=[ Label(0), Label(2), ]),
+        ], categories={
+            AnnotationType.label: LabelCategories.from_iterable(['a', 'b', 'c']),
+            AnnotationType.points: PointsCategories.from_iterable([
+                (0, ['l0', 'l1']),
+                (1, ['l2', 'l3']),
+                (2, []),
+            ]),
+            AnnotationType.mask: MaskCategories({
+                0: (0, 1, 2),
+                1: (1, 2, 3),
+                2: (0, 2, 4),
+            }),
+        })
+
+        merger = IntersectMerge()
+        merged = merger([source0, source1])
+
+        compare_datasets(self, expected, merged, ignored_attrs={'score'})

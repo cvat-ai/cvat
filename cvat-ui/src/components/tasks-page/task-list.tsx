@@ -6,7 +6,7 @@ import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
-import ModelRunnerModalContainer from 'containers/model-runner-dialog/model-runner-dialog';
+import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import TaskItem from 'containers/tasks-page/task-item';
 
 export interface ContentListProps {
@@ -46,7 +46,7 @@ export default function TaskListComponent(props: ContentListProps): JSX.Element 
                     />
                 </Col>
             </Row>
-            <ModelRunnerModalContainer />
+            <ModelRunnerModal />
         </>
     );
 }

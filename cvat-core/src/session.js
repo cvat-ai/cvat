@@ -833,6 +833,7 @@
                 data_compressed_chunk_type: undefined,
                 data_original_chunk_type: undefined,
                 use_zip_chunks: undefined,
+                use_cache: undefined,
             };
 
             for (const property in data) {
@@ -1086,6 +1087,24 @@
                             );
                         }
                         data.use_zip_chunks = useZipChunks;
+                    },
+                },
+                /**
+                    * @name useCache
+                    * @type {boolean}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                useCache: {
+                    get: () => data.use_cache,
+                    set: (useCache) => {
+                        if (typeof (useCache) !== 'boolean') {
+                            throw new ArgumentError(
+                                'Value must be a boolean',
+                            );
+                        }
+                        data.use_cache = useCache;
                     },
                 },
                 /**
@@ -1666,6 +1685,7 @@
             remote_files: this.remoteFiles,
             image_quality: this.imageQuality,
             use_zip_chunks: this.useZipChunks,
+            use_cache: this.useCache,
         };
 
         if (typeof (this.startFrame) !== 'undefined') {

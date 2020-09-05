@@ -67,6 +67,7 @@ const defaultState: AnnotationState = {
             statuses: [],
         },
         collapsed: {},
+        collapsedAll: true,
         states: [],
         filters: [],
         filtersHistory: JSON.parse(
@@ -352,6 +353,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             } = action.payload;
 
             const updatedCollapsedStates = { ...state.annotations.collapsed };
+            const totalStatesCount = state.annotations.states.length;
             for (const objectState of states) {
                 updatedCollapsedStates[objectState.clientID] = collapsed;
             }
@@ -361,6 +363,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     collapsed: updatedCollapsedStates,
+                    collapsedAll: states.length === totalStatesCount
+                        ? collapsed : state.annotations.collapsedAll,
                 },
             };
         }

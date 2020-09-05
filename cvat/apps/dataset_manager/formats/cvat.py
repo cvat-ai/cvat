@@ -398,8 +398,9 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame,
                 attributes=shape.attributes,
-            ),
-            annotations.TrackedShape(
+            )] +
+            ( # add a finishing frame if it does not hop over the last frame
+            [annotations.TrackedShape(
                 type=shape.type,
                 points=shape.points,
                 occluded=shape.occluded,
@@ -408,8 +409,10 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame + annotations.frame_step,
                 attributes=shape.attributes,
+            )] if shape.frame + annotations.frame_step < \
+                    int(annotations.meta['task']['stop_frame']) \
+               else []
             ),
-            ],
         ))
         counter += 1
 
@@ -530,15 +533,16 @@ def _export(dst_file, task_data, anno_callback, save_images=False):
             frame_provider = FrameProvider(task_data.db_task.data)
             frames = frame_provider.get_frames(
                 frame_provider.Quality.ORIGINAL,
-                frame_provider.Type.NUMPY_ARRAY)
+                frame_provider.Type.BUFFER)
             for frame_id, (frame_data, _) in enumerate(frames):
                 frame_name = task_data.frame_info[frame_id]['path']
-                if '.' in frame_name:
-                    save_image(osp.join(img_dir, frame_name),
-                        frame_data, jpeg_quality=100, create_dir=True)
-                else:
-                    save_image(osp.join(img_dir, frame_name + '.png'),
-                        frame_data, create_dir=True)
+                ext = ''
+                if not '.' in osp.basename(frame_name):
+                    ext = '.png'
+                img_path = osp.join(img_dir, frame_name + ext)
+                os.makedirs(osp.dirname(img_path), exist_ok=True)
+                with open(img_path, 'wb') as f:
+                    f.write(frame_data.getvalue())
 
         make_zip_archive(temp_dir, dst_file)
 
