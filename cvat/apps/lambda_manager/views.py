@@ -134,6 +134,16 @@ class LambdaFunction:
                 })
             quality = data.get("quality")
             mapping = data.get("mapping")
+            mapping_by_default = {db_label.name:db_label.name
+                for db_label in db_task.label_set.all()}
+            if not mapping:
+                # use mapping by default to avoid labels in mapping which
+                # don't exist in the task
+                mapping = mapping_by_default
+            else:
+                # filter labels in mapping which don't exist in the task
+                mapping = {k:v for k,v in mapping.items() if v in mapping_by_default}
+
             if self.kind == LambdaType.DETECTOR:
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality)
