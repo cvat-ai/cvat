@@ -13,9 +13,11 @@ import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
+import Progress from 'antd/lib/progress';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
+import range from 'utils/range';
 import getCore from 'cvat-core-wrapper';
 import {
     CombinedState,
@@ -109,6 +111,7 @@ interface State {
     activeLabelID: number;
     interactiveStateID: number | null;
     activeTracker: Model | null;
+    trackingProgress: number | null;
     trackingFrames: number;
     fetching: boolean;
     mode: 'detection' | 'interaction' | 'tracking';
@@ -125,6 +128,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
             activeTracker: props.trackers.length ? props.trackers[0] : null,
             activeLabelID: props.labels[0].id,
             interactiveStateID: null,
+            trackingProgress: null,
             trackingFrames: 10,
             fetching: false,
             mode: 'interaction',
@@ -323,6 +327,9 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
             fetchAnnotations,
         } = this.props;
         const { activeTracker, activeLabelID, trackingFrames } = this.state;
+        const [label] = jobInstance.task.labels.filter(
+            (_label: any): boolean => _label.id === activeLabelID,
+        );
 
         if (!(e as CustomEvent).detail.isDone) {
             return;
@@ -336,20 +343,18 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
 
             this.setState({
                 fetching: true,
+                trackingProgress: 0,
             });
 
             const tracker = activeTracker as Model;
             const { points } = (e as CustomEvent).detail.shapes[0];
 
             const state = new core.classes.ObjectState({
-                shapeType: ShapeType.POLYGON,
+                shapeType: ShapeType.RECTANGLE,
                 objectType: ObjectType.TRACK,
                 zOrder: curZOrder,
-                label: jobInstance.task.labels
-                    .filter(
-                        (label: any): boolean => label.id === activeLabelID,
-                    )[0],
-                points: [points[0], points[1], points[2], points[1], points[2], points[3], points[0], points[3]],
+                label,
+                points,
                 frame,
                 occluded: false,
                 source: 'auto',
@@ -367,52 +372,48 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                 shape: (e as CustomEvent).detail.shapes[0].points,
             });
 
-            for (let i = 1; i <= trackingFrames; i++) {
+            for (const offset of range(1, trackingFrames + 1)) {
                 /* eslint-disable no-await-in-loop */
-                const [objectState] = await jobInstance.annotations.get(frame + i, true, [`clientID == ${clientID}`]);
-
+                const states = await jobInstance.annotations.get(frame + offset);
+                const [objectState] = states
+                    .filter((_state: any): boolean => _state.clientID === clientID);
                 response = await core.lambda.call(jobInstance.task, tracker, {
                     task: jobInstance.task,
-                    frame: frame + i,
+                    frame: frame + offset,
                     shape: response.points,
                     state: response.state,
                 });
 
-                // let xtl = Number.MAX_SAFE_INTEGER;
-                // let ytl = Number.MAX_SAFE_INTEGER;
-                // let xbr = Number.MIN_SAFE_INTEGER;
-                // let ybr = Number.MIN_SAFE_INTEGER;
+                const reduced = response.shape
+                    .reduce((acc: number[], value: number, index: number): number[] => {
+                        if (index % 2) { // y
+                            acc[1] = Math.min(acc[1], value);
+                            acc[3] = Math.max(acc[3], value);
+                        } else { // x
+                            acc[0] = Math.min(acc[0], value);
+                            acc[2] = Math.max(acc[2], value);
+                        }
+                        return acc;
+                    }, [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER,
+                        Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER,
+                    ]);
 
-                // for (let j = 0; j < response.shape.length; j++) {
-                //     if (j % 2) { // y
-                //         ytl = Math.min(ytl, response.shape[j]);
-                //         ybr = Math.max(ybr, response.shape[j]);
-                //     } else { // x
-                //         xtl = Math.min(xtl, response.shape[j]);
-                //         xbr = Math.max(xbr, response.shape[j]);
-                //     }
-                // }
-
-                objectState.points = response.shape;
+                objectState.points = reduced;
                 await objectState.save();
+
+                this.setState({
+                    trackingProgress: offset / trackingFrames,
+                });
             }
-
-            this.setState({
-                fetching: false,
-            });
-
-            // add a track, get it back
-            // get it from the next frame
-            //
-
-
-            // start server request
-            // get result
-            // push track to collection
         } catch (err) {
             notification.error({
                 description: err.toString(),
                 message: 'Tracking error occured',
+            });
+        } finally {
+            this.setState({
+                fetching: false,
+                trackingProgress: null,
             });
         }
     };
@@ -760,7 +761,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
             isActivated,
             canvasInstance,
         } = this.props;
-        const { fetching } = this.state;
+        const { fetching, trackingProgress } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
 
@@ -791,6 +792,9 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                 >
                     <Text>Waiting for a server response..</Text>
                     <Icon style={{ marginLeft: '10px' }} type='loading' />
+                    { trackingProgress !== null && (
+                        <Progress percent={+(trackingProgress * 100).toFixed(0)} status='active' />
+                    )}
                 </Modal>
                 <Popover
                     {...dynamcPopoverPros}
