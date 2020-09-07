@@ -308,6 +308,9 @@ class RandomSplit(Transform, CliPlugin):
     |s|s%(prog)s --subset train:.67 --subset test:.33
     """
 
+    # avoid https://bugs.python.org/issue16399
+    _default_split = [('train', 0.67), ('test', 0.33)]
+
     @staticmethod
     def _split_arg(s):
         parts = s.split(':')
@@ -321,13 +324,16 @@ class RandomSplit(Transform, CliPlugin):
         parser = super().build_cmdline_parser(**kwargs)
         parser.add_argument('-s', '--subset', action='append',
             type=cls._split_arg, dest='splits',
-            default=[('train', 0.67), ('test', 0.33)],
-            help="Subsets in the form of: '<subset>:<ratio>' (repeatable)")
+            help="Subsets in the form: '<subset>:<ratio>' "
+                "(repeatable, default: %s)" % dict(cls._default_split))
         parser.add_argument('--seed', type=int, help="Random seed")
         return parser
 
     def __init__(self, extractor, splits, seed=None):
         super().__init__(extractor)
+
+        if splits is None:
+            splits = self._default_split
 
         assert 0 < len(splits), "Expected at least one split"
         assert all(0.0 <= r and r <= 1.0 for _, r in splits), \

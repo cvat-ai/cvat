@@ -42,8 +42,8 @@ class ImageDirExtractor(SourceExtractor):
         for dirpath, _, filenames in os.walk(url):
             for name in filenames:
                 path = osp.join(dirpath, name)
+                image = Image(path=path)
                 try:
-                    image = Image(path)
                     # force loading
                     image.data # pylint: disable=pointless-statement
                 except Exception:

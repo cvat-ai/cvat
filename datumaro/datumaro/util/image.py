@@ -41,6 +41,8 @@ def load_image(path):
     else:
         raise NotImplementedError()
 
+    if image is None:
+        raise ValueError("Can't open image '%s'" % path)
     assert len(image.shape) in {2, 3}
     if len(image.shape) == 3:
         assert image.shape[2] in {3, 4}
@@ -206,6 +208,8 @@ class Image:
         self._path = path
 
         assert data is not None or path or loader, "Image can not be empty"
+        if data is not None:
+            assert callable(data) or isinstance(data, np.ndarray), type(data)
         if data is None and (path or loader):
             if osp.isfile(path) or loader:
                 data = lazy_image(path, loader=loader, cache=cache)
