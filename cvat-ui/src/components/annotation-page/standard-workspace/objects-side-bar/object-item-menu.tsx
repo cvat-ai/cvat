@@ -100,7 +100,7 @@ export default function ItemMenu(props: Props): JSX.Element {
                 <Menu.Item>
                     <Tooltip title='Run tracking with the active tracker' mouseLeaveDelay={0}>
                         <Button type='link' onClick={activateTracking}>
-                            <Icon component={ForegroundIcon} />
+                            <Icon type='gateway' />
                             Track
                         </Button>
                     </Tooltip>
