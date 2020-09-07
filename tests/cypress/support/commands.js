@@ -107,11 +107,11 @@ Cypress.Commands.add('createTrack', (firstX, firstY, lastX, lastY) => {
     .click(lastX, lastY)
 })
 
-Cypress.Commands.add('createPoint', (posX, posY) => {
+Cypress.Commands.add('createPoint', (posX, posY, type='Shape') => {
     cy.get('.cvat-draw-points-control').click()
     cy.get('.cvat-draw-shape-popover-content')
     .find('button')
-    .contains('Shape')
+    .contains(type)
     .click({force: true})
     cy.get('.cvat-canvas-container')
     .click(posX, posY)
