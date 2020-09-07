@@ -24,7 +24,7 @@ dj-pagination==2.5.0
 python-logstash==0.4.6
 django-revproxy==0.10.0
 rules==2.2
-GitPython==3.1.3
+GitPython==3.1.8
 coreapi==2.3.3
 django-filter==2.3.0
 Markdown==3.2.2
@@ -44,4 +44,4 @@ tensorflow==2.2.0 # Optional requirement of Datumaro
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
-diskcache==4.1.0
+diskcache==5.0.2

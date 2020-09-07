@@ -31,7 +31,11 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               textDefaultValue='Some default value for type Text',
                                               image='image.png',
                                               multiJobs=false,
-                                              segmentSize=1) => {
+                                              segmentSize=1,
+                                              multiAttr=false,
+                                              additionalAttrName,
+                                              typeAttribute,
+                                              additionalValue) => {
     cy.get('#cvat-create-task-button').click()
     cy.url().should('include', '/tasks/create')
     cy.get('[id="name"]').type(taksName)
@@ -42,15 +46,18 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
     cy.get('div[title="Select"]').click()
     cy.get('li').contains('Text').click()
     cy.get('[placeholder="Default value"]').type(textDefaultValue)
+    if (multiAttr) {
+        cy.updateAttributes(additionalAttrName, typeAttribute, additionalValue)
+    }
     cy.contains('button', 'Done').click()
-    cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
+    cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' })
     if (multiJobs) {
         cy.contains('Advanced configuration').click()
         cy.get('#segmentSize')
         .type(segmentSize)
     }
     cy.contains('button', 'Submit').click()
-    cy.contains('The task has been created', {timeout: '8000'})
+    cy.contains('The task has been created')
     cy.get('[value="tasks"]').click()
     cy.url().should('include', '/tasks?page=')
 })
@@ -194,4 +201,12 @@ Cypress.Commands.add('createCuboid', (mode, firstX, firstY, lastX, lastY) => {
     .click(firstX, firstY)
     cy.get('.cvat-canvas-container')
     .click(lastX, lastY)
+})
+
+Cypress.Commands.add('updateAttributes', (additionalAttrName, typeAttribute, additionalValue) => {
+    cy.contains('button', 'Add an attribute').click()
+    cy.get('[placeholder="Name"]').first().type(additionalAttrName)
+    cy.get('div[title="Select"]').first().click()
+    cy.get('.ant-select-dropdown').last().contains(typeAttribute).click()
+    cy.get('[placeholder="Default value"]').first().type(additionalValue)
 })
