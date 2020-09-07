@@ -523,9 +523,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (!trackers.length) {
             return (
-                <Row type='flex' justify='start'>
+                <Row type='flex' justify='center' align='middle' style={{ marginTop: '5px' }}>
                     <Col>
-                        <Text className='cvat-text-color'>No available trackers found</Text>
+                        <Text type='warning' className='cvat-text-color'>No available trackers found</Text>
                     </Col>
                 </Row>
             );
@@ -611,9 +611,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (!interactors.length) {
             return (
-                <Row type='flex' justify='start'>
+                <Row type='flex' justify='center' align='middle' style={{ marginTop: '5px' }}>
                     <Col>
-                        <Text className='cvat-text-color'>No available interactors found</Text>
+                        <Text type='warning' className='cvat-text-color'>No available interactors found</Text>
                     </Col>
                 </Row>
             );
@@ -684,9 +684,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (!detectors.length) {
             return (
-                <Row type='flex' justify='start'>
+                <Row type='flex' justify='center' align='middle' style={{ marginTop: '5px' }}>
                     <Col>
-                        <Text className='cvat-text-color'>No available interactors found</Text>
+                        <Text type='warning' className='cvat-text-color'>No available detectors found</Text>
                     </Col>
                 </Row>
             );
