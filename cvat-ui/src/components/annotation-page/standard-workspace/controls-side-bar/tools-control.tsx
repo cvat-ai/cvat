@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { MutableRefObject } from 'react';
 import { connect } from 'react-redux';
 import Icon from 'antd/lib/icon';
 import Popover from 'antd/lib/popover';
@@ -48,6 +48,7 @@ interface StateToProps {
     detectors: Model[];
     trackers: Model[];
     curZOrder: number;
+    aiToolsRef: MutableRefObject<any>;
 }
 
 interface DispatchToProps {
@@ -79,6 +80,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         frame,
         curZOrder: annotation.annotations.zLayer.cur,
+        aiToolsRef: annotation.aiToolsRef,
     };
 }
 
@@ -117,7 +119,7 @@ interface State {
     mode: 'detection' | 'interaction' | 'tracking';
 }
 
-class ToolsControlComponent extends React.PureComponent<Props, State> {
+export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private interactionIsAborted: boolean;
     private interactionIsDone: boolean;
 
@@ -139,7 +141,8 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        const { canvasInstance } = this.props;
+        const { canvasInstance, aiToolsRef } = this.props;
+        aiToolsRef.current = this;
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
     }
@@ -157,7 +160,8 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        const { canvasInstance } = this.props;
+        const { canvasInstance, aiToolsRef } = this.props;
+        aiToolsRef.current = undefined;
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
     }
@@ -326,7 +330,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
             curZOrder,
             fetchAnnotations,
         } = this.props;
-        const { activeTracker, activeLabelID, trackingFrames } = this.state;
+        const { activeLabelID } = this.state;
         const [label] = jobInstance.task.labels.filter(
             (_label: any): boolean => _label.id === activeLabelID,
         );
@@ -341,14 +345,7 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
                 throw Error('Canvas raises event "canvas.interacted" when interaction with it is off');
             }
 
-            this.setState({
-                fetching: true,
-                trackingProgress: 0,
-            });
-
-            const tracker = activeTracker as Model;
             const { points } = (e as CustomEvent).detail.shapes[0];
-
             const state = new core.classes.ObjectState({
                 shapeType: ShapeType.RECTANGLE,
                 objectType: ObjectType.TRACK,
@@ -366,54 +363,14 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
             // update annotations on a canvas
             fetchAnnotations();
 
-            let response = await core.lambda.call(jobInstance.task, tracker, {
-                task: jobInstance.task,
-                frame,
-                shape: (e as CustomEvent).detail.shapes[0].points,
-            });
-
-            for (const offset of range(1, trackingFrames + 1)) {
-                /* eslint-disable no-await-in-loop */
-                const states = await jobInstance.annotations.get(frame + offset);
-                const [objectState] = states
-                    .filter((_state: any): boolean => _state.clientID === clientID);
-                response = await core.lambda.call(jobInstance.task, tracker, {
-                    task: jobInstance.task,
-                    frame: frame + offset,
-                    shape: response.points,
-                    state: response.state,
-                });
-
-                const reduced = response.shape
-                    .reduce((acc: number[], value: number, index: number): number[] => {
-                        if (index % 2) { // y
-                            acc[1] = Math.min(acc[1], value);
-                            acc[3] = Math.max(acc[3], value);
-                        } else { // x
-                            acc[0] = Math.min(acc[0], value);
-                            acc[2] = Math.max(acc[2], value);
-                        }
-                        return acc;
-                    }, [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER,
-                        Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER,
-                    ]);
-
-                objectState.points = reduced;
-                await objectState.save();
-
-                this.setState({
-                    trackingProgress: offset / trackingFrames,
-                });
-            }
+            const states = await jobInstance.annotations.get(frame);
+            const [objectState] = states
+                .filter((_state: any): boolean => _state.clientID === clientID);
+            await this.trackState(objectState);
         } catch (err) {
             notification.error({
                 description: err.toString(),
                 message: 'Tracking error occured',
-            });
-        } finally {
-            this.setState({
-                fetching: false,
-                trackingProgress: null,
             });
         }
     };
@@ -447,6 +404,63 @@ class ToolsControlComponent extends React.PureComponent<Props, State> {
             )[0],
         });
     };
+
+    public async trackState(state: any): Promise<void> {
+        const { jobInstance, frame } = this.props;
+        const { activeTracker, trackingFrames } = this.state;
+        const { clientID, points } = state;
+
+        const tracker = activeTracker as Model;
+        try {
+            this.setState({ trackingProgress: 0, fetching: true });
+            let response = await core.lambda.call(jobInstance.task, tracker, {
+                task: jobInstance.task,
+                frame,
+                shape: points,
+            });
+
+            for (const offset of range(1, trackingFrames + 1)) {
+                /* eslint-disable no-await-in-loop */
+                const states = await jobInstance.annotations.get(frame + offset);
+                const [objectState] = states
+                    .filter((_state: any): boolean => _state.clientID === clientID);
+                response = await core.lambda.call(jobInstance.task, tracker, {
+                    task: jobInstance.task,
+                    frame: frame + offset,
+                    shape: response.points,
+                    state: response.state,
+                });
+
+                const reduced = response.shape
+                    .reduce((acc: number[], value: number, index: number): number[] => {
+                        if (index % 2) { // y
+                            acc[1] = Math.min(acc[1], value);
+                            acc[3] = Math.max(acc[3], value);
+                        } else { // x
+                            acc[0] = Math.min(acc[0], value);
+                            acc[2] = Math.max(acc[2], value);
+                        }
+                        return acc;
+                    }, [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER,
+                        Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER,
+                    ]);
+
+                objectState.points = reduced;
+                await objectState.save();
+
+                this.setState({ trackingProgress: offset / trackingFrames });
+            }
+        } finally {
+            this.setState({ trackingProgress: null, fetching: false });
+        }
+    }
+
+    public trackingAvailable(): boolean {
+        const { activeTracker, trackingFrames } = this.state;
+        const { trackers } = this.props;
+
+        return !!trackingFrames && !!trackers.length && activeTracker !== null;
+    }
 
     private renderLabelBlock(): JSX.Element {
         const { labels } = this.props;

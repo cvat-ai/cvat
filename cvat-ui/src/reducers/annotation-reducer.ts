@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React from 'react';
 import { AnyAction } from 'redux';
 
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
@@ -93,6 +94,7 @@ const defaultState: AnnotationState = {
         collecting: false,
         data: null,
     },
+    aiToolsRef: React.createRef(),
     colors: [],
     sidebarCollapsed: false,
     appearanceCollapsed: false,
