@@ -447,7 +447,8 @@ def filter_command(args):
     if not args.filter:
         raise CliException("Expected a filter expression ('-e' argument)")
 
-    dataset.filter_project(save_dir=dst_dir, expr=args.filter, **filter_args)
+    dataset.filter_project(save_dir=dst_dir,
+        filter_expr=args.filter, **filter_args)
 
     log.info("Subproject has been extracted to '%s'" % dst_dir)
 
