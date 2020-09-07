@@ -2,14 +2,14 @@ metadata:
   name: pth.saic-vul.fbrs
   namespace: cvat
   annotations:
-    name: FBRS
+    name: f-BRS
     type: interactor
     spec:
     framework: pytorch
     min_pos_points: 1
 
 spec:
-  description: f-BRS Rethinking Backpropagating Refinement for Interactive Segmentation
+  description: f-BRS interactive segmentation
   runtime: "python:3.6"
   handler: main:handler
   eventTimeout: 30s

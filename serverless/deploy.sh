@@ -50,4 +50,8 @@ nuctl deploy --project-name cvat \
     --path $SCRIPT_DIR/pytorch/foolwood/siammask/nuclio \
     --platform local
 
+nuctl deploy --project-name cvat \
+    --path $SCRIPT_DIR/pytorch/saic-vul/fbrs/nuclio \
+    --platform local
+
 nuctl get function
