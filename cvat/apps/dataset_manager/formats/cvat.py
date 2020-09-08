@@ -442,7 +442,9 @@ def load(file_object, annotations):
                 )
             elif el.tag == 'image':
                 image_is_opened = True
-                frame_id = match_dm_item(DatasetItem(id=el.attrib['id'], image=el.attrib['name']), annotations)
+                frame_id = annotations.abs_frame_id(match_dm_item(
+                    DatasetItem(id=el.attrib['id'], image=el.attrib['name']),
+                    annotations))
             elif el.tag in supported_shapes and (track is not None or image_is_opened):
                 attributes = []
                 shape = {
