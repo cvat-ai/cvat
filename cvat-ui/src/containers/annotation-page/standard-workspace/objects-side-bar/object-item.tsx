@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { MutableRefObject } from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
@@ -26,6 +26,7 @@ import {
 } from 'actions/annotation-actions';
 
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
+import { ToolsControlComponent } from 'components/annotation-page/standard-workspace/controls-side-bar/tools-control';
 import { shift } from 'utils/math';
 
 interface OwnProps {
@@ -47,6 +48,7 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
+    aiToolsRef: MutableRefObject<ToolsControlComponent>;
 }
 
 interface DispatchToProps {
@@ -86,6 +88,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 ready,
                 activeControl,
             },
+            aiToolsRef,
         },
         settings: {
             shapes: {
@@ -118,6 +121,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
+        aiToolsRef,
     };
 }
 
@@ -257,6 +261,13 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         } = this.props;
 
         collapseOrExpand([objectState], !collapsed);
+    };
+
+    private activateTracking = (): void => {
+        const { objectState, aiToolsRef } = this.props;
+        if (aiToolsRef.current && aiToolsRef.current.trackingAvailable()) {
+            aiToolsRef.current.trackState(objectState);
+        }
     };
 
     private changeColor = (color: string): void => {
@@ -402,6 +413,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 changeLabel={this.changeLabel}
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
+                activateTracking={this.activateTracking}
                 resetCuboidPerspective={() => this.resetCuboidPerspective()}
             />
         );
