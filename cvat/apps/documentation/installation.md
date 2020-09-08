@@ -67,7 +67,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     defining and running multi-container docker applications.
 
     ```bash
-    sudo apt-get --no-install-recommends install -y python3-pip
+    sudo apt-get --no-install-recommends install -y python3-pip python3-setuptools
     sudo python3 -m pip install setuptools docker-compose
     ```
 
