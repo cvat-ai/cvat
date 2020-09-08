@@ -311,7 +311,7 @@ def _create_thread(tid, data):
                     counter_ = itertools.count()
                     if isinstance(extractor, MEDIA_TYPES['archive']['extractor']):
                         media_files = [os.path.relpath(path, upload_dir) for path in extractor._source_path]
-                    elif isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
+                    elif isinstance(extractor, (MEDIA_TYPES['zip']['extractor'], MEDIA_TYPES['pdf']['extractor'])):
                         media_files = extractor._source_path
 
                     numbers_sequence = range(db_data.start_frame, min(data['stop_frame'] if data['stop_frame'] else len(media_files), len(media_files)), db_data.get_frame_step())
