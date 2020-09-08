@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed multiple errors which arises when polygon is of length 5 or less (<https://github.com/opencv/cvat/pull/2100>)
+- Fixed CVAT format import for frame stepped tasks (<https://github.com/openvinotoolkit/cvat/pull/2151>)
 
 ### Security
 -
