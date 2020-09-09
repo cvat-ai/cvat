@@ -1,5 +1,6 @@
 # Computer Vision Annotation Tool (CVAT)
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b9899c72f2764df0b5d26390cb872e21)](https://app.codacy.com/gh/openvinotoolkit/cvat?utm_source=github.com&utm_medium=referral&utm_content=openvinotoolkit/cvat&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.org/opencv/cvat.svg?branch=develop)](https://travis-ci.org/opencv/cvat)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/840351da141e4eaeac6476fd19ec0a33)](https://app.codacy.com/app/cvat/cvat?utm_source=github.com&utm_medium=referral&utm_content=opencv/cvat&utm_campaign=Badge_Grade_Dashboard)
 [![Gitter chat](https://badges.gitter.im/opencv-cvat/gitter.png)](https://gitter.im/opencv-cvat)
