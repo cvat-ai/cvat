@@ -25,6 +25,16 @@ Cypress.Commands.add('logout', (username=Cypress.env('user')) => {
     .click()
 })
 
+Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {
+    cy.get('#firstName').type(firstName)
+    cy.get('#lastName').type(lastName)
+    cy.get('#username').type(userName)
+    cy.get('#email').type(emailAddr)
+    cy.get('#password1').type(password)
+    cy.get('#password2').type(password)
+    cy.get('.register-form-button').click()
+})
+
 Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               labelName='Some label',
                                               attrName='Some attr name',
