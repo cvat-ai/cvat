@@ -41,7 +41,7 @@ class ModelHandler:
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         for k in state_dict.keys():
             if 'feature_extractor.stage2.0.branches' in k:
-                self.net = load_hrnet_is_model(state_dict, self.device, backbone, **kwargs)
+                self.net = load_hrnet_is_model(state_dict, self.device, backbone)
                 break
 
         if self.net is None:
