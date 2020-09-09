@@ -1,3 +1,7 @@
+# Copyright (C) 2020 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import torch
 import numpy as np
 from torchvision import transforms
