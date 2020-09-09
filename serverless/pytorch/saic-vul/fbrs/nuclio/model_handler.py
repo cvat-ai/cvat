@@ -38,12 +38,12 @@ class ModelHandler:
 
         self.net = None
         backbone = 'auto'
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         for k in state_dict.keys():
             if 'feature_extractor.stage2.0.branches' in k:
-                self.net = load_hrnet_is_model(state_dict, device, backbone, **kwargs)
+                self.net = load_hrnet_is_model(state_dict, self.device, backbone, **kwargs)
                 break
 
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         if self.net is None:
             self.net = load_deeplab_is_model(state_dict, self.device, backbone)
         self.net.to(self.device)
