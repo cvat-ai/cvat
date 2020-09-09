@@ -33,16 +33,17 @@ interface Props {
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
     removeShortcut: string;
-    changeColor: (value: string) => void;
-    copy: (() => void);
-    remove: (() => void);
-    propagate: (() => void);
-    createURL: (() => void);
-    switchOrientation: (() => void);
-    toBackground: (() => void);
-    toForeground: (() => void);
-    resetCuboidPerspective: (() => void);
-    changeColorPickerVisible: (visible: boolean) => void;
+    changeColor(value: string): void;
+    copy(): void;
+    remove(): void;
+    propagate(): void;
+    createURL(): void;
+    switchOrientation(): void;
+    toBackground(): void;
+    toForeground(): void;
+    resetCuboidPerspective(): void;
+    changeColorPickerVisible(visible: boolean): void;
+    activateTracking(): void;
 }
 
 export default function ItemMenu(props: Props): JSX.Element {
@@ -71,6 +72,7 @@ export default function ItemMenu(props: Props): JSX.Element {
         toForeground,
         resetCuboidPerspective,
         changeColorPickerVisible,
+        activateTracking,
     } = props;
 
     return (
@@ -94,6 +96,16 @@ export default function ItemMenu(props: Props): JSX.Element {
                     </Button>
                 </Tooltip>
             </Menu.Item>
+            {objectType === ObjectType.TRACK && shapeType === ShapeType.RECTANGLE && (
+                <Menu.Item>
+                    <Tooltip title='Run tracking with the active tracker' mouseLeaveDelay={0}>
+                        <Button type='link' onClick={activateTracking}>
+                            <Icon type='gateway' />
+                            Track
+                        </Button>
+                    </Tooltip>
+                </Menu.Item>
+            )}
             { [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
                 <Menu.Item>
                     <Button type='link' icon='retweet' onClick={switchOrientation}>
