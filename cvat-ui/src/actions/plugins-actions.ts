@@ -30,19 +30,16 @@ export function checkPluginsAsync(): ThunkAction {
         const plugins: PluginObjects = {
             ANALYTICS: false,
             GIT_INTEGRATION: false,
-            DEXTR_SEGMENTATION: false,
         };
 
         const promises: Promise<boolean>[] = [
             // check must return true/false with no exceptions
             PluginChecker.check(SupportedPlugins.ANALYTICS),
             PluginChecker.check(SupportedPlugins.GIT_INTEGRATION),
-            PluginChecker.check(SupportedPlugins.DEXTR_SEGMENTATION),
         ];
 
         const values = await Promise.all(promises);
-        [plugins.ANALYTICS, plugins.GIT_INTEGRATION,
-            plugins.DEXTR_SEGMENTATION] = values;
+        [plugins.ANALYTICS, plugins.GIT_INTEGRATION] = values;
         dispatch(pluginActions.checkedAllPlugins(plugins));
     };
 }

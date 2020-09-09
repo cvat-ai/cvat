@@ -2082,7 +2082,14 @@ class JobAnnotationAPITestCase(APITestCase):
                 "client_files[0]": generate_image_file("test_1.jpg")[1],
                 "client_files[1]": generate_image_file("test_2.jpg")[1],
                 "client_files[2]": generate_image_file("test_3.jpg")[1],
+                "client_files[4]": generate_image_file("test_4.jpg")[1],
+                "client_files[5]": generate_image_file("test_5.jpg")[1],
+                "client_files[6]": generate_image_file("test_6.jpg")[1],
+                "client_files[7]": generate_image_file("test_7.jpg")[1],
+                "client_files[8]": generate_image_file("test_8.jpg")[1],
+                "client_files[9]": generate_image_file("test_9.jpg")[1],
                 "image_quality": 75,
+                "frame_filter": "step=3",
             }
             response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=images)
             assert response.status_code == status.HTTP_202_ACCEPTED
@@ -2202,7 +2209,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "occluded": False
                 },
                 {
-                    "frame": 1,
+                    "frame": 2,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
@@ -2239,7 +2246,7 @@ class JobAnnotationAPITestCase(APITestCase):
                             ]
                         },
                         {
-                            "frame": 1,
+                            "frame": 2,
                             "attributes": [],
                             "points": [2.0, 2.1, 100, 300.222],
                             "type": "rectangle",
@@ -2256,7 +2263,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     "attributes": [],
                     "shapes": [
                         {
-                            "frame": 1,
+                            "frame": 2,
                             "attributes": [],
                             "points": [1.0, 2.1, 100, 300.222],
                             "type": "rectangle",

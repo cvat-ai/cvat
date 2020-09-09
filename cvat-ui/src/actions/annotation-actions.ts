@@ -27,6 +27,7 @@ import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { getCVATStore } from 'cvat-store';
+import { MutableRefObject } from 'react';
 
 interface AnnotationsParameters {
     filters: string[];
@@ -189,6 +190,7 @@ export enum AnnotationActionTypes {
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
     INTERACT_WITH_CANVAS = 'INTERACT_WITH_CANVAS',
+    SET_AI_TOOLS_REF = 'SET_AI_TOOLS_REF',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -1397,6 +1399,16 @@ export function interactWithCanvas(activeInteractor: Model, activeLabelID: numbe
     };
 }
 
+export function setAIToolsRef(ref: MutableRefObject<any>): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_AI_TOOLS_REF,
+        payload: {
+            aiToolsRef: ref,
+        },
+    };
+}
+
+
 export function repeatDrawShapeAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const {
@@ -1424,12 +1436,21 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
         let activeControl = ActiveControl.CURSOR;
         if (activeInteractor) {
-            canvasInstance.interact({
-                enabled: true,
-                shapeType: 'points',
-                minPosVertices: 4, // TODO: Add parameter to interactor
-            });
-            dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+            if (activeInteractor.type === 'tracker') {
+                canvasInstance.interact({
+                    enabled: true,
+                    shapeType: 'rectangle',
+                });
+                dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+            } else {
+                canvasInstance.interact({
+                    enabled: true,
+                    shapeType: 'points',
+                    minPosVertices: 4, // TODO: Add parameter to interactor
+                });
+                dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+            }
+
             return;
         }
 
