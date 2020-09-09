@@ -155,10 +155,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.shapesWereUpdated = true;
 
             this.canvas.off('mousedown.interaction', eventListener);
-            if (this.shouldRaiseEvent(false)) {
-                this.onInteraction(this.prepareResult(), true, false);
-            }
-
             this.interact({ enabled: false });
         }).addClass('cvat_canvas_shape_drawing').attr({
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,

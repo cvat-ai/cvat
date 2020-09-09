@@ -4,6 +4,7 @@
 
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { MutableRefObject } from 'react';
 
 export type StringObject = {
     [index: string]: string;
@@ -275,7 +276,7 @@ export enum ActiveControl {
     GROUP = 'group',
     SPLIT = 'split',
     EDIT = 'edit',
-    INTERACTION = 'interaction',
+    AI_TOOLS = 'ai_tools',
 }
 
 export enum ShapeType {
@@ -394,6 +395,7 @@ export interface AnnotationState {
     appearanceCollapsed: boolean;
     tabContentHeight: number;
     workspace: Workspace;
+    aiToolsRef: MutableRefObject<any>;
 }
 
 export enum Workspace {
