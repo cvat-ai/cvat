@@ -229,3 +229,28 @@ Cypress.Commands.add('createPolyline', (mode,
     .trigger('keydown', {key: 'n'})
     .trigger('keyup', {key: 'n'})
 })
+
+Cypress.Commands.add('getTaskID', (taskName) => {
+    cy.contains('strong', taskName)
+    .parents('.cvat-tasks-list-item').within(() => {
+        cy.get('span').invoke('text')
+        .then((text)=>{
+            return String(text.match(/^#\d+\:/g)).replace(/[^\d]/g, '')
+       })
+    })
+})
+
+Cypress.Commands.add('deleteTask', (taskName, taskID) => {
+    cy.contains('strong', taskName)
+    .parents('.cvat-tasks-list-item')
+    .find('.cvat-menu-icon')
+    .trigger('mouseover')
+    cy.get('.cvat-actions-menu')
+    .contains('Delete')
+    .click()
+    cy.get('.ant-modal-content')
+    .should('contain', `The task ${taskID} will be deleted`).within(() => {
+        cy.contains('button', 'Delete')
+        .click()
+    })
+})
