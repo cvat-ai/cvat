@@ -40,12 +40,18 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               attrName='Some attr name',
                                               textDefaultValue='Some default value for type Text',
                                               image='image.png',
-                                              multiJobs=false,
-                                              segmentSize=1,
                                               multiAttr=false,
                                               additionalAttrName,
                                               typeAttribute,
-                                              additionalValue) => {
+                                              additionalValue,
+                                              advancedConfiguration=false,
+                                              multiJobs,
+                                              segmentSize,
+                                              sssFrame,
+                                              startFrame,
+                                              stopFrame,
+                                              frameStep
+                                              ) => {
     cy.get('#cvat-create-task-button').click()
     cy.url().should('include', '/tasks/create')
     cy.get('[id="name"]').type(taksName)
@@ -61,10 +67,8 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
     }
     cy.contains('button', 'Done').click()
     cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' })
-    if (multiJobs) {
-        cy.contains('Advanced configuration').click()
-        cy.get('#segmentSize')
-        .type(segmentSize)
+    if (advancedConfiguration) {
+        cy.advancedConfiguration(multiJobs, segmentSize, sssFrame, startFrame, stopFrame, frameStep)
     }
     cy.contains('button', 'Submit').click()
     cy.contains('The task has been created')
@@ -263,4 +267,22 @@ Cypress.Commands.add('deleteTask', (taskName, taskID) => {
         cy.contains('button', 'Delete')
         .click()
     })
+})
+
+Cypress.Commands.add('advancedConfiguration', (multiJobs=false,
+                                                segmentSize=1,
+                                                sssFrame=false,
+                                                startFrame=1,
+                                                stopFrame=1,
+                                                frameStep=1) => {
+    cy.contains('Advanced configuration').click()
+    if (multiJobs) {
+        cy.get('#segmentSize')
+        .type(segmentSize)
+    }
+    if (sssFrame) {
+        cy.get('#startFrame').type(startFrame)
+        cy.get('#stopFrame').type(stopFrame)
+        cy.get('#frameStep').type(frameStep)
+    }
 })
