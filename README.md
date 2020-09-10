@@ -41,7 +41,8 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 ## Supported annotation formats
 
 Format selection is possible after clicking on the Upload annotation
-and Dump annotation buttons. [Datumaro](datumaro/README.md) dataset
+and Dump annotation buttons.
+[Datumaro](https://github.com/openvinotoolkit/datumaro/README.md) dataset
 framework allows additional dataset transformations
 via its command line tool and Python library.
 
@@ -49,7 +50,7 @@ via its command line tool and Python library.
 | ------------------------------------------------------------------------------------------ | ------ | ------ |
 | [CVAT for images](cvat/apps/documentation/xml_format.md#annotation)                        | X      | X      |
 | [CVAT for a video](cvat/apps/documentation/xml_format.md#interpolation)                    | X      | X      |
-| [Datumaro](datumaro/README.md)                                                             |        | X      |
+| [Datumaro](https://github.com/openvinotoolkit/datumaro)                                    |        | X      |
 | [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                      | X      | X      |
 | Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)              | X      | X      |
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                                 | X      | X      |
