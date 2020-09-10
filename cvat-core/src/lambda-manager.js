@@ -29,11 +29,7 @@ class LambdaManager {
 
         for (const model of result) {
             models.push(new MLModel({
-                id: model.id,
-                name: model.name,
-                description: model.description,
-                framework: model.framework,
-                labels: [...model.labels],
+                ...model,
                 type: model.kind,
             }));
         }

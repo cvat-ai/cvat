@@ -141,6 +141,9 @@ export interface Model {
     framework: string;
     description: string;
     type: string;
+    params: {
+        canvas: object;
+    };
 }
 
 export enum RQStatus {

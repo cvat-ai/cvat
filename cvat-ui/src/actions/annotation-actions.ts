@@ -1446,7 +1446,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 canvasInstance.interact({
                     enabled: true,
                     shapeType: 'points',
-                    minPosVertices: 4, // TODO: Add parameter to interactor
+                    ...activeInteractor.params.canvas,
                 });
                 dispatch(interactWithCanvas(activeInteractor, activeLabelID));
             }
