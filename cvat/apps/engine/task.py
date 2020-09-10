@@ -311,7 +311,7 @@ def _create_thread(tid, data):
 
             else:#images,archive
                 db_data.size = len(extractor)
-                
+
                 counter = itertools.count()
                 for chunk_number, chunk_frames in itertools.groupby(extractor.frame_range, lambda x: next(counter) // db_data.chunk_size):
                     chunk_paths = [(extractor.get_path(i), i) for i in chunk_frames]
