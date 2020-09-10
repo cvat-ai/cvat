@@ -1,9 +1,9 @@
 # Computer Vision Annotation Tool (CVAT)
 
-[![Build Status](https://travis-ci.org/opencv/cvat.svg?branch=develop)](https://travis-ci.org/opencv/cvat)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/840351da141e4eaeac6476fd19ec0a33)](https://app.codacy.com/app/cvat/cvat?utm_source=github.com&utm_medium=referral&utm_content=opencv/cvat&utm_campaign=Badge_Grade_Dashboard)
+[![Build Status](https://travis-ci.org/openvinotoolkit/cvat.svg?branch=develop)](https://travis-ci.org/openvinotoolkit/cvat)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b9899c72f2764df0b5d26390cb872e21)](https://app.codacy.com/gh/openvinotoolkit/cvat?utm_source=github.com&utm_medium=referral&utm_content=openvinotoolkit/cvat&utm_campaign=Badge_Grade_Dashboard)
 [![Gitter chat](https://badges.gitter.im/opencv-cvat/gitter.png)](https://gitter.im/opencv-cvat)
-[![Coverage Status](https://coveralls.io/repos/github/opencv/cvat/badge.svg?branch=)](https://coveralls.io/github/opencv/cvat?branch=develop)
+[![Coverage Status](https://coveralls.io/repos/github/openvinotoolkit/cvat/badge.svg?branch=develop)](https://coveralls.io/github/openvinotoolkit/cvat?branch=develop)
 [![DOI](https://zenodo.org/badge/139156354.svg)](https://zenodo.org/badge/latestdoi/139156354)
 
 CVAT is free, online, interactive video and image annotation

@@ -107,11 +107,11 @@ Cypress.Commands.add('createTrack', (firstX, firstY, lastX, lastY) => {
     .click(lastX, lastY)
 })
 
-Cypress.Commands.add('createPoint', (posX, posY) => {
+Cypress.Commands.add('createPoint', (posX, posY, type='Shape') => {
     cy.get('.cvat-draw-points-control').click()
     cy.get('.cvat-draw-shape-popover-content')
     .find('button')
-    .contains('Shape')
+    .contains(type)
     .click({force: true})
     cy.get('.cvat-canvas-container')
     .click(posX, posY)
@@ -209,4 +209,23 @@ Cypress.Commands.add('updateAttributes', (additionalAttrName, typeAttribute, add
     cy.get('div[title="Select"]').first().click()
     cy.get('.ant-select-dropdown').last().contains(typeAttribute).click()
     cy.get('[placeholder="Default value"]').first().type(additionalValue)
+})
+
+Cypress.Commands.add('createPolyline', (mode,
+                                        pointsMap) => {
+    cy.get('.cvat-draw-polyline-control').click()
+    cy.contains('Draw new polyline')
+    .parents('.cvat-draw-shape-popover-content')
+    .within(() => {
+        cy.get('button')
+        .contains(mode)
+        .click({force: true})
+    })
+    pointsMap.forEach(element => {
+        cy.get('.cvat-canvas-container')
+        .click(element.x, element.y)
+    })
+    cy.get('.cvat-canvas-container')
+    .trigger('keydown', {key: 'n'})
+    .trigger('keyup', {key: 'n'})
 })

@@ -6,6 +6,7 @@ metadata:
     type: interactor
     spec:
     framework: openvino
+    min_pos_points: 4
 
 spec:
   description: Deep Extreme Cut
