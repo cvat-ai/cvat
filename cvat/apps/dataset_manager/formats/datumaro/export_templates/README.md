@@ -6,7 +6,7 @@ python -m virtualenv .venv
 . .venv/bin/activate
 
 # install dependencies
-pip install -e datumaro/
+pip install 'git+https://github.com/openvinotoolkit/datumaro'
 pip install -r cvat/utils/cli/requirements.txt
 
 # set up environment
@@ -17,4 +17,4 @@ export PYTHONPATH
 datum --help
 ```
 
-Check Datumaro [docs](datumaro/README.md) for more info.
+Check [Datumaro docs](https://github.com/openvinotoolkit/datumaro/README.md) for more info.

@@ -73,8 +73,6 @@ COPY components /tmp/components
 COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
-# pycocotools package is impossible to install with its dependencies by one pip install command
-RUN python3 -m pip install --no-cache-dir pycocotools==2.0.0
 
 ARG CLAM_AV
 ENV CLAM_AV=${CLAM_AV}
@@ -95,9 +93,6 @@ COPY cvat/ ${HOME}/cvat
 COPY cvat-core/ ${HOME}/cvat-core
 COPY cvat-data/ ${HOME}/cvat-data
 COPY tests ${HOME}/tests
-COPY datumaro/ ${HOME}/datumaro
-
-RUN python3 -m pip install --no-cache-dir -r ${HOME}/datumaro/requirements.txt
 
 RUN chown -R ${USER}:${USER} .
 
