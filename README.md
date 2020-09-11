@@ -42,7 +42,7 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 
 Format selection is possible after clicking on the Upload annotation
 and Dump annotation buttons.
-[Datumaro](https://github.com/openvinotoolkit/datumaro/README.md) dataset
+[Datumaro](https://github.com/openvinotoolkit/datumaro) dataset
 framework allows additional dataset transformations
 via its command line tool and Python library.
 
