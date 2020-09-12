@@ -10,7 +10,6 @@ Pillow==7.2.0
 numpy==1.18.5
 python-ldap==3.3.1
 pytz==2020.1
-pyhash==0.9.3
 pyunpack==0.2.1
 rcssmin==1.0.6
 redis==3.5.3
