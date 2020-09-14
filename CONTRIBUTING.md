@@ -10,7 +10,21 @@ patches and features.
 
 ## Development environment
 
-Next steps should work on clear Ubuntu 18.04.
+## Mac OS 10.15
+
+-   Install necessary dependencies:
+    ```sh
+    brew install git python pyenv redis curl openssl
+    ```
+
+-   Install Python 3.6
+    ```sh
+    pyenv update
+    pyenv install -v 3.6
+    pyenv global 3.6
+    ```
+
+## Ubuntu 18.04
 
 -   Install necessary dependencies:
     ```sh
@@ -21,6 +35,7 @@ Next steps should work on clear Ubuntu 18.04.
     # Node and npm (you can use default versions of these packages from apt (8.*, 3.*), but we would recommend to use newer versions)
     curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
     sudo apt-get install -y nodejs
+    ```
 
 -   Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
 for development
@@ -52,6 +67,15 @@ for development
     npm install && \
     cd cvat-core && npm install && \
     cd ../cvat-ui && npm install && npm start
+    ```
+    ## Note for Mac users
+    If you faced with error
+    ```sh
+    Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)
+    ```
+    Run command below and reinstall npm packages for all projects again
+    ```sh
+    npm rebuild node-sass
     ```
 
 -   Open new terminal (Ctrl + Shift + T), run Visual Studio Code from the virtual environment
