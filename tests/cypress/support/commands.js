@@ -40,17 +40,8 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               attrName='Some attr name',
                                               textDefaultValue='Some default value for type Text',
                                               image='image.png',
-                                              multiAttr=false,
-                                              additionalAttrName,
-                                              typeAttribute,
-                                              additionalValue,
-                                              advancedConfiguration=false,
-                                              multiJobs,
-                                              segmentSize,
-                                              sssFrame,
-                                              startFrame,
-                                              stopFrame,
-                                              frameStep
+                                              multiAttrParams,
+                                              advancedConfigurationParams
                                               ) => {
     cy.get('#cvat-create-task-button').click()
     cy.url().should('include', '/tasks/create')
@@ -62,13 +53,13 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
     cy.get('div[title="Select"]').click()
     cy.get('li').contains('Text').click()
     cy.get('[placeholder="Default value"]').type(textDefaultValue)
-    if (multiAttr) {
-        cy.updateAttributes(additionalAttrName, typeAttribute, additionalValue)
+    if (multiAttrParams) {
+        cy.updateAttributes(multiAttrParams)
     }
     cy.contains('button', 'Done').click()
     cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' })
-    if (advancedConfiguration) {
-        cy.advancedConfiguration(multiJobs, segmentSize, sssFrame, startFrame, stopFrame, frameStep)
+    if (advancedConfigurationParams) {
+        cy.advancedConfiguration(advancedConfigurationParams)
     }
     cy.contains('button', 'Submit').click()
     cy.contains('The task has been created')
@@ -217,12 +208,12 @@ Cypress.Commands.add('createCuboid', (mode, firstX, firstY, lastX, lastY) => {
     .click(lastX, lastY)
 })
 
-Cypress.Commands.add('updateAttributes', (additionalAttrName, typeAttribute, additionalValue) => {
+Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
     cy.contains('button', 'Add an attribute').click()
-    cy.get('[placeholder="Name"]').first().type(additionalAttrName)
+    cy.get('[placeholder="Name"]').first().type(multiAttrParams.additionalAttrName)
     cy.get('div[title="Select"]').first().click()
-    cy.get('.ant-select-dropdown').last().contains(typeAttribute).click()
-    cy.get('[placeholder="Default value"]').first().type(additionalValue)
+    cy.get('.ant-select-dropdown').last().contains(multiAttrParams.typeAttribute).click()
+    cy.get('[placeholder="Default value"]').first().type(multiAttrParams.additionalValue)
 })
 
 Cypress.Commands.add('createPolyline', (mode,
@@ -269,20 +260,15 @@ Cypress.Commands.add('deleteTask', (taskName, taskID) => {
     })
 })
 
-Cypress.Commands.add('advancedConfiguration', (multiJobs=false,
-                                                segmentSize=1,
-                                                sssFrame=false,
-                                                startFrame=1,
-                                                stopFrame=1,
-                                                frameStep=1) => {
+Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     cy.contains('Advanced configuration').click()
-    if (multiJobs) {
+    if (advancedConfigurationParams.multiJobs) {
         cy.get('#segmentSize')
-        .type(segmentSize)
+        .type(advancedConfigurationParams.segmentSize)
     }
-    if (sssFrame) {
-        cy.get('#startFrame').type(startFrame)
-        cy.get('#stopFrame').type(stopFrame)
-        cy.get('#frameStep').type(frameStep)
+    if (advancedConfigurationParams.sssFrame) {
+        cy.get('#startFrame').type(advancedConfigurationParams.startFrame)
+        cy.get('#stopFrame').type(advancedConfigurationParams.stopFrame)
+        cy.get('#frameStep').type(advancedConfigurationParams.frameStep)
     }
 })

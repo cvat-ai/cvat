@@ -27,8 +27,10 @@ context('Being able to return to the job list for a task and start a new job wit
     const archivePath = `cypress/fixtures/${archiveName}`
     const imagesFolder = `cypress/fixtures/image_issue_${issueId}`
     const directoryToArchive = imagesFolder
-    const advancedConfiguration = true
-    const multiJobs = true
+    const advancedConfigurationParams = {
+        multiJobs: true,
+        segmentSize: 1
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -42,7 +44,7 @@ context('Being able to return to the job list for a task and start a new job wit
     describe(`Testing issue "${issueId}"`, () => {
         it('Create a multijob task', () => {
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName,
-                false, '', '', '', advancedConfiguration, multiJobs)
+                null, advancedConfigurationParams)
         })
         it('Open the task. Open first job', () => {
             cy.openTaskJob(taskName)
