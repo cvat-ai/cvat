@@ -657,8 +657,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     canvasInstance.cancel();
                                     canvasInstance.interact({
                                         shapeType: 'points',
-                                        minPosVertices: 4, // TODO: Add parameter to interactor
                                         enabled: true,
+                                        ...activeInteractor.params.canvas,
                                     });
 
                                     onInteractionStart(activeInteractor, activeLabelID);

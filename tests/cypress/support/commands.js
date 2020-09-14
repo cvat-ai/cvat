@@ -25,6 +25,16 @@ Cypress.Commands.add('logout', (username=Cypress.env('user')) => {
     .click()
 })
 
+Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {
+    cy.get('#firstName').type(firstName)
+    cy.get('#lastName').type(lastName)
+    cy.get('#username').type(userName)
+    cy.get('#email').type(emailAddr)
+    cy.get('#password1').type(password)
+    cy.get('#password2').type(password)
+    cy.get('.register-form-button').click()
+})
+
 Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               labelName='Some label',
                                               attrName='Some attr name',
@@ -228,4 +238,29 @@ Cypress.Commands.add('createPolyline', (mode,
     cy.get('.cvat-canvas-container')
     .trigger('keydown', {key: 'n'})
     .trigger('keyup', {key: 'n'})
+})
+
+Cypress.Commands.add('getTaskID', (taskName) => {
+    cy.contains('strong', taskName)
+    .parents('.cvat-tasks-list-item').within(() => {
+        cy.get('span').invoke('text')
+        .then((text)=>{
+            return String(text.match(/^#\d+\:/g)).replace(/[^\d]/g, '')
+       })
+    })
+})
+
+Cypress.Commands.add('deleteTask', (taskName, taskID) => {
+    cy.contains('strong', taskName)
+    .parents('.cvat-tasks-list-item')
+    .find('.cvat-menu-icon')
+    .trigger('mouseover')
+    cy.get('.cvat-actions-menu')
+    .contains('Delete')
+    .click()
+    cy.get('.ant-modal-content')
+    .should('contain', `The task ${taskID} will be deleted`).within(() => {
+        cy.contains('button', 'Delete')
+        .click()
+    })
 })

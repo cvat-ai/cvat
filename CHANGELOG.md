@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - UI models (like DEXTR) were redesigned to be more interactive (<https://github.com/opencv/cvat/pull/2054>)
 - Used Ubuntu:20.04 as a base image for CVAT Dockerfile (<https://github.com/opencv/cvat/pull/2101>)
+- Right colors of label tags in label mapping when a user runs automatic detection (<https://github.com/openvinotoolkit/cvat/pull/2162>)
 
 ### Deprecated
 -
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed task creation from PDF (<https://github.com/opencv/cvat/pull/2141>)
 - Fixed CVAT format import for frame stepped tasks (<https://github.com/openvinotoolkit/cvat/pull/2151>)
 - Fixed the reading problem with large PDFs (<https://github.com/openvinotoolkit/cvat/pull/2154>)
+- Fixed unnecessary pyhash dependency (<https://github.com/openvinotoolkit/cvat/pull/2170>)
 
 ### Security
 -

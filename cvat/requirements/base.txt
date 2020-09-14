@@ -10,7 +10,6 @@ Pillow==7.2.0
 numpy==1.18.5
 python-ldap==3.3.1
 pytz==2020.1
-pyhash==0.9.3
 pyunpack==0.2.1
 rcssmin==1.0.6
 redis==3.5.3
@@ -45,3 +44,4 @@ tensorflow==2.2.0 # Optional requirement of Datumaro
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
 diskcache==5.0.2
+git+https://github.com/openvinotoolkit/datumaro@v0.1.0
