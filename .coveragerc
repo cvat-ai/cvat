@@ -3,13 +3,10 @@ branch = true
 # relative_files = true # does not work?
 
 source =
-    datumaro/datumaro/
     cvat/apps/
     utils/cli/
 
 omit =
-    datumaro/datumaro/__main__.py
-    datumaro/datumaro/version.py
     cvat/settings/*
     */tests/*
     */test_*

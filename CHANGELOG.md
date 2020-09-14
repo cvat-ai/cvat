@@ -10,8 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to work with data on the fly (https://github.com/opencv/cvat/pull/2007)
 - Annotation in process outline color wheel (<https://github.com/opencv/cvat/pull/2084>)
 - On the fly annotation using DL detectors (<https://github.com/opencv/cvat/pull/2102>)
+- Displaying automatic annotation progress on a task view (<https://github.com/opencv/cvat/pull/2148>)
+- Automatic tracking of bounding boxes using serverless functions (<https://github.com/opencv/cvat/pull/2136>)
 - [Datumaro] CLI command for dataset equality comparison (<https://github.com/opencv/cvat/pull/1989>)
 - [Datumaro] Merging of datasets with different labels (<https://github.com/opencv/cvat/pull/2098>)
+- Add FBRS interactive segmentation serverless function (<https://github.com/openvinotoolkit/cvat/pull/2094>)
 
 ### Changed
 - UI models (like DEXTR) were redesigned to be more interactive (<https://github.com/opencv/cvat/pull/2054>)
@@ -25,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed multiple errors which arises when polygon is of length 5 or less (<https://github.com/opencv/cvat/pull/2100>)
+- Fixed task creation from PDF (<https://github.com/opencv/cvat/pull/2141>)
+- Fixed CVAT format import for frame stepped tasks (<https://github.com/openvinotoolkit/cvat/pull/2151>)
+- Fixed unnecessary pyhash dependency (<https://github.com/openvinotoolkit/cvat/pull/2170>)
 
 ### Security
 -

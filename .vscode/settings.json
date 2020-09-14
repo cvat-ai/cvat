@@ -25,13 +25,7 @@
         }
     ],
     "python.linting.pylintEnabled": true,
-    "python.envFile": "${workspaceFolder}/.vscode/python.env",
     "python.testing.unittestEnabled": true,
-    "python.testing.unittestArgs": [
-        "-v",
-        "-s",
-        "./datumaro",
-    ],
     "licenser.license": "Custom",
     "licenser.customHeader": "Copyright (C) @YEAR@ Intel Corporation\n\nSPDX-License-Identifier: MIT",
     "files.trimTrailingWhitespace": true

@@ -85,7 +85,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             preventDefault(event);
             const drawing = [ActiveControl.DRAW_POINTS, ActiveControl.DRAW_POLYGON,
                 ActiveControl.DRAW_POLYLINE, ActiveControl.DRAW_RECTANGLE,
-                ActiveControl.DRAW_CUBOID, ActiveControl.INTERACTION].includes(activeControl);
+                ActiveControl.DRAW_CUBOID, ActiveControl.AI_TOOLS].includes(activeControl);
 
             if (!drawing) {
                 canvasInstance.cancel();
@@ -98,7 +98,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     repeatDrawShape();
                 }
             } else {
-                if (activeControl === ActiveControl.INTERACTION) {
+                if (activeControl === ActiveControl.AI_TOOLS) {
                     // separated API method
                     canvasInstance.interact({ enabled: false });
                     return;
