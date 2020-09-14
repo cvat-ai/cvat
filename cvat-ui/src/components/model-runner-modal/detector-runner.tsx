@@ -10,12 +10,15 @@ import Select, { OptionProps } from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
 import Tag from 'antd/lib/tag';
-import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
+import Button from 'antd/lib/button';
+import notification from 'antd/lib/notification';
 
 import { Model, StringObject } from 'reducers/interfaces';
-import Button from 'antd/lib/button';
+
+
+import consts from 'consts';
 
 interface Props {
     withCleanup: boolean;
@@ -151,7 +154,7 @@ function DetectorRunner(props: Props): JSX.Element {
                 Object.keys(mapping).map((modelLabel: string) => {
                     const label = task.labels
                         .filter((_label: any): boolean => _label.name === mapping[modelLabel])[0];
-                    const color = label ? label.color : '#dcdcdc';
+                    const color = label ? label.color : consts.NEW_LABEL_COLOR;
                     return (
                         <Row key={modelLabel} type='flex' justify='start' align='middle'>
                             <Col span={10}>
