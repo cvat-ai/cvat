@@ -10,34 +10,15 @@ import Select, { OptionProps } from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
 import Tag from 'antd/lib/tag';
-import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
+import Button from 'antd/lib/button';
+import notification from 'antd/lib/notification';
 
 import { Model, StringObject } from 'reducers/interfaces';
-import Button from 'antd/lib/button';
 
 
-function colorGenerator(): () => string {
-    const values = [
-        'magenta', 'green', 'geekblue',
-        'orange', 'red', 'cyan',
-        'blue', 'volcano', 'purple',
-    ];
-
-    let index = 0;
-
-    return (): string => {
-        const color = values[index++];
-        if (index >= values.length) {
-            index = 0;
-        }
-
-        return color;
-    };
-}
-
-const nextColor = colorGenerator();
+import consts from 'consts';
 
 interface Props {
     withCleanup: boolean;
@@ -56,7 +37,6 @@ function DetectorRunner(props: Props): JSX.Element {
 
     const [modelID, setModelID] = useState<string | null>(null);
     const [mapping, setMapping] = useState<StringObject>({});
-    const [colors, setColors] = useState<StringObject>({});
     const [threshold, setThreshold] = useState<number>(0.5);
     const [distance, setDistance] = useState<number>(50);
     const [cleanup, setCleanup] = useState<boolean>(false);
@@ -90,10 +70,7 @@ function DetectorRunner(props: Props): JSX.Element {
     function updateMatch(modelLabel: string | null, taskLabel: string | null): void {
         if (match.model && taskLabel) {
             const newmatch: { [index: string]: string } = {};
-            const newcolor: { [index: string]: string } = {};
             newmatch[match.model] = taskLabel;
-            newcolor[match.model] = nextColor();
-            setColors({ ...colors, ...newcolor });
             setMapping({ ...mapping, ...newmatch });
             setMatch({ model: null, task: null });
             return;
@@ -101,10 +78,7 @@ function DetectorRunner(props: Props): JSX.Element {
 
         if (match.task && modelLabel) {
             const newmatch: { [index: string]: string } = {};
-            const newcolor: { [index: string]: string } = {};
             newmatch[modelLabel] = match.task;
-            newcolor[modelLabel] = nextColor();
-            setColors({ ...colors, ...newcolor });
             setMapping({ ...mapping, ...newmatch });
             setMatch({ model: null, task: null });
             return;
@@ -157,18 +131,15 @@ function DetectorRunner(props: Props): JSX.Element {
                         onChange={(_modelID: string): void => {
                             const newmodel = models
                                 .filter((_model): boolean => _model.id === _modelID)[0];
-                            const newcolors: StringObject = {};
                             const newmapping = task.labels
                                 .reduce((acc: StringObject, label: any): StringObject => {
                                     if (newmodel.labels.includes(label.name)) {
                                         acc[label.name] = label.name;
-                                        newcolors[label.name] = nextColor();
                                     }
                                     return acc;
                                 }, {});
 
                             setMapping(newmapping);
-                            setColors(newcolors);
                             setMatch({ model: null, task: null });
                             setModelID(_modelID);
                         }}
@@ -180,29 +151,34 @@ function DetectorRunner(props: Props): JSX.Element {
                 </Col>
             </Row>
             { isDetector && !!Object.keys(mapping).length && (
-                Object.keys(mapping).map((modelLabel: string) => (
-                    <Row key={modelLabel} type='flex' justify='start' align='middle'>
-                        <Col span={10}>
-                            <Tag color={colors[modelLabel]}>{modelLabel}</Tag>
-                        </Col>
-                        <Col span={10} offset={1}>
-                            <Tag color={colors[modelLabel]}>{mapping[modelLabel]}</Tag>
-                        </Col>
-                        <Col offset={1}>
-                            <Tooltip title='Remove the mapped values' mouseLeaveDelay={0}>
-                                <Icon
-                                    className='cvat-danger-circle-icon'
-                                    type='close-circle'
-                                    onClick={(): void => {
-                                        const newmapping = { ...mapping };
-                                        delete newmapping[modelLabel];
-                                        setMapping(newmapping);
-                                    }}
-                                />
-                            </Tooltip>
-                        </Col>
-                    </Row>
-                ))
+                Object.keys(mapping).map((modelLabel: string) => {
+                    const label = task.labels
+                        .filter((_label: any): boolean => _label.name === mapping[modelLabel])[0];
+                    const color = label ? label.color : consts.NEW_LABEL_COLOR;
+                    return (
+                        <Row key={modelLabel} type='flex' justify='start' align='middle'>
+                            <Col span={10}>
+                                <Tag color={color}>{modelLabel}</Tag>
+                            </Col>
+                            <Col span={10} offset={1}>
+                                <Tag color={color}>{mapping[modelLabel]}</Tag>
+                            </Col>
+                            <Col offset={1}>
+                                <Tooltip title='Remove the mapped values' mouseLeaveDelay={0}>
+                                    <Icon
+                                        className='cvat-danger-circle-icon'
+                                        type='close-circle'
+                                        onClick={(): void => {
+                                            const newmapping = { ...mapping };
+                                            delete newmapping[modelLabel];
+                                            setMapping(newmapping);
+                                        }}
+                                    />
+                                </Tooltip>
+                            </Col>
+                        </Row>
+                    );
+                })
             )}
             { isDetector && !!taskLabels.length && !!modelLabels.length && (
                 <>
