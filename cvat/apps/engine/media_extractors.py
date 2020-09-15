@@ -70,7 +70,7 @@ class IMediaReader(ABC):
         pass
 
     def __len__(self):
-        return (self._stop - self._start) // self._step
+        return len(self.frame_range)
 
     @property
     def frame_range(self):
