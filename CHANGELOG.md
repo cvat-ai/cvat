@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed task creation from PDF (<https://github.com/opencv/cvat/pull/2141>)
 - Fixed CVAT format import for frame stepped tasks (<https://github.com/openvinotoolkit/cvat/pull/2151>)
 - Fixed unnecessary pyhash dependency (<https://github.com/openvinotoolkit/cvat/pull/2170>)
-
+- Fixed Data is not getting cleared, even after deleting the Task from Django Admin App(<https://github.com/openvinotoolkit/cvat/issues/1925>)
 ### Security
 -
 

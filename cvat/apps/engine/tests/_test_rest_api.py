@@ -1200,7 +1200,18 @@ class TaskDeleteAPITestCase(APITestCase):
     def test_api_v1_tasks_id_no_auth(self):
         self._check_api_v1_tasks_id(None)
 
+    def test_api_v1_tasks_delete_task_data_after_delete_task(self):
+        for task in self.tasks:
+            task_dir = task.get_task_dirname()
+            self.assertTrue(os.path.exists(task_dir))
+        self._check_api_v1_tasks_id(self.admin)
+        for task in self.tasks:
+            task_dir = task.get_task_dirname()
+            self.assertFalse(os.path.exists(task_dir))
+
+
 class TaskUpdateAPITestCase(APITestCase):
+
     def setUp(self):
         self.client = APIClient()
 
