@@ -10,4 +10,6 @@ class EngineConfig(AppConfig):
 
     def ready(self):
         # Required to define signals in application
-        import cvat.apps.engine.signals  # pylint: disable=unused-import
+        import cvat.apps.engine.signals
+        # Required in order to silent "unused-import" in pyflake
+        assert cvat.apps.engine.signals
