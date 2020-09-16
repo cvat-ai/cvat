@@ -10,4 +10,4 @@ class EngineConfig(AppConfig):
 
     def ready(self):
         # Required to define signals in application
-        import cvat.apps.engine.signals  # noqa: ignore=F401
+        import cvat.apps.engine.signals  # pylint: disable=unused-import
