@@ -39,11 +39,20 @@ script:
   - docker-compose up -d
   # Create superuser
   - docker exec -it cvat bash -ic "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
-  # Install Cypress and run tests
+  # Run cypress tests for firefox browser
   - cd ./tests && npm install
-  - $(npm bin)/cypress run --headless --browser chrome
-  - $(npm bin)/cypress run --headless --browser firefox && cd ..
+  - npm run cypress:run:firefox && cd ..
+  # Code instrumentation
+  - npm install
+  - npm run coverage
+  # Re-build CVAT
+  - docker-compose build
+  - docker-compose up -d
+  # Run cypress tests for firefox browser on instrumented code
+  - cd ./tests && npm run cypress:run:chrome && cd ..
 
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . && coveralls --merge=coverage.json'
+  - npm run report:coverage:text
+  - npm run report:coverage:lcov

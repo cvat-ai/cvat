@@ -1,0 +1,21 @@
+{
+    "extends": "@istanbuljs/nyc-config-typescript",
+    "all": true,
+    "check-coverage": true,
+    "recursive": true,
+    "compact": false,
+    "lines": 25,
+    "useInlineSourceMaps": false,
+    "extension": [
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx"
+    ],
+    "exclude": [
+        "**/*.config.*"
+    ],
+    "parser-plugins": [
+        "typescript"
+    ]
+}

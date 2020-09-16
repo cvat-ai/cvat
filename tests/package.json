@@ -1,7 +1,12 @@
 {
+  "scripts": {
+    "cypress:run:chrome": "cypress run --headless --browser chrome",
+    "cypress:run:firefox": "cypress run --headless --browser firefox"
+  },
   "devDependencies": {
     "cypress": "^5.0.0",
-    "cypress-file-upload": "^4.1.1"
+    "cypress-file-upload": "^4.1.1",
+    "istanbul-lib-coverage": "^3.0.0"
   },
   "dependencies": {
     "archiver": "^5.0.0",
