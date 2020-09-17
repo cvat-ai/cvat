@@ -136,7 +136,6 @@ function build() {
                 return result;
             },
             /**
-
                 * Method allows to register on a server
                 * @method register
                 * @async
@@ -470,34 +469,42 @@ function build() {
                 return result;
             },
             /**
-                * Install plugin to CVAT
-                * @method register
-                * @async
-                * @memberof module:API.cvat.plugins
-                * @param {Plugin} [plugin] plugin for registration
-                * @throws {module:API.cvat.exceptions.PluginError}
-            */
+             * Install plugin to CVAT
+             * @method register
+             * @async
+             * @memberof module:API.cvat.plugins
+             * @param {Plugin} [plugin] plugin for registration
+             * @throws {module:API.cvat.exceptions.PluginError}
+             */
             async register(plugin) {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.plugins.register, plugin);
                 return result;
             },
         },
+
+        allowedApps: {
+            async list() {
+                const result = await PluginRegistry.apiWrapper(cvat.allowedApps.list);
+                return result;
+            },
+        },
+
         /**
-            * Namespace is used for serverless functions management (mainly related with DL models)
-            * @namespace lambda
-            * @memberof module:API.cvat
-        */
+         * Namespace is used for serverless functions management (mainly related with DL models)
+         * @namespace lambda
+         * @memberof module:API.cvat
+         */
         lambda: {
             /**
-                * Method returns list of available serverless models
-                * @method list
-                * @async
-                * @memberof module:API.cvat.lambda
-                * @returns {module:API.cvat.classes.MLModel[]}
-                * @throws {module:API.cvat.exceptions.ServerError}
-                * @throws {module:API.cvat.exceptions.PluginError}
-            */
+             * Method returns list of available serverless models
+             * @method list
+             * @async
+             * @memberof module:API.cvat.lambda
+             * @returns {module:API.cvat.classes.MLModel[]}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             */
             async list() {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.lambda.list);
@@ -746,6 +753,7 @@ function build() {
     cvat.lambda = Object.freeze(cvat.lambda);
     cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
+    cvat.allowedApps = Object.freeze(cvat.allowedApps);
 
     const implementAPI = require('./api-implementation');
 

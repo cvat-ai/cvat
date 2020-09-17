@@ -1,4 +1,3 @@
-
 # Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -19,15 +18,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.apps import apps
 from django.contrib import admin
 from django.urls import path, include
-from django.apps import apps
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('cvat.apps.engine.urls')),
     path('django-rq/', include('django_rq.urls')),
     path('documentation/', include('cvat.apps.documentation.urls')),
+    path('api/v1/apps/', include('cvat.apps.allowed_apps.urls')),
 ]
 
 if apps.is_installed('cvat.apps.git'):

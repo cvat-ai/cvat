@@ -799,7 +799,7 @@
             }
 
             async function cancelLambdaRequest(requestId) {
-                const { backendAPI } = config;
+                const {backendAPI} = config;
 
                 try {
                     await Axios.delete(
@@ -807,6 +807,16 @@
                             method: 'DELETE',
                         },
                     );
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function getAllowedApps() {
+                const {backendAPI} = config;
+                try {
+                    const response = await Axios.get(`${backendAPI}/apps/`);
+                    return response.data;
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -893,6 +903,12 @@
                         run: runLambdaRequest,
                         call: callLambdaFunction,
                         cancel: cancelLambdaRequest,
+                    }),
+                    writable: false,
+                },
+                allowedApps: {
+                    value: Object.freeze({
+                        list: getAllowedApps,
                     }),
                     writable: false,
                 },

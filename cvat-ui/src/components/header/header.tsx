@@ -55,6 +55,9 @@ interface StateToProps {
     logoutFetching: boolean;
     installedAnalytics: boolean;
     renderChangePasswordItem: boolean;
+    showAnalyticsButton: boolean;
+    showModelsButton: boolean;
+    showTasksButton: boolean;
 }
 
 interface DispatchToProps {
@@ -85,6 +88,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settings: {
             showDialog: settingsDialogShown,
         },
+        meta: {
+            showAnalyticsButton,
+            showModelsButton,
+            showTasksButton,
+        },
     } = state;
 
     return {
@@ -113,6 +121,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         logoutFetching,
         installedAnalytics: list[SupportedPlugins.ANALYTICS],
         renderChangePasswordItem,
+        showAnalyticsButton,
+        showModelsButton,
+        showTasksButton,
     };
 }
 
@@ -132,7 +143,6 @@ function HeaderContainer(props: Props): JSX.Element {
     const {
         user,
         tool,
-        installedAnalytics,
         logoutFetching,
         changePasswordFetching,
         settingsDialogShown,
@@ -141,6 +151,9 @@ function HeaderContainer(props: Props): JSX.Element {
         switchSettingsDialog,
         switchChangePasswordDialog,
         renderChangePasswordItem,
+        showModelsButton,
+        showAnalyticsButton,
+        showTasksButton,
     } = props;
 
     const {
@@ -256,13 +269,14 @@ function HeaderContainer(props: Props): JSX.Element {
 
         </Menu>
     );
+    console.log(showTasksButton);
 
     return (
         <Layout.Header className='cvat-header'>
             <div className='cvat-left-header'>
-                <Icon className='cvat-logo-icon' component={CVATLogo} />
-
-                <Button
+                <Icon className='cvat-logo-icon' component={CVATLogo}/>
+                {showTasksButton && (
+                  <Button
                     className='cvat-header-button'
                     type='link'
                     value='tasks'
@@ -273,10 +287,12 @@ function HeaderContainer(props: Props): JSX.Element {
                             history.push('/tasks?page=1');
                         }
                     }
-                >
-                    Tasks
-                </Button>
-                <Button
+                  >
+                      Tasks
+                  </Button>
+                )}
+                {showModelsButton && (
+                  <Button
                     className='cvat-header-button'
                     type='link'
                     value='models'
@@ -287,64 +303,65 @@ function HeaderContainer(props: Props): JSX.Element {
                             history.push('/models');
                         }
                     }
-                >
-                    Models
-                </Button>
-                { installedAnalytics
-                    && (
-                        <Button
-                            className='cvat-header-button'
-                            type='link'
-                            href={`${tool.server.host}/analytics/app/kibana`}
-                            onClick={
-                                (event: React.MouseEvent): void => {
-                                    event.preventDefault();
-                                    // false positive
-                                    // eslint-disable-next-line
-                                    window.open(`${tool.server.host}/analytics/app/kibana`, '_blank');
-                                }
-                            }
-                        >
-                            Analytics
-                        </Button>
-                    )}
-            </div>
-            <div className='cvat-right-header'>
-                <Button
+                  >
+                      Models
+                  </Button>
+                )}
+                {showAnalyticsButton
+                && (
+                  <Button
                     className='cvat-header-button'
                     type='link'
-                    href={GITHUB_URL}
-                    onClick={
-                        (event: React.MouseEvent): void => {
-                            event.preventDefault();
-                            // false positive
-                            // eslint-disable-next-line security/detect-non-literal-fs-filename
-                            window.open(GITHUB_URL, '_blank');
-                        }
-                    }
-                >
-                    <Icon type='github' />
-                    <Text className='cvat-text-color'>GitHub</Text>
-                </Button>
-                <Button
-                    className='cvat-header-button'
-                    type='link'
-                    href={`${tool.server.host}/documentation/user_guide.html`}
+                    href={`${tool.server.host}/analytics/app/kibana`}
                     onClick={
                         (event: React.MouseEvent): void => {
                             event.preventDefault();
                             // false positive
                             // eslint-disable-next-line
-                            window.open(`${tool.server.host}/documentation/user_guide.html`, '_blank')
+                            window.open(`${tool.server.host}/analytics/app/kibana`, '_blank');
                         }
                     }
+                  >
+                      Analytics
+                  </Button>
+                )}
+            </div>
+            <div className='cvat-right-header'>
+                <Button
+                  className='cvat-header-button'
+                  type='link'
+                  href={GITHUB_URL}
+                  onClick={
+                      (event: React.MouseEvent): void => {
+                          event.preventDefault();
+                          // false positive
+                          // eslint-disable-next-line security/detect-non-literal-fs-filename
+                          window.open(GITHUB_URL, '_blank');
+                      }
+                  }
                 >
-                    <Icon type='question-circle' />
+                    <Icon type='github'/>
+                    <Text className='cvat-text-color'>GitHub</Text>
+                </Button>
+                <Button
+                  className='cvat-header-button'
+                  type='link'
+                  href={`${tool.server.host}/documentation/user_guide.html`}
+                  onClick={
+                      (event: React.MouseEvent): void => {
+                          event.preventDefault();
+                          // false positive
+                          // eslint-disable-next-line
+                          window.open(`${tool.server.host}/documentation/user_guide.html`, '_blank')
+                      }
+                  }
+                >
+                    <Icon type='question-circle'/>
                     Help
                 </Button>
                 <Dropdown overlay={menu} className='cvat-header-menu-dropdown'>
                     <span>
-                        <Icon className='cvat-header-account-icon' component={AccountIcon} />
+                        <Icon className='cvat-header-account-icon' component={AccountIcon}/>
                         <Text strong>
                             {user.username.length > 14 ? `${user.username.slice(0, 10)} ...` : user.username}
                         </Text>

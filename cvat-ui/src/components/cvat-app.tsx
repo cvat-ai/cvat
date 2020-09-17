@@ -65,6 +65,11 @@ interface CVATAppProps {
     authActionsInitialized: boolean;
     notifications: NotificationsState;
     user: any;
+    loadMeta: () => void;
+    metaInitialized: boolean;
+    metaFetching: boolean;
+    showModelsButton: boolean;
+    showAnalyticsButton: boolean;
 }
 
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
@@ -115,6 +120,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             userAgreementsInitialized,
             authActionsFetching,
             authActionsInitialized,
+            loadMeta,
+            metaInitialized,
+            metaFetching,
+            showModelsButton,
+            showAnalyticsButton,
         } = this.props;
 
         this.showErrors();
@@ -150,13 +160,18 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout();
         }
 
-        if (!modelsInitialized && !modelsFetching) {
+        if (!metaInitialized && !metaFetching) {
+            loadMeta();
+        }
+
+        if (showModelsButton && !modelsInitialized && !modelsFetching) {
             initModels();
         }
 
-        if (!pluginsInitialized && !pluginsFetching) {
+        if (showAnalyticsButton && !pluginsInitialized && !pluginsFetching) {
             initPlugins();
         }
+        console.log(metaInitialized, showModelsButton, showAnalyticsButton);
     }
 
     private showMessages(): void {
@@ -246,13 +261,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             formatsInitialized,
             switchShortcutsDialog,
             switchSettingsDialog,
+            showAnalyticsButton,
             user,
             keyMap,
         } = this.props;
 
         const readyForRender = (userInitialized && (user == null || !user.isVerified))
             || (userInitialized && formatsInitialized
-                && pluginsInitialized && usersInitialized && aboutInitialized);
+            && (showAnalyticsButton === pluginsInitialized)
+            && usersInitialized && aboutInitialized);
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,

@@ -32,9 +32,10 @@ import {
 } from './actions/notification-actions';
 
 import {
-    CombinedState,
-    NotificationsState,
+  CombinedState,
+  NotificationsState,
 } from './reducers/interfaces';
+import { getAllowedAppsAsync } from './actions/meta-action';
 
 createCVATStore(createRootReducer);
 const cvatStore = getCVATStore();
@@ -61,6 +62,11 @@ interface StateToProps {
     notifications: NotificationsState;
     user: any;
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    metaInitialized: boolean;
+    metaFetching: boolean;
+    showModelsButton: boolean;
+    showAnalyticsButton: boolean;
+    showTasksButton: boolean;
 }
 
 interface DispatchToProps {
@@ -76,6 +82,7 @@ interface DispatchToProps {
     loadUserAgreements: () => void;
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
+    loadMeta: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -86,7 +93,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { about } = state;
     const { shortcuts } = state;
     const { userAgreements } = state;
-    const { models } = state;
+  const {models} = state;
+  const {meta} = state;
 
     return {
         userInitialized: auth.initialized,
@@ -110,6 +118,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
         notifications: state.notifications,
         user: auth.user,
         keyMap: shortcuts.keyMap,
+        metaInitialized: meta.initialized,
+        metaFetching: meta.fetching,
+        showModelsButton: meta.showModelsButton,
+        showAnalyticsButton: meta.showAnalyticsButton,
+        showTasksButton: meta.showTasksButton,
     };
 }
 
@@ -127,6 +140,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         switchShortcutsDialog: (): void => dispatch(shortcutsActions.switchShortcutsDialog()),
         switchSettingsDialog: (): void => dispatch(switchSettingsDialog()),
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
+        loadMeta: (): void => dispatch(getAllowedAppsAsync()),
     };
 }
 
