@@ -269,92 +269,90 @@ function HeaderContainer(props: Props): JSX.Element {
 
         </Menu>
     );
-    console.log(showTasksButton);
 
     return (
         <Layout.Header className='cvat-header'>
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={CVATLogo}/>
                 {showTasksButton && (
-                  <Button
-                    className='cvat-header-button'
-                    type='link'
-                    value='tasks'
-                    href='/tasks?page=1'
-                    onClick={
-                        (event: React.MouseEvent): void => {
-                            event.preventDefault();
-                            history.push('/tasks?page=1');
+                    <Button
+                        className='cvat-header-button'
+                        type='link'
+                        value='tasks'
+                        href='/tasks?page=1'
+                        onClick={
+                            (event: React.MouseEvent): void => {
+                                event.preventDefault();
+                                history.push('/tasks?page=1');
+                            }
                         }
-                    }
-                  >
-                      Tasks
-                  </Button>
+                    >
+                        Tasks
+                    </Button>
                 )}
                 {showModelsButton && (
-                  <Button
-                    className='cvat-header-button'
-                    type='link'
-                    value='models'
-                    href='/models'
-                    onClick={
-                        (event: React.MouseEvent): void => {
-                            event.preventDefault();
-                            history.push('/models');
+                    <Button
+                        className='cvat-header-button'
+                        type='link'
+                        value='models'
+                        href='/models'
+                        onClick={
+                            (event: React.MouseEvent): void => {
+                                event.preventDefault();
+                                history.push('/models');
+                            }
                         }
-                    }
-                  >
-                      Models
-                  </Button>
+                    >
+                        Models
+                    </Button>
                 )}
-                {showAnalyticsButton
-                && (
-                  <Button
-                    className='cvat-header-button'
-                    type='link'
-                    href={`${tool.server.host}/analytics/app/kibana`}
-                    onClick={
-                        (event: React.MouseEvent): void => {
-                            event.preventDefault();
-                            // false positive
-                            // eslint-disable-next-line
-                            window.open(`${tool.server.host}/analytics/app/kibana`, '_blank');
+                {showAnalyticsButton && (
+                    <Button
+                        className='cvat-header-button'
+                        type='link'
+                        href={`${tool.server.host}/analytics/app/kibana`}
+                        onClick={
+                            (event: React.MouseEvent): void => {
+                                event.preventDefault();
+                                // false positive
+                                // eslint-disable-next-line
+                                window.open(`${tool.server.host}/analytics/app/kibana`, '_blank');
+                            }
                         }
-                    }
-                  >
-                      Analytics
-                  </Button>
+                    >
+                        Analytics
+                    </Button>
                 )}
             </div>
             <div className='cvat-right-header'>
                 <Button
-                  className='cvat-header-button'
-                  type='link'
-                  href={GITHUB_URL}
-                  onClick={
-                      (event: React.MouseEvent): void => {
-                          event.preventDefault();
-                          // false positive
-                          // eslint-disable-next-line security/detect-non-literal-fs-filename
-                          window.open(GITHUB_URL, '_blank');
-                      }
-                  }
+                    className='cvat-header-button'
+                    type='link'
+                    href={GITHUB_URL}
+                    onClick={
+                        (event: React.MouseEvent): void => {
+                            event.preventDefault();
+                            // false positive
+                            // eslint-disable-next-line security/detect-non-literal-fs-filename
+                            window.open(GITHUB_URL, '_blank');
+                        }
+                    }
                 >
                     <Icon type='github'/>
                     <Text className='cvat-text-color'>GitHub</Text>
                 </Button>
                 <Button
-                  className='cvat-header-button'
-                  type='link'
-                  href={`${tool.server.host}/documentation/user_guide.html`}
-                  onClick={
-                      (event: React.MouseEvent): void => {
-                          event.preventDefault();
-                          // false positive
-                          // eslint-disable-next-line
-                          window.open(`${tool.server.host}/documentation/user_guide.html`, '_blank')
-                      }
-                  }
+                    className='cvat-header-button'
+                    type='link'
+                    href={`${tool.server.host}/documentation/user_guide.html`}
+                    onClick={
+                        (event: React.MouseEvent): void => {
+                            event.preventDefault();
+                            // false positive
+                            // eslint-disable-next-line
+                            window.open(`${tool.server.host}/documentation/user_guide.html`, '_blank')
+                        }
+                    }
                 >
                     <Icon type='question-circle'/>
                     Help

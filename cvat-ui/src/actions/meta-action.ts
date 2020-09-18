@@ -17,7 +17,7 @@ export enum MetaActionTypes {
 
 export const allowedAppsActions = {
     getAllowedApps: () => createAction(MetaActionTypes.GET_ALLOWED_APPS),
-    getAllowedAppsSuccess: (data: MetaState) => createAction(MetaActionTypes.GET_ALLOWED_APPS_SUCCESS, {data}),
+    getAllowedAppsSuccess: (data: any) => createAction(MetaActionTypes.GET_ALLOWED_APPS_SUCCESS, {data}),
     getAllowedAppsFailed: (error: any) => createAction(MetaActionTypes.GET_ALLOWED_APPS_FAILED, {error}),
 };
 
@@ -29,12 +29,11 @@ export const getAllowedAppsAsync = (): ThunkAction => async (dispatch): Promise<
     try {
         const allowedApps: string[] = await core.allowedApps.list();
 
-        const data: MetaState = {
+        const data = {
             showTasksButton: allowedApps.includes('tasks'),
             showAnalyticsButton: allowedApps.includes('analytics'),
             showModelsButton: allowedApps.includes('serverless'),
         };
-        console.log(data);
         dispatch(
             allowedAppsActions.getAllowedAppsSuccess(data),
         );

@@ -799,7 +799,7 @@
             }
 
             async function cancelLambdaRequest(requestId) {
-                const {backendAPI} = config;
+                const { backendAPI } = config;
 
                 try {
                     await Axios.delete(
@@ -813,9 +813,11 @@
             }
 
             async function getAllowedApps() {
-                const {backendAPI} = config;
+                const { backendAPI } = config;
                 try {
-                    const response = await Axios.get(`${backendAPI}/apps/`);
+                    const response = await Axios.get(`${backendAPI}/apps/`, {
+                        proxy: config.proxy,
+                    });
                     return response.data;
                 } catch (errorData) {
                     throw generateError(errorData);
