@@ -87,6 +87,7 @@ import cvat.apps.dataset_manager.formats.datumaro
 import cvat.apps.dataset_manager.formats.labelme
 import cvat.apps.dataset_manager.formats.mask
 import cvat.apps.dataset_manager.formats.mot
+import cvat.apps.dataset_manager.formats.mots
 import cvat.apps.dataset_manager.formats.pascal_voc
 import cvat.apps.dataset_manager.formats.tfrecord
 import cvat.apps.dataset_manager.formats.yolo
