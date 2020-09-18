@@ -39,7 +39,7 @@ context('Check if the image is scaled and then fitted', () => {
             .should('have.attr', 'style').and('contain', 'scale(0.8875)')
         })
         it('Fit image', () => {
-            cy.get('body')
+            cy.get('#cvat_canvas_content')
             .dblclick()
             cy.get('#cvat_canvas_background')
             .should('have.attr', 'style').and('contain', 'scale(1.065)')
