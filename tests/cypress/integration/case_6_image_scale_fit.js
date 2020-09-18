@@ -6,7 +6,7 @@
 
 /// <reference types="cypress" />
 
-context('Check if the image is rotated', () => {
+context('Check if the image is scaled and then fitted', () => {
 
     const caseId = '6'
     const labelName = `Case ${caseId}`
