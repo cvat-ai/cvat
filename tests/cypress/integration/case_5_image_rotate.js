@@ -20,21 +20,16 @@ context('Check if the image is rotated', () => {
     const posX = 10
     const posY = 10
     const color = 'gray'
-    function rotateClockwise() {
-        cy.get('.cvat-canvas-container')
-        .trigger('keydown', {key: 'Control'})
-        .trigger('keydown', {key: 'r'})
-        .trigger('keyup', {key: 'r'})
-        .trigger('keyup', {key: 'Control'})
-    }
-    function rotateAnticlockwise() {
-        cy.get('.cvat-canvas-container')
-        .trigger('keydown', {key: 'Control'})
-        .trigger('keydown', {key: 'Shift'})
-        .trigger('keydown', {key: 'r'})
-        .trigger('keyup', {key: 'r'})
-        .trigger('keyup', {key: 'Control'})
-        .trigger('keyup', {key: 'Shift'})
+    function imageRotate(direction='anticlockwise') {
+        cy.get('.cvat-rotate-canvas-control')
+        .trigger('mouseover')
+        if (direction === 'clockwise') {
+            cy.get('.cvat-rotate-canvas-controls-right')
+            .click()
+        } else {
+            cy.get('.cvat-rotate-canvas-controls-left')
+            .click()
+        }
     }
 
     before(() => {
@@ -47,42 +42,42 @@ context('Check if the image is rotated', () => {
 
     describe(`Testing "${labelName}"`, () => {
         it('Rotate image clockwise 90deg', () => {
-            rotateClockwise()
+            imageRotate('clockwise')
             cy.get('#cvat_canvas_background')
             .should('have.attr', 'style').and('contain', 'rotate(90deg);')
         })
         it('Rotate image clockwise 180deg', () => {
-            rotateClockwise()
+            imageRotate('clockwise')
             cy.get('#cvat_canvas_background')
             .should('have.attr', 'style').and('contain', 'rotate(180deg);')
         })
         it('Rotate image clockwise 270deg', () => {
-            rotateClockwise()
+            imageRotate('clockwise')
             cy.get('#cvat_canvas_background')
             .should('have.attr', 'style').and('contain', 'rotate(270deg);')
         })
         it('Rotate image clockwise 360deg', () => {
-            rotateClockwise()
+            imageRotate('clockwise')
             cy.get('#cvat_canvas_background')
             .should('have.attr', 'style').and('contain', 'rotate(0deg);')
         })
         it('Rotate image anticlockwise 90deg', () => {
-            rotateAnticlockwise()
+            imageRotate()
             cy.get('#cvat_canvas_background')
             .should('have.attr', 'style').and('contain', 'rotate(270deg);')
         })
         it('Rotate image anticlockwise 180deg', () => {
-            rotateAnticlockwise()
+            imageRotate()
             cy.get('#cvat_canvas_background')
             .should('have.attr', 'style').and('contain', 'rotate(180deg);')
         })
         it('Rotate image anticlockwise 270deg', () => {
-            rotateAnticlockwise()
+            imageRotate()
             cy.get('#cvat_canvas_background')
             .should('have.attr', 'style').and('contain', 'rotate(90deg);')
         })
         it('Rotate image anticlockwise 360deg', () => {
-            rotateAnticlockwise()
+            imageRotate()
             cy.get('#cvat_canvas_background')
             .should('have.attr', 'style').and('contain', 'rotate(0deg);')
         })
