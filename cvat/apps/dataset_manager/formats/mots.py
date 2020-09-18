@@ -9,16 +9,22 @@ from pyunpack import Archive
 from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
     find_dataset_root, match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
-from datumaro.components.extractor import AnnotationType
+from datumaro.components.extractor import AnnotationType, Transform
 from datumaro.components.project import Dataset
 
 from .registry import dm_env, exporter, importer
 
 
+class KeepTracks(Transform):
+    def transform_item(self, item):
+        return item.wrap(annotations=[a for a in item.annotations
+            if 'track_id' in a.attributes])
+
 @exporter(name='MOTS PNG', ext='ZIP', version='1.0')
 def _export(dst_file, task_data, save_images=False):
     extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
     envt = dm_env.transforms
+    extractor = extractor.transform(KeepTracks) # can only export tracks
     extractor = extractor.transform(envt.get('polygons_to_masks'))
     extractor = extractor.transform(envt.get('boxes_to_masks'))
     extractor = extractor.transform(envt.get('merge_instance_segments'))
@@ -53,7 +59,7 @@ def _import(src_file, task_data):
 
                 track_id = ann.attributes['track_id']
                 shape = task_data.TrackedShape(
-                    type='rectangle',
+                    type='polygon',
                     points=ann.points,
                     occluded=ann.attributes.get('occluded') == True,
                     outside=False,
