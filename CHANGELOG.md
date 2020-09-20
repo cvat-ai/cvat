@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed CVAT format import for frame stepped tasks (<https://github.com/openvinotoolkit/cvat/pull/2151>)
 - Fixed unnecessary pyhash dependency (<https://github.com/openvinotoolkit/cvat/pull/2170>)
 - Fixed Data is not getting cleared, even after deleting the Task from Django Admin App(<https://github.com/openvinotoolkit/cvat/issues/1925>)
+- Fixed use case when UI throws exception: Cannot read property 'objectType' of undefined #2053 (<https://github.com/openvinotoolkit/cvat/pull/2203>)
+- Fixed use case when logs could be saved twice or more times #2202 (<https://github.com/openvinotoolkit/cvat/pull/2203>)
+
 ### Security
 -
 
