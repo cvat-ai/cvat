@@ -31,9 +31,8 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState, own: Props): StateToProps {
     const { list } = state.plugins;
     const { tasks } = state;
-    const { gettingQuery } = tasks;
+    const { gettingQuery, fetching, updating } = tasks;
     const { deletes } = tasks.activities;
-    const { fetching, updating } = tasks;
 
     const id = +own.match.params.id;
 
