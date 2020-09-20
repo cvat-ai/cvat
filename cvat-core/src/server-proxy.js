@@ -251,7 +251,7 @@
                     const data = JSON.stringify({
                         old_password: oldPassword,
                         new_password1: newPassword1,
-                        new_password2:newPassword2,
+                        new_password2: newPassword2,
                     });
                     await Axios.post(`${config.backendAPI}/auth/password/change`, data, {
                         proxy: config.proxy,
@@ -280,13 +280,13 @@
                 }
             }
 
-            async function resetPassword(newPassword1, newPassword2, uid, token) {
+            async function resetPassword(newPassword1, newPassword2, uid, _token) {
                 try {
                     const data = JSON.stringify({
                         new_password1: newPassword1,
                         new_password2: newPassword2,
                         uid,
-                        token,
+                        token: _token,
                     });
                     await Axios.post(`${config.backendAPI}/auth/password/reset/confirm`, data, {
                         proxy: config.proxy,
@@ -456,7 +456,7 @@
                     throw generateError(errorData);
                 }
 
-                onUpdate('The data is being uploaded to the server..');
+                onUpdate('The data are being uploaded to the server..');
                 try {
                     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
                         proxy: config.proxy,

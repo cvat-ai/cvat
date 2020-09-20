@@ -458,9 +458,7 @@ function updateTask(): AnyAction {
 function updateTaskSuccess(task: any): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_TASK_SUCCESS,
-        payload: {
-            task,
-        },
+        payload: { task },
     };
 
     return action;
@@ -469,10 +467,7 @@ function updateTaskSuccess(task: any): AnyAction {
 function updateTaskFailed(error: any, task: any): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_TASK_FAILED,
-        payload: {
-            error,
-            task,
-        },
+        payload: { error, task },
     };
 
     return action;

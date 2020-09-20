@@ -13,10 +13,7 @@ interface Props {
 }
 
 export default function ConstructorUpdater(props: Props): JSX.Element {
-    const {
-        label,
-        onUpdate,
-    } = props;
+    const { label, onUpdate } = props;
 
     return (
         <div className='cvat-label-constructor-updater'>
