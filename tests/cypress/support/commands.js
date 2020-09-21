@@ -71,9 +71,7 @@ Cypress.Commands.add('openTask', (taskName) => {
     cy.contains('strong', taskName)
     .parents('.cvat-tasks-list-item')
     .contains('a', 'Open')
-    .click({ force: true })
-    // sometimes this button can be under some UI notifications
-    // it isn't bug from the point of view using, since these notification can be closed by a user
+    .click()
 })
 
 Cypress.Commands.add('openJob', (jobNumber=0) => {

@@ -45,7 +45,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
         } = this.props;
 
         if (task === null || updating) {
-            if (!fetching) {
+            if (task === null && !fetching) {
                 getTask();
             }
 
