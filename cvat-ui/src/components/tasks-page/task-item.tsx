@@ -84,7 +84,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         // Progress appearence depends on number of jobs
         let progressColor = null;
         let progressText = null;
-        if (numOfCompleted === numOfJobs) {
+        if (numOfCompleted && numOfCompleted === numOfJobs) {
             progressColor = 'cvat-task-completed-progress';
             progressText = <Text strong className={progressColor}>Completed</Text>;
         } else if (numOfCompleted) {
