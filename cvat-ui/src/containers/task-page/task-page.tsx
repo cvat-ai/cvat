@@ -28,7 +28,7 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState, own: Props): StateToProps {
-    const { plugins } = state.plugins;
+    const { list } = state.plugins;
     const { tasks } = state;
     const { gettingQuery } = tasks;
     const { deletes } = tasks.activities;
@@ -50,7 +50,7 @@ function mapStateToProps(state: CombinedState, own: Props): StateToProps {
         task,
         deleteActivity,
         fetching: state.tasks.fetching,
-        installedGit: plugins.GIT_INTEGRATION,
+        installedGit: list.GIT_INTEGRATION,
     };
 }
 

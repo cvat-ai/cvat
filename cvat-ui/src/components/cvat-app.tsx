@@ -250,7 +250,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             switchSettingsDialog,
             user,
             keyMap,
-          isModelPluginActive,
+            isModelPluginActive,
         } = this.props;
 
         const readyForRender = (userInitialized && (user == null || !user.isVerified))
@@ -320,8 +320,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                         { isModelPluginActive
-                                            && <Route exact path='/models' component={ModelsPageContainer} />
-                                        }
+                                            && <Route exact path='/models' component={ModelsPageContainer} /> }
                                         <Redirect push to='/tasks' />
                                     </Switch>
                                 </GlobalHotKeys>

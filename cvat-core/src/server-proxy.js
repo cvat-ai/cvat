@@ -812,7 +812,7 @@
                 }
             }
 
-            async function getPlugins() {
+            async function installedApps() {
                 const { backendAPI } = config;
                 try {
                     const response = await Axios.get(`${backendAPI}/plugins/`, {
@@ -840,7 +840,7 @@
                         register,
                         request: serverRequest,
                         userAgreements,
-                        getPlugins,
+                        installedApps,
                     }),
                     writable: false,
                 },

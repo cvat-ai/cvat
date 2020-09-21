@@ -26,15 +26,8 @@ import { getModelsAsync } from 'actions/models-actions';
 import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { switchSettingsDialog } from 'actions/settings-actions';
-import {
-    resetErrors,
-    resetMessages,
-} from './actions/notification-actions';
-
-import {
-  CombinedState,
-  NotificationsState,
-} from './reducers/interfaces';
+import { resetErrors, resetMessages } from './actions/notification-actions';
+import { CombinedState, NotificationsState } from './reducers/interfaces';
 
 createCVATStore(createRootReducer);
 const cvatStore = getCVATStore();
@@ -111,7 +104,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         notifications: state.notifications,
         user: auth.user,
         keyMap: shortcuts.keyMap,
-        isModelPluginActive: plugins.plugins.MODELS,
+        isModelPluginActive: plugins.list.MODELS,
     };
 }
 

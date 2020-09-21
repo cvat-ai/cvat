@@ -22,7 +22,7 @@ import { CVATLogo, AccountIcon } from 'icons';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
-import { SupportedPlugins, CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers/interfaces';
 import SettingsModal from './settings-modal/settings-modal';
 
 const core = getCore();
@@ -75,7 +75,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             allowChangePassword: renderChangePasswordItem,
         },
         plugins: {
-            plugins,
+            list,
         },
         about: {
             server,
@@ -114,9 +114,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         changePasswordFetching,
         logoutFetching,
         renderChangePasswordItem,
-        isAnalyticsPluginActive: plugins.ANALYTICS,
-        isModelsPluginActive: plugins.MODELS,
-        isGitPluginActive: plugins.GIT_INTEGRATION,
+        isAnalyticsPluginActive: list.ANALYTICS,
+        isModelsPluginActive: list.MODELS,
+        isGitPluginActive: list.GIT_INTEGRATION,
     };
 }
 
@@ -265,7 +265,7 @@ function HeaderContainer(props: Props): JSX.Element {
     return (
         <Layout.Header className='cvat-header'>
             <div className='cvat-left-header'>
-                <Icon className='cvat-logo-icon' component={CVATLogo}/>
+                <Icon className='cvat-logo-icon' component={CVATLogo} />
 
                 <Button
                     className='cvat-header-button'
@@ -330,7 +330,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         }
                     }
                 >
-                    <Icon type='github'/>
+                    <Icon type='github' />
                     <Text className='cvat-text-color'>GitHub</Text>
                 </Button>
                 <Button
@@ -346,12 +346,12 @@ function HeaderContainer(props: Props): JSX.Element {
                         }
                     }
                 >
-                    <Icon type='question-circle'/>
+                    <Icon type='question-circle' />
                     Help
                 </Button>
                 <Dropdown overlay={menu} className='cvat-header-menu-dropdown'>
                     <span>
-                        <Icon className='cvat-header-account-icon' component={AccountIcon}/>
+                        <Icon className='cvat-header-account-icon' component={AccountIcon} />
                         <Text strong>
                             {user.username.length > 14 ? `${user.username.slice(0, 10)} ...` : user.username}
                         </Text>

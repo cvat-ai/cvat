@@ -223,8 +223,8 @@
             return tasks;
         };
 
-        cvat.server.getPlugins.implementation = async () => {
-            const result = await serverProxy.server.getPlugins();
+        cvat.server.installedApps.implementation = async () => {
+            const result = await serverProxy.server.installedApps();
             return result;
         };
 

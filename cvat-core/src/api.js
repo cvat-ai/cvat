@@ -272,8 +272,17 @@ function build() {
                 return result;
             },
 
-            async getPlugins() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.getPlugins);
+            /**
+                * Method returns apps that are installed on the server
+                * @method installedApps
+                * @async
+                * @memberof module:API.cvat.server
+                * @returns {Object} map {installedApp: boolean}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async installedApps() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
                 return result;
             },
         },

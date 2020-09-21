@@ -82,12 +82,14 @@ export enum SupportedPlugins {
     MODELS = 'MODELS',
 }
 
+export type PluginsList = {
+    [name in SupportedPlugins]: boolean;
+};
+
 export interface PluginsState {
     fetching: boolean;
     initialized: boolean;
-    plugins: {
-        [name in SupportedPlugins]: boolean;
-    };
+    list: PluginsList;
 }
 
 export interface UsersState {
