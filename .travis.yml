@@ -39,7 +39,7 @@ script:
   - docker-compose up -d
   # Create superuser
   - docker exec -it cvat bash -ic "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
-  # Run cypress tests for firefox browser
+  # Run cypress tests for Firefox browser
   # - cd ./tests && npm install
   # - npm run cypress:run:firefox && cd ..
   # Code instrumentation
@@ -48,7 +48,7 @@ script:
   # Re-build CVAT
   # - docker-compose build
   # - docker-compose up -d
-  # Run cypress tests for firefox browser
+  # Run cypress tests for Chrome browser
   - cd ./tests && npm install
   - npm run cypress:run:chrome && cd ..
 
