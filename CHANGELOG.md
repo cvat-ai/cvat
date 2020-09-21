@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Data is not getting cleared, even after deleting the Task from Django Admin App(<https://github.com/openvinotoolkit/cvat/issues/1925>)
 - Fixed blinking message: "Some tasks have not been showed because they do not have any data" (<https://github.com/openvinotoolkit/cvat/pull/2200>)
 - Fixed case when a task with 0 jobs is shown as "Completed" in UI (<https://github.com/openvinotoolkit/cvat/pull/2200>)
+- Fixed use case when UI throws exception: Cannot read property 'objectType' of undefined #2053 (<https://github.com/openvinotoolkit/cvat/pull/2203>)
+- Fixed use case when logs could be saved twice or more times #2202 (<https://github.com/openvinotoolkit/cvat/pull/2203>)
 
 ### Security
 -
