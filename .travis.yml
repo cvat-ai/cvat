@@ -48,7 +48,7 @@ script:
   # Re-build CVAT
   - docker-compose build
   - docker-compose up -d
-  # Run cypress tests for firefox browser on instrumented code
+  # Run cypress tests for firefox browser
   - cd ./tests && npm run cypress:run:chrome && cd ..
 
 after_success:
