@@ -29,12 +29,13 @@ function GroupControl(props: Props): JSX.Element {
 
     const dynamicIconProps = activeControl === ActiveControl.GROUP
         ? {
-            className: 'cvat-active-canvas-control',
+            className: 'cvat-group-control cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.group({ enabled: false });
                 groupObjects(false);
             },
         } : {
+            className: 'cvat-group-control',
             onClick: (): void => {
                 canvasInstance.cancel();
                 canvasInstance.group({ enabled: true });

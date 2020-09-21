@@ -17,9 +17,7 @@ interface Props {
 }
 
 function SetupTagControl(props: Props): JSX.Element {
-    const {
-        isDrawing,
-    } = props;
+    const { isDrawing } = props;
 
     const dynamcPopoverPros = isDrawing ? {
         overlayStyle: {
@@ -36,9 +34,7 @@ function SetupTagControl(props: Props): JSX.Element {
                 <SetupTagPopoverContainer />
             )}
         >
-            <Icon
-                component={TagIcon}
-            />
+            <Icon className='cvat-setup-tag-control' component={TagIcon} />
         </Popover>
     );
 }
