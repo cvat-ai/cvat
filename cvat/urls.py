@@ -27,7 +27,7 @@ urlpatterns = [
     path('', include('cvat.apps.engine.urls')),
     path('django-rq/', include('django_rq.urls')),
     path('documentation/', include('cvat.apps.documentation.urls')),
-    path('api/v1/apps/', include('cvat.apps.allowed_apps.urls')),
+    path('api/v1/plugins/', include('cvat.apps.plugins.urls')),
 ]
 
 if apps.is_installed('cvat.apps.git'):

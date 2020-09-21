@@ -271,6 +271,11 @@ function build() {
                     .apiWrapper(cvat.server.request, url, data);
                 return result;
             },
+
+            async getPlugins() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.getPlugins);
+                return result;
+            },
         },
         /**
             * Namespace is used for getting tasks
@@ -479,13 +484,6 @@ function build() {
             async register(plugin) {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.plugins.register, plugin);
-                return result;
-            },
-        },
-
-        allowedApps: {
-            async list() {
-                const result = await PluginRegistry.apiWrapper(cvat.allowedApps.list);
                 return result;
             },
         },
@@ -753,7 +751,6 @@ function build() {
     cvat.lambda = Object.freeze(cvat.lambda);
     cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
-    cvat.allowedApps = Object.freeze(cvat.allowedApps);
 
     const implementAPI = require('./api-implementation');
 

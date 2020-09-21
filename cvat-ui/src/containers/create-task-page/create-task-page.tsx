@@ -30,7 +30,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { creates } = state.tasks.activities;
     return {
         ...creates,
-        installedGit: state.plugins.list.GIT_INTEGRATION,
+        installedGit: state.plugins.plugins.GIT_INTEGRATION,
     };
 }
 

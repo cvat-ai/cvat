@@ -53,11 +53,10 @@ interface StateToProps {
     changePasswordDialogShown: boolean;
     changePasswordFetching: boolean;
     logoutFetching: boolean;
-    installedAnalytics: boolean;
     renderChangePasswordItem: boolean;
-    showAnalyticsButton: boolean;
-    showModelsButton: boolean;
-    showTasksButton: boolean;
+    isAnalyticsPluginActive: boolean;
+    isModelsPluginActive: boolean;
+    isGitPluginActive: boolean;
 }
 
 interface DispatchToProps {
@@ -76,7 +75,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             allowChangePassword: renderChangePasswordItem,
         },
         plugins: {
-            list,
+            plugins,
         },
         about: {
             server,
@@ -87,11 +86,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         settings: {
             showDialog: settingsDialogShown,
-        },
-        meta: {
-            showAnalyticsButton,
-            showModelsButton,
-            showTasksButton,
         },
     } = state;
 
@@ -119,11 +113,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         changePasswordDialogShown,
         changePasswordFetching,
         logoutFetching,
-        installedAnalytics: list[SupportedPlugins.ANALYTICS],
         renderChangePasswordItem,
-        showAnalyticsButton,
-        showModelsButton,
-        showTasksButton,
+        isAnalyticsPluginActive: plugins.ANALYTICS,
+        isModelsPluginActive: plugins.MODELS,
+        isGitPluginActive: plugins.GIT_INTEGRATION,
     };
 }
 
@@ -151,9 +144,8 @@ function HeaderContainer(props: Props): JSX.Element {
         switchSettingsDialog,
         switchChangePasswordDialog,
         renderChangePasswordItem,
-        showModelsButton,
-        showAnalyticsButton,
-        showTasksButton,
+        isAnalyticsPluginActive,
+        isModelsPluginActive,
     } = props;
 
     const {
@@ -274,23 +266,23 @@ function HeaderContainer(props: Props): JSX.Element {
         <Layout.Header className='cvat-header'>
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={CVATLogo}/>
-                {showTasksButton && (
-                    <Button
-                        className='cvat-header-button'
-                        type='link'
-                        value='tasks'
-                        href='/tasks?page=1'
-                        onClick={
-                            (event: React.MouseEvent): void => {
-                                event.preventDefault();
-                                history.push('/tasks?page=1');
-                            }
+
+                <Button
+                    className='cvat-header-button'
+                    type='link'
+                    value='tasks'
+                    href='/tasks?page=1'
+                    onClick={
+                        (event: React.MouseEvent): void => {
+                            event.preventDefault();
+                            history.push('/tasks?page=1');
                         }
-                    >
-                        Tasks
-                    </Button>
-                )}
-                {showModelsButton && (
+                    }
+                >
+                    Tasks
+                </Button>
+
+                {isModelsPluginActive && (
                     <Button
                         className='cvat-header-button'
                         type='link'
@@ -306,7 +298,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         Models
                     </Button>
                 )}
-                {showAnalyticsButton && (
+                {isAnalyticsPluginActive && (
                     <Button
                         className='cvat-header-button'
                         type='link'

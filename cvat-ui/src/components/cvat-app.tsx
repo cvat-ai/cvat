@@ -65,11 +65,7 @@ interface CVATAppProps {
     authActionsInitialized: boolean;
     notifications: NotificationsState;
     user: any;
-    loadMeta: () => void;
-    metaInitialized: boolean;
-    metaFetching: boolean;
-    showModelsButton: boolean;
-    showAnalyticsButton: boolean;
+    isModelPluginActive: boolean;
 }
 
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
@@ -120,11 +116,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             userAgreementsInitialized,
             authActionsFetching,
             authActionsInitialized,
-            loadMeta,
-            metaInitialized,
-            metaFetching,
-            showModelsButton,
-            showAnalyticsButton,
+            isModelPluginActive,
         } = this.props;
 
         this.showErrors();
@@ -160,18 +152,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout();
         }
 
-        if (!metaInitialized && !metaFetching) {
-            loadMeta();
-        }
-
-        if (showModelsButton && !modelsInitialized && !modelsFetching) {
+        if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
             initModels();
         }
 
-        if (showAnalyticsButton && !pluginsInitialized && !pluginsFetching) {
+        if (!pluginsInitialized && !pluginsFetching) {
             initPlugins();
         }
-        console.log(metaInitialized, showModelsButton, showAnalyticsButton);
     }
 
     private showMessages(): void {
@@ -261,14 +248,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             formatsInitialized,
             switchShortcutsDialog,
             switchSettingsDialog,
-            showAnalyticsButton,
             user,
             keyMap,
+          isModelPluginActive,
         } = this.props;
 
         const readyForRender = (userInitialized && (user == null || !user.isVerified))
-            || (userInitialized && formatsInitialized
-            && (showAnalyticsButton === pluginsInitialized)
+            || (userInitialized && formatsInitialized && pluginsInitialized
             && usersInitialized && aboutInitialized);
 
         const subKeyMap = {
@@ -333,7 +319,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                        <Route exact path='/models' component={ModelsPageContainer} />
+                                        { isModelPluginActive
+                                            && <Route exact path='/models' component={ModelsPageContainer} />
+                                        }
                                         <Redirect push to='/tasks' />
                                     </Switch>
                                 </GlobalHotKeys>

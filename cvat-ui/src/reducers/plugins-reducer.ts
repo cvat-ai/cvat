@@ -9,9 +9,10 @@ import { PluginsState } from './interfaces';
 const defaultState: PluginsState = {
     fetching: false,
     initialized: false,
-    list: {
+    plugins: {
         GIT_INTEGRATION: false,
         ANALYTICS: false,
+        MODELS: false,
     },
 };
 
@@ -20,17 +21,17 @@ export default function (
     action: PluginActions,
 ): PluginsState {
     switch (action.type) {
-        case PluginsActionTypes.CHECK_PLUGINS: {
+        case PluginsActionTypes.GET_PLUGINS: {
             return {
                 ...state,
                 initialized: false,
                 fetching: true,
             };
         }
-        case PluginsActionTypes.CHECKED_ALL_PLUGINS: {
-            const { list } = action.payload;
+        case PluginsActionTypes.GET_PLUGINS_SUCCESS: {
+            const { plugins } = action.payload;
 
-            if (!state.list.GIT_INTEGRATION && list.GIT_INTEGRATION) {
+            if (!state.plugins.GIT_INTEGRATION && plugins.GIT_INTEGRATION) {
                 registerGitPlugin();
             }
 
@@ -38,7 +39,14 @@ export default function (
                 ...state,
                 initialized: true,
                 fetching: false,
-                list,
+                plugins,
+            };
+        }
+        case PluginsActionTypes.GET_PLUGINS_FAILED: {
+            return {
+                ...state,
+                initialized: true,
+                fetching: false,
             };
         }
         default:

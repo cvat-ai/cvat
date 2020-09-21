@@ -89,7 +89,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cvat.apps.allowed_apps',
+    'cvat.apps.plugins',
     'cvat.apps.authentication',
     'cvat.apps.documentation',
     'cvat.apps.dataset_manager',

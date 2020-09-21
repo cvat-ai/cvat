@@ -223,8 +223,8 @@
             return tasks;
         };
 
-        cvat.allowedApps.list.implementation = async () => {
-            const result = await serverProxy.allowedApps.list();
+        cvat.server.getPlugins.implementation = async () => {
+            const result = await serverProxy.server.getPlugins();
             return result;
         };
 

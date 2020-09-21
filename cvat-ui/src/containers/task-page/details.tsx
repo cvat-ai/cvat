@@ -26,11 +26,11 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
-    const { list } = state.plugins;
+    const { plugins } = state.plugins;
 
     return {
         registeredUsers: state.users.users,
-        installedGit: list.GIT_INTEGRATION,
+        installedGit: plugins.GIT_INTEGRATION,
         activeInference: state.models.inferences[own.task.instance.id] || null,
     };
 }

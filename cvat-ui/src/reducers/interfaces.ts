@@ -79,12 +79,13 @@ export interface FormatsState {
 export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
+    MODELS = 'MODELS',
 }
 
 export interface PluginsState {
     fetching: boolean;
     initialized: boolean;
-    list: {
+    plugins: {
         [name in SupportedPlugins]: boolean;
     };
 }

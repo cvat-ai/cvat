@@ -812,10 +812,10 @@
                 }
             }
 
-            async function getAllowedApps() {
+            async function getPlugins() {
                 const { backendAPI } = config;
                 try {
-                    const response = await Axios.get(`${backendAPI}/apps/`, {
+                    const response = await Axios.get(`${backendAPI}/plugins/`, {
                         proxy: config.proxy,
                     });
                     return response.data;
@@ -840,6 +840,7 @@
                         register,
                         request: serverRequest,
                         userAgreements,
+                        getPlugins,
                     }),
                     writable: false,
                 },
@@ -905,12 +906,6 @@
                         run: runLambdaRequest,
                         call: callLambdaFunction,
                         cancel: cancelLambdaRequest,
-                    }),
-                    writable: false,
-                },
-                allowedApps: {
-                    value: Object.freeze({
-                        list: getAllowedApps,
                     }),
                     writable: false,
                 },
