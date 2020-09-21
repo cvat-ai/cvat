@@ -76,12 +76,7 @@ function updateQuery(previousQuery: TasksQuery, searchString: string): TasksQuer
 
 class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteComponentProps> {
     public componentDidMount(): void {
-        const {
-            gettingQuery,
-            location,
-            onGetTasks,
-        } = this.props;
-
+        const { gettingQuery, location, onGetTasks } = this.props;
         const query = updateQuery(gettingQuery, location.search);
         onGetTasks(query);
     }
@@ -90,8 +85,9 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         const {
             location,
             gettingQuery,
-            onGetTasks,
+            tasksFetching,
             numberOfHiddenTasks,
+            onGetTasks,
             hideEmptyTasks,
         } = this.props;
 
@@ -103,24 +99,26 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
             return;
         }
 
-        if (numberOfHiddenTasks) {
-            message.destroy();
-            message.info(
-                <>
-                    <Text>
-                        Some tasks have not been showed because they do not have any data.
-                    </Text>
-                    <Button
-                        type='link'
-                        onClick={(): void => {
-                            hideEmptyTasks(false);
-                            message.destroy();
-                        }}
-                    >
-                        Show all
-                    </Button>
-                </>, 7,
-            );
+        if (prevProps.tasksFetching && !tasksFetching) {
+            if (numberOfHiddenTasks) {
+                message.destroy();
+                message.info(
+                    <>
+                        <Text>
+                            Some tasks are temporary hidden since they are without any data
+                        </Text>
+                        <Button
+                            type='link'
+                            onClick={(): void => {
+                                hideEmptyTasks(false);
+                                message.destroy();
+                            }}
+                        >
+                            Show all
+                        </Button>
+                    </>, 5,
+                );
+            }
         }
     }
 
