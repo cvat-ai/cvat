@@ -12,6 +12,7 @@ import { TasksState, Task } from './interfaces';
 const defaultState: TasksState = {
     initialized: false,
     fetching: false,
+    updating: false,
     hideEmpty: false,
     count: 0,
     current: [],
@@ -290,11 +291,13 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
         case TasksActionTypes.UPDATE_TASK: {
             return {
                 ...state,
+                updating: true,
             };
         }
         case TasksActionTypes.UPDATE_TASK_SUCCESS: {
             return {
                 ...state,
+                updating: false,
                 current: state.current.map((task): Task => {
                     if (task.instance.id === action.payload.task.id) {
                         return {
@@ -310,6 +313,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
         case TasksActionTypes.UPDATE_TASK_FAILED: {
             return {
                 ...state,
+                updating: false,
                 current: state.current.map((task): Task => {
                     if (task.instance.id === action.payload.task.id) {
                         return {

@@ -48,10 +48,7 @@ class RawViewer extends React.PureComponent<Props> {
     };
 
     private handleSubmit = (e: React.FormEvent): void => {
-        const {
-            form,
-            onSubmit,
-        } = this.props;
+        const { form, onSubmit } = this.props;
 
         e.preventDefault();
         form.validateFields((error, values): void => {

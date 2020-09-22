@@ -19,6 +19,7 @@ type Props = RouteComponentProps<{id: string}>;
 interface StateToProps {
     task: Task | null | undefined;
     fetching: boolean;
+    updating: boolean;
     deleteActivity: boolean | null;
     installedGit: boolean;
 }
@@ -30,7 +31,7 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState, own: Props): StateToProps {
     const { list } = state.plugins;
     const { tasks } = state;
-    const { gettingQuery } = tasks;
+    const { gettingQuery, fetching, updating } = tasks;
     const { deletes } = tasks.activities;
 
     const id = +own.match.params.id;
@@ -49,7 +50,8 @@ function mapStateToProps(state: CombinedState, own: Props): StateToProps {
     return {
         task,
         deleteActivity,
-        fetching: state.tasks.fetching,
+        fetching,
+        updating,
         installedGit: list.GIT_INTEGRATION,
     };
 }
