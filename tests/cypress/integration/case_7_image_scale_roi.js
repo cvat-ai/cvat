@@ -31,6 +31,8 @@ context('Check if image was scaled to ROI', () => {
 
     describe(`Testing "${labelName}"`, () => {
         it('Create ROI', () => {
+            cy.get('#cvat_canvas_background')
+            .should('have.attr', 'style').and('contain', 'scale(1.065)')
             cy.get('.cvat-resize-control')
             .click()
             cy.get('.cvat-canvas-container')
@@ -40,7 +42,7 @@ context('Check if image was scaled to ROI', () => {
         })
         it('Image scaled to ROI', () => {
             cy.get('#cvat_canvas_background')
-            .should('have.attr', 'style').and('contain', 'scale(3.2817') //Chrome: scale(3.28173), Firefox: scale(3.28172)
+            .should('have.attr', 'style').and('not.contain', 'scale(1.065)')
         })
     })
 })
