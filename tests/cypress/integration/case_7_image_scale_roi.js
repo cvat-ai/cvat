@@ -20,6 +20,8 @@ context('Check if image was scaled to ROI', () => {
     const posX = 10
     const posY = 10
     const color = 'gray'
+    let scaleBefore = 0
+    let scaleAfter = 0
 
     before(() => {
         cy.visit('auth/login')
@@ -32,7 +34,10 @@ context('Check if image was scaled to ROI', () => {
     describe(`Testing "${labelName}"`, () => {
         it('Create ROI', () => {
             cy.get('#cvat_canvas_background')
-            .should('have.attr', 'style').and('contain', 'scale(1.065)')
+            .should('have.attr', 'style')
+            .then($scale => {
+                scaleBefore = Number($scale.match(/scale\((\d\.\d+)\)/m)[1])
+            })
             cy.get('.cvat-resize-control')
             .click()
             cy.get('.cvat-canvas-container')
@@ -42,7 +47,11 @@ context('Check if image was scaled to ROI', () => {
         })
         it('Image scaled to ROI', () => {
             cy.get('#cvat_canvas_background')
-            .should('have.attr', 'style').and('not.contain', 'scale(1.065)')
+            .should('have.attr', 'style')
+            .then($scale => {
+                scaleAfter = Number($scale.match(/scale\((\d\.\d+)\)/m)[1])
+                cy.expect(scaleAfter).to.be.greaterThan(scaleBefore)
+            })
         })
     })
 })
