@@ -33,14 +33,14 @@
     "eslint-config-typescript-recommended": "^1.4.17",
     "eslint-plugin-import": "^2.18.2",
     "node-sass": "^4.13.1",
-    "nodemon": "^1.19.1",
+    "nodemon": "^1.19.4",
     "postcss-loader": "^3.0.0",
     "postcss-preset-env": "^6.7.0",
     "sass-loader": "^8.0.2",
     "style-loader": "^1.0.0",
     "typescript": "^3.5.3",
-    "webpack": "^4.36.1",
+    "webpack": "^4.44.2",
     "webpack-cli": "^3.3.6",
-    "webpack-dev-server": "^3.7.2"
+    "webpack-dev-server": "^3.11.0"
   }
 }
