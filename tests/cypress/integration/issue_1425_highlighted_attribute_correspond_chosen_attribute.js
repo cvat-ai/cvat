@@ -19,9 +19,11 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
     const posX = 10
     const posY = 10
     const color = 'gray'
-    const additionalAttrName = `Attr 2`
-    const additionalValue = `Attr value 2`
-    const typeAttribute = 'Text'
+    const multiAttrParams = {
+        additionalAttrName: `Attr 2`,
+        additionalValue: `Attr value 2`,
+        typeAttribute: 'Text'
+    }
     let textValue = ''
 
     before(() => {
@@ -32,7 +34,7 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Create a task with multiple attributes, create a object', () => {
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image, false, 1, true, additionalAttrName, typeAttribute, additionalValue)
+            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image, multiAttrParams)
             cy.openTaskJob(taskName)
             cy.createShape(309, 431, 616, 671)
         })

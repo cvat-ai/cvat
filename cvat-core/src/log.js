@@ -196,7 +196,7 @@ class LogWithExceptionInfo extends Log {
 
     dump() {
         let body = super.dump();
-        const payload = body.payload;
+        const { payload } = body;
         const client = detect();
         body = {
             ...body,

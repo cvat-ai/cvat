@@ -1001,7 +1001,7 @@ export function getJobAsync(
 export function saveAnnotationsAsync(sessionInstance: any):
 ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
+        const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
         dispatch({
             type: AnnotationActionTypes.SAVE_ANNOTATIONS,
@@ -1021,15 +1021,16 @@ ThunkAction {
                     },
                 });
             });
-
-            const states = await sessionInstance
-                .annotations.get(frame, showAllInterpolationTracks, filters);
             await saveJobEvent.close();
             await sessionInstance.logger.log(
                 LogType.sendTaskInfo,
                 await jobInfoGenerator(sessionInstance),
             );
             dispatch(saveLogsAsync());
+
+            const { frame } = receiveAnnotationsParameters();
+            const states = await sessionInstance
+                .annotations.get(frame, showAllInterpolationTracks, filters);
 
             dispatch({
                 type: AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS,
