@@ -427,14 +427,14 @@ RESTRICTIONS = {
         ),
 }
 
+# http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
 CACHES = {
    'default' : {
        'BACKEND' : 'diskcache.DjangoCache',
        'LOCATION' : CACHE_ROOT,
        'TIMEOUT' : None,
        'OPTIONS' : {
-            #'statistics' :True,
-            'size_limit' : 2 ** 40, # 1 тб
+            'size_limit' : 2 ** 40, # 1 Tb
        }
    }
 }
