@@ -9,33 +9,24 @@ they should reciprocate that respect in addressing your issue or assessing
 patches and features.
 
 ## Development environment
-
-## Mac OS 10.15
-
 -   Install necessary dependencies:
-    ```sh
-    brew install git python pyenv redis curl openssl
-    ```
 
--   Install Python 3.6
-    ```sh
-    pyenv update
-    pyenv install -v 3.6
-    pyenv global 3.6
-    ```
-
-## Ubuntu 18.04
-
--   Install necessary dependencies:
+    Ubuntu 18.04
     ```sh
     sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
     ```
-    Please make sure you have installed FFmpeg libraries (libav*) version 4.0 or higher.
     ```sh
     # Node and npm (you can use default versions of these packages from apt (8.*, 3.*), but we would recommend to use newer versions)
     curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
     sudo apt-get install -y nodejs
     ```
+
+    MacOS 10.15
+    ```sh
+    brew install git python pyenv redis curl openssl node
+    ```
+
+-   Install FFmpeg libraries (libav*) version 4.0 or higher.
 
 -   Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
 for development
@@ -44,7 +35,7 @@ for development
     ```sh
     git clone https://github.com/opencv/cvat
     cd cvat && mkdir logs keys
-    python3 -m venv .env
+    python -m venv .env
     . .env/bin/activate
     pip install -U pip wheel setuptools
     pip install -r cvat/requirements/development.txt
@@ -52,6 +43,23 @@ for development
     python manage.py migrate
     python manage.py collectstatic
     ```
+    > Note for Mac users
+    >
+    > You may need to reinstal python as a first quick solution if you are faced with errors on step
+    >
+    > ```pip install -r cvat/requirements/development.txt```
+    >
+    > Run commands below
+    >
+    > ```$ sudo rm -rf /Library/Frameworks/Python.framework/Versions/3.8 &&  sudo rm -rf '/Applications/Python 3.8' && sudo rm -rf /usr/local/bin/python3```
+    >
+    > ```$ pyenv update && pyenv install -v 3.8 && pyenv global 3.8```
+    >
+    > Then  start from the very beginning from step
+    >
+    > ```$ python -m venv .env```
+    >
+    > ```...```
 
 -   Create a super user for CVAT:
     ```sh
@@ -68,15 +76,15 @@ for development
     cd cvat-core && npm install && \
     cd ../cvat-ui && npm install && npm start
     ```
-    ## Note for Mac users
-    If you faced with error
-    ```sh
-    Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)
-    ```
-    Run command below and reinstall npm packages for all projects again
-    ```sh
-    npm rebuild node-sass
-    ```
+    > Note for Mac users
+    >
+    > If you faced with error
+    >
+    > ```Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)```
+    >
+    > Run command below and reinstall npm packages for all projects again
+    >
+    > ```$ npm rebuild node-sass```
 
 -   Open new terminal (Ctrl + Shift + T), run Visual Studio Code from the virtual environment
     ```sh
