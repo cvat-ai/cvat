@@ -815,7 +815,7 @@
             async function installedApps() {
                 const { backendAPI } = config;
                 try {
-                    const response = await Axios.get(`${backendAPI}/plugins/`, {
+                    const response = await Axios.get(`${backendAPI}/server/plugins`, {
                         proxy: config.proxy,
                     });
                     return response.data;
