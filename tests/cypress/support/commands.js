@@ -88,8 +88,20 @@ Cypress.Commands.add('openTaskJob', (taskName, jobNumber=0) => {
     cy.openJob(jobNumber)
 })
 
-Cypress.Commands.add('createShape', (firstX, firstY, lastX, lastY) => {
+Cypress.Commands.add('createShape', (firstX, firstY, secondX, secondY, points='By 2 Points',
+                                     thirdX, thirdY, fourthX, fourthY, switchLabel=false, labelName) => {
     cy.get('.cvat-draw-rectangle-control').click()
+    if (switchLabel) {
+        cy.get('.cvat-draw-shape-popover-content')
+        .find('.ant-select-selection-selected-value')
+        .click()
+        cy.get('.ant-select-dropdown-menu')
+        .contains(labelName)
+        .click()
+    }
+    cy.get('.cvat-draw-shape-popover-content')
+    .contains(points)
+    .click()
     cy.get('.cvat-draw-shape-popover-content')
     .find('button')
     .contains('Shape')
@@ -97,11 +109,20 @@ Cypress.Commands.add('createShape', (firstX, firstY, lastX, lastY) => {
     cy.get('.cvat-canvas-container')
     .click(firstX, firstY)
     cy.get('.cvat-canvas-container')
-    .click(lastX, lastY)
+    .click(secondX, secondY)
+    if (points === 'By 4 Points') {
+        cy.get('.cvat-canvas-container')
+        .click(thirdX, thirdY)
+        cy.get('.cvat-canvas-container')
+        .click(fourthX, fourthY)
+    }
 })
 
-Cypress.Commands.add('createTrack', (firstX, firstY, lastX, lastY) => {
+Cypress.Commands.add('createTrack', (firstX, firstY, secondX, secondY, points='By 2 Points', thirdX, thirdY, fourthX, fourthY) => {
     cy.get('.cvat-draw-rectangle-control').click()
+    cy.get('.cvat-draw-shape-popover-content')
+    .contains(points)
+    .click()
     cy.get('.cvat-draw-shape-popover-content')
     .find('button')
     .contains('Track')
@@ -109,7 +130,13 @@ Cypress.Commands.add('createTrack', (firstX, firstY, lastX, lastY) => {
     cy.get('.cvat-canvas-container')
     .click(firstX, firstY)
     cy.get('.cvat-canvas-container')
-    .click(lastX, lastY)
+    .click(secondX, secondY )
+    if (points === 'By 4 Points') {
+        cy.get('.cvat-canvas-container')
+        .click(thirdX, thirdY)
+        cy.get('.cvat-canvas-container')
+        .click(fourthX, fourthY)
+    }
 })
 
 Cypress.Commands.add('createPoint', (posX, posY, type='Shape') => {
