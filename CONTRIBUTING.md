@@ -35,7 +35,7 @@ for development
     ```sh
     git clone https://github.com/opencv/cvat
     cd cvat && mkdir logs keys
-    python -m venv .env
+    python3 -m venv .env
     . .env/bin/activate
     pip install -U pip wheel setuptools
     pip install -r cvat/requirements/development.txt
@@ -44,21 +44,7 @@ for development
     ```
     > Note for Mac users
     >
-    > You may need to reinstal python as a first quick solution if you are faced with errors on step
-    >
-    > ```pip install -r cvat/requirements/development.txt```
-    >
-    > Run commands below
-    >
-    > ```$ sudo rm -rf /Library/Frameworks/Python.framework/Versions/3.8 &&  sudo rm -rf '/Applications/Python 3.8' && sudo rm -rf /usr/local/bin/python3```
-    >
-    > ```$ pyenv update && pyenv install -v 3.8 && pyenv global 3.8```
-    >
-    > Then  start from the very beginning from step
-    >
-    > ```$ python -m venv .env```
-    >
-    > ```...```
+    > If you have any problems with installing dependencies from ```cvat/requirements/*.txt``` files, you may need to reinstall your system python. In some cases after system update it can be configured incorrectly and cannot compile some native modules
 
 -   Create a super user for CVAT:
     ```sh
@@ -81,9 +67,7 @@ for development
     >
     > ```Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)```
     >
-    > Run command below and reinstall npm packages for all projects again
-    >
-    > ```$ npm rebuild node-sass```
+    > Read this article [Node Sass does not yet support your current environment](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
 
 -   Open new terminal (Ctrl + Shift + T), run Visual Studio Code from the virtual environment
     ```sh
