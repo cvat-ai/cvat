@@ -44,7 +44,9 @@ for development
     ```
     > Note for Mac users
     >
-    > If you have any problems with installing dependencies from ```cvat/requirements/*.txt``` files, you may need to reinstall your system python. In some cases after system update it can be configured incorrectly and cannot compile some native modules
+    > If you have any problems with installing dependencies from
+    > ```cvat/requirements/*.txt```, you may need to reinstall your system python
+    > In some cases after system update it can be configured incorrectly and cannot compile some native modules
 
 -   Create a super user for CVAT:
     ```sh
