@@ -848,6 +848,32 @@
             };
         }
 
+        searchEmpty(frameFrom, frameTo) {
+            const sign = Math.sign(frameTo - frameFrom);
+            const predicate = sign > 0
+                ? (frame) => frame <= frameTo
+                : (frame) => frame >= frameTo;
+            const update = sign > 0
+                ? (frame) => frame + 1
+                : (frame) => frame - 1;
+            for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+                if (frame in this.shapes) continue;
+                if (frame in this.tags) continue;
+                let found = false;
+                for (const track of this.tracks) {
+                    if (frame in track.shapes) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) continue;
+
+                return frame;
+            }
+
+            return null;
+        }
+
         search(filters, frameFrom, frameTo) {
             const [groups, query] = this.annotationsFilter.toJSONQuery(filters);
             const sign = Math.sign(frameTo - frameFrom);
