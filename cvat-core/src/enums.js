@@ -134,8 +134,8 @@
         * @readonly
     */
     const Source = Object.freeze({
-        MANUAL:'manual',
-        AUTO:'auto',
+        MANUAL: 'manual',
+        AUTO: 'auto',
     });
 
     /**
