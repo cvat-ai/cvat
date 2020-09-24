@@ -866,7 +866,8 @@
                 const filteredTracks = this.tracks.filter((track) => !track.removed);
                 let found = false;
                 for (const track of filteredTracks) {
-                    const { prev, first } = track.boundedKeyframes(frame);
+                    const keyframes = track.boundedKeyframes(frame);
+                    const { prev, first } = keyframes;
                     const last = prev === null ? first : prev;
                     const lastShape = track.shapes[last];
                     const isKeyfame = frame in track.shapes;

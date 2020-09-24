@@ -46,7 +46,7 @@
         * @property {string} UNKNOWN 'unknown'
         * @readonly
     */
-   const RQStatus = Object.freeze({
+    const RQStatus = Object.freeze({
         QUEUED: 'queued',
         STARTED: 'started',
         FINISHED: 'finished',
