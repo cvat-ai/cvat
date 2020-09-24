@@ -100,29 +100,41 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         },
     } = state;
 
-    const index = states
-        .map((_state: any): number => _state.clientID)
-        .indexOf(own.clientID);
+    const stateIDs = states.map((_state: any): number => _state.clientID);
+    const index = stateIDs.indexOf(own.clientID);
 
-    const collapsedState = typeof (statesCollapsed[own.clientID]) === 'undefined'
-        ? own.initialCollapsed : statesCollapsed[own.clientID];
+    try {
+        const collapsedState = typeof (statesCollapsed[own.clientID]) === 'undefined'
+            ? own.initialCollapsed : statesCollapsed[own.clientID];
 
-    return {
-        objectState: states[index],
-        collapsed: collapsedState,
-        attributes: jobAttributes[states[index].label.id],
-        labels,
-        ready,
-        activeControl,
-        colorBy,
-        jobInstance,
-        frameNumber,
-        activated: activatedStateID === own.clientID,
-        minZLayer,
-        maxZLayer,
-        normalizedKeyMap,
-        aiToolsRef,
-    };
+        return {
+            objectState: states[index],
+            collapsed: collapsedState,
+            attributes: jobAttributes[states[index].label.id],
+            labels,
+            ready,
+            activeControl,
+            colorBy,
+            jobInstance,
+            frameNumber,
+            activated: activatedStateID === own.clientID,
+            minZLayer,
+            maxZLayer,
+            normalizedKeyMap,
+            aiToolsRef,
+        };
+    } catch (exception) {
+        // we have an exception here sometimes
+        // but I cannot understand when it happens and what is the root reason
+        // maybe this temporary hack helps us
+        const dataObject = {
+            index,
+            frameNumber,
+            clientID: own.clientID,
+            stateIDs,
+        };
+        throw new Error(`${exception.toString()} in mapStateToProps of ObjectItemContainer. Data are ${JSON.stringify(dataObject)}`);
+    }
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
