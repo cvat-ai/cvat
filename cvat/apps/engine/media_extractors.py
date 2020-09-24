@@ -219,6 +219,12 @@ class VideoReader(IMediaReader):
                 for image in packet.decode():
                     frame_num += 1
                     if self._has_frame(frame_num - 1):
+                        if packet.stream.metadata.get('rotate'):
+                            old_image = image
+                            image = av.VideoFrame.from_image(
+                                image.to_image().rotate(360 - int(packet.stream.metadata.get('rotate')), expand=True)
+                            )
+                            image.pts = old_image.pts
                         yield (image, self._source_path[0], image.pts)
 
     def __iter__(self):
@@ -241,7 +247,8 @@ class VideoReader(IMediaReader):
         container = self._get_av_container()
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
-        return self._get_preview(preview.to_image())
+        return self._get_preview(preview.to_image() if not stream.metadata.get('rotate') \
+            else preview.to_image().rotate(360 - int(stream.metadata.get('rotate'))))
 
     def get_image_size(self):
         image = (next(iter(self)))[0]

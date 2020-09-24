@@ -302,6 +302,7 @@ def _create_thread(tid, data):
                         db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 if data['stop_frame'] else all_frames, all_frames), db_data.get_frame_step()))
                         video_path = os.path.join(upload_dir, media_files[0])
                         frame = meta_info.key_frames.get(next(iter(meta_info.key_frames)))
+                        # FIXME: if a video was loaded with a rotation record in the metadata, the wrong video sizes will be saved.
                         video_size = (frame.width, frame.height)
 
                     except Exception:

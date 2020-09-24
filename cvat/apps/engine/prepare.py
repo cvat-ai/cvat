@@ -145,6 +145,10 @@ class PrepareInfo(WorkWithVideo):
                 if frame_number < start_chunk_frame_number:
                     continue
                 elif frame_number < end_chunk_frame_number and not ((frame_number - start_chunk_frame_number) % step):
+                    if video_stream.metadata.get('rotate'):
+                        frame = av.VideoFrame.from_image(
+                            frame.to_image().rotate(360 - int(video_stream.metadata.get('rotate')), expand=True)
+                        )
                     yield frame
                 elif (frame_number - start_chunk_frame_number) % step:
                     continue
