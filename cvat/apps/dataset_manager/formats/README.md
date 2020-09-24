@@ -769,7 +769,7 @@ person
 
 - supported annotations: Rectangle and Polygon tracks
 
-#### MOT Loader
+#### MOTS PNG Loader
 
 Uploaded file: a zip archive of the structure above
 
