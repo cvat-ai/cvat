@@ -397,10 +397,10 @@ if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
     LOGGING['loggers']['cvat.client']['handlers'] += ['logstash']
 
-DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
-DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
-LOCAL_LOAD_MAX_FILES_COUNT = 500
-LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv('CVAT_MAX_MEMORY_SIZE', '104857600'))  # 100 MB default
+DATA_UPLOAD_MAX_NUMBER_FIELDS = None  # this django check disabled
+LOCAL_LOAD_MAX_FILES_COUNT = int(os.getenv('CVAT_MAX_FILES_COUNT', '500'))  # 500 default
+LOCAL_LOAD_MAX_FILES_SIZE = int(os.getenv('CVAT_MAX_FILES_SIZE', '536870912'))  # 512 MB default
 
 DATUMARO_PATH = os.path.join(BASE_DIR, 'datumaro')
 sys.path.append(DATUMARO_PATH)
