@@ -7,9 +7,11 @@ import os.path as osp
 import shutil
 import traceback
 from datetime import datetime
+from distutils.util import strtobool
 from tempfile import mkstemp
 
 import django_rq
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
@@ -40,7 +42,8 @@ from cvat.apps.engine.serializers import (
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, RqStatusSerializer,
-    TaskSerializer, UserSerializer)
+    TaskSerializer, UserSerializer, PluginsSerializer,
+)
 from cvat.apps.engine.utils import av_scan_paths
 
 from . import models, task
@@ -167,6 +170,23 @@ class ServerViewSet(viewsets.ViewSet):
     def annotation_formats(request):
         data = dm.views.get_all_formats()
         return Response(DatasetFormatsSerializer(data).data)
+
+    @staticmethod
+    @swagger_auto_schema(method='get', operation_summary='Method provides allowed plugins.',
+        responses={'200': PluginsSerializer()})
+    @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
+    def plugins(request):
+        response = {
+            'GIT_INTEGRATION': apps.is_installed('cvat.apps.git'),
+            'ANALYTICS':       False,
+            'MODELS':          False,
+        }
+        if strtobool(os.environ.get("CVAT_ANALYTICS", '0')):
+            response['ANALYTICS'] = True
+        if strtobool(os.environ.get("CVAT_SERVERLESS", '0')):
+            response['MODELS'] = True
+        return Response(response)
+
 
 class ProjectFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")

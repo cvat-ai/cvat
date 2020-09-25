@@ -136,7 +136,6 @@ function build() {
                 return result;
             },
             /**
-
                 * Method allows to register on a server
                 * @method register
                 * @async
@@ -270,6 +269,20 @@ function build() {
             async request(url, data) {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.server.request, url, data);
+                return result;
+            },
+
+            /**
+                * Method returns apps that are installed on the server
+                * @method installedApps
+                * @async
+                * @memberof module:API.cvat.server
+                * @returns {Object} map {installedApp: boolean}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async installedApps() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
                 return result;
             },
         },
@@ -470,34 +483,35 @@ function build() {
                 return result;
             },
             /**
-                * Install plugin to CVAT
-                * @method register
-                * @async
-                * @memberof module:API.cvat.plugins
-                * @param {Plugin} [plugin] plugin for registration
-                * @throws {module:API.cvat.exceptions.PluginError}
-            */
+             * Install plugin to CVAT
+             * @method register
+             * @async
+             * @memberof module:API.cvat.plugins
+             * @param {Plugin} [plugin] plugin for registration
+             * @throws {module:API.cvat.exceptions.PluginError}
+             */
             async register(plugin) {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.plugins.register, plugin);
                 return result;
             },
         },
+
         /**
-            * Namespace is used for serverless functions management (mainly related with DL models)
-            * @namespace lambda
-            * @memberof module:API.cvat
-        */
+         * Namespace is used for serverless functions management (mainly related with DL models)
+         * @namespace lambda
+         * @memberof module:API.cvat
+         */
         lambda: {
             /**
-                * Method returns list of available serverless models
-                * @method list
-                * @async
-                * @memberof module:API.cvat.lambda
-                * @returns {module:API.cvat.classes.MLModel[]}
-                * @throws {module:API.cvat.exceptions.ServerError}
-                * @throws {module:API.cvat.exceptions.PluginError}
-            */
+             * Method returns list of available serverless models
+             * @method list
+             * @async
+             * @memberof module:API.cvat.lambda
+             * @returns {module:API.cvat.classes.MLModel[]}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             */
             async list() {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.lambda.list);

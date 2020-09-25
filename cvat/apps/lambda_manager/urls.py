@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.urls import path
+from django.urls import include, path
 from rest_framework import routers
-from django.urls import include
+
 from . import views
 
 router = routers.DefaultRouter(trailing_slash=False)
@@ -18,7 +18,7 @@ router.register('requests', views.RequestViewSet, basename='request')
 
 # GET  /api/v1/lambda/functions - get list of functions
 # GET  /api/v1/lambda/functions/<int:fid> - get information about the function
-# POST /api/v1/labmda/requests - call a function
+# POST /api/v1/lambda/requests - call a function
 # { "function": "<id>", "mode": "online|offline", "job": "<jid>", "frame": "<n>",
 #   "points": [...], }
 # GET  /api/v1/lambda/requests - get list of requests

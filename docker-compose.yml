@@ -95,25 +95,6 @@ services:
       - ./cvat_proxy/conf.d/cvat.conf.template:/etc/nginx/conf.d/cvat.conf.template:ro
     command: /bin/sh -c "envsubst '$$CVAT_HOST' < /etc/nginx/conf.d/cvat.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
 
-  serverless:
-    container_name: nuclio
-    image: quay.io/nuclio/dashboard:1.4.8-amd64
-    restart: always
-    networks:
-      default:
-        aliases:
-          - nuclio
-    volumes:
-      - /tmp:/tmp
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      http_proxy:
-      https_proxy:
-      no_proxy: 172.28.0.1,${no_proxy}
-      NUCLIO_CHECK_FUNCTION_CONTAINERS_HEALTHINESS: "true"
-    ports:
-      - "8070:8070"
-
 networks:
   default:
     ipam:

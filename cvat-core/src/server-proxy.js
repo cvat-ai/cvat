@@ -812,6 +812,18 @@
                 }
             }
 
+            async function installedApps() {
+                const { backendAPI } = config;
+                try {
+                    const response = await Axios.get(`${backendAPI}/server/plugins`, {
+                        proxy: config.proxy,
+                    });
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             Object.defineProperties(this, Object.freeze({
                 server: {
                     value: Object.freeze({
@@ -828,6 +840,7 @@
                         register,
                         request: serverRequest,
                         userAgreements,
+                        installedApps,
                     }),
                     writable: false,
                 },
