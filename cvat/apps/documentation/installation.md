@@ -2,7 +2,7 @@
   - [Ubuntu 18.04 (x86_64/amd64)](#ubuntu-1804-x86_64amd64)
   - [Windows 10](#windows-10)
   - [Mac OS Mojave](#mac-os-mojave)
-  - [Advanced topics](#advanced-topics)
+  - [Advanced Topics](#advanced-topics)
     - [Deploying CVAT behind a proxy](#deploying-cvat-behind-a-proxy)
     - [Additional components](#additional-components)
     - [Semi-automatic and automatic annotation](#semi-automatic-and-automatic-annotation)
@@ -123,13 +123,15 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 ## Windows 10
 -   Install WSL2 (Windows subsystem for Linux) refer to [this official guide](https://docs.microsoft.com/windows/wsl/install-win10).
-    WSL2 requires Windows 10, version 2004 or higher. Note: You may not have to install a Linux distribution unless needed.
+    WSL2 requires Windows 10, version 2004 or higher. Note: You may not have to install a Linux distribution unless
+     needed.
 
 -   Download and install [Docker Desktop for Windows](https://download.docker.com/win/stable/Docker%20Desktop%20Installer.exe).
     Double-click `Docker for Windows Installer` to run the installer.
     More instructions can be found [here](https://docs.docker.com/docker-for-windows/install/).
     Official guide for docker WSL2 backend can be found
-    [here](https://docs.docker.com/docker-for-windows/wsl/). Note: Check that you are specifically using WSL2 backend for Docker.
+    [here](https://docs.docker.com/docker-for-windows/wsl/). Note: Check that you are specifically using WSL2 backend
+     for Docker.
 
 -   Download and install
     [Git for Windows](https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe).
