@@ -19,22 +19,15 @@ import {
     loadAuthActionsAsync,
 } from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';
-import { checkPluginsAsync } from 'actions/plugins-actions';
+import { getPluginsAsync } from 'actions/plugins-actions';
 import { getUsersAsync } from 'actions/users-actions';
 import { getAboutAsync } from 'actions/about-actions';
 import { getModelsAsync } from 'actions/models-actions';
 import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { switchSettingsDialog } from 'actions/settings-actions';
-import {
-    resetErrors,
-    resetMessages,
-} from './actions/notification-actions';
-
-import {
-    CombinedState,
-    NotificationsState,
-} from './reducers/interfaces';
+import { resetErrors, resetMessages } from './actions/notification-actions';
+import { CombinedState, NotificationsState } from './reducers/interfaces';
 
 createCVATStore(createRootReducer);
 const cvatStore = getCVATStore();
@@ -61,6 +54,7 @@ interface StateToProps {
     notifications: NotificationsState;
     user: any;
     keyMap: Record<string, ExtendedKeyMapOptions>;
+    isModelPluginActive: boolean;
 }
 
 interface DispatchToProps {
@@ -110,6 +104,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         notifications: state.notifications,
         user: auth.user,
         keyMap: shortcuts.keyMap,
+        isModelPluginActive: plugins.list.MODELS,
     };
 }
 
@@ -118,7 +113,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadFormats: (): void => dispatch(getFormatsAsync()),
         verifyAuthorized: (): void => dispatch(authorizedAsync()),
         loadUserAgreements: (): void => dispatch(getUserAgreementsAsync()),
-        initPlugins: (): void => dispatch(checkPluginsAsync()),
+        initPlugins: (): void => dispatch(getPluginsAsync()),
         initModels: (): void => dispatch(getModelsAsync()),
         loadUsers: (): void => dispatch(getUsersAsync()),
         loadAbout: (): void => dispatch(getAboutAsync()),

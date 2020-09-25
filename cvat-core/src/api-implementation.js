@@ -223,6 +223,11 @@
             return tasks;
         };
 
+        cvat.server.installedApps.implementation = async () => {
+            const result = await serverProxy.server.installedApps();
+            return result;
+        };
+
         return cvat;
     }
 

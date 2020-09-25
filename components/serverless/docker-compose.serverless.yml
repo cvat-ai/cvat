@@ -1,0 +1,28 @@
+version: '2.3'
+services:
+  serverless:
+    container_name: nuclio
+    image: quay.io/nuclio/dashboard:1.4.8-amd64
+    restart: always
+    networks:
+      default:
+        aliases:
+          - nuclio
+    volumes:
+      - /tmp:/tmp
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      http_proxy:
+      https_proxy:
+      no_proxy: 172.28.0.1,${no_proxy}
+      NUCLIO_CHECK_FUNCTION_CONTAINERS_HEALTHINESS: "true"
+    ports:
+      - "8070:8070"
+
+  cvat:
+    environment:
+      CVAT_SERVERLESS: 1
+      no_proxy: kibana,logstash,nuclio,${no_proxy}
+
+volumes:
+  cvat_events:
