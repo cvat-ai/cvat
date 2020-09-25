@@ -419,7 +419,7 @@ Point you shell in cvat repository directory, usually `cd $HOME/cvat`:
 
 Add the following into your `docker-compose.override.yml`, replacing `my-cvat-server.org` with your own IP address. This file lives in the same directory as `docker-compose.yml`.
 
-Create the required directories for letsencrypt webroot operation and acme folder pass-through.
+Create the required directories for letsencrypt webroot operation and acme folder passthrough.
 
 Now restart the containers with new configurations updated in `docker-compose.override.yml`
 
