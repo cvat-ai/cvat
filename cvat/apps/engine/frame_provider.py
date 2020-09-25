@@ -42,6 +42,9 @@ class RandomAccessIterator:
         self.pos = -1
 
 class FrameProvider:
+    VIDEO_FRAME_EXT = 'PNG'
+    VIDEO_FRAME_MIME = 'image/png'
+
     class Quality(Enum):
         COMPRESSED = 0
         ORIGINAL = 100
@@ -128,11 +131,11 @@ class FrameProvider:
 
         return chunk_number_
 
-    @staticmethod
-    def _av_frame_to_png_bytes(av_frame):
+    @classmethod
+    def _av_frame_to_png_bytes(cls, av_frame):
         pil_img = av_frame.to_image()
         buf = BytesIO()
-        pil_img.save(buf, format='PNG')
+        pil_img.save(buf, format=cls.VIDEO_FRAME_EXT)
         buf.seek(0)
         return buf
 
@@ -170,7 +173,7 @@ class FrameProvider:
 
         frame = self._convert_frame(frame, loader.reader_class, out_type)
         if loader.reader_class is VideoReader:
-            return (frame, 'image/png')
+            return (frame, self.VIDEO_FRAME_MIME)
         return (frame, mimetypes.guess_type(frame_name))
 
     def get_frames(self, quality=Quality.ORIGINAL, out_type=Type.BUFFER):

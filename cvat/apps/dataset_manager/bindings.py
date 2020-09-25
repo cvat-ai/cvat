@@ -13,7 +13,7 @@ import datumaro.components.extractor as datumaro
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import AttributeType, ShapeType
 from datumaro.util import cast
-from datumaro.util.image import Image
+from datumaro.util.image import BytesImage
 
 from .annotation import AnnotationManager, TrackManager
 
@@ -457,6 +457,9 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
         dm_items = []
 
+        frame_ext = FrameProvider.VIDEO_FRAME_EXT \
+            if task_data.meta['task']['mode'] == 'interpolation' \
+            else None
         if include_images:
             frame_provider = FrameProvider(task_data.db_task.data)
 
@@ -465,9 +468,9 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             if include_images:
                 loader = lambda p, i=frame_data.idx: frame_provider.get_frame(i,
                     quality=frame_provider.Quality.ORIGINAL,
-                    out_type=frame_provider.Type.NUMPY_ARRAY)[0]
-            dm_image = Image(path=frame_data.name, loader=loader,
-                size=(frame_data.height, frame_data.width)
+                    out_type=frame_provider.Type.BUFFER)[0].getvalue()
+            dm_image = BytesImage(path=frame_data.name, data=loader,
+                size=(frame_data.height, frame_data.width), ext=frame_ext
             )
             dm_anno = self._read_cvat_anno(frame_data, task_data)
             dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
