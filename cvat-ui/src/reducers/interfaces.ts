@@ -245,6 +245,7 @@ export interface NotificationsState {
             undo: null | ErrorState;
             redo: null | ErrorState;
             search: null | ErrorState;
+            searchEmptyFrame: null | ErrorState;
             savingLogs: null | ErrorState;
         };
         boundaries: {

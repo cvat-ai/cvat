@@ -152,7 +152,7 @@
                         * @readonly
                         * @instance
                     */
-                   get: () => !data.email_verification_required,
+                    get: () => !data.email_verification_required,
                 },
             }));
         }

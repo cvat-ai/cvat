@@ -76,6 +76,13 @@
                         return result;
                     },
 
+                    async searchEmpty(frameFrom, frameTo) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.searchEmpty,
+                                frameFrom, frameTo);
+                        return result;
+                    },
+
                     async select(objectStates, x, y) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this,
@@ -339,6 +346,18 @@
                 * @method search
                 * @memberof Session.annotations
                 * @param {ObjectFilter} [filter = []] filter
+                * @param {integer} from lower bound of a search
+                * @param {integer} to upper bound of a search
+                * @returns {integer|null} a frame that contains objects according to the filter
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
+            */
+            /**
+                * Find the nearest empty frame without any annotations
+                * @method searchEmpty
+                * @memberof Session.annotations
                 * @param {integer} from lower bound of a search
                 * @param {integer} to upper bound of a search
                 * @returns {integer|null} a frame that contains objects according to the filter
@@ -746,6 +765,7 @@
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
                 clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
                 search: Object.getPrototypeOf(this).annotations.search.bind(this),
+                searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
                 upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
                 select: Object.getPrototypeOf(this).annotations.select.bind(this),
                 import: Object.getPrototypeOf(this).annotations.import.bind(this),
@@ -1318,6 +1338,7 @@
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
                 clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
                 search: Object.getPrototypeOf(this).annotations.search.bind(this),
+                searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
                 upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
                 select: Object.getPrototypeOf(this).annotations.select.bind(this),
                 import: Object.getPrototypeOf(this).annotations.import.bind(this),
@@ -1411,6 +1432,7 @@
         saveAnnotations,
         hasUnsavedChanges,
         searchAnnotations,
+        searchEmptyFrame,
         mergeAnnotations,
         splitAnnotations,
         groupAnnotations,
@@ -1534,6 +1556,29 @@
         }
 
         const result = searchAnnotations(this, filters, frameFrom, frameTo);
+        return result;
+    };
+
+    Job.prototype.annotations.searchEmpty.implementation = function (frameFrom, frameTo) {
+        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+            throw new ArgumentError(
+                'The start and end frames both must be an integer',
+            );
+        }
+
+        if (frameFrom < this.startFrame || frameFrom > this.stopFrame) {
+            throw new ArgumentError(
+                'The start frame is out of the job',
+            );
+        }
+
+        if (frameTo < this.startFrame || frameTo > this.stopFrame) {
+            throw new ArgumentError(
+                'The stop frame is out of the job',
+            );
+        }
+
+        const result = searchEmptyFrame(this, frameFrom, frameTo);
         return result;
     };
 
@@ -1804,6 +1849,29 @@
         }
 
         const result = searchAnnotations(this, filters, frameFrom, frameTo);
+        return result;
+    };
+
+    Task.prototype.annotations.searchEmpty.implementation = function (frameFrom, frameTo) {
+        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+            throw new ArgumentError(
+                'The start and end frames both must be an integer',
+            );
+        }
+
+        if (frameFrom < 0 || frameFrom >= this.size) {
+            throw new ArgumentError(
+                'The start frame is out of the task',
+            );
+        }
+
+        if (frameTo < 0 || frameTo >= this.size) {
+            throw new ArgumentError(
+                'The stop frame is out of the task',
+            );
+        }
+
+        const result = searchEmptyFrame(this, frameFrom, frameTo);
         return result;
     };
 

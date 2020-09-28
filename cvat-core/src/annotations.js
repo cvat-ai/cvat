@@ -122,6 +122,19 @@
         );
     }
 
+    function searchEmptyFrame(session, frameFrom, frameTo) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).collection.searchEmpty(frameFrom, frameTo);
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
+    }
+
     function mergeAnnotations(session, objectStates) {
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
@@ -373,6 +386,7 @@
         hasUnsavedChanges,
         mergeAnnotations,
         searchAnnotations,
+        searchEmptyFrame,
         splitAnnotations,
         groupAnnotations,
         clearAnnotations,
