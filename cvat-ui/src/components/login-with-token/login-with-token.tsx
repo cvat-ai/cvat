@@ -18,5 +18,4 @@ export default function LoginWithTokenComponent(){
         <Redirect to="/tasks" />
     }
     return(<></>);
-
 };
