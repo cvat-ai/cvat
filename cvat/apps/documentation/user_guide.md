@@ -1351,13 +1351,13 @@ You can find the list of available models in the ``Models`` section.
     ![](static/documentation/images/gif014_detrac.gif)
 
 1.  You can combine separate bounding boxes into tracks using the ``Person reidentification `` model.
-To do this, click on the automatic annotation item in the action menu again and select the model
-of the ``ReID`` type (in this case the ``Person reidentification`` model).
-You can set the following parameters:
-Model “threshold” is a maximum cosine distance between objects’ embeddings.
-“Maximum distance” defines a maximum radius that an object can diverge between adjacent frames.
+    To do this, click on the automatic annotation item in the action menu again and select the model
+    of the ``ReID`` type (in this case the ``Person reidentification`` model).
+    You can set the following parameters:
+      - Model ``Threshold`` is a maximum cosine distance between objects’ embeddings.
+      - ``Maximum distance`` defines a maximum radius that an object can diverge between adjacent frames.
 
-    ![](static/documentation/images/image133.jpg)
+      ![](static/documentation/images/image133.jpg)
 
 1.  You can remove false positives and edit tracks using ``Split`` and ``Merge`` functions.
 
