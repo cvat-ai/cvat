@@ -15,6 +15,7 @@ import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
+import LoginWithTokenComponent from './login-with-token/login-with-token';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
@@ -337,6 +338,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <Switch>
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
                         <Route exact path='/auth/login' component={LoginPageContainer} />
+                        <Route exact path='/auth/login-with-token/:sessionId/:token' component={LoginWithTokenComponent} />
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
                         <Route exact path='/auth/password/reset/confirm' component={ResetPasswordPageConfirmComponent} />
                         <Redirect to='/auth/login' />
