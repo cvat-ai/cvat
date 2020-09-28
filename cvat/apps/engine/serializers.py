@@ -44,6 +44,47 @@ class LabelSerializer(serializers.ModelSerializer):
         model = models.Label
         fields = ('id', 'name', 'color', 'attributes')
 
+    @staticmethod
+    def update_instance(validated_data, parent_instance):
+        attributes = validated_data.pop('attributespec_set', [])
+        instance = dict()
+        if isinstace(parent_instance. models.Project):
+            instance['project'] = parent_instance
+            logger = sLogger.project[parent_instace.id]
+        else:
+            instance['task'] = parent_instance
+            logger = sLogger.task[parent_instace.id]
+        (db_label, created) = models.Label.objects.get_or_create(name=label['name'],
+            **instance)
+        if created:
+            logger.info("New {} label was created".format(db_label.name))
+        else:
+            logger.info("{} label was updated".format(db_label.name))
+        if not label.get('color', None):
+            label_names = [l.name for l in
+                models.Label.objects.filter(task_id=instance.id).exclude(id=db_label.id).order_by('id')
+            ]
+            db_label.color = get_label_color(db_label.name, label_names)
+        else:
+            db_label.color = label.get('color', db_label.color)
+        db_label.save()
+        for attr in attributes:
+            (db_attr, created) = models.AttributeSpec.objects.get_or_create(
+                label=db_label, name=attr['name'], defaults=attr)
+            if created:
+                logger.info("New {} attribute for {} label was created"
+                    .format(db_attr.name, db_label.name))
+            else:
+                logger.info("{} attribute for {} label was updated"
+                    .format(db_attr.name, db_label.name))
+
+                # FIXME: need to update only "safe" fields
+                db_attr.default_value = attr.get('default_value', db_attr.default_value)
+                db_attr.mutable = attr.get('mutable', db_attr.mutable)
+                db_attr.input_type = attr.get('input_type', db_attr.input_type)
+                db_attr.values = attr.get('values', db_attr.values)
+                db_attr.save()
+
 class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.JobCommit
@@ -286,39 +327,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.project = validated_data.get('project', instance.project)
         labels = validated_data.get('label_set', [])
         for label in labels:
-            attributes = label.pop('attributespec_set', [])
-            (db_label, created) = models.Label.objects.get_or_create(task=instance,
-                name=label['name'])
-            if created:
-                slogger.task[instance.id].info("New {} label was created"
-                    .format(db_label.name))
-            else:
-                slogger.task[instance.id].info("{} label was updated"
-                    .format(db_label.name))
-            if not label.get('color', None):
-                label_names = [l.name for l in
-                    models.Label.objects.filter(task_id=instance.id).exclude(id=db_label.id).order_by('id')
-                ]
-                db_label.color = get_label_color(db_label.name, label_names)
-            else:
-                db_label.color = label.get('color', db_label.color)
-            db_label.save()
-            for attr in attributes:
-                (db_attr, created) = models.AttributeSpec.objects.get_or_create(
-                    label=db_label, name=attr['name'], defaults=attr)
-                if created:
-                    slogger.task[instance.id].info("New {} attribute for {} label was created"
-                        .format(db_attr.name, db_label.name))
-                else:
-                    slogger.task[instance.id].info("{} attribute for {} label was updated"
-                        .format(db_attr.name, db_label.name))
-
-                    # FIXME: need to update only "safe" fields
-                    db_attr.default_value = attr.get('default_value', db_attr.default_value)
-                    db_attr.mutable = attr.get('mutable', db_attr.mutable)
-                    db_attr.input_type = attr.get('input_type', db_attr.input_type)
-                    db_attr.values = attr.get('values', db_attr.values)
-                    db_attr.save()
+            LabelSerializer.update_instance(label, instance)
 
         instance.save()
         return instance
@@ -333,12 +342,50 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
+    labels = LabelSerializer(many=True, source='label_set', partial=True)
+    tasks = TaskSerializer(many=True, source='task_set', read_only=True)
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'owner', 'assignee', 'bug_tracker',
-            'created_date', 'updated_date', 'status')
+        fields = ('url', 'id', 'name', 'labels', 'owner',
+            'created_date', 'updated_date', 'status', 'tasks')
         read_only_fields = ('created_date', 'updated_date', 'status')
         ordering = ['-id']
+
+    # pylint: disable=no-self-use
+    def create(self, validated_data):
+        labels = validated_data.pop('label_set')
+        db_project = models.Project.objects.create(**validated_data)
+        label_names = list()
+        for label in labels:
+            attributes = label.pop('attributespec_set')
+            if not label.get('color', None):
+                label['color'] = get_label_color(label['name'], label_names)
+            label_names.append(label['name'])
+            db_label = models.Label.objects.create(prject=db_project, **label)
+            for attr in attributes:
+                models.AttributeSpec.objects.create(label=db_label, **attr)
+
+        db_project.save()
+        return db_project
+
+    # pylint: disable=no-self-use
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.owner = validated_data.get('owner', instance.owner)
+        labels = validated_data.get('label_set', [])
+        for label in labels:
+            LabelSerializer.update_instance(label, instance)
+
+        instance.save()
+        return instance
+
+
+    def validate_labels(self, value):
+        if value:
+            label_names = [label['name'] for label in value]
+            if len(label_names) != len(set(label_names)):
+                raise serializers.ValidationError('All label names must be unique for the project')
+        return value
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
