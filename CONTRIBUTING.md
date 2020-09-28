@@ -238,7 +238,7 @@ Server = nuclio
     }
 ]
 ```
-
+</details>
 ### Run Cypress tests
 - Install Сypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
 - Run cypress tests:
