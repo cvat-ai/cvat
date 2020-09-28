@@ -26,7 +26,7 @@ filters and searching the nearest frame without any annotations (<https://github
 - Right colors of label tags in label mapping when a user runs automatic detection (<https://github.com/openvinotoolkit/cvat/pull/2162>)
 - Nuclio became an optional component of CVAT (<https://github.com/openvinotoolkit/cvat/pull/2192>)
 - A key to remove a point from a polyshape [Ctrl => Alt] (<https://github.com/openvinotoolkit/cvat/pull/2204>)
-- Updated `docker-compose` file version from `2.3` to `3.3`
+- Updated `docker-compose` file version from `2.3` to `3.3`(<https://github.com/openvinotoolkit/cvat/pull/2235>)
 
 ### Deprecated
 -
