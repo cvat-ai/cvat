@@ -1,0 +1,89 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-projects-page {
+    padding-top: 15px;
+    padding-bottom: 40px;
+    height: 100%;
+    position: fixed;
+    width: 100%;
+
+
+    > div:nth-child(1) {
+        padding-bottom: 10px;
+
+        div > {
+            span {
+                color: $text-color;
+            }
+        }
+    }
+}
+
+/* empty-projects icon */
+.cvat-empty-projects-list {
+    > div:nth-child(1) {
+        margin-top: 50px;
+    }
+
+    > div:nth-child(2) {
+        > div {
+            margin-top: 20px;
+
+            /* No projects created yet */
+            > span {
+                font-size: 20px;
+                color: $text-color;
+            }
+        }
+    }
+
+    /* To get started with your annotation project .. */
+    > div:nth-child(3) {
+        margin-top: 10px;
+    }
+}
+
+.cvat-projects-top-bar {
+    > div:nth-child(1) {
+        display: flex;
+
+        > span:nth-child(2) {
+            width: 200px;
+            margin-left: 10px;
+        }
+    }
+
+    > div:nth-child(2) {
+        display: flex;
+        justify-content: flex-end;
+        }
+}
+
+.cvat-create-project-button {
+    padding: 0 30px;
+}
+
+.cvat-projects-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.cvat-projects-project-item-title {
+    cursor: pointer;
+}
+
+.cvat-porjects-project-item-description {
+    display: flex;
+    justify-content: space-between;
+
+    // actions button
+    > div:nth-child(2) {
+        display: flex;
+        align-self: flex-end;
+        justify-content: center;
+    }
+}

@@ -16,6 +16,9 @@ import notification from 'antd/lib/notification';
 
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
+import ProjectsPageComponent from 'components/projects-page/projects-page';
+import CreateProjectPageComponent from 'components/create-project-page/create-project-page';
+import ProjectPageComponent from 'components/project-page/project-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
 import TaskPageContainer from 'containers/task-page/task-page';
@@ -312,12 +315,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <ShorcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>
+                                        <Route exact path='/projects' component={ProjectsPageComponent} />
+                                        <Route exact path='/projects/:id' component={ProjectPageComponent} />
+                                        <Route exact path='/projects/create' component={CreateProjectPageComponent} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                         <Route exact path='/models' component={ModelsPageContainer} />
-                                        <Redirect push to='/tasks' />
+                                        <Redirect push to='/projects' />
                                     </Switch>
                                 </GlobalHotKeys>
                                 {/* eslint-disable-next-line */}

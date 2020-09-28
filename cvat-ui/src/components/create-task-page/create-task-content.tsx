@@ -13,10 +13,10 @@ import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 
 import ConnectedFileManager from 'containers/file-manager/file-manager';
+import LabelsEditor from 'components/labels-editor/labels-editor';
+import { Files } from 'components/file-manager/file-manager';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import AdvancedConfigurationForm, { AdvancedConfiguration } from './advanced-configuration-form';
-import LabelsEditor from '../labels-editor/labels-editor';
-import { Files } from '../file-manager/file-manager';
 
 export interface CreateTaskData {
     basic: BaseConfiguration;

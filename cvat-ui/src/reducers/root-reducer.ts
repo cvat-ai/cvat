@@ -4,6 +4,7 @@
 
 import { combineReducers, Reducer } from 'redux';
 import authReducer from './auth-reducer';
+import projectsReducer from './projects-reducer';
 import tasksReducer from './tasks-reducer';
 import usersReducer from './users-reducer';
 import aboutReducer from './about-reducer';
@@ -20,6 +21,7 @@ import userAgreementsReducer from './useragreements-reducer';
 export default function createRootReducer(): Reducer {
     return combineReducers({
         auth: authReducer,
+        projects: projectsReducer,
         tasks: tasksReducer,
         users: usersReducer,
         about: aboutReducer,

@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { RouteComponentProps } from 'react-router';
-import { withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
@@ -15,20 +14,22 @@ interface VisibleTopBarProps {
     searchValue: string;
 }
 
-function TopBarComponent(props: VisibleTopBarProps & RouteComponentProps): JSX.Element {
+export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
     const {
         searchValue,
-        history,
         onSearch,
     } = props;
 
+    const history = useHistory();
+
     return (
         <>
-            <Row type='flex' justify='center' align='middle'>
+            {/* <Row type='flex' justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Text strong>Default project</Text>
                 </Col>
-            </Row>
+            </Row> */}
+            <Row />
             <Row type='flex' justify='center' align='middle'>
                 <Col md={11} lg={9} xl={8} xxl={7}>
                     <Text className='cvat-title'>Tasks</Text>
@@ -61,5 +62,3 @@ function TopBarComponent(props: VisibleTopBarProps & RouteComponentProps): JSX.E
         </>
     );
 }
-
-export default withRouter(TopBarComponent);
