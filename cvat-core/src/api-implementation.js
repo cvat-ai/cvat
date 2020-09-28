@@ -26,14 +26,20 @@
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats.js');
     const { ArgumentError } = require('./exceptions');
-    const { Task } = require('./session');
+    const { Task, Project } = require('./session');
 
-    function attachUsers(task, users) {
-        if (task.assignee !== null) {
-            [task.assignee] = users.filter((user) => user.id === task.assignee);
+    function attachUsers(instance, users, instanceType) {
+        if (instance.owner !== null) {
+            [instance.owner] = users.filter((user) => user.id === instance.owner);
         }
 
-        for (const segment of task.segments) {
+        if (instanceType === 'project') return instance;
+
+        if (instance.assignee !== null) {
+            [instance.assignee] = users.filter((user) => user.id === instance.assignee);
+        }
+
+        for (const segment of instance.segments) {
             for (const job of segment.jobs) {
                 if (job.assignee !== null) {
                     [job.assignee] = users.filter((user) => user.id === job.assignee);
@@ -41,11 +47,8 @@
             }
         }
 
-        if (task.owner !== null) {
-            [task.owner] = users.filter((user) => user.id === task.owner);
-        }
 
-        return task;
+        return instance;
     }
 
     function implementAPI(cvat) {
@@ -95,7 +98,11 @@
             await serverProxy.server.logout();
         };
 
-        cvat.server.changePassword.implementation = async (oldPassword, newPassword1, newPassword2) => {
+        cvat.server.changePassword.implementation = async (
+            oldPassword,
+            newPassword1,
+            newPassword2,
+        ) => {
             await serverProxy.server.changePassword(oldPassword, newPassword1, newPassword2);
         };
 
@@ -103,7 +110,12 @@
             await serverProxy.server.requestPasswordReset(email);
         };
 
-        cvat.server.resetPassword.implementation = async(newPassword1, newPassword2, uid, token) => {
+        cvat.server.resetPassword.implementation = async (
+            newPassword1,
+            newPassword2,
+            uid,
+            token,
+        ) => {
             await serverProxy.server.resetPassword(newPassword1, newPassword2, uid, token);
         };
 
@@ -166,7 +178,7 @@
             if (tasks !== null && tasks.length) {
                 const users = (await serverProxy.users.getUsers())
                     .map((userData) => new User(userData));
-                const task = new Task(attachUsers(tasks[0], users));
+                const task = new Task(attachUsers(tasks[0], users, 'task'));
 
                 return filter.jobID ? task.jobs
                     .filter((job) => job.id === filter.jobID) : task.jobs;
@@ -178,6 +190,7 @@
         cvat.tasks.get.implementation = async (filter) => {
             checkFilter(filter, {
                 page: isInteger,
+                projectId: isInteger,
                 name: isString,
                 id: isInteger,
                 owner: isString,
@@ -203,8 +216,14 @@
                 }
             }
 
+            if ('projectId' in filter && Object.keys(filter).length > 1) {
+                throw new ArgumentError(
+                    'Do not use the filter field "projectId" with other',
+                );
+            }
+
             const searchParams = new URLSearchParams();
-            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page']) {
+            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page', 'projectId']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams.set(field, filter[field]);
                 }
@@ -214,13 +233,59 @@
                 .map((userData) => new User(userData));
             const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
             const tasks = tasksData
-                .map((task) => attachUsers(task, users))
+                .map((task) => attachUsers(task, users, 'task'))
                 .map((task) => new Task(task));
 
 
             tasks.count = tasksData.count;
 
             return tasks;
+        };
+
+        cvat.projects.get.implementation = async (filter) => {
+            checkFilter(filter, {
+                id: isInteger,
+                page: isInteger,
+                name: isString,
+                owner: isString,
+                search: isString,
+                status: isEnum.bind(TaskStatus),
+            });
+
+            if ('search' in filter && Object.keys(filter).length > 1) {
+                if (!('page' in filter && Object.keys(filter).length === 2)) {
+                    throw new ArgumentError(
+                        'Do not use the filter field "search" with others',
+                    );
+                }
+            }
+
+            if ('id' in filter && Object.keys(filter).length > 1) {
+                if (!('page' in filter && Object.keys(filter).length === 2)) {
+                    throw new ArgumentError(
+                        'Do not use the filter field "id" with others',
+                    );
+                }
+            }
+
+            const searchParams = new URLSearchParams();
+            // TODO: need to check search fields
+            for (const field of ['name', 'owner', 'search', 'status', 'id', 'page']) {
+                if (Object.prototype.hasOwnProperty.call(filter, field)) {
+                    searchParams.set(field, filter[field]);
+                }
+            }
+
+            const users = (await serverProxy.users.getUsers())
+                .map((userData) => new User(userData));
+            const projectsData = await serverProxy.projects.getProjects(searchParams.toString());
+            const projects = projectsData
+                .map((project) => attachUsers(project, users, 'project'))
+                .map((project) => new Project(project));
+
+            projects.count = projectsData.count;
+
+            return projects;
         };
 
         return cvat;

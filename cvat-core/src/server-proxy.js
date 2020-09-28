@@ -251,7 +251,7 @@
                     const data = JSON.stringify({
                         old_password: oldPassword,
                         new_password1: newPassword1,
-                        new_password2:newPassword2,
+                        new_password2: newPassword2,
                     });
                     await Axios.post(`${config.backendAPI}/auth/password/change`, data, {
                         proxy: config.proxy,
@@ -280,13 +280,13 @@
                 }
             }
 
-            async function resetPassword(newPassword1, newPassword2, uid, token) {
+            async function resetPassword(newPassword1, newPassword2, uid, tokenString) {
                 try {
                     const data = JSON.stringify({
                         new_password1: newPassword1,
                         new_password2: newPassword2,
                         uid,
-                        token,
+                        tokenString,
                     });
                     await Axios.post(`${config.backendAPI}/auth/password/reset/confirm`, data, {
                         proxy: config.proxy,
@@ -319,6 +319,63 @@
                         url,
                         ...data,
                     })).data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function getProjects(filter = '') {
+                const { backendAPI, proxy } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/projects?page_size=12&${filter}`, {
+                        proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                response.data.results.count = response.data.count;
+                return response.data.results;
+            }
+
+            async function saveProject(id, projectData) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.patch(`${backendAPI}/projects/${id}`, JSON.stringify(projectData), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function deleteProject(id) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.delete(`${backendAPI}/projects/${id}`);
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function createProject(projectSpec) {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.post(`${backendAPI}/projects`, JSON.stringify(projectSpec), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    return response.data;
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -359,7 +416,12 @@
                 const { backendAPI } = config;
 
                 try {
-                    await Axios.delete(`${backendAPI}/tasks/${id}`);
+                    await Axios.delete(`${backendAPI}/tasks/${id}`, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -828,6 +890,16 @@
                         register,
                         request: serverRequest,
                         userAgreements,
+                    }),
+                    writable: false,
+                },
+
+                projects: {
+                    value: Object.freeze({
+                        getProjects,
+                        saveProject,
+                        createProject,
+                        deleteProject,
                     }),
                     writable: false,
                 },
