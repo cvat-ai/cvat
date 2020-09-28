@@ -6,6 +6,7 @@ import math
 from enum import Enum
 from io import BytesIO
 
+import cv2
 import numpy as np
 from PIL import Image
 
@@ -42,7 +43,7 @@ class RandomAccessIterator:
         self.pos = -1
 
 class FrameProvider:
-    VIDEO_FRAME_EXT = 'PNG'
+    VIDEO_FRAME_EXT = '.PNG'
     VIDEO_FRAME_MIME = 'image/png'
 
     class Quality(Enum):
@@ -133,11 +134,14 @@ class FrameProvider:
 
     @classmethod
     def _av_frame_to_png_bytes(cls, av_frame):
-        pil_img = av_frame.to_image()
-        buf = BytesIO()
-        pil_img.save(buf, format=cls.VIDEO_FRAME_EXT)
-        buf.seek(0)
-        return buf
+        ext = cls.VIDEO_FRAME_EXT
+        image = av_frame.to_ndarray()
+        if len(image.shape) == 3 and image.shape[2] in {3, 4}:
+            image[:, :, :3] = image[:, :, 2::-1] # RGB to BGR
+        success, result = cv2.imencode(ext, image)
+        if not success:
+            raise Exception("Failed to encode image to '%s' format" % (ext))
+        return BytesIO(result.tobytes())
 
     def _convert_frame(self, frame, reader_class, out_type):
         if out_type == self.Type.BUFFER:
@@ -146,7 +150,7 @@ class FrameProvider:
             return frame.to_image() if reader_class is VideoReader else Image.open(frame)
         elif out_type == self.Type.NUMPY_ARRAY:
             if reader_class is VideoReader:
-                image = np.array(frame.to_image())
+                image = frame.to_ndarray()
             else:
                 image = np.array(Image.open(frame))
             if len(image.shape) == 3 and image.shape[2] in {3, 4}:
