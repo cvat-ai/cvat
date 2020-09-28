@@ -13,7 +13,7 @@ import datumaro.components.extractor as datumaro
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import AttributeType, ShapeType
 from datumaro.util import cast
-from datumaro.util.image import BytesImage
+from datumaro.util.image import ByteImage
 
 from .annotation import AnnotationManager, TrackManager
 
@@ -469,7 +469,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 loader = lambda p, i=frame_data.idx: frame_provider.get_frame(i,
                     quality=frame_provider.Quality.ORIGINAL,
                     out_type=frame_provider.Type.BUFFER)[0].getvalue()
-            dm_image = BytesImage(path=frame_data.name, data=loader,
+            dm_image = ByteImage(path=frame_data.name, data=loader,
                 size=(frame_data.height, frame_data.width), ext=frame_ext
             )
             dm_anno = self._read_cvat_anno(frame_data, task_data)
