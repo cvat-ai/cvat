@@ -1035,7 +1035,8 @@ For more details about DL models read the [Models](#models) section.
 
 Interactors are used to create a polygon semi-automatically.
 Supported DL models are not bound to the label and can be used for any objects.
-To create a polygon you have to specify positive and / or negative points.
+To create a polygon usually you need to use regular or positive points.
+For some kinds of segmentation negative points are available.
 Positive points are the points related to the object.
 Negative points should be placed outside the boundary of the object.
 In most cases specifying positive points alone is enough to build a polygon.
@@ -1045,17 +1046,17 @@ In most cases specifying positive points alone is enough to build a polygon.
 
   ![](static/documentation/images/image114.jpg)
 
-- Click ``Interact`` to enter the drawing mode. Now you can place positive and/or negative points.
+- Click ``Interact`` to enter the interaction mode. Now you can place positive and/or negative points.
   Left click creates a positive point and right click creates a negative point.
-  This model requires a minimum of 4 points. After you set 4 positive points,
+  ``Deep extreme cut`` model requires a minimum of 4 points. After you set 4 positive points,
   a request will be sent to the server and when the process is complete a polygon will be created.
   If you are not satisfied with the result, you can set additional points or remove points by left-clicking on it.
-  If you want to postpone the request and create a few more points, hold down Ctrl and continue,
+  If you want to postpone the request and create a few more points, hold down ``Ctrl`` and continue,
   the request will be sent after the key is released.
 
   ![](static/documentation/images/image188.jpg)
 
-- To finish drawing, click on the icon on the controls sidebar or press ``N`` on your keyboard.
+- To finish interaction, click on the icon on the controls sidebar or press ``N`` on your keyboard.
 
 - When the object is finished, you can edit it like a polygon.
   You can read about editing polygons in the [Annotation with polygons](#annotation-with-polygons) section.
@@ -1070,7 +1071,7 @@ Detectors are used to automatically annotate one frame. Supported DL models are 
 
   ![](static/documentation/images/image187.jpg)
 
-- This action will automatically annotate one frame.
+- This action will automatically annotates one frame.
   In the [Automatic annotation](#automatic-annotation) section you can read how to make automatic annotation of all frames.
 
 ## Annotation with rectangle by 4 points
