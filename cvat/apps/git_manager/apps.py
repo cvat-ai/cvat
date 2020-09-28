@@ -6,4 +6,4 @@ from django.apps import AppConfig
 
 
 class GitConfig(AppConfig):
-    name = 'git'
+    name = 'git_manager'
