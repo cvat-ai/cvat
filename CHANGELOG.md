@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Right colors of label tags in label mapping when a user runs automatic detection (<https://github.com/openvinotoolkit/cvat/pull/2162>)
 - Nuclio became an optional component of CVAT (<https://github.com/openvinotoolkit/cvat/pull/2192>)
 - A key to remove a point from a polyshape [Ctrl => Alt] (<https://github.com/openvinotoolkit/cvat/pull/2204>)
+- Updated `docker-compose` file version from `2.3` to `3.3`
 
 ### Deprecated
 -
