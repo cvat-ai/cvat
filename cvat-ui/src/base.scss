@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+$grid-unit-size: 8px;
+$layout-grid-size: $grid-unit-size * 1;
+
 $header-color: #d8d8d8;
 $text-color: #303030;
 $hover-menu-color: rgba(24, 144, 255, 0.05);
@@ -24,5 +27,6 @@ $objects-bar-icons-color: #242424; // #6e6e6e
 $active-label-background-color: #d8ecff;
 $object-item-border-color: rgba(0, 0, 0, 0.7);
 $slider-color: #1890ff;
+$layout-grid-color: rgba(0, 0, 0, 0.15);
 
 $monospaced-fonts-stack: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;

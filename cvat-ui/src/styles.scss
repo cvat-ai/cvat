@@ -53,3 +53,11 @@ hr {
     display: grid;
     min-width: 1280px;
 }
+
+#layout-grid {
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+}
