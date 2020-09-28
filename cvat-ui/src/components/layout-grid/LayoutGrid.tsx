@@ -1,3 +1,7 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import './styles.scss';
