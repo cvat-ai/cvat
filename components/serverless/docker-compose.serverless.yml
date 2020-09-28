@@ -1,4 +1,4 @@
-version: '2.3'
+version: '3.3'
 services:
   serverless:
     container_name: nuclio
