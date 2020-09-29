@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Datumaro] CLI command for dataset equality comparison (<https://github.com/opencv/cvat/pull/1989>)
 - [Datumaro] Merging of datasets with different labels (<https://github.com/opencv/cvat/pull/2098>)
 - Add FBRS interactive segmentation serverless function (<https://github.com/openvinotoolkit/cvat/pull/2094>)
+- Ability to change default behaviour of previous/next buttons of a player.
+It supports regular navigation, searching a frame according to annotations
+filters and searching the nearest frame without any annotations (<https://github.com/openvinotoolkit/cvat/pull/2221>)
 - MacOS users notes in CONTRIBUTING.md
 
 ### Changed
@@ -23,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Right colors of label tags in label mapping when a user runs automatic detection (<https://github.com/openvinotoolkit/cvat/pull/2162>)
 - Nuclio became an optional component of CVAT (<https://github.com/openvinotoolkit/cvat/pull/2192>)
 - A key to remove a point from a polyshape [Ctrl => Alt] (<https://github.com/openvinotoolkit/cvat/pull/2204>)
+- Updated `docker-compose` file version from `2.3` to `3.3`(<https://github.com/openvinotoolkit/cvat/pull/2235>)
 - Added auto inference of url schema from host in CLI, if provided (<https://github.com/openvinotoolkit/cvat/pull/2240>)
 
 ### Deprecated

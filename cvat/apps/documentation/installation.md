@@ -2,7 +2,7 @@
   - [Ubuntu 18.04 (x86_64/amd64)](#ubuntu-1804-x86_64amd64)
   - [Windows 10](#windows-10)
   - [Mac OS Mojave](#mac-os-mojave)
-  - [Advanced topics](#advanced-topics)
+  - [Advanced Topics](#advanced-topics)
     - [Deploying CVAT behind a proxy](#deploying-cvat-behind-a-proxy)
     - [Additional components](#additional-components)
     - [Semi-automatic and automatic annotation](#semi-automatic-and-automatic-annotation)
@@ -103,7 +103,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     ```sh
     docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
     ```
-    Choose login and password for your admin account. For more information
+    Choose a username and a password for your admin account. For more information
     please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
 
 -   Google Chrome is the only browser which is supported by CVAT. You need to
@@ -123,13 +123,15 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 ## Windows 10
 -   Install WSL2 (Windows subsystem for Linux) refer to [this official guide](https://docs.microsoft.com/windows/wsl/install-win10).
-    WSL2 requires Windows 10, version 2004 or higher. Note: you may not install any Linux distribution unless necessary.
+    WSL2 requires Windows 10, version 2004 or higher. Note: You may not have to install a Linux distribution unless
+     needed.
 
 -   Download and install [Docker Desktop for Windows](https://download.docker.com/win/stable/Docker%20Desktop%20Installer.exe).
     Double-click `Docker for Windows Installer` to run the installer.
     More instructions can be found [here](https://docs.docker.com/docker-for-windows/install/).
     Official guide for docker WSL2 backend can be found
-    [here](https://docs.docker.com/docker-for-windows/wsl/). Note: check that using exaclty WSL2 backend for docker.
+    [here](https://docs.docker.com/docker-for-windows/wsl/). Note: Check that you are specifically using WSL2 backend
+     for Docker.
 
 -   Download and install
     [Git for Windows](https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe).
@@ -172,7 +174,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     ```sh
     winpty docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
     ```
-    Choose login and password for your admin account. For more information
+    Choose a username and a password for your admin account. For more information
     please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
 
 -   Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
@@ -237,7 +239,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     ```sh
     docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
     ```
-    Choose login and password for your admin account. For more information
+    Choose a username and a password for your admin account. For more information
     please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
 
 -   Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
@@ -245,7 +247,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     button. Now you should be able to create a new annotation task. Please read the
     [CVAT user's guide](/cvat/apps/documentation/user_guide.md) for more details.
 
-## Advanced topics
+## Advanced Topics
 
 ### Deploying CVAT behind a proxy
 If you deploy CVAT behind a proxy and do not plan to use any of [serverless functions](#semi-automatic-and-automatic-annotation)
@@ -419,9 +421,9 @@ Point you shell in cvat repository directory, usually `cd $HOME/cvat`:
 
 Add the following into your `docker-compose.override.yml`, replacing `my-cvat-server.org` with your own IP address. This file lives in the same directory as `docker-compose.yml`.
 
-Create enough directories for letsencrypt webroot operation and acme folder passthrougth.
+Create the required directories for letsencrypt webroot operation and acme folder passthrough.
 
- and restart containers with a new configuration updated in `docker-compose.override.yml`
+Now restart the containers with new configurations updated in `docker-compose.override.yml`
 
 ```bash
 # on the docker host

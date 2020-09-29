@@ -34,6 +34,8 @@ interface Props {
     previousFrameShortcut: string;
     forwardShortcut: string;
     backwardShortcut: string;
+    prevButtonType: string;
+    nextButtonType: string;
     focusFrameInputShortcut: string;
     changeWorkspace(workspace: Workspace): void;
     showStatistics(): void;
@@ -45,6 +47,8 @@ interface Props {
     onBackward(): void;
     onFirstFrame(): void;
     onLastFrame(): void;
+    setPrevButtonType(type: 'regular' | 'filtered' | 'empty'): void;
+    setNextButtonType(type: 'regular' | 'filtered' | 'empty'): void;
     onSliderChange(value: SliderValue): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
@@ -73,6 +77,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         previousFrameShortcut,
         forwardShortcut,
         backwardShortcut,
+        prevButtonType,
+        nextButtonType,
         focusFrameInputShortcut,
         showStatistics,
         changeWorkspace,
@@ -84,6 +90,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onBackward,
         onFirstFrame,
         onLastFrame,
+        setPrevButtonType,
+        setNextButtonType,
         onSliderChange,
         onInputChange,
         onURLIconClick,
@@ -114,6 +122,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         previousFrameShortcut={previousFrameShortcut}
                         forwardShortcut={forwardShortcut}
                         backwardShortcut={backwardShortcut}
+                        prevButtonType={prevButtonType}
+                        nextButtonType={nextButtonType}
                         onPrevFrame={onPrevFrame}
                         onNextFrame={onNextFrame}
                         onForward={onForward}
@@ -121,6 +131,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         onFirstFrame={onFirstFrame}
                         onLastFrame={onLastFrame}
                         onSwitchPlay={onSwitchPlay}
+                        setPrevButton={setPrevButtonType}
+                        setNextButton={setNextButtonType}
                     />
                     <PlayerNavigation
                         startFrame={startFrame}
