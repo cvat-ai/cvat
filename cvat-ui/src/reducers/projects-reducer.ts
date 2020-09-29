@@ -107,6 +107,41 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 },
             };
         }
+        case ProjectsActionTypes.UPDATE_PROJECT: {
+            return {
+                ...state,
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_SUCCESS: {
+            return {
+                ...state,
+                current: state.current.map((project): Project => {
+                    if (project.instance.id === action.payload.project.id) {
+                        return {
+                            ...project,
+                            instance: action.payload.project,
+                        };
+                    }
+
+                    return project;
+                }),
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
+            return {
+                ...state,
+                current: state.current.map((project): Project => {
+                    if (project.instance.id === action.payload.project.id) {
+                        return {
+                            ...project,
+                            instance: action.payload.project,
+                        };
+                    }
+
+                    return project;
+                }),
+            };
+        }
         case ProjectsActionTypes.DELETE_PROJECT: {
             const { projectId } = action.payload;
             const { deletes } = state.activities;

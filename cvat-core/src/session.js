@@ -1420,6 +1420,7 @@
                 name: undefined,
                 status: undefined,
                 owner: undefined,
+                bug_tracker: undefined,
                 created_date: undefined,
                 updated_date: undefined,
             };
@@ -1497,6 +1498,19 @@
                 */
                 owner: {
                     get: () => data.owner,
+                },
+                /**
+                    * @name bugTracker
+                    * @type {string}
+                    * @memberof module:API.cvat.classes.Project
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                bugTracker: {
+                    get: () => data.bug_tracker,
+                    set: (tracker) => {
+                        data.bug_tracker = tracker;
+                    },
                 },
                 /**
                     * @name createdDate
@@ -2112,6 +2126,7 @@
         if (typeof (this.id) !== 'undefined') {
             const projectData = {
                 name: this.name,
+                bug_tracker: this.bugTracker,
                 labels: [...this.labels.map((el) => el.toJSON())],
             };
 

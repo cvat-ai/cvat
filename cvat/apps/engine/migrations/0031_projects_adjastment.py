@@ -15,10 +15,6 @@ class Migration(migrations.Migration):
             model_name='project',
             name='assignee',
         ),
-        migrations.RemoveField(
-            model_name='project',
-            name='bug_tracker',
-        ),
         migrations.AddField(
             model_name='label',
             name='project',

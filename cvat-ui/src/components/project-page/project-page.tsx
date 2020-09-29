@@ -8,10 +8,12 @@ import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useHistory, useParams } from 'react-router';
 import Spin from 'antd/lib/spin';
+import { Row, Col } from 'antd/lib/grid';
+import Result from 'antd/lib/result';
 
 import { CombinedState } from 'reducers/interfaces';
 import { getProjectsAsync, updateProjectsGettingQuery } from 'actions/projects-actions';
-import Result from 'antd/lib/result';
+import DetailsComponent from './details';
 
 interface ParamType {
     id: string;
@@ -67,8 +69,11 @@ export default function TaskPageComponent(): JSX.Element {
     }
 
     return (
-        <span>
-            {project.instance.name}
-        </span>
+        <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
+            <Col md={22} lg={18} xl={16} xxl={14}>
+                <DetailsComponent project={project} />
+                {/* <TasksListContainer project={project} /> */}
+            </Col>
+        </Row>
     );
 }

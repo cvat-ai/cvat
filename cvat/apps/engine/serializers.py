@@ -346,7 +346,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     tasks = TaskSerializer(many=True, source='task_set', read_only=True)
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'labels', 'owner',
+        fields = ('url', 'id', 'name', 'labels', 'owner', 'bug_tracker',
             'created_date', 'updated_date', 'status', 'tasks')
         read_only_fields = ('created_date', 'updated_date', 'status')
         ordering = ['-id']
@@ -372,6 +372,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner = validated_data.get('owner', instance.owner)
+        instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
         labels = validated_data.get('label_set', [])
         for label in labels:
             LabelSerializer.update_instance(label, instance)

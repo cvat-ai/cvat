@@ -1,0 +1,25 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-project-details {
+    width: 100%;
+    height: auto;
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    padding: 16px;
+    margin-top: 16px;
+    background: $background-color-1;
+
+    .ant-row-flex:nth-child(1) {
+        margin-bottom: 16px;
+    }
+    .cvat-project-details-actions {
+        > div {
+            display: flex;
+            align-items: center;
+        }
+    }
+}

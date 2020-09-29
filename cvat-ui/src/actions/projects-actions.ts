@@ -19,6 +19,9 @@ export enum ProjectsActionTypes {
     CREATE_PROJECT = 'CREATE_PROJECT',
     CREATE_PROJECT_SUCCESS = 'CREATE_PROJECT_SUCCESS',
     CREATE_PROJECT_FAILED = 'CREATE_PROJECT_FAILED',
+    UPDATE_PROJECT = 'UPDATE_PROJECT',
+    UPDATE_PROJECT_SUCCESS = 'UPDATE_PROJECT_SUCCESS',
+    UPDATE_PROJECT_FAILED = 'UPDATE_PROJECT_FAILED',
     DELETE_PROJECT = 'DELETE_PROJECT',
     DELETE_PROJECT_SUCCESS = 'DELETE_PROJECT_SUCCESS',
     DELETE_PROJECT_FAILED = 'DELETE_PROJECT_FAILED',
@@ -142,6 +145,61 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         } catch (error) {
             // FIXME: error length
             dispatch(createProjectFailed(error));
+        }
+    };
+}
+
+function updateProject(): AnyAction {
+    const action = {
+        type: ProjectsActionTypes.UPDATE_PROJECT,
+        payload: {},
+    };
+
+    return action;
+}
+
+function updateProjectSuccess(project: any): AnyAction {
+    const action = {
+        type: ProjectsActionTypes.UPDATE_PROJECT_SUCCESS,
+        payload: {
+            project,
+        },
+    };
+
+    return action;
+}
+
+function updateProjectFailed(error: any, project: any): AnyAction {
+    const action = {
+        type: ProjectsActionTypes.UPDATE_PROJECT_FAILED,
+        payload: {
+            error,
+            project,
+        },
+    };
+
+    return action;
+}
+
+export function updateProjectAsync(projectInstance: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch(updateProject());
+            await projectInstance.save();
+            const [project] = await cvat.tasks.get({ id: projectInstance.id });
+            dispatch(updateProjectSuccess(project));
+        } catch (error) {
+            let project = null;
+            try {
+                [project] = await cvat.project.get({ id: projectInstance.id });
+            } catch (fetchError) {
+                // FIXME: error length
+                dispatch(updateProjectFailed(error, projectInstance));
+                return;
+            }
+            dispatch(updateProjectFailed(error, project));
+
         }
     };
 }
