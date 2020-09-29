@@ -9,17 +9,15 @@ import os.path as osp
 import tempfile
 import zipfile
 
+import datumaro
 from PIL import Image
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 
+import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import TaskData, find_dataset_root
-from cvat.apps.engine.models import Task
-
-from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import TaskData, CvatTaskDataExtractor
+from cvat.apps.dataset_manager.bindings import TaskData, find_dataset_root, CvatTaskDataExtractor
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.engine.models import Task
 
