@@ -7,24 +7,15 @@ import ReactDOM from 'react-dom';
 import './styles.scss';
 
 export default function LayoutGrid(): React.ReactPortal | null {
+    // 2 states to be able to enable or disable each one separately in future
     const [showSmGrid, setShowSmGrid] = useState(false);
     const [showLgGrid, setShowLgGrid] = useState(false);
 
     const listener = (e: KeyboardEvent): void => {
-        if (e.key === 'ArrowLeft' && e.altKey) {
+        if (e.code === 'Enter' && e.ctrlKey && e.altKey) {
             e.preventDefault();
             setShowSmGrid(!showSmGrid);
-        }
-
-        if (e.key === 'ArrowRight' && e.altKey) {
-            e.preventDefault();
             setShowLgGrid(!showLgGrid);
-        }
-
-        if (e.key === 'ArrowUp' && e.altKey) {
-            e.preventDefault();
-            setShowSmGrid(!(showSmGrid && showLgGrid));
-            setShowLgGrid(!(showSmGrid && showLgGrid));
         }
     };
 
