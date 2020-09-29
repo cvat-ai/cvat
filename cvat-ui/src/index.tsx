@@ -12,7 +12,7 @@ import { shortcutsActions } from 'actions/shortcuts-actions';
 import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import { getUsersAsync } from 'actions/users-actions';
 import CVATApplication from 'components/cvat-app';
-import LayoutGrid from 'components/layout-grid/LayoutGrid';
+import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import React from 'react';
