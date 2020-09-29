@@ -290,11 +290,11 @@ The Models page allows you to manage deep learning (DL) models uploaded for auto
  - model ``Name``
  - model ``Type``:
     -   ``detector`` - used for automatic annotation (available in [detectors](#detectors) and [automatic annotation](#automatic-annotation))
-    -  ``interactor`` - used for semi-automatic shape annotation (available in [interactor](#interactor))
+    -  ``interactor`` - used for semi-automatic shape annotation (available in [interactors](#interactors))
     -  ``tracker`` -  used for semi-automatic track annotation (available in [trackers](#trackers))
     -  ``reid`` -  used to combine individual objects into a track (available in [automatic annotation](#automatic-annotation))
- - ``description`` - brief description of the model
- - ``labels`` - list of the supported labels (only for the models of the ``detectors`` type)
+ - ``Description`` - brief description of the model
+ - ``Labels`` - list of the supported labels (only for the models of the ``detectors`` type)
 
 ![](static/documentation/images/image099.jpg)
 
@@ -1033,7 +1033,7 @@ In most cases specifying positive points alone is enough to build a polygon.
   If you want to postpone the request and create a few more points, hold down ``Ctrl`` and continue,
   the request will be sent after the key is released.
 
-  ![](static/documentation/images/image188.jpg)
+  ![](static/documentation/images/image188_detrac.jpg)
 
 - To finish interaction, click on the icon on the controls sidebar or press ``N`` on your keyboard.
 
