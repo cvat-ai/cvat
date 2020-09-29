@@ -6,4 +6,4 @@ from django.apps import AppConfig
 
 
 class GitConfig(AppConfig):
-    name = 'git_manager'
+    name = 'dataset_repo'
