@@ -24,6 +24,7 @@
   - [Shape mode (advanced)](#shape-mode-advanced)
   - [Track mode (advanced)](#track-mode-advanced)
   - [Attribute annotation mode (advanced)](#attribute-annotation-mode-advanced)
+  - [AI Tools](#ai-tools)
   - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
@@ -1021,6 +1022,55 @@ or shortcuts:
 In order to change the zoom level, go to settings (press ``F3``)
 in the workspace tab and set the value Attribute annotation mode (AAM) zoom margin in px.
 
+## AI Tools
+
+The tool is designed for semi-automatic and automatic annotation using DL models.
+The tool is available only if there is a corresponding model.
+For more details about DL models read the [Models](#models) section.
+
+### Interactors
+
+Interactors are used to create a polygon semi-automatically.
+Supported DL models are not bound to the label and can be used for any objects.
+To create a polygon usually you need to use regular or positive points.
+For some kinds of segmentation negative points are available.
+Positive points are the points related to the object.
+Negative points should be placed outside the boundary of the object.
+In most cases specifying positive points alone is enough to build a polygon.
+
+- Before you start, select the magic wand on the controls sidebar and go to the ``Interactors`` tab.
+  Then select a label for the polygon and a required DL model.
+
+  ![](static/documentation/images/image114.jpg)
+
+- Click ``Interact`` to enter the interaction mode. Now you can place positive and/or negative points.
+  Left click creates a positive point and right click creates a negative point.
+  ``Deep extreme cut`` model requires a minimum of 4 points. After you set 4 positive points,
+  a request will be sent to the server and when the process is complete a polygon will be created.
+  If you are not satisfied with the result, you can set additional points or remove points by left-clicking on it.
+  If you want to postpone the request and create a few more points, hold down ``Ctrl`` and continue,
+  the request will be sent after the key is released.
+
+  ![](static/documentation/images/image188.jpg)
+
+- To finish interaction, click on the icon on the controls sidebar or press ``N`` on your keyboard.
+
+- When the object is finished, you can edit it like a polygon.
+  You can read about editing polygons in the [Annotation with polygons](#annotation-with-polygons) section.
+
+### Detectors
+
+Detectors are used to automatically annotate one frame. Supported DL models are suitable only for certain labels.
+
+- Before you start, click the magic wand on the controls sidebar and select the Detectors icon tab.
+  You need to match the labels of the DL model (left column) with the labels in your task (right column).
+  Then click ``Annotate``.
+
+  ![](static/documentation/images/image187.jpg)
+
+- This action will automatically annotates one frame.
+  In the [Automatic annotation](#automatic-annotation) section you can read how to make automatic annotation of all frames.
+
 ## Annotation with rectangle by 4 points
 It is an efficient method of bounding box annotation, proposed
 [here](https://arxiv.org/pdf/1708.02750.pdf).
@@ -1107,21 +1157,6 @@ Below you can see results with opacity and black stroke:
 
 If you need to annotate small objects, increase ``Image Quality`` to
 ``95`` in ``Create task`` dialog for your convenience.
-
-### Make AI polygon
-
-Used to create a polygon semi-automatically.
-- Before starting, you have to make sure that the ``Make AI polygon`` is selected.
-
-  ![](static/documentation/images/image114.jpg)
-
-- Click ``Shape`` to enter drawing mode. Now you can start annotating the necessary area.
-  A shape must consist of 4 points minimum. You can set a fixed number of points in the ``Number of points`` field,
-  then drawing will be stopped automatically. You can zoom in/out and move while drawing.
-- Press ``N`` again to finish marking the area. At the end of Auto Segmentation,
-  a shape is created and you can work with it as a polygon.
-
-  ![](static/documentation/images/gif009_detrac.gif)
 
 ### Edit polygon
 
