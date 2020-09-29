@@ -48,25 +48,25 @@ class LabelSerializer(serializers.ModelSerializer):
     def update_instance(validated_data, parent_instance):
         attributes = validated_data.pop('attributespec_set', [])
         instance = dict()
-        if isinstace(parent_instance. models.Project):
+        if isinstance(parent_instance, models.Project):
             instance['project'] = parent_instance
-            logger = sLogger.project[parent_instace.id]
+            logger = slogger.project[parent_instance.id]
         else:
             instance['task'] = parent_instance
-            logger = sLogger.task[parent_instace.id]
-        (db_label, created) = models.Label.objects.get_or_create(name=label['name'],
+            logger = slogger.task[parent_instance.id]
+        (db_label, created) = models.Label.objects.get_or_create(name=validated_data['name'],
             **instance)
         if created:
             logger.info("New {} label was created".format(db_label.name))
         else:
             logger.info("{} label was updated".format(db_label.name))
-        if not label.get('color', None):
+        if not validated_data.get('color', None):
             label_names = [l.name for l in
                 models.Label.objects.filter(task_id=instance.id).exclude(id=db_label.id).order_by('id')
             ]
             db_label.color = get_label_color(db_label.name, label_names)
         else:
-            db_label.color = label.get('color', db_label.color)
+            db_label.color = validated_data.get('color', db_label.color)
         db_label.save()
         for attr in attributes:
             (db_attr, created) = models.AttributeSpec.objects.get_or_create(
