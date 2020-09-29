@@ -10,13 +10,20 @@ def get_args():
     parser.add_argument('meta_directory',
         type=str,
         help='Directory where the file with meta information will be saved')
+    parser.add_argument('-chunk_size',
+        type=int,
+        help='Chunk size that will be specified when creating the task with specified video and generated meta information')
 
     return parser.parse_args()
 
 def main():
     args = get_args()
     try:
-        prepare_meta_for_upload(prepare_meta, args.video_file, None, args.meta_directory)
+        smooth_decoding = prepare_meta_for_upload(prepare_meta, args.video_file, None, args.meta_directory, args.chunk_size)
+        print('Meta information for video has been prepared')
+
+        if smooth_decoding != None and not smooth_decoding:
+            print('NOTE: prepared meta information contains too few key frames for smooth decoding.')
     except Exception:
         print('Impossible to prepare meta information')
 

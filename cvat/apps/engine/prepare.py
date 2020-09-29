@@ -76,7 +76,7 @@ class PrepareInfo(WorkWithVideo):
 
     @property
     def frame_sizes(self):
-        frame = self.key_frames.get(next(iter(self.key_frames)))
+        frame = next(iter(self.key_frames.values()))
         return (frame.width, frame.height)
 
     def check_key_frame(self, container, video_stream, key_frame):
@@ -97,8 +97,7 @@ class PrepareInfo(WorkWithVideo):
             self.check_key_frame(container, video_stream, key_frame)
 
     def check_frames_ratio(self, chunk_size):
-        if not len(self.key_frames) or (len(self.key_frames) and (self.frames // len(self.key_frames)) > chunk_size):
-            raise Exception('Too few keyframes for smooth video decoding')
+        return (len(self.key_frames) and (self.frames // len(self.key_frames)) <= 2 * chunk_size)
 
     def save_key_frames(self):
         container = self._open_video_container(self.source_path, mode='r')
@@ -175,7 +174,7 @@ class UploadedMeta(PrepareInfo):
     def frame_sizes(self):
         container = self._open_video_container(self.source_path, 'r')
         video_stream = self._get_video_stream(container)
-        container.seek(offset=self.key_frames.get(next(iter(self.key_frames))), stream=video_stream)
+        container.seek(offset=next(iter(self.key_frames.values())), stream=video_stream)
         for packet in container.demux(video_stream):
             for frame in packet.decode():
                 self._close_video_container(container)
@@ -212,7 +211,7 @@ class UploadedMeta(PrepareInfo):
             return
         self._close_video_container(container)
 
-def prepare_meta(media_file, upload_dir=None, meta_dir=None):
+def prepare_meta(media_file, upload_dir=None, meta_dir=None, chunk_size=None):
     paths = {
         'source_path': os.path.join(upload_dir, media_file) if upload_dir else media_file,
         'meta_path': os.path.join(meta_dir, 'meta_info.txt') if meta_dir else os.path.join(upload_dir, 'meta_info.txt'),
@@ -226,10 +225,11 @@ def prepare_meta(media_file, upload_dir=None, meta_dir=None):
     meta_info.save_key_frames()
     meta_info.check_seek_key_frames()
     meta_info.save_meta_info()
-
-    return meta_info
+    smooth_decoding = meta_info.check_frames_ratio(chunk_size) if chunk_size else None
+    return (meta_info, smooth_decoding)
 
 def prepare_meta_for_upload(func, *args):
-    meta_info = func(*args)
+    meta_info, smooth_decoding = func(*args)
     with open(meta_info.meta_path, 'a') as meta_file:
         meta_file.write(str(meta_info.get_task_size()))
+    return smooth_decoding

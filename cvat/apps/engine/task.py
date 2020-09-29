@@ -300,36 +300,48 @@ def _create_thread(tid, data):
                         if meta_info_file:
                             try:
                                 from cvat.apps.engine.prepare import UploadedMeta
+                                if os.path.split(meta_info_file[0])[0]:
+                                    os.replace(
+                                        os.path.join(upload_dir, meta_info_file[0]),
+                                        db_data.get_meta_path()
+                                    )
                                 meta_info = UploadedMeta(source_path=os.path.join(upload_dir, media_files[0]),
-                                                         meta_path=os.path.join(upload_dir, meta_info_file[0]))
+                                                         meta_path=db_data.get_meta_path())
                                 meta_info.check_seek_key_frames()
-                                meta_info.check_frames_ratio(db_data.chunk_size)
                                 meta_info.check_frames_numbers()
                                 meta_info.save_meta_info()
-                            except AssertionError as ex:
-                                job.meta['status'] = str(ex)
-                                job.save_meta()
-                                meta_info = prepare_meta(media_file=media_files[0], upload_dir=upload_dir)
-                                meta_info.check_frames_ratio(db_data.chunk_size)
+                                assert len(meta_info.key_frames) > 0, 'No key frames.'
                             except Exception as ex:
-                                job.meta['status'] = 'Invalid meta information was upload. Start prepare valid meta information.'
+                                base_msg = str(ex) if isinstance(ex, AssertionError) else \
+                                    'Invalid meta information was upload.'
+                                job.meta['status'] = '{} Start prepare valid meta information.'.format(base_msg)
                                 job.save_meta()
-                                meta_info = prepare_meta(media_file=media_files[0], upload_dir=upload_dir)
-                                meta_info.check_frames_ratio(db_data.chunk_size)
+                                meta_info, smooth_decoding = prepare_meta(
+                                    media_file=media_files[0],
+                                    upload_dir=upload_dir,
+                                    chunk_size=db_data.chunk_size
+                                )
+                                assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'
                         else:
-                            meta_info = prepare_meta(media_file=media_files[0], upload_dir=upload_dir)
-                            meta_info.check_frames_ratio(db_data.chunk_size)
+                            meta_info, smooth_decoding = prepare_meta(
+                                media_file=media_files[0],
+                                upload_dir=upload_dir,
+                                chunk_size=db_data.chunk_size
+                            )
+                            assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'
 
                         all_frames = meta_info.get_task_size()
                         video_size = meta_info.frame_sizes
 
                         db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 if data['stop_frame'] else all_frames, all_frames), db_data.get_frame_step()))
                         video_path = os.path.join(upload_dir, media_files[0])
-
-                    except Exception:
+                    except Exception as ex:
                         db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
                         if os.path.exists(db_data.get_meta_path()):
                             os.remove(db_data.get_meta_path())
+                        base_msg = str(ex) if isinstance(ex, AssertionError) else "Uploaded video does not support a quick way of task creating."
+                        job.meta['status'] = "{} The task will be created using the old method".format(base_msg)
+                        job.save_meta()
 
                 else:#images,archive
                     counter_ = itertools.count()
