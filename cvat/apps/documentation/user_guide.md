@@ -100,7 +100,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     -   The ``Constructor`` is a simple way to add and adjust labels. To add a new label click the ``Add label`` button.
           ![](static/documentation/images/image123.jpg)
 
-        You can set a name of the label in the ``Label name`` field.
+        You can set a name of the label in the ``Label name`` field and choose a color for each label.
 
           ![](static/documentation/images/image124.jpg)
 
@@ -705,9 +705,6 @@ Button assignment:
   - [MS COCO](http://cocodataset.org/#format-data)
   - [YOLO](https://pjreddie.com/darknet/yolo/)
 - ``Open the task`` — opens a page with details about the task.
-- ``Run ReID merge`` —  automatic merge of shapes or tracks.
-  It is used to combine individual objects - created by automatic annotation in a single track.
-  For more information click [here](cvat/apps/reid/README.md).
 
 #### Save Work
 Saves annotations for the current job. The button has an indication of the saving process.
@@ -1353,12 +1350,14 @@ You can find the list of available models in the ``Models`` section.
 
     ![](static/documentation/images/gif014_detrac.gif)
 
-1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects and
-    merging into tracks using ``ReID merge`` function. Click the ``ReID merge`` button in the menu.
-    You can use the default settings (for more information click [here](cvat/apps/reid/README.md)).
-    To launch the merging process click ``Merge``. Each frame of the track will be a key frame.
+1.  You can combine separate bounding boxes into tracks using the ``Person reidentification `` model.
+    To do this, click on the automatic annotation item in the action menu again and select the model
+    of the ``ReID`` type (in this case the ``Person reidentification`` model).
+    You can set the following parameters:
+      - Model ``Threshold`` is a maximum cosine distance between objects’ embeddings.
+      - ``Maximum distance`` defines a maximum radius that an object can diverge between adjacent frames.
 
-    ![](static/documentation/images/image133.jpg)
+      ![](static/documentation/images/image133.jpg)
 
 1.  You can remove false positives and edit tracks using ``Split`` and ``Merge`` functions.
 
