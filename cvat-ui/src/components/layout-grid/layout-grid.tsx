@@ -2,35 +2,31 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { GlobalHotKeys } from 'react-hotkeys';
 import './styles.scss';
 
-export default function LayoutGrid(): React.ReactPortal | null {
-    // 2 states to be able to enable or disable each one separately in future
-    const [showSmGrid, setShowSmGrid] = useState(false);
-    const [showLgGrid, setShowLgGrid] = useState(false);
+export default function LayoutGrid(): React.ReactPortal {
+    const [showGrid, setShowGrid] = useState(false);
 
-    const listener = (e: KeyboardEvent): void => {
-        if (e.code === 'Enter' && e.ctrlKey && e.altKey) {
-            e.preventDefault();
-            setShowSmGrid(!showSmGrid);
-            setShowLgGrid(!showLgGrid);
-        }
+    const keyMap = {
+        TOGGLE_LAYOUT_GRID: 'ctrl+alt+enter',
     };
 
-    useEffect(() => {
-        window.addEventListener('keyup', listener);
-        return () => {
-            window.removeEventListener('keyup', listener);
-        };
-    }, [showSmGrid, showLgGrid]);
+    const toggleLayoutGrid = useCallback((): void => {
+        setShowGrid((prevState: boolean) => !prevState);
+    }, [showGrid]);
+
+    const handlers = {
+        TOGGLE_LAYOUT_GRID: toggleLayoutGrid,
+    };
 
     const portalContent: JSX.Element = (
-        <>
-            {showSmGrid && <div className='grid sm' />}
-            {showLgGrid && <div className='grid lg' />}
-        </>
+        <GlobalHotKeys keyMap={keyMap} handlers={handlers}>
+            {showGrid && <div className='grid sm' />}
+            {showGrid && <div className='grid lg' />}
+        </GlobalHotKeys>
     );
 
     return ReactDOM.createPortal(portalContent, document.getElementById('layout-grid') as HTMLElement);
