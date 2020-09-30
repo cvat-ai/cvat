@@ -280,13 +280,13 @@
                 }
             }
 
-            async function resetPassword(newPassword1, newPassword2, uid, tokenString) {
+            async function resetPassword(newPassword1, newPassword2, uid, _token) {
                 try {
                     const data = JSON.stringify({
                         new_password1: newPassword1,
                         new_password2: newPassword2,
                         uid,
-                        tokenString,
+                        token: _token,
                     });
                     await Axios.post(`${config.backendAPI}/auth/password/reset/confirm`, data, {
                         proxy: config.proxy,
@@ -518,7 +518,7 @@
                     throw generateError(errorData);
                 }
 
-                onUpdate('The data is being uploaded to the server..');
+                onUpdate('The data are being uploaded to the server..');
                 try {
                     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
                         proxy: config.proxy,
@@ -874,6 +874,18 @@
                 }
             }
 
+            async function installedApps() {
+                const { backendAPI } = config;
+                try {
+                    const response = await Axios.get(`${backendAPI}/server/plugins`, {
+                        proxy: config.proxy,
+                    });
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             Object.defineProperties(this, Object.freeze({
                 server: {
                     value: Object.freeze({
@@ -890,6 +902,7 @@
                         register,
                         request: serverRequest,
                         userAgreements,
+                        installedApps,
                     }),
                     writable: false,
                 },

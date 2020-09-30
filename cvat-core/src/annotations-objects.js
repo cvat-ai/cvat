@@ -933,12 +933,7 @@
         }
 
         _appendShapeActionToHistory(
-            actionType,
-            frame,
-            undoShape,
-            redoShape,
-            undoSource,
-            redoSource,
+            actionType, frame, undoShape, redoShape, undoSource, redoSource,
         ) {
             this.history.do(actionType, () => {
                 if (!undoShape) {

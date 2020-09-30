@@ -32,7 +32,7 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 - [Annotation mode](https://youtu.be/vH_639N67HI)
 - [Interpolation of bounding boxes](https://youtu.be/Hc3oudNuDsY)
 - [Interpolation of polygons](https://youtu.be/K4nis9lk92s)
-- [Tag_annotation_video](https://youtu.be/62bI4mF-Xfk)
+- [Tag annotation video](https://youtu.be/62bI4mF-Xfk)
 - [Attribute mode](https://youtu.be/iIkJsOkDzVA)
 - [Segmentation mode](https://youtu.be/9Fe_GzMLo3E)
 - [Tutorial for polygons](https://youtu.be/C7-r9lZbjBw)

@@ -68,6 +68,7 @@ interface CVATAppProps {
     authActionsInitialized: boolean;
     notifications: NotificationsState;
     user: any;
+    isModelPluginActive: boolean;
 }
 
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
@@ -118,6 +119,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             userAgreementsInitialized,
             authActionsFetching,
             authActionsInitialized,
+            isModelPluginActive,
         } = this.props;
 
         this.showErrors();
@@ -153,7 +155,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout();
         }
 
-        if (!modelsInitialized && !modelsFetching) {
+        if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
             initModels();
         }
 
@@ -251,11 +253,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             switchSettingsDialog,
             user,
             keyMap,
+            isModelPluginActive,
         } = this.props;
 
         const readyForRender = (userInitialized && (user == null || !user.isVerified))
-            || (userInitialized && formatsInitialized
-                && pluginsInitialized && usersInitialized && aboutInitialized);
+            || (userInitialized && formatsInitialized && pluginsInitialized
+            && usersInitialized && aboutInitialized);
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
@@ -322,7 +325,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                        <Route exact path='/models' component={ModelsPageContainer} />
+                                        { isModelPluginActive
+                                            && <Route exact path='/models' component={ModelsPageContainer} /> }
                                         <Redirect push to='/projects' />
                                     </Switch>
                                 </GlobalHotKeys>

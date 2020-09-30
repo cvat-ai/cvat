@@ -300,3 +300,20 @@
         }
     }
 }
+
+.cvat-player-previous-inlined-button,
+.cvat-player-next-inlined-button,
+.cvat-player-previous-filtered-inlined-button,
+.cvat-player-next-filtered-inlined-button,
+.cvat-player-previous-empty-inlined-button,
+.cvat-player-next-empty-inlined-button {
+    color: $player-buttons-color;
+
+    &:not(:first-child) {
+        margin-left: 12px;
+    }
+
+    > svg {
+        transform: scale(1.8);
+    }
+}

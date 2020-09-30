@@ -79,6 +79,7 @@ const defaultState: NotificationsState = {
             undo: null,
             redo: null,
             search: null,
+            searchEmptyFrame: null,
             savingLogs: null,
         },
         boundaries: {
@@ -849,6 +850,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         search: {
                             message: 'Could not execute search annotations',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SEARCH_EMPTY_FRAME_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        searchEmptyFrame: {
+                            message: 'Could not search an empty frame',
                             reason: action.payload.error.toString(),
                         },
                     },

@@ -1,4 +1,3 @@
-
 # Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -19,9 +18,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.apps import apps
 from django.contrib import admin
 from django.urls import path, include
-from django.apps import apps
 
 urlpatterns = [
     path('admin/', admin.site.urls),
