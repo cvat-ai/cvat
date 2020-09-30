@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "1.9.8",
+  "version": "1.9.9",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -16,6 +16,7 @@
   "devDependencies": {
     "@babel/core": "^7.6.0",
     "@babel/plugin-proposal-class-properties": "^7.5.5",
+    "@babel/plugin-proposal-optional-chaining": "^7.11.0",
     "@babel/preset-env": "^7.6.0",
     "@babel/preset-react": "^7.0.0",
     "@babel/preset-typescript": "^7.6.0",
