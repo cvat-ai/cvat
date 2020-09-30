@@ -398,6 +398,11 @@ class FrameMetaSerializer(serializers.Serializer):
     height = serializers.IntegerField()
     name = serializers.CharField(max_length=1024)
 
+class PluginsSerializer(serializers.Serializer):
+    GIT_INTEGRATION = serializers.BooleanField()
+    ANALYTICS = serializers.BooleanField()
+    MODELS = serializers.BooleanField()
+
 class DataMetaSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
     image_quality = serializers.IntegerField(min_value=0, max_value=100)

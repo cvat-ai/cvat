@@ -19,6 +19,7 @@ import TopBarComponent from './top-bar';
 interface TaskPageComponentProps {
     task: Task | null | undefined;
     fetching: boolean;
+    updating: boolean;
     deleteActivity: boolean | null;
     installedGit: boolean;
     getTask: () => void;
@@ -28,10 +29,7 @@ type Props = TaskPageComponentProps & RouteComponentProps<{id: string}>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
     public componentDidUpdate(): void {
-        const {
-            deleteActivity,
-            history,
-        } = this.props;
+        const { deleteActivity, history } = this.props;
 
         if (deleteActivity) {
             history.replace('/tasks');
@@ -42,11 +40,12 @@ class TaskPageComponent extends React.PureComponent<Props> {
         const {
             task,
             fetching,
+            updating,
             getTask,
         } = this.props;
 
-        if (task === null) {
-            if (!fetching) {
+        if (task === null || updating) {
+            if (task === null && !fetching) {
                 getTask();
             }
 

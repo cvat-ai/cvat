@@ -15,6 +15,11 @@ class MLModel {
         this._framework = data.framework;
         this._description = data.description;
         this._type = data.type;
+        this._params = {
+            canvas: {
+                minPosVertices: data.min_pos_points,
+            },
+        };
     }
 
     /**
@@ -67,6 +72,16 @@ class MLModel {
     */
     get type() {
         return this._type;
+    }
+
+    /**
+     * @returns {object}
+     * @readonly
+    */
+    get params() {
+        return {
+            canvas: { ...this._params.canvas },
+        };
     }
 }
 

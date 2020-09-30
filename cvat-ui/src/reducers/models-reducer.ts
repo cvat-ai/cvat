@@ -66,15 +66,26 @@ export default function (
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
             const { inferences } = state;
+
             if (action.payload.activeInference.status === 'finished') {
-                delete inferences[action.payload.taskID];
-            } else {
-                inferences[action.payload.taskID] = action.payload.activeInference;
+                return {
+                    ...state,
+                    inferences: Object.fromEntries(
+                        Object.entries(inferences)
+                            .filter(([key]): boolean => +key !== action.payload.taskID),
+                    ),
+                };
             }
+
+            const update: any = {};
+            update[action.payload.taskID] = action.payload.activeInference;
 
             return {
                 ...state,
-                inferences: { ...inferences },
+                inferences: {
+                    ...state.inferences,
+                    ...update,
+                },
             };
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_FAILED: {

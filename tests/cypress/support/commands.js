@@ -25,17 +25,24 @@ Cypress.Commands.add('logout', (username=Cypress.env('user')) => {
     .click()
 })
 
+Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {
+    cy.get('#firstName').type(firstName)
+    cy.get('#lastName').type(lastName)
+    cy.get('#username').type(userName)
+    cy.get('#email').type(emailAddr)
+    cy.get('#password1').type(password)
+    cy.get('#password2').type(password)
+    cy.get('.register-form-button').click()
+})
+
 Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               labelName='Some label',
                                               attrName='Some attr name',
                                               textDefaultValue='Some default value for type Text',
                                               image='image.png',
-                                              multiJobs=false,
-                                              segmentSize=1,
-                                              multiAttr=false,
-                                              additionalAttrName,
-                                              typeAttribute,
-                                              additionalValue) => {
+                                              multiAttrParams,
+                                              advancedConfigurationParams
+                                              ) => {
     cy.get('#cvat-create-task-button').click()
     cy.url().should('include', '/tasks/create')
     cy.get('[id="name"]').type(taksName)
@@ -46,15 +53,13 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
     cy.get('div[title="Select"]').click()
     cy.get('li').contains('Text').click()
     cy.get('[placeholder="Default value"]').type(textDefaultValue)
-    if (multiAttr) {
-        cy.updateAttributes(additionalAttrName, typeAttribute, additionalValue)
+    if (multiAttrParams) {
+        cy.updateAttributes(multiAttrParams)
     }
     cy.contains('button', 'Done').click()
     cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' })
-    if (multiJobs) {
-        cy.contains('Advanced configuration').click()
-        cy.get('#segmentSize')
-        .type(segmentSize)
+    if (advancedConfigurationParams) {
+        cy.advancedConfiguration(advancedConfigurationParams)
     }
     cy.contains('button', 'Submit').click()
     cy.contains('The task has been created')
@@ -203,12 +208,12 @@ Cypress.Commands.add('createCuboid', (mode, firstX, firstY, lastX, lastY) => {
     .click(lastX, lastY)
 })
 
-Cypress.Commands.add('updateAttributes', (additionalAttrName, typeAttribute, additionalValue) => {
+Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
     cy.contains('button', 'Add an attribute').click()
-    cy.get('[placeholder="Name"]').first().type(additionalAttrName)
+    cy.get('[placeholder="Name"]').first().type(multiAttrParams.additionalAttrName)
     cy.get('div[title="Select"]').first().click()
-    cy.get('.ant-select-dropdown').last().contains(typeAttribute).click()
-    cy.get('[placeholder="Default value"]').first().type(additionalValue)
+    cy.get('.ant-select-dropdown').last().contains(multiAttrParams.typeAttribute).click()
+    cy.get('[placeholder="Default value"]').first().type(multiAttrParams.additionalValue)
 })
 
 Cypress.Commands.add('createPolyline', (mode,
@@ -228,4 +233,42 @@ Cypress.Commands.add('createPolyline', (mode,
     cy.get('.cvat-canvas-container')
     .trigger('keydown', {key: 'n'})
     .trigger('keyup', {key: 'n'})
+})
+
+Cypress.Commands.add('getTaskID', (taskName) => {
+    cy.contains('strong', taskName)
+    .parents('.cvat-tasks-list-item').within(() => {
+        cy.get('span').invoke('text')
+        .then((text)=>{
+            return String(text.match(/^#\d+\:/g)).replace(/[^\d]/g, '')
+       })
+    })
+})
+
+Cypress.Commands.add('deleteTask', (taskName, taskID) => {
+    cy.contains('strong', taskName)
+    .parents('.cvat-tasks-list-item')
+    .find('.cvat-menu-icon')
+    .trigger('mouseover')
+    cy.get('.cvat-actions-menu')
+    .contains('Delete')
+    .click()
+    cy.get('.ant-modal-content')
+    .should('contain', `The task ${taskID} will be deleted`).within(() => {
+        cy.contains('button', 'Delete')
+        .click()
+    })
+})
+
+Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
+    cy.contains('Advanced configuration').click()
+    if (advancedConfigurationParams.multiJobs) {
+        cy.get('#segmentSize')
+        .type(advancedConfigurationParams.segmentSize)
+    }
+    if (advancedConfigurationParams.sssFrame) {
+        cy.get('#startFrame').type(advancedConfigurationParams.startFrame)
+        cy.get('#stopFrame').type(advancedConfigurationParams.stopFrame)
+        cy.get('#frameStep').type(advancedConfigurationParams.frameStep)
+    }
 })

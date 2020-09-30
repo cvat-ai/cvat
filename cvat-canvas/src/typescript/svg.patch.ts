@@ -175,7 +175,7 @@ SVG.Element.prototype.resize = function constructor(...args: any): any {
         handler = this.remember('_resizeHandler');
         handler.resize = function(e: any) {
             const { event } = e.detail;
-            if (event.button === 0 && !event.shiftKey && !event.ctrlKey) {
+            if (event.button === 0 && !event.shiftKey && !event.altKey) {
                 return handler.constructor.prototype.resize.call(this, e);
             }
         }

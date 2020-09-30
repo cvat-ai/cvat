@@ -109,6 +109,7 @@ class LambdaFunction:
         self.framework = data['metadata']['annotations'].get('framework')
         # display name for the function
         self.name = data['metadata']['annotations'].get('name', self.id)
+        self.min_pos_points = int(data['metadata']['annotations'].get('min_pos_points', 1))
         self.gateway = gateway
 
     def to_dict(self):
@@ -120,6 +121,7 @@ class LambdaFunction:
             'description': self.description,
             'framework': self.framework,
             'name': self.name,
+            'min_pos_points': self.min_pos_points
         }
 
         return response

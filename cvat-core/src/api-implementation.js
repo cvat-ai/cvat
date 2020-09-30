@@ -95,7 +95,9 @@
             await serverProxy.server.logout();
         };
 
-        cvat.server.changePassword.implementation = async (oldPassword, newPassword1, newPassword2) => {
+        cvat.server.changePassword.implementation = async (
+            oldPassword, newPassword1, newPassword2,
+        ) => {
             await serverProxy.server.changePassword(oldPassword, newPassword1, newPassword2);
         };
 
@@ -103,7 +105,9 @@
             await serverProxy.server.requestPasswordReset(email);
         };
 
-        cvat.server.resetPassword.implementation = async(newPassword1, newPassword2, uid, token) => {
+        cvat.server.resetPassword.implementation = async (
+            newPassword1, newPassword2, uid, token,
+        ) => {
             await serverProxy.server.resetPassword(newPassword1, newPassword2, uid, token);
         };
 
@@ -221,6 +225,11 @@
             tasks.count = tasksData.count;
 
             return tasks;
+        };
+
+        cvat.server.installedApps.implementation = async () => {
+            const result = await serverProxy.server.installedApps();
+            return result;
         };
 
         return cvat;
