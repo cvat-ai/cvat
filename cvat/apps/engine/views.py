@@ -179,7 +179,7 @@ class ProjectFilter(filters.FilterSet):
         fields = ("id", "name", "owner", "status", "assignee")
 
 @method_decorator(name='list', decorator=swagger_auto_schema(
-    operation_summary='Returns a paginated list of projects according to query parameters (10 projects per page)',
+    operation_summary='Returns a paginated list of projects according to query parameters (12 projects per page)',
     manual_parameters=[
         openapi.Parameter('id', openapi.IN_QUERY, description="A unique number value identifying this project",
             type=openapi.TYPE_NUMBER),

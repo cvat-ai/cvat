@@ -56,6 +56,16 @@ class BasicConfigurationForm extends React.PureComponent<Props> {
                         <Input />,
                     ) }
                 </Form.Item>
+                <Form.Item hasFeedback label={<span>Project Id (for develping only)</span>}>
+                    { getFieldDecorator('project_id', {
+                        rules: [{
+                            pattern: /^[1-9]+[0-9]*$/,
+                            message: 'Please, specify valid positive number',
+                        }],
+                    })(
+                        <Input />,
+                    ) }
+                </Form.Item>
             </Form>
         );
     }

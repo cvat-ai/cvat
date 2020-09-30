@@ -29,6 +29,7 @@ interface Props {
     onCreate: (data: CreateTaskData) => void;
     status: string;
     taskId: number | null;
+    projectId: number | null;
     installedGit: boolean;
 }
 
@@ -37,6 +38,7 @@ type State = CreateTaskData;
 const defaultState = {
     basic: {
         name: '',
+        projectId: null,
     },
     advanced: {
         zOrder: false,
@@ -63,7 +65,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        const { status, history, taskId } = this.props;
+        const {
+            status,
+            history,
+            taskId,
+            projectId,
+        } = this.props;
 
         if (status === 'CREATED' && prevProps.status !== 'CREATED') {
             const btn = (

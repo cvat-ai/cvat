@@ -283,10 +283,10 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'z_order', 'status', 'labels', 'segments',
-            'project', 'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
+            'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
         read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size',
             'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
         write_once_fields = ('overlap', 'segment_size')
@@ -343,11 +343,11 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True)
-    tasks = TaskSerializer(many=True, source='task_set', read_only=True)
+    tasks = TaskSerializer(many=True, read_only=True)
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'labels', 'owner', 'bug_tracker',
-            'created_date', 'updated_date', 'status', 'tasks')
+        fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner',
+            'bug_tracker', 'created_date', 'updated_date', 'status')
         read_only_fields = ('created_date', 'updated_date', 'status')
         ordering = ['-id']
 

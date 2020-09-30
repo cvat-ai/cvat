@@ -199,7 +199,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 return;
             }
             dispatch(updateProjectFailed(error, project));
-
         }
     };
 }

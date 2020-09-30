@@ -46,8 +46,12 @@ export default function CreateProjectContent(): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
 
-    const newProjectId = useSelector((state: CombinedState) => state.projects.creates.id);
-    const createProjectError = useSelector((state: CombinedState) => state.projects.creates.error);
+    const newProjectId = useSelector(
+        (state: CombinedState) => state.projects.activities.creates.id,
+    );
+    const createProjectError = useSelector(
+        (state: CombinedState) => state.projects.activities.creates.error,
+    );
 
     useEffect(() => {
         if (Number.isInteger(newProjectId)) {

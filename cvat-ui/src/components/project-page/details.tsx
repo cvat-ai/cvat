@@ -54,7 +54,6 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         {` on ${moment(project.instance.createdDate).format('MMMM Do YYYY')}`}
                     </Text>
                     <BugTrackerEditor
-                        className='cvat-project-details-bug-tracker'
                         instance={project.instance}
                         onChange={(_project): void => {
                             dispatch(updateProjectAsync(_project));

@@ -814,6 +814,7 @@
             const data = {
                 id: undefined,
                 name: undefined,
+                project_id: undefined,
                 status: undefined,
                 size: undefined,
                 mode: undefined,
@@ -905,6 +906,16 @@
                         }
                         data.name = value;
                     },
+                },
+                /**
+                    * @name project_id
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @readonly
+                    * @instance
+                */
+                project_id: {
+                    get: () => data.project_id,
                 },
                 /**
                     * @name status

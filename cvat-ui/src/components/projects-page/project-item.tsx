@@ -26,10 +26,8 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     const history = useHistory();
     const ownerName = instance.owner ? instance.owner.username : null;
     const updated = moment(instance.updatedDate).fromNow();
-    const deleted = useSelector((state: CombinedState) => {
-        const { deletes } = state.projects.activities;
-        return instance.id in deletes ? deletes[instance.id] : false;
-    });
+    const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
+    const deleted = instance.id in deletes ? deletes[instance.id] : false;
 
     const onOpenProject = (): void => {
         history.push(`/projects/${instance.id}`);

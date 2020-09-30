@@ -4,6 +4,7 @@
 
 import './styles.scss';
 import React, { useEffect } from 'react';
+import { RouteComponentProps } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
@@ -20,14 +21,21 @@ interface Props {
     installedGit: boolean;
 }
 
-export default function CreateTaskPage(props: Props): JSX.Element {
+export default function CreateTaskPage(props: Props & RouteComponentProps): JSX.Element {
     const {
         error,
         status,
         taskId,
+        location,
         onCreate,
         installedGit,
     } = props;
+
+    let projectId = null;
+    const params = new URLSearchParams(location.search);
+    if (params.has('projectId') && params.get('projectId')?.match(/^[1-9]+[0-9]*$/)) {
+        projectId = +(params.get('projectId') || 0);
+    }
 
     useEffect(() => {
         if (error) {
@@ -69,6 +77,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
                 <Text className='cvat-title'>Create a new task</Text>
                 <CreateTaskContent
                     taskId={taskId}
+                    projectId={projectId}
                     status={status}
                     onCreate={onCreate}
                     installedGit={installedGit}
