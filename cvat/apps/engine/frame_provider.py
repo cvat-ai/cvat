@@ -135,9 +135,7 @@ class FrameProvider:
     @classmethod
     def _av_frame_to_png_bytes(cls, av_frame):
         ext = cls.VIDEO_FRAME_EXT
-        image = av_frame.to_ndarray()
-        if len(image.shape) == 3 and image.shape[2] in {3, 4}:
-            image[:, :, :3] = image[:, :, 2::-1] # RGB to BGR
+        image = av_frame.to_ndarray(format='bgr24')
         success, result = cv2.imencode(ext, image)
         if not success:
             raise Exception("Failed to encode image to '%s' format" % (ext))
@@ -150,11 +148,11 @@ class FrameProvider:
             return frame.to_image() if reader_class is VideoReader else Image.open(frame)
         elif out_type == self.Type.NUMPY_ARRAY:
             if reader_class is VideoReader:
-                image = frame.to_ndarray()
+                image = frame.to_ndarray(format='bgr24')
             else:
                 image = np.array(Image.open(frame))
-            if len(image.shape) == 3 and image.shape[2] in {3, 4}:
-                image[:, :, :3] = image[:, :, 2::-1] # RGB to BGR
+                if len(image.shape) == 3 and image.shape[2] in {3, 4}:
+                    image[:, :, :3] = image[:, :, 2::-1] # RGB to BGR
             return image
         else:
             raise Exception('unsupported output type')
