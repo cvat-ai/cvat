@@ -285,39 +285,22 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
 ### Models
 
-On the ``Models`` page allows you to manage your deep learning (DL) models uploaded for auto annotation.
-Using the functionality you can upload, update or delete a specific DL model.
-To open the model manager, click the ``Models`` button on the navigation bar.
-The ``Models`` page contains information about all the existing models. The list of models is divided into two sections:
-- Primary — contains default CVAT models. Each model is a separate element.
-It contains the model’s name, a framework on which the model was based on and
-``Supported labels`` (a dropdown list of all supported labels).
-- Uploaded by a user — Contains models uploaded by a user.
-The list of user models has additional columns with the following information:
-name of the user who uploaded the model and the upload date.
-Here you can delete models in the ``Actions`` menu.
+The Models page contains a list of deep learning (DL) models deployed for semi-automatic and automatic annotation.
+To open the Models page, click the Models button on the navigation bar.
+The list of models is presented in the form of a table. The parameters indicated for each model are the following:
+ - ``Framework`` the model is based on
+ - model ``Name``
+ - model ``Type``:
+    -   ``detector`` - used for automatic annotation (available in [detectors](#detectors) and [automatic annotation](#automatic-annotation))
+    -  ``interactor`` - used for semi-automatic shape annotation (available in [interactors](#interactors))
+    -  ``tracker`` -  used for semi-automatic track annotation (available in [trackers](#trackers))
+    -  ``reid`` -  used to combine individual objects into a track (available in [automatic annotation](#automatic-annotation))
+ - ``Description`` - brief description of the model
+ - ``Labels`` - list of the supported labels (only for the models of the ``detectors`` type)
 
 ![](static/documentation/images/image099.jpg)
 
-In order to add your model, click `` Create new model``.
-Enter model name, and select model file using "Select files" button.
-To annotate a task with a custom model you need to prepare 4 files:
-- ``Model config`` (*.xml) - a text file with network configuration.
-- ``Model weights`` (*.bin) - a binary file with trained weights.
-- ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with
-string values for label numbers.
-- ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure
-which can be processed by CVAT.
-
-You can learn more about creating model files by pressing [(?)](/cvat/apps/auto_annotation).
-Check the box `` Load globally`` if you want everyone to be able to use the model.
-Click the ``Submit`` button to submit  a model.
-
-![](static/documentation/images/image104.jpg)
-
-After the upload is complete your model can be found in the ``Uploaded by a user`` section.
-Use "Auto annotation" button to pre annotate a task using one of your DL models.
-[Read more](/cvat/apps/auto_annotation)
+Read how to install your model [here](installation.md#semi-automatic-and-automatic-annotation).
 
 ### Search
 
@@ -797,12 +780,13 @@ Switching between user interface modes.
 **Shapes block** - contains all the tools for creating shapes.
 |Icon                                         |Description   |Links to section  |
 |--                                           |--            |--                |
+|![](static/documentation/images/image189.jpg)|``AI Tools`` |[AI Tools](#ai-tools)|
 |![](static/documentation/images/image167.jpg)|``Rectangle``|[Shape mode](#shape-mode-basics); [Track mode](#track-mode-basics);<br/> [Drawing by 4 points](#annotation-with-rectangle-by-4-points)|
 |![](static/documentation/images/image168.jpg)|``Polygon``  |[Annotation with polygons](#annotation-with-polygons); [Track mode with polygons](#track-mode-with-polygons)  |
 |![](static/documentation/images/image169.jpg)|``Polyline`` |[Annotation with polylines](#annotation-with-polylines)|
 |![](static/documentation/images/image170.jpg)|``Points``   |[Annotation with points](#annotation-with-points)      |
 |![](static/documentation/images/image176.jpg)|``Cuboid``   |[Annotation with cuboids](#annotation-with-cuboids)    |
-|![](static/documentation/images/image171.jpg)|``Tag``      |[Annotation with tags](#annotation-with-tag)s            |
+|![](static/documentation/images/image171.jpg)|``Tag``      |[Annotation with tags](#annotation-with-tag)           |
 
 **Edit block** - contains tools for editing tracks and shapes.
 |Icon                                         |Description                                        |Links to section  |
@@ -868,6 +852,10 @@ The action menu contains:
 
 - ``To background`` - moves the object to the background. The keyboard shortcut ``-``,``_``.
 - ``To foreground`` - moves the object to the foreground. The keyboard shortcut ``+``,``=``.
+- ``Change instance color``- choosing a color using the color picker (available only in instance mode).
+
+  ![](static/documentation/images/image153.jpg)
+
 - ``Remove`` - removes the object. The keyboard shortcut ``Del``,``Shift+Del``.
 
 A shape can be locked to prevent its modification or moving by an accident. Shortcut to lock an object: ``L``.
@@ -888,11 +876,6 @@ You can change the way an object is displayed on a frame (show or hide).
 
 ![](static/documentation/images/image052.jpg)
 
-You can change an object's color.
-To do so, click on the color bar of the object and select a color from the palette that appears.
-
-![](static/documentation/images/image153.jpg)
-
 By clicking on the ``Details`` button you can collapse or expand the field with all the attributes of the object.
 
 ![](static/documentation/images/image154.jpg)
@@ -900,9 +883,10 @@ By clicking on the ``Details`` button you can collapse or expand the field with 
 ---
 
 #### Labels
-You can also change the color of any object to random, to do so just hover
-the mouse over the object on the frame and highlight them by clicking on a label you need.
-In this tab, you can lock or hide objects of a certain label.
+In this tab you can lock or hide objects of a certain label.
+To change the color for a specific label,
+you need to go to the task page and select the color by clicking the edit button,
+this way you will change the label color for all jobs in the task.
 
 ![](static/documentation/images/image062.jpg)
 
@@ -940,9 +924,9 @@ Change the opacity of the selected object's fill.
 
 ![](static/documentation/images/image089_detrac.jpg)
 
-**Black Stroke** checkbox
+**Outlines borders** checkbox
 
-Changes the shape border from colored to black.
+You can change a special shape border color by clicking on the ``Eyedropper`` icon.
 
 ![](static/documentation/images/image088_detrac.jpg)
 
@@ -1051,7 +1035,7 @@ In most cases specifying positive points alone is enough to build a polygon.
   If you want to postpone the request and create a few more points, hold down ``Ctrl`` and continue,
   the request will be sent after the key is released.
 
-  ![](static/documentation/images/image188.jpg)
+  ![](static/documentation/images/image188_detrac.jpg)
 
 - To finish interaction, click on the icon on the controls sidebar or press ``N`` on your keyboard.
 
@@ -1116,7 +1100,7 @@ Before starting, you need to select ``Polygon`` on the controls sidebar and choo
   delete the previous point by right-clicking on it.
 - Press ``N`` again for completing the shape.
 - After creating the polygon, you can move the points or delete them by right-clicking and selecting ``Delete point``
-  or clicking with pressed ``Ctrl`` key in the context menu.
+  or clicking with pressed ``Alt`` key in the context menu.
 
 ### Drawing using automatic borders
 
@@ -1548,7 +1532,7 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 |                                | _Operations with objects_                                                       |
 | ``Ctrl``                       | Switch automatic bordering for polygons and polylines during drawing/editing    |
 | Hold ``Ctrl``                  | When the shape is active and fix it                                             |
-| ``Ctrl+Click`` on point        | Deleting a point (used when hovering over a point of polygon, polyline, points) |
+| ``Alt+Click`` on point         | Deleting a point (used when hovering over a point of polygon, polyline, points) |
 | ``Shift+Click`` on point       | Editing a shape (used when hovering over a point of polygon, polyline or points)|
 | ``Right-Click`` on shape       | Display of an object element from objects sidebar                               |
 | ``T+L``                        | Change locked state for all objects in the sidebar                              |
