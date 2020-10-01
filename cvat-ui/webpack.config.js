@@ -39,9 +39,13 @@ module.exports = {
             use: {
                 loader: 'babel-loader',
                 options: {
-                    plugins: ['@babel/plugin-proposal-class-properties', ['import', {
-                        'libraryName': 'antd',
-                    }]],
+                    plugins: [
+                        '@babel/plugin-proposal-class-properties',
+                        '@babel/plugin-proposal-optional-chaining',
+                        ['import', {
+                            'libraryName': 'antd',
+                        }]
+                    ],
                     presets: [
                         ['@babel/preset-env', {
                             targets: '> 2.5%', // https://github.com/browserslist/browserslist
