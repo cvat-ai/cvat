@@ -141,16 +141,23 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Select files**. Press tab ``My computer`` to choose some files for annotation from your PC.
     If you select tab ``Connected file share`` you can choose files for annotation from your network.
     If you select `` Remote source`` , you'll see a field where you can enter a list of URLs (one URL per line).
+    If you upload a video data and select ``Use cache`` option, you can along with the video file attach a file with meta information.
+    You can find how to prepare it [here](/utils/prepare_meta_information/README.md).
 
       ![](static/documentation/images/image127.jpg)
 
     #### Advanced configuration
 
-      ![](static/documentation/images/image128.jpg)
+      ![](static/documentation/images/image128_use_cache.jpg)
 
     **Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
 
     **Use zip chunks**. Force to use zip chunks as compressed data. Actual for videos only.
+
+    **Use cache**. Defines how to work with data. Select the checkbox to switch to the "on-the-fly data processing",
+    which will reduce the task creation time (by preparing chunks when requests are received)
+    and store data in a cache of limited size with a policy of evicting less popular items.
+    See more [here](/cvat/apps/documentation/data_on_fly.md).
 
     **Image Quality**. Use this option to specify quality of uploaded images.
     The option helps to load high resolution datasets faster.

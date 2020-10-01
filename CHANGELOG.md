@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 It supports regular navigation, searching a frame according to annotations
 filters and searching the nearest frame without any annotations (<https://github.com/openvinotoolkit/cvat/pull/2221>)
 - MacOS users notes in CONTRIBUTING.md
+- Ability to prepare meta information manually (<https://github.com/openvinotoolkit/cvat/pull/2217>)
+- Ability to upload prepared meta information along with a video when creating a task (<https://github.com/openvinotoolkit/cvat/pull/2217>)
 - Optional chaining plugin for cvat-canvas and cvat-ui (<https://github.com/openvinotoolkit/cvat/pull/2249>)
 
 ### Changed
@@ -46,6 +48,7 @@ filters and searching the nearest frame without any annotations (<https://github
 - Fixed case when a task with 0 jobs is shown as "Completed" in UI (<https://github.com/openvinotoolkit/cvat/pull/2200>)
 - Fixed use case when UI throws exception: Cannot read property 'objectType' of undefined #2053 (<https://github.com/openvinotoolkit/cvat/pull/2203>)
 - Fixed use case when logs could be saved twice or more times #2202 (<https://github.com/openvinotoolkit/cvat/pull/2203>)
+- Fixed issues from #2112 (<https://github.com/openvinotoolkit/cvat/pull/2217>)
 
 ### Security
 -

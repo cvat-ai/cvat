@@ -81,6 +81,7 @@ from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
     Segment, StatusChoice, Task, StorageMethodChoice)
+from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
 
 _setUpModule()
 
@@ -1644,6 +1645,8 @@ class TaskDataAPITestCase(APITestCase):
         path = os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
         os.remove(path)
 
+        path = os.path.join(settings.SHARE_ROOT, "videos", "meta_info.txt")
+        os.remove(path)
 
     def _run_api_v1_tasks_id_data_post(self, tid, user, data):
         with ForceLogin(user, self.client):
@@ -2056,6 +2059,31 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data,
             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
+
+        prepare_meta_for_upload(
+            prepare_meta,
+            os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4"),
+            os.path.join(settings.SHARE_ROOT, "videos")
+        )
+        task_spec = {
+            "name": "my video with meta info task #11",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+        task_data = {
+            "server_files[0]": os.path.join("videos", "test_video_1.mp4"),
+            "server_files[1]": os.path.join("videos", "meta_info.txt"),
+            "image_quality": 70,
+            "use_cache": True
+        }
+        image_sizes = self._image_sizes[task_data['server_files[0]']]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
+                                            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)
