@@ -70,6 +70,7 @@ from unittest import mock
 
 import av
 import numpy as np
+from pdf2image import convert_from_bytes
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponse
@@ -1538,6 +1539,19 @@ def generate_zip_archive_file(filename, count):
     zip_buf.seek(0)
     return image_sizes, zip_buf
 
+def generate_pdf_file(filename, page_count=1):
+    images = [Image.fromarray(np.ones((50, 100, 3), dtype=np.uint8))
+        for _ in range(page_count)]
+    image_sizes = [img.size for img in images]
+
+    file_buf = BytesIO()
+    images[0].save(file_buf, 'pdf', save_all=True, resolution=200,
+        append_images=images[1:])
+
+    file_buf.name = filename
+    file_buf.seek(0)
+    return image_sizes, file_buf
+
 class TaskDataAPITestCase(APITestCase):
     _image_sizes = {}
 
@@ -1765,6 +1779,10 @@ class TaskDataAPITestCase(APITestCase):
                 for f in source_files:
                     if zipfile.is_zipfile(f):
                         source_images.extend(self._extract_zip_chunk(f))
+                    elif isinstance(f, io.BytesIO) and \
+                            str(getattr(f, 'name', None)).endswith('.pdf'):
+                        source_images.extend(convert_from_bytes(f.getvalue(),
+                            fmt='png'))
                     else:
                         source_images.append(Image.open(f))
 
@@ -1930,7 +1948,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
         task_spec = {
-            "name": "use_cache video task #8",
+            "name": "cached video task #8",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -1948,10 +1966,10 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
-                                             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
+            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
 
         task_spec = {
-            "name": "use_cache images task #9",
+            "name": "cached images task #9",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -1974,10 +1992,10 @@ class TaskDataAPITestCase(APITestCase):
         ]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
-                                             self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE)
+            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE)
 
         task_spec = {
-            "name": "my zip archive task #10",
+            "name": "my cached zip archive task #10",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -1995,7 +2013,49 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
-                                             self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE)
+            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE)
+
+        task_spec = {
+            "name": "my cached pdf task #11",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        image_sizes, document = generate_pdf_file("test_pdf_1.pdf", 5)
+
+        task_data = {
+            "client_files[0]": document,
+            "image_quality": 70,
+            "use_cache": True
+        }
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data,
+            self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE)
+
+        task_spec = {
+            "name": "my pdf task #12",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        image_sizes, document = generate_pdf_file("test_pdf_2.pdf", 4)
+
+        task_data = {
+            "client_files[0]": document,
+            "image_quality": 70,
+        }
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data,
+            self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)

@@ -39,6 +39,7 @@ filters and searching the nearest frame without any annotations (<https://github
 - Fixed multiple errors which arises when polygon is of length 5 or less (<https://github.com/opencv/cvat/pull/2100>)
 - Fixed task creation from PDF (<https://github.com/opencv/cvat/pull/2141>)
 - Fixed CVAT format import for frame stepped tasks (<https://github.com/openvinotoolkit/cvat/pull/2151>)
+- Fixed the reading problem with large PDFs (<https://github.com/openvinotoolkit/cvat/pull/2154>)
 - Fixed unnecessary pyhash dependency (<https://github.com/openvinotoolkit/cvat/pull/2170>)
 - Fixed Data is not getting cleared, even after deleting the Task from Django Admin App(<https://github.com/openvinotoolkit/cvat/issues/1925>)
 - Fixed blinking message: "Some tasks have not been showed because they do not have any data" (<https://github.com/openvinotoolkit/cvat/pull/2200>)

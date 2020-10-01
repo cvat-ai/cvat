@@ -273,7 +273,7 @@ def _create_thread(tid, data):
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-            w, h = extractor.get_image_size()
+            w, h = extractor.get_image_size(0)
             area = h * w
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
@@ -285,58 +285,48 @@ def _create_thread(tid, data):
 
     if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
        for media_type, media_files in media.items():
-            if media_files:
-                if task_mode == MEDIA_TYPES['video']['mode']:
-                    try:
-                        analyzer = AnalyzeVideo(source_path=os.path.join(upload_dir, media_files[0]))
-                        analyzer.check_type_first_frame()
-                        analyzer.check_video_timestamps_sequences()
+            if not media_files:
+                continue
 
-                        meta_info = PrepareInfo(source_path=os.path.join(upload_dir, media_files[0]),
-                                                meta_path=os.path.join(upload_dir, 'meta_info.txt'))
-                        meta_info.save_key_frames()
-                        meta_info.check_seek_key_frames()
-                        meta_info.save_meta_info()
+            if task_mode == MEDIA_TYPES['video']['mode']:
+                try:
+                    analyzer = AnalyzeVideo(source_path=os.path.join(upload_dir, media_files[0]))
+                    analyzer.check_type_first_frame()
+                    analyzer.check_video_timestamps_sequences()
 
-                        all_frames = meta_info.get_task_size()
-                        db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 if data['stop_frame'] else all_frames, all_frames), db_data.get_frame_step()))
-                        video_path = os.path.join(upload_dir, media_files[0])
-                        frame = meta_info.key_frames.get(next(iter(meta_info.key_frames)))
-                        video_size = (frame.width, frame.height)
+                    meta_info = PrepareInfo(source_path=os.path.join(upload_dir, media_files[0]),
+                                            meta_path=os.path.join(upload_dir, 'meta_info.txt'))
+                    meta_info.save_key_frames()
+                    meta_info.check_seek_key_frames()
+                    meta_info.save_meta_info()
 
-                    except Exception:
-                        db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
+                    all_frames = meta_info.get_task_size()
+                    db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 if data['stop_frame'] else all_frames, all_frames), db_data.get_frame_step()))
+                    video_path = os.path.join(upload_dir, media_files[0])
+                    frame = meta_info.key_frames.get(next(iter(meta_info.key_frames)))
+                    video_size = (frame.width, frame.height)
 
-                else:#images,archive
-                    counter_ = itertools.count()
-                    if isinstance(extractor, MEDIA_TYPES['archive']['extractor']):
-                        media_files = [os.path.relpath(path, upload_dir) for path in extractor._source_path]
-                    elif isinstance(extractor, (MEDIA_TYPES['zip']['extractor'], MEDIA_TYPES['pdf']['extractor'])):
-                        media_files = extractor._source_path
+                except Exception:
+                    db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
 
-                    numbers_sequence = range(db_data.start_frame, min(data['stop_frame'] if data['stop_frame'] else len(media_files), len(media_files)), db_data.get_frame_step())
-                    m_paths = []
-                    m_paths = [(path, numb) for numb, path in enumerate(sorted(media_files)) if numb in numbers_sequence]
+            else:#images,archive
+                db_data.size = len(extractor)
 
-                    for chunk_number, media_paths in itertools.groupby(m_paths, lambda x: next(counter_) // db_data.chunk_size):
-                        media_paths = list(media_paths)
-                        img_sizes = []
-                        from PIL import Image
-                        with open(db_data.get_dummy_chunk_path(chunk_number), 'w') as dummy_chunk:
-                            for path, _ in media_paths:
-                                dummy_chunk.write(path+'\n')
-                                img_sizes += [Image.open(os.path.join(upload_dir, path)).size]
+                counter = itertools.count()
+                for chunk_number, chunk_frames in itertools.groupby(extractor.frame_range, lambda x: next(counter) // db_data.chunk_size):
+                    chunk_paths = [(extractor.get_path(i), i) for i in chunk_frames]
+                    img_sizes = []
+                    with open(db_data.get_dummy_chunk_path(chunk_number), 'w') as dummy_chunk:
+                        for path, frame_id in chunk_paths:
+                            dummy_chunk.write(path + '\n')
+                            img_sizes.append(extractor.get_image_size(frame_id))
 
-                        db_data.size += len(media_paths)
-                        db_images.extend([
-                            models.Image(
-                                data=db_data,
-                                path=data[0],
-                                frame=data[1],
-                                width=size[0],
-                                height=size[1])
-                            for data, size in zip(media_paths, img_sizes)
-                        ])
+                    db_images.extend([
+                        models.Image(data=db_data,
+                            path=os.path.relpath(path, upload_dir),
+                            frame=frame, width=w, height=h)
+                        for (path, frame), (w, h) in zip(chunk_paths, img_sizes)
+                    ])
 
     if db_data.storage_method == StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
         counter = itertools.count()
@@ -383,5 +373,5 @@ def _create_thread(tid, data):
     preview = extractor.get_preview()
     preview.save(db_data.get_preview_path())
 
-    slogger.glob.info("Founded frames {} for Data #{}".format(db_data.size, db_data.id))
+    slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
     _save_task_to_db(db_task)
