@@ -18,6 +18,7 @@ import notification from 'antd/lib/notification';
 import { OpenCVIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState, ActiveControl } from 'reducers/interfaces';
+import OpenCVWrapper from 'utils/opencv-wrapper';
 
 interface Props {
     labels: any[];
@@ -121,7 +122,7 @@ class OpenCVControlComponent extends React.PureComponent<Props, State> {
                         <Tabs.TabPane key='drawing' tab='Drawing'>
                             { this.renderDrawingContent() }
                         </Tabs.TabPane>
-                        <Tabs.TabPane disabled key='preprocessing' tab='Preprocessing'>
+                        <Tabs.TabPane disabled key='image' tab='Image'>
 
                         </Tabs.TabPane>
                     </Tabs>
@@ -134,18 +135,11 @@ class OpenCVControlComponent extends React.PureComponent<Props, State> {
                                     className='cvat-opencv-initialization-button'
                                     onClick={async () => {
                                         try {
-                                            // temporary stub
-                                            let progress = 0;
                                             this.setState({ initializationProgress: 0 });
-                                            setInterval(() => {
-                                                progress += 10;
+                                            await OpenCVWrapper.initialize((progress: number) => {
                                                 this.setState({ initializationProgress: progress });
-                                                if (progress >= 100) {
-                                                    setTimeout(() => {
-                                                        this.setState({ libraryInitialized: true });
-                                                    }, 500);
-                                                }
-                                            }, 500);
+                                            });
+                                            this.setState({ libraryInitialized: true });
                                         } catch (error) {
                                             notification.error({
                                                 description: error.toString(),

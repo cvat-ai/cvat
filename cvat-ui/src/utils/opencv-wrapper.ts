@@ -20,7 +20,19 @@ class OpenCVWrapper {
     }
 
     public async initialize(onProgress: (percent: number) => void): Promise<void> {
-        // todo
+        // temporary stub
+        return new Promise((resolve, reject) => {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                onProgress(progress);
+                if (progress >= 100) {
+                    reject(new Error('An error message'));
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, 500);
+        })
     }
 
     public initialized(): boolean {
