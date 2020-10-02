@@ -285,6 +285,7 @@ export enum ActiveControl {
     SPLIT = 'split',
     EDIT = 'edit',
     AI_TOOLS = 'ai_tools',
+    OPENCV_TOOLS = 'opencv_tools',
 }
 
 export enum ShapeType {

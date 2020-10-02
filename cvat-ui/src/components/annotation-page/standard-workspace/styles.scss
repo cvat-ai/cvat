@@ -84,7 +84,8 @@
 }
 
 .cvat-draw-shape-popover,
-.cvat-tools-control-popover {
+.cvat-tools-control-popover,
+.cvat-opencv-control-popover {
     > .ant-popover-content >
     .ant-popover-inner > div >
     .ant-popover-inner-content {
@@ -102,11 +103,31 @@
     width: 100%;
 }
 
-.cvat-tools-control-popover-content {
+.cvat-tools-control-popover-content,
+.cvat-opencv-control-popover-content {
     width: fit-content;
     padding: 10px;
     border-radius: 5px;
     background: $background-color-2;
+}
+
+.cvat-opencv-initialization-button {
+    width: 120px;
+    margin: 16px 8px 16px 8px;
+}
+
+.cvat-opencv-drawing-tools {
+    margin-top: 8px;
+}
+
+.cvat-opencv-drawing-tool {
+    padding: 4px;
+    width: 40px;
+    height: 40px;
+
+    > i {
+        font-size: 16px;
+    }
 }
 
 .cvat-draw-shape-popover-content {

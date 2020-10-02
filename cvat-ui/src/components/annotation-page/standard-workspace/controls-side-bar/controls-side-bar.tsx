@@ -15,6 +15,7 @@ import MoveControl from './move-control';
 import FitControl from './fit-control';
 import ResizeControl from './resize-control';
 import ToolsControl from './tools-control';
+import OpenCVControl from './opencv-control';
 import DrawRectangleControl from './draw-rectangle-control';
 import DrawPolygonControl from './draw-polygon-control';
 import DrawPolylineControl from './draw-polyline-control';
@@ -186,6 +187,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
             <hr />
             <ToolsControl />
+            <OpenCVControl />
             <DrawRectangleControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}

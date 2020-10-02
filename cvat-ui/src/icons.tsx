@@ -47,6 +47,7 @@ import SVGCubeIcon from './assets/cube-icon.svg';
 import SVGResetPerspectiveIcon from './assets/reset-perspective.svg';
 import SVGColorizeIcon from './assets/colorize-icon.svg';
 import SVGAITools from './assets/ai-tools-icon.svg';
+import SVGOpenCV from './assets/opencv.svg';
 
 
 export const CVATLogo = React.memo(
@@ -177,4 +178,7 @@ export const AIToolsIcon = React.memo(
 );
 export const ColorizeIcon = React.memo(
     (): JSX.Element => <SVGColorizeIcon />,
+);
+export const OpenCVIcon = React.memo(
+    (): JSX.Element => <SVGOpenCV />,
 );
