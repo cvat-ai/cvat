@@ -152,7 +152,7 @@ class OpenCVControlComponent extends React.PureComponent<Props, State> {
                                         }
                                     }}
                                 >
-                                    Initialize
+                                    Load OpenCV
                                 </Button>
                             </Col>
                         </Row>

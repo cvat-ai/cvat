@@ -10,7 +10,7 @@ type ScissorsResult = {
     state: ScissorsState | null;
 };
 interface Scissors {
-    run(points: number[], image: ImageData, state: ScissorsState | null): Promise<ScissorsResult>;
+    run(points: number[], image: ImageData, threshold: number, state: ScissorsState | null): Promise<ScissorsResult>;
     params: object;
 }
 
@@ -51,7 +51,7 @@ class OpenCVWrapper {
     }
 
     private runIntelligentScissors = async (
-        points: number[], image: ImageData, state: ScissorsState | null = null,
+        points: number[], image: ImageData, threshold: number, state: ScissorsState | null = null,
     ): Promise<ScissorsResult> => {
         // todo
         return new Promise((resolve, reject) => {
