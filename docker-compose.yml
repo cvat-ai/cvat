@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 #
-version: "2.3"
+version: "3.3"
 
 services:
   cvat_db:
@@ -98,9 +98,9 @@ services:
 networks:
   default:
     ipam:
+      driver: default
       config:
         - subnet: 172.28.0.0/24
-          gateway: 172.28.0.1
 
 volumes:
   cvat_db:
