@@ -7,7 +7,7 @@ import ReactDOM from 'react-dom';
 import { GlobalHotKeys } from 'react-hotkeys';
 import './styles.scss';
 
-export default function LayoutGrid(): React.ReactPortal {
+const LayoutGrid = (): React.ReactPortal => {
     const [showGrid, setShowGrid] = useState(false);
 
     const keyMap = {
@@ -30,4 +30,6 @@ export default function LayoutGrid(): React.ReactPortal {
     );
 
     return ReactDOM.createPortal(portalContent, document.getElementById('layout-grid') as HTMLElement);
-}
+};
+
+export default LayoutGrid;

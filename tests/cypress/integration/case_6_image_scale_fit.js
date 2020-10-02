@@ -32,17 +32,17 @@ context('Check if the image is scaled and then fitted', () => {
     describe(`Testing "${labelName}"`, () => {
         it('Scale image', () => {
             cy.get('#cvat_canvas_background')
-            .should('have.attr', 'style').and('contain', 'scale(1.065)')
+                .should('have.attr', 'style').and('contain', 'scale(1.05)')
             cy.get('.cvat-canvas-container')
-            .trigger('wheel', {deltaY: 5})
+                .trigger('wheel', {deltaY: 5})
             cy.get('#cvat_canvas_background')
-            .should('have.attr', 'style').and('contain', 'scale(0.8875)')
+                .should('have.attr', 'style').and('contain', 'scale(0.875)')
         })
         it('Fit image', () => {
             cy.get('#cvat_canvas_content')
-            .dblclick()
+                .dblclick()
             cy.get('#cvat_canvas_background')
-            .should('have.attr', 'style').and('contain', 'scale(1.065)')
+                .should('have.attr', 'style').and('contain', 'scale(1.05)')
         })
     })
 })
