@@ -33,7 +33,7 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
     };
 
     return (
-        <Menu>
+        <Menu className='cvat-project-actions-menu'>
             <hr />
             <Menu.Item onClick={onDeleteProject}>
                 Delete

@@ -8,6 +8,7 @@ import Form, { FormComponentProps } from 'antd/lib/form/Form';
 
 export interface BaseConfiguration {
     name: string;
+    project_id: string;
 }
 
 type Props = FormComponentProps & {
@@ -26,6 +27,7 @@ class BasicConfigurationForm extends React.PureComponent<Props> {
                 if (!error) {
                     onSubmit({
                         name: values.name,
+                        project_id: values.project_id,
                     });
                     resolve();
                 } else {
@@ -71,4 +73,6 @@ class BasicConfigurationForm extends React.PureComponent<Props> {
     }
 }
 
-export default Form.create<Props>()(BasicConfigurationForm);
+export default Form.create<Props>({
+    onFieldsChange: (props, fields,) => console.log(props, fields, allFields),
+})(BasicConfigurationForm);

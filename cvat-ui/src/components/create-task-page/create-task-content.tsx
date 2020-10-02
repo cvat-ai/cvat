@@ -29,7 +29,7 @@ interface Props {
     onCreate: (data: CreateTaskData) => void;
     status: string;
     taskId: number | null;
-    projectId: number | null;
+    projectId: string | null;
     installedGit: boolean;
 }
 
@@ -64,12 +64,19 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.state = { ...defaultState };
     }
 
+    public componentDidMount(): void {
+        const { projectId } = this.props;
+
+        this.basicConfigurationComponent.props.form.setFieldsValue(
+            { project_id: projectId },
+        );
+    }
+
     public componentDidUpdate(prevProps: Props): void {
         const {
             status,
             history,
             taskId,
-            projectId,
         } = this.props;
 
         if (status === 'CREATED' && prevProps.status !== 'CREATED') {
@@ -179,7 +186,22 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderLabelsBlock(): JSX.Element {
+        const { projectId } = this.props;
         const { labels } = this.state;
+
+        if (projectId) {
+            return (
+                <>
+                    <Col span={24}>
+                        <Text type='danger'>* </Text>
+                        <Text className='cvat-text-color'>Labels:</Text>
+                    </Col>
+                    <Col span={24}>
+                        <Text type='secondary'>Project labels will be used</Text>
+                    </Col>
+                </>
+            );
+        }
 
         return (
             <Col span={24}>

@@ -87,3 +87,16 @@
         justify-content: center;
     }
 }
+
+.ant-menu.cvat-project-actions-menu {
+    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
+
+    > li:hover {
+        background-color: $hover-menu-color;
+    }
+
+    .ant-menu-submenu-title {
+        margin: 0;
+        width: 13em;
+    }
+}
