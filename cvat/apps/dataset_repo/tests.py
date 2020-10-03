@@ -8,7 +8,7 @@ from django.test import TestCase
 
 # Create your tests here.
 
-from cvat.apps.git.git import Git
+from cvat.apps.dataset_repo.dataset_repo import Git
 
 
 class GitUrlTest(TestCase):

@@ -177,7 +177,7 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
     def plugins(request):
         response = {
-            'GIT_INTEGRATION': apps.is_installed('cvat.apps.git'),
+            'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS':       False,
             'MODELS':          False,
         }

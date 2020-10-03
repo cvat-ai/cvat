@@ -93,7 +93,7 @@ INSTALLED_APPS = [
     'cvat.apps.documentation',
     'cvat.apps.dataset_manager',
     'cvat.apps.engine',
-    'cvat.apps.git',
+    'cvat.apps.dataset_repo',
     'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
     'django_rq',

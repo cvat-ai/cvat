@@ -2,57 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-# FIXME: Git application and package name clash in tests
-class _GitImportFix:
-    import sys
-    former_path = sys.path[:]
-
-    @classmethod
-    def apply(cls):
-        # HACK: fix application and module name clash
-        # 'git' app is found earlier than a library in the path.
-        # The clash is introduced by unittest discover
-        import sys
-        print('apply')
-
-        apps_dir = __file__[:__file__.rfind('/engine/')]
-        assert 'apps' in apps_dir
-        try:
-            sys.path.remove(apps_dir)
-        except ValueError:
-            pass
-
-        for name in list(sys.modules):
-            if name.startswith('git.') or name == 'git':
-                m = sys.modules.pop(name, None)
-                del m
-
-        import git
-        assert apps_dir not in git.__file__
-
-    @classmethod
-    def restore(cls):
-        import sys
-        print('restore')
-
-        for name in list(sys.modules):
-            if name.startswith('git.') or name == 'git':
-                m = sys.modules.pop(name)
-                del m
-
-        sys.path.insert(0, __file__[:__file__.rfind('/engine/')])
-
-        import importlib
-        importlib.invalidate_caches()
-
-def _setUpModule():
-    _GitImportFix.apply()
-
-    import sys
-    sys.path.insert(0, __file__[:__file__.rfind('/engine/')])
-
-# def tearDownModule():
-    # _GitImportFix.restore()
 
 import io
 import os
@@ -82,8 +31,6 @@ from rest_framework.test import APIClient, APITestCase
 from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
     Segment, StatusChoice, Task, StorageMethodChoice)
 from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
-
-_setUpModule()
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")

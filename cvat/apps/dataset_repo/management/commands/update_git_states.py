@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from django.core.management.base import BaseCommand
-from cvat.apps.git.git import update_states
+from cvat.apps.dataset_repo.dataset_repo import update_states
 import time
 
 INTERVAL_SEC = 600
