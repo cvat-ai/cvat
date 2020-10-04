@@ -6,8 +6,10 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('git', '0002_auto_20190123_1305'),
+        ('dataset_repo', '0002_auto_20190123_1305'),
     ]
+
+    replaces = [('git', '0003_gitdata_lfs')]
 
     operations = [
         migrations.AddField(

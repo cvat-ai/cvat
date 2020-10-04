@@ -93,7 +93,7 @@ INSTALLED_APPS = [
     'cvat.apps.documentation',
     'cvat.apps.dataset_manager',
     'cvat.apps.engine',
-    'cvat.apps.git',
+    'cvat.apps.dataset_repo',
     'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
     'django_rq',
@@ -427,14 +427,14 @@ RESTRICTIONS = {
         ),
 }
 
+# http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
 CACHES = {
    'default' : {
        'BACKEND' : 'diskcache.DjangoCache',
        'LOCATION' : CACHE_ROOT,
        'TIMEOUT' : None,
        'OPTIONS' : {
-            #'statistics' :True,
-            'size_limit' : 2 ** 40, # 1 тб
+            'size_limit' : 2 ** 40, # 1 Tb
        }
    }
 }

@@ -12,6 +12,8 @@ class Migration(migrations.Migration):
         ('engine', '0014_job_max_shape_id'),
     ]
 
+    replaces = [('git', '0001_initial')]
+
     operations = [
         migrations.CreateModel(
             name='GitData',
@@ -22,5 +24,8 @@ class Migration(migrations.Migration):
                 ('sync_date', models.DateTimeField(auto_now_add=True)),
                 ('status', models.CharField(default='!sync', max_length=20)),
             ],
+            options={
+                'db_table': 'git_gitdata',
+            },
         ),
     ]
