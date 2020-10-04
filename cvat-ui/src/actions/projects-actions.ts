@@ -169,7 +169,7 @@ function updateProjectSuccess(project: any): AnyAction {
     return action;
 }
 
-function updateProjectFailed(error: any, project: any): AnyAction {
+function updateProjectFailed(project: any, error: any): AnyAction {
     const action = {
         type: ProjectsActionTypes.UPDATE_PROJECT_FAILED,
         payload: {
@@ -187,18 +187,18 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             dispatch(updateProject());
             await projectInstance.save();
-            const [project] = await cvat.tasks.get({ id: projectInstance.id });
+            const [project] = await cvat.projects.get({ id: projectInstance.id });
             dispatch(updateProjectSuccess(project));
         } catch (error) {
             let project = null;
             try {
-                [project] = await cvat.project.get({ id: projectInstance.id });
+                [project] = await cvat.projects.get({ id: projectInstance.id });
             } catch (fetchError) {
                 // FIXME: error length
-                dispatch(updateProjectFailed(error, projectInstance));
+                dispatch(updateProjectFailed(projectInstance, error));
                 return;
             }
-            dispatch(updateProjectFailed(error, project));
+            dispatch(updateProjectFailed(project, error));
         }
     };
 }

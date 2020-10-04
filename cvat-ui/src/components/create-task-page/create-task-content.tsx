@@ -38,7 +38,7 @@ type State = CreateTaskData;
 const defaultState = {
     basic: {
         name: '',
-        projectId: null,
+        projectId: '',
     },
     advanced: {
         zOrder: false,
@@ -67,9 +67,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     public componentDidMount(): void {
         const { projectId } = this.props;
 
-        this.basicConfigurationComponent.props.form.setFieldsValue(
-            { project_id: projectId },
-        );
+        if (projectId) {
+            this.basicConfigurationComponent.props.form.setFieldsValue(
+                { projectId },
+            );
+        }
     }
 
     public componentDidUpdate(prevProps: Props): void {
@@ -106,9 +108,14 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
     }
 
-    private validateLabels = (): boolean => {
-        const { labels } = this.state;
-        return !!labels.length;
+    private validateLabelsOrProject = (): boolean => {
+        const {
+            basic: {
+                projectId,
+            },
+            labels,
+        } = this.state;
+        return !!labels.length || !!projectId;
     };
 
     private validateFiles = (): boolean => {
@@ -121,6 +128,20 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
 
         return !!totalLen;
+    };
+
+    private handleFormDataChange = (values: {[name: string]: string}): void => {
+        for (const value of Object.keys(values)) {
+            if (value === 'projectId') {
+                this.setState((prevState) => ({
+                    ...prevState,
+                    basic: {
+                        ...prevState.basic,
+                        projectId: values[value],
+                    },
+                }));
+            }
+        }
     };
 
     private handleSubmitBasicConfiguration = (values: BaseConfiguration): void => {
@@ -136,10 +157,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleSubmitClick = (): void => {
-        if (!this.validateLabels()) {
+        if (!this.validateLabelsOrProject()) {
             notification.error({
                 message: 'Could not create a task',
-                description: 'A task must contain at least one label',
+                description: 'A task must contain at least one label or belong to some project',
             });
             return;
         }
@@ -179,6 +200,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     wrappedComponentRef={
                         (component: any): void => { this.basicConfigurationComponent = component; }
                     }
+                    onChange={this.handleFormDataChange}
                     onSubmit={this.handleSubmitBasicConfiguration}
                 />
             </Col>
@@ -186,8 +208,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderLabelsBlock(): JSX.Element {
-        const { projectId } = this.props;
-        const { labels } = this.state;
+        const {
+            basic: {
+                projectId,
+            },
+            labels,
+        } = this.state;
 
         if (projectId) {
             return (

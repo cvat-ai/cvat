@@ -50,7 +50,8 @@ class LabelSerializer(serializers.ModelSerializer):
         instance = dict()
         if isinstance(parent_instance, models.Project):
             instance['project'] = parent_instance
-            logger = slogger.project[parent_instance.id]
+            # FIXME:
+            logger = slogger.glob
         else:
             instance['task'] = parent_instance
             logger = slogger.task[parent_instance.id]
@@ -62,7 +63,7 @@ class LabelSerializer(serializers.ModelSerializer):
             logger.info("{} label was updated".format(db_label.name))
         if not validated_data.get('color', None):
             label_names = [l.name for l in
-                models.Label.objects.filter(task_id=instance.id).exclude(id=db_label.id).order_by('id')
+                models.Label.objects.filter(**instance).exclude(id=db_label.id).order_by('id')
             ]
             db_label.color = get_label_color(db_label.name, label_names)
         else:
@@ -316,6 +317,12 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         db_task.save()
         return db_task
 
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        if instance.project_id:
+            response["labels"] = LabelSerializer(many=True).to_representation(instance.project.label_set)
+        return response
+
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
@@ -333,11 +340,14 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return instance
 
     def validate_labels(self, value):
-        if not value:
-            raise serializers.ValidationError('Label set must not be empty')
         label_names = [label['name'] for label in value]
         if len(label_names) != len(set(label_names)):
             raise serializers.ValidationError('All label names must be unique for the task')
+        return value
+
+    def validate(self, value):
+        if not value["labels"] or value["project_id"]:
+            raise serializers.ValidationError('Label set or project_id must be present')
         return value
 
 

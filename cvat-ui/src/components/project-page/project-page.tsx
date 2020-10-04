@@ -23,13 +23,13 @@ interface ParamType {
     id: string;
 }
 
-export default function TaskPageComponent(): JSX.Element {
+export default function ProjectPageComponent(): JSX.Element {
     // TODO: need to optimize renders here
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
-    const gettingQueryId = useSelector((state: CombinedState) => state.projects.gettingQuery.id);
     const projects = useSelector((state: CombinedState) => state.projects.current);
+    const projectsFetching = useSelector((state: CombinedState) => state.projects.fetching);
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
     const tasksActiveInferences = useSelector((state: CombinedState) => state.models.inferences);
@@ -38,8 +38,7 @@ export default function TaskPageComponent(): JSX.Element {
     const filteredProjects = projects.filter(
         (project) => project.instance.id === id,
     );
-    const project = filteredProjects[0] || (gettingQueryId === id || Number.isNaN(id)
-        ? undefined : null);
+    const project = filteredProjects[0];
     const deleteActivity = project && id in deletes ? deletes[id] : null;
 
     useEffect(() => {
@@ -58,13 +57,13 @@ export default function TaskPageComponent(): JSX.Element {
         history.push('/projects');
     }
 
-    if (project === null) {
+    if (projectsFetching) {
         return (
             <Spin size='large' className='cvat-spinner' />
         );
     }
 
-    if (typeof (project) === 'undefined') {
+    if (!project) {
         return (
             <Result
                 className='cvat-not-found'
@@ -95,7 +94,6 @@ export default function TaskPageComponent(): JSX.Element {
                         </Button>
                     </Col>
                 </Row>
-                {/* <TasksListContainer project={project} /> */}
                 {project.instance.tasks.map((task: any) => (
                     <TaskItem
                         key={task.id}

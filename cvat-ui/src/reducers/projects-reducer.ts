@@ -14,6 +14,7 @@ const defaultState: ProjectsState = {
     fetching: false,
     count: 0,
     current: [],
+    taskPreviews: {},
     gettingQuery: {
         page: 1,
         id: null,

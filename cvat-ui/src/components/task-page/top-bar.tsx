@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
@@ -20,10 +21,38 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     const { taskInstance } = props;
     const { id } = taskInstance;
 
+    const history = useHistory();
+
     return (
         <Row className='cvat-task-top-bar' type='flex' justify='space-between' align='middle'>
             <Col>
-                <Text className='cvat-title'>{`Task details #${id}`}</Text>
+                { taskInstance.project_id ? (
+                    <Button
+                        onClick={() => history.push(`/projects/${taskInstance.project_id}`)}
+                        type='link'
+                        size='large'
+                    >
+                        <Icon type='left' />
+                        {`Back to project #${taskInstance.project_id}`}
+                    </Button>
+                ): (
+                    <Button
+                        onClick={() => history.push('/tasks')}
+                        type='link'
+                        size='large'
+                    >
+                        <Icon type='left' />
+                        Back to tasks
+                    </Button>
+                )}
+            </Col>
+            <Col>
+                <Row>
+                    <Col>
+                        <Text className='cvat-title'>{`Task details #${id}`}</Text>
+                    </Col>
+
+                </Row>
             </Col>
             <Col>
                 <Dropdown overlay={

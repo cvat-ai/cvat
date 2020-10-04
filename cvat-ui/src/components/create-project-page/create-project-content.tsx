@@ -2,7 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, {
+    useState,
+    useRef,
+    useEffect,
+    Component,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Col, Row } from 'antd/lib/grid';
@@ -15,6 +20,8 @@ import notification from 'antd/lib/notification';
 import { CombinedState } from 'reducers/interfaces';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { createProjectAsync } from 'actions/projects-actions';
+
+type NameFormRefType = Component<FormComponentProps<any>, any, any> & WrappedFormUtils;
 
 const ProjectNameEditor = Form.create<FormComponentProps>()(
     (props: FormComponentProps): JSX.Element => {
@@ -42,7 +49,7 @@ const ProjectNameEditor = Form.create<FormComponentProps>()(
 
 export default function CreateProjectContent(): JSX.Element {
     const [projectLabels, setProjectLabels] = useState<any[]>([]);
-    const nameFormRef = useRef<WrappedFormUtils | null>(null);
+    const nameFormRef = useRef<NameFormRefType>(null);
     const dispatch = useDispatch();
     const history = useHistory();
 
@@ -109,7 +116,6 @@ export default function CreateProjectContent(): JSX.Element {
                 />
             </Col>
             <Col span={24}>
-                <Text type='danger'>* </Text>
                 <Text className='cvat-text-color'>Labels:</Text>
                 <LabelsEditor
                     labels={projectLabels}
