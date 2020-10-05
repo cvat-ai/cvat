@@ -58,6 +58,3 @@ script:
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . && coveralls --merge=coverage.json'
-  # Create a coverage report
-  - npm run report:coverage:text
-  - npm run report:coverage:lcov
