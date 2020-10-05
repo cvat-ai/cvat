@@ -13,6 +13,7 @@ const cvat = getCore();
 
 export enum ProjectsActionTypes {
     UPDATE_PROJECTS_GETTING_QUERY = 'UPDATE_PROJECTS_GETTING_QUERY',
+    UPDATE_TASK_PREVIEW_IMAGE = 'UPDATE_TASK_PREVIEW_IMAGE',
     GET_PROJECTS = 'GET_PROJECTS',
     GET_PROJECTS_SUCCESS = 'GET_PROJECTS_SUCCESS',
     GET_PROJECTS_FAILED = 'GET_PROJECTS_FAILED',
@@ -32,6 +33,18 @@ export function updateProjectsGettingQuery(query: Partial<ProjectsQuery>): AnyAc
         type: ProjectsActionTypes.UPDATE_PROJECTS_GETTING_QUERY,
         payload: {
             query,
+        },
+    };
+
+    return action;
+}
+
+function updateTaskImagePreview(taskId: number, image: string): AnyAction {
+    const action = {
+        type: ProjectsActionTypes.UPDATE_TASK_PREVIEW_IMAGE,
+        payload: {
+            taskId,
+            image,
         },
     };
 
@@ -99,6 +112,14 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
         const array = Array.from(result);
         dispatch(getProjectsSuccess(array, result.count));
+
+        for (const project of array) {
+            for (const task of (project as any).tasks) {
+                (task as any).frames.preview().then((image: string) => {
+                    dispatch(updateTaskImagePreview(task.id, image));
+                });
+            }
+        }
     };
 }
 

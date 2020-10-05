@@ -100,3 +100,14 @@
         width: 13em;
     }
 }
+
+.cvat-projects-project-item-card {
+    .ant-empty {
+        margin: 8px;
+    }
+
+    img {
+        height: 100%;
+        max-height: 146px;
+    }
+}

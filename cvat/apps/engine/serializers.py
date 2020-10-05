@@ -281,6 +281,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     size = serializers.ReadOnlyField(source='data.size')
     image_quality = serializers.ReadOnlyField(source='data.image_quality')
     data = serializers.ReadOnlyField(source='data.id')
+    project_id = serializers.IntegerField()
 
     class Meta:
         model = models.Task
@@ -290,7 +291,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
         read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size',
             'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
-        write_once_fields = ('overlap', 'segment_size')
+        write_once_fields = ('overlap', 'segment_size', 'project_id')
         ordering = ['-id']
 
     # pylint: disable=no-self-use
@@ -331,7 +332,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.bug_tracker = validated_data.get('bug_tracker',
             instance.bug_tracker)
         instance.z_order = validated_data.get('z_order', instance.z_order)
-        instance.project = validated_data.get('project', instance.project)
         labels = validated_data.get('label_set', [])
         for label in labels:
             LabelSerializer.update_instance(label, instance)
@@ -346,8 +346,10 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return value
 
     def validate(self, value):
-        if not value["labels"] or value["project_id"]:
+        if not (value.get("labels") or value.get("project_id")):
             raise serializers.ValidationError('Label set or project_id must be present')
+        if value.get("labels") and value.get("project_id"):
+            raise serializers.ValidationError('Project must have only one of Label set or project_id')
         return value
 
 

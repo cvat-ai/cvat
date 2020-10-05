@@ -372,7 +372,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                             </Col>
                         </Row>
                         { this.renderDatasetRepository() }
-                        { !taskInstance.project_id && this.renderLabelsEditor() }
+                        { !taskInstance.projectId && this.renderLabelsEditor() }
                     </Col>
                 </Row>
             </div>

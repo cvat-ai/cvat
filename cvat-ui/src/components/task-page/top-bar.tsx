@@ -26,16 +26,16 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     return (
         <Row className='cvat-task-top-bar' type='flex' justify='space-between' align='middle'>
             <Col>
-                { taskInstance.project_id ? (
+                { taskInstance.projectId ? (
                     <Button
-                        onClick={() => history.push(`/projects/${taskInstance.project_id}`)}
+                        onClick={() => history.push(`/projects/${taskInstance.projectId}`)}
                         type='link'
                         size='large'
                     >
                         <Icon type='left' />
-                        {`Back to project #${taskInstance.project_id}`}
+                        {`Back to project #${taskInstance.projectId}`}
                     </Button>
-                ): (
+                ) : (
                     <Button
                         onClick={() => history.push('/tasks')}
                         type='link'

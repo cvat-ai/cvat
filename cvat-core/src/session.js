@@ -928,13 +928,13 @@
                     },
                 },
                 /**
-                    * @name project_id
+                    * @name projectId
                     * @type {integer}
                     * @memberof module:API.cvat.classes.Task
                     * @readonly
                     * @instance
                 */
-                project_id: {
+                projectId: {
                     get: () => data.project_id,
                 },
                 /**
@@ -1948,6 +1948,9 @@
         }
         if (typeof (this.overlap) !== 'undefined') {
             taskSpec.overlap = this.overlap;
+        }
+        if (typeof (this.projectId) !== 'undefined') {
+            taskSpec.project_id = this.projectId;
         }
 
         const taskDataSpec = {

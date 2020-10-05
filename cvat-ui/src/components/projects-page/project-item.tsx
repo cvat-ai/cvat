@@ -29,6 +29,13 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const deleted = instance.id in deletes ? deletes[instance.id] : false;
 
+    let projectPreview = null;
+    if (instance.tasks.length) {
+        projectPreview = useSelector((state: CombinedState) => (
+            state.projects.taskPreviews[instance.tasks[0].id]
+        ));
+    }
+
     const onOpenProject = (): void => {
         history.push(`/projects/${instance.id}`);
     };
@@ -42,7 +49,9 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
 
     return (
         <Card
-            cover={<Empty description='No tasks' />}
+            cover={projectPreview ? (
+                <img src={projectPreview} alt='Preview' />
+            ) : (<Empty description='No tasks' />)}
             size='small'
             style={style}
             className='cvat-projects-project-item-card'
