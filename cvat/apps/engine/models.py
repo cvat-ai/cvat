@@ -149,6 +149,18 @@ class Project(models.Model):
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
 
+    def get_project_dirname(self):
+        return os.path.join(settings.PROJECTS_ROOT, str(self.id))
+
+    def get_project_logs_dirname(self):
+        return os.path.join(self.get_project_dirname(), 'logs')
+
+    def get_client_log_path(self):
+        return os.path.join(self.get_project_logs_dirname(), "client.log")
+
+    def get_log_path(self):
+        return os.path.join(self.get_project_logs_dirname(), "project.log")
+
     # Extend default permission model
     class Meta:
         default_permissions = ()

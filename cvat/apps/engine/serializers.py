@@ -50,8 +50,7 @@ class LabelSerializer(serializers.ModelSerializer):
         instance = dict()
         if isinstance(parent_instance, models.Project):
             instance['project'] = parent_instance
-            # FIXME:
-            logger = slogger.glob
+            logger = slogger.project[parent_instance.id]
         else:
             instance['task'] = parent_instance
             logger = slogger.task[parent_instance.id]
@@ -376,6 +375,11 @@ class ProjectSerializer(serializers.ModelSerializer):
             db_label = models.Label.objects.create(prject=db_project, **label)
             for attr in attributes:
                 models.AttributeSpec.objects.create(label=db_label, **attr)
+
+        project_path = db_project.get_project_dirname()
+        if os.path.isdir(project_path):
+            shutil.rmtree(project_path)
+        os.makedirs(db_project.get_project_logs_dirname())
 
         db_project.save()
         return db_project

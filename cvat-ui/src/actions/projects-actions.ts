@@ -164,7 +164,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             const savedProject = await projectInstance.save();
             dispatch(createProjectSuccess(savedProject.id));
         } catch (error) {
-            // FIXME: error length
             dispatch(createProjectFailed(error));
         }
     };
@@ -215,7 +214,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             try {
                 [project] = await cvat.projects.get({ id: projectInstance.id });
             } catch (fetchError) {
-                // FIXME: error length
                 dispatch(updateProjectFailed(projectInstance, error));
                 return;
             }
@@ -263,7 +261,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             await projectInstance.delete();
             dispatch(deleteProjectSuccess(projectInstance.id));
         } catch (error) {
-            // FIXME: error length
             dispatch(deleteProjectFailed(projectInstance.id, error));
         }
     };

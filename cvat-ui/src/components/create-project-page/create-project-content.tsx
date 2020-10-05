@@ -56,9 +56,6 @@ export default function CreateProjectContent(): JSX.Element {
     const newProjectId = useSelector(
         (state: CombinedState) => state.projects.activities.creates.id,
     );
-    const createProjectError = useSelector(
-        (state: CombinedState) => state.projects.activities.creates.error,
-    );
 
     useEffect(() => {
         if (Number.isInteger(newProjectId)) {
@@ -75,20 +72,12 @@ export default function CreateProjectContent(): JSX.Element {
             setProjectLabels([]);
 
             notification.info({
-                message: 'The task has been created',
+                message: 'The project has been created',
                 btn,
             });
         }
     }, [newProjectId]);
 
-    useEffect(() => {
-        if (createProjectError) {
-            notification.error({
-                message: 'Could not create a task',
-                description: createProjectError,
-            });
-        }
-    }, [createProjectError]);
 
     const onSumbit = (): void => {
         let projectName = '';
