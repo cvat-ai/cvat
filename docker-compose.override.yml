@@ -1,0 +1,5 @@
+version: "2.3"
+services:
+  cvat_proxy:
+    environment:
+      CVAT_HOST: $(ec2-metadata --public-hostname)
