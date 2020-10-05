@@ -27,6 +27,15 @@ context('Check if the UI fails by moving to the next frame while dragging the ob
     const archivePath = `cypress/fixtures/${archiveName}`
     const imagesFolder = `cypress/fixtures/image_issue_${prId}`
     const directoryToArchive = imagesFolder
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -41,7 +50,7 @@ context('Check if the UI fails by moving to the next frame while dragging the ob
 
     describe(`Testing PR "${prId}"`, () => {
         it('Create object', () => {
-            cy.createShape(200, 300, 300, 400)
+            cy.createRectangle(createRectangleShape2Points)
         })
         it('Start object dragging and go to next frame (F).', () => {
             cy.get('#cvat_canvas_shape_1')

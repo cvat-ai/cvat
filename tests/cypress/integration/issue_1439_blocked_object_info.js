@@ -19,6 +19,24 @@ context('Information about a blocked object disappears if hover the cursor over 
     const posX = 10
     const posY = 10
     const color = 'gray'
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450
+    }
+    const createRectangleShape2PointsSecond = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: createRectangleShape2Points.firstX,
+        firstY: createRectangleShape2Points.firstY - 150,
+        secondX: createRectangleShape2Points.secondX,
+        secondY: createRectangleShape2Points.secondY -150
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -30,8 +48,8 @@ context('Information about a blocked object disappears if hover the cursor over 
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Create multiple objects', () => {
-            cy.createShape(309, 431, 409, 531)
-            cy.createShape(200, 300, 300, 400)
+            cy.createRectangle(createRectangleShape2Points)
+            cy.createRectangle(createRectangleShape2PointsSecond)       
         })
         it('Lock all objects', () => {
             cy.get('.cvat-objects-sidebar-states-header')
