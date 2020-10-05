@@ -3,18 +3,16 @@
 // SPDX-License-Identifier: MIT
 
 import 'antd/dist/antd.css';
-import '../styles.scss';
-import React from 'react';
-import { Switch, Route, Redirect } from 'react-router';
-import { withRouter, RouteComponentProps } from 'react-router-dom';
-import { GlobalHotKeys, ExtendedKeyMapOptions, configure } from 'react-hotkeys';
-import Spin from 'antd/lib/spin';
+import { Col, Row } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
-import { Row, Col } from 'antd/lib/grid';
-import Text from 'antd/lib/typography/Text';
+import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
-
+import Spin from 'antd/lib/spin';
+import Text from 'antd/lib/typography/Text';
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
+import Header from 'components/header/header';
+import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
+import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
 import ProjectsPageComponent from 'components/projects-page/projects-page';
 import CreateProjectPageComponent from 'components/create-project-page/create-project-page';
@@ -26,15 +24,16 @@ import ModelsPageContainer from 'containers/models-page/models-page';
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
-import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
-import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
-import Header from 'components/header/header';
-import { customWaViewHit } from 'utils/enviroment';
-import showPlatformNotification, { stopNotifications, platformInfo } from 'utils/platform-checker';
-
 import getCore from 'cvat-core-wrapper';
+import React from 'react';
+import { configure, ExtendedKeyMapOptions, GlobalHotKeys } from 'react-hotkeys';
+import { Redirect, Route, Switch } from 'react-router';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { NotificationsState } from 'reducers/interfaces';
-import Modal from 'antd/lib/modal';
+import { customWaViewHit } from 'utils/enviroment';
+import showPlatformNotification, { platformInfo, stopNotifications } from 'utils/platform-checker';
+import '../styles.scss';
+
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -258,7 +257,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const readyForRender = (userInitialized && (user == null || !user.isVerified))
             || (userInitialized && formatsInitialized && pluginsInitialized
-            && usersInitialized && aboutInitialized);
+                && usersInitialized && aboutInitialized);
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
@@ -325,8 +324,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                        { isModelPluginActive
-                                            && <Route exact path='/models' component={ModelsPageContainer} /> }
+                                        {isModelPluginActive && <Route exact path='/models' component={ModelsPageContainer} />}
                                         <Redirect push to='/projects' />
                                     </Switch>
                                 </GlobalHotKeys>
