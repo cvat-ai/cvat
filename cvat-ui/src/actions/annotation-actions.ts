@@ -186,6 +186,7 @@ export enum AnnotationActionTypes {
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
     ADD_Z_LAYER = 'ADD_Z_LAYER',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
+    SEARCH_EMPTY_FRAME_FAILED = 'SEARCH_EMPTY_FRAME_FAILED',
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
@@ -1001,7 +1002,7 @@ export function getJobAsync(
 export function saveAnnotationsAsync(sessionInstance: any):
 ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
+        const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
         dispatch({
             type: AnnotationActionTypes.SAVE_ANNOTATIONS,
@@ -1021,15 +1022,16 @@ ThunkAction {
                     },
                 });
             });
-
-            const states = await sessionInstance
-                .annotations.get(frame, showAllInterpolationTracks, filters);
             await saveJobEvent.close();
             await sessionInstance.logger.log(
                 LogType.sendTaskInfo,
                 await jobInfoGenerator(sessionInstance),
             );
             dispatch(saveLogsAsync());
+
+            const { frame } = receiveAnnotationsParameters();
+            const states = await sessionInstance
+                .annotations.get(frame, showAllInterpolationTracks, filters);
 
             dispatch({
                 type: AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS,
@@ -1322,6 +1324,28 @@ export function searchAnnotationsAsync(
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.SEARCH_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function searchEmptyFrameAsync(
+    sessionInstance: any,
+    frameFrom: number,
+    frameTo: number,
+): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const frame = await sessionInstance.annotations.searchEmpty(frameFrom, frameTo);
+            if (frame !== null) {
+                dispatch(changeFrameAsync(frame));
+            }
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.SEARCH_EMPTY_FRAME_FAILED,
                 payload: {
                     error,
                 },

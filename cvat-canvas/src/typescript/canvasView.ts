@@ -642,7 +642,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     ));
 
                 if (['polygon', 'polyline', 'points'].includes(state.shapeType)) {
-                    if (e.ctrlKey) {
+                    if (e.altKey) {
                         const { points } = state;
                         self.onEditDone(
                             state,
@@ -897,7 +897,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Setup event handlers
         this.content.addEventListener('dblclick', (e: MouseEvent): void => {
-            if (e.ctrlKey || e.shiftKey) return;
             self.controller.fit();
             e.preventDefault();
         });
@@ -933,7 +932,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             self.controller.drag(e.clientX, e.clientY);
 
             if (this.mode !== Mode.IDLE) return;
-            if (e.ctrlKey || e.shiftKey) return;
+            if (e.ctrlKey || e.altKey) return;
 
             const { offset } = this.controller.geometry;
             const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);

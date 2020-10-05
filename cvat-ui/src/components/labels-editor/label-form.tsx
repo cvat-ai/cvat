@@ -49,14 +49,9 @@ class LabelForm extends React.PureComponent<Props, {}> {
     }
 
     private handleSubmit = (e: React.FormEvent): void => {
+        const { form, label, onSubmit } = this.props;
+
         e.preventDefault();
-
-        const {
-            form,
-            label,
-            onSubmit,
-        } = this.props;
-
         form.validateFields((error, formValues): void => {
             if (!error) {
                 onSubmit({
@@ -344,11 +339,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
     }
 
     private renderAttribute = (key: number, index: number): JSX.Element => {
-        const {
-            label,
-            form,
-        } = this.props;
-
+        const { label, form } = this.props;
         const attr = (label && index < label.attributes.length
             ? label.attributes[index]
             : null);
@@ -387,11 +378,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
     };
 
     private renderLabelNameInput(): JSX.Element {
-        const {
-            label,
-            form,
-            labelNames,
-        } = this.props;
+        const { label, form, labelNames } = this.props;
         const value = label ? label.name : '';
         const locked = label ? label.id >= 0 : false;
 
@@ -532,10 +519,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
     }
 
     public render(): JSX.Element {
-        const {
-            label,
-            form,
-        } = this.props;
+        const { label, form } = this.props;
 
         form.getFieldDecorator('keys', {
             initialValue: label

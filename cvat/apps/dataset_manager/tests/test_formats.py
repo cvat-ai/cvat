@@ -3,81 +3,21 @@
 #
 # SPDX-License-Identifier: MIT
 
-# FIXME: Git application and package name clash in tests
-class _GitImportFix:
-    import sys
-    former_path = sys.path[:]
-
-    @classmethod
-    def apply(cls):
-        # HACK: fix application and module name clash
-        # 'git' app is found earlier than a library in the path.
-        # The clash is introduced by unittest discover
-        import sys
-        print('apply')
-
-        apps_dir = __file__[:__file__.rfind('/dataset_manager/')]
-        assert 'apps' in apps_dir
-        try:
-            sys.path.remove(apps_dir)
-        except ValueError:
-            pass
-
-        for name in list(sys.modules):
-            if name.startswith('git.') or name == 'git':
-                m = sys.modules.pop(name, None)
-                del m
-
-        import git
-        assert apps_dir not in git.__file__
-
-    @classmethod
-    def restore(cls):
-        import sys
-        print('restore')
-
-        for name in list(sys.modules):
-            if name.startswith('git.') or name == 'git':
-                m = sys.modules.pop(name)
-                del m
-
-        sys.path.insert(0, __file__[:__file__.rfind('/dataset_manager/')])
-
-        import importlib
-        importlib.invalidate_caches()
-
-def _setUpModule():
-    _GitImportFix.apply()
-    import cvat.apps.dataset_manager as dm
-    globals()['dm'] = dm
-
-    import datumaro
-    globals()['datumaro'] = datumaro
-
-    import sys
-    sys.path.insert(0, __file__[:__file__.rfind('/dataset_manager/')])
-
-# def tearDownModule():
-    # _GitImportFix.restore()
 
 from io import BytesIO
 import os.path as osp
 import tempfile
 import zipfile
 
+import datumaro
 from PIL import Image
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 
+import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import TaskData, find_dataset_root
-from cvat.apps.engine.models import Task
-
-_setUpModule()
-
-from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import TaskData, CvatTaskDataExtractor
+from cvat.apps.dataset_manager.bindings import TaskData, find_dataset_root, CvatTaskDataExtractor
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.engine.models import Task
 

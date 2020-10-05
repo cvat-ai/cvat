@@ -38,7 +38,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
 function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     return {
-        onTaskUpdate: (taskInstance: any): void => dispatch(updateTaskAsync(taskInstance)),
+        onTaskUpdate(taskInstance: any): void {
+            dispatch(updateTaskAsync(taskInstance));
+        },
         cancelAutoAnnotation(): void {
             dispatch(cancelInferenceAsync(own.task.instance.id));
         },

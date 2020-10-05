@@ -17,6 +17,7 @@ import settingsReducer from './settings-reducer';
 import shortcutsReducer from './shortcuts-reducer';
 import userAgreementsReducer from './useragreements-reducer';
 
+
 export default function createRootReducer(): Reducer {
     return combineReducers({
         auth: authReducer,

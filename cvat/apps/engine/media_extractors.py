@@ -7,6 +7,7 @@ import tempfile
 import shutil
 import zipfile
 import io
+import itertools
 from abc import ABC, abstractmethod
 
 import av
@@ -65,8 +66,15 @@ class IMediaReader(ABC):
         return preview.convert('RGB')
 
     @abstractmethod
-    def get_image_size(self):
+    def get_image_size(self, i):
         pass
+
+    def __len__(self):
+        return len(self.frame_range)
+
+    @property
+    def frame_range(self):
+        return range(self._start, self._stop, self._step)
 
 class ImageListReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
@@ -104,8 +112,8 @@ class ImageListReader(IMediaReader):
         fp = open(self._source_path[0], "rb")
         return self._get_preview(fp)
 
-    def get_image_size(self):
-        img = Image.open(self._source_path[0])
+    def get_image_size(self, i):
+        img = Image.open(self._source_path[i])
         return img.width, img.height
 
 class DirectoryReader(ImageListReader):
@@ -127,6 +135,7 @@ class ArchiveReader(DirectoryReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
         self._archive_source = source_path[0]
         Archive(self._archive_source).extractall(os.path.dirname(source_path[0]))
+        os.remove(self._archive_source)
         super().__init__(
             source_path=[os.path.dirname(source_path[0])],
             step=step,
@@ -134,36 +143,36 @@ class ArchiveReader(DirectoryReader):
             stop=stop,
         )
 
-    def __del__(self):
-        os.remove(self._archive_source)
-
-class PdfReader(DirectoryReader):
+class PdfReader(ImageListReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
         if not source_path:
             raise Exception('No PDF found')
 
-        from pdf2image import convert_from_path
         self._pdf_source = source_path[0]
-        self._tmp_dir = create_tmp_dir()
-        file_ = convert_from_path(self._pdf_source)
-        basename = os.path.splitext(os.path.basename(self._pdf_source))[0]
-        for page_num, page in enumerate(file_):
-            output = os.path.join(self._tmp_dir, '{}{:09d}.jpeg'.format(basename, page_num))
-            page.save(output, 'JPEG')
+
+        _basename = os.path.splitext(os.path.basename(self._pdf_source))[0]
+        _counter = itertools.count()
+        def _make_name():
+            for page_num in _counter:
+                yield '{}{:09d}.jpeg'.format(_basename, page_num)
+
+        from pdf2image import convert_from_path
+        self._tmp_dir = os.path.dirname(source_path[0])
+        os.makedirs(self._tmp_dir, exist_ok=True)
+
+        # Avoid OOM: https://github.com/openvinotoolkit/cvat/issues/940
+        paths = convert_from_path(self._pdf_source,
+            last_page=stop, paths_only=True,
+            output_folder=self._tmp_dir, fmt="jpeg", output_file=_make_name())
+
+        os.remove(source_path[0])
 
         super().__init__(
-            source_path=[self._tmp_dir],
+            source_path=paths,
             step=step,
             start=start,
             stop=stop,
         )
-
-    def __del__(self):
-        delete_tmp_dir(self._tmp_dir)
-
-    def get_path(self, i):
-        base_dir = os.path.dirname(self._pdf_source)
-        return os.path.join(base_dir, os.path.relpath(self._source_path[i], self._tmp_dir))
 
 class ZipReader(ImageListReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
@@ -178,8 +187,8 @@ class ZipReader(ImageListReader):
         io_image = io.BytesIO(self._zip_source.read(self._source_path[0]))
         return self._get_preview(io_image)
 
-    def get_image_size(self):
-        img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[0])))
+    def get_image_size(self, i):
+        img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
         return img.width, img.height
 
     def get_image(self, i):
@@ -243,7 +252,7 @@ class VideoReader(IMediaReader):
         preview = next(container.decode(stream))
         return self._get_preview(preview.to_image())
 
-    def get_image_size(self):
+    def get_image_size(self, i):
         image = (next(iter(self)))[0]
         return image.width, image.height
 

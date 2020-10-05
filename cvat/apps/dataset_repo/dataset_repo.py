@@ -21,7 +21,7 @@ from cvat.apps.dataset_manager.task import export_task
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Job, Task, User
 from cvat.apps.engine.plugins import add_plugin
-from cvat.apps.git.models import GitData, GitStatusChoice
+from cvat.apps.dataset_repo.models import GitData, GitStatusChoice
 
 
 def _have_no_access_exception(ex):

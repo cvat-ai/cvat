@@ -6,14 +6,25 @@
 
 /// <reference types="cypress" />
 
+const randomString = (isPassword) => {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    for (let i = 0; i <= 8; i++) {
+        result += characters.charAt(
+            Math.floor(Math.random() * characters.length),
+        );
+    }
+    return isPassword ? `${result}${Math.floor(Math.random() * 10)}` : result;
+};
+
 context('Register user, change password, login with new password', () => {
-    const caseId = '2'
-    const firstName = 'First name'
-    const lastName = 'Last name'
-    const userName = 'Username'
-    const emailAddr = `${userName}@local.local`
-    const password = 'UfdU21!dds'
-    const newPassword = 'dKl3j49sd@jjk'
+    const caseId = '2';
+    const firstName = `${randomString()}`;
+    const lastName = `${randomString()}`;
+    const userName = `${randomString()}`;
+    const emailAddr = `${userName}@local.local`;
+    const password = `${randomString(true)}`;
+    const newPassword = `${randomString(true)}`;
 
     before(() => {
         cy.visit('auth/register')

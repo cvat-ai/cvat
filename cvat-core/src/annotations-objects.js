@@ -932,7 +932,9 @@
             }, [this.clientID], frame);
         }
 
-        _appendShapeActionToHistory(actionType, frame, undoShape, redoShape, undoSource, redoSource) {
+        _appendShapeActionToHistory(
+            actionType, frame, undoShape, redoShape, undoSource, redoSource,
+        ) {
             this.history.do(actionType, () => {
                 if (!undoShape) {
                     delete this.shapes[frame];

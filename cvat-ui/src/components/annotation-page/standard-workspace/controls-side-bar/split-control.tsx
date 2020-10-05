@@ -27,12 +27,13 @@ function SplitControl(props: Props): JSX.Element {
 
     const dynamicIconProps = activeControl === ActiveControl.SPLIT
         ? {
-            className: 'cvat-active-canvas-control',
+            className: 'cvat-split-track-control cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.split({ enabled: false });
                 splitTrack(false);
             },
         } : {
+            className: 'cvat-split-track-control',
             onClick: (): void => {
                 canvasInstance.cancel();
                 canvasInstance.split({ enabled: true });
