@@ -21,6 +21,74 @@ context('Actions on rectangle', () => {
     const posX = 10
     const posY = 10
     const color = 'gray'
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450
+    }
+    const createRectangleShape4Points = {
+        points: 'By 4 Points',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: 400,
+        firstY: 350,
+        secondX: 500,
+        secondY: 350,
+        thirdX:  500,
+        thirdY: 450,
+        fourthX: 400,
+        fourthY: 450
+    }
+    const createRectangleTrack2Points = {
+        points: 'By 2 Points',
+        type: 'Track',
+        switchLabel: false,
+        firstX: createRectangleShape2Points.firstX,
+        firstY: createRectangleShape2Points.firstY - 150,
+        secondX: createRectangleShape2Points.secondX,
+        secondY: createRectangleShape2Points.secondY -150
+    }
+    const createRectangleTrack4Points = {
+        points: 'By 4 Points',
+        type: 'Track',
+        switchLabel: false,
+        firstX: createRectangleShape4Points.firstX,
+        firstY: createRectangleShape4Points.firstY - 150,
+        secondX: createRectangleShape4Points.secondX - 100,
+        secondY: createRectangleShape4Points.secondY - 50,
+        thirdX: createRectangleShape4Points.thirdX,
+        thirdY: createRectangleShape4Points.thirdY - 150,
+        fourthX: createRectangleShape4Points.fourthX,
+        fourthY: createRectangleShape4Points.fourthY - 150
+    }
+    const createRectangleShape2PointsNewLabel = {
+        labelName: newLabelName,
+        points: 'By 2 Points',
+        type: 'Shape',
+        switchLabel: true,
+        firstX: createRectangleShape2Points.firstX,
+        firstY: createRectangleShape2Points.firstY + 150,
+        secondX: createRectangleShape2Points.secondX,
+        secondY: createRectangleShape2Points.secondY + 150
+    }
+    const createRectangleShape4PointsNewLabel = {
+        labelName: newLabelName,
+        points: 'By 4 Points',
+        type: 'Shape',
+        switchLabel: true,
+        firstX: createRectangleShape4Points.firstX,
+        firstY: createRectangleShape4Points.firstY + 150,
+        secondX: createRectangleShape4Points.secondX,
+        secondY: createRectangleShape4Points.secondY + 150,
+        thirdX:  createRectangleShape4Points.thirdX,
+        thirdY: createRectangleShape4Points.thirdY + 150,
+        fourthX: createRectangleShape4Points.fourthX,
+        fourthY: createRectangleShape4Points.fourthY + 150
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -40,7 +108,7 @@ context('Actions on rectangle', () => {
             cy.openJob()
         })
         it('Draw a rectangle shape in two ways (by 2 points, by 4 points)', () => {
-            cy.createShape(250, 350, 350, 450)
+            cy.createRectangle(createRectangleShape2Points)
             cy.get('#cvat_canvas_shape_1')
             .should('exist').and('be.visible')
             cy.get('#cvat-objects-sidebar-state-item-1')
@@ -48,7 +116,7 @@ context('Actions on rectangle', () => {
                 cy.get('.ant-select-selection-selected-value')
                 .should('contain', labelName)
             })
-            cy.createShape(400, 350, 500, 350, 'By 4 Points', 500, 450, 400, 350)
+            cy.createRectangle(createRectangleShape4Points)
             cy.get('#cvat_canvas_shape_2')
             .should('exist').and('be.visible')
             cy.get('#cvat-objects-sidebar-state-item-2')
@@ -58,7 +126,7 @@ context('Actions on rectangle', () => {
             })
         })
         it('Draw a rectangle track in two ways (by 2 points, by 4 points)', () => {
-            cy.createTrack(250, 150, 350, 250)
+            cy.createRectangle(createRectangleTrack2Points)
             cy.get('#cvat_canvas_shape_3')
             .should('exist').and('be.visible')
             cy.get('#cvat-objects-sidebar-state-item-3')
@@ -66,7 +134,7 @@ context('Actions on rectangle', () => {
                 cy.get('.ant-select-selection-selected-value')
                 .should('contain', labelName)
             })
-            cy.createTrack(400, 150, 500, 150, 'By 4 Points', 500, 250, 400, 250)
+            cy.createRectangle(createRectangleTrack4Points)
             cy.get('#cvat_canvas_shape_4')
             .should('exist').and('be.visible')
             cy.get('#cvat-objects-sidebar-state-item-4')
@@ -76,7 +144,7 @@ context('Actions on rectangle', () => {
             })
         })
         it('Draw a new rectangle shape in two ways (by 2 points, by 4 points) with second label', () => {
-            cy.createShape(250, 550, 350, 650, 'By 2 Points', '', '', '', '', true, newLabelName)
+            cy.createRectangle(createRectangleShape2PointsNewLabel)
             cy.get('#cvat_canvas_shape_5')
             .should('exist').and('be.visible')
             cy.get('#cvat-objects-sidebar-state-item-5')
@@ -84,7 +152,7 @@ context('Actions on rectangle', () => {
                 cy.get('.ant-select-selection-selected-value')
                 .should('contain', newLabelName)
             })
-            cy.createShape(400, 550, 500, 550, 'By 4 Points', 500, 650, 400, 650, true, newLabelName)
+            cy.createRectangle(createRectangleShape4PointsNewLabel)
             cy.get('#cvat_canvas_shape_6')
             .should('exist').and('be.visible')
             cy.get('#cvat-objects-sidebar-state-item-6')

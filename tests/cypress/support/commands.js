@@ -88,55 +88,37 @@ Cypress.Commands.add('openTaskJob', (taskName, jobNumber=0) => {
     cy.openJob(jobNumber)
 })
 
-Cypress.Commands.add('createShape', (firstX, firstY, secondX, secondY, points='By 2 Points',
-                                     thirdX, thirdY, fourthX, fourthY, switchLabel=false, labelName) => {
+Cypress.Commands.add('createRectangle', (createRectangleParams) => {
     cy.get('.cvat-draw-rectangle-control').click()
-    if (switchLabel) {
-        cy.get('.cvat-draw-shape-popover-content')
-        .find('.ant-select-selection-selected-value')
-        .click()
-        cy.get('.ant-select-dropdown-menu')
-        .contains(labelName)
-        .click()
+    if (createRectangleParams.switchLabel) {
+        cy.switchLabel(createRectangleParams.labelName)
     }
     cy.get('.cvat-draw-shape-popover-content')
-    .contains(points)
+    .contains(createRectangleParams.points)
     .click()
     cy.get('.cvat-draw-shape-popover-content')
     .find('button')
-    .contains('Shape')
+    .contains(createRectangleParams.type)
     .click({force: true})
     cy.get('.cvat-canvas-container')
-    .click(firstX, firstY)
+    .click(createRectangleParams.firstX, createRectangleParams.firstY)
     cy.get('.cvat-canvas-container')
-    .click(secondX, secondY)
-    if (points === 'By 4 Points') {
+    .click(createRectangleParams.secondX, createRectangleParams.secondY)
+    if (createRectangleParams.points === 'By 4 Points') {
         cy.get('.cvat-canvas-container')
-        .click(thirdX, thirdY)
+        .click(createRectangleParams.thirdX, createRectangleParams.thirdY)
         cy.get('.cvat-canvas-container')
-        .click(fourthX, fourthY)
+        .click(createRectangleParams.fourthX, createRectangleParams.fourthY)
     }
 })
 
-Cypress.Commands.add('createTrack', (firstX, firstY, secondX, secondY, points='By 2 Points', thirdX, thirdY, fourthX, fourthY) => {
-    cy.get('.cvat-draw-rectangle-control').click()
+Cypress.Commands.add('switchLabel', (labelName) => {
     cy.get('.cvat-draw-shape-popover-content')
-    .contains(points)
+    .find('.ant-select-selection-selected-value')
     .click()
-    cy.get('.cvat-draw-shape-popover-content')
-    .find('button')
-    .contains('Track')
-    .click({force: true})
-    cy.get('.cvat-canvas-container')
-    .click(firstX, firstY)
-    cy.get('.cvat-canvas-container')
-    .click(secondX, secondY )
-    if (points === 'By 4 Points') {
-        cy.get('.cvat-canvas-container')
-        .click(thirdX, thirdY)
-        cy.get('.cvat-canvas-container')
-        .click(fourthX, fourthY)
-    }
+    cy.get('.ant-select-dropdown-menu')
+    .contains(labelName)
+    .click()
 })
 
 Cypress.Commands.add('createPoint', (posX, posY, type='Shape') => {
