@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - Unreleased
 ### Added
+- Added layout grids toggling ('ctrl + alt + Enter')
 - Added password reset functionality (<https://github.com/opencv/cvat/pull/2058>)
 - Ability to work with data on the fly (https://github.com/opencv/cvat/pull/2007)
 - Annotation in process outline color wheel (<https://github.com/opencv/cvat/pull/2084>)
