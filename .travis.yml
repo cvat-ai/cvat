@@ -38,21 +38,22 @@ script:
   - docker-compose up -d
   # Create superuser
   - docker exec -it cvat bash -ic "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
-# End-to-end testing
+  # End-to-end testing
   - if [ $TRAVIS_EVENT_TYPE == "cron" && $TRAVIS_BRANCH == "develop" ];
-  then # expanded weekly build with Firefox and code coverage
-    cd ./tests && npm install && \ 
-    npm run cypress:run:firefox && cd ..  && \
-    npm install  && \
-    npm run coverage  && \
-    docker-compose up -d --build  && \
-    cd ./tests && npm instal && \
-    npm run cypress:run:chrome && cd .. && \
-    npm run report:coverage:text && \
-    npm run report:coverage:lcov;
-  else # Regular build
-    cd ./tests && npm instal && \
-    npm run cypress:run:chrome && cd ..;
+    then
+      cd ./tests && npm install &&
+      npm run cypress:run:firefox && cd ..  &&
+      npm install  &&
+      npm run coverage  &&
+      docker-compose up -d --build  &&
+      cd ./tests && npm instal &&
+      npm run cypress:run:chrome && cd .. &&
+      npm run report:coverage:text &&
+      npm run report:coverage:lcov;
+    else
+      cd ./tests && npm instal &&
+      npm run cypress:run:chrome && cd ..;
+    fi;
 
 
 after_success:
