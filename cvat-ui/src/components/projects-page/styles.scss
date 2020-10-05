@@ -11,7 +11,6 @@
     position: fixed;
     width: 100%;
 
-
     > div:nth-child(1) {
         padding-bottom: 10px;
 
@@ -60,7 +59,7 @@
     > div:nth-child(2) {
         display: flex;
         justify-content: flex-end;
-        }
+    }
 }
 
 .cvat-create-project-button {

@@ -10,12 +10,13 @@
     border: 1px solid $border-color-1;
     border-radius: 3px;
     padding: 16px;
-    margin: 16px 0px;
+    margin: 16px 0;
     background: $background-color-1;
 
     .ant-row-flex:nth-child(1) {
         margin-bottom: 16px;
     }
+
     .cvat-project-details-actions {
         > div {
             display: flex;
