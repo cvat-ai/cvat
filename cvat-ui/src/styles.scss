@@ -39,6 +39,12 @@ hr {
     }
 }
 
+.ant-notification {
+    top: $header-height !important;
+    right: 0 !important;
+    margin-right: 0;
+}
+
 .cvat-info-circle-icon {
     color: $info-icon-color;
 }
