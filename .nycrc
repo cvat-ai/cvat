@@ -1,5 +1,4 @@
 {
-    "extends": "@istanbuljs/nyc-config-typescript",
     "all": true,
     "recursive": true,
     "compact": false,
@@ -11,7 +10,8 @@
         ".tsx"
     ],
     "exclude": [
-        "**/*.config.*"
+        "**/3rdparty/*",
+        "**/tests/*"
     ],
     "parser-plugins": [
         "typescript"

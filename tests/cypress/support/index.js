@@ -19,19 +19,18 @@ before(() => {
     }
 })
 
-// Will need to uncomment this code when implementing coverage measurement.
-// afterEach(() => {
-//     if (Cypress.browser.name === 'chrome') {
-//         cy.window().then(win => {
-//             if (win.__coverage__) {
-//                 cy.task('combineCoverage', win.__coverage__)
-//             }
-//         })
-//     }
-// })
+afterEach(() => {
+    if (Cypress.browser.name === 'chrome') {
+        cy.window().then(win => {
+            if (win.__coverage__) {
+                cy.task('combineCoverage', win.__coverage__)
+            }
+        })
+    }
+})
 
-// after(() => {
-//     if (Cypress.browser.name === 'chrome') {
-//         cy.task('coverageReportPrepare')
-//     }
-// })
+after(() => {
+    if (Cypress.browser.name === 'chrome') {
+        cy.task('coverageReportPrepare')
+    }
+})
