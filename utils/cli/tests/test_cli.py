@@ -12,7 +12,7 @@ from django.conf import settings
 from PIL import Image
 from rest_framework.test import APITestCase, RequestsClient
 
-from cvat.apps.engine.tests._test_rest_api import (create_db_users,
+from cvat.apps.engine.tests.test_rest_api import (create_db_users,
     generate_image_file)
 from utils.cli.core import CLI, CVAT_API_V1, ResourceType
 

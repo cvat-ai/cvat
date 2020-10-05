@@ -29,8 +29,8 @@ urlpatterns = [
     path('documentation/', include('cvat.apps.documentation.urls')),
 ]
 
-if apps.is_installed('cvat.apps.git'):
-    urlpatterns.append(path('git/repository/', include('cvat.apps.git.urls')))
+if apps.is_installed('cvat.apps.dataset_repo'):
+    urlpatterns.append(path('git/repository/', include('cvat.apps.dataset_repo.urls')))
 
 if apps.is_installed('cvat.apps.log_viewer'):
     urlpatterns.append(path('analytics/', include('cvat.apps.log_viewer.urls')))

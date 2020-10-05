@@ -8,9 +8,9 @@ from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine import models
-from cvat.apps.git.models import GitData
+from cvat.apps.dataset_repo.models import GitData
 
-import cvat.apps.git.git as CVATGit
+import cvat.apps.dataset_repo.dataset_repo as CVATGit
 import django_rq
 import json
 
