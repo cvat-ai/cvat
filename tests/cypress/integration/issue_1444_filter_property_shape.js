@@ -28,6 +28,18 @@ context('Filter property "shape" work correctly', () => {
         secondX: 350,
         secondY: 450
     }
+    const createPolygonShape = {
+        reDraw: false,
+        type: 'Shape',
+        switchLabel: false,
+        pointsMap: [
+            {x: 300, y: 100},
+            {x: 400, y: 400},
+            {x: 400, y: 250},
+            ],
+        complete: true,
+        numberOfPoints: null
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -44,11 +56,7 @@ context('Filter property "shape" work correctly', () => {
             .should('contain', '1').and('contain', 'RECTANGLE SHAPE')
         })
         it('Create a polygon', () => {
-            cy.createPolygon('Shape', [
-                                        {x: 300, y: 100},
-                                        {x: 400, y: 400},
-                                        {x: 400, y: 250},
-                                      ])
+            cy.createPolygon(createPolygonShape)
             cy.get('#cvat-objects-sidebar-state-item-2')
             .should('contain', '2').and('contain', 'POLYGON SHAPE')
         })
