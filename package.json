@@ -8,6 +8,11 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@istanbuljs/nyc-config-babel": "^1.0.1",
+    "babel-plugin-istanbul": "^6.0.0",
+    "babel-register": "^6.26.0",
+    "core-js": "^3.6.5",
+    "coveralls": "^3.1.0",
     "eslint": "^7.3.0",
     "eslint-config-airbnb": "^18.0.1",
     "eslint-plugin-import": "^2.18.2",
@@ -17,6 +22,7 @@
     "eslint-plugin-react": "^7.14.3",
     "eslint-plugin-react-hooks": "^4.0.4",
     "eslint-plugin-security": "^1.4.0",
+    "nyc": "^15.1.0",
     "remark-lint-emphasis-marker": "^2.0.0",
     "remark-lint-list-item-spacing": "^2.0.0",
     "remark-lint-maximum-heading-length": "^2.0.0",
@@ -29,11 +35,18 @@
     "remark-preset-lint-consistent": "^3.0.0",
     "remark-preset-lint-markdown-style-guide": "^3.0.0",
     "remark-preset-lint-recommended": "^4.0.0",
+    "source-map-support": "^0.5.19",
     "stylelint": "^13.6.1",
     "stylelint-config-standard": "^20.0.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "coverage": "npm run instrument && npm run cp && npm run rm",
+    "instrument": "nyc instrument cvat-ui cvat-ui_cov && nyc instrument cvat-canvas cvat-canvas_cov && nyc instrument cvat-data cvat-data_cov && nyc instrument cvat-core cvat-core_cov",
+    "cp": "cp -r cvat-ui_cov/* cvat-ui && cp -r cvat-canvas_cov/* cvat-canvas && cp -r cvat-data_cov/* cvat-data && cp -r cvat-core_cov/* cvat-core",
+    "rm": "rm -rf cvat-ui_cov && rm -rf cvat-canvas_cov && rm -rf cvat-data_cov && rm -r cvat-core_cov",
+    "report:coverage:text": "nyc report --reporter=text",
+    "report:coverage:lcov": "nyc report --reporter=text-lcov | coveralls"
   },
   "repository": {
     "type": "git",
