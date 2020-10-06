@@ -729,7 +729,6 @@ class TrackManager(ObjectManager):
         if track.get("interpolated_shapes"):
             return track["interpolated_shapes"]
 
-        # TODO: should be return an iterator?
         shapes = []
         curr_frame = track["shapes"][0]["frame"]
         prev_shape = {}
@@ -747,9 +746,7 @@ class TrackManager(ObjectManager):
             curr_frame = shape["frame"]
             prev_shape = shape
 
-        # TODO: Need to modify a client and a database (append "outside" shapes for polytracks)
-        if not prev_shape["outside"] and (prev_shape["type"] == ShapeType.RECTANGLE
-               or prev_shape["type"] == ShapeType.POINTS or prev_shape["type"] == ShapeType.CUBOID):
+        if not prev_shape["outside"]:
             shape = copy(prev_shape)
             shape["frame"] = end_frame
             shapes.extend(interpolate(prev_shape, shape))

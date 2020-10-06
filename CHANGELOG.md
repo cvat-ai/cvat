@@ -33,6 +33,7 @@ filters and searching the nearest frame without any annotations (<https://github
 - A key to remove a point from a polyshape [Ctrl => Alt] (<https://github.com/openvinotoolkit/cvat/pull/2204>)
 - Updated `docker-compose` file version from `2.3` to `3.3`(<https://github.com/openvinotoolkit/cvat/pull/2235>)
 - Added auto inference of url schema from host in CLI, if provided (<https://github.com/openvinotoolkit/cvat/pull/2240>)
+- Track frames in skips between annotation is presented in MOT and MOTS formats are marked `outside` (<https://github.com/openvinotoolkit/cvat/pull/2198>)
 
 ### Deprecated
 -
@@ -53,6 +54,7 @@ filters and searching the nearest frame without any annotations (<https://github
 - Fixed use case when logs could be saved twice or more times #2202 (<https://github.com/openvinotoolkit/cvat/pull/2203>)
 - Fixed issues from #2112 (<https://github.com/openvinotoolkit/cvat/pull/2217>)
 - Git application name (renamed to dataset_repo) (<https://github.com/openvinotoolkit/cvat/pull/2243>)
+- A problem in exporting of tracks, where tracks could be truncated (<https://github.com/openvinotoolkit/cvat/issues/2129>)
 
 ### Security
 -
