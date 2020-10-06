@@ -24,12 +24,6 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
 
     return (
         <>
-            {/* <Row type='flex' justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
-                    <Text strong>Default project</Text>
-                </Col>
-            </Row> */}
-            <Row />
             <Row type='flex' justify='center' align='middle'>
                 <Col md={11} lg={9} xl={8} xxl={7}>
                     <Text className='cvat-title'>Tasks</Text>

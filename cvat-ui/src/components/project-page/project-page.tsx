@@ -14,7 +14,7 @@ import Button from 'antd/lib/button';
 import Title from 'antd/lib/typography/Title';
 
 import { CombinedState } from 'reducers/interfaces';
-import { getProjectsAsync, updateProjectsGettingQuery } from 'actions/projects-actions';
+import { getProjectsAsync } from 'actions/projects-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import TaskItem from 'components/tasks-page/task-item';
 import DetailsComponent from './details';
@@ -42,15 +42,9 @@ export default function ProjectPageComponent(): JSX.Element {
     const deleteActivity = project && id in deletes ? deletes[id] : null;
 
     useEffect(() => {
-        dispatch(updateProjectsGettingQuery({
+        dispatch(getProjectsAsync({
             id,
-            page: 1,
-            search: null,
-            owner: null,
-            name: null,
-            status: null,
         }));
-        dispatch(getProjectsAsync());
     }, [id, dispatch]);
 
     if (deleteActivity) {

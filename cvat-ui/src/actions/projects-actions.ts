@@ -5,8 +5,7 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 
-import { CombinedState, ProjectsQuery } from 'reducers/interfaces';
-import { getCVATStore } from 'cvat-store';
+import { ProjectsQuery } from 'reducers/interfaces';
 import getCore from 'cvat-core-wrapper';
 
 const cvat = getCore();
@@ -28,7 +27,7 @@ export enum ProjectsActionTypes {
     DELETE_PROJECT_FAILED = 'DELETE_PROJECT_FAILED',
 }
 
-export function updateProjectsGettingQuery(query: Partial<ProjectsQuery>): AnyAction {
+function updateProjectsGettingQuery(query: Partial<ProjectsQuery>): AnyAction {
     const action = {
         type: ProjectsActionTypes.UPDATE_PROJECTS_GETTING_QUERY,
         payload: {
@@ -83,21 +82,19 @@ function getProjectsFailed(error: any): AnyAction {
     return action;
 }
 
-export function getProjectsAsync():
+export function getProjectsAsync(query: Partial<ProjectsQuery>):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const {
-            projects: {
-                gettingQuery,
-            },
-        } = getCVATStore().getState() as CombinedState;
-
         dispatch(getProjects());
+        dispatch(updateProjectsGettingQuery(query));
 
         // Clear query object from null fields
-        const filteredQuery = { ...gettingQuery };
+        const filteredQuery: Partial<ProjectsQuery> = {
+            page: 1,
+            ...query,
+        };
         for (const key in filteredQuery) {
-            if (filteredQuery[key] === null) {
+            if (filteredQuery[key] === null || typeof filteredQuery[key] === 'undefined') {
                 delete filteredQuery[key];
             }
         }

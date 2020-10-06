@@ -28,7 +28,7 @@ export interface ProjectsQuery {
     owner: string | null;
     name: string | null;
     status: string | null;
-    [key: string]: string | number | null;
+    [key: string]: string | number | null | undefined;
 }
 
 export interface Project {

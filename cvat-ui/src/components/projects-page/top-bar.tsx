@@ -6,9 +6,9 @@ import React from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 
+import SearchField from './search-field';
 
 export default function TopBarComponent(): JSX.Element {
     const history = useHistory();
@@ -17,13 +17,7 @@ export default function TopBarComponent(): JSX.Element {
         <Row type='flex' justify='center' align='middle' className='cvat-projects-top-bar'>
             <Col md={11} lg={9} xl={8} xxl={7}>
                 <Text className='cvat-title'>Projects</Text>
-                <Input.Search
-                    defaultValue=''
-                    onSearch={() => {}}
-                    size='large'
-                    placeholder='Search'
-                    disabled
-                />
+                <SearchField />
             </Col>
             <Col
                 md={{ span: 11 }}

@@ -3,28 +3,26 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { useSelector } from 'react-redux';
-import { useHistory, useLocation } from 'react-router';
+import { useSelector, useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
+import { getProjectsAsync } from 'actions/projects-actions';
 import { CombinedState } from 'reducers/interfaces';
 import ProjectItem from './project-item';
 
 export default function ProjectListComponent(): JSX.Element {
-    const history = useHistory();
-    const { search } = useLocation();
+    const dispatch = useDispatch();
     const projectsCount = useSelector((state: CombinedState) => state.projects.count);
     const { page } = useSelector((state: CombinedState) => state.projects.gettingQuery);
     const projectInstances = useSelector((state: CombinedState) => state.projects.current);
+    const gettingQuery = useSelector((state: CombinedState) => state.projects.gettingQuery);
 
     function changePage(p: number): void {
-        const URLparams = new URLSearchParams(search);
-        URLparams.set('page', p.toString());
-        history.push({
-            pathname: '/projects',
-            search: `?${URLparams.toString()}`,
-        });
+        dispatch(getProjectsAsync({
+            ...gettingQuery,
+            page: p,
+        }));
     }
 
     return (
