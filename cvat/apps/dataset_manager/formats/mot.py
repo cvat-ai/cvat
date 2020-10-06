@@ -79,6 +79,20 @@ def _import(src_file, task_data):
         for track in tracks.values():
             # MOT annotations do not require frames to be ordered
             track.shapes.sort(key=lambda t: t.frame)
+
+            # insert outside=True in skips between the frames track is visible
+            prev_shape_idx = 0
+            prev_shape = track.shapes[0]
+            for shape in track.shapes[1:]:
+                has_skip = task_data.frame_step < shape.frame - prev_shape.frame
+                if has_skip and not prev_shape.outside:
+                    prev_shape = prev_shape._replace(outside=True,
+                            frame=prev_shape.frame + task_data.frame_step)
+                    prev_shape_idx += 1
+                    track.shapes.insert(prev_shape_idx, prev_shape)
+                prev_shape = shape
+                prev_shape_idx += 1
+
             # Append a shape with outside=True to finish the track
             last_shape = track.shapes[-1]
             if last_shape.frame + task_data.frame_step <= \
