@@ -259,7 +259,7 @@ class VideoReader(IMediaReader):
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
         return self._get_preview(preview.to_image() if not stream.metadata.get('rotate') \
-            else preview.to_image().rotate(360 - int(stream.metadata.get('rotate'))))
+            else preview.to_image().rotate(360 - int(stream.metadata.get('rotate')), expand=True))
 
     def get_image_size(self, i):
         image = (next(iter(self)))[0]
