@@ -106,24 +106,29 @@
 .cvat-tools-control-popover-content,
 .cvat-opencv-control-popover-content {
     width: fit-content;
-    padding: 10px;
-    border-radius: 5px;
+    padding: $grid-unit-size;
+    border-radius: $grid-unit-size;
     background: $background-color-2;
+
+    .ant-tabs-tab {
+        width: $grid-unit-size * 14;
+        text-align: center;
+    }
 }
 
 .cvat-opencv-initialization-button {
-    width: 120px;
-    margin: 16px 8px 16px 8px;
+    width: 100%;
+    margin: $grid-unit-size 0;
 }
 
 .cvat-opencv-drawing-tools {
-    margin-top: 8px;
+    margin-top: $grid-unit-size;
 }
 
 .cvat-opencv-drawing-tool {
-    padding: 4px;
-    width: 40px;
-    height: 40px;
+    padding: $grid-unit-size;
+    width: $grid-unit-size * 5;
+    height: $grid-unit-size * 5;
 
     > i {
         font-size: 16px;
@@ -131,13 +136,13 @@
 }
 
 .cvat-draw-shape-popover-content {
-    padding: 10px;
-    border-radius: 5px;
+    padding: $grid-unit-size;
+    border-radius: $grid-unit-size;
     background: $background-color-2;
-    width: 270px;
+    width: 34 * $grid-unit-size;
 
     > div {
-        margin-top: 5px;
+        margin-top: $grid-unit-size;
     }
 
     > div:nth-child(3) > div > div {

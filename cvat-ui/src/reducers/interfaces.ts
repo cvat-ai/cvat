@@ -4,6 +4,7 @@
 
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { Scissors } from 'utils/opencv-wrapper';
 import { MutableRefObject } from 'react';
 
 export type StringObject = {
@@ -149,6 +150,8 @@ export interface Model {
         canvas: object;
     };
 }
+
+export type OpenCVTool = Scissors;
 
 export enum RQStatus {
     unknown = 'unknown',
@@ -358,7 +361,7 @@ export interface AnnotationState {
         frameAngles: number[];
     };
     drawing: {
-        activeInteractor?: Model;
+        activeInteractor?: Model | OpenCVTool;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeNumOfPoints?: number;

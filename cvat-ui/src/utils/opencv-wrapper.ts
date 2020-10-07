@@ -4,17 +4,21 @@
 
 /* eslint-disable */
 
-type ScissorsState = { };
-type ScissorsResult = {
+export type ScissorsState = { };
+export type ScissorsResult = {
     points: number[];
     state: ScissorsState | null;
 };
-interface Scissors {
+export interface Scissors {
     run(points: number[], image: ImageData, threshold: number, state: ScissorsState | null): Promise<ScissorsResult>;
-    params: object;
+    type: 'opencv_scissors';
+    params: {
+        shape: object;
+        canvas: object;
+    };
 }
 
-class OpenCVWrapper {
+export class OpenCVWrapper {
     public constructor() {
         // todo
     }
@@ -40,23 +44,29 @@ class OpenCVWrapper {
         return false;
     }
 
-    public intelligentScissors(): Scissors {
+    public scissors(): Scissors {
         return {
-            run: this.runIntelligentScissors,
+            run: this.scissorsRunner,
             params: {
-                shapeType: 'polygon',
-                minPosVertices: 1,
+                shape: {
+                    shapeType: 'polygon',
+                },
+                canvas: {
+                    shapeType: 'points',
+                    minPosVertices: 1,
+                },
             },
+            type: 'opencv_scissors',
         };
     }
 
-    private runIntelligentScissors = async (
+    private scissorsRunner = async (
         points: number[], image: ImageData, threshold: number, state: ScissorsState | null = null,
     ): Promise<ScissorsResult> => {
         // todo
         return new Promise((resolve, reject) => {
             resolve({
-                points: [],
+                points,
                 state: null,
             });
         });
