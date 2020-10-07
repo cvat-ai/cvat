@@ -76,7 +76,13 @@ class PrepareInfo(WorkWithVideo):
 
     @property
     def frame_sizes(self):
+        container = self._open_video_container(self.source_path, 'r')
         frame = next(iter(self.key_frames.values()))
+        if container.streams.video[0].metadata.get('rotate'):
+            frame = av.VideoFrame.from_image(
+                frame.to_image().rotate(360 - int(container.streams.video[0].metadata.get('rotate')), expand=True)
+            )
+        self._close_video_container(container)
         return (frame.width, frame.height)
 
     def check_key_frame(self, container, video_stream, key_frame):
@@ -181,6 +187,10 @@ class UploadedMeta(PrepareInfo):
         container.seek(offset=next(iter(self.key_frames.values())), stream=video_stream)
         for packet in container.demux(video_stream):
             for frame in packet.decode():
+                if video_stream.metadata.get('rotate'):
+                    frame = av.VideoFrame.from_image(
+                        frame.to_image().rotate(360 - int(video_stream.metadata.get('rotate')), expand=True)
+                    )
                 self._close_video_container(container)
                 return (frame.width, frame.height)
 
