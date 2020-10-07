@@ -281,9 +281,24 @@ docker-compose -f docker-compose.yml -f components/analytics/docker-compose.anal
 ```
 
 ### Semi-automatic and automatic annotation
+- First of all, you need to build and run the container with [serverless support for CVAT](/components/serverless/README.md):
 
-- You have to install `nuctl` command line tool to build and deploy serverless
+```bash
+# From project root directory
+docker-compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
+```
+
+- You also have to install `nuctl` command line tool to build and deploy serverless
 functions. Download [the latest release](https://github.com/nuclio/nuclio/releases).
+For example, for Ubuntu you can download the binary file `nuctl-1.4.18-linux-amd64`.
+Put it in the CVAT root directory and change its permission to be executable.
+
+- [Run Nuclio dashboard with](https://github.com/nuclio/nuclio)
+
+```bash
+ docker run -p 8070:8070 -v /var/run/docker.sock:/var/run/docker.sock -v /tmp:/tmp --name nuclio-dashboard quay.io/nuclio/dashboard:stable-amd64
+```
+
 - Create `cvat` project inside nuclio dashboard where you will deploy new
 serverless functions and deploy a couple of DL models. Commands below should
 be run only after CVAT has been installed using docker-compose because it
@@ -307,7 +322,10 @@ nuctl deploy --project-name cvat \
     --platform local
 ```
 
-Note: see [deploy.sh](/serverless/deploy.sh) script for more examples.
+Note:
+- see [deploy.sh](/serverless/deploy.sh) script for more examples.
+- As an example, if you use `nuctl-1.4.18-linux-amd64` in the CVAT root directory,
+you need to change the `nuctl` in the above commands to `.nuctl-1.4.18-linux-amd64`.
 
 ### Stop all containers
 
