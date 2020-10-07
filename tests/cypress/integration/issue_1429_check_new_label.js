@@ -20,6 +20,15 @@ context('Check if the new label reflects in the options', () => {
     const posX = 10
     const posY = 10
     const color = 'gray'
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -44,8 +53,8 @@ context('Check if the new label reflects in the options', () => {
         it('Open the job again', () => {
             cy.openJob()
         })
-        it('Create a shape', () => {
-            cy.createShape(309, 431, 616, 671)
+        it('Create a rectangle shape', () => {
+            cy.createRectangle(createRectangleShape2Points)
         })
         it('Checking for the new label', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')

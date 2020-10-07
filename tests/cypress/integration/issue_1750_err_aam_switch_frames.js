@@ -25,6 +25,24 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
     const archivePath = `cypress/fixtures/${archiveName}`
     const imagesFolder = `cypress/fixtures/image_issue_${issueId}`
     const directoryToArchive = imagesFolder
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450
+    }
+    const createRectangleShape2PointsSecond = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: createRectangleShape2Points.firstX,
+        firstY: createRectangleShape2Points.firstY - 150,
+        secondX: createRectangleShape2Points.secondX,
+        secondY: createRectangleShape2Points.secondY -150
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -39,8 +57,8 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Create multiple objects', () => {
-            cy.createShape(309, 431, 409, 531)
-            cy.createShape(200, 300, 300, 400)
+            cy.createRectangle(createRectangleShape2Points)
+            cy.createRectangle(createRectangleShape2PointsSecond)
         })
         it('Go to AAM', () => {
             cy.get('.cvat-workspace-selector')

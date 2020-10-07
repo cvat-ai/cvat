@@ -1,13 +1,8 @@
 -r base.txt
-astroid==2.4.2
-isort==5.5.1
-lazy-object-proxy==1.5.1
-mccabe==0.6.1
 pylint==2.6.0
 pylint-django==2.3.0
 pylint-plugin-utils==0.6
 rope==0.17.0
-wrapt==1.12.1
 django-extensions==3.0.8
 Werkzeug==1.0.1
 snakeviz==2.1.0

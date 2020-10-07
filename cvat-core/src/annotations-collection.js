@@ -848,6 +848,43 @@
             };
         }
 
+        searchEmpty(frameFrom, frameTo) {
+            const sign = Math.sign(frameTo - frameFrom);
+            const predicate = sign > 0
+                ? (frame) => frame <= frameTo
+                : (frame) => frame >= frameTo;
+            const update = sign > 0
+                ? (frame) => frame + 1
+                : (frame) => frame - 1;
+            for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+                if (frame in this.shapes && this.shapes[frame].some((shape) => !shape.removed)) {
+                    continue;
+                }
+                if (frame in this.tags && this.tags[frame].some((tag) => !tag.removed)) {
+                    continue;
+                }
+                const filteredTracks = this.tracks.filter((track) => !track.removed);
+                let found = false;
+                for (const track of filteredTracks) {
+                    const keyframes = track.boundedKeyframes(frame);
+                    const { prev, first } = keyframes;
+                    const last = prev === null ? first : prev;
+                    const lastShape = track.shapes[last];
+                    const isKeyfame = frame in track.shapes;
+                    if (first <= frame && (!lastShape.outside || isKeyfame)) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) continue;
+
+                return frame;
+            }
+
+            return null;
+        }
+
         search(filters, frameFrom, frameTo) {
             const [groups, query] = this.annotationsFilter.toJSONQuery(filters);
             const sign = Math.sign(frameTo - frameFrom);

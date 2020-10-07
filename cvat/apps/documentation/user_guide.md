@@ -24,6 +24,7 @@
   - [Shape mode (advanced)](#shape-mode-advanced)
   - [Track mode (advanced)](#track-mode-advanced)
   - [Attribute annotation mode (advanced)](#attribute-annotation-mode-advanced)
+  - [AI Tools](#ai-tools)
   - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
@@ -100,7 +101,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     -   The ``Constructor`` is a simple way to add and adjust labels. To add a new label click the ``Add label`` button.
           ![](static/documentation/images/image123.jpg)
 
-        You can set a name of the label in the ``Label name`` field.
+        You can set a name of the label in the ``Label name`` field and choose a color for each label.
 
           ![](static/documentation/images/image124.jpg)
 
@@ -140,16 +141,23 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Select files**. Press tab ``My computer`` to choose some files for annotation from your PC.
     If you select tab ``Connected file share`` you can choose files for annotation from your network.
     If you select `` Remote source`` , you'll see a field where you can enter a list of URLs (one URL per line).
+    If you upload a video data and select ``Use cache`` option, you can along with the video file attach a file with meta information.
+    You can find how to prepare it [here](/utils/prepare_meta_information/README.md).
 
       ![](static/documentation/images/image127.jpg)
 
     #### Advanced configuration
 
-      ![](static/documentation/images/image128.jpg)
+      ![](static/documentation/images/image128_use_cache.jpg)
 
     **Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
 
     **Use zip chunks**. Force to use zip chunks as compressed data. Actual for videos only.
+
+    **Use cache**. Defines how to work with data. Select the checkbox to switch to the "on-the-fly data processing",
+    which will reduce the task creation time (by preparing chunks when requests are received)
+    and store data in a cache of limited size with a policy of evicting less popular items.
+    See more [here](/cvat/apps/documentation/data_on_fly.md).
 
     **Image Quality**. Use this option to specify quality of uploaded images.
     The option helps to load high resolution datasets faster.
@@ -284,39 +292,22 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
 ### Models
 
-On the ``Models`` page allows you to manage your deep learning (DL) models uploaded for auto annotation.
-Using the functionality you can upload, update or delete a specific DL model.
-To open the model manager, click the ``Models`` button on the navigation bar.
-The ``Models`` page contains information about all the existing models. The list of models is divided into two sections:
-- Primary — contains default CVAT models. Each model is a separate element.
-It contains the model’s name, a framework on which the model was based on and
-``Supported labels`` (a dropdown list of all supported labels).
-- Uploaded by a user — Contains models uploaded by a user.
-The list of user models has additional columns with the following information:
-name of the user who uploaded the model and the upload date.
-Here you can delete models in the ``Actions`` menu.
+The Models page contains a list of deep learning (DL) models deployed for semi-automatic and automatic annotation.
+To open the Models page, click the Models button on the navigation bar.
+The list of models is presented in the form of a table. The parameters indicated for each model are the following:
+ - ``Framework`` the model is based on
+ - model ``Name``
+ - model ``Type``:
+    -   ``detector`` - used for automatic annotation (available in [detectors](#detectors) and [automatic annotation](#automatic-annotation))
+    -  ``interactor`` - used for semi-automatic shape annotation (available in [interactors](#interactors))
+    -  ``tracker`` -  used for semi-automatic track annotation (available in [trackers](#trackers))
+    -  ``reid`` -  used to combine individual objects into a track (available in [automatic annotation](#automatic-annotation))
+ - ``Description`` - brief description of the model
+ - ``Labels`` - list of the supported labels (only for the models of the ``detectors`` type)
 
 ![](static/documentation/images/image099.jpg)
 
-In order to add your model, click `` Create new model``.
-Enter model name, and select model file using "Select files" button.
-To annotate a task with a custom model you need to prepare 4 files:
-- ``Model config`` (*.xml) - a text file with network configuration.
-- ``Model weights`` (*.bin) - a binary file with trained weights.
-- ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with
-string values for label numbers.
-- ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure
-which can be processed by CVAT.
-
-You can learn more about creating model files by pressing [(?)](/cvat/apps/auto_annotation).
-Check the box `` Load globally`` if you want everyone to be able to use the model.
-Click the ``Submit`` button to submit  a model.
-
-![](static/documentation/images/image104.jpg)
-
-After the upload is complete your model can be found in the ``Uploaded by a user`` section.
-Use "Auto annotation" button to pre annotate a task using one of your DL models.
-[Read more](/cvat/apps/auto_annotation)
+Read how to install your model [here](installation.md#semi-automatic-and-automatic-annotation).
 
 ### Search
 
@@ -705,9 +696,6 @@ Button assignment:
   - [MS COCO](http://cocodataset.org/#format-data)
   - [YOLO](https://pjreddie.com/darknet/yolo/)
 - ``Open the task`` — opens a page with details about the task.
-- ``Run ReID merge`` —  automatic merge of shapes or tracks.
-  It is used to combine individual objects - created by automatic annotation in a single track.
-  For more information click [here](cvat/apps/reid/README.md).
 
 #### Save Work
 Saves annotations for the current job. The button has an indication of the saving process.
@@ -799,12 +787,13 @@ Switching between user interface modes.
 **Shapes block** - contains all the tools for creating shapes.
 |Icon                                         |Description   |Links to section  |
 |--                                           |--            |--                |
+|![](static/documentation/images/image189.jpg)|``AI Tools`` |[AI Tools](#ai-tools)|
 |![](static/documentation/images/image167.jpg)|``Rectangle``|[Shape mode](#shape-mode-basics); [Track mode](#track-mode-basics);<br/> [Drawing by 4 points](#annotation-with-rectangle-by-4-points)|
 |![](static/documentation/images/image168.jpg)|``Polygon``  |[Annotation with polygons](#annotation-with-polygons); [Track mode with polygons](#track-mode-with-polygons)  |
 |![](static/documentation/images/image169.jpg)|``Polyline`` |[Annotation with polylines](#annotation-with-polylines)|
 |![](static/documentation/images/image170.jpg)|``Points``   |[Annotation with points](#annotation-with-points)      |
 |![](static/documentation/images/image176.jpg)|``Cuboid``   |[Annotation with cuboids](#annotation-with-cuboids)    |
-|![](static/documentation/images/image171.jpg)|``Tag``      |[Annotation with tags](#annotation-with-tag)s            |
+|![](static/documentation/images/image171.jpg)|``Tag``      |[Annotation with tags](#annotation-with-tag)           |
 
 **Edit block** - contains tools for editing tracks and shapes.
 |Icon                                         |Description                                        |Links to section  |
@@ -870,6 +859,10 @@ The action menu contains:
 
 - ``To background`` - moves the object to the background. The keyboard shortcut ``-``,``_``.
 - ``To foreground`` - moves the object to the foreground. The keyboard shortcut ``+``,``=``.
+- ``Change instance color``- choosing a color using the color picker (available only in instance mode).
+
+  ![](static/documentation/images/image153.jpg)
+
 - ``Remove`` - removes the object. The keyboard shortcut ``Del``,``Shift+Del``.
 
 A shape can be locked to prevent its modification or moving by an accident. Shortcut to lock an object: ``L``.
@@ -890,11 +883,6 @@ You can change the way an object is displayed on a frame (show or hide).
 
 ![](static/documentation/images/image052.jpg)
 
-You can change an object's color.
-To do so, click on the color bar of the object and select a color from the palette that appears.
-
-![](static/documentation/images/image153.jpg)
-
 By clicking on the ``Details`` button you can collapse or expand the field with all the attributes of the object.
 
 ![](static/documentation/images/image154.jpg)
@@ -902,9 +890,10 @@ By clicking on the ``Details`` button you can collapse or expand the field with 
 ---
 
 #### Labels
-You can also change the color of any object to random, to do so just hover
-the mouse over the object on the frame and highlight them by clicking on a label you need.
-In this tab, you can lock or hide objects of a certain label.
+In this tab you can lock or hide objects of a certain label.
+To change the color for a specific label,
+you need to go to the task page and select the color by clicking the edit button,
+this way you will change the label color for all jobs in the task.
 
 ![](static/documentation/images/image062.jpg)
 
@@ -942,9 +931,9 @@ Change the opacity of the selected object's fill.
 
 ![](static/documentation/images/image089_detrac.jpg)
 
-**Black Stroke** checkbox
+**Outlines borders** checkbox
 
-Changes the shape border from colored to black.
+You can change a special shape border color by clicking on the ``Eyedropper`` icon.
 
 ![](static/documentation/images/image088_detrac.jpg)
 
@@ -1024,6 +1013,55 @@ or shortcuts:
 In order to change the zoom level, go to settings (press ``F3``)
 in the workspace tab and set the value Attribute annotation mode (AAM) zoom margin in px.
 
+## AI Tools
+
+The tool is designed for semi-automatic and automatic annotation using DL models.
+The tool is available only if there is a corresponding model.
+For more details about DL models read the [Models](#models) section.
+
+### Interactors
+
+Interactors are used to create a polygon semi-automatically.
+Supported DL models are not bound to the label and can be used for any objects.
+To create a polygon usually you need to use regular or positive points.
+For some kinds of segmentation negative points are available.
+Positive points are the points related to the object.
+Negative points should be placed outside the boundary of the object.
+In most cases specifying positive points alone is enough to build a polygon.
+
+- Before you start, select the magic wand on the controls sidebar and go to the ``Interactors`` tab.
+  Then select a label for the polygon and a required DL model.
+
+  ![](static/documentation/images/image114.jpg)
+
+- Click ``Interact`` to enter the interaction mode. Now you can place positive and/or negative points.
+  Left click creates a positive point and right click creates a negative point.
+  ``Deep extreme cut`` model requires a minimum of 4 points. After you set 4 positive points,
+  a request will be sent to the server and when the process is complete a polygon will be created.
+  If you are not satisfied with the result, you can set additional points or remove points by left-clicking on it.
+  If you want to postpone the request and create a few more points, hold down ``Ctrl`` and continue,
+  the request will be sent after the key is released.
+
+  ![](static/documentation/images/image188_detrac.jpg)
+
+- To finish interaction, click on the icon on the controls sidebar or press ``N`` on your keyboard.
+
+- When the object is finished, you can edit it like a polygon.
+  You can read about editing polygons in the [Annotation with polygons](#annotation-with-polygons) section.
+
+### Detectors
+
+Detectors are used to automatically annotate one frame. Supported DL models are suitable only for certain labels.
+
+- Before you start, click the magic wand on the controls sidebar and select the Detectors icon tab.
+  You need to match the labels of the DL model (left column) with the labels in your task (right column).
+  Then click ``Annotate``.
+
+  ![](static/documentation/images/image187.jpg)
+
+- This action will automatically annotates one frame.
+  In the [Automatic annotation](#automatic-annotation) section you can read how to make automatic annotation of all frames.
+
 ## Annotation with rectangle by 4 points
 It is an efficient method of bounding box annotation, proposed
 [here](https://arxiv.org/pdf/1708.02750.pdf).
@@ -1069,7 +1107,7 @@ Before starting, you need to select ``Polygon`` on the controls sidebar and choo
   delete the previous point by right-clicking on it.
 - Press ``N`` again for completing the shape.
 - After creating the polygon, you can move the points or delete them by right-clicking and selecting ``Delete point``
-  or clicking with pressed ``Ctrl`` key in the context menu.
+  or clicking with pressed ``Alt`` key in the context menu.
 
 ### Drawing using automatic borders
 
@@ -1110,21 +1148,6 @@ Below you can see results with opacity and black stroke:
 
 If you need to annotate small objects, increase ``Image Quality`` to
 ``95`` in ``Create task`` dialog for your convenience.
-
-### Make AI polygon
-
-Used to create a polygon semi-automatically.
-- Before starting, you have to make sure that the ``Make AI polygon`` is selected.
-
-  ![](static/documentation/images/image114.jpg)
-
-- Click ``Shape`` to enter drawing mode. Now you can start annotating the necessary area.
-  A shape must consist of 4 points minimum. You can set a fixed number of points in the ``Number of points`` field,
-  then drawing will be stopped automatically. You can zoom in/out and move while drawing.
-- Press ``N`` again to finish marking the area. At the end of Auto Segmentation,
-  a shape is created and you can work with it as a polygon.
-
-  ![](static/documentation/images/gif009_detrac.gif)
 
 ### Edit polygon
 
@@ -1353,12 +1376,14 @@ You can find the list of available models in the ``Models`` section.
 
     ![](static/documentation/images/gif014_detrac.gif)
 
-1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects and
-    merging into tracks using ``ReID merge`` function. Click the ``ReID merge`` button in the menu.
-    You can use the default settings (for more information click [here](cvat/apps/reid/README.md)).
-    To launch the merging process click ``Merge``. Each frame of the track will be a key frame.
+1.  You can combine separate bounding boxes into tracks using the ``Person reidentification `` model.
+    To do this, click on the automatic annotation item in the action menu again and select the model
+    of the ``ReID`` type (in this case the ``Person reidentification`` model).
+    You can set the following parameters:
+      - Model ``Threshold`` is a maximum cosine distance between objects’ embeddings.
+      - ``Maximum distance`` defines a maximum radius that an object can diverge between adjacent frames.
 
-    ![](static/documentation/images/image133.jpg)
+      ![](static/documentation/images/image133.jpg)
 
 1.  You can remove false positives and edit tracks using ``Split`` and ``Merge`` functions.
 
@@ -1514,7 +1539,7 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 |                                | _Operations with objects_                                                       |
 | ``Ctrl``                       | Switch automatic bordering for polygons and polylines during drawing/editing    |
 | Hold ``Ctrl``                  | When the shape is active and fix it                                             |
-| ``Ctrl+Click`` on point        | Deleting a point (used when hovering over a point of polygon, polyline, points) |
+| ``Alt+Click`` on point         | Deleting a point (used when hovering over a point of polygon, polyline, points) |
 | ``Shift+Click`` on point       | Editing a shape (used when hovering over a point of polygon, polyline or points)|
 | ``Right-Click`` on shape       | Display of an object element from objects sidebar                               |
 | ``T+L``                        | Change locked state for all objects in the sidebar                              |

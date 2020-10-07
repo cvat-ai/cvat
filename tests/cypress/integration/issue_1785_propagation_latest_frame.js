@@ -25,6 +25,15 @@ context('Check propagation work from the latest frame', () => {
     const archivePath = `cypress/fixtures/${archiveName}`
     const imagesFolder = `cypress/fixtures/image_issue_${issueId}`
     const directoryToArchive = imagesFolder
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -46,8 +55,8 @@ context('Check propagation work from the latest frame', () => {
                 .should('have.value', '2')
             })
         })
-        it('Create a shape', () => {
-            cy.createShape(309, 431, 616, 671)
+        it('Create a rectangle shape', () => {
+            cy.createRectangle(createRectangleShape2Points)
         })
         it('Try to propagate', () => {
             cy.get('#cvat_canvas_shape_1').trigger('mousemove')
