@@ -726,6 +726,7 @@ The button to go to the next / previous frame has the customization possibility.
 1. The default option - go to the next / previous frame (the step is 1 frame).
 2. Go to the next / previous frame which corresponds to the set filter (read the [filter](#filter) section to know the details how to use it).
 3. Go to the next / previous frame without annotation at all. Use this option in cases when you need to find missed frames quickly.
+
 Shortcuts: ``D`` - previous, ``F`` - next.
 
   ![](static/documentation/images/image040.jpg)
