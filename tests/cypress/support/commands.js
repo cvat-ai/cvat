@@ -202,19 +202,31 @@ Cypress.Commands.add('changeAnnotationMode', (mode) => {
     .should('contain.text', mode)
 })
 
-Cypress.Commands.add('createCuboid', (mode, firstX, firstY, lastX, lastY) => {
+Cypress.Commands.add('createCuboid', (createCuboidParams) => {
     cy.get('.cvat-draw-cuboid-control').click()
+    if (createCuboidParams.switchLabel) {
+        cy.switchLabel(createCuboidParams.labelName)
+    }
+    cy.get('.cvat-draw-shape-popover-content')
+    .contains(createCuboidParams.points)
+    .click()
     cy.contains('Draw new cuboid')
     .parents('.cvat-draw-shape-popover-content')
     .within(() => {
         cy.get('button')
-        .contains(mode)
+        .contains(createCuboidParams.type)
         .click({force: true})
     })
     cy.get('.cvat-canvas-container')
-    .click(firstX, firstY)
+    .click(createCuboidParams.firstX, createCuboidParams.firstY)
     cy.get('.cvat-canvas-container')
-    .click(lastX, lastY)
+    .click(createCuboidParams.secondX, createCuboidParams.secondY)
+    if (createCuboidParams.points === 'By 4 Points') {
+        cy.get('.cvat-canvas-container')
+        .click(createCuboidParams.thirdX, createCuboidParams.thirdY)
+        cy.get('.cvat-canvas-container')
+        .click(createCuboidParams.fourthX, createCuboidParams.fourthY)
+    }
 })
 
 Cypress.Commands.add('updateAttributes', (multiAttrParams) => {

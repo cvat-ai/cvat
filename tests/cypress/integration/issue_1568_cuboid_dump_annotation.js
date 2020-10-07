@@ -19,6 +19,15 @@ context('Dump annotation if cuboid created', () => {
     const posX = 10
     const posY = 10
     const color = 'gray'
+    const createCuboidShape2Points = {
+        points: 'From rectangle',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -30,7 +39,7 @@ context('Dump annotation if cuboid created', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Create a cuboid', () => {
-            cy.createCuboid('Shape', 309, 431, 616, 671)
+            cy.createCuboid(createCuboidShape2Points)
             cy.get('#cvat-objects-sidebar-state-item-1')
             .should('contain', '1').and('contain', 'CUBOID SHAPE')
         })
