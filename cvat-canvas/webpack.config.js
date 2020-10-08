@@ -28,7 +28,10 @@ const nodeConfig = {
             use: {
                 loader: 'babel-loader',
                 options: {
-                    plugins: ['@babel/plugin-proposal-class-properties'],
+                    plugins: [
+                        '@babel/plugin-proposal-class-properties',
+                        '@babel/plugin-proposal-optional-chaining'
+                    ],
                     presets: [
                         ['@babel/preset-env'],
                         ['@babel/typescript'],

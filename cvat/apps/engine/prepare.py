@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import av
+from collections import OrderedDict
 import hashlib
+import os
 
 class WorkWithVideo:
     def __init__(self, **kwargs):
@@ -72,27 +74,30 @@ class PrepareInfo(WorkWithVideo):
     def get_task_size(self):
         return self.frames
 
+    @property
+    def frame_sizes(self):
+        frame = next(iter(self.key_frames.values()))
+        return (frame.width, frame.height)
+
+    def check_key_frame(self, container, video_stream, key_frame):
+        for packet in container.demux(video_stream):
+            for frame in packet.decode():
+                if md5_hash(frame) != md5_hash(key_frame[1]) or frame.pts != key_frame[1].pts:
+                    self.key_frames.pop(key_frame[0])
+                return
+
     def check_seek_key_frames(self):
         container = self._open_video_container(self.source_path, mode='r')
         video_stream = self._get_video_stream(container)
 
         key_frames_copy = self.key_frames.copy()
 
-        for index, key_frame in key_frames_copy.items():
-            container.seek(offset=key_frame.pts, stream=video_stream)
-            flag = True
-            for packet in container.demux(video_stream):
-                for frame in packet.decode():
-                    if md5_hash(frame) != md5_hash(key_frame) or frame.pts != key_frame.pts:
-                        self.key_frames.pop(index)
-                    flag = False
-                    break
-                if not flag:
-                    break
+        for key_frame in key_frames_copy.items():
+            container.seek(offset=key_frame[1].pts, stream=video_stream)
+            self.check_key_frame(container, video_stream, key_frame)
 
-        #TODO: correct ratio of number of frames to keyframes
-        if len(self.key_frames) == 0:
-            raise Exception('Too few keyframes')
+    def check_frames_ratio(self, chunk_size):
+        return (len(self.key_frames) and (self.frames // len(self.key_frames)) <= 2 * chunk_size)
 
     def save_key_frames(self):
         container = self._open_video_container(self.source_path, mode='r')
@@ -153,3 +158,78 @@ class PrepareInfo(WorkWithVideo):
                     return
 
         self._close_video_container(container)
+
+class UploadedMeta(PrepareInfo):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        with open(self.meta_path, 'r') as meta_file:
+            lines = meta_file.read().strip().split('\n')
+            self.frames = int(lines.pop())
+
+            key_frames = {int(line.split()[0]): int(line.split()[1]) for line in lines}
+            self.key_frames = OrderedDict(sorted(key_frames.items(), key=lambda x: x[0]))
+
+    @property
+    def frame_sizes(self):
+        container = self._open_video_container(self.source_path, 'r')
+        video_stream = self._get_video_stream(container)
+        container.seek(offset=next(iter(self.key_frames.values())), stream=video_stream)
+        for packet in container.demux(video_stream):
+            for frame in packet.decode():
+                self._close_video_container(container)
+                return (frame.width, frame.height)
+
+    def save_meta_info(self):
+        with open(self.meta_path, 'w') as meta_file:
+            for index, pts in self.key_frames.items():
+                meta_file.write('{} {}\n'.format(index, pts))
+
+    def check_key_frame(self, container, video_stream, key_frame):
+        for packet in container.demux(video_stream):
+            for frame in packet.decode():
+                assert frame.pts == key_frame[1], "Uploaded meta information does not match the video"
+                return
+
+    def check_seek_key_frames(self):
+        container = self._open_video_container(self.source_path, mode='r')
+        video_stream = self._get_video_stream(container)
+
+        for key_frame in self.key_frames.items():
+            container.seek(offset=key_frame[1], stream=video_stream)
+            self.check_key_frame(container, video_stream, key_frame)
+
+        self._close_video_container(container)
+
+    def check_frames_numbers(self):
+        container = self._open_video_container(self.source_path, mode='r')
+        video_stream = self._get_video_stream(container)
+        # not all videos contain information about numbers of frames
+        if video_stream.frames:
+            self._close_video_container(container)
+            assert video_stream.frames == self.frames, "Uploaded meta information does not match the video"
+            return
+        self._close_video_container(container)
+
+def prepare_meta(media_file, upload_dir=None, meta_dir=None, chunk_size=None):
+    paths = {
+        'source_path': os.path.join(upload_dir, media_file) if upload_dir else media_file,
+        'meta_path': os.path.join(meta_dir, 'meta_info.txt') if meta_dir else os.path.join(upload_dir, 'meta_info.txt'),
+    }
+    analyzer = AnalyzeVideo(source_path=paths.get('source_path'))
+    analyzer.check_type_first_frame()
+    analyzer.check_video_timestamps_sequences()
+
+    meta_info = PrepareInfo(source_path=paths.get('source_path'),
+                            meta_path=paths.get('meta_path'))
+    meta_info.save_key_frames()
+    meta_info.check_seek_key_frames()
+    meta_info.save_meta_info()
+    smooth_decoding = meta_info.check_frames_ratio(chunk_size) if chunk_size else None
+    return (meta_info, smooth_decoding)
+
+def prepare_meta_for_upload(func, *args):
+    meta_info, smooth_decoding = func(*args)
+    with open(meta_info.meta_path, 'a') as meta_file:
+        meta_file.write(str(meta_info.get_task_size()))
+    return smooth_decoding

@@ -1,0 +1,19 @@
+{
+    "all": true,
+    "recursive": true,
+    "compact": false,
+    "useInlineSourceMaps": false,
+    "extension": [
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx"
+    ],
+    "exclude": [
+        "**/3rdparty/*",
+        "**/tests/*"
+    ],
+    "parser-plugins": [
+        "typescript"
+    ]
+}

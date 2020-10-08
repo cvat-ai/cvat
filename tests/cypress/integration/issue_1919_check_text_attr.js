@@ -20,6 +20,15 @@ context('Check label attribute changes', () => {
     const posX = 10
     const posY = 10
     const color = 'gray'
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -27,7 +36,7 @@ context('Check label attribute changes', () => {
         cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image)
         cy.openTaskJob(taskName)
-        cy.createShape(309, 431, 616, 671)
+        cy.createRectangle(createRectangleShape2Points)
     })
 
     describe(`Testing issue "${issueId}"`, () => {

@@ -88,28 +88,37 @@ Cypress.Commands.add('openTaskJob', (taskName, jobNumber=0) => {
     cy.openJob(jobNumber)
 })
 
-Cypress.Commands.add('createShape', (firstX, firstY, lastX, lastY) => {
+Cypress.Commands.add('createRectangle', (createRectangleParams) => {
     cy.get('.cvat-draw-rectangle-control').click()
+    if (createRectangleParams.switchLabel) {
+        cy.switchLabel(createRectangleParams.labelName)
+    }
+    cy.get('.cvat-draw-shape-popover-content')
+    .contains(createRectangleParams.points)
+    .click()
     cy.get('.cvat-draw-shape-popover-content')
     .find('button')
-    .contains('Shape')
+    .contains(createRectangleParams.type)
     .click({force: true})
     cy.get('.cvat-canvas-container')
-    .click(firstX, firstY)
+    .click(createRectangleParams.firstX, createRectangleParams.firstY)
     cy.get('.cvat-canvas-container')
-    .click(lastX, lastY)
+    .click(createRectangleParams.secondX, createRectangleParams.secondY)
+    if (createRectangleParams.points === 'By 4 Points') {
+        cy.get('.cvat-canvas-container')
+        .click(createRectangleParams.thirdX, createRectangleParams.thirdY)
+        cy.get('.cvat-canvas-container')
+        .click(createRectangleParams.fourthX, createRectangleParams.fourthY)
+    }
 })
 
-Cypress.Commands.add('createTrack', (firstX, firstY, lastX, lastY) => {
-    cy.get('.cvat-draw-rectangle-control').click()
+Cypress.Commands.add('switchLabel', (labelName) => {
     cy.get('.cvat-draw-shape-popover-content')
-    .find('button')
-    .contains('Track')
-    .click({force: true})
-    cy.get('.cvat-canvas-container')
-    .click(firstX, firstY)
-    cy.get('.cvat-canvas-container')
-    .click(lastX, lastY)
+    .find('.ant-select-selection-selected-value')
+    .click()
+    cy.get('.ant-select-dropdown-menu')
+    .contains(labelName)
+    .click()
 })
 
 Cypress.Commands.add('createPoint', (posX, posY, type='Shape') => {
@@ -193,19 +202,31 @@ Cypress.Commands.add('changeAnnotationMode', (mode) => {
     .should('contain.text', mode)
 })
 
-Cypress.Commands.add('createCuboid', (mode, firstX, firstY, lastX, lastY) => {
+Cypress.Commands.add('createCuboid', (createCuboidParams) => {
     cy.get('.cvat-draw-cuboid-control').click()
+    if (createCuboidParams.switchLabel) {
+        cy.switchLabel(createCuboidParams.labelName)
+    }
+    cy.get('.cvat-draw-shape-popover-content')
+    .contains(createCuboidParams.points)
+    .click()
     cy.contains('Draw new cuboid')
     .parents('.cvat-draw-shape-popover-content')
     .within(() => {
         cy.get('button')
-        .contains(mode)
+        .contains(createCuboidParams.type)
         .click({force: true})
     })
     cy.get('.cvat-canvas-container')
-    .click(firstX, firstY)
+    .click(createCuboidParams.firstX, createCuboidParams.firstY)
     cy.get('.cvat-canvas-container')
-    .click(lastX, lastY)
+    .click(createCuboidParams.secondX, createCuboidParams.secondY)
+    if (createCuboidParams.points === 'By 4 Points') {
+        cy.get('.cvat-canvas-container')
+        .click(createCuboidParams.thirdX, createCuboidParams.thirdY)
+        cy.get('.cvat-canvas-container')
+        .click(createCuboidParams.fourthX, createCuboidParams.fourthY)
+    }
 })
 
 Cypress.Commands.add('updateAttributes', (multiAttrParams) => {

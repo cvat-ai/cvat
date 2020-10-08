@@ -206,7 +206,9 @@ function build() {
             */
             async changePassword(oldPassword, newPassword1, newPassword2) {
                 const result = await PluginRegistry
-                    .apiWrapper(cvat.server.changePassword, oldPassword, newPassword1, newPassword2);
+                    .apiWrapper(
+                        cvat.server.changePassword, oldPassword, newPassword1, newPassword2,
+                    );
                 return result;
             },
             /**

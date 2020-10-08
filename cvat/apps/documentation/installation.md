@@ -326,7 +326,7 @@ specify the `CVAT_HOST` environment variable. The best way to do that is to crea
 all your extra settings here.
 
 ```yml
-version: "2.3"
+version: "3.3"
 
 services:
   cvat_proxy:
@@ -344,7 +344,7 @@ To do that you can mount it to CVAT docker container. Example of
 docker-compose.override.yml for this purpose:
 
 ```yml
-version: "2.3"
+version: "3.3"
 
 services:
   cvat:
@@ -437,7 +437,7 @@ mkdir -p $HOME/cvat/letsencrypt-webroot/.well-known/acme-challenge
 
 ```yaml
 # docker-compose.override.yml
-version: "2.3"
+version: "3.3"
 
 services:
   cvat_proxy:

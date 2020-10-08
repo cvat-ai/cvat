@@ -2,14 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
-from diskcache import Cache
-from django.conf import settings
-from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter, ZipChunkWriter,
-    Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter)
-from cvat.apps.engine.models import DataChoice
-from .prepare import PrepareInfo
 import os
 from io import BytesIO
+
+from diskcache import Cache
+from django.conf import settings
+
+from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
+    Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter)
+from cvat.apps.engine.models import DataChoice
+from cvat.apps.engine.prepare import PrepareInfo
+
 
 class CacheInteraction:
     def __init__(self):
@@ -27,7 +30,7 @@ class CacheInteraction:
         return chunk, tag
 
     def prepare_chunk_buff(self, db_data, quality, chunk_number):
-        from cvat.apps.engine.frame_provider import FrameProvider
+        from cvat.apps.engine.frame_provider import FrameProvider # TODO: remove circular dependency
         extractor_classes = {
             FrameProvider.Quality.COMPRESSED : Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter,
             FrameProvider.Quality.ORIGINAL : Mpeg4ChunkWriter if db_data.original_chunk_type == DataChoice.VIDEO else ZipChunkWriter,
