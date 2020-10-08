@@ -3,15 +3,18 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import {Redirect, useParams} from "react-router";
-import {useCookies } from "react-cookie";
+import { Redirect, useParams } from 'react-router';
+import { useCookies } from 'react-cookie';
 
 export default function LoginWithTokenComponent(){
     const { sessionId, token } = useParams()
     const [cookies, setCookie] = useCookies(['sessionid', 'csrftoken'])
-    const expires = new Date(new Date().setFullYear(new Date().getFullYear() + 1))
-    setCookie('sessionid', sessionId, {path: '/', expires })
-    setCookie('csrftoken', token, {path: '/', expires})
+
+    const expires1y = new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+    const expires2w = new Date(new Date().setDate(new Date().getDate() + 13))
+
+    setCookie('sessionid', sessionId, {path: '/', expires: expires2w })
+    setCookie('csrftoken', token, {path: '/', expires: expires1y})
 
     if ( cookies['sessionid'] && cookies['csrftoken']) {
         window.location.reload();
