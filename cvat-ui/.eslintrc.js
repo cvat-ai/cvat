@@ -3,29 +3,29 @@
 // SPDX-License-Identifier: MIT
 
 module.exports = {
-    'env': {
-        'node': true,
-        'browser': true,
-        'es6': true,
+    env: {
+        node: true,
+        browser: true,
+        es6: true,
     },
-    'parserOptions': {
-        'parser': '@typescript-eslint/parser',
-        'ecmaVersion': 6,
-        'project': './tsconfig.json',
+    parserOptions: {
+        parser: '@typescript-eslint/parser',
+        ecmaVersion: 6,
+        project: './tsconfig.json',
     },
-    'plugins': [
-        '@typescript-eslint',
-        'import',
-    ],
-    'ignorePatterns': ['*.svg', '*.scss'],
-    'extends': [
+    plugins: ['@typescript-eslint', 'import', 'eslint-plugin-header'],
+    ignorePatterns: ['*.svg', '*.scss'],
+    extends: [
         'plugin:@typescript-eslint/recommended',
         'airbnb-typescript',
         'plugin:import/errors',
         'plugin:import/warnings',
         'plugin:import/typescript',
+        'prettier',
+        'prettier/@typescript-eslint',
+        'prettier/react',
     ],
-    'rules': {
+    rules: {
         '@typescript-eslint/indent': ['warn', 4],
         'react/jsx-indent': ['warn', 4],
         'react/jsx-indent-props': ['warn', 4],
@@ -34,16 +34,17 @@ module.exports = {
         'arrow-parens': ['error', 'always'],
         '@typescript-eslint/no-explicit-any': [0],
         '@typescript-eslint/explicit-function-return-type': ['warn', { allowExpressions: true }],
-        'no-restricted-syntax': [0, {'selector': 'ForOfStatement'}],
+        'no-restricted-syntax': [0, { selector: 'ForOfStatement' }],
         'no-plusplus': [0],
         'lines-between-class-members': 0,
         'react/no-did-update-set-state': 0, // https://github.com/airbnb/javascript/issues/1875
+        'header/header': [2, '.header-tpl.ts'],
     },
-    'settings': {
+    settings: {
         'import/resolver': {
-            'typescript': {
-                'directory': './tsconfig.json'
-            }
+            typescript: {
+                directory: './tsconfig.json',
+            },
         },
     },
 };

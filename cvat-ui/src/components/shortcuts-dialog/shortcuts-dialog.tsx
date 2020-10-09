@@ -1,10 +1,13 @@
-import React from 'react';
-import { getApplicationKeyMap } from 'react-hotkeys';
-import Modal from 'antd/lib/modal';
-import Table from 'antd/lib/table';
-import { connect } from 'react-redux';
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 import { shortcutsActions } from 'actions/shortcuts-actions';
+import Modal from 'antd/lib/modal';
+import Table from 'antd/lib/table';
+import React from 'react';
+import { getApplicationKeyMap } from 'react-hotkeys';
+import { connect } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
@@ -17,9 +20,7 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        shortcuts: {
-            visibleShortcutsHelp: visible,
-        },
+        shortcuts: { visibleShortcutsHelp: visible },
     } = state;
 
     return {
@@ -39,35 +40,41 @@ function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | nu
     const { visible, switchShortcutsDialog } = props;
     const keyMap = getApplicationKeyMap();
 
-    const splitToRows = (data: string[]): JSX.Element[] => (
-        data.map((item: string, id: number): JSX.Element => (
-            // eslint-disable-next-line react/no-array-index-key
-            <span key={id}>
-                {item}
-                <br />
-            </span>
-        ))
-    );
+    const splitToRows = (data: string[]): JSX.Element[] =>
+        data.map(
+            (item: string, id: number): JSX.Element => (
+                // eslint-disable-next-line react/no-array-index-key
+                <span key={id}>
+                    {item}
+                    <br />
+                </span>
+            ),
+        );
 
-    const columns = [{
-        title: 'Name',
-        dataIndex: 'name',
-        key: 'name',
-    }, {
-        title: 'Shortcut',
-        dataIndex: 'shortcut',
-        key: 'shortcut',
-        render: splitToRows,
-    }, {
-        title: 'Action',
-        dataIndex: 'action',
-        key: 'action',
-        render: splitToRows,
-    }, {
-        title: 'Description',
-        dataIndex: 'description',
-        key: 'description',
-    }];
+    const columns = [
+        {
+            title: 'Name',
+            dataIndex: 'name',
+            key: 'name',
+        },
+        {
+            title: 'Shortcut',
+            dataIndex: 'shortcut',
+            key: 'shortcut',
+            render: splitToRows,
+        },
+        {
+            title: 'Action',
+            dataIndex: 'action',
+            key: 'action',
+            render: splitToRows,
+        },
+        {
+            title: 'Description',
+            dataIndex: 'description',
+            key: 'description',
+        },
+    ];
 
     const dataSource = Object.keys(keyMap).map((key: string, id: number) => ({
         key: id,
@@ -92,7 +99,4 @@ function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | nu
     );
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(ShorcutsDialog);
+export default connect(mapStateToProps, mapDispatchToProps)(ShorcutsDialog);
