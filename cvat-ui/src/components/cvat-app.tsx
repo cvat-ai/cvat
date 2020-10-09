@@ -10,11 +10,11 @@ import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
-import LoginWithTokenComponent from './login-with-token/login-with-token';
 import Header from 'components/header/header';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
+import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
 import LoginPageContainer from 'containers/login-page/login-page';
@@ -31,7 +31,6 @@ import { NotificationsState } from 'reducers/interfaces';
 import { customWaViewHit } from 'utils/enviroment';
 import showPlatformNotification, { platformInfo, stopNotifications } from 'utils/platform-checker';
 import '../styles.scss';
-
 
 
 interface CVATAppProps {

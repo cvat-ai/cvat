@@ -6,7 +6,7 @@ import React, { useEffect } from 'react';
 import { Redirect, useParams } from 'react-router';
 import { useCookies } from 'react-cookie';
 
-export default function LoginWithTokenComponent() {
+export default function LoginWithTokenComponent(): JSX.Element {
     const { sessionId, token } = useParams();
     const [cookies, setCookie] = useCookies(['sessionid', 'csrftoken']);
 
