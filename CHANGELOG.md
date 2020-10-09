@@ -52,6 +52,7 @@ filters and searching the nearest frame without any annotations (<https://github
 - Fixed use case when logs could be saved twice or more times #2202 (<https://github.com/openvinotoolkit/cvat/pull/2203>)
 - Fixed issues from #2112 (<https://github.com/openvinotoolkit/cvat/pull/2217>)
 - Git application name (renamed to dataset_repo) (<https://github.com/openvinotoolkit/cvat/pull/2243>)
+- Fixed CVAT startup process if the user has `umask 077` in .bashrc file (<https://github.com/openvinotoolkit/cvat/pull/2293>)
 
 ### Security
 -
