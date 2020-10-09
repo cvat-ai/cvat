@@ -2,15 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
-import { Row, Col } from 'antd/lib/grid';
-import Tooltip from 'antd/lib/tooltip';
-import Select from 'antd/lib/select';
-import Table from 'antd/lib/table';
-import Modal from 'antd/lib/modal';
-import Spin from 'antd/lib/spin';
+import { Col, Row } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
+import Modal from 'antd/lib/modal';
+import Select from 'antd/lib/select';
+import Spin from 'antd/lib/spin';
+import Table from 'antd/lib/table';
+import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
+import React from 'react';
 
 interface Props {
     collecting: boolean;
@@ -36,7 +36,6 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         assignee,
         startFrame,
         stopFrame,
-        zOrder,
         bugTracker,
         closeStatistics,
         changeJobStatus,
@@ -54,9 +53,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
 
     if (collecting || !data) {
         return (
-            <Modal
-                {...baseProps}
-            >
+            <Modal {...baseProps}>
                 <Spin style={{ margin: '0 50%' }} />
             </Modal>
         );
@@ -90,61 +87,79 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
 
     const makeShapesTracksTitle = (title: string): JSX.Element => (
         <Tooltip title='Shapes / Tracks' mouseLeaveDelay={0}>
-            <Text strong style={{ marginRight: 5 }}>{title}</Text>
+            <Text strong style={{ marginRight: 5 }}>
+                {title}
+            </Text>
             <Icon className='cvat-info-circle-icon' type='question-circle' />
         </Tooltip>
     );
 
-    const columns = [{
-        title: <Text strong> Label </Text>,
-        dataIndex: 'label',
-        key: 'label',
-    }, {
-        title: makeShapesTracksTitle('Rectangle'),
-        dataIndex: 'rectangle',
-        key: 'rectangle',
-    }, {
-        title: makeShapesTracksTitle('Polygon'),
-        dataIndex: 'polygon',
-        key: 'polygon',
-    }, {
-        title: makeShapesTracksTitle('Polyline'),
-        dataIndex: 'polyline',
-        key: 'polyline',
-    }, {
-        title: makeShapesTracksTitle('Points'),
-        dataIndex: 'points',
-        key: 'points',
-    }, {
-        title: <Text strong> Tags </Text>,
-        dataIndex: 'tags',
-        key: 'tags',
-    }, {
-        title: <Text strong> Manually </Text>,
-        dataIndex: 'manually',
-        key: 'manually',
-    }, {
-        title: <Text strong> Interpolated </Text>,
-        dataIndex: 'interpolated',
-        key: 'interpolated',
-    }, {
-        title: <Text strong> Total </Text>,
-        dataIndex: 'total',
-        key: 'total',
-    }];
+    const columns = [
+        {
+            title: <Text strong> Label </Text>,
+            dataIndex: 'label',
+            key: 'label',
+        },
+        {
+            title: makeShapesTracksTitle('Rectangle'),
+            dataIndex: 'rectangle',
+            key: 'rectangle',
+        },
+        {
+            title: makeShapesTracksTitle('Polygon'),
+            dataIndex: 'polygon',
+            key: 'polygon',
+        },
+        {
+            title: makeShapesTracksTitle('Polyline'),
+            dataIndex: 'polyline',
+            key: 'polyline',
+        },
+        {
+            title: makeShapesTracksTitle('Points'),
+            dataIndex: 'points',
+            key: 'points',
+        },
+        {
+            title: <Text strong> Tags </Text>,
+            dataIndex: 'tags',
+            key: 'tags',
+        },
+        {
+            title: <Text strong> Manually </Text>,
+            dataIndex: 'manually',
+            key: 'manually',
+        },
+        {
+            title: <Text strong> Interpolated </Text>,
+            dataIndex: 'interpolated',
+            key: 'interpolated',
+        },
+        {
+            title: <Text strong> Total </Text>,
+            dataIndex: 'total',
+            key: 'total',
+        },
+    ];
 
     return (
-        <Modal
-            {...baseProps}
-        >
+        <Modal {...baseProps}>
             <div className='cvat-job-info-modal-window'>
                 <Row type='flex' justify='start'>
                     <Col>
-                        <Text strong className='cvat-text'>Job status</Text>
+                        <Text strong className='cvat-text'>
+                            Job status
+                        </Text>
                         <Select value={jobStatus} onChange={changeJobStatus}>
-                            <Select.Option key='1' value='annotation'>annotation</Select.Option>
-                            <Select.Option key='2' value='validation'>validation</Select.Option>
-                            <Select.Option key='3' value='completed'>completed</Select.Option>
+                            <Select.Option key='1' value='annotation'>
+                                annotation
+                            </Select.Option>
+                            <Select.Option key='2' value='validation'>
+                                validation
+                            </Select.Option>
+                            <Select.Option key='3' value='completed'>
+                                completed
+                            </Select.Option>
                         </Select>
                         {savingJobStatus && <Icon type='loading' />}
                     </Col>
@@ -156,30 +171,36 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                 </Row>
                 <Row type='flex' justify='start'>
                     <Col span={5}>
-                        <Text strong className='cvat-text'>Assignee</Text>
+                        <Text strong className='cvat-text'>
+                            Assignee
+                        </Text>
                         <Text className='cvat-text'>{assignee}</Text>
                     </Col>
                     <Col span={5}>
-                        <Text strong className='cvat-text'>Start frame</Text>
+                        <Text strong className='cvat-text'>
+                            Start frame
+                        </Text>
                         <Text className='cvat-text'>{startFrame}</Text>
                     </Col>
                     <Col span={5}>
-                        <Text strong className='cvat-text'>Stop frame</Text>
+                        <Text strong className='cvat-text'>
+                            Stop frame
+                        </Text>
                         <Text className='cvat-text'>{stopFrame}</Text>
                     </Col>
                     <Col span={5}>
-                        <Text strong className='cvat-text'>Frames</Text>
+                        <Text strong className='cvat-text'>
+                            Frames
+                        </Text>
                         <Text className='cvat-text'>{stopFrame - startFrame + 1}</Text>
                     </Col>
-                    <Col span={4}>
-                        <Text strong className='cvat-text'>Z-Order</Text>
-                        <Text className='cvat-text'>{zOrder.toString()}</Text>
-                    </Col>
                 </Row>
-                { !!bugTracker && (
+                {!!bugTracker && (
                     <Row type='flex' justify='start' className='cvat-job-info-bug-tracker'>
                         <Col>
-                            <Text strong className='cvat-text'>Bug tracker</Text>
+                            <Text strong className='cvat-text'>
+                                Bug tracker
+                            </Text>
                             <a href={bugTracker}>{bugTracker}</a>
                         </Col>
                     </Row>
@@ -187,13 +208,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                 <Row type='flex' justify='space-around' className='cvat-job-info-statistics'>
                     <Col span={24}>
                         <Text className='cvat-text'>Annotations statistics</Text>
-                        <Table
-                            scroll={{ y: 400 }}
-                            bordered
-                            pagination={false}
-                            columns={columns}
-                            dataSource={rows}
-                        />
+                        <Table scroll={{ y: 400 }} bordered pagination={false} columns={columns} dataSource={rows} />
                     </Col>
                 </Row>
             </div>

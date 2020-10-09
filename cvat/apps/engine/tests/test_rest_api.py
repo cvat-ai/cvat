@@ -19,18 +19,20 @@ from unittest import mock
 
 import av
 import numpy as np
-from pdf2image import convert_from_bytes
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponse
+from pdf2image import convert_from_bytes
 from PIL import Image
 from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, StorageMethodChoice)
+                                     Segment, StatusChoice,
+                                     StorageMethodChoice, Task)
 from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
+
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -103,7 +105,6 @@ def create_dummy_db_tasks(obj, project=None):
         "assignee": obj.assignee,
         "overlap": 0,
         "segment_size": 100,
-        "z_order": False,
         "image_quality": 75,
         "size": 100,
         "project": project
@@ -116,7 +117,6 @@ def create_dummy_db_tasks(obj, project=None):
         "owner": obj.user,
         "overlap": 0,
         "segment_size": 100,
-        "z_order": True,
         "image_quality": 50,
         "size": 200,
         "project": project
@@ -130,7 +130,6 @@ def create_dummy_db_tasks(obj, project=None):
         "assignee": obj.assignee,
         "overlap": 0,
         "segment_size": 100,
-        "z_order": False,
         "image_quality": 75,
         "size": 100,
         "project": project
@@ -143,7 +142,6 @@ def create_dummy_db_tasks(obj, project=None):
         "owner": obj.admin,
         "overlap": 0,
         "segment_size": 50,
-        "z_order": False,
         "image_quality": 95,
         "size": 50,
         "project": project
@@ -1082,7 +1080,6 @@ class TaskGetAPITestCase(APITestCase):
         self.assertEqual(response.data["assignee"], assignee)
         self.assertEqual(response.data["overlap"], db_task.overlap)
         self.assertEqual(response.data["segment_size"], db_task.segment_size)
-        self.assertEqual(response.data["z_order"], db_task.z_order)
         self.assertEqual(response.data["image_quality"], db_task.data.image_quality)
         self.assertEqual(response.data["status"], db_task.status)
         self.assertListEqual(
@@ -1191,8 +1188,6 @@ class TaskUpdateAPITestCase(APITestCase):
         self.assertEqual(response.data["assignee"], assignee)
         self.assertEqual(response.data["overlap"], db_task.overlap)
         self.assertEqual(response.data["segment_size"], db_task.segment_size)
-        z_order = data.get("z_order", db_task.z_order)
-        self.assertEqual(response.data["z_order"], z_order)
         image_quality = data.get("image_quality", db_task.data.image_quality)
         self.assertEqual(response.data["image_quality"], image_quality)
         self.assertEqual(response.data["status"], db_task.status)
@@ -1351,7 +1346,6 @@ class TaskCreateAPITestCase(APITestCase):
         self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", ""))
         self.assertEqual(response.data["overlap"], data.get("overlap", None))
         self.assertEqual(response.data["segment_size"], data.get("segment_size", 0))
-        self.assertEqual(response.data["z_order"], data.get("z_order", False))
         self.assertEqual(response.data["status"], StatusChoice.ANNOTATION)
         self.assertListEqual(
             [label["name"] for label in data.get("labels")],
@@ -1748,7 +1742,6 @@ class TaskDataAPITestCase(APITestCase):
             "assignee": self.assignee.id,
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
@@ -1795,7 +1788,6 @@ class TaskDataAPITestCase(APITestCase):
             "name": "my video task #1",
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
@@ -2048,7 +2040,6 @@ class TaskDataAPITestCase(APITestCase):
             "assignee": self.assignee.id,
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
@@ -2095,7 +2086,6 @@ class JobAnnotationAPITestCase(APITestCase):
             "assignee": assignee.id,
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {
                     "name": "car",

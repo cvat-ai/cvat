@@ -229,8 +229,7 @@ def dump_as_cvat_annotation(file_object, annotations):
                     )),
                 ]))
 
-            if annotations.meta["task"]["z_order"] != "False":
-                dump_data['z_order'] = str(shape.z_order)
+            dump_data['z_order'] = str(shape.z_order)
             if shape.group:
                 dump_data['group_id'] = str(shape.group)
 
@@ -343,8 +342,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
                         for x,y in pairwise(shape.points)]))
                 ]))
 
-            if annotations.meta["task"]["z_order"] != "False":
-                dump_data["z_order"] = str(shape.z_order)
+            dump_data["z_order"] = str(shape.z_order)
 
             if shape.type == "rectangle":
                 dumper.open_box(dump_data)
