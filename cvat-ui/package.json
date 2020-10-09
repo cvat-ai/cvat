@@ -53,7 +53,7 @@
     "@types/react-color": "^3.0.2",
     "@types/react-dom": "^16.9.0",
     "@types/react-redux": "^7.1.2",
-    "@types/react-router": "^5.0.5",
+    "@types/react-router": "^5.1.8",
     "@types/react-router-dom": "^5.1.0",
     "@types/react-share": "^3.0.1",
     "@types/redux-logger": "^3.0.7",
