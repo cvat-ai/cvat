@@ -6,21 +6,22 @@ import React, { useEffect } from 'react';
 import { Redirect, useParams } from 'react-router';
 import { useCookies } from 'react-cookie';
 
-export default function LoginWithTokenComponent(){
+export default function LoginWithTokenComponent() {
     const { sessionId, token } = useParams();
     const [cookies, setCookie] = useCookies(['sessionid', 'csrftoken']);
 
     const expires1y = new Date(new Date().setFullYear(new Date().getFullYear() + 1));
     const expires2w = new Date(new Date().setDate(new Date().getDate() + 13));
 
-    setCookie('sessionid', sessionId, {path: '/', expires: expires2w });
-    setCookie('csrftoken', token, {path: '/', expires: expires1y});
+    setCookie('sessionid', sessionId, { path: '/', expires: expires2w });
+    setCookie('csrftoken', token, { path: '/', expires: expires1y });
 
-    useEffect(() => {return () => {window.location.reload()};
-    }, [cookies['sessionid'], cookies['csrftoken']]);
+    useEffect(() => () => {
+        window.location.reload();
+    }, [cookies.sessionid, cookies.csrftoken]);
 
-    if ( cookies['sessionid'] && cookies['csrftoken']) {
-        return(<Redirect to="/tasks" />);
+    if (cookies.sessionid && cookies.csrftoken) {
+        return (<Redirect to='/tasks' />);
     }
-    return(<></>);
-};
+    return (<></>);
+}
