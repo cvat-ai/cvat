@@ -151,25 +151,31 @@ Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
     .trigger('keyup', {key: 'g'})
 })
 
-Cypress.Commands.add('createPolygon', ( mode,
-                                        pointsMap,
-                                        complete=true,
-                                        reDraw=false) => {
-    if (!reDraw) {
+Cypress.Commands.add('createPolygon', (createPolygonParams) => {
+    if (!createPolygonParams.reDraw) {
         cy.get('.cvat-draw-polygon-control').click()
+        if (createPolygonParams.switchLabel) {
+            cy.switchLabel(createPolygonParams.labelName)
+        }
         cy.contains('Draw new polygon')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
+            if (createPolygonParams.numberOfPoints) {
+                createPolygonParams.complete = false
+                cy.get('.ant-input-number-input')
+                .clear()
+                .type(createPolygonParams.numberOfPoints)
+            }
             cy.get('button')
-            .contains(mode)
+            .contains(createPolygonParams.type)
             .click({force: true})
         })
     }
-    pointsMap.forEach(element => {
+    createPolygonParams.pointsMap.forEach(element => {
         cy.get('.cvat-canvas-container')
         .click(element.x, element.y)
     })
-    if (complete) {
+    if (createPolygonParams.complete) {
         cy.get('.cvat-canvas-container')
         .trigger('keydown', {key: 'n'})
         .trigger('keyup', {key: 'n'})
