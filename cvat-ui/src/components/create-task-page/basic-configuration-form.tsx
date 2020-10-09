@@ -8,12 +8,10 @@ import Form, { FormComponentProps } from 'antd/lib/form/Form';
 
 export interface BaseConfiguration {
     name: string;
-    projectId: string;
 }
 
 type Props = FormComponentProps & {
     onSubmit(values: BaseConfiguration): void;
-    onChange(values: {[name: string]: string}): void;
 };
 
 class BasicConfigurationForm extends React.PureComponent<Props> {
@@ -28,7 +26,6 @@ class BasicConfigurationForm extends React.PureComponent<Props> {
                 if (!error) {
                     onSubmit({
                         name: values.name,
-                        projectId: values.projectId,
                     });
                     resolve();
                 } else {
@@ -59,31 +56,9 @@ class BasicConfigurationForm extends React.PureComponent<Props> {
                         <Input />,
                     ) }
                 </Form.Item>
-                <Form.Item hasFeedback label={<span>Project Id (for develping only)</span>}>
-                    { getFieldDecorator('projectId', {
-                        rules: [{
-                            pattern: /^[1-9]+[0-9]*$/,
-                            message: 'Please, specify valid positive number',
-                        }],
-                    })(
-                        <Input />,
-                    ) }
-                </Form.Item>
             </Form>
         );
     }
 }
 
-export default Form.create<Props>({
-    onFieldsChange: (props, fields) => {
-        const values: {[name: string]: string} = {};
-        for (const field of Object.keys(fields)) {
-            if (!(fields[field].dirty || fields[field].errors)) {
-                values[field] = fields[field].value;
-            }
-        }
-        if (values) {
-            props.onChange(values);
-        }
-    },
-})(BasicConfigurationForm);
+export default Form.create<Props>()(BasicConfigurationForm);

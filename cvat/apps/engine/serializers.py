@@ -352,6 +352,14 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return value
 
 
+class ProjectSearchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Project
+        fields = ('id', 'name')
+        read_only_fields = ('name',)
+        ordering = ['-id']
+
+
 class ProjectSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True)
     tasks = TaskSerializer(many=True, read_only=True)

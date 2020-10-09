@@ -389,8 +389,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             use_cache: data.advanced.useCache,
         };
 
-        if (data.basic.projectId) {
-            description.project_id = +data.basic.projectId;
+        if (data.projectId) {
+            description.project_id = data.projectId;
         }
         if (data.advanced.bugTracker) {
             description.bug_tracker = data.advanced.bugTracker;

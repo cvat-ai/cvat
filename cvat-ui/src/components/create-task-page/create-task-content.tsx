@@ -16,9 +16,11 @@ import ConnectedFileManager from 'containers/file-manager/file-manager';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { Files } from 'components/file-manager/file-manager';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
+import ProjectSearchField from './project-search-field';
 import AdvancedConfigurationForm, { AdvancedConfiguration } from './advanced-configuration-form';
 
 export interface CreateTaskData {
+    projectId: number | null;
     basic: BaseConfiguration;
     advanced: AdvancedConfiguration;
     labels: any[];
@@ -29,16 +31,16 @@ interface Props {
     onCreate: (data: CreateTaskData) => void;
     status: string;
     taskId: number | null;
-    projectId: string | null;
+    projectId: number | null;
     installedGit: boolean;
 }
 
 type State = CreateTaskData;
 
 const defaultState = {
+    projectId: null,
     basic: {
         name: '',
-        projectId: '',
     },
     advanced: {
         zOrder: false,
@@ -110,9 +112,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private validateLabelsOrProject = (): boolean => {
         const {
-            basic: {
-                projectId,
-            },
+            projectId,
             labels,
         } = this.state;
         return !!labels.length || !!projectId;
@@ -130,18 +130,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return !!totalLen;
     };
 
-    private handleFormDataChange = (values: {[name: string]: string}): void => {
-        for (const value of Object.keys(values)) {
-            if (value === 'projectId') {
-                this.setState((prevState) => ({
-                    ...prevState,
-                    basic: {
-                        ...prevState.basic,
-                        projectId: values[value],
-                    },
-                }));
-            }
-        }
+    private handleProjectIdChange = (value: null | number): void => {
+        this.setState({
+            projectId: value,
+        });
     };
 
     private handleSubmitBasicConfiguration = (values: BaseConfiguration): void => {
@@ -200,18 +192,33 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     wrappedComponentRef={
                         (component: any): void => { this.basicConfigurationComponent = component; }
                     }
-                    onChange={this.handleFormDataChange}
                     onSubmit={this.handleSubmitBasicConfiguration}
                 />
             </Col>
         );
     }
 
+    private renderProjectBlock(): JSX.Element {
+        const { projectId } = this.state;
+
+        return (
+            <>
+                <Col span={24}>
+                    <Text className='cvat-text-color'>Labels:</Text>
+                </Col>
+                <Col span={24}>
+                    <ProjectSearchField
+                        onSelect={this.handleProjectIdChange}
+                        value={projectId}
+                    />
+                </Col>
+            </>
+        );
+    }
+
     private renderLabelsBlock(): JSX.Element {
         const {
-            basic: {
-                projectId,
-            },
+            projectId,
             labels,
         } = this.state;
 
@@ -299,6 +306,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 </Col>
 
                 { this.renderBasicBlock() }
+                { this.renderProjectBlock() }
                 { this.renderLabelsBlock() }
                 { this.renderFilesBlock() }
                 { this.renderAdvancedBlock() }

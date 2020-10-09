@@ -34,7 +34,7 @@ export default function CreateTaskPage(props: Props & RouteComponentProps): JSX.
     let projectId = null;
     const params = new URLSearchParams(location.search);
     if (params.get('projectId')?.match(/^[1-9]+[0-9]*$/)) {
-        projectId = params.get('projectId');
+        projectId = +(params.get('projectId') as string);
     }
 
     useEffect(() => {

@@ -324,6 +324,24 @@
                 }
             }
 
+            async function searchProjectNames(search, limit) {
+                const { backendAPI, proxy } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(
+                        `${backendAPI}/projects?names_only=true&page=1&page_size=${limit}&search=${search}`, {
+                            proxy,
+                        },
+                    );
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                response.data.results.count = response.data.count;
+                return response.data.results;
+            }
+
             async function getProjects(filter = '') {
                 const { backendAPI, proxy } = config;
 
@@ -910,6 +928,7 @@
                 projects: {
                     value: Object.freeze({
                         getProjects,
+                        searchProjectNames,
                         saveProject,
                         createProject,
                         deleteProject,

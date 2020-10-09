@@ -41,8 +41,9 @@ from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectSerializer, RqStatusSerializer,
-    TaskSerializer, UserSerializer, PluginsSerializer,
+    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer,
+    RqStatusSerializer, TaskSerializer, UserSerializer,
+    PluginsSerializer,
 )
 from cvat.apps.engine.utils import av_scan_paths
 
@@ -214,11 +215,16 @@ class ProjectFilter(filters.FilterSet):
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a project'))
 class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = models.Project.objects.all().order_by('-id')
-    serializer_class = ProjectSerializer
     search_fields = ("name", "owner__username", "status")
     filterset_class = ProjectFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        if self.request.query_params and self.request.query_params.get("names_only") == "true":
+            return ProjectSearchSerializer
+        else:
+            return ProjectSerializer
 
     def get_permissions(self):
         http_method = self.request.method

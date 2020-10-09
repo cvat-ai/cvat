@@ -323,6 +323,27 @@ function build() {
                     .apiWrapper(cvat.projects.get, filter);
                 return result;
             },
+
+
+            /**
+             * Method returns list of project names with project ids
+             * corresponding to a search phrase
+             * used for autocomplete field
+             * @method searchNames
+             * @async
+            * @memberof module:API.cvat.projects
+            * @param {string} [search = ''] search phrase
+            * @param {number} [limit = 10] number of returning project names
+            * @returns {module:API.cvat.classes.Project[]}
+            * @throws {module:API.cvat.exceptions.PluginError}
+            * @throws {module:API.cvat.exceptions.ServerError}
+             *
+             */
+            async searchNames(search = '', limit = 10) {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.projects.searchNames, search, limit);
+                return result;
+            },
         },
         /**
             * Namespace is used for getting tasks

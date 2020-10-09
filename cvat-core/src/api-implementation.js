@@ -288,6 +288,10 @@
             return projects;
         };
 
+        cvat.projects.searchNames.implementation = async (search, limit) => {
+            return serverProxy.projects.searchProjectNames(search, limit);
+        };
+
         return cvat;
     }
 
