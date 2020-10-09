@@ -1,6 +1,6 @@
 {
     "name": "cvat-ui",
-    "version": "1.9.11",
+    "version": "1.9.12",
     "description": "CVAT single-page application",
     "main": "src/index.tsx",
     "scripts": {
@@ -73,6 +73,7 @@
         "prop-types": "^15.7.2",
         "react": "^16.9.0",
         "react-color": "^2.18.1",
+        "react-cookie": "^4.0.3",
         "react-dom": "^16.9.0",
         "react-hotkeys": "^2.0.0",
         "react-redux": "^7.1.1",
