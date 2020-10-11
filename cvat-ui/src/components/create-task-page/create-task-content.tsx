@@ -70,9 +70,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { projectId } = this.props;
 
         if (projectId) {
-            this.basicConfigurationComponent.props.form.setFieldsValue(
-                { projectId },
-            );
+            this.handleProjectIdChange(projectId);
         }
     }
 
@@ -204,7 +202,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <>
                 <Col span={24}>
-                    <Text className='cvat-text-color'>Labels:</Text>
+                    <Text className='cvat-text-color'>Project:</Text>
                 </Col>
                 <Col span={24}>
                     <ProjectSearchField

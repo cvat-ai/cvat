@@ -380,7 +380,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             if not label.get('color', None):
                 label['color'] = get_label_color(label['name'], label_names)
             label_names.append(label['name'])
-            db_label = models.Label.objects.create(prject=db_project, **label)
+            db_label = models.Label.objects.create(project=db_project, **label)
             for attr in attributes:
                 models.AttributeSpec.objects.create(label=db_label, **attr)
 

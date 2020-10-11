@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import Autocomplete from 'antd/lib/auto-complete';
 
 import getCore from 'cvat-core-wrapper';
+import { SelectValue } from 'antd/lib/select';
 
 const core = getCore();
 
@@ -21,7 +22,7 @@ type Project = {
 
 export default function ProjectSearchField(props: Props): JSX.Element {
     const { value, onSelect } = props;
-    const { searchPhrase, setSearchPhrase } = useState('');
+    const [searchPhrase, setSearchPhrase] = useState('');
 
     const [projects, setProjects] = useState<Project[]>([]);
 
@@ -30,12 +31,13 @@ export default function ProjectSearchField(props: Props): JSX.Element {
             core.projects.searchNames(searchValue).then((result: Project[]) => {
                 if (result) {
                     setProjects(result);
-                    setSearchPhrase(searchValue);
                 }
             });
         } else {
             setProjects([]);
         }
+        setSearchPhrase(searchValue);
+        onSelect(null);
     };
 
     const handleFocus = (): void => {
@@ -48,6 +50,11 @@ export default function ProjectSearchField(props: Props): JSX.Element {
         }
     };
 
+    const handleSelect = (_value: SelectValue): void => {
+        setSearchPhrase(projects.filter((proj) => proj.id === +_value)[0].name);
+        onSelect(_value ? +_value : null);
+    };
+
     useEffect(() => {
         if (value && !projects.filter((project) => project.id === value).length) {
             core.projects.get({ id: value }).then((result: Project[]) => {
@@ -56,6 +63,8 @@ export default function ProjectSearchField(props: Props): JSX.Element {
                     id: project.id,
                     name: project.name,
                 }]);
+                setSearchPhrase(project.name);
+                onSelect(project.id);
             });
         }
     }, [value]);
@@ -65,7 +74,7 @@ export default function ProjectSearchField(props: Props): JSX.Element {
             value={searchPhrase}
             placeholder='Select project'
             onSearch={handleSearch}
-            onSelect={(_value) => onSelect(_value ? +_value : null)}
+            onSelect={handleSelect}
             className='cvat-project-search-field'
             onFocus={handleFocus}
         >

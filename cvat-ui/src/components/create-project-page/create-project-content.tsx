@@ -63,7 +63,7 @@ export default function CreateProjectContent(): JSX.Element {
                 <Button
                     onClick={() => history.push(`/projects/${newProjectId}`)}
                 >
-                    Open task
+                    Open project
                 </Button>
             );
 
