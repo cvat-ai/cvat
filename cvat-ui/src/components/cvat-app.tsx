@@ -14,6 +14,7 @@ import Header from 'components/header/header';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
+import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
 import LoginPageContainer from 'containers/login-page/login-page';
@@ -30,7 +31,6 @@ import { NotificationsState } from 'reducers/interfaces';
 import { customWaViewHit } from 'utils/enviroment';
 import showPlatformNotification, { platformInfo, stopNotifications } from 'utils/platform-checker';
 import '../styles.scss';
-
 
 
 interface CVATAppProps {
@@ -336,6 +336,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <Switch>
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
                         <Route exact path='/auth/login' component={LoginPageContainer} />
+                        <Route exact path='/auth/login-with-token/:sessionId/:token' component={LoginWithTokenComponent} />
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
                         <Route exact path='/auth/password/reset/confirm' component={ResetPasswordPageConfirmComponent} />
                         <Redirect to='/auth/login' />
