@@ -10,8 +10,8 @@ from model_loader import ModelLoader
 
 class ModelHandler:
     def __init__(self, labels):
-        base_dir = os.environ.get("MODEL_PATH",
-            "/opt/nuclio/open_model_zoo/intel/semantic-segmentation-adas-0001/FP32")
+        base_dir = os.path.abspath(os.environ.get("MODEL_PATH",
+            "/opt/nuclio/open_model_zoo/intel/semantic-segmentation-adas-0001/FP32"))
         model_xml = os.path.join(base_dir, "semantic-segmentation-adas-0001.xml")
         model_bin = os.path.join(base_dir, "semantic-segmentation-adas-0001.bin")
         self.model = ModelLoader(model_xml, model_bin)
