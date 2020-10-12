@@ -40,13 +40,16 @@ export default function ProjectSearchField(props: Props): JSX.Element {
         onSelect(null);
     };
 
-    const handleFocus = (): void => {
-        if (!projects.length) {
+    const handleFocus = (open: boolean): void => {
+        if (!projects.length && open) {
             core.projects.searchNames().then((result: Project[]) => {
                 if (result) {
                     setProjects(result);
                 }
             });
+        }
+        if (!open && !value && searchPhrase) {
+            setSearchPhrase('');
         }
     };
 
@@ -76,13 +79,13 @@ export default function ProjectSearchField(props: Props): JSX.Element {
             onSearch={handleSearch}
             onSelect={handleSelect}
             className='cvat-project-search-field'
-            onFocus={handleFocus}
-        >
-            {projects.map((proj) => (
-                <Autocomplete.Option key={proj.id} value={proj.id.toString()}>
-                    {proj.name}
-                </Autocomplete.Option>
-            ))}
-        </Autocomplete>
+            onDropdownVisibleChange={handleFocus}
+            dataSource={
+                projects.map((proj) => ({
+                    value: proj.id.toString(),
+                    text: proj.name,
+                }))
+            }
+        />
     );
 }
