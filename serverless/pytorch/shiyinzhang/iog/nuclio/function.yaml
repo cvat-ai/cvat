@@ -26,6 +26,16 @@ spec:
       - kind: WORKDIR
         value: /opt/nuclio
       - kind: RUN
+        value: conda create -y -n iog python=3.6
+      - kind: SHELL
+        value: '["conda", "run", "-n", "iog", "/bin/bash", "-c"]'
+      - kind: RUN
+        value: conda install -y -c anaconda curl
+      - kind: RUN
+        value: conda install -y pytorch=0.4 torchvision=0.2 -c pytorch
+      - kind: RUN
+        value: conda install -y -c conda-forge pycocotools opencv scipy
+      - kind: RUN
         value: git clone https://github.com/shiyinzhang/Inside-Outside-Guidance.git iog
       - kind: WORKDIR
         value: /opt/nuclio/iog
@@ -39,14 +49,6 @@ spec:
         value: curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=${fileid}" -o ${filename}
       - kind: WORKDIR
         value: /opt/nuclio
-      - kind: RUN
-        value: conda create -y -n iog python=3.6
-      - kind: SHELL
-        value: '["conda", "run", "-n", "iog", "/bin/bash", "-c"]'
-      - kind: RUN
-        value: conda install pytorch=0.4 torchvision=0.2 -c pytorch
-      - kind: RUN
-        value: conda install -c conda-forge pycocotools opencv scipy
       - kind: ENTRYPOINT
         value: '["conda", "run", "-n", "iog"]'
 
