@@ -63,7 +63,7 @@
         "@types/react-share": "^3.0.1",
         "@types/redux-logger": "^3.0.7",
         "antd": "^3.26.17",
-        "copy-to-clipboard": "^3.2.0",
+        "copy-to-clipboard": "^3.3.1",
         "cvat-canvas": "file:../cvat-canvas",
         "cvat-core": "file:../cvat-core",
         "dotenv-webpack": "^1.7.0",
