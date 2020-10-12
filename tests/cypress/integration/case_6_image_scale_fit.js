@@ -35,15 +35,15 @@ context('Check if the image is scaled and then fitted', () => {
         it('Scale image', () => {
             cy.get('#cvat_canvas_background')
             .should('have.attr', 'style')
-            .then($scale => {
-                scaleBefore = Number($scale.match(/scale\((\d\.\d+)\)/m)[1])
+            .then($styles => {
+                scaleBefore = Number($styles.match(/scale\((\d\.\d+)\)/m)[1])
             })
             cy.get('.cvat-canvas-container')
             .trigger('wheel', {deltaY: 5})
             cy.get('#cvat_canvas_background')
             .should('have.attr', 'style')
-            .then($scale => {
-                scaleAfter = Number($scale.match(/scale\((\d\.\d+)\)/m)[1])
+            .then($styles => {
+                scaleAfter = Number($styles.match(/scale\((\d\.\d+)\)/m)[1])
                 cy.expect(scaleBefore).to.be.greaterThan(scaleAfter)
             })
         })
