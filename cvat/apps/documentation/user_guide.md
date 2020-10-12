@@ -58,25 +58,22 @@ computer vision tasks developed by our team.
 
 - First of all, you have to log in to CVAT tool.
 
-  ![](static/documentation/images/image001.jpg)
+![](static/documentation/images/image001.jpg)
 
 - For register a new user press "Create an account"
 
-  ![](static/documentation/images/image002.jpg)
+![](static/documentation/images/image002.jpg)
 
-- You can register a user but by default it will not have rights even to view
-  list of tasks. Thus you should create a superuser. The superuser can use
-  [Django administration panel](http://localhost:8080/admin) to assign correct
-  groups to the user. Please use the command below to create an admin account:
+- You can register a user but by default it will not have rights even to view list of tasks. Thus you should create a superuser. The superuser can use [Django administration panel](http://localhost:8080/admin) to assign correct groups to the user. Please use the command below to create an admin account:
 
-  `docker exec -it cvat bash -ic '/usr/bin/python3 ~/manage.py createsuperuser'`
+`docker exec -it cvat bash -ic '/usr/bin/python3 ~/manage.py createsuperuser'`
 
 - If you want to create a non-admin account, you can do that using the link below
   on the login page. Don't forget to modify permissions for the new user in the
   administration panel. There are several groups (aka roles): admin, user,
   annotator, observer.
 
-  ![](static/documentation/images/image003.jpg)
+![](static/documentation/images/image003.jpg)
 
 ### Administration panel
 
@@ -85,7 +82,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 - Create / edit / delete users
 - Control permissions of users and access to the tool.
 
-  ![](static/documentation/images/image115.jpg)
+![](static/documentation/images/image115.jpg)
 
 ### Creating an annotation task
 
