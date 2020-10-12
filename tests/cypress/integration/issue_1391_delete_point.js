@@ -21,6 +21,17 @@ context('When delete a point, the required point is deleted.', () => {
     const color = 'white'
     let pointsСoordinatesBeforeDeletePoint = []
     let pointsСoordinatesAfterDeletePoint = []
+    const createPolylinesShape = {
+        type: 'Shape',
+        switchLabel: false,
+        pointsMap: [
+            {x: 309, y: 250},
+            {x: 309, y: 350},
+            {x: 309, y: 450}
+            ],
+        complete: true,
+        numberOfPoints: null
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -32,11 +43,7 @@ context('When delete a point, the required point is deleted.', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Crearte polyline', () => {
-            cy.createPolyline('Shape', [
-                {x: 309, y: 250},
-                {x: 309, y: 350},
-                {x: 309, y: 450}
-              ])
+            cy.createPolyline(createPolylinesShape)
             cy.get('#cvat-objects-sidebar-state-item-1')
             .should('contain', '1').and('contain', 'POLYLINE SHAPE')
         })

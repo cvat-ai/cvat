@@ -11,7 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "svg.draggable.js": "2.2.2",
-    "svg.draw.js": "^2.0.3",
+    "svg.draw.js": "^2.0.4",
     "svg.js": "2.7.1",
     "svg.resize.js": "1.4.3",
     "svg.select.js": "3.0.1"

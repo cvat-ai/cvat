@@ -25,6 +25,15 @@ context('First part of a splitted track is visible', () => {
     const archivePath = `cypress/fixtures/${archiveName}`
     const imagesFolder = `cypress/fixtures/image_issue_${issueId}`
     const directoryToArchive = imagesFolder
+    const createRectangleTrack2Points = {
+        points: 'By 2 Points',
+        type: 'Track',
+        switchLabel: false,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -38,8 +47,8 @@ context('First part of a splitted track is visible', () => {
     })
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Create a track', () => {
-            cy.createTrack(309, 431, 616, 671)
+        it('Create a rectangle track', () => {
+            cy.createRectangle(createRectangleTrack2Points)
         })
         it('Go next with a step', () => {
             cy.get('.cvat-player-forward-button')

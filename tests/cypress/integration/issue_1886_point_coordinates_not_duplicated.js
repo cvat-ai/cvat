@@ -28,6 +28,18 @@ context('Point coordinates are not duplicated while polygon\'s interpolation.', 
     const imagesFolder = `cypress/fixtures/image_issue_${issueId}`
     const directoryToArchive = imagesFolder
     let pointsСoordinates = []
+    const createPolygonTrack = {
+        reDraw: false,
+        type: 'Track',
+        switchLabel: false,
+        pointsMap: [
+            {x: 300, y: 450},
+            {x: 400, y: 450},
+            {x: 400, y: 550},
+            ],
+        complete: true,
+        numberOfPoints: null
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -42,11 +54,7 @@ context('Point coordinates are not duplicated while polygon\'s interpolation.', 
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Create a polygon', () => {
-            cy.createPolygon('Track', [
-                                        {x: 300, y: 450},
-                                        {x: 400, y: 450},
-                                        {x: 400, y: 550},
-                                      ])
+            cy.createPolygon(createPolygonTrack)
             cy.get('#cvat-objects-sidebar-state-item-1')
             .should('contain', '1').and('contain', 'POLYGON TRACK')
         })

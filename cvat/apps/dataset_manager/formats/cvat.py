@@ -531,6 +531,10 @@ def _export(dst_file, task_data, anno_callback, save_images=False):
             anno_callback(f, task_data)
 
         if save_images:
+            ext = ''
+            if task_data.meta['task']['mode'] == 'interpolation':
+                ext = FrameProvider.VIDEO_FRAME_EXT
+
             img_dir = osp.join(temp_dir, 'images')
             frame_provider = FrameProvider(task_data.db_task.data)
             frames = frame_provider.get_frames(
@@ -538,9 +542,6 @@ def _export(dst_file, task_data, anno_callback, save_images=False):
                 frame_provider.Type.BUFFER)
             for frame_id, (frame_data, _) in enumerate(frames):
                 frame_name = task_data.frame_info[frame_id]['path']
-                ext = ''
-                if not '.' in osp.basename(frame_name):
-                    ext = '.png'
                 img_path = osp.join(img_dir, frame_name + ext)
                 os.makedirs(osp.dirname(img_path), exist_ok=True)
                 with open(img_path, 'wb') as f:

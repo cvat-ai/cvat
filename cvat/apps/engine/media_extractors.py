@@ -244,6 +244,8 @@ class VideoReader(IMediaReader):
         return pos / stream.duration if stream.duration else None
 
     def _get_av_container(self):
+        if isinstance(self._source_path[0], io.BytesIO):
+            self._source_path[0].seek(0) # required for re-reading
         return av.open(self._source_path[0])
 
     def get_preview(self):

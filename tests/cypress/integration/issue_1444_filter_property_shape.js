@@ -19,6 +19,27 @@ context('Filter property "shape" work correctly', () => {
     const posX = 10
     const posY = 10
     const color = 'white'
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        switchLabel: false,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450
+    }
+    const createPolygonShape = {
+        reDraw: false,
+        type: 'Shape',
+        switchLabel: false,
+        pointsMap: [
+            {x: 300, y: 100},
+            {x: 400, y: 400},
+            {x: 400, y: 250},
+            ],
+        complete: true,
+        numberOfPoints: null
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -29,17 +50,13 @@ context('Filter property "shape" work correctly', () => {
     })
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Create a shape', () => {
-            cy.createShape(309, 431, 616, 671)
+        it('Create a rectangle shape', () => {
+            cy.createRectangle(createRectangleShape2Points)
             cy.get('#cvat-objects-sidebar-state-item-1')
             .should('contain', '1').and('contain', 'RECTANGLE SHAPE')
         })
         it('Create a polygon', () => {
-            cy.createPolygon('Shape', [
-                                        {x: 300, y: 100},
-                                        {x: 400, y: 400},
-                                        {x: 400, y: 250},
-                                      ])
+            cy.createPolygon(createPolygonShape)
             cy.get('#cvat-objects-sidebar-state-item-2')
             .should('contain', '2').and('contain', 'POLYGON SHAPE')
         })
