@@ -25,6 +25,15 @@ context('Points track it is still invisible on next frames', () => {
     const archivePath = `cypress/fixtures/${archiveName}`
     const imagesFolder = `cypress/fixtures/image_issue_${issueId}`
     const directoryToArchive = imagesFolder
+    const createPointsTrack = {
+        type: 'Track',
+        switchLabel: false,
+        pointsMap: [
+            {x: 300, y: 410},
+            ],
+        complete: true,
+        numberOfPoints: null
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -39,7 +48,7 @@ context('Points track it is still invisible on next frames', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Create a points track', () => {
-            cy.createPoint(300, 410, 'Track')
+            cy.createPoint(createPointsTrack)
             cy.get('#cvat-objects-sidebar-state-item-1')
             .should('contain', '1').and('contain', 'POINTS TRACK')
         })

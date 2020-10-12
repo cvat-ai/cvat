@@ -121,16 +121,33 @@ Cypress.Commands.add('switchLabel', (labelName) => {
     .click()
 })
 
-Cypress.Commands.add('createPoint', (posX, posY, type='Shape') => {
+Cypress.Commands.add('createPoint', (createPointParams) => {
     cy.get('.cvat-draw-points-control').click()
-    cy.get('.cvat-draw-shape-popover-content')
-    .find('button')
-    .contains(type)
-    .click({force: true})
-    cy.get('.cvat-canvas-container')
-    .click(posX, posY)
-    .trigger('keydown', {key: 'n'})
-    .trigger('keyup', {key: 'n'})
+    if (createPointParams.switchLabel) {
+        cy.switchLabel(createPointParams.labelName)
+    }
+    cy.contains('Draw new points')
+    .parents('.cvat-draw-shape-popover-content')
+    .within(() => {
+        if (createPointParams.numberOfPoints) {
+            createPointParams.complete = false
+            cy.get('.ant-input-number-input')
+            .clear()
+            .type(createPointParams.numberOfPoints)
+        }
+        cy.get('button')
+        .contains(createPointParams.type)
+        .click({force: true})
+    })
+    createPointParams.pointsMap.forEach(element => {
+        cy.get('.cvat-canvas-container')
+        .click(element.x, element.y)
+    })
+    if (createPointParams.complete) {
+        cy.get('.cvat-canvas-container')
+        .trigger('keydown', {key: 'n'})
+        .trigger('keyup', {key: 'n'})
+    }
 })
 
 Cypress.Commands.add('changeAppearance', (colorBy) => {

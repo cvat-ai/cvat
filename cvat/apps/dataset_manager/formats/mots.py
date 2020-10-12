@@ -6,60 +6,60 @@ from tempfile import TemporaryDirectory
 
 from pyunpack import Archive
 
-import datumaro.components.extractor as datumaro
-from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor
+from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+    find_dataset_root, match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
+from datumaro.components.extractor import AnnotationType, Transform
 from datumaro.components.project import Dataset
 
 from .registry import dm_env, exporter, importer
 
 
-@exporter(name='MOT', ext='ZIP', version='1.1')
+class KeepTracks(Transform):
+    def transform_item(self, item):
+        return item.wrap(annotations=[a for a in item.annotations
+            if 'track_id' in a.attributes])
+
+@exporter(name='MOTS PNG', ext='ZIP', version='1.0')
 def _export(dst_file, task_data, save_images=False):
     extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
+    envt = dm_env.transforms
+    extractor = extractor.transform(KeepTracks) # can only export tracks
+    extractor = extractor.transform(envt.get('polygons_to_masks'))
+    extractor = extractor.transform(envt.get('boxes_to_masks'))
+    extractor = extractor.transform(envt.get('merge_instance_segments'))
     extractor = Dataset.from_extractors(extractor) # apply lazy transforms
     with TemporaryDirectory() as temp_dir:
-        dm_env.converters.get('mot_seq_gt').convert(extractor,
+        dm_env.converters.get('mots_png').convert(extractor,
             save_dir=temp_dir, save_images=save_images)
 
         make_zip_archive(temp_dir, dst_file)
 
-@importer(name='MOT', ext='ZIP', version='1.1')
+@importer(name='MOTS PNG', ext='ZIP', version='1.0')
 def _import(src_file, task_data):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
-        dataset = dm_env.make_importer('mot_seq')(tmp_dir).make_dataset()
+        dataset = dm_env.make_importer('mots')(tmp_dir).make_dataset()
+        masks_to_polygons = dm_env.transforms.get('masks_to_polygons')
+        dataset = dataset.transform(masks_to_polygons)
 
         tracks = {}
-        label_cat = dataset.categories()[datumaro.AnnotationType.label]
+        label_cat = dataset.categories()[AnnotationType.label]
+
+        root_hint = find_dataset_root(dataset, task_data)
 
         for item in dataset:
-            frame_number = int(item.id) - 1 # NOTE: MOT frames start from 1
-            frame_number = task_data.abs_frame_id(frame_number)
+            frame_number = task_data.abs_frame_id(
+                match_dm_item(item, task_data, root_hint=root_hint))
 
             for ann in item.annotations:
-                if ann.type != datumaro.AnnotationType.bbox:
+                if ann.type != AnnotationType.polygon:
                     continue
 
-                track_id = ann.attributes.get('track_id')
-                if track_id is None:
-                    # Extension. Import regular boxes:
-                    task_data.add_shape(task_data.LabeledShape(
-                        type='rectangle',
-                        label=label_cat.items[ann.label].name,
-                        points=ann.points,
-                        occluded=ann.attributes.get('occluded') == True,
-                        z_order=ann.z_order,
-                        group=0,
-                        frame=frame_number,
-                        attributes=[],
-                        source='manual',
-                    ))
-                    continue
-
+                track_id = ann.attributes['track_id']
                 shape = task_data.TrackedShape(
-                    type='rectangle',
+                    type='polygon',
                     points=ann.points,
                     occluded=ann.attributes.get('occluded') == True,
                     outside=False,
@@ -77,7 +77,6 @@ def _import(src_file, task_data):
                 tracks[track_id].shapes.append(shape)
 
         for track in tracks.values():
-            # MOT annotations do not require frames to be ordered
             track.shapes.sort(key=lambda t: t.frame)
 
             # insert outside=True in skips between the frames track is visible
