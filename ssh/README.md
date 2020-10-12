@@ -1,4 +1,5 @@
 Put your SSH keys and SSH config here and they will be installed to the CVAT container.
+Please do not use encrypted keys that require a passphrase - these keys will not be used.
 
 If you have any problems with a git repository cloning inside the CVAT:
   * Make sure that SSH keys have been added to the CVAT container:
