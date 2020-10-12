@@ -27,9 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Ability to prepare meta information manually (<https://github.com/openvinotoolkit/cvat/pull/2217>)
 -   Ability to upload prepared meta information along with a video when creating a task (<https://github.com/openvinotoolkit/cvat/pull/2217>)
 -   Optional chaining plugin for cvat-canvas and cvat-ui (<https://github.com/openvinotoolkit/cvat/pull/2249>)
+-   MOTS png mask format support (<https://github.com/openvinotoolkit/cvat/pull/2198>)
 
 ### Changed
-
 -   UI models (like DEXTR) were redesigned to be more interactive (<https://github.com/opencv/cvat/pull/2054>)
 -   Used Ubuntu:20.04 as a base image for CVAT Dockerfile (<https://github.com/opencv/cvat/pull/2101>)
 -   Right colors of label tags in label mapping when a user runs automatic detection (<https://github.com/openvinotoolkit/cvat/pull/2162>)
@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   A key to remove a point from a polyshape [Ctrl => Alt] (<https://github.com/openvinotoolkit/cvat/pull/2204>)
 -   Updated `docker-compose` file version from `2.3` to `3.3`(<https://github.com/openvinotoolkit/cvat/pull/2235>)
 -   Added auto inference of url schema from host in CLI, if provided (<https://github.com/openvinotoolkit/cvat/pull/2240>)
+-   Track frames in skips between annotation is presented in MOT and MOTS formats are marked `outside` (<https://github.com/openvinotoolkit/cvat/pull/2198>)
 
 ### Deprecated
 
@@ -47,7 +48,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
-
 -   Fixed multiple errors which arises when polygon is of length 5 or less (<https://github.com/opencv/cvat/pull/2100>)
 -   Fixed task creation from PDF (<https://github.com/opencv/cvat/pull/2141>)
 -   Fixed CVAT format import for frame stepped tasks (<https://github.com/openvinotoolkit/cvat/pull/2151>)
@@ -60,6 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Fixed use case when logs could be saved twice or more times #2202 (<https://github.com/openvinotoolkit/cvat/pull/2203>)
 -   Fixed issues from #2112 (<https://github.com/openvinotoolkit/cvat/pull/2217>)
 -   Git application name (renamed to dataset_repo) (<https://github.com/openvinotoolkit/cvat/pull/2243>)
+-   A problem in exporting of tracks, where tracks could be truncated (<https://github.com/openvinotoolkit/cvat/issues/2129>)
+
 
 ### Security
 
