@@ -13,6 +13,7 @@
   - [CVAT](#cvat)
   - [LabelMe](#labelme)
   - [MOT](#mot)
+  - [MOTS](#mots)
   - [COCO](#coco)
   - [PASCAL VOC and mask](#voc)
   - [YOLO](#yolo)
@@ -708,8 +709,8 @@ Downloaded file: a zip archive of the following structure:
 ``` bash
 taskname.zip/
 ├── img1/
-|   ├── imgage1.jpg
-|   └── imgage2.jpg
+|   ├── image1.jpg
+|   └── image2.jpg
 └── gt/
     ├── labels.txt
     └── gt.txt
@@ -741,6 +742,38 @@ taskname.zip/
 ```
 
 - supported annotations: Rectangle tracks
+
+### [MOTS PNG](https://www.vision.rwth-aachen.de/page/mots)<a id="mots" />
+
+#### MOTS PNG Dumper
+
+Downloaded file: a zip archive of the following structure:
+
+``` bash
+taskname.zip/
+└── <any_subset_name>/
+    |   images/
+    |   ├── image1.jpg
+    |   └── image2.jpg
+    └── instances/
+        ├── labels.txt
+        ├── image1.png
+        └── image2.png
+
+# labels.txt
+cat
+dog
+person
+...
+```
+
+- supported annotations: Rectangle and Polygon tracks
+
+#### MOTS PNG Loader
+
+Uploaded file: a zip archive of the structure above
+
+- supported annotations: Polygon tracks
 
 ### [LabelMe](http://labelme.csail.mit.edu/Release3.0)<a id="labelme" />
 
