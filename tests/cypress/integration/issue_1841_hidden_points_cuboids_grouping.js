@@ -20,6 +20,33 @@ context('Hidden objects mustn\'t consider when we want to group visible objects 
     const posY = 10
     const color = 'white'
     let bgcolor = ''
+    const createFirstPointsShape = {
+        type: 'Shape',
+        switchLabel: false,
+        pointsMap: [
+            {x: 300, y: 410},
+            ],
+        complete: true,
+        numberOfPoints: null
+    }
+    const createSecondPointsShape = {
+        type: 'Shape',
+        switchLabel: false,
+        pointsMap: [
+            {x: 350, y: 410},
+            ],
+        complete: true,
+        numberOfPoints: null
+    }
+    const createThridPointsShape = {
+        type: 'Shape',
+        switchLabel: false,
+        pointsMap: [
+            {x: 400, y: 410},
+            ],
+        complete: true,
+        numberOfPoints: null
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -34,13 +61,13 @@ context('Hidden objects mustn\'t consider when we want to group visible objects 
             cy.changeAppearance('Group')
         })
         it('Create three points as different objects', () => {
-            cy.createPoint(300, 410)
+            cy.createPoint(createFirstPointsShape)
             cy.get('#cvat-objects-sidebar-state-item-1')
             .should('contain', '1').and('contain', 'POINTS SHAPE')
-            cy.createPoint(350, 410)
+            cy.createPoint(createSecondPointsShape)
             cy.get('#cvat-objects-sidebar-state-item-2')
             .should('contain', '2').and('contain', 'POINTS SHAPE')
-            cy.createPoint(400, 410)
+            cy.createPoint(createThridPointsShape)
             cy.get('#cvat-objects-sidebar-state-item-3')
             .should('contain', '3').and('contain', 'POINTS SHAPE')
             .should('have.attr', 'style').then(($bgcolor) => {
