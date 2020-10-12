@@ -18,6 +18,7 @@ import ProjectsPageComponent from 'components/projects-page/projects-page';
 import CreateProjectPageComponent from 'components/create-project-page/create-project-page';
 import ProjectPageComponent from 'components/project-page/project-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
+import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
 import TaskPageContainer from 'containers/task-page/task-page';
 import ModelsPageContainer from 'containers/models-page/models-page';
@@ -341,6 +342,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <Switch>
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
                         <Route exact path='/auth/login' component={LoginPageContainer} />
+                        <Route exact path='/auth/login-with-token/:sessionId/:token' component={LoginWithTokenComponent} />
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
                         <Route exact path='/auth/password/reset/confirm' component={ResetPasswordPageConfirmComponent} />
                         <Redirect to='/auth/login' />

@@ -35,14 +35,26 @@ before_script:
 script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && coveralls-lcov -v -n ./reports/coverage/lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
-  # Up all containers
   - docker-compose up -d
   # Create superuser
   - docker exec -it cvat bash -ic "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
-  # Install Cypress and run tests
-  - cd ./tests && npm install
-  - $(npm bin)/cypress run --headless --browser chrome
-  - $(npm bin)/cypress run --headless --browser firefox && cd ..
+  # End-to-end testing
+  - if [[ $TRAVIS_EVENT_TYPE == "cron" && $TRAVIS_BRANCH == "develop" ]];
+    then
+      cd ./tests && npm install &&
+      npm run cypress:run:firefox && cd ..  &&
+      npm install  &&
+      npm run coverage  &&
+      docker-compose up -d --build  &&
+      cd ./tests &&
+      npm run cypress:run:chrome && cd .. &&
+      npm run report:coverage:text &&
+      npm run report:coverage:lcov;
+    else
+      cd ./tests && npm install &&
+      npm run cypress:run:chrome && cd ..;
+    fi;
+
 
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
