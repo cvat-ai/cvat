@@ -122,7 +122,8 @@ export class EditHandlerImpl implements EditHandler {
             this.transform(this.geometry);
             lastDrawnPoint.x = e.detail.event.clientX;
             lastDrawnPoint.y = e.detail.event.clientY;
-        }).draw(dummyEvent, { snapToGrid: 0.1 });
+        }).on('drawupdate', (): void => this.transform(this.geometry))
+            .draw(dummyEvent, { snapToGrid: 0.1 });
 
         if (this.editData.state.shapeType === 'points') {
             this.editLine.attr('stroke-width', 0);
