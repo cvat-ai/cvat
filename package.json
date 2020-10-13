@@ -23,6 +23,9 @@
     "eslint-plugin-react-hooks": "^4.0.4",
     "eslint-plugin-security": "^1.4.0",
     "nyc": "^15.1.0",
+    "husky": "^4.3.0",
+    "lint-staged": "^10.4.0",
+    "prettier": "2.1.2",
     "remark-lint-emphasis-marker": "^2.0.0",
     "remark-lint-list-item-spacing": "^2.0.0",
     "remark-lint-maximum-heading-length": "^2.0.0",
@@ -57,5 +60,17 @@
   "bugs": {
     "url": "https://github.com/opencv/cvat/issues"
   },
-  "homepage": "https://github.com/opencv/cvat#readme"
+  "homepage": "https://github.com/opencv/cvat#readme",
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{html,css,scss,json,yaml,yml,md}": "prettier --write",
+    "*.{js,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
 }
