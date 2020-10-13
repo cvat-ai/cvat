@@ -46,7 +46,9 @@ spec:
       - kind: RUN
         value: curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}"
       - kind: RUN
-        value: curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=${fileid}" -o ${filename}
+        value: echo "/download/ {print \$NF}" > confirm_code.awk
+      - kind: RUN
+        value: curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk -f confirm_code.awk ./cookie`&id=${fileid}" -o ${filename}
       - kind: WORKDIR
         value: /opt/nuclio
       - kind: ENTRYPOINT
@@ -62,6 +64,7 @@ spec:
 
   platform:
     attributes:
+      processorMountMode: volume
       restartPolicy:
         name: always
         maximumRetryCount: 3
