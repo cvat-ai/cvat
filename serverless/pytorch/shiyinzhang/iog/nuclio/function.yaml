@@ -27,8 +27,10 @@ spec:
         value: /opt/nuclio
       - kind: RUN
         value: conda create -y -n iog python=3.6
-      - kind: SHELL
-        value: '["conda", "run", "-n", "iog", "/bin/bash", "-c"]'
+      - kind: RUN
+        value: echo "source activate iog" > ~/.bashrc
+      - kind: ENV
+        value: PATH=/opt/conda/envs/env/bin:$PATH
       - kind: RUN
         value: conda install -y -c anaconda curl
       - kind: RUN
@@ -51,8 +53,6 @@ spec:
         value: curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk -f confirm_code.awk ./cookie`&id=${fileid}" -o ${filename}
       - kind: WORKDIR
         value: /opt/nuclio
-      - kind: ENTRYPOINT
-        value: '["conda", "run", "-n", "iog"]'
 
   triggers:
     myHttpTrigger:

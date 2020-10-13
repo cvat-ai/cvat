@@ -51,14 +51,15 @@ class ModelHandler:
 
     def handle(self, image, pos_points, neg_points, threshold):
         with torch.no_grad():
-            input_bbox = cv2.boundingBox(np.array(neg_points))
+            x, y = np.split(np.transpose(np.array(neg_points)), 2)
+            bbox = [np.min(x), np.min(y), np.max(x), np.max(y)]
             # extract a crop from the image
             crop_padding = 30
             crop_bbox = [
-                max(input_bbox[0] - crop_padding, 0),
-                max(input_bbox[1] - crop_padding, 0),
-                min(input_bbox[2] + crop_padding, image.width - 1),
-                min(input_bbox[3] + crop_padding, image.height - 1)
+                max(bbox[0] - crop_padding, 0),
+                max(bbox[1] - crop_padding, 0),
+                min(bbox[2] + crop_padding, image.width - 1),
+                min(bbox[3] + crop_padding, image.height - 1)
             ]
             crop_shape = (
                 int(crop_bbox[2] - crop_bbox[0] + 1), # width
