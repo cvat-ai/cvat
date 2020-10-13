@@ -73,7 +73,7 @@ class ModelHandler:
             input_crop = cv2.resize(input_crop, (512, 512), interpolation=cv2.INTER_NEAREST)
             crop_scale = (512 / crop_shape[0], 512 / crop_shape[1])
 
-            def translate_points(points):
+            def translate_points_to_crop(points):
                 points = [
                     ((p[0] - crop_bbox[0]) * crop_scale[0], # x
                      (p[1] - crop_bbox[1]) * crop_scale[1]) # y
@@ -81,8 +81,8 @@ class ModelHandler:
 
                 return points
 
-            pos_points = translate_points(pos_points)
-            neg_points = translate_points(neg_points)
+            pos_points = translate_points_to_crop(pos_points)
+            neg_points = translate_points_to_crop(neg_points)
 
             # FIXME: need to constract correct gt (pos_points can be more than 1)
             iog_image = helpers.make_gt(input_crop, pos_points + neg_points)
@@ -109,10 +109,15 @@ class ModelHandler:
 
             # Convert a mask to a polygon
             polygon = convert_mask_to_polygon(pred)
-            polygon = [
-                (int(p[0] + crop_bbox[0]), int(p[1] + crop_bbox[1]))
-                for p in polygon
-            ]
+            def translate_points_to_image(points):
+                points = [
+                    (p[0] / crop_scale[0] + crop_bbox[0], # x
+                     p[1] / crop_scale[1] + crop_bbox[1]) # y
+                    for p in points]
+
+                return points
+
+            polygon = translate_points_to_image(polygon)
 
             return polygon
 

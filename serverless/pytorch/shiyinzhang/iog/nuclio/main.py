@@ -21,7 +21,7 @@ def handler(context, event):
     data = event.body
     pos_points = data["points"][:1]
     neg_points = data["points"][1:]
-    threshold = data.get("threshold", 0.9)
+    threshold = data.get("threshold", 0.8)
     buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
     image = Image.open(buf)
 
