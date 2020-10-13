@@ -17,12 +17,7 @@ import {
     changeGroupColorAsync,
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
-import {
-    CombinedState,
-    StatesOrdering,
-    ObjectType,
-    ColorBy,
-} from 'reducers/interfaces';
+import { CombinedState, StatesOrdering, ObjectType, ColorBy } from 'reducers/interfaces';
 
 interface StateToProps {
     jobInstance: any;
@@ -65,34 +60,20 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 collapsed,
                 collapsedAll,
                 activatedStateID,
-                zLayer: {
-                    min: minZLayer,
-                    max: maxZLayer,
-                },
+                zLayer: { min: minZLayer, max: maxZLayer },
             },
-            job: {
-                instance: jobInstance,
-            },
+            job: { instance: jobInstance },
             player: {
-                frame: {
-                    number: frameNumber,
-                },
+                frame: { number: frameNumber },
             },
-            canvas: {
-                instance: canvasInstance,
-            },
+            canvas: { instance: canvasInstance },
             tabContentHeight: listHeight,
             colors,
         },
         settings: {
-            shapes: {
-                colorBy,
-            },
+            shapes: { colorBy },
         },
-        shortcuts: {
-            keyMap,
-            normalizedKeyMap,
-        },
+        shortcuts: { keyMap, normalizedKeyMap },
     } = state;
 
     let statesHidden = true;
@@ -232,10 +213,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private lockAllStates(locked: boolean): void {
-        const {
-            objectStates,
-            updateAnnotations,
-        } = this.props;
+        const { objectStates, updateAnnotations } = this.props;
         for (const objectState of objectStates) {
             objectState.lock = locked;
         }
@@ -244,10 +222,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 
     private hideAllStates(hidden: boolean): void {
-        const {
-            objectStates,
-            updateAnnotations,
-        } = this.props;
+        const { objectStates, updateAnnotations } = this.props;
         for (const objectState of objectStates) {
             objectState.hidden = hidden;
         }
@@ -256,10 +231,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 
     private collapseAllStates(collapsed: boolean): void {
-        const {
-            objectStates,
-            collapseStates,
-        } = this.props;
+        const { objectStates, collapseStates } = this.props;
 
         collapseStates(objectStates, collapsed);
     }
@@ -269,7 +241,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             statesHidden,
             statesLocked,
             activatedStateID,
-            objectStates,
             jobInstance,
             updateAnnotations,
             changeGroupColor,
@@ -285,10 +256,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             colors,
             colorBy,
         } = this.props;
-        const {
-            sortedStatesID,
-            statesOrdering,
-        } = this.state;
+        const { objectStates, sortedStatesID, statesOrdering } = this.state;
 
         const subKeyMap = {
             SWITCH_ALL_LOCK: keyMap.SWITCH_ALL_LOCK,
@@ -316,10 +284,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
         const activatedStated = (): any | null => {
             if (activatedStateID !== null) {
-                const [state] = objectStates
-                    .filter((objectState: any): boolean => (
-                        objectState.clientID === activatedStateID
-                    ));
+                const [state] = objectStates.filter(
+                    (objectState: any): boolean => objectState.clientID === activatedStateID,
+                );
 
                 return state || null;
             }
@@ -434,8 +401,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedStated();
                 if (state && state.objectType === ObjectType.TRACK) {
-                    const frame = typeof (state.keyframes.next) === 'number'
-                        ? state.keyframes.next : null;
+                    const frame = typeof state.keyframes.next === 'number' ? state.keyframes.next : null;
                     if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
                         changeFrame(frame);
                     }
@@ -445,8 +411,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedStated();
                 if (state && state.objectType === ObjectType.TRACK) {
-                    const frame = typeof (state.keyframes.prev) === 'number'
-                        ? state.keyframes.prev : null;
+                    const frame = typeof state.keyframes.prev === 'number' ? state.keyframes.prev : null;
                     if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
                         changeFrame(frame);
                     }
@@ -461,6 +426,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     {...this.props}
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
+                    objectStates={objectStates}
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
@@ -476,7 +442,4 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(ObjectsListContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(ObjectsListContainer);
