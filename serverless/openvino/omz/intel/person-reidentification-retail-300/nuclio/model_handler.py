@@ -12,8 +12,8 @@ from model_loader import ModelLoader
 
 class ModelHandler:
     def __init__(self):
-        base_dir = os.environ.get("MODEL_PATH",
-            "/opt/nuclio/open_model_zoo/intel/person-reidentification-retail-0300/FP32")
+        base_dir = os.path.abspath(os.environ.get("MODEL_PATH",
+            "/opt/nuclio/open_model_zoo/intel/person-reidentification-retail-0300/FP32"))
         model_xml = os.path.join(base_dir, "person-reidentification-retail-0300.xml")
         model_bin = os.path.join(base_dir, "person-reidentification-retail-0300.bin")
 
