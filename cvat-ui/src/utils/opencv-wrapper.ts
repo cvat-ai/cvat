@@ -16,7 +16,11 @@ export interface Scissors {
         shape: {
             shapeType?: string;
         };
-        canvas: object;
+        canvas: {
+            shapeType?: string;
+            withThreshold?: boolean;
+            minPosVertices?: number;
+        };
     };
 }
 
@@ -55,6 +59,7 @@ export class OpenCVWrapper {
                 },
                 canvas: {
                     shapeType: 'points',
+                    withThreshold: true,
                     minPosVertices: 1,
                 },
             },

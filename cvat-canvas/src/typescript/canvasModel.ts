@@ -75,6 +75,7 @@ export interface InteractionData {
     crosshair?: boolean;
     minPosVertices?: number;
     minNegVertices?: number;
+    withThreshold?: boolean;
 }
 
 export interface InteractionResult {

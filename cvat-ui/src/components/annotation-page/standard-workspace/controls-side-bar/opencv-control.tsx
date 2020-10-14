@@ -202,12 +202,18 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             return;
         }
 
-        this.interactionIsDone = (e as CustomEvent).detail.isDone;
+        const {
+            shapesUpdated,
+            isDone,
+            threshold,
+            shapes,
+        } = (e as CustomEvent).detail;
+        this.interactionIsDone = isDone;
         if (processing) return;
 
         try {
             let points: number[] = [];
-            if ((e as CustomEvent).detail.shapesUpdated) {
+            if (shapesUpdated) {
                 this.setState({ processing: true });
                 try {
                     // Getting image data
@@ -227,9 +233,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
                     // Handling via OpenCV.js
                     const result = await this.activeTool.run(
-                        convertShapesForInteractor((e as CustomEvent).detail.shapes).flat(),
+                        convertShapesForInteractor(shapes).flat(),
                         imageData,
-                        500,
+                        threshold,
                         this.toolState,
                     );
                     this.toolState = result.state;

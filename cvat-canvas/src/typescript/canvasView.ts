@@ -135,6 +135,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         shapes: InteractionResult[] | null,
         shapesUpdated: boolean = true,
         isDone: boolean = false,
+        threshold: number | null = null,
     ): void {
         const { zLayer } = this.controller;
         if (Array.isArray(shapes)) {
@@ -146,6 +147,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     isDone,
                     shapes,
                     zOrder: zLayer || 0,
+                    threshold,
                 },
             });
 
@@ -918,6 +920,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.content.addEventListener('wheel', (event): void => {
+            if (event.ctrlKey) return;
             const { offset } = this.controller.geometry;
             const point = translateToSVG(this.content, [event.clientX, event.clientY]);
             self.controller.zoom(point[0] - offset, point[1] - offset, event.deltaY > 0 ? -1 : 1);
