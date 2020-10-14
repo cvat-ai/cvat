@@ -203,9 +203,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
 
         this.interactionIsDone = (e as CustomEvent).detail.isDone;
-        if (processing) {
-            return;
-        }
+        if (processing) return;
 
         try {
             let points: number[] = [];
@@ -239,6 +237,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
                     // Increasing number of points artificially
                     let minNumberOfPoints = 1;
+                    // eslint-disable-next-line: eslintdot-notation
                     if (this.activeTool.params.shape.shapeType === 'polyline') {
                         minNumberOfPoints = 2;
                     } else if (this.activeTool.params.shape.shapeType === 'polygon') {
@@ -290,7 +289,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     objectType: state.objectType,
                     label: state.label,
                     shapeType: state.shapeType,
-                    points: points || state.points,
+                    points: state.points,
                     occluded: state.occluded,
                     zOrder: state.zOrder,
                 });

@@ -13,7 +13,9 @@ export interface Scissors {
     run(points: number[], image: ImageData, threshold: number, state: ScissorsState | null): Promise<ScissorsResult>;
     type: 'opencv_scissors';
     params: {
-        shape: object;
+        shape: {
+            shapeType?: string;
+        };
         canvas: object;
     };
 }
