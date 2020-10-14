@@ -33,25 +33,23 @@ before_script:
   - chmod a+rwx ${HOST_COVERAGE_DATA_DIR}
 
 script:
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && coveralls-lcov -v -n ./reports/coverage/lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
   - docker-compose up -d
-  # Create superuser
-  - docker exec -it cvat bash -ic "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+  - docker exec -it cvat bash -ic "python3 ~/manage.py migrate && echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
   # End-to-end testing
-  - if [[ $TRAVIS_EVENT_TYPE == "cron" || $TRAVIS_BRANCH == "dkru/measure_coverage_experiments_for_testing" ]];
+  - if [[ $TRAVIS_EVENT_TYPE == "cron" && $TRAVIS_BRANCH == "develop" ]];
     then
+      cd ./tests && npm install &&
+      npm run cypress:run:firefox && cd ..;
+    else
+      docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}' &&
+      docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info' &&
       npm install &&
       npm run coverage &&
       docker-compose up -d --build &&
       cd ./tests && npm install &&
-      npx cypress run --headless --browser firefox && cd .. &&
-      docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR}/tests && coveralls-lcov -v -n ${CONTAINER_COVERAGE_DATA_DIR}/tests/coverage/lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage_ui.json';
-    else
-      cd ./tests && npm install &&
-      npm run cypress:run:chrome && cd ..;
+      npx cypress run --headless --browser chrome && cd .. &&
+      mv ./tests/.nyc_output ./ &&
+      npx nyc report --reporter=text-lcov >> ${HOST_COVERAGE_DATA_DIR}/lcov.info &&
+      docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls-lcov -v -n lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json' &&
+      docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . && coveralls --merge=coverage.json';
     fi;
-
-after_success:
-  # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage_ui.json . && ls -la ${CONTAINER_COVERAGE_DATA_DIR} && coveralls --merge=coverage_ui.json'
