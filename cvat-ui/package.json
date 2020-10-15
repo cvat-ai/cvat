@@ -36,12 +36,10 @@
         "eslint-plugin-react": "^7.17.0",
         "eslint-plugin-react-hooks": "^1.7.0",
         "html-webpack-plugin": "^3.2.0",
-        "husky": "^4.3.0",
         "lint-staged": "^10.4.0",
         "node-sass": "^4.13.0",
         "postcss-loader": "^3.0.0",
         "postcss-preset-env": "^6.7.0",
-        "prettier": "2.1.2",
         "react-svg-loader": "^3.0.3",
         "sass-loader": "^8.0.0",
         "style-loader": "^1.0.0",
@@ -84,17 +82,5 @@
         "redux-devtools-extension": "^2.13.8",
         "redux-logger": "^3.0.6",
         "redux-thunk": "^2.3.0"
-    },
-    "husky": {
-        "hooks": {
-            "pre-commit": "lint-staged"
-        }
-    },
-    "lint-staged": {
-        "*.{html,css,scss,json,md}": "prettier --write",
-        "*.{js,ts,tsx}": [
-            "eslint --fix",
-            "prettier --write"
-        ]
     }
 }
