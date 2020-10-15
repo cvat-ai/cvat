@@ -112,8 +112,8 @@ def intersection_over_union(box_1, box_2):
 
 class ModelHandler:
     def __init__(self, labels):
-        base_dir = os.environ.get("MODEL_PATH",
-            "/opt/nuclio/open_model_zoo/public/yolo-v3-tf/FP32")
+        base_dir = os.path.abspath(os.environ.get("MODEL_PATH",
+            "/opt/nuclio/open_model_zoo/public/yolo-v3-tf/FP32"))
         model_xml = os.path.join(base_dir, "yolo-v3-tf.xml")
         model_bin = os.path.join(base_dir, "yolo-v3-tf.bin")
         self.model = ModelLoader(model_xml, model_bin)

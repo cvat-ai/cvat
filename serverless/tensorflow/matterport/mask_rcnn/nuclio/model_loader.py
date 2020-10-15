@@ -17,7 +17,7 @@ tf.compat.v1.disable_eager_execution()
 # The directory should contain a clone of
 # https://github.com/matterport/Mask_RCNN repository and
 # downloaded mask_rcnn_coco.h5 model.
-MASK_RCNN_DIR = os.environ.get('MASK_RCNN_DIR')
+MASK_RCNN_DIR = os.path.abspath(os.environ.get('MASK_RCNN_DIR'))
 if MASK_RCNN_DIR:
     sys.path.append(MASK_RCNN_DIR)  # To find local version of the library
     sys.path.append(os.path.join(MASK_RCNN_DIR, 'samples/coco'))
