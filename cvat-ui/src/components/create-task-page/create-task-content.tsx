@@ -75,20 +75,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        const {
-            status,
-            history,
-            taskId,
-        } = this.props;
+        const { status, history, taskId } = this.props;
 
         if (status === 'CREATED' && prevProps.status !== 'CREATED') {
-            const btn = (
-                <Button
-                    onClick={() => history.push(`/tasks/${taskId}`)}
-                >
-                    Open task
-                </Button>
-            );
+            const btn = <Button onClick={() => history.push(`/tasks/${taskId}`)}>Open task</Button>;
 
             notification.info({
                 message: 'The task has been created',
@@ -109,10 +99,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private validateLabelsOrProject = (): boolean => {
-        const {
-            projectId,
-            labels,
-        } = this.state;
+        const { projectId, labels } = this.state;
         return !!labels.length || !!projectId;
     };
 
@@ -121,9 +108,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.setState({
             files,
         });
-        const totalLen = Object.keys(files).reduce(
-            (acc, key) => acc + files[key].length, 0,
-        );
+        const totalLen = Object.keys(files).reduce((acc, key) => acc + files[key].length, 0);
 
         return !!totalLen;
     };
@@ -163,7 +148,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             return;
         }
 
-        this.basicConfigurationComponent.submit()
+        this.basicConfigurationComponent
+            .submit()
             .then(() => {
                 if (this.advancedConfigurationComponent) {
                     return this.advancedConfigurationComponent.submit();
@@ -172,10 +158,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 return new Promise((resolve): void => {
                     resolve();
                 });
-            }).then((): void => {
+            })
+            .then((): void => {
                 const { onCreate } = this.props;
                 onCreate(this.state);
-            }).catch((error: Error): void => {
+            })
+            .catch((error: Error): void => {
                 notification.error({
                     message: 'Could not create a task',
                     description: error.toString(),
@@ -187,9 +175,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <Col span={24}>
                 <BasicConfigurationForm
-                    wrappedComponentRef={
-                        (component: any): void => { this.basicConfigurationComponent = component; }
-                    }
+                    wrappedComponentRef={(component: any): void => {
+                        this.basicConfigurationComponent = component;
+                    }}
                     onSubmit={this.handleSubmitBasicConfiguration}
                 />
             </Col>
@@ -205,26 +193,19 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     <Text className='cvat-text-color'>Project:</Text>
                 </Col>
                 <Col span={24}>
-                    <ProjectSearchField
-                        onSelect={this.handleProjectIdChange}
-                        value={projectId}
-                    />
+                    <ProjectSearchField onSelect={this.handleProjectIdChange} value={projectId} />
                 </Col>
             </>
         );
     }
 
     private renderLabelsBlock(): JSX.Element {
-        const {
-            projectId,
-            labels,
-        } = this.state;
+        const { projectId, labels } = this.state;
 
         if (projectId) {
             return (
                 <>
                     <Col span={24}>
-                        <Text type='danger'>* </Text>
                         <Text className='cvat-text-color'>Labels:</Text>
                     </Col>
                     <Col span={24}>
@@ -240,13 +221,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 <Text className='cvat-text-color'>Labels:</Text>
                 <LabelsEditor
                     labels={labels}
-                    onSubmit={
-                        (newLabels): void => {
-                            this.setState({
-                                labels: newLabels,
-                            });
-                        }
-                    }
+                    onSubmit={(newLabels): void => {
+                        this.setState({
+                            labels: newLabels,
+                        });
+                    }}
                 />
             </Col>
         );
@@ -258,9 +237,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 <Text type='danger'>* </Text>
                 <Text className='cvat-text-color'>Select files:</Text>
                 <ConnectedFileManager
-                    ref={
-                        (container: any): void => { this.fileManagerContainer = container; }
-                    }
+                    ref={(container: any): void => {
+                        this.fileManagerContainer = container;
+                    }}
                     withRemote
                 />
             </Col>
@@ -272,19 +251,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <Col span={24}>
                 <Collapse>
-                    <Collapse.Panel
-                        key='1'
-                        header={
-                            <Text className='cvat-title'>Advanced configuration</Text>
-                        }
-                    >
+                    <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
                         <AdvancedConfigurationForm
                             installedGit={installedGit}
-                            wrappedComponentRef={
-                                (component: any): void => {
-                                    this.advancedConfigurationComponent = component;
-                                }
-                            }
+                            wrappedComponentRef={(component: any): void => {
+                                this.advancedConfigurationComponent = component;
+                            }}
                             onSubmit={this.handleSubmitAdvancedConfiguration}
                         />
                     </Collapse.Panel>
@@ -303,22 +275,15 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     <Text className='cvat-title'>Basic configuration</Text>
                 </Col>
 
-                { this.renderBasicBlock() }
-                { this.renderProjectBlock() }
-                { this.renderLabelsBlock() }
-                { this.renderFilesBlock() }
-                { this.renderAdvancedBlock() }
+                {this.renderBasicBlock()}
+                {this.renderProjectBlock()}
+                {this.renderLabelsBlock()}
+                {this.renderFilesBlock()}
+                {this.renderAdvancedBlock()}
 
-                <Col span={18}>
-                    {loading ? <Alert message={status} /> : null}
-                </Col>
+                <Col span={18}>{loading ? <Alert message={status} /> : null}</Col>
                 <Col span={6}>
-                    <Button
-                        loading={loading}
-                        disabled={loading}
-                        type='primary'
-                        onClick={this.handleSubmitClick}
-                    >
+                    <Button loading={loading} disabled={loading} type='primary' onClick={this.handleSubmitClick}>
                         Submit
                     </Button>
                 </Col>

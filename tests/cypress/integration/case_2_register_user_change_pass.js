@@ -34,7 +34,7 @@ context('Register user, change password, login with new password', () => {
     describe(`Testing "Case ${caseId}"`, () => {
         it('Register user, change password', () => {
             cy.userRegistration(firstName, lastName, userName, emailAddr, password)
-            cy.url().should('include', '/tasks')
+            cy.url().should('include', '/projects')
             cy.get('.cvat-right-header')
             .find('.cvat-header-menu-dropdown')
             .should('have.text', userName)
@@ -56,7 +56,7 @@ context('Register user, change password, login with new password', () => {
         })
         it('Login with the new password', () => {
             cy.login(userName, newPassword)
-            cy.url().should('include', '/tasks')
+            cy.url().should('include', '/projects')
         })
     })
 })

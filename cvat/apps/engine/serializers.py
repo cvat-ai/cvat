@@ -280,7 +280,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     size = serializers.ReadOnlyField(source='data.size')
     image_quality = serializers.ReadOnlyField(source='data.image_quality')
     data = serializers.ReadOnlyField(source='data.id')
-    project_id = serializers.IntegerField()
+    project_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = models.Task
@@ -345,9 +345,10 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return value
 
     def validate(self, value):
-        if not (value.get("labels") or value.get("project_id")):
+        print(value)
+        if not (value.get("label_set") or value.get("project_id")):
             raise serializers.ValidationError('Label set or project_id must be present')
-        if value.get("labels") and value.get("project_id"):
+        if value.get("label_set") and value.get("project_id"):
             raise serializers.ValidationError('Project must have only one of Label set or project_id')
         return value
 
@@ -365,7 +366,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     tasks = TaskSerializer(many=True, read_only=True)
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner',
+        fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'status')
         read_only_fields = ('created_date', 'updated_date', 'status')
         ordering = ['-id']

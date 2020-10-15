@@ -14,6 +14,7 @@ Cypress.Commands.add('login', (username=Cypress.env('user'), password=Cypress.en
     cy.get('[placeholder="Username"]').type(username)
     cy.get('[placeholder="Password"]').type(password)
     cy.get('[type="submit"]').click()
+    cy.url().should('include', '/projects')
 })
 
 Cypress.Commands.add('logout', (username=Cypress.env('user')) => {
@@ -43,6 +44,7 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               multiAttrParams,
                                               advancedConfigurationParams
                                               ) => {
+    cy.visit('tasks')
     cy.get('#cvat-create-task-button').click()
     cy.url().should('include', '/tasks/create')
     cy.get('[id="name"]').type(taksName)
@@ -68,6 +70,7 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
 })
 
 Cypress.Commands.add('openTask', (taskName) => {
+    cy.visit('tasks')
     cy.contains('strong', taskName)
     .parents('.cvat-tasks-list-item')
     .contains('a', 'Open')

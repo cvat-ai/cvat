@@ -60,8 +60,8 @@ context('Dump annotation if cuboid created', () => {
                 .click()
             })
         })
-        it('Error notification is ot exists', () => {
-            cy.wait(5000)
+        it('Error notification is not exists', () => {
+            cy.wait(10000)
             cy.get('.ant-notification-notice')
             .should('not.exist')
         })

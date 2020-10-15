@@ -44,7 +44,7 @@ context('Issue 1599 (Chinese alphabet).', () => {
         })
 
         it('Successful registration', () => {
-            cy.url().should('include', '/tasks')
+            cy.url().should('include', '/projects')
         })
     })
 })

@@ -143,6 +143,8 @@ class Project(models.Model):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="+")
+    assignee = models.ForeignKey(User, null=True,  blank=True,
+        on_delete=models.SET_NULL, related_name="+")
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)

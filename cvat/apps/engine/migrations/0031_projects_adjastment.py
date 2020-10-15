@@ -11,10 +11,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='project',
-            name='assignee',
-        ),
         migrations.AddField(
             model_name='label',
             name='project',

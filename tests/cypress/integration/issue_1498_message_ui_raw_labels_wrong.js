@@ -34,6 +34,7 @@ context('Message in UI when raw labels are wrong.', () => {
     before(() => {
         cy.visit('auth/login')
         cy.login()
+        cy.visit('tasks')
         cy.get('#cvat-create-task-button').click()
         cy.url().should('include', '/tasks/create')
         cy.get('[role="tab"]').contains('Raw').click()
