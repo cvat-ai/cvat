@@ -41,8 +41,7 @@ function isPositiveInteger(_: any, value: any, callback: any): void {
     }
 
     const intValue = +value;
-    if (Number.isNaN(intValue)
-        || !Number.isInteger(intValue) || intValue < 1) {
+    if (Number.isNaN(intValue) || !Number.isInteger(intValue) || intValue < 1) {
         callback('Value must be a positive integer');
     }
 
@@ -70,10 +69,7 @@ function isIntegerRange(min: number, max: number, _: any, value: any, callback: 
     }
 
     const intValue = +value;
-    if (Number.isNaN(intValue)
-        || !Number.isInteger(intValue)
-        || intValue < min || intValue > max
-    ) {
+    if (Number.isNaN(intValue) || !Number.isInteger(intValue) || intValue < min || intValue > max) {
         callback(`Value must be an integer [${min}, ${max}]`);
     }
 
@@ -83,10 +79,7 @@ function isIntegerRange(min: number, max: number, _: any, value: any, callback: 
 class AdvancedConfigurationForm extends React.PureComponent<Props> {
     public submit(): Promise<void> {
         return new Promise((resolve, reject) => {
-            const {
-                form,
-                onSubmit,
-            } = this.props;
+            const { form, onSubmit } = this.props;
 
             form.validateFields((error, values): void => {
                 if (!error) {
@@ -97,8 +90,10 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         reject(new Error('Segment size must be more than overlap size'));
                     }
 
-                    if (typeof (values.startFrame) !== 'undefined' && typeof (values.stopFrame) !== 'undefined'
-                        && +values.stopFrame < +values.startFrame
+                    if (
+                        typeof values.startFrame !== 'undefined' &&
+                        typeof values.stopFrame !== 'undefined' &&
+                        +values.stopFrame < +values.startFrame
                     ) {
                         reject(new Error('Stop frame must be more or equal start frame'));
                     }
@@ -129,9 +124,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     valuePropName: 'checked',
                 })(
                     <Checkbox>
-                        <Text className='cvat-text-color'>
-                            Z-order
-                        </Text>
+                        <Text className='cvat-text-color'>Z-order</Text>
                     </Checkbox>,
                 )}
             </Form.Item>
@@ -146,19 +139,16 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Tooltip title='Defines image quality level' mouseLeaveDelay={0}>
                     {form.getFieldDecorator('imageQuality', {
                         initialValue: 70,
-                        rules: [{
-                            required: true,
-                            message: 'The field is required.',
-                        }, {
-                            validator: isIntegerRange.bind(null, 5, 100),
-                        }],
-                    })(
-                        <Input
-                            size='large'
-                            type='number'
-                            suffix={<Icon type='percentage' />}
-                        />,
-                    )}
+                        rules: [
+                            {
+                                required: true,
+                                message: 'The field is required.',
+                            },
+                            {
+                                validator: isIntegerRange.bind(null, 5, 100),
+                            },
+                        ],
+                    })(<Input size='large' type='number' suffix={<Icon type='percentage' />} />)}
                 </Tooltip>
             </Form.Item>
         );
@@ -171,12 +161,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             <Form.Item label={<span>Overlap size</span>}>
                 <Tooltip title='Defines a number of intersected frames between different segments' mouseLeaveDelay={0}>
                     {form.getFieldDecorator('overlapSize', {
-                        rules: [{
-                            validator: isNonNegativeInteger,
-                        }],
-                    })(
-                        <Input size='large' type='number' />,
-                    )}
+                        rules: [
+                            {
+                                validator: isNonNegativeInteger,
+                            },
+                        ],
+                    })(<Input size='large' type='number' />)}
                 </Tooltip>
             </Form.Item>
         );
@@ -189,12 +179,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             <Form.Item label={<span>Segment size</span>}>
                 <Tooltip title='Defines a number of frames in a segment' mouseLeaveDelay={0}>
                     {form.getFieldDecorator('segmentSize', {
-                        rules: [{
-                            validator: isPositiveInteger,
-                        }],
-                    })(
-                        <Input size='large' type='number' />,
-                    )}
+                        rules: [
+                            {
+                                validator: isPositiveInteger,
+                            },
+                        ],
+                    })(<Input size='large' type='number' />)}
                 </Tooltip>
             </Form.Item>
         );
@@ -206,17 +196,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item label={<span>Start frame</span>}>
                 {form.getFieldDecorator('startFrame', {
-                    rules: [{
-                        validator: isNonNegativeInteger,
-                    }],
-                })(
-                    <Input
-                        size='large'
-                        type='number'
-                        min={0}
-                        step={1}
-                    />,
-                )}
+                    rules: [
+                        {
+                            validator: isNonNegativeInteger,
+                        },
+                    ],
+                })(<Input size='large' type='number' min={0} step={1} />)}
             </Form.Item>
         );
     }
@@ -227,17 +212,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item label={<span>Stop frame</span>}>
                 {form.getFieldDecorator('stopFrame', {
-                    rules: [{
-                        validator: isNonNegativeInteger,
-                    }],
-                })(
-                    <Input
-                        size='large'
-                        type='number'
-                        min={0}
-                        step={1}
-                    />,
-                )}
+                    rules: [
+                        {
+                            validator: isNonNegativeInteger,
+                        },
+                    ],
+                })(<Input size='large' type='number' min={0} step={1} />)}
             </Form.Item>
         );
     }
@@ -248,17 +228,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item label={<span>Frame step</span>}>
                 {form.getFieldDecorator('frameStep', {
-                    rules: [{
-                        validator: isPositiveInteger,
-                    }],
-                })(
-                    <Input
-                        size='large'
-                        type='number'
-                        min={1}
-                        step={1}
-                    />,
-                )}
+                    rules: [
+                        {
+                            validator: isPositiveInteger,
+                        },
+                    ],
+                })(<Input size='large' type='number' min={1} step={1} />)}
             </Form.Item>
         );
     }
@@ -273,9 +248,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     initialValue: false,
                 })(
                     <Checkbox>
-                        <Text className='cvat-text-color'>
-                            Use LFS (Large File Support):
-                        </Text>
+                        <Text className='cvat-text-color'>Use LFS (Large File Support):</Text>
                     </Checkbox>,
                 )}
             </Form.Item>
@@ -292,24 +265,26 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 extra='Attach a repository to store annotations there'
             >
                 {form.getFieldDecorator('repository', {
-                    rules: [{
-                        validator: (_, value, callback): void => {
-                            if (!value) {
-                                callback();
-                            } else {
-                                const [url, path] = value.split(/\s+/);
-                                if (!patterns.validateURL.pattern.test(url)) {
-                                    callback('Git URL is not a valid');
-                                }
+                    rules: [
+                        {
+                            validator: (_, value, callback): void => {
+                                if (!value) {
+                                    callback();
+                                } else {
+                                    const [url, path] = value.split(/\s+/);
+                                    if (!patterns.validateURL.pattern.test(url)) {
+                                        callback('Git URL is not a valid');
+                                    }
 
-                                if (path && !patterns.validatePath.pattern.test(path)) {
-                                    callback('Git path is not a valid');
-                                }
+                                    if (path && !patterns.validatePath.pattern.test(path)) {
+                                        callback('Git path is not a valid');
+                                    }
 
-                                callback();
-                            }
+                                    callback();
+                                }
+                            },
                         },
-                    }],
+                    ],
                 })(
                     <Input
                         size='large'
@@ -324,14 +299,10 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <>
                 <Row>
-                    <Col>
-                        {this.renderGitRepositoryURL()}
-                    </Col>
+                    <Col>{this.renderGitRepositoryURL()}</Col>
                 </Row>
                 <Row>
-                    <Col>
-                        {this.renderGitLFSBox()}
-                    </Col>
+                    <Col>{this.renderGitLFSBox()}</Col>
                 </Row>
             </>
         );
@@ -347,18 +318,18 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 extra='Attach issue tracker where the task is described'
             >
                 {form.getFieldDecorator('bugTracker', {
-                    rules: [{
-                        validator: (_, value, callback): void => {
-                            if (value && !patterns.validateURL.pattern.test(value)) {
-                                callback('Issue tracker must be URL');
-                            } else {
-                                callback();
-                            }
+                    rules: [
+                        {
+                            validator: (_, value, callback): void => {
+                                if (value && !patterns.validateURL.pattern.test(value)) {
+                                    callback('Issue tracker must be URL');
+                                } else {
+                                    callback();
+                                }
+                            },
                         },
-                    }],
-                })(
-                    <Input size='large' />,
-                )}
+                    ],
+                })(<Input size='large' />)}
             </Form.Item>
         );
     }
@@ -372,9 +343,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     valuePropName: 'checked',
                 })(
                     <Checkbox>
-                        <Text className='cvat-text-color'>
-                            Use zip chunks
-                        </Text>
+                        <Text className='cvat-text-color'>Use zip chunks</Text>
                     </Checkbox>,
                 )}
             </Form.Item>
@@ -386,13 +355,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item help='Using cache to store data.'>
                 {form.getFieldDecorator('useCache', {
-                    initialValue: false,
+                    initialValue: true,
                     valuePropName: 'checked',
                 })(
                     <Checkbox>
-                        <Text className='cvat-text-color'>
-                            Use cache
-                        </Text>
+                        <Text className='cvat-text-color'>Use cache</Text>
                     </Checkbox>,
                 )}
             </Form.Item>
@@ -405,11 +372,10 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item label={<span>Chunk size</span>}>
                 <Tooltip
-                    title={(
+                    title={
                         <>
-                            Defines a number of frames to be packed in
-                            a chunk when send from client to server.
-                            Server defines automatically if empty.
+                            Defines a number of frames to be packed in a chunk when send from client to server. Server
+                            defines automatically if empty.
                             <br />
                             Recommended values:
                             <br />
@@ -421,16 +387,16 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             <br />
                             More: 1 - 4
                         </>
-                    )}
+                    }
                     mouseLeaveDelay={0}
                 >
                     {form.getFieldDecorator('dataChunkSize', {
-                        rules: [{
-                            validator: isPositiveInteger,
-                        }],
-                    })(
-                        <Input size='large' type='number' />,
-                    )}
+                        rules: [
+                            {
+                                validator: isPositiveInteger,
+                            },
+                        ],
+                    })(<Input size='large' type='number' />)}
                 </Tooltip>
             </Form.Item>
         );
@@ -442,27 +408,19 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form>
                 <Row>
-                    <Col>
-                        {this.renderZOrder()}
-                    </Col>
+                    <Col>{this.renderZOrder()}</Col>
                 </Row>
 
                 <Row>
-                    <Col>
-                        {this.renderUzeZipChunks()}
-                    </Col>
+                    <Col>{this.renderUzeZipChunks()}</Col>
                 </Row>
 
                 <Row>
-                    <Col>
-                        {this.renderCreateTaskMethod()}
-                    </Col>
+                    <Col>{this.renderCreateTaskMethod()}</Col>
                 </Row>
 
                 <Row type='flex' justify='start'>
-                    <Col span={7}>
-                        {this.renderImageQuality()}
-                    </Col>
+                    <Col span={7}>{this.renderImageQuality()}</Col>
                     <Col span={7} offset={1}>
                         {this.renderOverlap()}
                     </Col>
@@ -472,9 +430,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Row>
 
                 <Row type='flex' justify='start'>
-                    <Col span={7}>
-                        {this.renderStartFrame()}
-                    </Col>
+                    <Col span={7}>{this.renderStartFrame()}</Col>
                     <Col span={7} offset={1}>
                         {this.renderStopFrame()}
                     </Col>
@@ -484,17 +440,13 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Row>
 
                 <Row type='flex' justify='start'>
-                    <Col span={7}>
-                        {this.renderChunkSize()}
-                    </Col>
+                    <Col span={7}>{this.renderChunkSize()}</Col>
                 </Row>
 
-                { installedGit ? this.renderGit() : null}
+                {installedGit ? this.renderGit() : null}
 
                 <Row>
-                    <Col>
-                        {this.renderBugTracker()}
-                    </Col>
+                    <Col>{this.renderBugTracker()}</Col>
                 </Row>
             </Form>
         );

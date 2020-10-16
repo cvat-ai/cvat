@@ -121,16 +121,33 @@ Cypress.Commands.add('switchLabel', (labelName) => {
     .click()
 })
 
-Cypress.Commands.add('createPoint', (posX, posY, type='Shape') => {
+Cypress.Commands.add('createPoint', (createPointParams) => {
     cy.get('.cvat-draw-points-control').click()
-    cy.get('.cvat-draw-shape-popover-content')
-    .find('button')
-    .contains(type)
-    .click({force: true})
-    cy.get('.cvat-canvas-container')
-    .click(posX, posY)
-    .trigger('keydown', {key: 'n'})
-    .trigger('keyup', {key: 'n'})
+    if (createPointParams.switchLabel) {
+        cy.switchLabel(createPointParams.labelName)
+    }
+    cy.contains('Draw new points')
+    .parents('.cvat-draw-shape-popover-content')
+    .within(() => {
+        if (createPointParams.numberOfPoints) {
+            createPointParams.complete = false
+            cy.get('.ant-input-number-input')
+            .clear()
+            .type(createPointParams.numberOfPoints)
+        }
+        cy.get('button')
+        .contains(createPointParams.type)
+        .click({force: true})
+    })
+    createPointParams.pointsMap.forEach(element => {
+        cy.get('.cvat-canvas-container')
+        .click(element.x, element.y)
+    })
+    if (createPointParams.complete) {
+        cy.get('.cvat-canvas-container')
+        .trigger('keydown', {key: 'n'})
+        .trigger('keyup', {key: 'n'})
+    }
 })
 
 Cypress.Commands.add('changeAppearance', (colorBy) => {
@@ -151,25 +168,31 @@ Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
     .trigger('keyup', {key: 'g'})
 })
 
-Cypress.Commands.add('createPolygon', ( mode,
-                                        pointsMap,
-                                        complete=true,
-                                        reDraw=false) => {
-    if (!reDraw) {
+Cypress.Commands.add('createPolygon', (createPolygonParams) => {
+    if (!createPolygonParams.reDraw) {
         cy.get('.cvat-draw-polygon-control').click()
+        if (createPolygonParams.switchLabel) {
+            cy.switchLabel(createPolygonParams.labelName)
+        }
         cy.contains('Draw new polygon')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
+            if (createPolygonParams.numberOfPoints) {
+                createPolygonParams.complete = false
+                cy.get('.ant-input-number-input')
+                .clear()
+                .type(createPolygonParams.numberOfPoints)
+            }
             cy.get('button')
-            .contains(mode)
+            .contains(createPolygonParams.type)
             .click({force: true})
         })
     }
-    pointsMap.forEach(element => {
+    createPolygonParams.pointsMap.forEach(element => {
         cy.get('.cvat-canvas-container')
         .click(element.x, element.y)
     })
-    if (complete) {
+    if (createPolygonParams.complete) {
         cy.get('.cvat-canvas-container')
         .trigger('keydown', {key: 'n'})
         .trigger('keyup', {key: 'n'})
@@ -237,23 +260,33 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
     cy.get('[placeholder="Default value"]').first().type(multiAttrParams.additionalValue)
 })
 
-Cypress.Commands.add('createPolyline', (mode,
-                                        pointsMap) => {
+Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     cy.get('.cvat-draw-polyline-control').click()
+    if (createPolylineParams.switchLabel) {
+        cy.switchLabel(createPolylineParams.labelName)
+    }
     cy.contains('Draw new polyline')
     .parents('.cvat-draw-shape-popover-content')
     .within(() => {
+        if (createPolylineParams.numberOfPoints) {
+            createPolylineParams.complete = false
+            cy.get('.ant-input-number-input')
+            .clear()
+            .type(createPolylineParams.numberOfPoints)
+        }
         cy.get('button')
-        .contains(mode)
+        .contains(createPolylineParams.type)
         .click({force: true})
     })
-    pointsMap.forEach(element => {
+    createPolylineParams.pointsMap.forEach(element => {
         cy.get('.cvat-canvas-container')
         .click(element.x, element.y)
     })
-    cy.get('.cvat-canvas-container')
-    .trigger('keydown', {key: 'n'})
-    .trigger('keyup', {key: 'n'})
+    if (createPolylineParams.complete) {
+        cy.get('.cvat-canvas-container')
+        .trigger('keydown', {key: 'n'})
+        .trigger('keyup', {key: 'n'})
+    }
 })
 
 Cypress.Commands.add('getTaskID', (taskName) => {

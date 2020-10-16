@@ -297,7 +297,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     .format(db_label.name))
             if not label.get('color', None):
                 label_names = [l.name for l in
-                    models.Label.objects.filter(task_id=instance.id).exclude(id=db_label.id).order_by('id')
+                    instance.label_set.all().exclude(id=db_label.id).order_by('id')
                 ]
                 db_label.color = get_label_color(db_label.name, label_names)
             else:

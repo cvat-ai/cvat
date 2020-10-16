@@ -36,7 +36,7 @@ def convert_mask_to_polygon(mask):
 class ModelHandler:
     def __init__(self):
         torch.backends.cudnn.deterministic = True
-        base_dir = os.environ.get("MODEL_PATH", "/opt/nuclio/fbrs")
+        base_dir = os.path.abspath(os.environ.get("MODEL_PATH", "/opt/nuclio/fbrs"))
         model_path = os.path.join(base_dir, "resnet101_dh256_sbd.pth")
         state_dict = torch.load(model_path, map_location='cpu')
 
