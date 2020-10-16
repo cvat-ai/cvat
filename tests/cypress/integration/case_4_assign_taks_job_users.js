@@ -68,6 +68,10 @@ context('Multiple users. Assign task, job.', () => {
         it('First user login and create a task', () => {
             cy.login()
             cy.url().should('include', '/projects')
+            cy.visit('tasks')
+            if (Cypress.browser.name === 'firefox') {
+                closeModal()
+            }
             cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image)
         })
@@ -85,6 +89,9 @@ context('Multiple users. Assign task, job.', () => {
             cy.login(secondUserName, secondUser.password)
             cy.url().should('include', '/projects')
             cy.visit('tasks')
+            if (Cypress.browser.name === 'firefox') {
+                closeModal()
+            }
             cy.contains('strong', taskName)
             .should('exist')
             cy.openTask(taskName)
@@ -94,6 +101,9 @@ context('Multiple users. Assign task, job.', () => {
             cy.login(thirdUserName, thirdUser.password)
             cy.url().should('include', '/projects')
             cy.visit('tasks')
+            if (Cypress.browser.name === 'firefox') {
+                closeModal()
+            }
             cy.contains('strong', taskName)
             .should('not.exist')
             cy.logout(thirdUserName)
@@ -101,6 +111,10 @@ context('Multiple users. Assign task, job.', () => {
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login()
             cy.url().should('include', '/projects')
+            cy.visit('tasks')
+            if (Cypress.browser.name === 'firefox') {
+                closeModal()
+            }
             cy.openTask(taskName)
             cy.get('.cvat-task-job-list').within(() => {
                 cy.get('.cvat-user-selector')
@@ -114,6 +128,9 @@ context('Multiple users. Assign task, job.', () => {
             cy.login(thirdUserName, thirdUser.password)
             cy.url().should('include', '/projects')
             cy.visit('tasks')
+            if (Cypress.browser.name === 'firefox') {
+                closeModal()
+            }
             cy.contains('strong', taskName)
             .should('exist')
             cy.openTask(taskName)

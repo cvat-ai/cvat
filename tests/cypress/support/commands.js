@@ -70,7 +70,6 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
 })
 
 Cypress.Commands.add('openTask', (taskName) => {
-    cy.visit('tasks')
     cy.contains('strong', taskName)
     .parents('.cvat-tasks-list-item')
     .contains('a', 'Open')
