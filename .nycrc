@@ -1,8 +1,6 @@
 {
     "all": true,
-    "recursive": true,
     "compact": false,
-    "useInlineSourceMaps": false,
     "extension": [
         ".js",
         ".jsx",
