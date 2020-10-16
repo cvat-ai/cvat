@@ -62,6 +62,7 @@ context('Filter property "shape" work correctly', () => {
         })
         it('Input filter "shape == "polygon""', () => {
             cy.get('.cvat-annotations-filters-input')
+            .click()
             .type('shape == "polygon"{Enter}')
         })
         it('Only polygon is visible', () => {
