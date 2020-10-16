@@ -7,7 +7,6 @@ import io
 import os
 import os.path as osp
 import random
-import subprocess
 import shutil
 import tempfile
 import xml.etree.ElementTree as ET
@@ -1557,12 +1556,15 @@ class TaskDataAPITestCase(APITestCase):
             video.write(data.read())
         cls._image_sizes[filename] = img_sizes
 
-        filename = "test_rotate_video_1.mp4"
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        subprocess.check_call([
-            'ffmpeg', '-i', os.path.join(settings.SHARE_ROOT, 'test_video_1.mp4'),
-            '-c', 'copy', '-metadata:s:v:0', 'rotate=90', path])
-        cls._image_sizes[filename] = [(img_size[1], img_size[0]) for img_size in img_sizes]
+        filename = "test_rotated_90_video.mp4"
+        path = os.path.join(os.path.dirname(__file__), 'assets', 'test_rotated_90_video.mp4')
+        container = av.open(path, 'r')
+        for frame in container.decode(video=0):
+            # pyav ignores rotation record in metadata when decoding frames
+            img_sizes = [(frame.height, frame.width)] * container.streams.video[0].frames
+            break
+        container.close()
+        cls._image_sizes[filename] = img_sizes
 
         filename = os.path.join("videos", "test_video_1.mp4")
         path = os.path.join(settings.SHARE_ROOT, filename)
@@ -1598,9 +1600,6 @@ class TaskDataAPITestCase(APITestCase):
         os.remove(path)
 
         path = os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
-        os.remove(path)
-
-        path = os.path.join(settings.SHARE_ROOT, "test_rotate_video_1.mp4")
         os.remove(path)
 
         path = os.path.join(settings.SHARE_ROOT, "videos", "meta_info.txt")
@@ -2054,12 +2053,12 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         task_data = {
-            "server_files[0]": 'test_rotate_video_1.mp4',
+            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_rotated_90_video.mp4'), 'rb'),
             "image_quality": 70,
             "use_zip_chunks": True
         }
 
-        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+        image_sizes = self._image_sizes['test_rotated_90_video.mp4']
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.FILE_SYSTEM)
 
@@ -2074,13 +2073,13 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         task_data = {
-            "server_files[0]": 'test_rotate_video_1.mp4',
+            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_rotated_90_video.mp4'), 'rb'),
             "image_quality": 70,
             "use_cache": True,
             "use_zip_chunks": True
         }
 
-        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+        image_sizes = self._image_sizes['test_rotated_90_video.mp4']
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
 
