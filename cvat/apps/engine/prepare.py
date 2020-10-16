@@ -195,8 +195,12 @@ class UploadedMeta(PrepareInfo):
         for packet in container.demux(video_stream):
             for frame in packet.decode():
                 if video_stream.metadata.get('rotate'):
-                    frame = av.VideoFrame.from_image(
-                        frame.to_image().rotate(360 - int(video_stream.metadata.get('rotate')), expand=True)
+                    frame = av.VideoFrame().from_ndarray(
+                        rotate_image(
+                            frame.to_ndarray(format='bgr24'),
+                            360 - int(container.streams.video[0].metadata.get('rotate'))
+                        ),
+                        format ='bgr24'
                     )
                 self._close_video_container(container)
                 return (frame.width, frame.height)
