@@ -362,7 +362,7 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True)
+    labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     tasks = TaskSerializer(many=True, read_only=True)
     class Meta:
         model = models.Project
