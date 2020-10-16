@@ -35,6 +35,20 @@ def delete_tmp_dir(tmp_dir):
     if tmp_dir:
         shutil.rmtree(tmp_dir)
 
+def rotate_image(image, angle):
+    import cv2 as cv
+    height, width = image.shape[:2]
+    image_center = (width/2, height/2)
+    matrix = cv.getRotationMatrix2D(image_center, angle, 1.)
+    abs_cos = abs(matrix[0,0])
+    abs_sin = abs(matrix[0,1])
+    bound_w = int(height * abs_sin + width * abs_cos)
+    bound_h = int(height * abs_cos + width * abs_sin)
+    matrix[0, 2] += bound_w/2 - image_center[0]
+    matrix[1, 2] += bound_h/2 - image_center[1]
+    matrix = cv.warpAffine(image, matrix, (bound_w, bound_h))
+    return matrix
+
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop):
         self._source_path = sorted(source_path)
@@ -230,8 +244,12 @@ class VideoReader(IMediaReader):
                     if self._has_frame(frame_num - 1):
                         if packet.stream.metadata.get('rotate'):
                             old_image = image
-                            image = av.VideoFrame.from_image(
-                                image.to_image().rotate(360 - int(packet.stream.metadata.get('rotate')), expand=True)
+                            image = av.VideoFrame().from_ndarray(
+                                rotate_image(
+                                    image.to_ndarray(format='bgr24'),
+                                    360 - int(container.streams.video[0].metadata.get('rotate'))
+                                ),
+                                format ='bgr24'
                             )
                             image.pts = old_image.pts
                         yield (image, self._source_path[0], image.pts)
@@ -259,7 +277,14 @@ class VideoReader(IMediaReader):
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
         return self._get_preview(preview.to_image() if not stream.metadata.get('rotate') \
-            else preview.to_image().rotate(360 - int(stream.metadata.get('rotate')), expand=True))
+            else av.VideoFrame().from_ndarray(
+                rotate_image(
+                    preview.to_ndarray(format='bgr24'),
+                    360 - int(container.streams.video[0].metadata.get('rotate'))
+                ),
+                format ='bgr24'
+            ).to_image()
+        )
 
     def get_image_size(self, i):
         image = (next(iter(self)))[0]

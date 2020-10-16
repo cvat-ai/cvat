@@ -24,7 +24,6 @@ class WorkWithVideo:
         video_stream.thread_type = 'AUTO'
         return video_stream
 
-
 class AnalyzeVideo(WorkWithVideo):
     def check_type_first_frame(self):
         container = self._open_video_container(self.source_path, mode='r')
@@ -79,8 +78,12 @@ class PrepareInfo(WorkWithVideo):
         container = self._open_video_container(self.source_path, 'r')
         frame = next(iter(self.key_frames.values()))
         if container.streams.video[0].metadata.get('rotate'):
-            frame = av.VideoFrame.from_image(
-                frame.to_image().rotate(360 - int(container.streams.video[0].metadata.get('rotate')), expand=True)
+            frame = av.VideoFrame().from_ndarray(
+                rotate_image(
+                    frame.to_ndarray(format='bgr24'),
+                    360 - int(container.streams.video[0].metadata.get('rotate'))
+                ),
+                format ='bgr24'
             )
         self._close_video_container(container)
         return (frame.width, frame.height)
@@ -157,8 +160,12 @@ class PrepareInfo(WorkWithVideo):
                     continue
                 elif frame_number < end_chunk_frame_number and not ((frame_number - start_chunk_frame_number) % step):
                     if video_stream.metadata.get('rotate'):
-                        frame = av.VideoFrame.from_image(
-                            frame.to_image().rotate(360 - int(video_stream.metadata.get('rotate')), expand=True)
+                        frame = av.VideoFrame().from_ndarray(
+                            rotate_image(
+                                frame.to_ndarray(format='bgr24'),
+                                360 - int(container.streams.video[0].metadata.get('rotate'))
+                            ),
+                            format ='bgr24'
                         )
                     yield frame
                 elif (frame_number - start_chunk_frame_number) % step:
@@ -247,3 +254,17 @@ def prepare_meta_for_upload(func, *args):
     with open(meta_info.meta_path, 'a') as meta_file:
         meta_file.write(str(meta_info.get_task_size()))
     return smooth_decoding
+
+def rotate_image(image, angle):
+    import cv2 as cv
+    height, width = image.shape[:2]
+    image_center = (width/2, height/2)
+    matrix = cv.getRotationMatrix2D(image_center, angle, 1.)
+    abs_cos = abs(matrix[0,0])
+    abs_sin = abs(matrix[0,1])
+    bound_w = int(height * abs_sin + width * abs_cos)
+    bound_h = int(height * abs_cos + width * abs_sin)
+    matrix[0, 2] += bound_w/2 - image_center[0]
+    matrix[1, 2] += bound_h/2 - image_center[1]
+    matrix = cv.warpAffine(image, matrix, (bound_w, bound_h))
+    return matrix
