@@ -311,12 +311,16 @@ export class DrawHandlerImpl implements DrawHandler {
 
         const sizeDecrement = (): void => {
             if (--size === 0) {
-                this.drawInstance.draw('done');
+                // we need additional settimeout because we cannot invoke draw('done')
+                // from event listener for drawstart event
+                // because of implementation of svg.js
+                setTimeout((): void => this.drawInstance.draw('done'));
             }
         };
 
         this.drawInstance.on('drawstart', sizeDecrement);
         this.drawInstance.on('drawpoint', sizeDecrement);
+        this.drawInstance.on('drawupdate', (): void => this.transform(this.geometry));
         this.drawInstance.on('undopoint', (): number => size++);
 
         // Add ability to cancel the latest drawn point

@@ -9,18 +9,14 @@ import ObjectItemContainer from 'containers/annotation-page/standard-workspace/o
 
 interface Props {
     activatedStateID: number | null;
+    objectStates: any[];
     visible: boolean;
     left: number;
     top: number;
 }
 
 export default function CanvasContextMenu(props: Props): JSX.Element | null {
-    const {
-        activatedStateID,
-        visible,
-        left,
-        top,
-    } = props;
+    const { activatedStateID, objectStates, visible, left, top } = props;
 
     if (!visible || activatedStateID === null) {
         return null;
@@ -31,6 +27,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
             <ObjectItemContainer
                 key={activatedStateID}
                 clientID={activatedStateID}
+                objectStates={objectStates}
                 initialCollapsed
             />
         </div>,

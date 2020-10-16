@@ -10,6 +10,7 @@ cache:
 
 addons:
   firefox: "latest"
+  chrome: stable
   apt:
     packages:
     - libgconf-2-4
@@ -34,27 +35,21 @@ before_script:
 
 script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
-  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && coveralls-lcov -v -n ./reports/coverage/lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm install && cd ../cvat-core && npm install && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info'
   - docker-compose up -d
-  # Create superuser
   - docker exec -it cvat bash -ic "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
   # End-to-end testing
+  - cd ./tests && npm install && cd ..
   - if [[ $TRAVIS_EVENT_TYPE == "cron" && $TRAVIS_BRANCH == "develop" ]];
     then
-      cd ./tests && npm install &&
-      npm run cypress:run:firefox && cd ..  &&
-      npm install  &&
-      npm run coverage  &&
-      docker-compose up -d --build  &&
-      cd ./tests &&
-      npm run cypress:run:chrome && cd .. &&
-      npm run report:coverage:text &&
-      npm run report:coverage:lcov;
-    else
-      cd ./tests && npm install &&
-      npm run cypress:run:chrome && cd ..;
+      cd ./tests && npm run cypress:run:firefox && exit $?;
     fi;
-
+  - npm install && npm run coverage
+  - docker-compose up -d --build
+  - cd ./tests && npx cypress run --headless --browser chrome
+  - mv ./.nyc_output ../ && cd ..
+  - npx nyc report --reporter=text-lcov >> ${HOST_COVERAGE_DATA_DIR}/lcov.info
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls-lcov -v -n lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
 
 after_success:
   # https://coveralls-python.readthedocs.io/en/latest/usage/multilang.html

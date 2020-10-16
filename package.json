@@ -44,9 +44,7 @@
     "coverage": "npm run instrument && npm run cp && npm run rm",
     "instrument": "nyc instrument cvat-ui cvat-ui_cov && nyc instrument cvat-canvas cvat-canvas_cov && nyc instrument cvat-data cvat-data_cov && nyc instrument cvat-core cvat-core_cov",
     "cp": "cp -r cvat-ui_cov/* cvat-ui && cp -r cvat-canvas_cov/* cvat-canvas && cp -r cvat-data_cov/* cvat-data && cp -r cvat-core_cov/* cvat-core",
-    "rm": "rm -rf cvat-ui_cov && rm -rf cvat-canvas_cov && rm -rf cvat-data_cov && rm -r cvat-core_cov",
-    "report:coverage:text": "nyc report --reporter=text",
-    "report:coverage:lcov": "nyc report --reporter=text-lcov | coveralls"
+    "rm": "rm -rf cvat-ui_cov cvat-canvas_cov cvat-data_cov cvat-core_cov"
   },
   "repository": {
     "type": "git",
