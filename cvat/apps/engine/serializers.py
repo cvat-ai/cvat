@@ -272,7 +272,7 @@ class DataSerializer(serializers.ModelSerializer):
         return db_data
 
 class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True)
+    labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type')
@@ -295,7 +295,12 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
-        labels = validated_data.pop('label_set')
+        if not (validated_data.get("label_set") or validated_data.get("project_id")):
+            raise serializers.ValidationError('Label set or project_id must be present')
+        if validated_data.get("label_set") and validated_data.get("project_id"):
+            raise serializers.ValidationError('Project must have only one of Label set or project_id')
+
+        labels = validated_data.pop('label_set', [])
         db_task = models.Task.objects.create(**validated_data)
         label_names = list()
         for label in labels:
@@ -343,15 +348,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if len(label_names) != len(set(label_names)):
             raise serializers.ValidationError('All label names must be unique for the task')
         return value
-
-    def validate(self, value):
-        print(value)
-        if not (value.get("label_set") or value.get("project_id")):
-            raise serializers.ValidationError('Label set or project_id must be present')
-        if value.get("label_set") and value.get("project_id"):
-            raise serializers.ValidationError('Project must have only one of Label set or project_id')
-        return value
-
 
 class ProjectSearchSerializer(serializers.ModelSerializer):
     class Meta:
