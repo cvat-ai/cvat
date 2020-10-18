@@ -5,6 +5,7 @@
  */
 
 import './commands'
+import '@cypress/code-coverage/support'
 
 before(() => {
     if (Cypress.browser.family !== 'chromium') {
@@ -16,21 +17,5 @@ before(() => {
             .contains('OK')
             .click()
         })
-    }
-})
-
-afterEach(() => {
-    if (Cypress.browser.name === 'chrome') {
-        cy.window().then(win => {
-            if (win.__coverage__) {
-                cy.task('combineCoverage', win.__coverage__)
-            }
-        })
-    }
-})
-
-after(() => {
-    if (Cypress.browser.name === 'chrome') {
-        cy.task('coverageReportPrepare')
     }
 })
