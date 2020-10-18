@@ -161,6 +161,7 @@ class RqStatusSerializer(serializers.Serializer):
     message = serializers.CharField(allow_blank=True, default="")
 
 class WriteOnceMixin:
+
     """Adds support for write once fields to serializers.
 
     To use it, specify a list of fields as `write_once_fields` on the
