@@ -12,6 +12,11 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
 
+def get_user_rating(self):
+    return self.profile.rating
+
+User.add_to_class('get_user_rating', get_user_rating)
+
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
         value = super().get_prep_value(value)
@@ -248,6 +253,7 @@ class Segment(models.Model):
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    reviewer = models.ForeignKey(User, null=True, blank=True, related_name='review_job_set', on_delete=models.SET_NULL)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
 
@@ -323,6 +329,18 @@ class ShapeType(str, Enum):
 class SourceType(str, Enum):
     AUTO = 'auto'
     MANUAL = 'manual'
+
+    @classmethod
+    def choices(self):
+        return tuple((x.value, x.name) for x in self)
+
+    def __str__(self):
+        return self.value
+
+class ReviewStatus(str, Enum):
+    ACCEPTED = 'accepted'
+    REJECTED = 'rejected'
+    REVIEW_FURTHER = 'review_further'
 
     @classmethod
     def choices(self):
@@ -411,3 +429,31 @@ class TrackedShape(Shape):
 
 class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE)
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    rating = models.FloatField(default=0.0)
+
+class Review(models.Model):
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    reviewer = models.ForeignKey(User, null=True, blank=True, related_name='reviews', on_delete=models.SET_NULL)
+    assignee = models.ForeignKey(User, null=True, blank=True, related_name='reviewed', on_delete=models.SET_NULL)
+    estimated_quality = models.FloatField(default=0.0)
+    status = models.CharField(max_length=16, choices=ReviewStatus.choices())
+
+class Issue(models.Model):
+    frame = models.PositiveIntegerField()
+    roi = FloatArrayField()
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    review = models.ForeignKey(Review, null=True, blank=True, on_delete=models.SET_NULL)
+    owner = models.ForeignKey(User, null=True, blank=True, related_name='issues', on_delete=models.SET_NULL)
+    resolver = models.ForeignKey(User, null=True, blank=True, related_name='resolved_issues', on_delete=models.SET_NULL)
+    created_date = models.DateTimeField(auto_now_add=True)
+    resolved_date = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+class Comment(models.Model):
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    message = models.CharField(max_length=4096, default='')
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)

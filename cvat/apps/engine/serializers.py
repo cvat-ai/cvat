@@ -360,13 +360,14 @@ class BasicUserSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True,
         slug_field='name', queryset=Group.objects.all())
+    rating = serializers.SlugRelatedField(read_only=True, slug_field='get_user_rating')
 
     class Meta:
         model = User
         fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email',
             'groups', 'is_staff', 'is_superuser', 'is_active', 'last_login',
-            'date_joined')
-        read_only_fields = ('last_login', 'date_joined')
+            'date_joined', 'rating')
+        read_only_fields = ('last_login', 'date_joined', 'rating')
         write_only_fields = ('password', )
         ordering = ['-id']
 
