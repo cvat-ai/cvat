@@ -56,7 +56,7 @@ class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'status', 'start_frame',
+        fields = ('url', 'id', 'assignee', 'reviewer', 'status', 'start_frame',
             'stop_frame', 'task_id')
 
 class SimpleJobSerializer(serializers.ModelSerializer):
