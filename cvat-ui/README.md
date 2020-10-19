@@ -10,7 +10,7 @@ If you make changes in this package, please do following:
 - After adding new features do: ``npm version minor``
 - After significant UI redesign do: ``npm version major``
 
-Important: If you have changed versions for ``cvat-core``, ``cvat-canvas``, ``cvat-data``,
+Important: If you have changed versions for ``cvat-core``, ``cvat-canvas``, ``cvat-data``, 
 you also need to do ``npm install`` to update ``package-lock.json``
 
 ## Commands

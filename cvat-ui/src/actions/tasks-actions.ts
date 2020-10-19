@@ -4,7 +4,9 @@
 
 import getCore from 'cvat-core-wrapper';
 import { getCVATStore } from 'cvat-store';
-import { CombinedState, TasksQuery } from 'reducers/interfaces';
+import {
+    CombinedState, TasksQuery
+} from 'reducers/interfaces';
 import { ActionCreator, AnyAction, Dispatch } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import { getInferenceStatusAsync } from './models-actions';
@@ -46,7 +48,8 @@ function getTasks(): AnyAction {
     return action;
 }
 
-function getTasksSuccess(array: any[], previews: string[], count: number, query: TasksQuery): AnyAction {
+function getTasksSuccess(array: any[], previews: string[],
+    count: number, query: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
         payload: {
@@ -72,7 +75,8 @@ function getTasksFailed(error: any, query: TasksQuery): AnyAction {
     return action;
 }
 
-export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getTasksAsync(query: TasksQuery):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(getTasks());
 
@@ -94,7 +98,8 @@ export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {},
 
         const array = Array.from(result);
         const previews = [];
-        const promises = array.map((task): string => (task as any).frames.preview());
+        const promises = array
+            .map((task): string => (task as any).frames.preview());
 
         dispatch(getInferenceStatusAsync());
 
@@ -152,12 +157,13 @@ function dumpAnnotationFailed(task: any, dumper: any, error: any): AnyAction {
     return action;
 }
 
-export function dumpAnnotationsAsync(task: any, dumper: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function dumpAnnotationsAsync(task: any, dumper: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             dispatch(dumpAnnotation(task, dumper));
             const url = await task.annotations.dump(dumper);
-            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+            const downloadAnchor = (window.document.getElementById('downloadAnchor') as HTMLAnchorElement);
             downloadAnchor.href = url;
             downloadAnchor.click();
         } catch (error) {
@@ -204,11 +210,8 @@ function loadAnnotationsFailed(task: any, error: any): AnyAction {
     return action;
 }
 
-export function loadAnnotationsAsync(
-    task: any,
-    loader: any,
-    file: File,
-): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function loadAnnotationsAsync(task: any, loader: any, file: File):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const store = getCVATStore();
@@ -264,13 +267,14 @@ function exportDatasetFailed(task: any, exporter: any, error: any): AnyAction {
     return action;
 }
 
-export function exportDatasetAsync(task: any, exporter: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function exportDatasetAsync(task: any, exporter: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(exportDataset(task, exporter));
 
         try {
             const url = await task.annotations.exportDataset(exporter.name);
-            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+            const downloadAnchor = (window.document.getElementById('downloadAnchor') as HTMLAnchorElement);
             downloadAnchor.href = url;
             downloadAnchor.click();
         } catch (error) {
@@ -315,7 +319,8 @@ function deleteTaskFailed(taskID: number, error: any): AnyAction {
     return action;
 }
 
-export function deleteTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function deleteTaskAsync(taskInstance: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             dispatch(deleteTask(taskInstance.id));
@@ -371,7 +376,8 @@ function createTaskUpdateStatus(status: string): AnyAction {
     return action;
 }
 
-export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function createTaskAsync(data: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const description: any = {
             name: data.basic.name,
@@ -412,7 +418,9 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
         taskInstance.remoteFiles = data.files.remote;
 
         if (data.advanced.repository) {
-            const [gitPlugin] = (await cvat.plugins.list()).filter((plugin: any): boolean => plugin.name === 'Git');
+            const [gitPlugin] = (await cvat.plugins.list()).filter(
+                (plugin: any): boolean => plugin.name === 'Git',
+            );
 
             if (gitPlugin) {
                 gitPlugin.callbacks.onStatusChange = (status: string): void => {
@@ -463,8 +471,12 @@ function updateTaskFailed(error: any, task: any): AnyAction {
     return action;
 }
 
-export function updateTaskAsync(taskInstance: any): ThunkAction<Promise<void>, CombinedState, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): Promise<void> => {
+export function updateTaskAsync(taskInstance: any):
+ThunkAction<Promise<void>, CombinedState, {}, AnyAction> {
+    return async (
+        dispatch: ActionCreator<Dispatch>,
+        getState: () => CombinedState,
+    ): Promise<void> => {
         try {
             dispatch(updateTask());
             const currentUser = getState().auth.user;
@@ -492,7 +504,8 @@ export function updateTaskAsync(taskInstance: any): ThunkAction<Promise<void>, C
 
 // a job is a part of a task, so for simplify we consider
 // updating the job as updating a task
-export function updateJobAsync(jobInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function updateJobAsync(jobInstance: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             dispatch(updateTask());

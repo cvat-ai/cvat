@@ -2,20 +2,19 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
-import { Row, Col } from 'antd/lib/grid';
+import Checkbox from 'antd/lib/checkbox';
+import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import { Col, Row } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
-import Checkbox from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
-
+import React from 'react';
 import patterns from 'utils/validation-patterns';
+
 
 export interface AdvancedConfiguration {
     bugTracker?: string;
-    zOrder: boolean;
     imageQuality?: number;
     overlapSize?: number;
     segmentSize?: number;
@@ -392,9 +391,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form>
                 <Row>
-                    <Col>
-                        {this.renderUzeZipChunks()}
-                    </Col>
+                    <Col>{this.renderUzeZipChunks()}</Col>
                 </Row>
 
                 <Row>

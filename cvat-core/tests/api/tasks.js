@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2018 Intel Corporation
  * SPDX-License-Identifier: MIT
- */
+*/
 
 /* global
     require:false
@@ -19,6 +19,7 @@ jest.mock('../../src/server-proxy', () => {
 window.cvat = require('../../src/api');
 
 const { Task } = require('../../src/session');
+
 
 // Test cases
 describe('Feature: get a list of tasks', () => {
@@ -50,11 +51,9 @@ describe('Feature: get a list of tasks', () => {
     });
 
     test('get a task by an invalid id', async () => {
-        expect(
-            window.cvat.tasks.get({
-                id: '50',
-            }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(window.cvat.tasks.get({
+            id: '50',
+        })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('get tasks by filters', async () => {
@@ -70,11 +69,9 @@ describe('Feature: get a list of tasks', () => {
     });
 
     test('get tasks by invalid filters', async () => {
-        expect(
-            window.cvat.tasks.get({
-                unknown: '5',
-            }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(window.cvat.tasks.get({
+            unknown: '5',
+        })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('get task by name, status and mode', async () => {
@@ -120,16 +117,14 @@ describe('Feature: save a task', () => {
 
         const labelsLength = result[0].labels.length;
         const newLabel = new window.cvat.classes.Label({
-            name: "My boss's car",
-            attributes: [
-                {
-                    default_value: 'false',
-                    input_type: 'checkbox',
-                    mutable: true,
-                    name: 'parked',
-                    values: ['false'],
-                },
-            ],
+            name: 'My boss\'s car',
+            attributes: [{
+                default_value: 'false',
+                input_type: 'checkbox',
+                mutable: true,
+                name: 'parked',
+                values: ['false'],
+            }],
         });
 
         result[0].labels = [...result[0].labels, newLabel];
@@ -140,7 +135,7 @@ describe('Feature: save a task', () => {
         });
 
         expect(result[0].labels).toHaveLength(labelsLength + 1);
-        const appendedLabel = result[0].labels.filter((el) => el.name === "My boss's car");
+        const appendedLabel = result[0].labels.filter((el) => el.name === 'My boss\'s car');
         expect(appendedLabel).toHaveLength(1);
         expect(appendedLabel[0].attributes).toHaveLength(1);
         expect(appendedLabel[0].attributes[0].name).toBe('parked');
@@ -152,26 +147,22 @@ describe('Feature: save a task', () => {
     test('save new task without an id', async () => {
         const task = new window.cvat.classes.Task({
             name: 'New Task',
-            labels: [
-                {
-                    name: "My boss's car",
-                    attributes: [
-                        {
-                            default_value: 'false',
-                            input_type: 'checkbox',
-                            mutable: true,
-                            name: 'parked',
-                            values: ['false'],
-                        },
-                    ],
-                },
-            ],
+            labels: [{
+                name: 'My boss\'s car',
+                attributes: [{
+                    default_value: 'false',
+                    input_type: 'checkbox',
+                    mutable: true,
+                    name: 'parked',
+                    values: ['false'],
+                }],
+            }],
             bug_tracker: 'bug tracker value',
             image_quality: 50,
         });
 
         const result = await task.save();
-        expect(typeof result.id).toBe('number');
+        expect(typeof (result.id)).toBe('number');
     });
 });
 
