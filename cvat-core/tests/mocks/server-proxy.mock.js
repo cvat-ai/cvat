@@ -125,7 +125,6 @@ class ServerProxy {
                 updated_date: '2019-05-16T13:08:00.621797+03:00',
                 overlap: taskData.overlap ? taskData.overlap : 5,
                 segment_size: taskData.segment_size ? taskData.segment_size : 5000,
-                z_order: taskData.z_order,
                 flipped: false,
                 status: 'annotation',
                 image_quality: taskData.image_quality,

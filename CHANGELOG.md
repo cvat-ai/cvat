@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - Unreleased
 
 ### Added
+-   Removed Z-Order flag from task creation process
 -   Ability to login into CVAT-UI with token from api/v1/auth/login (<https://github.com/openvinotoolkit/cvat/pull/2234>)
 -   Added layout grids toggling ('ctrl + alt + Enter')
 -   Added password reset functionality (<https://github.com/opencv/cvat/pull/2058>)

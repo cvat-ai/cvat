@@ -222,7 +222,6 @@ class TaskExportTest(_DbTestBase):
             "assignee": '',
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {
                     "name": "car",
@@ -429,7 +428,6 @@ class FrameMatchingTest(_DbTestBase):
             "assignee": '',
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {
                     "name": "car",

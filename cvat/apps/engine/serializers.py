@@ -244,7 +244,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         model = models.Task
         fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
-            'segment_size', 'z_order', 'status', 'labels', 'segments',
+            'segment_size', 'status', 'labels', 'segments',
             'project', 'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
         read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size',
             'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
@@ -282,7 +282,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.assignee = validated_data.get('assignee', instance.assignee)
         instance.bug_tracker = validated_data.get('bug_tracker',
             instance.bug_tracker)
-        instance.z_order = validated_data.get('z_order', instance.z_order)
         instance.project = validated_data.get('project', instance.project)
         labels = validated_data.get('label_set', [])
         for label in labels:

@@ -163,7 +163,6 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     private renderParameters(): JSX.Element {
         const { taskInstance } = this.props;
         const { overlap, segmentSize, imageQuality } = taskInstance;
-        const zOrder = taskInstance.zOrder.toString();
 
         return (
             <>
@@ -184,11 +183,6 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         <Text strong className='cvat-text-color'>Image quality</Text>
                         <br />
                         <Text className='cvat-text-color'>{imageQuality}</Text>
-                    </Col>
-                    <Col span={12}>
-                        <Text strong className='cvat-text-color'>Z-order</Text>
-                        <br />
-                        <Text className='cvat-text-color'>{zOrder}</Text>
                     </Col>
                 </Row>
             </>

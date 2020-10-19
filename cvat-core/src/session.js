@@ -824,7 +824,6 @@
         * <br> <li style="margin-left: 10px;"> name
         * <br> <li style="margin-left: 10px;"> assignee
         * <br> <li style="margin-left: 10px;"> bug_tracker
-        * <br> <li style="margin-left: 10px;"> z_order
         * <br> <li style="margin-left: 10px;"> labels
         * <br> <li style="margin-left: 10px;"> segment_size
         * <br> <li style="margin-left: 10px;"> overlap
@@ -844,7 +843,6 @@
                 bug_tracker: undefined,
                 overlap: undefined,
                 segment_size: undefined,
-                z_order: undefined,
                 image_quality: undefined,
                 start_frame: undefined,
                 stop_frame: undefined,
@@ -1053,24 +1051,6 @@
                             );
                         }
                         data.segment_size = segment;
-                    },
-                },
-                /**
-                    * @name zOrder
-                    * @type {boolean}
-                    * @memberof module:API.cvat.classes.Task
-                    * @instance
-                    * @throws {module:API.cvat.exceptions.ArgumentError}
-                */
-                zOrder: {
-                    get: () => data.z_order,
-                    set: (zOrder) => {
-                        if (typeof (zOrder) !== 'boolean') {
-                            throw new ArgumentError(
-                                'Value must be a boolean',
-                            );
-                        }
-                        data.z_order = zOrder;
                     },
                 },
                 /**
@@ -1700,7 +1680,6 @@
                 assignee: this.assignee ? this.assignee.id : null,
                 name: this.name,
                 bug_tracker: this.bugTracker,
-                z_order: this.zOrder,
                 labels: [...this.labels.map((el) => el.toJSON())],
             };
 
@@ -1711,7 +1690,6 @@
         const taskSpec = {
             name: this.name,
             labels: this.labels.map((el) => el.toJSON()),
-            z_order: Boolean(this.zOrder),
         };
 
         if (typeof (this.bugTracker) !== 'undefined') {

@@ -147,7 +147,6 @@ class TaskData:
                 ("start_frame", str(self._db_task.data.start_frame)),
                 ("stop_frame", str(self._db_task.data.stop_frame)),
                 ("frame_filter", self._db_task.data.frame_filter),
-                ("z_order", str(self._db_task.z_order)),
 
                 ("labels", [
                     ("label", OrderedDict([

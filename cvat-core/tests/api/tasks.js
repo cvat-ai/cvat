@@ -98,7 +98,6 @@ describe('Feature: save a task', () => {
         });
 
         result[0].bugTracker = 'newBugTracker';
-        result[0].zOrder = true;
         result[0].name = 'New Task Name';
 
         result[0].save();
@@ -108,7 +107,6 @@ describe('Feature: save a task', () => {
         });
 
         expect(result[0].bugTracker).toBe('newBugTracker');
-        expect(result[0].zOrder).toBe(true);
         expect(result[0].name).toBe('New Task Name');
     });
 
@@ -161,7 +159,6 @@ describe('Feature: save a task', () => {
             }],
             bug_tracker: 'bug tracker value',
             image_quality: 50,
-            z_order: true,
         });
 
         const result = await task.save();
