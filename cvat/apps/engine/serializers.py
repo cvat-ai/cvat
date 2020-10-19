@@ -360,7 +360,7 @@ class BasicUserSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True,
         slug_field='name', queryset=Group.objects.all())
-    rating = serializers.SlugRelatedField(read_only=True, slug_field='get_user_rating')
+    rating = serializers.FloatField(read_only=True, source='profile.rating')
 
     class Meta:
         model = User

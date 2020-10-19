@@ -12,11 +12,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
 
-def get_user_rating(self):
-    return self.profile.rating
-
-User.add_to_class('get_user_rating', get_user_rating)
-
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
         value = super().get_prep_value(value)
