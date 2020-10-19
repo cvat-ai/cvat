@@ -2,15 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Col, Row } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
-import Modal from 'antd/lib/modal';
-import Select from 'antd/lib/select';
-import Spin from 'antd/lib/spin';
-import Table from 'antd/lib/table';
-import Tooltip from 'antd/lib/tooltip';
-import Text from 'antd/lib/typography/Text';
 import React from 'react';
+import { Row, Col } from 'antd/lib/grid';
+import Tooltip from 'antd/lib/tooltip';
+import Select from 'antd/lib/select';
+import Table from 'antd/lib/table';
+import Modal from 'antd/lib/modal';
+import Spin from 'antd/lib/spin';
+import Icon from 'antd/lib/icon';
+import Text from 'antd/lib/typography/Text';
 
 interface Props {
     collecting: boolean;

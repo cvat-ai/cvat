@@ -2,24 +2,24 @@
 //
 // SPDX-License-Identifier: MIT
 
-import Button from 'antd/lib/button';
-import { Col, Row } from 'antd/lib/grid';
+import React from 'react';
+import { Row, Col } from 'antd/lib/grid';
+import Tag from 'antd/lib/tag';
 import Icon from 'antd/lib/icon';
 import Modal from 'antd/lib/modal';
+import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
-import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
-import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
-import getCore from 'cvat-core-wrapper';
 import moment from 'moment';
-import React from 'react';
-import { ActiveInference } from 'reducers/interfaces';
-import { getReposData, syncRepos } from 'utils/git-utils';
-import patterns from 'utils/validation-patterns';
-import LabelsEditorComponent from '../labels-editor/labels-editor';
-import UserSelector from './user-selector';
 
+import getCore from 'cvat-core-wrapper';
+import patterns from 'utils/validation-patterns';
+import { getReposData, syncRepos } from 'utils/git-utils';
+import { ActiveInference } from 'reducers/interfaces';
+import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
+import UserSelector from './user-selector';
+import LabelsEditorComponent from '../labels-editor/labels-editor';
 
 const core = getCore();
 

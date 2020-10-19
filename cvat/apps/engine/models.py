@@ -2,15 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-import re
 from enum import Enum
+import re
+import os
 
+from django.db import models
 from django.conf import settings
+
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
-from django.db import models
-
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):

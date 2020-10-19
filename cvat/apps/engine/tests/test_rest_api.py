@@ -19,20 +19,18 @@ from unittest import mock
 
 import av
 import numpy as np
+from pdf2image import convert_from_bytes
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponse
-from pdf2image import convert_from_bytes
 from PIL import Image
 from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
-                                     Segment, StatusChoice,
-                                     StorageMethodChoice, Task)
+    Segment, StatusChoice, Task, StorageMethodChoice)
 from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
-
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")

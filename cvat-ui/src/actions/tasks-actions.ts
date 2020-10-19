@@ -2,13 +2,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-import getCore from 'cvat-core-wrapper';
-import { getCVATStore } from 'cvat-store';
-import {
-    CombinedState, TasksQuery
-} from 'reducers/interfaces';
-import { ActionCreator, AnyAction, Dispatch } from 'redux';
+import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
+import {
+    TasksQuery,
+    CombinedState,
+} from 'reducers/interfaces';
+import { getCVATStore } from 'cvat-store';
+import getCore from 'cvat-core-wrapper';
 import { getInferenceStatusAsync } from './models-actions';
 
 const cvat = getCore();

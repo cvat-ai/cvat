@@ -2,21 +2,21 @@
 //
 // SPDX-License-Identifier: MIT
 
-import Alert from 'antd/lib/alert';
-import Button from 'antd/lib/button';
-import Collapse from 'antd/lib/collapse';
-import { Col, Row } from 'antd/lib/grid';
-import notification from 'antd/lib/notification';
-import Text from 'antd/lib/typography/Text';
-import ConnectedFileManager from 'containers/file-manager/file-manager';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
-import { Files } from '../file-manager/file-manager';
-import LabelsEditor from '../labels-editor/labels-editor';
-import AdvancedConfigurationForm, { AdvancedConfiguration } from './advanced-configuration-form';
-import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
+import { Row, Col } from 'antd/lib/grid';
+import Alert from 'antd/lib/alert';
+import Button from 'antd/lib/button';
+import Collapse from 'antd/lib/collapse';
+import notification from 'antd/lib/notification';
+import Text from 'antd/lib/typography/Text';
 
+import ConnectedFileManager from 'containers/file-manager/file-manager';
+import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
+import AdvancedConfigurationForm, { AdvancedConfiguration } from './advanced-configuration-form';
+import LabelsEditor from '../labels-editor/labels-editor';
+import { Files } from '../file-manager/file-manager';
 
 export interface CreateTaskData {
     basic: BaseConfiguration;

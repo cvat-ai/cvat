@@ -6,12 +6,12 @@ import os
 import re
 import shutil
 
-from django.contrib.auth.models import Group, User
 from rest_framework import serializers
+from django.contrib.auth.models import User, Group
 
-from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
+from cvat.apps.dataset_manager.formats.utils import get_label_color
 
 
 class AttributeSerializer(serializers.ModelSerializer):

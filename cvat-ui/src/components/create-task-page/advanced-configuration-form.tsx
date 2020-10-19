@@ -2,16 +2,16 @@
 //
 // SPDX-License-Identifier: MIT
 
-import Checkbox from 'antd/lib/checkbox';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
-import { Col, Row } from 'antd/lib/grid';
+import React from 'react';
+import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
+import Checkbox from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
+import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
-import React from 'react';
-import patterns from 'utils/validation-patterns';
 
+import patterns from 'utils/validation-patterns';
 
 export interface AdvancedConfiguration {
     bugTracker?: string;

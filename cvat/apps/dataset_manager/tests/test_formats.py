@@ -4,21 +4,20 @@
 # SPDX-License-Identifier: MIT
 
 
+from io import BytesIO
 import os.path as osp
 import tempfile
 import zipfile
-from io import BytesIO
 
-from django.contrib.auth.models import Group, User
+import datumaro
 from PIL import Image
+from django.contrib.auth.models import User, Group
+from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
 
 import cvat.apps.dataset_manager as dm
-import datumaro
 from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
-                                                TaskData, find_dataset_root)
+from cvat.apps.dataset_manager.bindings import TaskData, find_dataset_root, CvatTaskDataExtractor
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.engine.models import Task
 
