@@ -34,7 +34,7 @@ class ServerProxy {
                 const components = directory.split('/');
 
                 for (const component of components) {
-                    const idx = position.map((x) => x.name).indexOf(component);
+                    const idx = position.map(x => x.name).indexOf(component);
                     if (idx !== -1 && 'children' in position[idx]) {
                         position = position[idx].children;
                     } else {
@@ -101,7 +101,7 @@ class ServerProxy {
         }
 
         async function saveTask(id, taskData) {
-            const object = tasksDummyData.results.filter((task) => task.id === id)[0];
+            const object = tasksDummyData.results.filter(task => task.id === id)[0];
             for (const prop in taskData) {
                 if (Object.prototype.hasOwnProperty.call(taskData, prop)
                     && Object.prototype.hasOwnProperty.call(object, prop)) {
@@ -111,7 +111,7 @@ class ServerProxy {
         }
 
         async function createTask(taskData) {
-            const id = Math.max(...tasksDummyData.results.map((el) => el.id)) + 1;
+            const id = Math.max(...tasksDummyData.results.map(el => el.id)) + 1;
             tasksDummyData.results.push({
                 id,
                 url: `http://localhost:7000/api/v1/tasks/${id}`,
@@ -137,7 +137,7 @@ class ServerProxy {
 
         async function deleteTask(id) {
             const tasks = tasksDummyData.results;
-            const task = tasks.filter((el) => el.id === id)[0];
+            const task = tasks.filter(el => el.id === id)[0];
             if (task) {
                 tasks.splice(tasks.indexOf(task), 1);
             }
@@ -157,7 +157,7 @@ class ServerProxy {
                 }
 
                 return acc;
-            }, []).filter((job) => job.id === jobID);
+            }, []).filter(job => job.id === jobID);
 
             return jobs[0] || {
                 detail: 'Not found.',
@@ -173,7 +173,7 @@ class ServerProxy {
                 }
 
                 return acc;
-            }, []).filter((job) => job.id === id)[0];
+            }, []).filter(job => job.id === id)[0];
 
             for (const prop in jobData) {
                 if (Object.prototype.hasOwnProperty.call(jobData, prop)
