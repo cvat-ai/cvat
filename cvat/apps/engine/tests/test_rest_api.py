@@ -29,7 +29,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, StorageMethodChoice)
+    Segment, StatusChoice, Task, Label, StorageMethodChoice)
 from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
 
 def create_db_users(cls):
@@ -843,6 +843,10 @@ class ProjectCreateAPITestCase(APITestCase):
         self.assertEqual(response.data["assignee"], data.get("assignee"))
         self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", ""))
         self.assertEqual(response.data["status"], StatusChoice.ANNOTATION)
+        self.assertListEqual(
+            [label["name"] for label in data.get("labels", [])],
+            [label["name"] for label in response.data["labels"]]
+        )
 
     def _check_api_v1_projects(self, user, data):
         response = self._run_api_v1_projects(user, data)
@@ -870,6 +874,14 @@ class ProjectCreateAPITestCase(APITestCase):
         data = {
             "owner": self.admin.id,
             "name": "2"
+        }
+        self._check_api_v1_projects(self.admin, data)
+
+        data = {
+            "name": "Project with labels",
+            "labels": [{
+                "name": "car",
+            }]
         }
         self._check_api_v1_projects(self.admin, data)
 
@@ -1331,6 +1343,16 @@ class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
 class TaskCreateAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
+        project = {
+            "name": "Project for task creation",
+            "owner": self.user,
+        }
+        self.project = Project.objects.create(**project)
+        label = {
+            "name": "car",
+            "project": self.project
+        }
+        Label.objects.create(**label)
 
     @classmethod
     def setUpTestData(cls):
@@ -1346,6 +1368,7 @@ class TaskCreateAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["name"], data["name"])
         self.assertEqual(response.data["mode"], "")
+        self.assertEqual(response.data["project_id"], data.get("project_id", None))
         self.assertEqual(response.data["owner"], data.get("owner", user.id))
         self.assertEqual(response.data["assignee"], data.get("assignee"))
         self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", ""))
@@ -1398,6 +1421,17 @@ class TaskCreateAPITestCase(APITestCase):
             }]
         }
         self._check_api_v1_tasks(self.user, data)
+
+    def test_api_vi_tasks_user_project(self):
+        data = {
+            "name": "new name for the task",
+            "project_id": self.project.id,
+        }
+        response = self._run_api_v1_tasks(self.user, data)
+        data["labels"] = [{
+            "name": "car"
+        }]
+        self._check_response(response, self.user, data)
 
     def test_api_v1_tasks_observer(self):
         data = {

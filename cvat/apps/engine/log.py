@@ -29,7 +29,7 @@ class ProjectLoggerStorage:
         self._storage = dict()
 
     def __getitem__(self, pid):
-        """Get ceratain storage object for some project"""
+        """Get ceratain storage object for some project."""
         if pid not in self._storage:
             self._storage[pid] = self._create_project_logger(pid)
         return self._storage[pid]
@@ -84,7 +84,7 @@ class ProjectClientLoggerStorage:
         self._storage = dict()
 
     def __getitem__(self, pid):
-        """Get logger for exact task by id"""
+        """Get logger for exact task by id."""
         if pid not in self._storage:
             self._storage[pid] = self._create_client_logger(pid)
         return self._storage[pid]
