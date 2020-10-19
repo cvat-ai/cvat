@@ -35,6 +35,7 @@ context('Create and delete a annotation task', () => {
             cy.getTaskID(taskName).then($taskID => {
                 cy.deleteTask(taskName, $taskID)
                 taskID = $taskID
+                cy.log(taskID)
             })
         })
         it('Deleted task not exist', () => {
