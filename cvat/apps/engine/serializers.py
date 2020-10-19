@@ -497,3 +497,55 @@ class LogEventSerializer(serializers.Serializer):
 
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Review
+        fields = '__all__'
+        read_only_fields = ('id', )
+        write_once_fields = ('job', 'reviewer', 'assignee', 'estimated_quality', 'status', )
+        ordering = ['-id']
+
+class ReviewSummarySerializer(serializers.Serializer):
+    reviews = serializers.IntegerField(read_only=True)
+    average_estimated_quality = serializers.FloatField(read_only=True)
+    comments_unresolved = serializers.IntegerField(read_only=True)
+    comments_resolved = serializers.IntegerField(read_only=True)
+    annotators = serializers.ListField(allow_empty=True, read_only=True)
+    reviewers = serializers.ListField(allow_empty=True, read_only=True)
+
+    def to_representation(self, instance):
+        db_reviews = instance.review_set.all()
+        qualities = list(map(lambda db_review: db_review.estimated_quality, db_reviews))
+        reviewers = list(map(lambda db_review: db_review.reviewer, db_reviews))
+        annotators = list(map(lambda db_review: db_review.annotator, db_reviews))
+
+        return {
+            'reviews': len(db_reviews),
+            'average_estimated_quality': sum(qualities) / len(qualities) if qualities else 0,
+            'comments_unresolved': 0,
+            'comments_resolved': 0,
+            'annotators': list(set(annotators)),
+            'reviewers': list(set(reviewers)),
+        }
+
+class IssueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Issue
+        fields = '__all__'
+        read_only_fields = ('created_date', 'id',)
+        write_once_fields = ('frame', 'roi', 'job', 'owner', 'review', )
+        ordering = ['-id']
+
+class IssueListSerializer(serializers.ListSerializer):
+    child = IssueSerializer()
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Comment
+        fields = '__all__'
+        read_only_fields = ('created_date', 'id',)
+        write_once_fields = ('issue', 'owner', )
+
+class CommentListSerializer(serializers.ListSerializer):
+    child = CommentSerializer()

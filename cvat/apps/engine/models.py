@@ -433,7 +433,7 @@ class Review(models.Model):
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     reviewer = models.ForeignKey(User, null=True, blank=True, related_name='reviews', on_delete=models.SET_NULL)
     assignee = models.ForeignKey(User, null=True, blank=True, related_name='reviewed', on_delete=models.SET_NULL)
-    estimated_quality = models.FloatField(default=0.0)
+    estimated_quality = models.FloatField()
     status = models.CharField(max_length=16, choices=ReviewStatus.choices())
 
 class Issue(models.Model):

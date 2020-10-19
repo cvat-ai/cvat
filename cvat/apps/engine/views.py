@@ -36,13 +36,18 @@ import cvat.apps.dataset_manager.views # pylint: disable=unused-import
 from cvat.apps.authentication import auth
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, StatusChoice, Task, StorageMethodChoice
+from cvat.apps.engine.models import (
+    Job, StatusChoice, Task, Review, Issue,
+    Comment, StorageMethodChoice
+)
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, RqStatusSerializer,
-    TaskSerializer, UserSerializer, PluginsSerializer,
+    TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
+    ReviewSummarySerializer, IssueSerializer, IssueListSerializer,
+    CommentSerializer, CommentListSerializer
 )
 from cvat.apps.engine.utils import av_scan_paths
 
@@ -703,6 +708,144 @@ class JobViewSet(viewsets.GenericViewSet,
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
+
+    @swagger_auto_schema(method='get', operation_summary='Method returns list of reviews for the job',
+        responses={'200': ReviewSerializer(many=True)}
+    )
+    @action(detail=True, methods=['GET'], serializer_class=ReviewSerializer)
+    def reviews(self, request, pk):
+        db_job = self.get_object()
+        queryset = db_job.review_set
+        serializer = ReviewSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(method='get', operation_summary='Get a brief summary about done reviews')
+    @action(detail=True, methods=['GET'], url_path='reviews/summary', serializer_class=ReviewSummarySerializer )
+    def reviews_summary(self, request, pk):
+        db_job = self.get_object()
+        serialize = ReviewSummarySerializer(db_job)
+        return Response(serialize.data)
+
+    @swagger_auto_schema(method='get', operation_summary='Method returns list of issues for the job',
+        responses={'200': IssueSerializer(many=True)}
+    )
+    @action(detail=True, methods=['GET'], serializer_class=IssueSerializer)
+    def issues(self, request, pk):
+        db_job = self.get_object()
+        queryset = db_job.issue_set
+        serializer = IssueSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+@method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method submits a review for a job'))
+@method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a review from a job'))
+class ReviewViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
+    mixins.DestroyModelMixin):
+    queryset = Review.objects.all().order_by('id')
+    serializer_class = ReviewSerializer
+
+    def get_permissions(self):
+        http_method = self.request.method
+        permissions = [IsAuthenticated]
+
+        # TODO: implement
+        if http_method in SAFE_METHODS:
+            permissions.append(auth.JobAccessPermission)
+        elif http_method in ['POST']:
+            permissions.append(auth.JobChangePermission)
+        else:
+            permissions.append(auth.AdminRolePermission)
+
+        return [perm() for perm in permissions]
+
+@method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method adds list of issues to a job'))
+@method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes an issue from a job'))
+class IssueViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
+    mixins.DestroyModelMixin):
+    queryset = Issue.objects.all().order_by('id')
+
+    def get_serializer_class(self):
+        http_method = self.request.method
+        if http_method == 'POST':
+            return IssueListSerializer
+        return IssueSerializer
+
+    def get_permissions(self):
+        http_method = self.request.method
+        permissions = [IsAuthenticated]
+
+        # TODO: implement
+        if http_method in SAFE_METHODS:
+            permissions.append(auth.JobAccessPermission)
+        elif http_method in ['POST']:
+            permissions.append(auth.JobChangePermission)
+        else:
+            permissions.append(auth.AdminRolePermission)
+
+        return [perm() for perm in permissions]
+
+    @swagger_auto_schema(method='patch', operation_summary='The action resolves a specific issue',
+        responses={'200': IssueSerializer()}
+    )
+    @action(detail=True, methods=['PATCH'], serializer_class=IssueSerializer)
+    def resolve(self, request, pk):
+        db_issue = self.get_object()
+        db_issue.resolved = True
+        db_issue.resolver = request.user
+        db_issue.resolved_date = datetime.now()
+        db_issue.save()
+        serializer = self.get_serializer_class()(db_issue)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(method='patch', operation_summary='The action unresolves a specific issue',
+        responses={'200': IssueSerializer()}
+    )
+    @action(detail=True, methods=['PATCH'], serializer_class=IssueSerializer)
+    def unresolve(self, request, pk):
+        db_issue = self.get_object()
+        db_issue.resolved = False
+        db_issue.resolver = None
+        db_issue.resolved_date = None
+        db_issue.save()
+        serializer = self.get_serializer_class()(db_issue)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(method='get', operation_summary='The action returns all comments of a specific issue',
+        responses={'200': CommentSerializer(many=True)}
+    )
+    @action(detail=True, methods=['GET'], serializer_class=CommentSerializer)
+    def comments(self, request, pk):
+        db_issue = self.get_object()
+        queryset = db_issue.comment_set
+        serializer = CommentSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+@method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method adds list of comments to an issue'))
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates comment in an issue'))
+@method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a comment from an issue'))
+@method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates comment in an issue'))
+class CommentViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
+    mixins.DestroyModelMixin, mixins.UpdateModelMixin):
+    queryset = Comment.objects.all().order_by('id')
+
+    def get_serializer_class(self):
+        http_method = self.request.method
+        if http_method == 'POST':
+            return CommentListSerializer
+        return CommentSerializer
+
+    def get_permissions(self):
+        http_method = self.request.method
+        permissions = [IsAuthenticated]
+
+        # TODO: implement
+        if http_method in SAFE_METHODS:
+            permissions.append(auth.JobAccessPermission)
+        elif http_method in ['POST']:
+            permissions.append(auth.JobChangePermission)
+        else:
+            permissions.append(auth.AdminRolePermission)
+
+        return [perm() for perm in permissions]
 
 @method_decorator(name='list', decorator=swagger_auto_schema(
     operation_summary='Method provides a paginated list of users registered on the server'))
