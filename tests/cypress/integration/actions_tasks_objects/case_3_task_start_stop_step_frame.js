@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-/// <reference types="cypress" />
+/// <reference types="cypress" />z
 
 context('Check if parameters "startFrame", "stopFrame", "frameStep" works as expected', () => {
 
@@ -43,6 +43,13 @@ context('Check if parameters "startFrame", "stopFrame", "frameStep" works as exp
             cy.imageGenerator(imagesFolder, img, width, height, color, posX, posY, labelName)
         }
         cy.createZipArchive(directoryToArchive, archivePath)
+    })
+
+    after(() => {
+        cy.goToTaskList()
+        cy.getTaskID(taskName).then($taskID => {
+            cy.deleteTask(taskName, $taskID)
+        })
     })
 
     describe(`Testing "${labelName}"`, () => {

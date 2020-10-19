@@ -6,19 +6,11 @@
 
 /// <reference types="cypress" />
 
+import { taskName } from '../../support/const'
+
 context('Dump annotation if cuboid created', () => {
 
     const issueId = '1568'
-    const labelName = `Issue ${issueId}`
-    const taskName = `New annotation task for ${labelName}`
-    const attrName = `Attr for ${labelName}`
-    const textDefaultValue = 'Some default value for type Text'
-    const image = `image_${issueId}.png`
-    const width = 800
-    const height = 800
-    const posX = 10
-    const posY = 10
-    const color = 'gray'
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
@@ -29,12 +21,18 @@ context('Dump annotation if cuboid created', () => {
         secondY: 450
     }
 
+    function save() {
+        cy.get('button').contains('Save')
+        .click({force: true})
+    }
+
     before(() => {
-        cy.visit('auth/login')
-        cy.login()
-        cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
-        cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image)
         cy.openTaskJob(taskName)
+    })
+
+    after('Go to task list', () => {
+        cy.removeAnnotations()
+        save()
     })
 
     describe(`Testing issue "${issueId}"`, () => {
@@ -45,9 +43,7 @@ context('Dump annotation if cuboid created', () => {
         })
         it('Dump an annotation', () => {
             cy.get('.cvat-annotation-header-left-group').within(() => {
-                cy.get('[title="Save current changes [Ctrl+S]"]')
-                cy.get('button').contains('Save')
-                .click({force: true})
+                save()
                 cy.get('button').contains('Menu')
                 .trigger('mouseover',{force: true})
             })

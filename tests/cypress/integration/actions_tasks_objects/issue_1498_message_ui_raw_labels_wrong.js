@@ -6,12 +6,11 @@
 
 /// <reference types="cypress" />
 
+import { taskName, labelName, attrName, textDefaultValue } from '../../support/const'
+
 context('Message in UI when raw labels are wrong.', () => {
 
     const issueId = '1498'
-    const labelName = `Issue ${issueId}`
-    const attrName = `Attr for ${labelName}`
-    const textDefaultValue = 'Some default value for type Text'
     let taskRaw = [
         {
           name: labelName,
@@ -32,10 +31,7 @@ context('Message in UI when raw labels are wrong.', () => {
       ]
 
     before(() => {
-        cy.visit('auth/login')
-        cy.login()
-        cy.get('#cvat-create-task-button').click()
-        cy.url().should('include', '/tasks/create')
+        cy.openTask(taskName)
         cy.get('[role="tab"]').contains('Raw').click()
     })
 

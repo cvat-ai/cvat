@@ -6,20 +6,11 @@
 
 /// <reference types="cypress" />
 
+import { taskName, textDefaultValue } from '../../support/const'
+
 context('Checks that the cursor doesn\'t automatically jump to the end of a word when the attribute value changes', () => {
 
     const issueId = '1870'
-    const labelName = `Issue ${issueId}`
-    const taskName = `New annotation task for ${labelName}`
-    const attrName = `Attr for ${labelName}`
-    const textDefaultValue = 'text'
-    const image = `image_${issueId}.png`
-    const newLabelAttrValue = 'teeext'
-    const width = 800
-    const height = 800
-    const posX=10
-    const posY=10
-    const color='gray'
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -31,22 +22,18 @@ context('Checks that the cursor doesn\'t automatically jump to the end of a word
     }
 
     before(() => {
-        cy.visit('auth/login')
-        cy.login()
-        cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
-        cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image)
         cy.openTaskJob(taskName)
-        cy.createRectangle(createRectangleShape2Points)
     })
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Enter 2 characters in the middle of the word attribute value and check the result', () => {
+            cy.createRectangle(createRectangleShape2Points)
             cy.get('#cvat-objects-sidebar-state-item-1')
             .find('.ant-collapse-item')
             .click()
-            .find('.cvat-object-item-text-attribute')
+            .find('.cvat-object-item-text-attribute').eq(0)
             .type('{leftarrow}{leftarrow}ee')
-            .should('have.value', newLabelAttrValue)
+            .should('have.value', textDefaultValue.replace('Text', 'Teeext'))
         })
     })
 })

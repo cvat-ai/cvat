@@ -6,27 +6,11 @@
 
 /// <reference types="cypress" />
 
+import { taskName } from '../../support/const'
+
 context('Check if the UI fails by moving to the next frame while dragging the object', () => {
 
     const prId = '1370'
-    const labelName = `PR ${prId}`
-    const taskName = `New annotation task for ${labelName}`
-    const attrName = `Attr for ${labelName}`
-    const textDefaultValue = 'Some default value for type Text'
-    const imagesCount = 3
-    let images = []
-    for ( let i = 1; i <= imagesCount; i++) {
-        images.push(`image_${prId}_${i}.png`)
-    }
-    const width = 800
-    const height = 800
-    const posX = 10
-    const posY = 10
-    const color = 'gray'
-    const archiveName = `images_issue_${prId}.zip`
-    const archivePath = `cypress/fixtures/${archiveName}`
-    const imagesFolder = `cypress/fixtures/image_issue_${prId}`
-    const directoryToArchive = imagesFolder
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -37,15 +21,12 @@ context('Check if the UI fails by moving to the next frame while dragging the ob
         secondY: 450
     }
 
-    before(() => {
-        cy.visit('auth/login')
-        cy.login()
-        for (let img of images) {
-            cy.imageGenerator(imagesFolder, img, width, height, color, posX, posY, labelName)
-        }
-        cy.createZipArchive(directoryToArchive, archivePath)
-        cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName)
+    before('Open task, job', () => {
         cy.openTaskJob(taskName)
+    })
+
+    after('Go to task list', () => {
+        cy.goToTaskList()
     })
 
     describe(`Testing PR "${prId}"`, () => {

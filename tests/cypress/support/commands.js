@@ -326,3 +326,37 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
         cy.get('#frameStep').type(advancedConfigurationParams.frameStep)
     }
 })
+
+Cypress.Commands.add('removeAnnotations', () => {
+    cy.get('.cvat-annotation-header-button').eq(0)
+    .click()
+    cy.get('.cvat-annotation-menu').within(() => {
+        cy.contains('Remove annotations')
+        .click()
+    })
+    cy.get('.ant-modal-content').within(() => {
+        cy.get('.ant-btn-danger')
+        .click()
+    })
+})
+
+Cypress.Commands.add('goToTaskList', () => {
+    cy.get('a[value="tasks"]')
+    .click()
+})
+
+Cypress.Commands.add('createTaskIfNotExist', (taskName, images, imagesFolder, width, height, color, posX,
+                                                posY, labelName, directoryToArchive, archivePath,
+                                                attrName, textDefaultValue, archiveName, multiAttrParams,
+                                                advancedConfigurationParams) => {
+    cy.get('.cvat-text-color').should('not.contain', taskName).then(($annotationTask) => {
+        if ( $annotationTask) {
+            for (let img of images) {
+                cy.imageGenerator(imagesFolder, img, width, height, color, posX, posY, labelName)
+            }
+            cy.createZipArchive(directoryToArchive, archivePath)
+            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName,
+                multiAttrParams, advancedConfigurationParams)
+        }
+    })
+})

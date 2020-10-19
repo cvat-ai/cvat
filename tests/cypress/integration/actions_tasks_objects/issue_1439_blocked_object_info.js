@@ -6,19 +6,11 @@
 
 /// <reference types="cypress" />
 
+import { taskName, labelName } from '../../support/const'
+
 context('Information about a blocked object disappears if hover the cursor over another object', () => {
 
     const issueId = '1439'
-    const labelName = `Issue ${issueId}`
-    const taskName = `New annotation task for ${labelName}`
-    const attrName = `Attr for ${labelName}`
-    const textDefaultValue = 'Some default value for type Text'
-    const image = `image_${issueId}.png`
-    const width = 800
-    const height = 800
-    const posX = 10
-    const posY = 10
-    const color = 'gray'
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -39,17 +31,13 @@ context('Information about a blocked object disappears if hover the cursor over 
     }
 
     before(() => {
-        cy.visit('auth/login')
-        cy.login()
-        cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
-        cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image)
         cy.openTaskJob(taskName)
     })
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Create multiple objects', () => {
             cy.createRectangle(createRectangleShape2Points)
-            cy.createRectangle(createRectangleShape2PointsSecond)       
+            cy.createRectangle(createRectangleShape2PointsSecond)
         })
         it('Lock all objects', () => {
             cy.get('.cvat-objects-sidebar-states-header')

@@ -6,24 +6,11 @@
 
 /// <reference types="cypress" />
 
+import { taskName } from '../../support/const'
+
 context('The highlighted attribute in AAM should correspond to the chosen attribute', () => {
 
     const issueId = '1425'
-    const labelName = `Issue ${issueId}`
-    const taskName = `New annotation task for ${labelName}`
-    const attrName = `Attr for ${labelName}`
-    const textDefaultValue = 'Some default value for type Text'
-    const image = `image_${issueId}.png`
-    const width = 800
-    const height = 800
-    const posX = 10
-    const posY = 10
-    const color = 'gray'
-    const multiAttrParams = {
-        additionalAttrName: `Attr 2`,
-        additionalValue: `Attr value 2`,
-        typeAttribute: 'Text'
-    }
     let textValue = ''
     const createRectangleShape2Points = {
         points: 'By 2 Points',
@@ -36,15 +23,11 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
     }
 
     before(() => {
-        cy.visit('auth/login')
-        cy.login()
-        cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
+        cy.openTaskJob(taskName)
     })
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Create a task with multiple attributes, create a object', () => {
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image, multiAttrParams)
-            cy.openTaskJob(taskName)
+        it('Create a object', () => {
             cy.createRectangle(createRectangleShape2Points)
         })
         it('Go to AAM', () => {

@@ -6,27 +6,11 @@
 
 /// <reference types="cypress" />
 
+import { taskName } from '../../support/const'
+
 context('Point coordinates are not duplicated while polygon\'s interpolation.', () => {
 
     const issueId = '1886'
-    const labelName = `Issue ${issueId}`
-    const taskName = `New annotation task for ${labelName}`
-    const attrName = `Attr for ${labelName}`
-    const textDefaultValue = 'Some default value for type Text'
-    const imagesCount = 4
-    let images = []
-    for ( let i = 1; i <= imagesCount; i++) {
-        images.push(`image_${issueId}_${i}.png`)
-    }
-    const width = 800
-    const height = 800
-    const posX = 10
-    const posY = 10
-    const color = 'white'
-    const archiveName = `images_issue_${issueId}.zip`
-    const archivePath = `cypress/fixtures/${archiveName}`
-    const imagesFolder = `cypress/fixtures/image_issue_${issueId}`
-    const directoryToArchive = imagesFolder
     let pointsСoordinates = []
     const createPolygonTrack = {
         reDraw: false,
@@ -42,13 +26,6 @@ context('Point coordinates are not duplicated while polygon\'s interpolation.', 
     }
 
     before(() => {
-        cy.visit('auth/login')
-        cy.login()
-        for (let img of images) {
-            cy.imageGenerator(imagesFolder, img, width, height, color, posX, posY, labelName)
-        }
-        cy.createZipArchive(directoryToArchive, archivePath)
-        cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName)
         cy.openTaskJob(taskName)
     })
 
@@ -62,7 +39,7 @@ context('Point coordinates are not duplicated while polygon\'s interpolation.', 
             cy.get('.cvat-player-forward-button').click()
             cy.get('.cvat-player-frame-selector').within(() => {
                 cy.get('input[role="spinbutton"]')
-                .should('have.value', '3')
+                .should('have.value', '2')
             })
         })
         it('Set a keyframe for the polygon', () => {
@@ -74,7 +51,7 @@ context('Point coordinates are not duplicated while polygon\'s interpolation.', 
             cy.get('.cvat-player-previous-button').click()
             cy.get('.cvat-player-frame-selector').within(() => {
                 cy.get('input[role="spinbutton"]')
-                .should('have.value', '2')
+                .should('have.value', '1')
             })
             cy.get('#cvat_canvas_shape_1').should('have.prop', 'animatedPoints')
             .then(($pointsСoordinates) => {

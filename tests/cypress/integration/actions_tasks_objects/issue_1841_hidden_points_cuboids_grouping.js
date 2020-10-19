@@ -6,19 +6,11 @@
 
 /// <reference types="cypress" />
 
+import { taskName } from '../../support/const'
+
 context('Hidden objects mustn\'t consider when we want to group visible objects only and use an grouping area for it.', () => {
 
     const issueId = '1841'
-    const labelName = `Issue ${issueId}`
-    const taskName = `New annotation task for ${labelName}`
-    const attrName = `Attr for ${labelName}`
-    const textDefaultValue = 'Some default value for type Text'
-    const image = `image_${issueId}.png`
-    const width = 800
-    const height = 800
-    const posX = 10
-    const posY = 10
-    const color = 'white'
     let bgcolor = ''
     const createFirstPointsShape = {
         type: 'Shape',
@@ -49,10 +41,6 @@ context('Hidden objects mustn\'t consider when we want to group visible objects 
     }
 
     before(() => {
-        cy.visit('auth/login')
-        cy.login()
-        cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
-        cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image)
         cy.openTaskJob(taskName)
     })
 

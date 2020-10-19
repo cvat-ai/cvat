@@ -6,19 +6,11 @@
 
 /// <reference types="cypress" />
 
+import {taskName} from '../../support/const'
+
 context('Check if UI not fails with shape dragging over sidebar', () => {
 
     const issueId = '1216'
-    const labelName = `Issue ${issueId}`
-    const taskName = `New annotation task for ${labelName}`
-    const attrName = `Attr for ${labelName}`
-    const textDefaultValue = 'Some default value for type Text'
-    const image = `image_${issueId}.png`
-    const width = 800
-    const height = 800
-    const posX = 10
-    const posY = 10
-    const color = 'gray'
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -39,10 +31,6 @@ context('Check if UI not fails with shape dragging over sidebar', () => {
     }
 
     before(() => {
-        cy.visit('auth/login')
-        cy.login()
-        cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
-        cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image)
         cy.openTaskJob(taskName)
     })
 
