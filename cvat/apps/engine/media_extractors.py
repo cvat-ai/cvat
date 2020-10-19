@@ -14,6 +14,7 @@ import av
 import numpy as np
 from pyunpack import Archive
 from PIL import Image, ImageFile
+from cvat.apps.engine.utils import rotate_image
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
@@ -34,20 +35,6 @@ def create_tmp_dir():
 def delete_tmp_dir(tmp_dir):
     if tmp_dir:
         shutil.rmtree(tmp_dir)
-
-def rotate_image(image, angle):
-    import cv2 as cv
-    height, width = image.shape[:2]
-    image_center = (width/2, height/2)
-    matrix = cv.getRotationMatrix2D(image_center, angle, 1.)
-    abs_cos = abs(matrix[0,0])
-    abs_sin = abs(matrix[0,1])
-    bound_w = int(height * abs_sin + width * abs_cos)
-    bound_h = int(height * abs_cos + width * abs_sin)
-    matrix[0, 2] += bound_w/2 - image_center[0]
-    matrix[1, 2] += bound_h/2 - image_center[1]
-    matrix = cv.warpAffine(image, matrix, (bound_w, bound_h))
-    return matrix
 
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop):
