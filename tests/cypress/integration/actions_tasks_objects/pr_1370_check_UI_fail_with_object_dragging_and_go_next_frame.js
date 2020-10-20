@@ -21,12 +21,8 @@ context('Check if the UI fails by moving to the next frame while dragging the ob
         secondY: 450
     }
 
-    before('Open task, job', () => {
+    before(() => {
         cy.openTaskJob(taskName)
-    })
-
-    after('Go to task list', () => {
-        cy.goToTaskList()
     })
 
     describe(`Testing PR "${prId}"`, () => {

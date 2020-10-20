@@ -6,7 +6,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName, textDefaultValue } from '../../support/const'
+import { taskName, textDefaultValue, attrName } from '../../support/const'
 
 context('Check label attribute changes', () => {
 
@@ -38,15 +38,19 @@ context('Check label attribute changes', () => {
         })
         it('Clear field of text attribute and write new value', () => {
             cy.get('.cvat-canvas-context-menu')
-            .find('.cvat-object-item-text-attribute').eq(0)
-            .should('have.value', textDefaultValue)
-            .clear()
-            .type(newLabelAttrValue)
+            .contains(attrName).parents('.cvat-object-item-attribute-wrapper').within(() => {
+                cy.get('.cvat-object-item-text-attribute')
+                .should('have.value', textDefaultValue)
+                .clear()
+                .type(newLabelAttrValue)
+            })
         })
         it('Check what value of right panel is changed too', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
-            .find('.cvat-object-item-text-attribute').eq(0)
-            .should('have.value', newLabelAttrValue)
+            .contains(attrName).parents('.cvat-object-item-attribute-wrapper').within(() => {
+                cy.get('.cvat-object-item-text-attribute')
+                .should('have.value', newLabelAttrValue)
+            })
         })
     })
 })

@@ -17,6 +17,10 @@ context('Being able to return to the job list for a task and start a new job wit
     })
 
     describe(`Testing issue "${issueId}"`, () => {
+        it('The first job opened', () => {
+            cy.get('input[role="spinbutton"]')
+            .should('have.value', '0')
+        })
         it('Return to tasks page', () => {
             cy.get('[value="tasks"]').click()
             cy.url().should('include', '/tasks').and('not.contain', '/jobs')
@@ -26,7 +30,7 @@ context('Being able to return to the job list for a task and start a new job wit
             cy.get('.cvat-annotation-header')
             .should('exist')
             cy.get('input[role="spinbutton"]')
-            .should('have.value', '1')
+            .should('have.value', '3')
         })
     })
 })

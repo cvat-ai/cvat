@@ -12,10 +12,6 @@ export const attrName = `Attr for ${labelName}`
 export const textDefaultValue = 'Some default value for type Text'
 export const imagesCount = 30
 export const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`
-export let images = []
-for ( let i = 1; i <= imagesCount; i++) {
-    images.push(`${imageFileName}_${i}.png`)
-}
 export const width = 800
 export const height = 800
 export const posX = 10
@@ -42,14 +38,21 @@ export const multiAttrParams = {
 it('Prepare to testing', () => {
     cy.visit('/')
     cy.login()
-    cy.get('.cvat-tasks-page').then(($taskList) => {
-        if ($taskList.find('.cvat-task-item-description').length === 0) {
-            for (let img of images) {
-                cy.imageGenerator(imagesFolder, img, width, height, color, posX, posY, labelName)
-            }
+    cy.get('.cvat-tasks-page').should('exist')
+    let listItems = []
+    cy.document().then((doc) => {
+        const collection = Array.from(doc.querySelectorAll('.cvat-text-color'))
+        for (let i = 0; i < collection.length; i++) {
+            listItems.push(collection[i].innerText)
+        }
+        if (listItems.indexOf(taskName) === -1) {
+            cy.task('log', 'A task doesn\'t exist. Creating.')
+            cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount)
             cy.createZipArchive(directoryToArchive, archivePath)
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName,
                 multiAttrParams, advancedConfigurationParams)
+        } else {
+            cy.task('log', 'The task exist. Skipping creation.')
         }
     })
 })

@@ -19,15 +19,18 @@ function imageGenerator(args) {
     const posY = args.posY
     const message = args.message
     const file = path.join(directory, fileName)
+    const count = args.count
     return new Promise((resolve, reject) => {
-        const image = new jimp(width, height, color, function (err, image) {
-            if (err) reject(err)
-            jimp.loadFont(jimp.FONT_SANS_64_BLACK, function (err, font) {
+        for (let i=1; i<=count; i++) {
+            const image = new jimp(width, height, color, function (err, image) {
                 if (err) reject(err)
-                image.print(font, Number(posX), Number(posY), message)
-                .write(file)
+                jimp.loadFont(jimp.FONT_SANS_64_BLACK, function (err, font) {
+                    if (err) reject(err)
+                    image.print(font, Number(posX), Number(posY), `${message}. Num ${i}`)
+                    .write(`${file}_${i}.png`)
+                })
             })
-        })
+        }
         setTimeout(() => resolve(null), '1000')
     })
 }

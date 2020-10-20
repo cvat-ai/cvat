@@ -6,7 +6,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName, textDefaultValue } from '../../support/const'
+import { taskName, textDefaultValue, attrName } from '../../support/const'
 
 context('Checks that the cursor doesn\'t automatically jump to the end of a word when the attribute value changes', () => {
 
@@ -31,9 +31,12 @@ context('Checks that the cursor doesn\'t automatically jump to the end of a word
             cy.get('#cvat-objects-sidebar-state-item-1')
             .find('.ant-collapse-item')
             .click()
-            .find('.cvat-object-item-text-attribute').eq(0)
-            .type('{leftarrow}{leftarrow}ee')
-            .should('have.value', textDefaultValue.replace('Text', 'Teeext'))
+            cy.get('.cvat-object-item-attribute-wrapper')
+            .contains(attrName).parents('.cvat-object-item-attribute-wrapper').within(() => {
+                cy.get('.cvat-object-item-text-attribute')
+                .type('{leftarrow}{leftarrow}ee')
+                .should('have.value', textDefaultValue.replace('Text', 'Teeext'))
+            })
         })
     })
 })

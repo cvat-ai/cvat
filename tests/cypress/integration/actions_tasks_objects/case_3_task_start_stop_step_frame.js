@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-/// <reference types="cypress" />z
+/// <reference types="cypress" />
 
 context('Check if parameters "startFrame", "stopFrame", "frameStep" works as expected', () => {
 
@@ -15,10 +15,6 @@ context('Check if parameters "startFrame", "stopFrame", "frameStep" works as exp
     const textDefaultValue = 'Some default value for type Text'
     const imagesCount = 10
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`
-    let images = []
-    for ( let i = 1; i <= imagesCount; i++) {
-        images.push(`${imageFileName}_${i}.png`)
-    }
     const width = 800
     const height = 800
     const posX = 10
@@ -39,9 +35,7 @@ context('Check if parameters "startFrame", "stopFrame", "frameStep" works as exp
     before(() => {
         cy.visit('auth/login')
         cy.login()
-        for (let img of images) {
-            cy.imageGenerator(imagesFolder, img, width, height, color, posX, posY, labelName)
-        }
+        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount)
         cy.createZipArchive(directoryToArchive, archivePath)
     })
 

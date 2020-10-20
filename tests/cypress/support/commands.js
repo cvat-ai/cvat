@@ -43,7 +43,7 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               multiAttrParams,
                                               advancedConfigurationParams
                                               ) => {
-    cy.get('#cvat-create-task-button').click()
+    cy.get('#cvat-create-task-button').click({force: true})
     cy.url().should('include', '/tasks/create')
     cy.get('[id="name"]').type(taksName)
     cy.get('.cvat-constructor-viewer-new-item').click()
@@ -71,15 +71,19 @@ Cypress.Commands.add('openTask', (taskName) => {
     cy.contains('strong', taskName)
     .parents('.cvat-tasks-list-item')
     .contains('a', 'Open')
-    .click()
+    .click({force: true})
 })
 
 Cypress.Commands.add('openJob', (jobNumber=0) => {
+    let tdText = ''
     cy.get('.ant-table-tbody')
-    .find('tr')
-    .eq(jobNumber)
-    .contains('a', 'Job #')
-    .click()
+    .contains('0-').parent().find('td').eq(0).invoke('text')
+    .then(($tdText) => {
+        tdText = Number($tdText.match(/\d+/g)) + jobNumber
+        cy.get('.ant-table-tbody')
+        .contains('a', `Job #${tdText}`)
+        .click()
+    })
     cy.url().should('include', '/jobs')
 })
 
@@ -343,20 +347,4 @@ Cypress.Commands.add('removeAnnotations', () => {
 Cypress.Commands.add('goToTaskList', () => {
     cy.get('a[value="tasks"]')
     .click()
-})
-
-Cypress.Commands.add('createTaskIfNotExist', (taskName, images, imagesFolder, width, height, color, posX,
-                                                posY, labelName, directoryToArchive, archivePath,
-                                                attrName, textDefaultValue, archiveName, multiAttrParams,
-                                                advancedConfigurationParams) => {
-    cy.get('.cvat-text-color').should('not.contain', taskName).then(($annotationTask) => {
-        if ( $annotationTask) {
-            for (let img of images) {
-                cy.imageGenerator(imagesFolder, img, width, height, color, posX, posY, labelName)
-            }
-            cy.createZipArchive(directoryToArchive, archivePath)
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName,
-                multiAttrParams, advancedConfigurationParams)
-        }
-    })
 })

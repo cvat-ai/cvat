@@ -13,23 +13,29 @@ context('Create and delete a annotation task', () => {
     const taskName = `New annotation task for ${labelName}`
     const attrName = `Attr for ${labelName}`
     const textDefaultValue = 'Some default value for type Text'
-    const image = `image_${labelName.replace(' ', '_').toLowerCase()}.png`
+    const imagesCount = 1
+    const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`
     const width = 800
     const height = 800
     const posX = 10
     const posY = 10
     const color = 'gray'
+    const archiveName = `${imageFileName}.zip`
+    const archivePath = `cypress/fixtures/${archiveName}`
+    const imagesFolder = `cypress/fixtures/${imageFileName}`
+    const directoryToArchive = imagesFolder
     let taskID = ''
 
     before(() => {
         cy.visit('auth/login')
         cy.login()
-        cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
+        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount)
+        cy.createZipArchive(directoryToArchive, archivePath)
     })
 
     describe(`Testing "${labelName}"`, () => {
         it('Create a task', () => {
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image)
+            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName)
         })
         it('Delete the created task', () => {
             cy.getTaskID(taskName).then($taskID => {

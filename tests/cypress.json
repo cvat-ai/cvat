@@ -11,6 +11,7 @@
     "testFiles": [
         "auth_page.js",
         "actions_tasks_objects/*",
+        "actions_users/*",
         "remove_users_tasks.js"
     ]
 }

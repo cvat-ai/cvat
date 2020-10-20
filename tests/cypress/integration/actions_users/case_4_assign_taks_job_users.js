@@ -12,12 +12,17 @@ context('Multiple users. Assign task, job.', () => {
     const taskName = `New annotation task for ${labelName}`
     const attrName = `Attr for ${labelName}`
     const textDefaultValue = 'Some default value for type Text'
-    const image = `image_${labelName.replace(' ', '_').toLowerCase()}.png`
+    const imagesCount = 1
+    const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`
     const width = 800
     const height = 800
     const posX = 10
     const posY = 10
     const color = 'gray'
+    const archiveName = `${imageFileName}.zip`
+    const archivePath = `cypress/fixtures/${archiveName}`
+    const imagesFolder = `cypress/fixtures/${imageFileName}`
+    const directoryToArchive = imagesFolder
     const secondUserName = 'Seconduser'
     const thirdUserName = 'Thirduser'
 
@@ -34,15 +39,12 @@ context('Multiple users. Assign task, job.', () => {
         password: 'Fv5Df3#f55g'
     }
 
-    function closeModal() {
-        cy.get('.ant-modal-body').within(() => {
-            cy.get('.ant-modal-confirm-title')
-            .should('contain', 'Unsupported platform detected')
-            cy.get('.ant-modal-confirm-btns')
-            .contains('OK')
-            .click()
+    after(() => {
+        cy.login()
+        cy.getTaskID(taskName).then($taskID => {
+            cy.deleteTask(taskName, $taskID)
         })
-    }
+    })
 
     describe(`Testing case "${caseId}"`, () => {
         // First user is "admin".
@@ -55,11 +57,8 @@ context('Multiple users. Assign task, job.', () => {
             cy.url().should('include', '/auth/login')
         })
         it('Register third user and logout.', () => {
-            cy.visit('auth/register')
+            cy.get('a[href="/auth/register"]').click()
             cy.url().should('include', '/auth/register')
-            if (Cypress.browser.name === 'firefox') {
-                closeModal()
-            }
             cy.userRegistration(thirdUser.firstName, thirdUser.lastName, thirdUserName, thirdUser.emailAddr, thirdUser.password)
             cy.url().should('include', '/tasks')
             cy.logout(thirdUserName)
@@ -68,14 +67,15 @@ context('Multiple users. Assign task, job.', () => {
         it('First user login and create a task', () => {
             cy.login()
             cy.url().should('include', '/tasks')
-            cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image)
+            cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount)
+            cy.createZipArchive(directoryToArchive, archivePath)
+            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName)
         })
         it('Assign the task to the second user and logout', () => {
             cy.openTask(taskName)
             cy.get('.cvat-task-details').within(() => {
                 cy.get('.cvat-user-selector')
-                .click()
+                .click({force: true})
             })
             cy.contains(secondUserName)
             .click()
@@ -84,6 +84,7 @@ context('Multiple users. Assign task, job.', () => {
         it('Second user login. The task can be opened. Logout', () => {
             cy.login(secondUserName, secondUser.password)
             cy.url().should('include', '/tasks')
+            cy.get('[value="tasks"]').click()
             cy.contains('strong', taskName)
             .should('exist')
             cy.openTask(taskName)
@@ -92,6 +93,7 @@ context('Multiple users. Assign task, job.', () => {
         it('Third user login. The task not exist. Logout', () => {
             cy.login(thirdUserName, thirdUser.password)
             cy.url().should('include', '/tasks')
+            cy.get('[value="tasks"]').click()
             cy.contains('strong', taskName)
             .should('not.exist')
             cy.logout(thirdUserName)
@@ -99,10 +101,11 @@ context('Multiple users. Assign task, job.', () => {
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login()
             cy.url().should('include', '/tasks')
+            cy.get('[value="tasks"]').click()
             cy.openTask(taskName)
             cy.get('.cvat-task-job-list').within(() => {
                 cy.get('.cvat-user-selector')
-                .click()
+                .click({force: true})
             })
             cy.contains(thirdUserName)
             .click()
@@ -111,9 +114,11 @@ context('Multiple users. Assign task, job.', () => {
         it('Third user login. The task can be opened.', () => {
             cy.login(thirdUserName, thirdUser.password)
             cy.url().should('include', '/tasks')
+            cy.get('[value="tasks"]').click()
             cy.contains('strong', taskName)
             .should('exist')
             cy.openTask(taskName)
+            cy.logout(thirdUserName)
         })
     })
 })

@@ -6,21 +6,12 @@
 
 /// <reference types="cypress" />
 
+import {taskName, labelName} from '../../support/const'
+
 context('Actions on Cuboid', () => {
 
     const caseId = '9'
-    const labelName = `Case ${caseId}`
-    const taskName = `New annotation task for ${labelName}`
-    const attrName = `Attr for ${labelName}`
-    const textDefaultValue = 'Some default value for type Text'
-    const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`
-    const image = `${imageFileName}.png`
-    const newLabelName = `New ${labelName}`
-    const width = 800
-    const height = 800
-    const posX = 10
-    const posY = 10
-    const color = 'gray'
+    const newLabelName = `New label for case ${caseId}`
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
@@ -91,10 +82,6 @@ context('Actions on Cuboid', () => {
     }
 
     before(() => {
-        cy.visit('auth/login')
-        cy.login()
-        cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
-        cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image)
         cy.openTask(taskName)
     })
 

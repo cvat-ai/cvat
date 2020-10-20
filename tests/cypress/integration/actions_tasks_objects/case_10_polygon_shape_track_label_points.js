@@ -6,21 +6,12 @@
 
 /// <reference types="cypress" />
 
+import {taskName, labelName} from '../../support/const'
+
 context('Actions on polygon', () => {
 
     const caseId = '10'
-    const labelName = `Case ${caseId}`
-    const taskName = `New annotation task for ${labelName}`
-    const attrName = `Attr for ${labelName}`
-    const textDefaultValue = 'Some default value for type Text'
-    const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`
-    const image = `${imageFileName}.png`
-    const newLabelName = `New ${labelName}`
-    const width = 800
-    const height = 800
-    const posX = 10
-    const posY = 10
-    const color = 'gray'
+    const newLabelName = `New label for case ${caseId}`
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
@@ -99,10 +90,6 @@ context('Actions on polygon', () => {
     }
 
     before(() => {
-        cy.visit('auth/login')
-        cy.login()
-        cy.imageGenerator('cypress/fixtures', image, width, height, color, posX, posY, labelName)
-        cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, image)
         cy.openTask(taskName)
     })
 
@@ -166,7 +153,7 @@ context('Actions on polygon', () => {
             cy.get('#cvat-objects-sidebar-state-item-6')
             .should('contain', '6').and('contain', 'POLYGON TRACK').within(() => {
                 cy.get('.ant-select-selection-selected-value')
-                .should('contain', labelName)
+                .should('contain', newLabelName)
             })
         })
     })
