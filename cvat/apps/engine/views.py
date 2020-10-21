@@ -743,41 +743,44 @@ class ReviewViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
     queryset = Review.objects.all().order_by('id')
     serializer_class = ReviewSerializer
 
+    def ger_serializer_class(self):
+        # TODO get_serializer_class to push combined results
+        pass
+
     def get_permissions(self):
         http_method = self.request.method
         permissions = [IsAuthenticated]
 
-        # TODO: implement
-        if http_method in SAFE_METHODS:
-            permissions.append(auth.JobAccessPermission)
-        elif http_method in ['POST']:
-            permissions.append(auth.JobChangePermission)
+        if http_method in ['POST']:
+            permissions.append(auth.ReviewCreatePermission)
         else:
             permissions.append(auth.AdminRolePermission)
 
         return [perm() for perm in permissions]
 
-@method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method adds list of issues to a job'))
+# @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method adds list of issues to a job'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes an issue from a job'))
 class IssueViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
     mixins.DestroyModelMixin):
     queryset = Issue.objects.all().order_by('id')
+    serializer_class = IssueSerializer
 
-    def get_serializer_class(self):
-        http_method = self.request.method
-        if http_method == 'POST':
-            return IssueListSerializer
-        return IssueSerializer
+    # def get_serializer_class(self):
+    #     http_method = self.request.method
+    #     if http_method == 'POST':
+    #         return IssueListSerializer
+    #     return IssueSerializer
 
     def get_permissions(self):
         http_method = self.request.method
         permissions = [IsAuthenticated]
 
-        # TODO: implement
         if http_method in SAFE_METHODS:
-            permissions.append(auth.JobAccessPermission)
-        elif http_method in ['POST']:
-            permissions.append(auth.JobChangePermission)
+            permissions.append(auth.IssueAccessPermission)
+        elif http_method in ['DELETE']:
+            permissions.append(auth.IssueDestroyPermission)
+        elif http_method in ['PATCH', 'PUT']:
+            permissions.append(auth.IssueChangePermission)
         else:
             permissions.append(auth.AdminRolePermission)
 
@@ -837,11 +840,10 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
         http_method = self.request.method
         permissions = [IsAuthenticated]
 
-        # TODO: implement
-        if http_method in SAFE_METHODS:
-            permissions.append(auth.JobAccessPermission)
-        elif http_method in ['POST']:
-            permissions.append(auth.JobChangePermission)
+        if http_method in ['POST']:
+            permissions.append(auth.CommentCreatePermission)
+        else if http_method in ['PATCH', 'PUT', 'DELETE']:
+            permissions.append(auth.CommentChangePermission)
         else:
             permissions.append(auth.AdminRolePermission)
 
