@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 
+from functools import reduce
 from rest_framework import serializers
 from django.contrib.auth.models import User, Group
 
@@ -509,24 +510,25 @@ class ReviewSerializer(serializers.ModelSerializer):
 class ReviewSummarySerializer(serializers.Serializer):
     reviews = serializers.IntegerField(read_only=True)
     average_estimated_quality = serializers.FloatField(read_only=True)
-    comments_unresolved = serializers.IntegerField(read_only=True)
-    comments_resolved = serializers.IntegerField(read_only=True)
-    annotators = serializers.ListField(allow_empty=True, read_only=True)
+    issues_unresolved = serializers.IntegerField(read_only=True)
+    issues_resolved = serializers.IntegerField(read_only=True)
+    assignees = serializers.ListField(allow_empty=True, read_only=True)
     reviewers = serializers.ListField(allow_empty=True, read_only=True)
 
     def to_representation(self, instance):
-        db_reviews = instance.review_set.all()
+        db_reviews = instance.review_set.prefetch_related('issue_set').all()
         qualities = list(map(lambda db_review: db_review.estimated_quality, db_reviews))
-        reviewers = list(map(lambda db_review: db_review.reviewer, db_reviews))
-        annotators = list(map(lambda db_review: db_review.annotator, db_reviews))
+        reviewers = list(map(lambda db_review: db_review.reviewer.username if db_review.reviewer else None, db_reviews))
+        assignees = list(map(lambda db_review: db_review.assignee.username if db_review.assignee else None, db_reviews))
+        db_issues = list(reduce(lambda acc, db_review: acc + list(db_review.issue_set.all()), db_reviews, []))
 
         return {
             'reviews': len(db_reviews),
             'average_estimated_quality': sum(qualities) / len(qualities) if qualities else 0,
-            'comments_unresolved': 0,
-            'comments_resolved': 0,
-            'annotators': list(set(annotators)),
-            'reviewers': list(set(reviewers)),
+            'issues_unresolved': len(list(filter(lambda db_issue: db_issue.resolved_date is None, db_issues))),
+            'issues_resolved': len(list(filter(lambda db_issue: db_issue.resolved_date is not None, db_issues))),
+            'assignees': list(set(filter(lambda username: username is not None, assignees))),
+            'reviewers': list(set(filter(lambda username: username is not None, reviewers))),
         }
 
 class IssueSerializer(serializers.ModelSerializer):

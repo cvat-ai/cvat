@@ -360,6 +360,138 @@ class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
         response = self._run_api_v1_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
 
+class JobReview(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.task = create_dummy_db_tasks(cls)[0]
+        cls.job = Job.objects.filter(segment__task_id=cls.task.id).first()
+        cls.reviewer = cls.annotator
+        cls.job.reviewer = cls.reviewer
+        cls.job.assignee = cls.assignee
+        cls.job.save()
+        cls.reject_review_data = {
+            "issue_set": [
+                {
+                "roi": [
+                    50, 50, 100, 100
+                ],
+                "comment_set": [
+                    {
+                    "message": "This is wrong!"
+                    }, {
+                    "message": "This is wrong 2!"
+                    }
+                ],
+                "frame": 0
+                }
+            ],
+            "estimated_quality": 3,
+            "status": "rejected"
+        }
+
+        cls.accept_review_data = {
+            "issue_set": [],
+            "estimated_quality": 5,
+            "status": "accepted"
+        }
+
+        cls.review_further_data = {
+            "issue_set": [],
+            "estimated_quality": 4,
+            "status": "review_further"
+        }
+
+    def _post_request(self, jid, user, data, path=''):
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/jobs/{}{}'.format(jid, path), data=data, format='json')\
+
+        return response
+
+    def _patch_request(self, jid, user, data,  path=''):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/v1/jobs/{}{}'.format(jid, path), data=data, format='json')
+
+        return response
+
+    def _get_request(self, jid, user,  path=''):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/jobs/{}{}'.format(jid, path))
+
+        return response
+
+    def _fetch_job_from_db(self):
+        self.job = Job.objects.prefetch_related(
+            'review_set',
+            'review_set__issue_set',
+            'review_set__issue_set__comment_set').filter(segment__task_id=self.task.id).first()
+
+    def _set_annotation_status(self):
+        self._patch_request(self.job.id, self.admin, {'status': 'annotation'})
+
+    def _set_validation_status(self):
+        self._patch_request(self.job.id, self.admin, {'status': 'validation'})
+
+    def test_api_v1_job_annotation_review(self):
+        self._set_annotation_status()
+        response = self._post_request(self.job.id, self.reviewer, self.accept_review_data, path='/reviews/create')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        response = self._post_request(self.job.id, self.assignee, self.accept_review_data, path='/reviews/create')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_api_v1_job_validation_review_create(self):
+        self._set_validation_status()
+        response = self._post_request(self.job.id, self.reviewer, self.accept_review_data, path='/reviews/create')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self._fetch_job_from_db()
+        self.assertEqual(self.job.status, 'completed')
+        response = self._post_request(self.job.id, self.assignee, self.accept_review_data, path='/reviews/create')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.job.review_set.first().delete()
+
+    def test_api_v1_job_reject_review(self):
+        self._set_validation_status()
+        response = self._post_request(self.job.id, self.reviewer, self.reject_review_data, path='/reviews/create')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self._fetch_job_from_db()
+        self.assertEqual(self.job.status, 'annotation')
+        self.job.review_set.first().delete()
+
+    def test_api_v1_job_review_further(self):
+        self._set_validation_status()
+        response = self._post_request(self.job.id, self.reviewer, self.review_further_data, path='/reviews/create')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self._fetch_job_from_db()
+        self.assertEqual(self.job.status, 'validation')
+        self.job.review_set.first().delete()
+
+    def test_api_v1_job_review_summary(self):
+        self._set_validation_status()
+        response = self._post_request(self.job.id, self.reviewer, self.accept_review_data, path='/reviews/create')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self._set_validation_status()
+        response = self._post_request(self.job.id, self.reviewer, self.review_further_data, path='/reviews/create')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self._post_request(self.job.id, self.reviewer, self.reject_review_data, path='/reviews/create')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self._get_request(self.job.id, self.reviewer, path='/reviews/summary')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get('reviews', None), 3)
+        self.assertEqual(response.data.get('average_estimated_quality', None), 4)
+        self.assertEqual(response.data.get('issues_unresolved', None), 1)
+        self.assertEqual(response.data.get('issues_resolved', None), 0)
+        self.assertSequenceEqual(response.data.get('assignees', None), ['user2'])
+        self.assertSequenceEqual(response.data.get('reviewers', None), ['user3'])
+
+        # todo: left comment
+        # todo: edit comment (+ with wrong permissions)
+        # todo: remove comment (+ with wrong permissions)
+        # todo: resolve issue (+ with wrong permissions)
+        # todo: unresolve issue (+ with wrong permissions)
+
 class ServerAboutAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()

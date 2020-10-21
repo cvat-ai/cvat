@@ -38,7 +38,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Review, Issue,
-    Comment, StorageMethodChoice
+    Comment, StorageMethodChoice, ReviewStatus
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
@@ -729,7 +729,7 @@ class JobViewSet(viewsets.GenericViewSet,
         request.data.update({
             'job': db_job.id,
             'reviewer': request.user.id,
-            'assignee': db_job.assignee,
+            'assignee': db_job.assignee.id,
         })
 
         issue_set = request.data['issue_set']
@@ -743,8 +743,13 @@ class JobViewSet(viewsets.GenericViewSet,
         serializer = CombinedReviewSerializer(data=request.data, partial=True)
         if serializer.is_valid(raise_exception=True):
             instance = serializer.save()
-            return Response(CombinedReviewSerializer(instance).data)
-
+            if instance.status == ReviewStatus.ACCEPTED:
+                db_job.status = StatusChoice.COMPLETED
+                db_job.save()
+            elif instance.status == ReviewStatus.REJECTED:
+                db_job.status = StatusChoice.ANNOTATION
+                db_job.save()
+            return Response(CombinedReviewSerializer(instance).data, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(method='get', operation_summary='Get a brief summary about done reviews')
     @action(detail=True, methods=['GET'], url_path='reviews/summary', serializer_class=ReviewSummarySerializer)

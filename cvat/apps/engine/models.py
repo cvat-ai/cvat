@@ -444,7 +444,7 @@ class Issue(models.Model):
     owner = models.ForeignKey(User, null=True, blank=True, related_name='issues', on_delete=models.SET_NULL)
     resolver = models.ForeignKey(User, null=True, blank=True, related_name='resolved_issues', on_delete=models.SET_NULL)
     created_date = models.DateTimeField(auto_now_add=True)
-    resolved_date = models.DateTimeField(auto_now=True, null=True, blank=True)
+    resolved_date = models.DateTimeField(null=True, blank=True)
 
 class Comment(models.Model):
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE)
