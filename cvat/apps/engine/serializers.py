@@ -549,14 +549,25 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_date', 'updated_date', 'id',)
         write_once_fields = ('issue', 'owner', )
 
-class IssueListSerializer(serializers.ListSerializer):
-    child = IssueSerializer()
+class CombinedIssueSerializer(IssueSerializer):
+    comment_set = CommentSerializer(many=True)
+
+class CombinedReviewSerializer(ReviewSerializer):
+    issue_set = CombinedIssueSerializer(many=True)
+
+    def create(self, validated_data):
+        issues_validated_data = validated_data.pop('issue_set')
+        db_review = models.Review.objects.create(**validated_data)
+        for issue in issues_validated_data:
+            issue['review'] = db_review
+
+            comments_validated_data = issue.pop('comment_set')
+            db_issue = models.Issue.objects.create(**issue)
+            for comment in comments_validated_data:
+                comment['issue'] = db_issue
+                models.Comment.objects.create(**comment)
+
+        return db_review
 
 class CommentListSerializer(serializers.ListSerializer):
     child = CommentSerializer()
-
-class CombinedIssueSerializer(IssueSerializer):
-    comments = CommentListSerializer()
-
-class CombinedReviewSerializer(ReviewSerializer):
-    issues = CombinedIssueSerializer()

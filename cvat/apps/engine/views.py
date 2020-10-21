@@ -650,12 +650,15 @@ class JobViewSet(viewsets.GenericViewSet,
 
     def get_permissions(self):
         http_method = self.request.method
+        http_path = self.request.path
         permissions = [IsAuthenticated]
 
         if http_method in SAFE_METHODS:
             permissions.append(auth.JobAccessPermission)
         elif http_method in ["PATCH", "PUT", "DELETE"]:
             permissions.append(auth.JobChangePermission)
+        elif http_method == 'POST' and http_path.endswith('reviews/create'):
+            permissions.append(auth.JobReviewPermission)
         else:
             permissions.append(auth.AdminRolePermission)
 
@@ -719,12 +722,36 @@ class JobViewSet(viewsets.GenericViewSet,
         serializer = ReviewSerializer(queryset, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(method='post', operation_summary='Submit a review for the job')
+    @action(detail=True, methods=['POST'], url_path='reviews/create', serializer_class=CombinedReviewSerializer)
+    def create_review(self, request, pk):
+        db_job = self.get_object()
+        request.data.update({
+            'job': db_job.id,
+            'reviewer': request.user.id,
+            'assignee': db_job.assignee,
+        })
+
+        issue_set = request.data['issue_set']
+        for issue in issue_set:
+            issue['job'] = db_job.id
+            issue['owner'] = request.user.id
+            comment_set = issue['comment_set']
+            for comment in comment_set:
+                comment['owner'] = request.user.id
+
+        serializer = CombinedReviewSerializer(data=request.data, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            instance = serializer.save()
+            return Response(CombinedReviewSerializer(instance).data)
+
+
     @swagger_auto_schema(method='get', operation_summary='Get a brief summary about done reviews')
-    @action(detail=True, methods=['GET'], url_path='reviews/summary', serializer_class=ReviewSummarySerializer )
+    @action(detail=True, methods=['GET'], url_path='reviews/summary', serializer_class=ReviewSummarySerializer)
     def reviews_summary(self, request, pk):
         db_job = self.get_object()
-        serialize = ReviewSummarySerializer(db_job)
-        return Response(serialize.data)
+        serializer = ReviewSummarySerializer(db_job)
+        return Response(serializer.data)
 
     @swagger_auto_schema(method='get', operation_summary='Method returns list of issues for the job',
         responses={'200': CombinedIssueSerializer(many=True)}
@@ -736,28 +763,13 @@ class JobViewSet(viewsets.GenericViewSet,
         serializer = CombinedIssueSerializer(queryset, many=True)
         return Response(serializer.data)
 
-@method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method submits a review for a job'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a review from a job'))
-class ReviewViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
-    mixins.DestroyModelMixin):
+class ReviewViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin):
     queryset = Review.objects.all().order_by('id')
-
-    def get_serializer_class(self):
-        http_method = self.request.method
-        if http_method == 'POST':
-            return CombinedReviewSerializer
-        else:
-            return ReviewSerializer
+    serializer_class = ReviewSerializer
 
     def get_permissions(self):
-        http_method = self.request.method
-        permissions = [IsAuthenticated]
-
-        if http_method in ['POST']:
-            permissions.append(auth.ReviewCreatePermission)
-        else:
-            permissions.append(auth.AdminRolePermission)
-
+        permissions = [IsAuthenticated, auth.AdminRolePermission]
         return [perm() for perm in permissions]
 
 

@@ -274,11 +274,10 @@ class JobChangePermission(BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm('engine.job.change', obj)
 
-class ReviewCreatePermission(BasePermission):
+class JobReviewPermission(BasePermission):
     # pylint: disable=no-self-use
     def has_object_permission(self, request, view, obj):
-        db_job = obj.job
-        return request.user.has_perm('engine.job.review', db_job)
+        return request.user.has_perm('engine.job.review', obj)
 
 class IssueAccessPermission(BasePermission):
     # pylint: disable=no-self-use
