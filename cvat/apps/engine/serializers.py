@@ -544,8 +544,14 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Comment
         fields = '__all__'
-        read_only_fields = ('created_date', 'id',)
+        read_only_fields = ('created_date', 'updated_date', 'id',)
         write_once_fields = ('issue', 'owner', )
 
 class CommentListSerializer(serializers.ListSerializer):
     child = CommentSerializer()
+
+class CombinedIssueSerializer(IssueSerializer):
+    comments = CommentListSerializer()
+
+class CombinedReviewSerializer(ReviewSerializer):
+    issues = CombinedIssueSerializer()

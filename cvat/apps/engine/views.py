@@ -46,7 +46,7 @@ from cvat.apps.engine.serializers import (
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, RqStatusSerializer,
     TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
-    ReviewSummarySerializer, IssueSerializer, IssueListSerializer,
+    ReviewSummarySerializer, CombinedReviewSerializer, IssueSerializer,
     CommentSerializer, CommentListSerializer
 )
 from cvat.apps.engine.utils import av_scan_paths
@@ -741,11 +741,13 @@ class JobViewSet(viewsets.GenericViewSet,
 class ReviewViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
     mixins.DestroyModelMixin):
     queryset = Review.objects.all().order_by('id')
-    serializer_class = ReviewSerializer
 
-    def ger_serializer_class(self):
-        # TODO get_serializer_class to push combined results
-        pass
+    def get_serializer_class(self):
+        http_method = self.request.method
+        if http_method == 'POST':
+            return CombinedReviewSerializer
+        else:
+            return ReviewSerializer
 
     def get_permissions(self):
         http_method = self.request.method
@@ -758,18 +760,12 @@ class ReviewViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
 
         return [perm() for perm in permissions]
 
-# @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method adds list of issues to a job'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes an issue from a job'))
-class IssueViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
-    mixins.DestroyModelMixin):
+class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
     queryset = Issue.objects.all().order_by('id')
-    serializer_class = IssueSerializer
 
-    # def get_serializer_class(self):
-    #     http_method = self.request.method
-    #     if http_method == 'POST':
-    #         return IssueListSerializer
-    #     return IssueSerializer
+    def get_serializer_class(self):
+        return IssueSerializer
 
     def get_permissions(self):
         http_method = self.request.method
@@ -789,27 +785,27 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
     @swagger_auto_schema(method='patch', operation_summary='The action resolves a specific issue',
         responses={'200': IssueSerializer()}
     )
-    @action(detail=True, methods=['PATCH'], serializer_class=IssueSerializer)
+    @action(detail=True, methods=['PATCH'], serializer_class=None)
     def resolve(self, request, pk):
         db_issue = self.get_object()
         db_issue.resolved = True
         db_issue.resolver = request.user
         db_issue.resolved_date = datetime.now()
         db_issue.save()
-        serializer = self.get_serializer_class()(db_issue)
+        serializer = IssueSerializer(db_issue)
         return Response(serializer.data)
 
     @swagger_auto_schema(method='patch', operation_summary='The action unresolves a specific issue',
         responses={'200': IssueSerializer()}
     )
-    @action(detail=True, methods=['PATCH'], serializer_class=IssueSerializer)
+    @action(detail=True, methods=['PATCH'], serializer_class=None)
     def unresolve(self, request, pk):
         db_issue = self.get_object()
         db_issue.resolved = False
         db_issue.resolver = None
         db_issue.resolved_date = None
         db_issue.save()
-        serializer = self.get_serializer_class()(db_issue)
+        serializer = IssueSerializer(db_issue)
         return Response(serializer.data)
 
     @swagger_auto_schema(method='get', operation_summary='The action returns all comments of a specific issue',
@@ -842,7 +838,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
 
         if http_method in ['POST']:
             permissions.append(auth.CommentCreatePermission)
-        else if http_method in ['PATCH', 'PUT', 'DELETE']:
+        elif http_method in ['PATCH', 'PUT', 'DELETE']:
             permissions.append(auth.CommentChangePermission)
         else:
             permissions.append(auth.AdminRolePermission)
