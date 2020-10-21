@@ -760,6 +760,7 @@ class ReviewViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
 
         return [perm() for perm in permissions]
 
+
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes an issue from a job'))
 class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
     queryset = Issue.objects.all().order_by('id')

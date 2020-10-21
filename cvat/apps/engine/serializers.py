@@ -530,6 +530,11 @@ class ReviewSummarySerializer(serializers.Serializer):
         }
 
 class IssueSerializer(serializers.ModelSerializer):
+    roi = serializers.ListField(
+        child=serializers.FloatField(),
+        allow_empty=False,
+    )
+
     class Meta:
         model = models.Issue
         fields = '__all__'

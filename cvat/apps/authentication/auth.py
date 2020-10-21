@@ -267,7 +267,7 @@ class TaskDeletePermission(BasePermission):
 class JobAccessPermission(BasePermission):
     # pylint: disable=no-self-use
     def has_object_permission(self, request, view, obj):
-        return request.user.has_perm('engine.job.access"', obj)
+        return request.user.has_perm('engine.job.access', obj)
 
 class JobChangePermission(BasePermission):
     # pylint: disable=no-self-use
