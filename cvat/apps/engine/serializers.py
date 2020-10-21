@@ -537,15 +537,15 @@ class IssueSerializer(serializers.ModelSerializer):
         write_once_fields = ('frame', 'roi', 'job', 'owner', 'review', )
         ordering = ['-id']
 
-class IssueListSerializer(serializers.ListSerializer):
-    child = IssueSerializer()
-
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Comment
         fields = '__all__'
         read_only_fields = ('created_date', 'updated_date', 'id',)
         write_once_fields = ('issue', 'owner', )
+
+class IssueListSerializer(serializers.ListSerializer):
+    child = IssueSerializer()
 
 class CommentListSerializer(serializers.ListSerializer):
     child = CommentSerializer()

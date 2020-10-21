@@ -47,7 +47,7 @@ from cvat.apps.engine.serializers import (
     LogEventSerializer, ProjectSerializer, RqStatusSerializer,
     TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
     ReviewSummarySerializer, CombinedReviewSerializer, IssueSerializer,
-    CommentSerializer, CommentListSerializer
+    CombinedIssueSerializer, CommentSerializer, CommentListSerializer
 )
 from cvat.apps.engine.utils import av_scan_paths
 
@@ -727,13 +727,13 @@ class JobViewSet(viewsets.GenericViewSet,
         return Response(serialize.data)
 
     @swagger_auto_schema(method='get', operation_summary='Method returns list of issues for the job',
-        responses={'200': IssueSerializer(many=True)}
+        responses={'200': CombinedIssueSerializer(many=True)}
     )
-    @action(detail=True, methods=['GET'], serializer_class=IssueSerializer)
+    @action(detail=True, methods=['GET'], serializer_class=CombinedIssueSerializer)
     def issues(self, request, pk):
         db_job = self.get_object()
         queryset = db_job.issue_set
-        serializer = IssueSerializer(queryset, many=True)
+        serializer = CombinedIssueSerializer(queryset, many=True)
         return Response(serializer.data)
 
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method submits a review for a job'))
