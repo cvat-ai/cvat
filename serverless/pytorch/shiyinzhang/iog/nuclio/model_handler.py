@@ -49,11 +49,9 @@ class ModelHandler:
         self.net.to(self.device)
         self.net.eval()
 
-    def handle(self, image, pos_points, neg_points, threshold):
+    def handle(self, image, bbox, pos_points, neg_points, threshold):
         with torch.no_grad():
-            x, y = np.split(np.transpose(np.array(neg_points)), 2)
-            bbox = [np.min(x), np.min(y), np.max(x), np.max(y)]
-            # extract a crop from the image
+            # extract a crop with padding from the image
             crop_padding = 30
             crop_bbox = [
                 max(bbox[0] - crop_padding, 0),
@@ -84,11 +82,17 @@ class ModelHandler:
             pos_points = translate_points_to_crop(pos_points)
             neg_points = translate_points_to_crop(neg_points)
 
-            # FIXME: need to constract correct gt (pos_points can be more than 1)
-            iog_image = helpers.make_gt(input_crop, pos_points + neg_points)
+            # Create IOG image
+            gt_0 = np.zeros(shape=input_crop.shape[:2], dtype=np.float64)
+            gt_1 = np.zeros(shape=input_crop.shape[:2], dtype=np.float64)
+            for p in pos_points:
+                gt_0 = np.maximum(gt_0, helpers.make_gaussian(gt_0.shape, center=p))
+            for p in neg_points:
+                gt_1 = np.maximum(gt_1, helpers.make_gaussian(gt_1.shape, center=p))
+            iog_image = np.stack((gt_0, gt_1), axis=2).astype(dtype=input_crop.dtype)
 
             # Convert iog_image to an image (0-255 values)
-            iog_image = 255. * (iog_image - iog_image.min()) / (iog_image.max() - iog_image.min() + 1e-10)
+            cv2.normalize(iog_image, iog_image, 0, 255, cv2.NORM_MINMAX)
 
             # Concatenate input crop and IOG image
             input_blob = np.concatenate((input_crop, iog_image), axis=2)

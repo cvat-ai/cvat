@@ -6,6 +6,7 @@ import json
 import base64
 from PIL import Image
 import io
+import numpy as np
 from model_handler import ModelHandler
 
 def init_context(context):
@@ -19,14 +20,20 @@ def init_context(context):
 def handler(context, event):
     context.logger.info("call handler")
     data = event.body
-    pos_points = data["points"][:1]
-    neg_points = data["points"][1:]
+    pos_points = data.get("pos_points", data["points"][:1])
+    neg_points = data.get("neg_points", data["points"][1:])
+    crop_bbox = data.get("crop_bbox", None)
     threshold = data.get("threshold", 0.8)
     buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
     image = Image.open(buf)
 
-    polygon = context.user_data.model.handle(image, pos_points,
-        neg_points, threshold)
+    if crop_bbox is None:
+        x, y = np.split(np.transpose(np.array(neg_points)), 2)
+        crop_bbox = [np.min(x), np.min(y), np.max(x), np.max(y)]
+        neg_points = []
+
+    polygon = context.user_data.model.handle(image, crop_bbox,
+        pos_points, neg_points, threshold)
     return context.Response(body=json.dumps(polygon),
                             headers={},
                             content_type='application/json',
