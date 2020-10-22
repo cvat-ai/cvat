@@ -39,7 +39,6 @@ const defaultState = {
         name: '',
     },
     advanced: {
-        zOrder: false,
         lfs: false,
         useZipChunks: true,
         useCache: true,

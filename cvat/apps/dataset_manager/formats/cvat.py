@@ -229,8 +229,7 @@ def dump_as_cvat_annotation(file_object, annotations):
                     )),
                 ]))
 
-            if annotations.meta["task"]["z_order"] != "False":
-                dump_data['z_order'] = str(shape.z_order)
+            dump_data['z_order'] = str(shape.z_order)
             if shape.group:
                 dump_data['group_id'] = str(shape.group)
 
@@ -343,8 +342,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
                         for x,y in pairwise(shape.points)]))
                 ]))
 
-            if annotations.meta["task"]["z_order"] != "False":
-                dump_data["z_order"] = str(shape.z_order)
+            dump_data["z_order"] = str(shape.z_order)
 
             if shape.type == "rectangle":
                 dumper.open_box(dump_data)
@@ -531,6 +529,10 @@ def _export(dst_file, task_data, anno_callback, save_images=False):
             anno_callback(f, task_data)
 
         if save_images:
+            ext = ''
+            if task_data.meta['task']['mode'] == 'interpolation':
+                ext = FrameProvider.VIDEO_FRAME_EXT
+
             img_dir = osp.join(temp_dir, 'images')
             frame_provider = FrameProvider(task_data.db_task.data)
             frames = frame_provider.get_frames(
@@ -538,9 +540,6 @@ def _export(dst_file, task_data, anno_callback, save_images=False):
                 frame_provider.Type.BUFFER)
             for frame_id, (frame_data, _) in enumerate(frames):
                 frame_name = task_data.frame_info[frame_id]['path']
-                ext = ''
-                if not '.' in osp.basename(frame_name):
-                    ext = '.png'
                 img_path = osp.join(img_dir, frame_name + ext)
                 os.makedirs(osp.dirname(img_path), exist_ok=True)
                 with open(img_path, 'wb') as f:

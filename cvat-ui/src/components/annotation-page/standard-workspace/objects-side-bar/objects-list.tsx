@@ -15,6 +15,7 @@ interface Props {
     statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
     sortedStatesID: number[];
+    objectStates: any[];
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
     changeStatesOrdering(value: StatesOrdering): void;
@@ -34,6 +35,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesCollapsedAll,
         statesOrdering,
         sortedStatesID,
+        objectStates,
         switchLockAllShortcut,
         switchHiddenAllShortcut,
         changeStatesOrdering,
@@ -63,13 +65,16 @@ function ObjectListComponent(props: Props): JSX.Element {
                 showAllStates={showAllStates}
             />
             <div className='cvat-objects-sidebar-states-list'>
-                { sortedStatesID.map((id: number): JSX.Element => (
-                    <ObjectItemContainer
-                        key={id}
-                        clientID={id}
-                        initialCollapsed={statesCollapsedAll}
-                    />
-                ))}
+                {sortedStatesID.map(
+                    (id: number): JSX.Element => (
+                        <ObjectItemContainer
+                            objectStates={objectStates}
+                            key={id}
+                            clientID={id}
+                            initialCollapsed={statesCollapsedAll}
+                        />
+                    ),
+                )}
             </div>
         </div>
     );

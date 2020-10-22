@@ -244,7 +244,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         model = models.Task
         fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
-            'segment_size', 'z_order', 'status', 'labels', 'segments',
+            'segment_size', 'status', 'labels', 'segments',
             'project', 'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
         read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size',
             'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
@@ -282,7 +282,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.assignee = validated_data.get('assignee', instance.assignee)
         instance.bug_tracker = validated_data.get('bug_tracker',
             instance.bug_tracker)
-        instance.z_order = validated_data.get('z_order', instance.z_order)
         instance.project = validated_data.get('project', instance.project)
         labels = validated_data.get('label_set', [])
         for label in labels:
@@ -297,7 +296,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     .format(db_label.name))
             if not label.get('color', None):
                 label_names = [l.name for l in
-                    models.Label.objects.filter(task_id=instance.id).exclude(id=db_label.id).order_by('id')
+                    instance.label_set.all().exclude(id=db_label.id).order_by('id')
                 ]
                 db_label.color = get_label_color(db_label.name, label_names)
             else:

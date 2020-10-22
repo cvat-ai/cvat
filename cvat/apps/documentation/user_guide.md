@@ -150,8 +150,6 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
       ![](static/documentation/images/image128_use_cache.jpg)
 
-    **Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
-
     **Use zip chunks**. Force to use zip chunks as compressed data. Actual for videos only.
 
     **Use cache**. Defines how to work with data. Select the checkbox to switch to the "on-the-fly data processing",
@@ -722,7 +720,12 @@ Go to the next/previous frame with a predefined step. Shortcuts:
 
   ![](static/documentation/images/image037.jpg)
 
-Go to the next/previous frame (the step is 1 frame). Shortcuts: ``D`` — previous, ``F`` — next.
+The button to go to the next / previous frame has the customization possibility. To customize, right-click on the button and select one of three options:
+1. The default option - go to the next / previous frame (the step is 1 frame).
+2. Go to the next / previous frame that has any objects (in particular filtered). Read the [filter](#filter) section to know the details how to use it.
+3. Go to the next / previous frame without annotation at all. Use this option in cases when you need to find missed frames quickly.
+
+Shortcuts: ``D`` - previous, ``F`` - next.
 
   ![](static/documentation/images/image040.jpg)
 
@@ -755,7 +758,6 @@ _Overview_:
 -  ``Start Frame`` - the number of the first frame in this job.
 -  ``End Frame`` - the number of the last frame in this job.
 -  ``Frames`` - the total number of all frames in the job.
--  ``Z-Order`` - z-order enable indicator.
 
 _Annotations statistics_:
 
@@ -1082,7 +1084,6 @@ Press ``Esc`` to cancel editing.
 
 It is used for semantic / instance segmentation.
 
-If you want to annotate polygons, make sure the ``Z-Order`` flag in ``Create new task`` dialog is enabled.
 The Z-Order flag defines the order of drawing. It is necessary to
 get the right annotation mask without extra work (additional drawing of borders).
 Z-Order can be changed by pressing ``+``/``-`` which set maximum/minimum z-order
@@ -1418,9 +1419,11 @@ Shapes that don't have ``group_id``, will be highlighted in white.
 There are some reasons to use the feature:
 
 1. When you use a filter, objects that don't match the filter will be hidden.
-1. Fast navigation between the frames that have an object of interest. Use
-``Left Arrow`` / ``Right Arrow`` keys for this purpose. If there are no objects matching the filter,
-the will go to arrows the previous/next frames which contains any objects.
+1. The fast navigation between frames which have an object of interest.
+Use the ``Left Arrow`` / ``Right Arrow`` keys for this purpose
+or customize the UI buttons by right-clicking and select "switching by filter".
+If there are no objects which correspond to the filter,
+you will go to the previous / next frame which contains any annotated objects.
 1. The list contains frequently used and recent filters.
 
 To use the function, it is enough to specify a value inside the ``Filter`` text

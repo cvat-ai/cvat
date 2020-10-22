@@ -103,7 +103,6 @@ def create_dummy_db_tasks(obj, project=None):
         "assignee": obj.assignee,
         "overlap": 0,
         "segment_size": 100,
-        "z_order": False,
         "image_quality": 75,
         "size": 100,
         "project": project
@@ -116,7 +115,6 @@ def create_dummy_db_tasks(obj, project=None):
         "owner": obj.user,
         "overlap": 0,
         "segment_size": 100,
-        "z_order": True,
         "image_quality": 50,
         "size": 200,
         "project": project
@@ -130,7 +128,6 @@ def create_dummy_db_tasks(obj, project=None):
         "assignee": obj.assignee,
         "overlap": 0,
         "segment_size": 100,
-        "z_order": False,
         "image_quality": 75,
         "size": 100,
         "project": project
@@ -143,7 +140,6 @@ def create_dummy_db_tasks(obj, project=None):
         "owner": obj.admin,
         "overlap": 0,
         "segment_size": 50,
-        "z_order": False,
         "image_quality": 95,
         "size": 50,
         "project": project
@@ -1082,7 +1078,6 @@ class TaskGetAPITestCase(APITestCase):
         self.assertEqual(response.data["assignee"], assignee)
         self.assertEqual(response.data["overlap"], db_task.overlap)
         self.assertEqual(response.data["segment_size"], db_task.segment_size)
-        self.assertEqual(response.data["z_order"], db_task.z_order)
         self.assertEqual(response.data["image_quality"], db_task.data.image_quality)
         self.assertEqual(response.data["status"], db_task.status)
         self.assertListEqual(
@@ -1191,8 +1186,6 @@ class TaskUpdateAPITestCase(APITestCase):
         self.assertEqual(response.data["assignee"], assignee)
         self.assertEqual(response.data["overlap"], db_task.overlap)
         self.assertEqual(response.data["segment_size"], db_task.segment_size)
-        z_order = data.get("z_order", db_task.z_order)
-        self.assertEqual(response.data["z_order"], z_order)
         image_quality = data.get("image_quality", db_task.data.image_quality)
         self.assertEqual(response.data["image_quality"], image_quality)
         self.assertEqual(response.data["status"], db_task.status)
@@ -1351,7 +1344,6 @@ class TaskCreateAPITestCase(APITestCase):
         self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", ""))
         self.assertEqual(response.data["overlap"], data.get("overlap", None))
         self.assertEqual(response.data["segment_size"], data.get("segment_size", 0))
-        self.assertEqual(response.data["z_order"], data.get("z_order", False))
         self.assertEqual(response.data["status"], StatusChoice.ANNOTATION)
         self.assertListEqual(
             [label["name"] for label in data.get("labels")],
@@ -1748,7 +1740,6 @@ class TaskDataAPITestCase(APITestCase):
             "assignee": self.assignee.id,
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
@@ -1795,7 +1786,6 @@ class TaskDataAPITestCase(APITestCase):
             "name": "my video task #1",
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
@@ -2048,7 +2038,6 @@ class TaskDataAPITestCase(APITestCase):
             "assignee": self.assignee.id,
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
@@ -2095,7 +2084,6 @@ class JobAnnotationAPITestCase(APITestCase):
             "assignee": assignee.id,
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {
                     "name": "car",
@@ -3183,6 +3171,39 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     }
                 ]
             }]
+            polygon_tracks_wo_attrs = [{
+                "frame": 0,
+                "label_id": task["labels"][1]["id"],
+                "group": 0,
+                "source": "manual",
+                "attributes": [],
+                "shapes": [
+                    {
+                        "frame": 0,
+                        "attributes": [],
+                        "points": [1.0, 2.1, 50.2, 36.6, 7.0, 10.0],
+                        "type": "polygon",
+                        "occluded": False,
+                        "outside": False,
+                    },
+                    {
+                        "frame": 1,
+                        "attributes": [],
+                        "points": [1.0, 2.1, 51, 36.6, 8.0, 11.0],
+                        "type": "polygon",
+                        "occluded": False,
+                        "outside": False
+                    },
+                    {
+                        "frame": 2,
+                        "attributes": [],
+                        "points": [1.0, 2.1, 51, 36.6, 14.0, 15.0],
+                        "type": "polygon",
+                        "occluded": False,
+                        "outside": True,
+                    }
+                ]
+            }]
 
             rectangle_shapes_with_attrs = [{
                 "frame": 0,
@@ -3287,11 +3308,15 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "tracks": [],
                 }
             if annotation_format == "CVAT for video 1.1":
-                annotations["tracks"] = rectangle_tracks_with_attrs + rectangle_tracks_wo_attrs
+                annotations["tracks"] = rectangle_tracks_with_attrs \
+                                      + rectangle_tracks_wo_attrs \
+                                      + polygon_tracks_wo_attrs
 
             elif annotation_format == "CVAT for images 1.1":
-                annotations["shapes"] = rectangle_shapes_with_attrs + rectangle_shapes_wo_attrs \
-                    + polygon_shapes_wo_attrs + polygon_shapes_with_attrs
+                annotations["shapes"] = rectangle_shapes_with_attrs \
+                                      + rectangle_shapes_wo_attrs \
+                                      + polygon_shapes_wo_attrs \
+                                      + polygon_shapes_with_attrs
                 annotations["tags"] = tags_with_attrs + tags_wo_attrs
 
             elif annotation_format == "PASCAL VOC 1.1":
@@ -3306,24 +3331,28 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
             elif annotation_format == "Segmentation mask 1.1":
-                annotations["shapes"] = rectangle_shapes_wo_attrs + polygon_shapes_wo_attrs
+                annotations["shapes"] = rectangle_shapes_wo_attrs \
+                                      + polygon_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
             elif annotation_format == "MOT 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
+            elif annotation_format == "MOTS PNG 1.0":
+                annotations["tracks"] = polygon_tracks_wo_attrs
+
             elif annotation_format == "LabelMe 3.0":
-                annotations["shapes"] = rectangle_shapes_with_attrs + \
-                                        rectangle_shapes_wo_attrs + \
-                                        polygon_shapes_wo_attrs + \
-                                        polygon_shapes_with_attrs
+                annotations["shapes"] = rectangle_shapes_with_attrs \
+                                      + rectangle_shapes_wo_attrs \
+                                      + polygon_shapes_wo_attrs \
+                                      + polygon_shapes_with_attrs
 
             elif annotation_format == "Datumaro 1.0":
-                annotations["shapes"] = rectangle_shapes_with_attrs + \
-                                        rectangle_shapes_wo_attrs + \
-                                        polygon_shapes_wo_attrs + \
-                                        polygon_shapes_with_attrs
+                annotations["shapes"] = rectangle_shapes_with_attrs \
+                                      + rectangle_shapes_wo_attrs \
+                                      + polygon_shapes_wo_attrs \
+                                      + polygon_shapes_with_attrs
                 annotations["tags"] = tags_with_attrs + tags_wo_attrs
 
             else:
@@ -3422,7 +3451,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
                 # 7. check annotation
-                if import_format == "Segmentation mask 1.1":
+                if import_format in {"Segmentation mask 1.1", "MOTS PNG 1.0"}:
                     continue # can't really predict the result to check
                 response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
                 self.assertEqual(response.status_code, HTTP_200_OK)

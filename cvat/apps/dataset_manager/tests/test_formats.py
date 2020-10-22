@@ -222,7 +222,6 @@ class TaskExportTest(_DbTestBase):
             "assignee": '',
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {
                     "name": "car",
@@ -267,6 +266,7 @@ class TaskExportTest(_DbTestBase):
             'Datumaro 1.0',
             'LabelMe 3.0',
             'MOT 1.1',
+            'MOTS PNG 1.0',
             'PASCAL VOC 1.1',
             'Segmentation mask 1.1',
             'TFRecord 1.0',
@@ -282,6 +282,7 @@ class TaskExportTest(_DbTestBase):
             'CVAT 1.1',
             'LabelMe 3.0',
             'MOT 1.1',
+            'MOTS PNG 1.0',
             'PASCAL VOC 1.1',
             'Segmentation mask 1.1',
             'TFRecord 1.0',
@@ -316,6 +317,7 @@ class TaskExportTest(_DbTestBase):
             ('Datumaro 1.0', 'datumaro_project'),
             ('LabelMe 3.0', 'label_me'),
             # ('MOT 1.1', 'mot_seq'), # does not support
+            # ('MOTS PNG 1.0', 'mots_png'), # does not support
             ('PASCAL VOC 1.1', 'voc'),
             ('Segmentation mask 1.1', 'voc'),
             ('TFRecord 1.0', 'tf_detection_api'),
@@ -426,7 +428,6 @@ class FrameMatchingTest(_DbTestBase):
             "assignee": '',
             "overlap": 0,
             "segment_size": 100,
-            "z_order": False,
             "labels": [
                 {
                     "name": "car",

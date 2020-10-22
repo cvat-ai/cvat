@@ -5,6 +5,7 @@
  */
 
 import './commands'
+import '@cypress/code-coverage/support'
 
 before(() => {
     if (Cypress.browser.name === 'firefox') {

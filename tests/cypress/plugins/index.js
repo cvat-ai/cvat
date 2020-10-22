@@ -8,8 +8,8 @@
 
 const {imageGenerator} = require('../plugins/imageGenerator/addPlugin')
 const {createZipArchive} = require('../plugins/createZipArchive/addPlugin')
-
-module.exports = (on) => {
+module.exports = (on, config) => {
+    require('@cypress/code-coverage/task')(on, config)
     on('task', {imageGenerator})
     on('task', {createZipArchive})
     on('task', {
@@ -18,4 +18,5 @@ module.exports = (on) => {
             return null
         }
     })
+    return config
 }

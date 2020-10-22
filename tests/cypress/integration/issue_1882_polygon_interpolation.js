@@ -19,6 +19,30 @@ context('The points of the previous polygon mustn\'t appear while polygon\'s int
     const posX = 10
     const posY = 10
     const color = 'white'
+    const createPolygonTrack = {
+        reDraw: false,
+        type: 'Track',
+        switchLabel: false,
+        pointsMap: [
+            {x: 309, y: 431},
+            {x: 360, y: 500},
+            {x: 320, y: 300},
+            ],
+        complete: true,
+        numberOfPoints: null
+    }
+    const reDrawPolygonTrack = {
+        reDraw: true,
+        type: 'Track',
+        switchLabel: false,
+        pointsMap: [
+            {x: 359, y: 431},
+            {x: 410, y: 500},
+            {x: 370, y: 300},
+            ],
+        complete: true,
+        numberOfPoints: null
+    }
 
     before(() => {
         cy.visit('auth/login')
@@ -30,11 +54,7 @@ context('The points of the previous polygon mustn\'t appear while polygon\'s int
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Create a polygon', () => {
-            cy.createPolygon('Track', [
-                                        {x: 309, y: 431},
-                                        {x: 360, y: 500},
-                                        {x: 320, y: 300},
-                                      ])
+            cy.createPolygon(createPolygonTrack)
             cy.get('#cvat-objects-sidebar-state-item-1')
             .should('contain', '1').and('contain', 'POLYGON TRACK')
         })
@@ -43,12 +63,7 @@ context('The points of the previous polygon mustn\'t appear while polygon\'s int
             .trigger('mousemove', {force: true})
             .trigger('keydown', {key: 'n', shiftKey: true})
             .trigger('keyup', {force: true}, {key: 'n', shiftKey: true})
-            cy.createPolygon('Track', [
-                                        {x: 359, y: 431},
-                                        {x: 410, y: 500},
-                                        {x: 370, y: 300},
-                                        ],
-                                        false, true)
+            cy.createPolygon(reDrawPolygonTrack)
         })
         it('Activate auto bordering mode', () => {
             cy.openSettings()
