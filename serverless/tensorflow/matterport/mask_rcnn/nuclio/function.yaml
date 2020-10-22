@@ -108,7 +108,7 @@ spec:
       - kind: WORKDIR
         value: /opt/nuclio
       - kind: RUN
-        value: apt update && apt install --no-install-recommends -y git curl libsm6 libxext6 libxrender-dev
+        value: apt update && apt install --no-install-recommends -y git curl libsm6 libxext6 libxrender-dev libglu1
       - kind: RUN
         value: git clone https://github.com/matterport/Mask_RCNN.git
       - kind: RUN
