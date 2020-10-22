@@ -41,7 +41,7 @@ it('Prepare to testing', () => {
     cy.get('.cvat-tasks-page').should('exist')
     let listItems = []
     cy.document().then((doc) => {
-        const collection = Array.from(doc.querySelectorAll('.cvat-text-color'))
+        const collection = Array.from(doc.querySelectorAll('.cvat-item-task-name'))
         for (let i = 0; i < collection.length; i++) {
             listItems.push(collection[i].innerText)
         }
