@@ -83,13 +83,13 @@ class ModelHandler:
             neg_points = translate_points_to_crop(neg_points)
 
             # Create IOG image
-            gt_0 = np.zeros(shape=input_crop.shape[:2], dtype=np.float64)
-            gt_1 = np.zeros(shape=input_crop.shape[:2], dtype=np.float64)
+            pos_gt = np.zeros(shape=input_crop.shape[:2], dtype=np.float64)
+            neg_gt = np.zeros(shape=input_crop.shape[:2], dtype=np.float64)
             for p in pos_points:
-                gt_0 = np.maximum(gt_0, helpers.make_gaussian(gt_0.shape, center=p))
+                pos_gt = np.maximum(pos_gt, helpers.make_gaussian(pos_gt.shape, center=p))
             for p in neg_points:
-                gt_1 = np.maximum(gt_1, helpers.make_gaussian(gt_1.shape, center=p))
-            iog_image = np.stack((gt_0, gt_1), axis=2).astype(dtype=input_crop.dtype)
+                neg_gt = np.maximum(neg_gt, helpers.make_gaussian(neg_gt.shape, center=p))
+            iog_image = np.stack((pos_gt, neg_gt), axis=2).astype(dtype=input_crop.dtype)
 
             # Convert iog_image to an image (0-255 values)
             cv2.normalize(iog_image, iog_image, 0, 255, cv2.NORM_MINMAX)
