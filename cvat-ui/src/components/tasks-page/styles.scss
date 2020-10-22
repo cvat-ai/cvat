@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 @import '../../base.scss';
+@import '../../styles.scss';
 
 .cvat-tasks-page {
     padding-top: 15px;
@@ -157,6 +158,10 @@
 
 .cvat-item-open-task-button {
     margin-right: 20px;
+}
+
+.cvat-item-task-name {
+    @extend .cvat-text-color;
 }
 
 #cvat-create-task-button {

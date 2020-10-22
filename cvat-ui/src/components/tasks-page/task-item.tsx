@@ -52,8 +52,8 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         return (
             <Col span={10} className='cvat-task-item-description'>
-                <Text strong type='secondary'>{`#${id}: `}</Text>
-                <Text strong className='cvat-text-color'>{name}</Text>
+                <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
+                <Text strong className='cvat-item-task-name'>{name}</Text>
                 <br />
                 { owner
                     && (
