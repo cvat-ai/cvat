@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import moment from 'moment';
 import { Row, Col } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
@@ -12,11 +12,12 @@ import Icon from 'antd/lib/icon';
 import Dropdown from 'antd/lib/dropdown';
 
 import getCore from 'cvat-core-wrapper';
-import { Project } from 'reducers/interfaces';
+import { Project, CombinedState } from 'reducers/interfaces';
 import { updateProjectAsync } from 'actions/projects-actions';
 import ActionsMenu from 'components/projects-page/actions-menu';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import BugTrackerEditor from 'components/task-page/bug-tracker-editor';
+import UserSelector from 'components/task-page/user-selector';
 import { MenuIcon } from 'icons';
 
 const core = getCore();
@@ -29,6 +30,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     const { project } = props;
 
     const dispatch = useDispatch();
+    const registeredUsers = useSelector((state: CombinedState) => state.users.users);
     const [projectName, setProjectName] = useState(project.instance.name);
 
     return (
@@ -60,13 +62,30 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         }}
                     />
                 </Col>
-                <Col className='cvat-project-details-actions'>
-                    <div>
+                <Col>
+                    <div className='cvat-project-details-actions'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <Dropdown overlay={<ActionsMenu projectInstance={project.instance} />}>
                             <Icon className='cvat-menu-icon' component={MenuIcon} />
                         </Dropdown>
                     </div>
+                    <UserSelector
+                        value={project.instance.assignee}
+                        users={registeredUsers}
+                        onChange={
+                            (value) => {
+                                let [userInstance] = registeredUsers
+                                    .filter((user: any) => user.username === value);
+
+                                if (userInstance === undefined) {
+                                    userInstance = null;
+                                }
+
+                                project.instance.assignee = userInstance;
+                                dispatch(updateProjectAsync(project.instance));
+                            }
+                        }
+                    />
                 </Col>
             </Row>
             <LabelsEditor

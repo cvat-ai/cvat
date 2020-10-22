@@ -32,7 +32,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     let projectPreview = null;
     if (instance.tasks.length) {
         projectPreview = useSelector((state: CombinedState) => (
-            state.projects.taskPreviews[instance.tasks[0].id]
+            state.tasks.current.find((task) => task.instance.id === instance.tasks[0].id)?.preview
         ));
     }
 

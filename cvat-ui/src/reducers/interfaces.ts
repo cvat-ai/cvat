@@ -40,9 +40,6 @@ export interface ProjectsState {
     fetching: boolean;
     count: number;
     current: Project[];
-    taskPreviews: {
-        [taskId: number]: string;
-    };
     gettingQuery: ProjectsQuery;
     activities: {
         creates: {

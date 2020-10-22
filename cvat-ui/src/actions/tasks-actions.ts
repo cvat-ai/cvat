@@ -49,7 +49,7 @@ function getTasks(): AnyAction {
     return action;
 }
 
-function getTasksSuccess(array: any[], previews: string[],
+export function getTasksSuccess(array: any[], previews: string[],
     count: number, query: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
@@ -98,26 +98,12 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
 
         const array = Array.from(result);
-        const previews = [];
         const promises = array
-            .map((task): string => (task as any).frames.preview());
+            .map((task): string => (task as any).frames.preview().catch(''));
 
         dispatch(getInferenceStatusAsync());
 
-        for (const promise of promises) {
-            try {
-                // a tricky moment
-                // await is okay in loop in this case, there aren't any performance bottleneck
-                // because all server requests have been already sent in parallel
-
-                // eslint-disable-next-line no-await-in-loop
-                previews.push(await promise);
-            } catch (error) {
-                previews.push('');
-            }
-        }
-
-        dispatch(getTasksSuccess(array, previews, result.count, query));
+        dispatch(getTasksSuccess(array, await Promise.all(promises), result.count, query));
     };
 }
 
@@ -458,7 +444,7 @@ function updateTask(): AnyAction {
     return action;
 }
 
-function updateTaskSuccess(task: any): AnyAction {
+export function updateTaskSuccess(task: any): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_TASK_SUCCESS,
         payload: { task },

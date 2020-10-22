@@ -14,7 +14,6 @@ const defaultState: ProjectsState = {
     fetching: false,
     count: 0,
     current: [],
-    taskPreviews: {},
     gettingQuery: {
         page: 1,
         id: null,
@@ -42,16 +41,6 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                     ...action.payload.query,
                 },
             };
-        case ProjectsActionTypes.UPDATE_TASK_PREVIEW_IMAGE: {
-            const { taskId, image } = action.payload;
-            return {
-                ...state,
-                taskPreviews: {
-                    ...state.taskPreviews,
-                    [taskId]: image,
-                },
-            };
-        }
         case ProjectsActionTypes.GET_PROJECTS:
             return {
                 ...state,

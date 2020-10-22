@@ -99,8 +99,6 @@ describe('Feature: save a project', () => {
             id: 6,
         });
 
-        console.log(result[0].labels);
-
         const labelsLength = result[0].labels.length;
         const newLabel = new window.cvat.classes.Label({
             name: 'My boss\'s car',

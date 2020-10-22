@@ -6,13 +6,13 @@ import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 
 import { ProjectsQuery } from 'reducers/interfaces';
+import { getTasksSuccess, updateTaskSuccess } from 'actions/tasks-actions';
 import getCore from 'cvat-core-wrapper';
 
 const cvat = getCore();
 
 export enum ProjectsActionTypes {
     UPDATE_PROJECTS_GETTING_QUERY = 'UPDATE_PROJECTS_GETTING_QUERY',
-    UPDATE_TASK_PREVIEW_IMAGE = 'UPDATE_TASK_PREVIEW_IMAGE',
     GET_PROJECTS = 'GET_PROJECTS',
     GET_PROJECTS_SUCCESS = 'GET_PROJECTS_SUCCESS',
     GET_PROJECTS_FAILED = 'GET_PROJECTS_FAILED',
@@ -32,18 +32,6 @@ function updateProjectsGettingQuery(query: Partial<ProjectsQuery>): AnyAction {
         type: ProjectsActionTypes.UPDATE_PROJECTS_GETTING_QUERY,
         payload: {
             query,
-        },
-    };
-
-    return action;
-}
-
-function updateTaskImagePreview(taskId: number, image: string): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.UPDATE_TASK_PREVIEW_IMAGE,
-        payload: {
-            taskId,
-            image,
         },
     };
 
@@ -110,13 +98,31 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         const array = Array.from(result);
         dispatch(getProjectsSuccess(array, result.count));
 
+        const tasks: any[] = [];
+        const taskPreviewPromises: Promise<any>[] = [];
+
         for (const project of array) {
-            for (const task of (project as any).tasks) {
-                (task as any).frames.preview().then((image: string) => {
-                    dispatch(updateTaskImagePreview(task.id, image));
-                });
-            }
+            taskPreviewPromises.push(...(project as any).tasks.map((task: any): string => {
+                tasks.push(task);
+                return (task as any).frames.preview().catch(() => '');
+            }));
         }
+
+        dispatch(getTasksSuccess(
+            tasks,
+            await Promise.all(taskPreviewPromises),
+            tasks.length,
+            {
+                page: 1,
+                assignee: null,
+                id: null,
+                mode: null,
+                name: null,
+                owner: null,
+                search: null,
+                status: null,
+            }
+        ))
     };
 }
 
@@ -206,6 +212,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             await projectInstance.save();
             const [project] = await cvat.projects.get({ id: projectInstance.id });
             dispatch(updateProjectSuccess(project));
+            project.tasks.forEach((task: any) => {
+                dispatch(updateTaskSuccess(task));
+            });
         } catch (error) {
             let project = null;
             try {

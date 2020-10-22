@@ -1,4 +1,3 @@
-
 // Copyright (C) 2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
@@ -13,7 +12,7 @@ import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
 import Title from 'antd/lib/typography/Title';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, Task } from 'reducers/interfaces';
 import { getProjectsAsync } from 'actions/projects-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import TaskItem from 'components/tasks-page/task-item';
@@ -33,7 +32,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
     const tasksActiveInferences = useSelector((state: CombinedState) => state.models.inferences);
-    const previewImages = useSelector((state: CombinedState) => state.projects.taskPreviews);
+    const tasks = useSelector((state: CombinedState) => state.tasks.current);
 
     const filteredProjects = projects.filter(
         (project) => project.instance.id === id,
@@ -88,17 +87,17 @@ export default function ProjectPageComponent(): JSX.Element {
                         </Button>
                     </Col>
                 </Row>
-                {project.instance.tasks.map((task: any) => (
+                {tasks.filter((task) => task.instance.projectId === project.instance.id).map((task: Task) => (
                     <TaskItem
-                        key={task.id}
-                        deleted={task.id in taskDeletes ? taskDeletes[task.id] : false}
+                        key={task.instance.id}
+                        deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
                         hidden={false}
-                        activeInference={tasksActiveInferences[task.id] || null}
+                        activeInference={tasksActiveInferences[task.instance.id] || null}
                         cancelAutoAnnotation={() => {
-                            dispatch(cancelInferenceAsync(task.id));
+                            dispatch(cancelInferenceAsync(task.instance.id));
                         }}
-                        previewImage={previewImages[task.id]}
-                        taskInstance={task}
+                        previewImage={task.preview}
+                        taskInstance={task.instance}
                     />
                 ))}
             </Col>

@@ -247,6 +247,7 @@
                 id: isInteger,
                 page: isInteger,
                 name: isString,
+                assignee: isString,
                 owner: isString,
                 search: isString,
                 status: isEnum.bind(TaskStatus),
@@ -270,7 +271,7 @@
 
             const searchParams = new URLSearchParams();
             // TODO: need to check search fields
-            for (const field of ['name', 'owner', 'search', 'status', 'id', 'page']) {
+            for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams.set(field, filter[field]);
                 }

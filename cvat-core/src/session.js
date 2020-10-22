@@ -1451,6 +1451,7 @@
                 id: undefined,
                 name: undefined,
                 status: undefined,
+                assignee: undefined,
                 owner: undefined,
                 bug_tracker: undefined,
                 created_date: undefined,
@@ -1521,7 +1522,26 @@
                     get: () => data.status,
                 },
                 /**
-                    * Instance of a user who has created the task
+                    * Instance of a user who was assigned for the project
+                    * @name assignee
+                    * @type {module:API.cvat.classes.User}
+                    * @memberof module:API.cvat.classes.Project
+                    * @readonly
+                    * @instance
+                */
+                assignee: {
+                    get: () => data.assignee,
+                    set: (assignee) => {
+                        if (assignee !== null && !(assignee instanceof User)) {
+                            throw new ArgumentError(
+                                'Value must be a user instance',
+                            );
+                        }
+                        data.assignee = assignee;
+                    },
+                },
+                /**
+                    * Instance of a user who has created the project
                     * @name owner
                     * @type {module:API.cvat.classes.User}
                     * @memberof module:API.cvat.classes.Project
@@ -2208,6 +2228,7 @@
         if (typeof (this.id) !== 'undefined') {
             const projectData = {
                 name: this.name,
+                assignee: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
                 labels: [...this.labels.map((el) => el.toJSON())],
             };
