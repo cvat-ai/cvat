@@ -11,7 +11,8 @@ Cypress.Commands.add('imageGenerator', (directory,
                                         color,
                                         posX,
                                         posY,
-                                        message) => {
+                                        message,
+                                        count) => {
     return cy.task('imageGenerator', {
         directory: directory,
         fileName: fileName,
@@ -20,6 +21,7 @@ Cypress.Commands.add('imageGenerator', (directory,
         color: color,
         posX: posX,
         posY: posY,
-        message: message
+        message: message,
+        count: count
     })
 })
