@@ -430,6 +430,9 @@ RESTRICTIONS = {
     # this setting limits the number of tasks for the user
     'task_limit': None,
 
+    # this setting limits the number of projects for the user
+    'project_limit': None,
+
     # this setting reduse task visibility to owner and assignee only
     'reduce_task_visibility': False,
 

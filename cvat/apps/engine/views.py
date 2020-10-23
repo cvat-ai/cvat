@@ -244,9 +244,19 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         return [perm() for perm in permissions]
 
     def perform_create(self, serializer):
-        if self.request.data.get('owner', None):
+        def validate_project_limit(owner):
+            admin_perm = auth.AdminRolePermission()
+            is_admin = admin_perm.has_permission(self.request, self)
+            if not is_admin and settings.RESTRICTIONS['project_limit'] is not None and \
+                Project.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['project_limit']:
+                raise serializers.ValidationError('The user has the maximum number of projects')
+
+        owner = self.request.data.get('owner', None)
+        if owner:
+            validate_project_limit(owner)
             serializer.save()
         else:
+            validate_project_limit(self.request.user)
             serializer.save(owner=self.request.user)
 
     @swagger_auto_schema(method='get', operation_summary='Returns information of the tasks of the project with the selected id',
